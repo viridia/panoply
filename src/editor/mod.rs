@@ -1,2 +1,2 @@
-mod view;
-pub use view::editor_camera_controller;
+mod camera;
+pub use camera::editor_camera_controller;
