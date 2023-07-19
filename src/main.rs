@@ -1,8 +1,6 @@
 use bevy::{
     prelude::*,
-    render::camera::Viewport,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-    window::PrimaryWindow,
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use std::f32::consts::PI;
@@ -12,15 +10,12 @@ extern crate directories;
 mod editor;
 mod settings;
 mod view;
-use view::Viewpoint;
+use view::{PrimaryCamera, Viewpoint};
 
-use crate::settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings};
-
-#[derive(Default, Resource)]
-struct OccupiedScreenSpace {
-    left: f32,
-    right: f32,
-}
+use crate::{
+    settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
+    view::{update_camera_viewport, ViewportInset},
+};
 
 fn main() {
     let mut settings = UserSettings {
@@ -52,7 +47,7 @@ fn main() {
             // ImagePlugin::default_nearest(),
         ))
         .insert_resource(settings)
-        .init_resource::<OccupiedScreenSpace>()
+        .init_resource::<ViewportInset>()
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
             azimuth: 0.,
@@ -65,12 +60,10 @@ fn main() {
             Update,
             (
                 editor_ui_system,
-                update_camera_transform_system,
-                // set_camera_viewports,
+                update_camera_viewport,
                 rotate,
                 editor::editor_camera_controller,
                 update_window_settings,
-                update_camera_transform_system,
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
@@ -79,13 +72,10 @@ fn main() {
     println!("Exited!")
 }
 
-fn editor_ui_system(
-    mut contexts: EguiContexts,
-    mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
-) {
+fn editor_ui_system(mut contexts: EguiContexts, mut viewport_inset: ResMut<ViewportInset>) {
     let ctx = contexts.ctx_mut();
 
-    occupied_screen_space.left = egui::SidePanel::left("left_panel")
+    viewport_inset.left = egui::SidePanel::left("left_panel")
         .resizable(true)
         .default_width(300.)
         .min_width(300.)
@@ -95,7 +85,7 @@ fn editor_ui_system(
         .response
         .rect
         .width();
-    occupied_screen_space.right = egui::SidePanel::right("right_panel")
+    viewport_inset.right = egui::SidePanel::right("right_panel")
         .resizable(true)
         .default_width(300.)
         .min_width(300.)
@@ -112,9 +102,6 @@ fn editor_ui_system(
 struct Shape;
 
 const X_EXTENT: f32 = 14.5;
-
-#[derive(Component)]
-struct PrimaryCamera;
 
 fn setup(
     mut commands: Commands,
@@ -226,28 +213,4 @@ fn uv_debug_texture() -> Image {
         &texture_data,
         TextureFormat::Rgba8UnormSrgb,
     )
-}
-
-fn update_camera_transform_system(
-    occupied_screen_space: Res<OccupiedScreenSpace>,
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut camera: Query<&mut Camera>,
-) {
-    let window = windows.single();
-    let ww = window.resolution.physical_width();
-    let wh = window.resolution.physical_height();
-    let sf = window.resolution.scale_factor() as f32;
-    let left = (occupied_screen_space.left * sf) as u32;
-    let right = (occupied_screen_space.right * sf) as u32;
-    let width = if ww > left + right {
-        ww - left - right
-    } else {
-        1
-    };
-
-    camera.single_mut().viewport = Some(Viewport {
-        physical_position: UVec2::new(left as u32, 0),
-        physical_size: UVec2::new(width, wh),
-        ..default()
-    });
 }
