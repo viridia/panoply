@@ -1,6 +1,8 @@
 use bevy::prelude::{EulerRot, Quat, Resource, Transform, Vec3};
 use std::f32::consts::PI;
 
+/// Represents the focal point of attention, typically the coordinates of the player
+/// character.
 #[derive(Resource, Default, Debug)]
 pub struct Viewpoint {
     pub realm_id: String,
@@ -47,7 +49,6 @@ impl Viewpoint {
 // import { ease, EaseFunction, invariant } from '@faery/common';
 // import { createAtom } from '@faery/reflex';
 // import { Box3, Vector3 } from 'three';
-// import type { IEngine } from '../IEngine';
 
 // /** A class which tracks where the camera is looking at, and what objects are visible. */
 // export class Viewpoint {

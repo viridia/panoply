@@ -4,6 +4,7 @@ use super::PrimaryCamera;
 
 const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 
+/// Used to create margins around the viewport so that side panels don't overwrite the 3d scene.
 #[derive(Default, Resource)]
 pub struct ViewportInset {
     pub left: f32,
@@ -12,6 +13,8 @@ pub struct ViewportInset {
     pub bottom: f32,
 }
 
+/// Update the camera viewport and fov properties based on the window size and the viewport
+/// margins.
 pub fn update_camera_viewport(
     viewport_inset: Res<ViewportInset>,
     windows: Query<&Window, With<PrimaryWindow>>,
