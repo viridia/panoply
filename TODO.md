@@ -1,6 +1,14 @@
 # TODO
 
-* Adjust FoV based on viewport size.
+* egui
+  * display button
+  * display button with icon
+  * button with toggled bg
+  * button group
+  * tool grid
+* cursors
+* TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
+  to track which region we're in.
 
 # Project hierarchy
 
@@ -110,3 +118,7 @@
   * Biome
   * Realm
   * World
+
+# Convert PNG to premultiplied alpha:
+
+convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png

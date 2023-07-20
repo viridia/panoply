@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{input::mouse::MouseWheel, prelude::*};
 
 use crate::view::Viewpoint;
 
@@ -13,8 +13,9 @@ fn movement(flag: bool) -> f32 {
     }
 }
 
-pub fn editor_camera_controller(
+pub fn camera_controller(
     keyboard_input: Res<Input<KeyCode>>,
+    mut scroll_events: EventReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
     mut query: Query<&mut Transform, With<Camera>>,
@@ -27,6 +28,16 @@ pub fn editor_camera_controller(
     let right = keyboard_input.pressed(KeyCode::Right);
     let up = keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W);
     let down = keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S);
+
+    use bevy::input::mouse::MouseScrollUnit;
+    for ev in scroll_events.iter() {
+        match ev.unit {
+            MouseScrollUnit::Line => {}
+            MouseScrollUnit::Pixel => {
+                viewpoint.rotate(ev.x * -0.002);
+            }
+        }
+    }
 
     viewpoint.rotate(
         (movement(left && !strafe) - movement(right && !strafe))

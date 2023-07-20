@@ -1,9 +1,10 @@
 use bevy::{
+    asset::ChangeWatcher,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use std::f32::consts::PI;
+use std::{f32::consts::PI, time::Duration};
 
 extern crate directories;
 
@@ -16,6 +17,15 @@ use crate::{
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     view::{update_camera_viewport, ViewportInset},
 };
+
+#[derive(Resource)]
+struct EditorImages {
+    world: Handle<Image>,
+    terrain: Handle<Image>,
+    building: Handle<Image>,
+    quest: Handle<Image>,
+    play: Handle<Image>,
+}
 
 fn main() {
     let mut settings = UserSettings {
@@ -32,17 +42,22 @@ fn main() {
 
     App::new()
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Bevy Game".into(),
-                    resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
-                        .into(),
-                    position: WindowPosition::new(settings.window.position),
-                    // mode: WindowMode::SizedFullscreen,
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Bevy Game".into(),
+                        resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
+                            .into(),
+                        position: WindowPosition::new(settings.window.position),
+                        // mode: WindowMode::SizedFullscreen,
+                        ..default()
+                    }),
                     ..default()
+                })
+                .set(AssetPlugin {
+                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
+                    ..Default::default()
                 }),
-                ..default()
-            }),
             EguiPlugin,
             // ImagePlugin::default_nearest(),
         ))
@@ -55,14 +70,14 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, load_assets_system))
         .add_systems(
             Update,
             (
                 editor_ui_system,
                 update_camera_viewport,
-                rotate,
-                editor::editor_camera_controller,
+                rotate_shapes,
+                editor::camera_controller,
                 update_window_settings,
             ),
         )
@@ -72,7 +87,26 @@ fn main() {
     println!("Exited!")
 }
 
-fn editor_ui_system(mut contexts: EguiContexts, mut viewport_inset: ResMut<ViewportInset>) {
+fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.insert_resource(EditorImages {
+        world: assets.load("editor/icons/world.png"),
+        terrain: assets.load("editor/icons/terrain.png"),
+        building: assets.load("editor/icons/building.png"),
+        quest: assets.load("editor/icons/quest.png"),
+        play: assets.load("editor/icons/play.png"),
+    });
+}
+
+fn editor_ui_system(
+    mut contexts: EguiContexts,
+    mut viewport_inset: ResMut<ViewportInset>,
+    images: Res<EditorImages>,
+) {
+    let world_texture_id = contexts.add_image(images.world.clone());
+    let terrain_texture_id = contexts.add_image(images.terrain.clone());
+    let building_texture_id = contexts.add_image(images.building.clone());
+    let quest_texture_id = contexts.add_image(images.quest.clone());
+    let play_texture_id = contexts.add_image(images.play.clone());
     let ctx = contexts.ctx_mut();
 
     viewport_inset.left = egui::SidePanel::left("left_panel")
@@ -80,7 +114,55 @@ fn editor_ui_system(mut contexts: EguiContexts, mut viewport_inset: ResMut<Viewp
         .default_width(300.)
         .min_width(300.)
         .show(ctx, |ui| {
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+            ui.horizontal(|ui| {
+                ui.add(egui::Button::image_and_text(
+                    world_texture_id,
+                    bevy_egui::egui::Vec2::new(32., 23.),
+                    "World",
+                ));
+                ui.add(egui::Button::image_and_text(
+                    terrain_texture_id,
+                    bevy_egui::egui::Vec2::new(32., 24.),
+                    "Terrain",
+                ));
+                ui.add(egui::Button::image_and_text(
+                    building_texture_id,
+                    bevy_egui::egui::Vec2::new(28., 30.),
+                    "Scenery",
+                ));
+                ui.add(egui::Button::image_and_text(
+                    quest_texture_id,
+                    bevy_egui::egui::Vec2::new(28., 26.),
+                    "Quest",
+                ));
+                ui.add(egui::Button::image_and_text(
+                    play_texture_id,
+                    bevy_egui::egui::Vec2::new(28., 26.),
+                    "Play",
+                ));
+            });
+
+            egui::Grid::new("tools")
+                .spacing(bevy_egui::egui::Vec2 { x: 0., y: 0. })
+                .show(ui, |ui| {
+                    ui.button("Hello").clicked();
+                    ui.button("Hello").clicked();
+                    ui.end_row();
+
+                    ui.button("Hello").clicked();
+                    ui.button("Hello").clicked();
+                    ui.button("Hello").clicked();
+                    ui.end_row();
+
+                    // ui.horizontal(|ui| {
+                    //     ui.label("Same");
+                    //     ui.label("cell");
+                    // });
+                    // ui.label("Third row, second column");
+                    // ui.end_row();
+                })
+
+            // ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response
         .rect
@@ -181,7 +263,7 @@ fn setup(
     ));
 }
 
-fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
+fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.rotate_y(time.delta_seconds() / 2.);
     }

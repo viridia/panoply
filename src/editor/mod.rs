@@ -1,2 +1,2 @@
 mod camera;
-pub use camera::editor_camera_controller;
+pub use camera::camera_controller;
