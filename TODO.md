@@ -1,8 +1,6 @@
 # TODO
 
 * egui
-  * display button
-  * display button with icon
   * button with toggled bg
   * button group
   * tool grid
@@ -122,3 +120,11 @@
 # Convert PNG to premultiplied alpha:
 
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
+convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
+
+# Asset file extension
+
+* .meta.json
+* .world.json
+* .realm.msgpack
+* .scenery.msgpack

@@ -4,6 +4,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use egui::Frame;
 use std::{f32::consts::PI, time::Duration};
 
 extern crate directories;
@@ -25,6 +26,19 @@ struct EditorImages {
     building: Handle<Image>,
     quest: Handle<Image>,
     play: Handle<Image>,
+}
+
+enum EditorState {
+    World,
+    Terrain,
+    Scenery,
+    Meta,
+    Play,
+}
+
+#[derive(Resource)]
+struct ToolState {
+    state: EditorState,
 }
 
 fn main() {
@@ -70,6 +84,9 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
+        .insert_resource(ToolState {
+            state: EditorState::World,
+        })
         .add_systems(Startup, (setup, load_assets_system))
         .add_systems(
             Update,
@@ -100,6 +117,7 @@ fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
 fn editor_ui_system(
     mut contexts: EguiContexts,
     mut viewport_inset: ResMut<ViewportInset>,
+    mut tool_state_res: ResMut<ToolState>,
     images: Res<EditorImages>,
 ) {
     let world_texture_id = contexts.add_image(images.world.clone());
@@ -108,38 +126,91 @@ fn editor_ui_system(
     let quest_texture_id = contexts.add_image(images.quest.clone());
     let play_texture_id = contexts.add_image(images.play.clone());
     let ctx = contexts.ctx_mut();
+    let tool_state = tool_state_res.as_mut();
 
     viewport_inset.left = egui::SidePanel::left("left_panel")
         .resizable(true)
         .default_width(300.)
         .min_width(300.)
+        .frame(Frame {
+            inner_margin: egui::Margin {
+                left: 4.,
+                right: 4.,
+                top: 4.,
+                bottom: 4.,
+            },
+            fill: ctx.style().visuals.window_fill,
+
+            ..default()
+        })
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.add(egui::Button::image_and_text(
-                    world_texture_id,
-                    bevy_egui::egui::Vec2::new(32., 23.),
-                    "World",
-                ));
-                ui.add(egui::Button::image_and_text(
-                    terrain_texture_id,
-                    bevy_egui::egui::Vec2::new(32., 24.),
-                    "Terrain",
-                ));
-                ui.add(egui::Button::image_and_text(
-                    building_texture_id,
-                    bevy_egui::egui::Vec2::new(28., 30.),
-                    "Scenery",
-                ));
-                ui.add(egui::Button::image_and_text(
-                    quest_texture_id,
-                    bevy_egui::egui::Vec2::new(28., 26.),
-                    "Quest",
-                ));
-                ui.add(egui::Button::image_and_text(
-                    play_texture_id,
-                    bevy_egui::egui::Vec2::new(28., 26.),
-                    "Play",
-                ));
+                ui.spacing_mut().item_spacing.x = 1.;
+
+                if ui
+                    .add(
+                        egui::ImageButton::new(
+                            world_texture_id,
+                            bevy_egui::egui::Vec2::new(32., 26.),
+                        )
+                        .selected(matches!(tool_state.state, EditorState::World)),
+                    )
+                    .clicked()
+                {
+                    tool_state.state = EditorState::World
+                }
+
+                if ui
+                    .add(
+                        egui::ImageButton::new(
+                            terrain_texture_id,
+                            bevy_egui::egui::Vec2::new(32., 26.),
+                        )
+                        .selected(matches!(tool_state.state, EditorState::Terrain)),
+                    )
+                    .clicked()
+                {
+                    tool_state.state = EditorState::Terrain
+                };
+
+                if ui
+                    .add(
+                        egui::ImageButton::new(
+                            building_texture_id,
+                            bevy_egui::egui::Vec2::new(32., 26.),
+                        )
+                        .selected(matches!(tool_state.state, EditorState::Scenery)),
+                    )
+                    .clicked()
+                {
+                    tool_state.state = EditorState::Scenery
+                };
+
+                if ui
+                    .add(
+                        egui::ImageButton::new(
+                            quest_texture_id,
+                            bevy_egui::egui::Vec2::new(28., 26.),
+                        )
+                        .selected(matches!(tool_state.state, EditorState::Meta)),
+                    )
+                    .clicked()
+                {
+                    tool_state.state = EditorState::Meta
+                };
+
+                if ui
+                    .add(
+                        egui::ImageButton::new(
+                            play_texture_id,
+                            bevy_egui::egui::Vec2::new(28., 26.),
+                        )
+                        .selected(matches!(tool_state.state, EditorState::Play)),
+                    )
+                    .clicked()
+                {
+                    tool_state.state = EditorState::Play
+                };
             });
 
             egui::Grid::new("tools")
@@ -160,9 +231,9 @@ fn editor_ui_system(
                     // });
                     // ui.label("Third row, second column");
                     // ui.end_row();
-                })
+                });
 
-            // ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
         })
         .response
         .rect
