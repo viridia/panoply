@@ -17,7 +17,7 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
-    terrain::{spawn_parcels, ParcelCache},
+    terrain::{apply_build_parcels, build_parcels, spawn_parcels, ParcelCache},
     view::{update_camera_viewport, ViewportInset},
 };
 
@@ -100,6 +100,8 @@ fn main() {
                 editor::camera_controller,
                 update_window_settings,
                 spawn_parcels,
+                build_parcels,
+                apply_build_parcels,
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)

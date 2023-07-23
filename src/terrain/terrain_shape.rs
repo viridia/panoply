@@ -1,7 +1,7 @@
-use super::PLOT_LENGTH;
+use super::PARCEL_SIZE;
 use serde::{Deserialize, Serialize};
 
-const PLOT_STRIDE: usize = PLOT_LENGTH as usize;
+const PLOT_STRIDE: usize = PARCEL_SIZE as usize;
 const PLOT_AREA: usize = PLOT_STRIDE * PLOT_STRIDE;
 type HeightArray = [i16; PLOT_AREA];
 type FloraArray = [u8; PLOT_AREA];
@@ -28,21 +28,23 @@ impl Drop for TerrainShape {
 }
 
 impl TerrainShape {
-    pub fn new(&mut self) {
-        self.height.fill(0);
-        self.flora.fill(0);
-        self.has_terrain = false;
-        self.has_water = false;
+    pub fn _new() {
+        Self {
+            height: [0; PLOT_AREA],
+            flora: [0; PLOT_AREA],
+            has_terrain: false,
+            has_water: false,
+        };
     }
 
     /// Get terrain height (non-interpolated).
-    pub fn height_at(&self, x: usize, y: usize) -> i16 {
+    pub fn _height_at(&self, x: usize, y: usize) -> i16 {
         assert!(x < PLOT_STRIDE);
         assert!(y < PLOT_STRIDE);
         return self.height[x + y * PLOT_STRIDE];
     }
 
-    pub fn flora_at(&self, x: usize, y: usize) -> u8 {
+    pub fn _flora_at(&self, x: usize, y: usize) -> u8 {
         assert!(x < PLOT_STRIDE);
         assert!(y < PLOT_STRIDE);
         return self.flora[x + y * PLOT_STRIDE];

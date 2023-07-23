@@ -23,15 +23,8 @@ pub struct Parcel {
     // pub adjacent_plots: [TerrainShape; 9],
 }
 
-impl Drop for Parcel {
-    fn drop(&mut self) {
-        println!("Parcel {} {} dropped.", self.coords.x, self.coords.y);
-    }
-}
-
 #[derive(Bundle)]
 pub struct ParcelBundle {
     pub parcel: Parcel,
-    // #[bundle]
     pub mesh: PbrBundle,
 }
