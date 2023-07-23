@@ -1,9 +1,5 @@
 # TODO
 
-* egui
-  * button with toggled bg
-  * button group
-  * tool grid
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.
@@ -128,3 +124,13 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
 * .world.json
 * .realm.msgpack
 * .scenery.msgpack
+
+# Overlays
+
+* Show
+* For
+* Overlay
+* TranslucentShape
+* TranslucentLines
+* TranslucentPoints
+* TranslucentSprites

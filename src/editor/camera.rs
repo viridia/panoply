@@ -24,6 +24,7 @@ pub fn camera_controller(
 
     let strafe =
         keyboard_input.pressed(KeyCode::ShiftLeft) || keyboard_input.pressed(KeyCode::ShiftRight);
+    let fast = if strafe { 3. } else { 1. };
     let left = keyboard_input.pressed(KeyCode::Left);
     let right = keyboard_input.pressed(KeyCode::Right);
     let up = keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W);
@@ -46,8 +47,8 @@ pub fn camera_controller(
     );
 
     viewpoint.move_local(
-        (movement(up) - movement(down)) * CAMERA_SPEED * time.delta_seconds(),
-        (movement(right && strafe) - movement(left && strafe))
+        (movement(up) - movement(down)) * CAMERA_SPEED * time.delta_seconds() * fast,
+        (movement(left && strafe) - movement(right && strafe))
             * CAMERA_SPEED
             * time.delta_seconds(),
     );

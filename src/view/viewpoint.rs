@@ -5,7 +5,7 @@ use std::f32::consts::PI;
 /// character.
 #[derive(Resource, Default, Debug)]
 pub struct Viewpoint {
-    pub realm_id: String,
+    pub realm: i32,
     pub position: Vec3,
     pub azimuth: f32,
     pub elevation: f32,

@@ -11,11 +11,13 @@ extern crate directories;
 
 mod editor;
 mod settings;
+mod terrain;
 mod view;
 use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
+    terrain::{spawn_parcels, ParcelCache},
     view::{update_camera_viewport, ViewportInset},
 };
 
@@ -84,6 +86,7 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
+        .insert_resource(ParcelCache::new())
         .insert_resource(ToolState {
             state: EditorState::World,
         })
@@ -96,6 +99,7 @@ fn main() {
                 rotate_shapes,
                 editor::camera_controller,
                 update_window_settings,
+                spawn_parcels,
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
