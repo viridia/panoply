@@ -20,7 +20,6 @@ impl Plugin for TerrainPlugin {
             .init_resource::<TerrainShapes>()
             .init_resource::<TerrainMaterials>()
             .add_plugins(MaterialPlugin::<TerrainMaterial>::default())
-            // .insert_resource(TerrainShapes::new())
             .add_systems(Startup, (load_terrain_shapes, create_materials))
             .add_systems(
                 Update,

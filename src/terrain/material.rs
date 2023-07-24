@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Assets, Handle, Material, ResMut, Resource},
+    prelude::*,
     reflect::{TypePath, TypeUuid},
     render::render_resource::{AsBindGroup, ShaderRef},
 };
@@ -10,9 +10,9 @@ use bevy::{
 pub struct TerrainMaterial {
     // #[uniform(0)]
     // color: Color,
-    // #[texture(1)]
-    // #[sampler(2)]
-    // color_texture: Option<Handle<Image>>,
+    #[texture(1)]
+    #[sampler(2)]
+    grass: Handle<Image>,
     // alpha_mode: AlphaMode,
 }
 
@@ -20,7 +20,7 @@ pub struct TerrainMaterial {
 /// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
 impl Material for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/terrain.wgsl".into()
+        "terrain/shaders/ground.wgsl".into()
     }
 
     // fn alpha_mode(&self) -> AlphaMode {
@@ -36,6 +36,9 @@ pub struct TerrainMaterials {
 pub fn create_materials(
     mut terrain_materials: ResMut<TerrainMaterials>,
     mut materials: ResMut<Assets<TerrainMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
-    terrain_materials.ground = materials.add(TerrainMaterial {});
+    terrain_materials.ground = materials.add(TerrainMaterial {
+        grass: asset_server.load("terrain/textures/grass.png"),
+    });
 }

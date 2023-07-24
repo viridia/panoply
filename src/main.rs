@@ -1,5 +1,7 @@
 use bevy::{
     asset::ChangeWatcher,
+    core_pipeline::tonemapping::Tonemapping,
+    pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
@@ -82,7 +84,7 @@ fn main() {
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
             azimuth: 0.,
-            camera_distance: 32.,
+            camera_distance: 9.,
             elevation: PI * 0.25,
             ..default()
         })
@@ -301,12 +303,41 @@ fn setup(
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {
-            intensity: 9000.0,
-            range: 30.,
+            intensity: 5000.0,
+            range: 20.,
             shadows_enabled: true,
             ..default()
         },
         transform: Transform::from_xyz(8.0, 16.0, 8.0),
+        ..default()
+    });
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            shadows_enabled: true,
+            color: Color::Rgba {
+                red: 1.,
+                green: 1.,
+                blue: 0.8,
+                alpha: 1.,
+            },
+            illuminance: 15000.,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
+            ..default()
+        },
+        // The default cascade config is designed to handle large scenes.
+        // As this example has a much smaller world, we can tighten the shadow
+        // bounds for better visual quality.
+        cascade_shadow_config: CascadeShadowConfigBuilder {
+            first_cascade_far_bound: 4.0,
+            maximum_distance: 10.0,
+            ..default()
+        }
+        .into(),
         ..default()
     });
 
@@ -316,6 +347,7 @@ fn setup(
             transform: Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
             camera: Camera {
                 // Renders the right camera after the left camera, which has a default priority of 0
+                hdr: true,
                 order: 1,
                 ..default()
             },
@@ -324,6 +356,7 @@ fn setup(
                 // clear_color: ClearColorConfig::None,
                 ..default()
             },
+            tonemapping: Tonemapping::ReinhardLuminance,
             ..default()
         },
         PrimaryCamera,
