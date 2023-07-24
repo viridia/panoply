@@ -17,7 +17,7 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
-    terrain::{apply_build_parcels, build_parcels, spawn_parcels, ParcelCache},
+    terrain::TerrainPlugin,
     view::{update_camera_viewport, ViewportInset},
 };
 
@@ -86,7 +86,6 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
-        .insert_resource(ParcelCache::new())
         .insert_resource(ToolState {
             state: EditorState::World,
         })
@@ -99,12 +98,10 @@ fn main() {
                 rotate_shapes,
                 editor::camera_controller,
                 update_window_settings,
-                spawn_parcels,
-                build_parcels,
-                apply_build_parcels,
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
+        .add_plugins(TerrainPlugin)
         .run();
 
     println!("Exited!")
@@ -310,13 +307,6 @@ fn setup(
             ..default()
         },
         transform: Transform::from_xyz(8.0, 16.0, 8.0),
-        ..default()
-    });
-
-    // ground plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(50.0).into()),
-        material: materials.add(Color::SILVER.into()),
         ..default()
     });
 

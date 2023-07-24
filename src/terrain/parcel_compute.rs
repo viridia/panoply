@@ -1,5 +1,7 @@
 use super::{
+    material::{TerrainMaterial, TerrainMaterials},
     parcel::{Parcel, ParcelStatus},
+    terrain_shapes::{TerrainShapes, TerrainShapesResource},
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
     PARCEL_SIZE_F,
 };
@@ -13,7 +15,13 @@ use futures_lite::future;
 #[derive(Component)]
 pub struct ParcelComputeTask(Task<Mesh>);
 
-pub fn build_parcels(mut commands: Commands, mut query: Query<(Entity, &mut Parcel)>) {
+pub fn build_parcels(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Parcel)>,
+    asset_server: Res<AssetServer>,
+    terrain_shapes: Res<TerrainShapes>,
+    shape_table: Res<Assets<TerrainShapesResource>>,
+) {
     let pool = AsyncComputeTaskPool::get();
 
     for (entity, mut parcel) in query.iter_mut() {
@@ -27,13 +35,17 @@ pub fn build_parcels(mut commands: Commands, mut query: Query<(Entity, &mut Parc
                     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
                     let mut indices: Vec<u32> =
                         Vec::with_capacity((PARCEL_MESH_RESOLUTION.pow(2)) as usize);
+                    // let terrain_shapes_handle: Handle<TerrainShapesResource> =
+                    //     asset_server.load("terrain.tsh.msgpack");
+
+                    // let terrain_shapes = shape_table.get(&terrain_shapes.0);
 
                     // Generate vertices
                     for z in 0..PARCEL_MESH_STRIDE {
                         for x in 0..PARCEL_MESH_STRIDE {
                             position.push([
                                 x as f32 * PARCEL_MESH_SCALE,
-                                0.,
+                                if x > 5 && x < 10 { 1. } else { 0. },
                                 z as f32 * PARCEL_MESH_SCALE,
                             ]);
                             normal.push([0., 1., 0.])
@@ -78,16 +90,16 @@ pub fn build_parcels(mut commands: Commands, mut query: Query<(Entity, &mut Parc
 pub fn apply_build_parcels(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ParcelComputeTask)>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    terrain_materials: ResMut<TerrainMaterials>,
 ) {
     // Reset the visibility bits for all parcels.
     for (entity, mut parcel, mut task) in query.iter_mut() {
         if let Some(mesh) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
-            commands.entity(entity).insert(PbrBundle {
+            commands.entity(entity).insert(MaterialMeshBundle {
                 mesh: meshes.add(mesh),
-                material: materials.add(Color::GREEN.into()),
+                material: terrain_materials.ground.clone(),
                 transform: Transform::from_xyz(
                     parcel.coords.x as f32 * PARCEL_SIZE_F,
                     2.0,
