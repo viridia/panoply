@@ -1,7 +1,7 @@
+mod ground_mesh;
 mod material;
 mod parcel;
 mod parcel_cache;
-mod parcel_compute;
 mod plugin;
 mod terrain_shapes;
 
@@ -13,6 +13,6 @@ pub const PARCEL_MESH_STRIDE: i32 = PARCEL_MESH_RESOLUTION + 1;
 pub const PARCEL_MESH_VERTEX_COUNT: usize = (PARCEL_MESH_STRIDE * PARCEL_MESH_STRIDE) as usize;
 pub const PARCEL_MESH_SCALE: f32 = PARCEL_SIZE as f32 / PARCEL_MESH_RESOLUTION as f32;
 
+pub use ground_mesh::*;
 pub use parcel_cache::*;
-pub use parcel_compute::*;
 pub use plugin::*;

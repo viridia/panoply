@@ -1,5 +1,5 @@
 use super::{
-    material::{TerrainMaterial, TerrainMaterials},
+    material::TerrainMaterials,
     parcel::{Parcel, ParcelStatus},
     terrain_shapes::{TerrainShapes, TerrainShapesResource},
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
@@ -13,9 +13,10 @@ use bevy::{
 use futures_lite::future;
 
 #[derive(Component)]
-pub struct ParcelComputeTask(Task<Mesh>);
+pub struct ComputeGroundMeshTask(Task<Mesh>);
 
-pub fn build_parcels(
+/// Spawns a task for each parcel to compute the ground mesh geometry.
+pub fn compute_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel)>,
     asset_server: Res<AssetServer>,
@@ -79,7 +80,7 @@ pub fn build_parcels(
                     mesh.compute_aabb();
                     mesh
                 });
-                commands.entity(entity).insert(ParcelComputeTask(task));
+                commands.entity(entity).insert(ComputeGroundMeshTask(task));
             }
 
             _ => {}
@@ -87,9 +88,10 @@ pub fn build_parcels(
     }
 }
 
-pub fn apply_build_parcels(
+/// Consumes the output of the compute task and creates a mesh component for the ground geometry.
+pub fn insert_ground_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Parcel, &mut ParcelComputeTask)>,
+    mut query: Query<(Entity, &mut Parcel, &mut ComputeGroundMeshTask)>,
     mut meshes: ResMut<Assets<Mesh>>,
     terrain_materials: ResMut<TerrainMaterials>,
 ) {
@@ -109,7 +111,7 @@ pub fn apply_build_parcels(
                 ..default()
             });
             parcel.status = ParcelStatus::Ready;
-            commands.entity(entity).remove::<ParcelComputeTask>();
+            commands.entity(entity).remove::<ComputeGroundMeshTask>();
         }
     }
 }

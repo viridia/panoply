@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    apply_build_parcels, build_parcels,
+    compute_ground_meshes, insert_ground_meshes,
     material::{create_materials, TerrainMaterial, TerrainMaterials},
     spawn_parcels,
     terrain_shapes::{
@@ -22,6 +22,9 @@ impl Plugin for TerrainPlugin {
             .add_plugins(MaterialPlugin::<TerrainMaterial>::default())
             // .insert_resource(TerrainShapes::new())
             .add_systems(Startup, (load_terrain_shapes, create_materials))
-            .add_systems(Update, (spawn_parcels, build_parcels, apply_build_parcels));
+            .add_systems(
+                Update,
+                (spawn_parcels, compute_ground_meshes, insert_ground_meshes),
+            );
     }
 }
