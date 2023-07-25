@@ -83,7 +83,7 @@ fn main() {
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
             azimuth: 0.,
-            camera_distance: 9.,
+            camera_distance: 25.,
             elevation: PI * 0.25,
             ..default()
         })
@@ -311,6 +311,16 @@ fn setup(
         ..default()
     });
 
+    commands.insert_resource(AmbientLight {
+        brightness: 0.5,
+        color: Color::Rgba {
+            red: 0.5,
+            green: 0.5,
+            blue: 1.,
+            alpha: 1.,
+        },
+    });
+
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             shadows_enabled: true,
@@ -333,7 +343,7 @@ fn setup(
         // bounds for better visual quality.
         cascade_shadow_config: CascadeShadowConfigBuilder {
             first_cascade_far_bound: 4.0,
-            maximum_distance: 10.0,
+            maximum_distance: 40.0,
             ..default()
         }
         .into(),

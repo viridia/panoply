@@ -35,6 +35,7 @@ pub fn compute_ground_meshes(
                     // `ihm` stands for 'Interpolated height map.'
                     let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0, 0.);
 
+                    // Set a test pattern.
                     for x in 5..15 {
                         for z in 5..15 {
                             ihm.set(x, z, 1.);

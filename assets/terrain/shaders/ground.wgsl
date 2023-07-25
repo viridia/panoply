@@ -31,11 +31,8 @@ fn fragment(
     @builtin(front_facing) is_front: bool,
     mesh: MeshVertexOutput,
 ) -> @location(0) vec4<f32> {
-    // let layer = i32(mesh.world_position.x) & 0x3;
-    let uv = vec2<f32>(fract(mesh.world_position.x), fract(mesh.world_position.z));
+    let uv = fract(vec2<f32>(mesh.world_position.xz * 0.35));
 
-    // Prepare a 'processed' StandardMaterial by sampling all textures to resolve
-    // the material members
     var pbr_input: fns::PbrInput = fns::pbr_input_new();
 
     pbr_input.material.base_color = textureSample(grass, grass_sampler, uv);
