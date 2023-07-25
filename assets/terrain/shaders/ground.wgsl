@@ -1,47 +1,75 @@
-#import bevy_pbr::mesh_vertex_output    MeshVertexOutput
 #import bevy_pbr::mesh_view_bindings    view
-#import bevy_pbr::pbr_types             STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
+#import bevy_pbr::pbr_functions         as fns
+#import bevy_pbr::mesh_functions        as mfns
+#import bevy_pbr::mesh_bindings         mesh
 #import bevy_core_pipeline::tonemapping tone_mapping
-#import bevy_pbr::pbr_functions as fns
+#import "shaderlib/octaves.wgsl"
+#import "shaderlib/snoise.wgsl"         snoise_2d
 
 @group(1) @binding(1)
 var grass: texture_2d<f32>;
 @group(1) @binding(2)
 var grass_sampler: sampler;
+@group(1) @binding(3)
+var dirt: texture_2d<f32>;
+@group(1) @binding(4)
+var dirt_sampler: sampler;
 
-// Vertex shader
+struct Vertex {
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+};
 
-// struct VertexOutput {
-//     @builtin(position) clip_position: vec4<f32>,
-// };
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) world_position: vec4<f32>,
+    @location(1) world_normal: vec3<f32>,
+    @location(2) slope: f32,
 
-// @vertex
-// fn vs_main(
-//     @builtin(vertex_index) in_vertex_index: u32,
-// ) -> VertexOutput {
-//     var out: VertexOutput;
-//     let x = f32(1 - i32(in_vertex_index)) * 0.5;
-//     let y = f32(i32(in_vertex_index & 1u) * 2 - 1) * 0.5;
-//     out.clip_position = vec4<f32>(x, y, 0.0, 1.0);
-//     return out;
-// }
+// varying vec3 vViewPosition;
+// varying vec3 vPosition;
+// varying vec4 vStyle;
+// varying float vBiomeWeight[NumGroundTypes];
+
+};
+
+@vertex
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
+    out.world_position = mfns::mesh_position_local_to_world(
+        mesh.model,
+        vec4<f32>(vertex.position, 1.0)
+    );
+    out.position = mfns::mesh_position_local_to_clip(
+        mesh.model,
+        vec4<f32>(vertex.position, 1.0)
+    );
+    out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal);
+    out.slope = -out.world_normal.y;
+    return out;
+}
 
 @fragment
 fn fragment(
     @builtin(front_facing) is_front: bool,
-    mesh: MeshVertexOutput,
+    mesh: VertexOutput,
 ) -> @location(0) vec4<f32> {
-    let uv = fract(vec2<f32>(mesh.world_position.xz * 0.35));
+    let uv = vec2<f32>(mesh.world_position.xz * 0.35);
 
     var pbr_input: fns::PbrInput = fns::pbr_input_new();
 
-    pbr_input.material.base_color = textureSample(grass, grass_sampler, uv);
+    let p = snoise_2d(uv);
+
+    pbr_input.material.base_color = textureSample(grass, grass_sampler, fract(uv));
+    // pbr_input.material.base_color = textureSample(dirt, dirt_sampler, fract(uv));
+    // pbr_input.material.base_color = vec4<f32>(p * 0.5 + 0.5, 0., 0., 1.);
+
     pbr_input.material.perceptual_roughness = 1.;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
     pbr_input.world_normal = fns::prepare_world_normal(
         mesh.world_normal,
-        (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u,
+        false,
         is_front,
     );
 

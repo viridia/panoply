@@ -8,12 +8,12 @@ use bevy::{
 #[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
 #[uuid = "c666955b-c00f-4de6-a4d6-49c9581d6139"]
 pub struct TerrainMaterial {
-    // #[uniform(0)]
-    // color: Color,
     #[texture(1)]
     #[sampler(2)]
     grass: Handle<Image>,
-    // alpha_mode: AlphaMode,
+    #[texture(3)]
+    #[sampler(4)]
+    dirt: Handle<Image>,
 }
 
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
@@ -22,10 +22,9 @@ impl Material for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()
     }
-
-    // fn alpha_mode(&self) -> AlphaMode {
-    //     self.alpha_mode
-    // }
+    fn vertex_shader() -> ShaderRef {
+        "terrain/shaders/ground.wgsl".into()
+    }
 }
 
 #[derive(Resource, Default)]
@@ -40,5 +39,6 @@ pub fn create_materials(
 ) {
     terrain_materials.ground = materials.add(TerrainMaterial {
         grass: asset_server.load("terrain/textures/grass.png"),
+        dirt: asset_server.load("terrain/textures/dirt.png"),
     });
 }

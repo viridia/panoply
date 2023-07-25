@@ -326,8 +326,8 @@ fn setup(
             shadows_enabled: true,
             color: Color::Rgba {
                 red: 1.,
-                green: 1.,
-                blue: 0.8,
+                green: 0.9,
+                blue: 0.5,
                 alpha: 1.,
             },
             illuminance: 15000.,
