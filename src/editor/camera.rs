@@ -3,7 +3,7 @@ use bevy::{input::mouse::MouseWheel, prelude::*};
 use crate::view::Viewpoint;
 
 const CAMERA_SPEED: f32 = 10.;
-const CAMERA_ROTATION_SPEED: f32 = 1.;
+const CAMERA_ROTATION_SPEED: f32 = 1.5;
 
 fn movement(flag: bool) -> f32 {
     if flag {

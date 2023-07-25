@@ -8,7 +8,7 @@ pub struct ParcelKey {
 
 pub enum ParcelStatus {
     New,
-    Loading,
+    // Loading,
     Waiting,
     Building,
     Ready,

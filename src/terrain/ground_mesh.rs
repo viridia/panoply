@@ -1,6 +1,7 @@
 use super::{
     material::TerrainMaterials,
     parcel::{Parcel, ParcelStatus},
+    square::SquareArray,
     terrain_shapes::{TerrainShapes, TerrainShapesResource},
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
     PARCEL_SIZE_F,
@@ -31,6 +32,33 @@ pub fn compute_ground_meshes(
             ParcelStatus::New | ParcelStatus::Waiting => {
                 parcel.status = ParcelStatus::Building;
                 let task = pool.spawn(async move {
+                    // `ihm` stands for 'Interpolated height map.'
+                    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0, 0.);
+
+                    for x in 5..15 {
+                        for z in 5..15 {
+                            ihm.set(x, z, 1.);
+                        }
+                    }
+
+                    // `shm` stands for 'Smoothed height map`
+                    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0, 0.);
+
+                    // Compute smoothed mesh
+                    for z in 0..PARCEL_MESH_STRIDE {
+                        for x in 0..PARCEL_MESH_STRIDE {
+                            let h4 = ihm.get(x, z + 1)
+                                + ihm.get(x + 2, z + 1)
+                                + ihm.get(x + 1, z)
+                                + ihm.get(x + 1, z + 2);
+
+                            shm.set(x, z, h4 * 0.25);
+                            // shm[dstIndex] = h4 * 0.25 + hOffset[dstIndex];
+                        }
+                    }
+
+                    // const center = this.getRotationalInterpolator(AdjacentIndex.Center);
+
                     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
                     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
                     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
@@ -42,14 +70,34 @@ pub fn compute_ground_meshes(
                     // let terrain_shapes = shape_table.get(&terrain_shapes.0);
 
                     // Generate vertices
+                    let mut n = Vec3::new(0., 1., 0.);
                     for z in 0..PARCEL_MESH_STRIDE {
                         for x in 0..PARCEL_MESH_STRIDE {
                             position.push([
                                 x as f32 * PARCEL_MESH_SCALE,
-                                if x > 5 && x < 10 { 1. } else { 0. },
+                                shm.get(x, z),
                                 z as f32 * PARCEL_MESH_SCALE,
                             ]);
-                            normal.push([0., 1., 0.])
+
+                            // Off the edge of the smoothing array, use unsmoothed
+                            if x == 0 {
+                                n.x = ihm.get(x, z + 1) - shm.get(x + 1, z);
+                            } else if x == PARCEL_MESH_STRIDE - 1 {
+                                n.x = shm.get(x - 1, z) - ihm.get(x + 2, z + 1);
+                            } else {
+                                n.x = shm.get(x - 1, z) - shm.get(x + 1, z);
+                            }
+
+                            if z == 0 {
+                                n.z = ihm.get(x + 1, z) - shm.get(x, z + 1);
+                            } else if z == PARCEL_MESH_STRIDE - 1 {
+                                n.z = shm.get(x, z - 1) - ihm.get(x + 1, z + 2);
+                            } else {
+                                n.z = shm.get(x, z - 1) - shm.get(x, z + 1);
+                            }
+
+                            n.y = 1.;
+                            normal.push(n.normalize().to_array())
                         }
                     }
 

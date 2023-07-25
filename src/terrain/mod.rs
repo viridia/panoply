@@ -3,6 +3,7 @@ mod material;
 mod parcel;
 mod parcel_cache;
 mod plugin;
+mod square;
 mod terrain_shapes;
 
 pub const PARCEL_SIZE: i32 = 16;

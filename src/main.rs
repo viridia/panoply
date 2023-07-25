@@ -1,6 +1,5 @@
 use bevy::{
     asset::ChangeWatcher,
-    core_pipeline::tonemapping::Tonemapping,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -347,8 +346,8 @@ fn setup(
             transform: Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
             camera: Camera {
                 // Renders the right camera after the left camera, which has a default priority of 0
-                hdr: true,
-                order: 1,
+                // hdr: true,
+                // order: 1,
                 ..default()
             },
             camera_3d: Camera3d {
@@ -356,7 +355,7 @@ fn setup(
                 // clear_color: ClearColorConfig::None,
                 ..default()
             },
-            tonemapping: Tonemapping::ReinhardLuminance,
+            // tonemapping: Tonemapping::ReinhardLuminance,
             ..default()
         },
         PrimaryCamera,
