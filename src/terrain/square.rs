@@ -1,8 +1,5 @@
 pub struct SquareArray<T> {
     size: usize,
-    base_index: i32,
-    dx: i32,
-    dy: i32,
     elts: Vec<T>,
 }
 
@@ -10,11 +7,63 @@ impl<T: Clone> SquareArray<T>
 where
     T: Copy,
 {
-    pub fn new(size: usize, rotation: u8, fill: T) -> SquareArray<T> {
+    pub fn new(size: usize, fill: T) -> SquareArray<T> {
+        Self {
+            size,
+            elts: vec![fill; size * size],
+        }
+    }
+
+    pub fn from_slice(&mut self, data: &[T]) {
+        assert!(data.len() == self.size * self.size);
+        self.elts.copy_from_slice(data);
+    }
+
+    pub fn get(&self, x: i32, y: i32) -> T {
+        assert!((x as usize) < self.size);
+        assert!((y as usize) < self.size);
+        self.elts[(y as usize * self.size) + x as usize]
+    }
+
+    pub fn get_mut_ref(&mut self, x: i32, y: i32) -> &mut T {
+        assert!((x as usize) < self.size);
+        assert!((y as usize) < self.size);
+        &mut self.elts[(y as usize * self.size) + x as usize]
+    }
+
+    pub fn set(&mut self, x: i32, y: i32, value: T) {
+        assert!((x as usize) < self.size);
+        assert!((y as usize) < self.size);
+        self.elts[(y as usize * self.size) + x as usize] = value;
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    pub fn elts(&self) -> &[T] {
+        &self.elts
+    }
+}
+
+pub struct RotatingSquareArray<'a, T> {
+    size: usize,
+    base_index: i32,
+    dx: i32,
+    dy: i32,
+    elts: &'a [T],
+}
+
+impl<'a, T: Clone> RotatingSquareArray<'a, T>
+where
+    T: Copy,
+{
+    pub fn new(size: usize, rotation: i32, elts: &'a [T]) -> RotatingSquareArray<T> {
         let dx: i32;
         let dy: i32;
         let base_index: i32;
         let sz = size as i32;
+        assert!(elts.len() == size * size);
 
         match rotation {
             0 => {
@@ -51,7 +100,7 @@ where
             base_index,
             dx,
             dy,
-            elts: vec![fill; size * size],
+            elts,
         }
     }
 
@@ -60,14 +109,4 @@ where
         assert!((y as usize) < self.size);
         self.elts[(self.base_index + x * self.dx + y * self.dy) as usize]
     }
-
-    pub fn set(&mut self, x: i32, y: i32, value: T) {
-        assert!((x as usize) < self.size);
-        assert!((y as usize) < self.size);
-        self.elts[(self.base_index + x * self.dx + y * self.dy) as usize] = value;
-    }
-
-    // pub fn size(&self) -> usize {
-    //     self.size
-    // }
 }

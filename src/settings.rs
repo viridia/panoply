@@ -29,7 +29,7 @@ pub fn update_window_settings(
 ) {
     for event in move_events.iter() {
         settings.window.position = event.position;
-        println!("Window moved: {} {}", event.position.x, event.position.y);
+        // println!("Window moved: {} {}", event.position.x, event.position.y);
     }
 
     for _ in close_requested_events.iter() {
@@ -40,7 +40,7 @@ pub fn update_window_settings(
         );
         settings.window.fullscreen = window.mode != WindowMode::Windowed;
         save_user_settings(&settings);
-        println!("Window closed requested");
+        // println!("Window closed requested");
     }
 }
 

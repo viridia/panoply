@@ -1,12 +1,13 @@
 use super::{
     material::TerrainMaterials,
     parcel::{Parcel, ParcelStatus},
-    square::SquareArray,
-    terrain_shapes::{TerrainShapes, TerrainShapesResource},
+    square::{RotatingSquareArray, SquareArray},
+    terrain_shapes::{TerrainShapesAsset, TerrainShapesHandle},
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
-    PARCEL_SIZE_F,
+    PARCEL_SIZE, PARCEL_SIZE_F,
 };
 use bevy::{
+    asset::LoadState,
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
     tasks::{AsyncComputeTaskPool, Task},
@@ -16,13 +17,15 @@ use futures_lite::future;
 #[derive(Component)]
 pub struct ComputeGroundMeshTask(Task<Mesh>);
 
+pub const HEIGHT_SCALE: f32 = 0.5;
+
 /// Spawns a task for each parcel to compute the ground mesh geometry.
 pub fn compute_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel)>,
-    asset_server: Res<AssetServer>,
-    terrain_shapes: Res<TerrainShapes>,
-    shape_table: Res<Assets<TerrainShapesResource>>,
+    server: Res<AssetServer>,
+    ts_handle: Res<TerrainShapesHandle>,
+    ts_assets: Res<Assets<TerrainShapesAsset>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
@@ -30,20 +33,44 @@ pub fn compute_ground_meshes(
         match parcel.status {
             // Spawn task to compute mesh
             ParcelStatus::New | ParcelStatus::Waiting => {
+                let handle = ts_handle.0.clone();
+                if server.get_load_state(&handle) != LoadState::Loaded {
+                    return;
+                }
+
+                let shapes = ts_assets.get(&handle).expect("msg").0.clone();
                 parcel.status = ParcelStatus::Building;
                 let task = pool.spawn(async move {
                     // `ihm` stands for 'Interpolated height map.'
-                    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0, 0.);
+                    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
 
-                    // Set a test pattern.
-                    for x in 5..15 {
-                        for z in 5..15 {
-                            ihm.set(x, z, 1.);
+                    let shapes_table = shapes.lock().unwrap();
+
+                    // Add terrain heights for center plot and all eight neighbors
+                    for z in &[-1, 0, 1] {
+                        for x in &[-1, 0, 1] {
+                            let shape = shapes_table.get(10);
+                            accumulate(
+                                &shape.height,
+                                &mut ihm,
+                                1 + x * PARCEL_MESH_RESOLUTION,
+                                1 + z * PARCEL_MESH_RESOLUTION,
+                                0,
+                            );
                         }
                     }
 
+                    // Now re-scale the rows and columns with more than one accumulated value.
+                    // Note that some cells will be visited twice, which is what we want.
+                    for i in 0..PARCEL_MESH_RESOLUTION + 3 {
+                        *ihm.get_mut_ref(1, i) *= 0.5;
+                        *ihm.get_mut_ref(PARCEL_MESH_RESOLUTION + 1, i) *= 0.5;
+                        *ihm.get_mut_ref(i, 1) *= 0.5;
+                        *ihm.get_mut_ref(i, PARCEL_MESH_RESOLUTION + 1) *= 0.5;
+                    }
+
                     // `shm` stands for 'Smoothed height map`
-                    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0, 0.);
+                    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
 
                     // Compute smoothed mesh
                     for z in 0..PARCEL_MESH_STRIDE {
@@ -58,17 +85,11 @@ pub fn compute_ground_meshes(
                         }
                     }
 
-                    // const center = this.getRotationalInterpolator(AdjacentIndex.Center);
-
                     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
                     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
                     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
                     let mut indices: Vec<u32> =
                         Vec::with_capacity((PARCEL_MESH_RESOLUTION.pow(2)) as usize);
-                    // let terrain_shapes_handle: Handle<TerrainShapesResource> =
-                    //     asset_server.load("terrain.tsh.msgpack");
-
-                    // let terrain_shapes = shape_table.get(&terrain_shapes.0);
 
                     // Generate vertices
                     let mut n = Vec3::new(0., 1., 0.);
@@ -129,6 +150,7 @@ pub fn compute_ground_meshes(
                     mesh.compute_aabb();
                     mesh
                 });
+
                 commands.entity(entity).insert(ComputeGroundMeshTask(task));
             }
 
@@ -163,4 +185,52 @@ pub fn insert_ground_meshes(
             commands.entity(entity).remove::<ComputeGroundMeshTask>();
         }
     }
+}
+
+fn accumulate(
+    src: &SquareArray<i8>,
+    dst: &mut SquareArray<f32>,
+    x_offset: i32,
+    z_offset: i32,
+    rotation: i32,
+) {
+    let src_rot = RotatingSquareArray::new(src.size(), rotation, &src.elts());
+    let x0 = x_offset.max(0);
+    let x1 = (x_offset + PARCEL_MESH_RESOLUTION + 1).min(dst.size() as i32);
+    let z0 = z_offset.max(0);
+    let z1 = (z_offset + PARCEL_MESH_RESOLUTION + 1).min(dst.size() as i32);
+
+    for z in z0..z1 {
+        for x in x0..x1 {
+            *dst.get_mut_ref(x, z) += interpolate_square(
+                &src_rot,
+                (x - x_offset) as f32 * PARCEL_MESH_SCALE,
+                (z - z_offset) as f32 * PARCEL_MESH_SCALE,
+            ) * HEIGHT_SCALE;
+        }
+    }
+}
+
+/// Returns a callable object that computes the interpolated terrain height for any point
+/// on the terrain plot. Note that this is before smoothing, since that happens at
+/// the terrain parcel level.
+fn interpolate_square(square: &RotatingSquareArray<i8>, x: f32, z: f32) -> f32 {
+    // Get interpolated height - note doesn't incorporate smoothing.
+    let cx = x.clamp(0., PARCEL_SIZE as f32);
+    let cz = z.clamp(0., PARCEL_SIZE as f32);
+    let x0 = cx.floor();
+    let x1 = cx.ceil();
+    let z0 = cz.floor();
+    let z1 = cz.ceil();
+
+    let h00 = square.get(x0 as i32, z0 as i32) as f32;
+    let h01 = square.get(x0 as i32, z1 as i32) as f32;
+    let h10 = square.get(x1 as i32, z0 as i32) as f32;
+    let h11 = square.get(x1 as i32, z1 as i32) as f32;
+
+    let fx = cx - x0;
+    let fy = cz - z0;
+    let h0 = h00 * (1. - fx) + h10 * fx;
+    let h1 = h01 * (1. - fx) + h11 * fx;
+    return h0 * (1. - fy) + h1 * fy;
 }

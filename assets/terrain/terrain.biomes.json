@@ -1,0 +1,369 @@
+{
+  "meadow": {
+    "trees": [
+      {
+        "probability": 5,
+        "proto": "trees/temperate:poplar-green"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-green2"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-orange"
+      },
+      {
+        "probability": 0.5,
+        "proto": "trees/temperate:poplar-yellow"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:leechgrass"
+      }
+    ],
+    "herbs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:buckberry"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:eldenthorn"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:dreamsage"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:whitespear"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:wracknettle"
+      }
+    ],
+    "surface": "grass"
+  },
+  "underground": {
+    "trees": [],
+    "shrubs": [],
+    "herbs": [],
+    "surface": "grass"
+  },
+  "desert": {
+    "trees": [
+      {
+        "probability": 9
+      },
+      {
+        "probability": 1,
+        "proto": "trees/desert:desert1"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 3
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:scragbush"
+      }
+    ],
+    "herbs": [
+      {
+        "probability": 6
+      },
+      {
+        "probability": 2,
+        "proto": "shrubs:whitespear"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:fireweed"
+      }
+    ],
+    "surface": "sand"
+  },
+  "arctic": {
+    "trees": [
+      {
+        "probability": 2,
+        "proto": "trees/arctic:pine-arctic1"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/arctic:pine-arctic2"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/arctic:pine-arctic3"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:scrubthistle"
+      },
+      {
+        "probability": 2,
+        "proto": "shrubs:rimeslip"
+      }
+    ],
+    "herbs": [],
+    "surface": "snow"
+  },
+  "tundra": {
+    "trees": [
+      {
+        "probability": 2,
+        "proto": "trees/coniferous:pine-fluffy"
+      },
+      {
+        "probability": 2,
+        "proto": "trees/coniferous:pine-drooping"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 3,
+        "proto": "shrubs:scrubthistle"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:rimeslip"
+      }
+    ],
+    "herbs": [],
+    "surface": "tundra"
+  },
+  "taiga": {
+    "trees": [
+      {
+        "probability": 2,
+        "proto": "trees/coniferous:pine-fluffy"
+      },
+      {
+        "probability": 2,
+        "proto": "trees/coniferous:pine-drooping"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:scrubthistle"
+      }
+    ],
+    "herbs": [],
+    "surface": "taiga"
+  },
+  "barren": {
+    "trees": [
+      {
+        "probability": 2,
+        "proto": "trees/dead:dead1"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/dead:dead2"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/dead:dead3"
+      },
+      {
+        "probability": 0.5,
+        "proto": "trees/dead:dead4"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 2
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:scragbush"
+      }
+    ],
+    "herbs": [],
+    "surface": "dirt"
+  },
+  "forest": {
+    "trees": [
+      {
+        "probability": 2,
+        "proto": "trees/temperate:hemlock1"
+      },
+      {
+        "probability": 2,
+        "proto": "trees/temperate:hemlock2"
+      },
+      {
+        "probability": 3,
+        "proto": "trees/temperate:hemlock3"
+      },
+      {
+        "probability": 3,
+        "proto": "trees/temperate:hemlock4"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:leechgrass"
+      }
+    ],
+    "herbs": [],
+    "surface": "moss"
+  },
+  "meadow-light": {
+    "trees": [
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-ivory"
+      },
+      {
+        "probability": 0.5,
+        "proto": "trees/temperate:poplar-green2"
+      },
+      {
+        "probability": 3,
+        "proto": "trees/temperate:poplar-orange"
+      },
+      {
+        "probability": 4,
+        "proto": "trees/temperate:poplar-yellow"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:leechgrass"
+      }
+    ],
+    "herbs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:buckberry"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:eldenthorn"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:dreamsage"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:whitespear"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:wracknettle"
+      }
+    ],
+    "surface": "grass"
+  },
+  "meadow-dark": {
+    "name": "meadow-dark",
+    "trees": [
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-green"
+      },
+      {
+        "probability": 0.5,
+        "proto": "trees/temperate:poplar-green2"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-green3"
+      },
+      {
+        "probability": 0.5,
+        "proto": "trees/temperate:hemlock1"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:leechgrass"
+      }
+    ],
+    "herbs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:buckberry"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:eldenthorn"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:dreamsage"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:whitespear"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:wracknettle"
+      }
+    ],
+    "surface": "grass"
+  },
+  "chaparral": {
+    "trees": [
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-green"
+      },
+      {
+        "probability": 1,
+        "proto": "trees/temperate:poplar-green2"
+      },
+      {
+        "probability": 3,
+        "proto": "trees/temperate:poplar-orange"
+      },
+      {
+        "probability": 5,
+        "proto": "trees/temperate:poplar-yellow"
+      }
+    ],
+    "shrubs": [
+      {
+        "probability": 1,
+        "proto": "shrubs:sticklebrush"
+      }
+    ],
+    "herbs": [
+      {
+        "probability": 6
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:eldenthorn"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:dreamsage"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:whitespear"
+      },
+      {
+        "probability": 1,
+        "proto": "shrubs:wracknettle"
+      }
+    ],
+    "surface": "chaparral"
+  }
+}

@@ -1,9 +1,11 @@
+mod biome;
 mod ground_mesh;
 mod material;
 mod parcel;
 mod parcel_cache;
 mod plugin;
 mod square;
+mod terrain_map;
 mod terrain_shapes;
 
 pub const PARCEL_SIZE: i32 = 16;
