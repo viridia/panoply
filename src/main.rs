@@ -89,7 +89,7 @@ fn main() {
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
             azimuth: 0.,
-            camera_distance: 25.,
+            camera_distance: 20.,
             elevation: PI * 0.25,
             ..default()
         })

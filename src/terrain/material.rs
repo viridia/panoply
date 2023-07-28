@@ -17,6 +17,9 @@ pub struct TerrainMaterial {
     #[texture(5)]
     #[sampler(6)]
     dirt: Handle<Image>,
+    #[texture(7)]
+    #[sampler(8)]
+    moss: Handle<Image>,
 }
 
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
@@ -44,5 +47,6 @@ pub fn create_materials(
         noise: asset_server.load("terrain/textures/noise.png"),
         grass: asset_server.load("terrain/textures/grass.png"),
         dirt: asset_server.load("terrain/textures/dirt.png"),
+        moss: asset_server.load("terrain/textures/moss.png"),
     });
 }
