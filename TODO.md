@@ -118,13 +118,6 @@
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
 convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
 
-# Asset file extension
-
-* .meta.json
-* .world.json
-* .realm.msgpack
-* .scenery.msgpack
-
 # Overlays
 
 * Show
@@ -134,3 +127,10 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
 * TranslucentLines
 * TranslucentPoints
 * TranslucentSprites
+
+# Biome params
+
+struct BiomeInput {
+  image: Handle<Image>,
+
+}

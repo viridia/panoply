@@ -10,9 +10,12 @@ use bevy::{
 pub struct TerrainMaterial {
     #[texture(1)]
     #[sampler(2)]
-    grass: Handle<Image>,
+    noise: Handle<Image>,
     #[texture(3)]
     #[sampler(4)]
+    grass: Handle<Image>,
+    #[texture(5)]
+    #[sampler(6)]
     dirt: Handle<Image>,
 }
 
@@ -38,6 +41,7 @@ pub fn create_materials(
     asset_server: Res<AssetServer>,
 ) {
     terrain_materials.ground = materials.add(TerrainMaterial {
+        noise: asset_server.load("terrain/textures/noise.png"),
         grass: asset_server.load("terrain/textures/grass.png"),
         dirt: asset_server.load("terrain/textures/dirt.png"),
     });

@@ -12,13 +12,8 @@ use bevy::{
 use serde::{Deserialize, Serialize};
 
 const HEIGHT_STRIDE: usize = (PARCEL_SIZE + 1) as usize;
-// const HEIGHT_VERTEX_COUNT: usize = HEIGHT_STRIDE * HEIGHT_STRIDE;
 
 const FLORA_STRIDE: usize = PARCEL_SIZE as usize;
-// const FLORA_VERTEX_COUNT: usize = FLORA_STRIDE * FLORA_STRIDE;
-
-// type HeightArray = [i8; HEIGHT_VERTEX_COUNT];
-// type FloraArray = [u8; FLORA_VERTEX_COUNT];
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TerrainShapeSer {

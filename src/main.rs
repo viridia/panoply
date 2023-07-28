@@ -11,6 +11,7 @@ use std::{f32::consts::PI, time::Duration};
 
 extern crate directories;
 
+mod diagnostics;
 mod editor;
 mod settings;
 mod terrain;
@@ -19,6 +20,7 @@ mod world;
 use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
+    diagnostics::ScreenDiagsPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, ViewportInset},
@@ -79,6 +81,7 @@ fn main() {
                     ..Default::default()
                 }),
             EguiPlugin,
+            ScreenDiagsPlugin,
             // ImagePlugin::default_nearest(),
         ))
         .insert_resource(settings)
@@ -97,7 +100,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                editor_ui_system,
+                // editor_ui_system,
                 update_camera_viewport,
                 rotate_shapes,
                 editor::camera_controller,
@@ -315,7 +318,7 @@ fn setup(
     });
 
     commands.insert_resource(AmbientLight {
-        brightness: 0.5,
+        brightness: 2.0,
         color: Color::Rgba {
             red: 0.5,
             green: 0.5,
@@ -329,11 +332,11 @@ fn setup(
             shadows_enabled: true,
             color: Color::Rgba {
                 red: 1.,
-                green: 0.9,
-                blue: 0.5,
+                green: 1.,
+                blue: 1.,
                 alpha: 1.,
             },
-            illuminance: 15000.,
+            illuminance: 17000.,
             ..default()
         },
         transform: Transform {
@@ -368,7 +371,7 @@ fn setup(
                 // clear_color: ClearColorConfig::None,
                 ..default()
             },
-            tonemapping: Tonemapping::BlenderFilmic,
+            tonemapping: Tonemapping::AcesFitted,
             ..default()
         },
         PrimaryCamera,
