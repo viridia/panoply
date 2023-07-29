@@ -12,7 +12,6 @@ use bevy::{
 use serde::{Deserialize, Serialize};
 
 const HEIGHT_STRIDE: usize = (PARCEL_SIZE + 1) as usize;
-
 const FLORA_STRIDE: usize = PARCEL_SIZE as usize;
 
 #[derive(Serialize, Deserialize, Debug)]

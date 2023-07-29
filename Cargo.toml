@@ -1,7 +1,24 @@
 [package]
-name = "bevy_game"
+name = "panoply"
 version = "0.1.0"
 edition = "2021"
+
+# [workspace]
+# exclude = [
+#   "benches",
+#   "crates/bevy_ecs_compile_fail_tests",
+#   "crates/bevy_macros_compile_fail_tests",
+#   "crates/bevy_reflect_compile_fail_tests",
+# ]
+# members = [
+#   "crates/*",
+#   "examples/mobile",
+#   "tools/ci",
+#   "tools/build-templated-pages",
+#   "tools/build-wasm-example",
+#   "tools/example-showcase",
+#   "errors",
+# ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

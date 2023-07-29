@@ -6,22 +6,37 @@ pub struct ParcelKey {
     pub z: i32,
 }
 
-pub enum ParcelStatus {
-    New,
-    // Loading,
-    Waiting,
-    Building,
-    Ready,
+pub const ADJACENT_COUNT: usize = 9;
+
+// A reference to a terrain shape
+#[derive(Default, Copy, Clone, PartialEq, Eq)]
+pub struct ShapeRef {
+    pub shape: u16,
+    pub rotation: u8,
+}
+
+impl ShapeRef {
+    pub fn new() -> ShapeRef {
+        Self {
+            shape: 0,
+            rotation: 0,
+        }
+    }
 }
 
 #[derive(Component)]
 pub struct Parcel {
     pub realm: i32,
     pub coords: IVec2,
-    pub status: ParcelStatus,
     pub visible: bool,
-    // pub adjacent_plots: [TerrainShape; 9],
+    pub shapes: [ShapeRef; ADJACENT_COUNT],
 }
+
+#[derive(Component)]
+pub struct ParcelContourChanged;
+
+#[derive(Component)]
+pub struct ParcelFloraChanged;
 
 #[derive(Bundle)]
 pub struct ParcelBundle {

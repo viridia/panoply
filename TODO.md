@@ -128,9 +128,8 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
 * TranslucentPoints
 * TranslucentSprites
 
-# Biome params
+Overlay structure:
 
-struct BiomeInput {
-  image: Handle<Image>,
-
-}
+Node
+  old reflex?
+  Children

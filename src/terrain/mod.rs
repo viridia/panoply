@@ -1,6 +1,7 @@
+#![allow(dead_code)]
 mod biome;
+mod ground_material;
 mod ground_mesh;
-mod material;
 mod parcel;
 mod parcel_cache;
 mod plugin;

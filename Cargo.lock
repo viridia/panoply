@@ -541,25 +541,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_game"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_egui",
- "cargo-wgsl",
- "directories",
- "egui",
- "futures-lite",
- "lru",
- "rmp-serde",
- "serde",
- "serde_arrays",
- "serde_bytes",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "bevy_gilrs"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2928,6 +2909,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "706de7e2214113d63a8238d1910463cfce781129a6f263d13fdb09ff64355ba4"
 dependencies = [
  "ttf-parser",
+]
+
+[[package]]
+name = "panoply"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_egui",
+ "cargo-wgsl",
+ "directories",
+ "egui",
+ "futures-lite",
+ "lru",
+ "rmp-serde",
+ "serde",
+ "serde_arrays",
+ "serde_bytes",
+ "serde_derive",
+ "serde_json",
 ]
 
 [[package]]

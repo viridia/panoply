@@ -1,9 +1,13 @@
-use bevy::{math::IRect, prelude::*};
+use bevy::{asset::LoadState, math::IRect, prelude::*};
 
-use crate::view::{QueryRect, Viewpoint};
+use crate::{
+    view::{QueryRect, Viewpoint},
+    world::Realm,
+};
 
 use super::{
-    parcel::{Parcel, ParcelKey, ParcelStatus},
+    parcel::{Parcel, ParcelContourChanged, ParcelKey, ShapeRef, ADJACENT_COUNT},
+    terrain_map::{TerrainMap, TerrainMapAsset},
     PARCEL_SIZE_F,
 };
 
@@ -39,6 +43,9 @@ pub fn spawn_parcels(
     viewpoint: Res<Viewpoint>,
     mut parcel_cache: ResMut<ParcelCache>,
     mut query: Query<&mut Parcel>,
+    realm_query: Query<(&Realm, &TerrainMap)>,
+    terrain_map_assets: Res<Assets<TerrainMapAsset>>,
+    server: Res<AssetServer>,
 ) {
     // Determine coordinates of view in parcel units.
     let view_radius = 16.;
@@ -53,6 +60,7 @@ pub fn spawn_parcels(
     };
 
     // TODO: return here if query rects (including portals) was the same as last time.
+    // ONLY if terrain maps haven't changed?
 
     // Reset the visibility bits for all parcels.
     query.for_each_mut(|mut parcel| {
@@ -61,33 +69,51 @@ pub fn spawn_parcels(
 
     // Function to add parcels to the cache based on a view rect.
     let mut fetch_parcels = |rect: &QueryRect| {
-        // Set parcels within the query rect as visible; also load missing parcels.
-        for z in rect.bounds.min.y..rect.bounds.max.y {
-            for x in rect.bounds.min.x..rect.bounds.max.x {
-                let key = ParcelKey {
-                    realm: rect.realm,
-                    x,
-                    z,
-                };
-                let entity = parcel_cache.parcels.get(&key);
-                match entity {
-                    Some(entity) => {
-                        if let Ok(mut parcel) = query.get_mut(*entity) {
-                            parcel.visible = true;
-                        }
-                    }
+        if let Some((_, terrain)) = realm_query.iter().find(|r| r.0.id == rect.realm) {
+            if server.get_load_state(&terrain.handle) != LoadState::Loaded {
+                return;
+            }
+            let terrain_map = terrain_map_assets
+                .get(&terrain.handle)
+                .expect("expecting terrain map");
 
-                    None => {
-                        // println!("Creating parcel {} {}.", x, z);
-                        let entity = commands.spawn(Parcel {
-                            realm: rect.realm,
-                            coords: IVec2::new(x, z),
-                            status: ParcelStatus::New,
-                            visible: true,
-                        });
-                        parcel_cache.parcels.put(key, entity.id());
-                    }
-                };
+            // Set parcels within the query rect as visible; also load missing parcels.
+            for z in rect.bounds.min.y..rect.bounds.max.y {
+                for x in rect.bounds.min.x..rect.bounds.max.x {
+                    let key = ParcelKey {
+                        realm: rect.realm,
+                        x,
+                        z,
+                    };
+                    let mut shapes: [ShapeRef; 9] = [ShapeRef::new(); ADJACENT_COUNT];
+                    terrain_map.adjacent_shapes(&mut shapes, IVec2::new(x, z));
+                    let entity = parcel_cache.parcels.get(&key);
+                    match entity {
+                        Some(entity) => {
+                            if let Ok(mut parcel) = query.get_mut(*entity) {
+                                if parcel.shapes != shapes {
+                                    parcel.shapes = shapes;
+                                    commands.entity(*entity).insert(ParcelContourChanged);
+                                }
+                                parcel.visible = true;
+                            }
+                        }
+
+                        None => {
+                            // println!("Creating parcel {} {}.", x, z);
+                            let entity = commands.spawn((
+                                Parcel {
+                                    realm: rect.realm,
+                                    coords: IVec2::new(x, z),
+                                    visible: true,
+                                    shapes,
+                                },
+                                ParcelContourChanged,
+                            ));
+                            parcel_cache.parcels.put(key, entity.id());
+                        }
+                    };
+                }
             }
         }
     };

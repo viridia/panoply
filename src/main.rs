@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use bevy::{
     asset::ChangeWatcher,
     core_pipeline::tonemapping::Tonemapping,
@@ -13,6 +14,7 @@ extern crate directories;
 
 mod diagnostics;
 mod editor;
+mod random;
 mod settings;
 mod terrain;
 mod view;
