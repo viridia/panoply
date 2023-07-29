@@ -30,6 +30,9 @@ var moss: texture_2d<f32>;
 @group(1) @binding(8)
 var moss_sampler: sampler;
 
+@group(1) @binding(9)
+var<uniform> water_color: vec4<f32>;
+
 const NUM_GROUND_TYPES = 8u;
 
 const UV_ROT = mat2x2<f32>(
@@ -103,6 +106,7 @@ const moss_biome = BiomeSurfaceAttrs(
 struct SurfaceAccum {
     color: vec4<f32>,
     terrain_noise: f32,
+    under_mix: f32,
     under_darken: f32,
 }
 
@@ -141,7 +145,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     );
     out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal);
     out.slope = -out.world_normal.y;
-    out.biome_weight_0 = vec4<f32>(0., 0., 0., 1.);
+    out.biome_weight_0 = vec4<f32>(0., 0., 1., 0.);
     out.biome_weight_1 = vec4<f32>(0., 0., 0., 0.);
     out.biome_weight_2 = vec4<f32>(0., 0., 0., 0.);
     return out;
@@ -159,23 +163,21 @@ fn fragment(
     var sfc: SurfaceAccum;
     sfc.color = vec4<f32>(0., 0., 0., 1.);
     sfc.under_darken = 0.;
+    sfc.under_mix = 0.;
     sfc.terrain_noise = textureSample(noise, noise_sampler, fract(uv * 0.05)).x;
 
     let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * dirt_biome.tx_scale));
 
 	// vec3 underColor = dirtColor.xyz;
 	let under_roughness = 0.9 - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
-	var under_mix = 0.0; // Mix factor for top layer and underlayer
 	// let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
 
-	// vec4 dirtColor = texture2D(dirtTexture, uv * 0.1);
-
 	let slope_mix = slope + sfc.terrain_noise * 0.5;
-	under_mix = max(under_mix, smoothstep(0.35, 0.55, slope_mix));
+	sfc.under_mix = max(sfc.under_mix, smoothstep(0.35, 0.55, slope_mix));
 	sfc.under_darken = max(sfc.under_darken, smoothstep(0.1, 0.6, slope_mix));
 
 	// No top coats underwater
-	// under_mix = min(max(under_mix, -mesh.world_position.y * 3.), 1.);
+	sfc.under_mix = min(1., max(sfc.under_mix, -mesh.world_position.y * 3.));
     var under_color = dirt_color.xyz;
 
     // Dirt surface
@@ -199,12 +201,12 @@ fn fragment(
 	}
 
 	// Mix top layer and under layer.
-	let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), under_mix);
-	let diffuse_color = vec4<f32>(combined.xyz, 1.0);
+	let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), sfc.under_mix);
+	var diffuse_color = vec4<f32>(combined.xyz, 1.0);
 	let roughness = combined.w;
 
 	// If underwater, then mix in dark blue
-	// diffuseColor = mix(diffuseColor, vec4(waterColor, 1.), clamp(-0.2-vPosition.y, 0., 0.7));
+	diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.7));
 
     var pbr_input: fns::PbrInput = fns::pbr_input_new();
     pbr_input.material.base_color = diffuse_color;

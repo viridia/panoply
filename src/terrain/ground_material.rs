@@ -20,6 +20,9 @@ pub struct GroundMaterial {
     #[texture(7)]
     #[sampler(8)]
     moss: Handle<Image>,
+
+    #[uniform(9)]
+    water_color: Color,
 }
 
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
@@ -48,5 +51,6 @@ pub fn create_materials(
         grass: asset_server.load("terrain/textures/grass.png"),
         dirt: asset_server.load("terrain/textures/dirt.png"),
         moss: asset_server.load("terrain/textures/moss.png"),
+        water_color: Color::rgb(0.0, 0.1, 0.3),
     });
 }

@@ -83,7 +83,7 @@ pub fn insert_ground_meshes(
                 material: terrain_materials.ground.clone(),
                 transform: Transform::from_xyz(
                     parcel.coords.x as f32 * PARCEL_SIZE_F,
-                    2.0,
+                    0.,
                     parcel.coords.y as f32 * PARCEL_SIZE_F,
                 ),
                 visibility: Visibility::Visible,
