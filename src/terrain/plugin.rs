@@ -3,11 +3,11 @@ use bevy::prelude::*;
 use super::{
     biome::{load_biomes, BiomesAsset, BiomesHandle, BiomesLoader},
     compute_ground_meshes,
-    ground_material::{create_materials, GroundMaterial, TerrainMaterials},
+    ground_material::GroundMaterial,
     insert_ground_meshes, spawn_parcels,
     terrain_map::{
-        insert_terrain_maps, load_terrain_maps, update_terrain_maps, TerrainMapAsset,
-        TerrainMapLoader, TerrainMapsHandleResource,
+        insert_terrain_maps, load_terrain_maps, update_ground_material, update_terrain_maps,
+        TerrainMapAsset, TerrainMapLoader, TerrainMapsHandleResource,
     },
     terrain_shapes::{
         load_terrain_shapes, TerrainShapesAsset, TerrainShapesHandle, TerrainShapesLoader,
@@ -28,17 +28,11 @@ impl Plugin for TerrainPlugin {
             .add_asset::<BiomesAsset>()
             .init_resource::<BiomesHandle>()
             .init_resource::<TerrainShapesHandle>()
-            .init_resource::<TerrainMaterials>()
             .init_resource::<TerrainMapsHandleResource>()
             .add_plugins(MaterialPlugin::<GroundMaterial>::default())
             .add_systems(
                 Startup,
-                (
-                    load_biomes,
-                    load_terrain_maps,
-                    load_terrain_shapes,
-                    create_materials,
-                ),
+                (load_biomes, load_terrain_maps, load_terrain_shapes),
             )
             .add_systems(
                 Update,
@@ -48,6 +42,7 @@ impl Plugin for TerrainPlugin {
                     insert_ground_meshes,
                     insert_terrain_maps,
                     update_terrain_maps,
+                    update_ground_material,
                 ),
             );
     }

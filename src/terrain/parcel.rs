@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 #[derive(Eq, PartialEq, Hash)]
 pub struct ParcelKey {
-    pub realm: i32,
+    pub realm: Entity,
     pub x: i32,
     pub z: i32,
 }
@@ -26,7 +26,7 @@ impl ShapeRef {
 
 #[derive(Component)]
 pub struct Parcel {
-    pub realm: i32,
+    pub realm: Entity,
     pub coords: IVec2,
     pub visible: bool,
     pub shapes: [ShapeRef; ADJACENT_COUNT],

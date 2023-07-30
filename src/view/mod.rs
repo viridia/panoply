@@ -11,6 +11,6 @@ pub struct PrimaryCamera;
 
 /// Used to query precincts or parcels
 pub struct QueryRect {
-    pub realm: i32,
+    pub realm: Entity,
     pub bounds: IRect,
 }

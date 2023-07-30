@@ -4,11 +4,15 @@ use bevy::{
     core_pipeline::tonemapping::Tonemapping,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+    render::{
+        render_resource::{Extent3d, TextureDimension, TextureFormat},
+        texture::ImageSampler,
+    },
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use egui::Frame;
 use std::{f32::consts::PI, time::Duration};
+use world::Realm;
 
 extern crate directories;
 
@@ -107,6 +111,7 @@ fn main() {
                 rotate_shapes,
                 editor::camera_controller,
                 update_window_settings,
+                nav_to_center,
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
@@ -402,7 +407,7 @@ fn uv_debug_texture() -> Image {
         palette.rotate_right(4);
     }
 
-    Image::new_fill(
+    let mut res = Image::new_fill(
         Extent3d {
             width: TEXTURE_SIZE as u32,
             height: TEXTURE_SIZE as u32,
@@ -411,5 +416,16 @@ fn uv_debug_texture() -> Image {
         TextureDimension::D2,
         &texture_data,
         TextureFormat::Rgba8UnormSrgb,
-    )
+    );
+    res.sampler_descriptor = ImageSampler::nearest();
+    res
+}
+
+fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {
+    for (entity, realm) in realms.iter() {
+        if realm.name == "overland" {
+            println!("Navigating to [overland]");
+            viewpoint.realm = Some(entity)
+        }
+    }
 }

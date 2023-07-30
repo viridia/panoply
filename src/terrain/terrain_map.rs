@@ -4,13 +4,20 @@ use bevy::{
     math::IRect,
     prelude::*,
     reflect::{TypePath, TypeUuid},
+    render::{
+        render_resource::{Extent3d, TextureDimension, TextureFormat},
+        texture::ImageSampler,
+    },
     utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::world::Realm;
 
-use super::parcel::{ShapeRef, ADJACENT_COUNT};
+use super::{
+    ground_material::GroundMaterial,
+    parcel::{ShapeRef, ADJACENT_COUNT},
+};
 
 #[derive(Default, Serialize, Deserialize, TypeUuid, TypePath)]
 #[uuid = "42827d83-1cb9-4d78-aa38-108ee87fbb2b"]
@@ -62,9 +69,14 @@ pub struct TerrainMap {
     /** Asset data for terrain map. */
     pub handle: Handle<TerrainMapAsset>,
 
+    /** Biome lookup texture. */
+    pub biome_texture: Image,
+
+    /** Material to use when rendering terrain. */
+    pub ground_material: Handle<GroundMaterial>,
+
     /** Flag indicating we need to rebuild the biome texture. */
     pub needs_rebuild_biomes: bool,
-    // private biomeTexture: DataTexture | null = null;
 }
 
 /// Marker component that a terrain map has changed.
@@ -107,13 +119,20 @@ pub fn insert_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm), Without<TerrainMap>>,
+    mut materials: ResMut<Assets<GroundMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     for (entity, realm) in query.iter_mut() {
         println!("Inserting terrain map: [{}].", realm.name);
-        commands.entity(entity).insert(TerrainMap {
-            handle: server.load(format!("terrain/maps/{}.terrain", realm.name)),
-            needs_rebuild_biomes: false,
-        });
+        commands.entity(entity).insert((
+            TerrainMap {
+                handle: server.load(format!("terrain/maps/{}.terrain", realm.name)),
+                biome_texture: Image::default(),
+                ground_material: create_material(&mut materials, &asset_server),
+                needs_rebuild_biomes: false,
+            },
+            TerrainMapChanged,
+        ));
     }
 }
 
@@ -122,6 +141,8 @@ pub fn update_terrain_maps(
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm, Option<&mut TerrainMap>)>,
     mut ev_asset: EventReader<AssetEvent<TerrainMapAsset>>,
+    mut materials: ResMut<Assets<GroundMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     for ev in ev_asset.iter() {
         match ev {
@@ -131,6 +152,8 @@ pub fn update_terrain_maps(
                     commands.entity(realm.0).insert((
                         TerrainMap {
                             handle: handle.clone(),
+                            biome_texture: Image::default(),
+                            ground_material: create_material(&mut materials, &asset_server),
                             needs_rebuild_biomes: false,
                         },
                         TerrainMapChanged,
@@ -168,4 +191,64 @@ fn asset_name_from_handle(server: &Res<AssetServer>, handle: &Handle<TerrainMapA
     let filename_str = filename.to_str().unwrap();
     let dot = filename_str.find(".").unwrap_or(filename_str.len());
     return filename_str[0..dot].to_string();
+}
+
+pub fn update_ground_material(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
+    mut materials: ResMut<Assets<GroundMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+    terrain_map_assets: Res<Assets<TerrainMapAsset>>,
+) {
+    for (entity, realm, terrain) in query.iter_mut() {
+        if let Some(terr) = terrain_map_assets.get(&terrain.handle) {
+            if let Some(m) = materials.get_mut(&terrain.ground_material) {
+                println!("Updating material {}", realm.name);
+
+                if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
+                    let mut texture_data = Vec::<u8>::new();
+                    let rows = terr.bounds.height() as usize;
+                    let stride = terr.bounds.width() as usize;
+                    texture_data.resize(rows * stride, 0);
+                    for z in 0..rows {
+                        for x in 0..stride {
+                            texture_data[z * stride + x] = 0;
+                        }
+                    }
+                    let mut res = Image::new_fill(
+                        Extent3d {
+                            width: terr.bounds.width() as u32,
+                            height: terr.bounds.height() as u32,
+                            depth_or_array_layers: 1,
+                        },
+                        TextureDimension::D2,
+                        &texture_data,
+                        TextureFormat::R8Uint,
+                    );
+                    res.sampler_descriptor = ImageSampler::nearest();
+                    m.biomes = images.add(res);
+                }
+
+                m.realm_offset =
+                    Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
+            }
+        }
+
+        commands.entity(entity).remove::<TerrainMapChanged>();
+    }
+}
+
+fn create_material(
+    materials: &mut Assets<GroundMaterial>,
+    asset_server: &AssetServer,
+) -> Handle<GroundMaterial> {
+    materials.add(GroundMaterial {
+        noise: asset_server.load("terrain/textures/noise.png"),
+        grass: asset_server.load("terrain/textures/grass.png"),
+        dirt: asset_server.load("terrain/textures/dirt.png"),
+        moss: asset_server.load("terrain/textures/moss.png"),
+        water_color: Color::rgb(0.0, 0.1, 0.3),
+        realm_offset: Vec2::new(0., 0.),
+        biomes: Handle::default(),
+    })
 }

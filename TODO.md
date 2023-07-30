@@ -99,9 +99,9 @@
   * Tier
 * skills
 * terrain
-  * ParcelCache
-  * Parcel
-  * ParcelShape
+  * [x] ParcelCache
+  * [x] Parcel
+  * [x] TerrainShape
   * TerrainFx
 * view
   * Viewpoint

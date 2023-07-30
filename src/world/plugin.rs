@@ -9,8 +9,6 @@ impl Plugin for WorldPlugin {
         app.add_asset_loader(RealmsLoader)
             .add_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
-            // .init_resource::<TerrainMaterials>()
-            // .add_plugins(MaterialPlugin::<TerrainMaterial>::default())
             .add_systems(Startup, load_realms)
             .add_systems(Update, sync_realms);
     }

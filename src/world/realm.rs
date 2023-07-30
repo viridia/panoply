@@ -4,7 +4,7 @@ use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::BoxedFuture;
 use serde::{Deserialize, Serialize};
 
-pub type RealmId = i32;
+pub type RealmLayer = usize;
 
 #[derive(Default, Serialize, Deserialize, Clone, Copy)]
 pub enum RealmLighting {
@@ -21,14 +21,10 @@ pub struct RealmData {
     pub lighting: RealmLighting,
 }
 
-// #[derive(Default, Serialize, Deserialize, TypeUuid, TypePath)]
-// #[uuid = "dace4039-ec2b-46ff-8dd1-92b8704e8b73"]
-// pub struct RealmsData(pub HashMap<String, RealmData>);
-
 #[derive(Component, Default)]
 pub struct Realm {
     /** Realm index, also used as layer index for rendering. */
-    pub id: RealmId,
+    pub layer: RealmLayer,
 
     /** Resource name of this realm. */
     pub name: String,
@@ -76,12 +72,12 @@ pub fn sync_realms(
         match ev {
             AssetEvent::Created { handle } => {
                 // Assign first unused id.
-                let mut id: RealmId = 0;
+                let mut layer: RealmLayer = 1;
                 loop {
                     let mut collision = false;
                     for (_, realm) in query.iter() {
-                        if realm.id == id {
-                            id += 1;
+                        if realm.layer == layer {
+                            layer += 1;
                             collision = true;
                         }
                     }
@@ -94,7 +90,7 @@ pub fn sync_realms(
                 let realm_name = realm_name_from_handle(&server, handle);
                 println!("Realm created: [{}].", realm_name);
                 commands.spawn(Realm {
-                    id,
+                    layer,
                     name: realm_name,
                     lighting: realm.lighting,
                 });

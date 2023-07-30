@@ -1,11 +1,11 @@
-use bevy::prelude::{EulerRot, Quat, Resource, Transform, Vec3};
+use bevy::prelude::*;
 use std::f32::consts::PI;
 
 /// Represents the focal point of attention, typically the coordinates of the player
 /// character.
 #[derive(Resource, Default, Debug)]
 pub struct Viewpoint {
-    pub realm: i32,
+    pub realm: Option<Entity>,
     pub position: Vec3,
     pub azimuth: f32,
     pub elevation: f32,

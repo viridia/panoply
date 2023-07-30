@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use crate::world::Realm;
 
 use super::{
-    ground_material::TerrainMaterials,
     parcel::{Parcel, ParcelContourChanged, ShapeRef, ADJACENT_COUNT},
     square::{RotatingSquareArray, SquareArray},
     terrain_map::TerrainMap,
@@ -36,8 +35,8 @@ pub fn compute_ground_meshes(
     let pool = AsyncComputeTaskPool::get();
 
     for (entity, parcel) in query.iter_mut() {
-        let realm = realms_query.iter().find(|r| r.0.id == parcel.realm);
-        if realm.is_none() {
+        let realm = realms_query.get(parcel.realm);
+        if !realm.is_ok() {
             return;
         }
 
@@ -70,26 +69,30 @@ pub fn compute_ground_meshes(
 pub fn insert_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeGroundMeshTask)>,
+    realms_query: Query<(&Realm, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
-    terrain_materials: ResMut<TerrainMaterials>,
 ) {
     // Need biomes
     // Reset the visibility bits for all parcels.
     for (entity, parcel, mut task) in query.iter_mut() {
-        if let Some(mesh) = future::block_on(future::poll_once(&mut task.0)) {
-            // Add our new PbrBundle of components to our tagged entity
-            commands.entity(entity).insert(MaterialMeshBundle {
-                mesh: meshes.add(mesh),
-                material: terrain_materials.ground.clone(),
-                transform: Transform::from_xyz(
-                    parcel.coords.x as f32 * PARCEL_SIZE_F,
-                    0.,
-                    parcel.coords.y as f32 * PARCEL_SIZE_F,
-                ),
-                visibility: Visibility::Visible,
-                ..default()
-            });
-            commands.entity(entity).remove::<ComputeGroundMeshTask>();
+        let realm = realms_query.get(parcel.realm);
+        if realm.is_ok() {
+            let (_, terrain_map) = realm.unwrap();
+            if let Some(mesh) = future::block_on(future::poll_once(&mut task.0)) {
+                // Add our new PbrBundle of components to our tagged entity
+                commands.entity(entity).insert(MaterialMeshBundle {
+                    mesh: meshes.add(mesh),
+                    material: terrain_map.ground_material.clone(),
+                    transform: Transform::from_xyz(
+                        parcel.coords.x as f32 * PARCEL_SIZE_F,
+                        0.,
+                        parcel.coords.y as f32 * PARCEL_SIZE_F,
+                    ),
+                    visibility: Visibility::Visible,
+                    ..default()
+                });
+                commands.entity(entity).remove::<ComputeGroundMeshTask>();
+            }
         }
     }
 }

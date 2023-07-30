@@ -30,8 +30,16 @@ var moss: texture_2d<f32>;
 @group(1) @binding(8)
 var moss_sampler: sampler;
 
-@group(1) @binding(9)
+// @group(1) @binding(9)
+// var biomes: texture_2d<u32>;
+// @group(1) @binding(10)
+// var biomes_sampler: sampler;
+
+@group(1) @binding(11)
 var<uniform> water_color: vec4<f32>;
+
+@group(1) @binding(12)
+var<uniform> realm_offset: vec2<f32>;
 
 const NUM_GROUND_TYPES = 8u;
 

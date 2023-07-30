@@ -10,19 +10,26 @@ use bevy::{
 pub struct GroundMaterial {
     #[texture(1)]
     #[sampler(2)]
-    noise: Handle<Image>,
+    pub noise: Handle<Image>,
     #[texture(3)]
     #[sampler(4)]
-    grass: Handle<Image>,
+    pub grass: Handle<Image>,
     #[texture(5)]
     #[sampler(6)]
-    dirt: Handle<Image>,
+    pub dirt: Handle<Image>,
     #[texture(7)]
     #[sampler(8)]
-    moss: Handle<Image>,
+    pub moss: Handle<Image>,
 
-    #[uniform(9)]
-    water_color: Color,
+    // #[texture(9)]
+    // #[sampler(10)]
+    pub biomes: Handle<Image>,
+
+    #[uniform(11)]
+    pub water_color: Color,
+
+    #[uniform(12)]
+    pub realm_offset: Vec2,
 }
 
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
@@ -34,23 +41,4 @@ impl Material for GroundMaterial {
     fn vertex_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()
     }
-}
-
-#[derive(Resource, Default)]
-pub struct TerrainMaterials {
-    pub ground: Handle<GroundMaterial>,
-}
-
-pub fn create_materials(
-    mut terrain_materials: ResMut<TerrainMaterials>,
-    mut materials: ResMut<Assets<GroundMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    terrain_materials.ground = materials.add(GroundMaterial {
-        noise: asset_server.load("terrain/textures/noise.png"),
-        grass: asset_server.load("terrain/textures/grass.png"),
-        dirt: asset_server.load("terrain/textures/dirt.png"),
-        moss: asset_server.load("terrain/textures/moss.png"),
-        water_color: Color::rgb(0.0, 0.1, 0.3),
-    });
 }

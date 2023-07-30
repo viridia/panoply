@@ -47,10 +47,14 @@ pub fn spawn_parcels(
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     server: Res<AssetServer>,
 ) {
+    if viewpoint.realm.is_none() {
+        return;
+    }
+
     // Determine coordinates of view in parcel units.
     let view_radius = 16.;
     let query_rect = QueryRect {
-        realm: viewpoint.realm,
+        realm: viewpoint.realm.expect("Realm id expected"),
         bounds: IRect::new(
             ((viewpoint.position.x - view_radius) / PARCEL_SIZE_F).floor() as i32,
             ((viewpoint.position.z - view_radius) / PARCEL_SIZE_F).floor() as i32,
@@ -69,7 +73,9 @@ pub fn spawn_parcels(
 
     // Function to add parcels to the cache based on a view rect.
     let mut fetch_parcels = |rect: &QueryRect| {
-        if let Some((_, terrain)) = realm_query.iter().find(|r| r.0.id == rect.realm) {
+        let realm = realm_query.get(rect.realm);
+        if realm.is_ok() {
+            let (_, terrain) = realm.unwrap();
             if server.get_load_state(&terrain.handle) != LoadState::Loaded {
                 return;
             }
