@@ -30,10 +30,14 @@ pub struct Parcel {
     pub coords: IVec2,
     pub visible: bool,
     pub shapes: [ShapeRef; ADJACENT_COUNT],
+    pub water_entity: Option<Entity>,
 }
 
 #[derive(Component)]
 pub struct ParcelContourChanged;
+
+#[derive(Component)]
+pub struct ParcelWaterChanged;
 
 #[derive(Component)]
 pub struct ParcelFloraChanged;

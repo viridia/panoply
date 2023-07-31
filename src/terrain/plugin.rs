@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::{
     biome::{load_biomes, BiomesAsset, BiomesHandle, BiomesLoader},
-    compute_ground_meshes,
+    gen_ground_meshes,
     ground_material::GroundMaterial,
     insert_ground_meshes, spawn_parcels,
     terrain_map::{
@@ -12,6 +12,8 @@ use super::{
     terrain_shapes::{
         load_terrain_shapes, TerrainShapesAsset, TerrainShapesHandle, TerrainShapesLoader,
     },
+    water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
+    water_mesh::{gen_water_meshes, insert_water_meshes},
     ParcelCache,
 };
 
@@ -29,17 +31,28 @@ impl Plugin for TerrainPlugin {
             .init_resource::<BiomesHandle>()
             .init_resource::<TerrainShapesHandle>()
             .init_resource::<TerrainMapsHandleResource>()
-            .add_plugins(MaterialPlugin::<GroundMaterial>::default())
+            .init_resource::<WaterMaterialResource>()
+            .add_plugins((
+                MaterialPlugin::<GroundMaterial>::default(),
+                MaterialPlugin::<WaterMaterial>::default(),
+            ))
             .add_systems(
                 Startup,
-                (load_biomes, load_terrain_maps, load_terrain_shapes),
+                (
+                    load_biomes,
+                    load_terrain_maps,
+                    load_terrain_shapes,
+                    create_water_material,
+                ),
             )
             .add_systems(
                 Update,
                 (
                     spawn_parcels,
-                    compute_ground_meshes,
+                    gen_ground_meshes,
+                    gen_water_meshes,
                     insert_ground_meshes,
+                    insert_water_meshes,
                     insert_terrain_maps,
                     update_terrain_maps,
                     update_ground_material,

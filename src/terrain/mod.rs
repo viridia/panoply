@@ -8,9 +8,15 @@ mod plugin;
 mod square;
 mod terrain_map;
 mod terrain_shapes;
+mod water_material;
+mod water_mesh;
 
 pub const PARCEL_SIZE: i32 = 16;
 pub const PARCEL_SIZE_F: f32 = PARCEL_SIZE as f32;
+
+pub const PARCEL_WATER_RESOLUTION: usize = 16;
+pub const PARCEL_WATER_STRIDE: usize = PARCEL_WATER_RESOLUTION + 1;
+pub const PARCEL_WATER_VERTEX_COUNT: usize = PARCEL_WATER_STRIDE * PARCEL_WATER_STRIDE;
 
 pub const PARCEL_MESH_RESOLUTION: i32 = 64;
 pub const PARCEL_MESH_STRIDE: i32 = PARCEL_MESH_RESOLUTION + 1;

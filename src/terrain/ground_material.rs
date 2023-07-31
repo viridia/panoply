@@ -21,8 +21,8 @@ pub struct GroundMaterial {
     #[sampler(8)]
     pub moss: Handle<Image>,
 
-    // #[texture(9)]
-    // #[sampler(10)]
+    #[texture(9, sample_type = "u_int")]
+    #[sampler(10)]
     pub biomes: Handle<Image>,
 
     #[uniform(11)]
@@ -32,8 +32,6 @@ pub struct GroundMaterial {
     pub realm_offset: Vec2,
 }
 
-/// The Material trait is very configurable, but comes with sensible defaults for all methods.
-/// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
 impl Material for GroundMaterial {
     fn fragment_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()

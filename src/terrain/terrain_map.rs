@@ -212,7 +212,7 @@ pub fn update_ground_material(
                     texture_data.resize(rows * stride, 0);
                     for z in 0..rows {
                         for x in 0..stride {
-                            texture_data[z * stride + x] = 0;
+                            texture_data[z * stride + x] = if (x & 1) == 0 { 2 } else { 3 };
                         }
                     }
                     let mut res = Image::new_fill(

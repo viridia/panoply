@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use super::{square::SquareArray, PARCEL_SIZE};
 use bevy::{
     asset::{AssetLoader, LoadContext, LoadedAsset},
+    math::IRect,
     prelude::*,
     reflect::{TypePath, TypeUuid},
     utils::BoxedFuture,
@@ -22,7 +23,6 @@ struct TerrainShapeSer {
 
     pub flora: serde_bytes::ByteBuf,
 
-    // public readonly lakes: Box2[] = [];
     // public needsUpdateVertices = false;
     #[serde(alias = "hasTerrain")]
     pub has_terrain: bool,
@@ -38,8 +38,6 @@ pub struct TerrainShape {
 
     pub flora: SquareArray<u8>,
 
-    // public readonly lakes: Box2[] = [];
-    // public needsUpdateVertices = false;
     pub has_terrain: bool,
 
     pub has_water: bool,
@@ -148,3 +146,11 @@ pub struct TerrainShapesHandle(pub Handle<TerrainShapesAsset>);
 pub fn load_terrain_shapes(server: Res<AssetServer>, mut handle: ResMut<TerrainShapesHandle>) {
     handle.0 = server.load("terrain/terrain.contours");
 }
+
+const PARCEL_BOUNDS: IRect = IRect {
+    min: IVec2 { x: 0, y: 0 },
+    max: IVec2 {
+        x: PARCEL_SIZE + 1,
+        y: PARCEL_SIZE + 1,
+    },
+};

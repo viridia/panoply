@@ -24,7 +24,7 @@ pub struct ComputeGroundMeshTask(Task<Mesh>);
 pub const HEIGHT_SCALE: f32 = 0.5;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
-pub fn compute_ground_meshes(
+pub fn gen_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel), With<ParcelContourChanged>>,
     realms_query: Query<(&Realm, &TerrainMap)>,
@@ -41,11 +41,6 @@ pub fn compute_ground_meshes(
         }
 
         if server.get_load_state(&ts_handle.0) != LoadState::Loaded {
-            return;
-        }
-
-        let tm_handle = &realm.expect("need realm").1.handle;
-        if server.get_load_state(tm_handle) != LoadState::Loaded {
             return;
         }
 
@@ -72,7 +67,6 @@ pub fn insert_ground_meshes(
     realms_query: Query<(&Realm, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    // Need biomes
     // Reset the visibility bits for all parcels.
     for (entity, parcel, mut task) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);

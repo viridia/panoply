@@ -6,7 +6,9 @@ use crate::{
 };
 
 use super::{
-    parcel::{Parcel, ParcelContourChanged, ParcelKey, ShapeRef, ADJACENT_COUNT},
+    parcel::{
+        Parcel, ParcelContourChanged, ParcelKey, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT,
+    },
     terrain_map::{TerrainMap, TerrainMapAsset},
     PARCEL_SIZE_F,
 };
@@ -52,7 +54,7 @@ pub fn spawn_parcels(
     }
 
     // Determine coordinates of view in parcel units.
-    let view_radius = 16.;
+    let view_radius = 32.;
     let query_rect = QueryRect {
         realm: viewpoint.realm.expect("Realm id expected"),
         bounds: IRect::new(
@@ -99,7 +101,9 @@ pub fn spawn_parcels(
                             if let Ok(mut parcel) = query.get_mut(*entity) {
                                 if parcel.shapes != shapes {
                                     parcel.shapes = shapes;
-                                    commands.entity(*entity).insert(ParcelContourChanged);
+                                    commands
+                                        .entity(*entity)
+                                        .insert((ParcelContourChanged, ParcelWaterChanged));
                                 }
                                 parcel.visible = true;
                             }
@@ -113,8 +117,10 @@ pub fn spawn_parcels(
                                     coords: IVec2::new(x, z),
                                     visible: true,
                                     shapes,
+                                    water_entity: None,
                                 },
                                 ParcelContourChanged,
+                                ParcelWaterChanged,
                             ));
                             parcel_cache.parcels.put(key, entity.id());
                         }
@@ -135,7 +141,7 @@ pub fn spawn_parcels(
                 if parcel.visible {
                     break;
                 } else {
-                    commands.entity(*entity).despawn();
+                    commands.entity(*entity).despawn_recursive();
                 }
             }
         }

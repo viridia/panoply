@@ -30,8 +30,8 @@ var moss: texture_2d<f32>;
 @group(1) @binding(8)
 var moss_sampler: sampler;
 
-// @group(1) @binding(9)
-// var biomes: texture_2d<u32>;
+@group(1) @binding(9)
+var biomes: texture_2d<u32>;
 // @group(1) @binding(10)
 // var biomes_sampler: sampler;
 
@@ -46,6 +46,10 @@ const NUM_GROUND_TYPES = 8u;
 const UV_ROT = mat2x2<f32>(
     vec2<f32>(0.8775825618903728, 0.479425538604203),
     vec2<f32>(-0.479425538604203, 0.8775825618903728));
+
+// struct BiomeWeights {
+//     weights: array<f32, 10>,
+// }
 
 struct Vertex {
     @location(0) position: vec3<f32>,
@@ -73,6 +77,7 @@ struct VertexOutput {
     @location(3) biome_weight_0: vec4<f32>,
     @location(4) biome_weight_1: vec4<f32>,
     @location(5) biome_weight_2: vec4<f32>,
+    // @location(6) biome_weights: BiomeWeights,
 };
 
 struct BiomeSurfaceAttrs {
@@ -143,17 +148,61 @@ fn blend_biome(
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
-    out.world_position = mfns::mesh_position_local_to_world(
+    var wposition = mfns::mesh_position_local_to_world(
         mesh.model,
         vec4<f32>(vertex.position, 1.0)
     );
+
+	let parcel_coords = floor(wposition.xz / 16.0) - realm_offset;
+	let parcel_coords_i = vec2<i32>(i32(parcel_coords.x), i32(parcel_coords.y));
+	let biome_selection = vec4<u32>(
+		textureLoad(biomes, parcel_coords_i, 0).r,
+		textureLoad(biomes, (parcel_coords_i + vec2(0, 1)), 0).r,
+		textureLoad(biomes, (parcel_coords_i + vec2(1, 0)), 0).r,
+		textureLoad(biomes, (parcel_coords_i + vec2(1, 1)), 0).r
+	);
+
+    let parcel_uv = fract(wposition.xz / 16.);
+	let biome_interpolation = vec4<f32>(
+		(1. - parcel_uv.x) * (1. - parcel_uv.y),
+		(1. - parcel_uv.x) * parcel_uv.y,
+		parcel_uv.x * (1. - parcel_uv.y),
+		parcel_uv.x * parcel_uv.y
+	);
+
+	// Compute weights for each ground cover type.
+	var first_layer = true;
+    var biome_weight = array<f32, NUM_GROUND_TYPES>();
+	for (var i = 0u; i < NUM_GROUND_TYPES; i++) {
+        var eq = vec4<f32>();
+        eq.x = select(0., 1., i == biome_selection.x);
+        eq.y = select(0., 1., i == biome_selection.y);
+        eq.z = select(0., 1., i == biome_selection.z);
+        eq.w = select(0., 1., i == biome_selection.w);
+		// let eq = vec4(equal(vec4<u32>(i), biome_selection));
+		var weight = dot(eq, biome_interpolation);
+		// The first non-zero layer covers the entire parcel.
+		if (dot(eq, eq) > 0. && first_layer) {
+			weight = 1.;
+			first_layer = false;
+		}
+		biome_weight[i] = weight;
+	}
+
+    out.world_position = wposition;
     out.position = mfns::mesh_position_local_to_clip(
         mesh.model,
         vec4<f32>(vertex.position, 1.0)
     );
+
     out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal);
     out.slope = -out.world_normal.y;
-    out.biome_weight_0 = vec4<f32>(0., 0., 1., 0.);
+    out.biome_weight_0 = vec4<f32>(
+        biome_weight[0],
+        biome_weight[1],
+        biome_weight[2],
+        biome_weight[3]
+    );
     out.biome_weight_1 = vec4<f32>(0., 0., 0., 0.);
     out.biome_weight_2 = vec4<f32>(0., 0., 0., 0.);
     return out;
@@ -172,7 +221,7 @@ fn fragment(
     sfc.color = vec4<f32>(0., 0., 0., 1.);
     sfc.under_darken = 0.;
     sfc.under_mix = 0.;
-    sfc.terrain_noise = textureSample(noise, noise_sampler, fract(uv * 0.05)).x;
+    sfc.terrain_noise = textureSample(noise, noise_sampler, fract(uv * 0.04)).x;
 
     let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * dirt_biome.tx_scale));
 
