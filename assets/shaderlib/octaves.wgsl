@@ -53,7 +53,7 @@ fn sum_octaves_8v2f(
 }
 
 fn sum_octaves_6v2f(
-    level: ptr<private, array<vec2<f32>, 6>>,
+    level: ptr<function, array<vec2<f32>, 6>>,
     start_octave: u32,
     end_octave: u32,
     persistence: f32) -> vec2<f32> {
@@ -71,7 +71,7 @@ fn sum_octaves_6v2f(
 }
 
 fn sum_octaves_8v3f(
-    level: ptr<private, array<vec3<f32>, 8>>,
+    level: ptr<function, array<vec3<f32>, 8>>,
     start_octave: u32,
     end_octave: u32,
     persistence: f32) -> vec3<f32> {
@@ -89,7 +89,7 @@ fn sum_octaves_8v3f(
 }
 
 fn sum_octaves_6v3f(
-    level: ptr<private, array<vec3<f32>, 6>>,
+    level: ptr<function, array<vec3<f32>, 6>>,
     start_octave: u32,
     end_octave: u32,
     persistence: f32) -> vec3<f32> {

@@ -133,3 +133,21 @@ Overlay structure:
 Node
   old reflex?
   Children
+
+We need local memoization
+
+```rust
+fn (ctx: Local<ViewContext>) {
+  let color = ctx.createSelector(|| resource.color);
+  let state = ctx.createMemo(|| { la la la });
+  return ctx.render(||
+    Group::new([
+        FlatRect {
+          color: color(),
+          opacity: if state().selected { 1. } else { .5 },
+          ..default(),
+        }
+    ])
+  )
+}
+```

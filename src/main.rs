@@ -348,7 +348,7 @@ fn setup(
         },
         transform: Transform {
             translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.),
+            rotation: Quat::from_rotation_x(-PI / 3.),
             ..default()
         },
         // The default cascade config is designed to handle large scenes.

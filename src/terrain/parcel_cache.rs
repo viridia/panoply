@@ -19,12 +19,6 @@ pub struct ParcelCache {
     parcels: lru::LruCache<ParcelKey, Entity>,
 }
 
-impl Drop for ParcelCache {
-    fn drop(&mut self) {
-        println!("Parcel cache dropped.");
-    }
-}
-
 impl ParcelCache {
     pub fn new() -> Self {
         Self {

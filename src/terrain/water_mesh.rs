@@ -5,11 +5,9 @@ use std::{
 
 use bevy::{
     asset::LoadState,
+    pbr::NotShadowCaster,
     prelude::*,
-    render::{
-        mesh::{Indices, MeshVertexAttribute},
-        render_resource::{PrimitiveTopology, VertexFormat},
-    },
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
     tasks::{AsyncComputeTaskPool, Task},
     utils::HashMap,
 };
@@ -19,16 +17,17 @@ use crate::world::Realm;
 
 use super::{
     parcel::{Parcel, ParcelWaterChanged, ShapeRef},
+    square::RotatingSquareArray,
     terrain_map::TerrainMap,
     terrain_shapes::{TerrainShapesAsset, TerrainShapesHandle, TerrainShapesTable},
-    water_material::WaterMaterialResource,
+    water_material::{WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION},
     HEIGHT_SCALE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE_F, PARCEL_WATER_RESOLUTION,
     PARCEL_WATER_VERTEX_COUNT,
 };
 
 const WATER_HEIGHT: f32 = -0.4;
 
-/// Spawns a task for each parcel to compute the lakes mesh geometry.
+/// Spawns a task for each parcel to compute the water mesh geometry.
 pub fn gen_water_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel), With<ParcelWaterChanged>>,
@@ -68,7 +67,7 @@ pub fn gen_water_meshes(
 #[derive(Component)]
 pub struct ComputeWaterMeshTask(Task<Option<Mesh>>);
 
-/// Consumes the output of the compute task and creates a mesh component for the ground geometry.
+/// Consumes the output of the compute task and creates a mesh component for the water geometry.
 pub fn insert_water_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeWaterMeshTask)>,
@@ -99,7 +98,8 @@ pub fn insert_water_meshes(
                     // Add or replace water
                     match parcel.water_entity {
                         None => {
-                            parcel.water_entity = Some(commands.spawn(bundle).id());
+                            parcel.water_entity =
+                                Some(commands.spawn((bundle, NotShadowCaster)).id());
                         }
 
                         Some(entity) => {
@@ -128,10 +128,16 @@ fn compute_water_mesh(
         return None;
     }
 
+    let src_rot = RotatingSquareArray::new(
+        terrain_shape.height.size(),
+        shape_ref.rotation as i32,
+        &terrain_shape.height.elts(),
+    );
+
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);
     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
-    let mut depth_motion: Vec<f32> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
+    let mut depth_motion: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut indices: Vec<u32> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);
     let index_map = HashMap::<UVec2, u32>::new();
 
@@ -142,19 +148,17 @@ fn compute_water_mesh(
         Quat::from_rotation_y(-(shape_ref.rotation as f32) * PI * 0.5),
     );
 
-    // const depthMotion: number[] = [];
-
     let n = Vec3::new(0., 1., 0.);
 
     let mut vertex_at = |x: usize, z: usize| {
         return match index_map.get(&UVec2::new(x as u32, z as u32)) {
             Some(&index) => index,
             None => {
-                let depth = terrain_shape.height.get(x as i32, z as i32);
+                let depth = src_rot.get(x as i32, z as i32);
                 let index = position.len() as u32;
                 position.push([x as f32, WATER_HEIGHT, z as f32]);
                 normal.push(n.to_array());
-                depth_motion.push(depth as f32 * HEIGHT_SCALE);
+                depth_motion.push([depth as f32 * -HEIGHT_SCALE, 0., 0.]);
                 index
             }
         };
@@ -162,31 +166,28 @@ fn compute_water_mesh(
 
     for z in 0..PARCEL_WATER_RESOLUTION {
         for x in 0..PARCEL_WATER_RESOLUTION {
-            let da = terrain_shape.height.get(x as i32, z as i32);
-            let db = terrain_shape.height.get(x as i32 + 1, z as i32);
-            let dc = terrain_shape.height.get(x as i32 + 1, z as i32 + 1);
-            let dd = terrain_shape.height.get(x as i32, z as i32 + 1);
-            if da < 1 || db < 1 || dc < 1 || dd < 1 {
-                let a = vertex_at(x, z);
-                let b = vertex_at(x, z + 1);
-                let c = vertex_at(x + 1, z + 1);
-                let d = vertex_at(x + 1, z);
-                indices.push(a);
-                indices.push(b);
-                indices.push(d);
-                indices.push(b);
-                indices.push(c);
-                indices.push(d);
-            }
+            // let da = src_rot.get(x as i32, z as i32);
+            // let db = src_rot.get(x as i32 + 1, z as i32);
+            // let dc = src_rot.get(x as i32 + 1, z as i32 + 1);
+            // let dd = src_rot.get(x as i32, z as i32 + 1);
+            // if da < 0 || db < 0 || dc < 0 || dd < 0 {
+            let a = vertex_at(x, z);
+            let b = vertex_at(x, z + 1);
+            let c = vertex_at(x + 1, z + 1);
+            let d = vertex_at(x + 1, z);
+            indices.push(a);
+            indices.push(b);
+            indices.push(d);
+            indices.push(b);
+            indices.push(c);
+            indices.push(d);
+            // }
         }
     }
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
-    mesh.insert_attribute(
-        MeshVertexAttribute::new("depth", 0x1000, VertexFormat::Float32),
-        depth_motion,
-    );
+    mesh.insert_attribute(ATTRIBUTE_DEPTH_MOTION, depth_motion);
     mesh.set_indices(Some(Indices::U32(indices)));
     mesh.compute_aabb();
     Some(mesh)

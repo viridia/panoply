@@ -3,12 +3,6 @@
 #import bevy_pbr::mesh_functions        as mfns
 #import bevy_pbr::mesh_bindings         mesh
 #import bevy_core_pipeline::tonemapping tone_mapping
-#import "shaderlib/snoise.wgsl"         snoise_2d
-
-// // Allows summing of up to 4 noise octaves via a dot product.
-// fn persist(c: f32) -> vec4<f32> {
-//     return vec4<f32>(c, c*c, c*c*c, c*c*c*c) / (c + c*c + c*c*c + c*c*c*c);
-// }
 
 @group(1) @binding(1)
 var noise: texture_2d<f32>;
