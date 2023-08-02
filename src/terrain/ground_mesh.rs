@@ -51,7 +51,6 @@ pub fn gen_ground_meshes(
             .clone();
 
         let shape_refs = parcel.shapes;
-
         let task = pool.spawn(async move { compute_ground_mesh(shape_refs, &shapes) });
         commands
             .entity(entity)
@@ -97,38 +96,7 @@ fn compute_ground_mesh(
 ) -> Mesh {
     // `ihm` stands for 'Interpolated height map.'
     let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
-
-    let shapes_table = shapes.lock().unwrap();
-    let center = shapes_table.get(shape_refs[4].shape as usize);
-    if !center.has_terrain {
-        println!("No terrain");
-    }
-
-    // Add terrain heights for center plot and all eight neighbors
-    for z in &[-1, 0, 1] {
-        for x in &[-1, 0, 1] {
-            let shape_ref = shape_refs[(z * 3 + x + 4) as usize];
-            let shape = shapes_table.get(shape_ref.shape as usize);
-            if shape.has_terrain {
-                accumulate(
-                    &shape.height,
-                    &mut ihm,
-                    1 + x * PARCEL_MESH_RESOLUTION,
-                    1 + z * PARCEL_MESH_RESOLUTION,
-                    shape_ref.rotation as i32,
-                );
-            }
-        }
-    }
-
-    // Now re-scale the rows and columns with more than one accumulated value.
-    // Note that some cells will be visited twice, which is what we want.
-    for i in 0..PARCEL_MESH_RESOLUTION + 3 {
-        *ihm.get_mut_ref(1, i) *= 0.5;
-        *ihm.get_mut_ref(PARCEL_MESH_RESOLUTION + 1, i) *= 0.5;
-        *ihm.get_mut_ref(i, 1) *= 0.5;
-        *ihm.get_mut_ref(i, PARCEL_MESH_RESOLUTION + 1) *= 0.5;
-    }
+    compute_interpolated_mesh(&mut ihm, shape_refs, shapes);
 
     // `shm` stands for 'Smoothed height map`
     let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
@@ -211,9 +179,52 @@ fn compute_ground_mesh(
     mesh
 }
 
+pub fn compute_interpolated_mesh(
+    // `ihm` stands for 'Interpolated height map.'
+    mut ihm: &mut SquareArray<f32>,
+    shape_refs: [ShapeRef; ADJACENT_COUNT],
+    shapes: &Arc<Mutex<TerrainShapesTable>>,
+) {
+    let mut weights = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
+
+    let shapes_table = shapes.lock().unwrap();
+    let center = shapes_table.get(shape_refs[4].shape as usize);
+    if !center.has_terrain {
+        println!("No terrain");
+    }
+
+    // Add terrain heights for center plot and all eight neighbors
+    for z in &[-1, 0, 1] {
+        for x in &[-1, 0, 1] {
+            let shape_ref = shape_refs[(z * 3 + x + 4) as usize];
+            let shape = shapes_table.get(shape_ref.shape as usize);
+            if shape.has_terrain {
+                accumulate(
+                    &shape.height,
+                    &mut ihm,
+                    &mut weights,
+                    1 + x * PARCEL_MESH_RESOLUTION,
+                    1 + z * PARCEL_MESH_RESOLUTION,
+                    shape_ref.rotation as i32,
+                );
+            }
+        }
+    }
+
+    for z in 0..=PARCEL_MESH_RESOLUTION + 2 {
+        for x in 0..=PARCEL_MESH_RESOLUTION + 2 {
+            let w = weights.get(x, z);
+            if w > 0. {
+                *ihm.get_mut_ref(x, z) /= w;
+            }
+        }
+    }
+}
+
 fn accumulate(
     src: &SquareArray<i8>,
     dst: &mut SquareArray<f32>,
+    weight: &mut SquareArray<f32>,
     x_offset: i32,
     z_offset: i32,
     rotation: i32,
@@ -231,6 +242,7 @@ fn accumulate(
                 (x - x_offset) as f32 * PARCEL_MESH_SCALE,
                 (z - z_offset) as f32 * PARCEL_MESH_SCALE,
             ) * HEIGHT_SCALE;
+            *weight.get_mut_ref(x, z) += 1.0;
         }
     }
 }

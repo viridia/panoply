@@ -70,8 +70,8 @@ pub fn create_water_material(
     asset_server: Res<AssetServer>,
 ) {
     resource.handle = materials.add(WaterMaterial {
-        water_color: Color::rgb(0.0, 0.3, 0.3),
-        noise: asset_server.load("terrain/textures/water-waves.png"),
+        water_color: Color::rgb(0.0, 0.3, 0.0),
+        noise: asset_server.load("terrain/textures/water-waves-2.png"),
         sky: asset_server.load("terrain/textures/water-sky.png"),
     });
 }

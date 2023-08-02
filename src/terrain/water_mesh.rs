@@ -1,7 +1,4 @@
-use std::{
-    f32::consts::PI,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use bevy::{
     asset::LoadState,
@@ -16,12 +13,13 @@ use futures_lite::future;
 use crate::world::Realm;
 
 use super::{
-    parcel::{Parcel, ParcelWaterChanged, ShapeRef},
-    square::RotatingSquareArray,
+    compute_interpolated_mesh,
+    parcel::{Parcel, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT},
+    square::SquareArray,
     terrain_map::TerrainMap,
     terrain_shapes::{TerrainShapesAsset, TerrainShapesHandle, TerrainShapesTable},
     water_material::{WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION},
-    HEIGHT_SCALE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE_F, PARCEL_WATER_RESOLUTION,
+    HEIGHT_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
     PARCEL_WATER_VERTEX_COUNT,
 };
 
@@ -54,9 +52,8 @@ pub fn gen_water_meshes(
             .0
             .clone();
 
-        let shape_ref = parcel.shapes[4];
-
-        let task = pool.spawn(async move { compute_water_mesh(shape_ref, &shapes) });
+        let shape_refs = parcel.shapes;
+        let task = pool.spawn(async move { compute_water_mesh(shape_refs, &shapes) });
         commands
             .entity(entity)
             .insert(ComputeWaterMeshTask(task))
@@ -86,11 +83,7 @@ pub fn insert_water_meshes(
                     let bundle = MaterialMeshBundle {
                         mesh: meshes.add(mesh),
                         material: material.handle.clone(),
-                        transform: Transform::from_xyz(
-                            parcel.coords.x as f32 * PARCEL_SIZE_F,
-                            0.,
-                            parcel.coords.y as f32 * PARCEL_SIZE_F,
-                        ),
+                        transform: Transform::from_xyz(0., 0., 0.),
                         visibility: Visibility::Visible,
                         ..default()
                     };
@@ -98,17 +91,18 @@ pub fn insert_water_meshes(
                     // Add or replace water
                     match parcel.water_entity {
                         None => {
-                            parcel.water_entity =
-                                Some(commands.spawn((bundle, NotShadowCaster)).id());
+                            let child = commands.spawn((bundle, NotShadowCaster)).id();
+                            commands.entity(entity).add_child(child);
+                            parcel.water_entity = Some(child);
                         }
 
-                        Some(entity) => {
-                            commands.entity(entity).insert(bundle);
+                        Some(ent) => {
+                            commands.entity(ent).insert(bundle);
                         }
                     }
                 } else {
-                    if let Some(entity) = parcel.water_entity {
-                        commands.entity(entity).despawn_recursive();
+                    if let Some(ent) = parcel.water_entity {
+                        commands.entity(ent).despawn_recursive();
                         parcel.water_entity = None;
                     }
                 }
@@ -119,20 +113,18 @@ pub fn insert_water_meshes(
 }
 
 fn compute_water_mesh(
-    shape_ref: ShapeRef,
+    shape_refs: [ShapeRef; ADJACENT_COUNT],
     shapes: &Arc<Mutex<TerrainShapesTable>>,
 ) -> Option<Mesh> {
+    // `ihm` stands for 'Interpolated height map.'
+    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
+    compute_interpolated_mesh(&mut ihm, shape_refs, shapes);
+
     let shapes_table = shapes.lock().unwrap();
-    let terrain_shape = shapes_table.get(shape_ref.shape as usize);
+    let terrain_shape = shapes_table.get(shape_refs[4].shape as usize);
     if !terrain_shape.has_water {
         return None;
     }
-
-    let src_rot = RotatingSquareArray::new(
-        terrain_shape.height.size(),
-        shape_ref.rotation as i32,
-        &terrain_shape.height.elts(),
-    );
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);
@@ -141,20 +133,13 @@ fn compute_water_mesh(
     let mut indices: Vec<u32> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);
     let index_map = HashMap::<UVec2, u32>::new();
 
-    let parcel_center = PARCEL_SIZE_F * 0.5;
-    let mut transform = Transform::IDENTITY;
-    transform.rotate_around(
-        Vec3::new(parcel_center, 0., parcel_center),
-        Quat::from_rotation_y(-(shape_ref.rotation as f32) * PI * 0.5),
-    );
-
     let n = Vec3::new(0., 1., 0.);
 
     let mut vertex_at = |x: usize, z: usize| {
         return match index_map.get(&UVec2::new(x as u32, z as u32)) {
             Some(&index) => index,
             None => {
-                let depth = src_rot.get(x as i32, z as i32);
+                let depth = ihm.get(x as i32 * 4 + 1, z as i32 * 4 + 1);
                 let index = position.len() as u32;
                 position.push([x as f32, WATER_HEIGHT, z as f32]);
                 normal.push(n.to_array());
@@ -166,22 +151,22 @@ fn compute_water_mesh(
 
     for z in 0..PARCEL_WATER_RESOLUTION {
         for x in 0..PARCEL_WATER_RESOLUTION {
-            // let da = src_rot.get(x as i32, z as i32);
-            // let db = src_rot.get(x as i32 + 1, z as i32);
-            // let dc = src_rot.get(x as i32 + 1, z as i32 + 1);
-            // let dd = src_rot.get(x as i32, z as i32 + 1);
-            // if da < 0 || db < 0 || dc < 0 || dd < 0 {
-            let a = vertex_at(x, z);
-            let b = vertex_at(x, z + 1);
-            let c = vertex_at(x + 1, z + 1);
-            let d = vertex_at(x + 1, z);
-            indices.push(a);
-            indices.push(b);
-            indices.push(d);
-            indices.push(b);
-            indices.push(c);
-            indices.push(d);
-            // }
+            let da = ihm.get(x as i32 * 4 + 1, z as i32 * 4);
+            let db = ihm.get(x as i32 * 4 + 2, z as i32 * 4);
+            let dc = ihm.get(x as i32 * 4 + 2, z as i32 * 4 + 2);
+            let dd = ihm.get(x as i32 * 4 + 1, z as i32 * 4 + 2);
+            if da < 0. || db < 0. || dc < 0. || dd < 0. {
+                let a = vertex_at(x, z);
+                let b = vertex_at(x, z + 1);
+                let c = vertex_at(x + 1, z + 1);
+                let d = vertex_at(x + 1, z);
+                indices.push(a);
+                indices.push(b);
+                indices.push(d);
+                indices.push(b);
+                indices.push(c);
+                indices.push(d);
+            }
         }
     }
 

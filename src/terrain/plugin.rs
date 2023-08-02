@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{
+        render_resource::{AddressMode, FilterMode, SamplerDescriptor},
+        texture::ImageSampler,
+    },
+};
 
 use super::{
     biome::{load_biomes, BiomesAsset, BiomesHandle, BiomesLoader},
@@ -56,7 +62,41 @@ impl Plugin for TerrainPlugin {
                     insert_terrain_maps,
                     update_terrain_maps,
                     update_ground_material,
+                    config_textures_modes,
                 ),
             );
+    }
+}
+
+pub fn config_textures_modes(
+    server: Res<AssetServer>,
+    mut assets: ResMut<Assets<Image>>,
+    mut ev_image: EventReader<AssetEvent<Image>>,
+) {
+    for ev in ev_image.iter() {
+        match ev {
+            AssetEvent::Created { handle } => {
+                if let Some(asset_path) = server.get_handle_path(handle) {
+                    let path = asset_path.path();
+                    if path.parent().expect("path").to_str().expect("path") == "textures" {
+                        if let Some(image) = assets.get_mut(handle) {
+                            image.sampler_descriptor =
+                                ImageSampler::Descriptor(SamplerDescriptor {
+                                    label: Some("Terrain textures"),
+                                    address_mode_u: AddressMode::Repeat,
+                                    address_mode_v: AddressMode::ClampToEdge,
+                                    address_mode_w: AddressMode::ClampToEdge,
+                                    mag_filter: FilterMode::Linear,
+                                    min_filter: FilterMode::Linear,
+                                    mipmap_filter: FilterMode::Linear,
+                                    ..default()
+                                });
+                        }
+                    }
+                }
+            }
+
+            _ => {}
+        }
     }
 }

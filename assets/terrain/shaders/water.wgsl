@@ -1,6 +1,5 @@
-#define FRAGMENT_WAVES_2 1
 #define VERTEX_WAVES 1
-// #define FRAGMENT_WAVES 1
+#define FRAGMENT_WAVES 1
 
 #import bevy_pbr::mesh_view_bindings    globals
 #import bevy_pbr::mesh_view_bindings    view
@@ -8,7 +7,6 @@
 #import bevy_pbr::mesh_functions        as mfns
 #import bevy_pbr::mesh_bindings         mesh
 #import bevy_core_pipeline::tonemapping tone_mapping
-// #import "shaderlib/noised.wgsl"         noised
 
 @group(1) @binding(1)
 var<uniform> water_color: vec4<f32>;
@@ -60,7 +58,6 @@ fn add_wave(
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
-
     var out: VertexOutput;
     var position = vertex.position;
     var normal = vertex.normal;
@@ -70,7 +67,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     );
     let uv = wposition.xz;
 
-      var wave: WaveAccum;
+    var wave: WaveAccum;
     // freq, wavelength, strength, position, direction
 #ifdef VERTEX_WAVES
     add_wave(1., .05, vec2(5.0, 5.0), uv, &wave);
@@ -82,6 +79,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     position.y += wave.amplitude;
     normal = normalize(vec3(wave.tangent.x * 0.5, 1.0, wave.tangent.y * 0.5));
     position.x -= normal.x * 0.7;
+    position.y += 0.1;
     position.z -= normal.z * 0.7;
 
     out.world_position = mfns::mesh_position_local_to_world(
@@ -98,26 +96,6 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     return out;
 }
 
-struct CurrentWave {
-    dir: vec2<f32>,
-    rot: vec2<f32>,
-    period: f32,
-    speed: f32,
-}
-
-const currents: array<CurrentWave, 1> = array<CurrentWave, 1>(
-    CurrentWave(vec2<f32>(0.5, 0.7), vec2<f32>(0.8, 0.1), 1., 0.5),
-);
-
-// Calculates wave value and its derivative,
-// for the wave direction, position in space, wave frequency and time
-fn wavedx(position: vec2<f32>, direction: vec2<f32>, frequency: f32, timeshift: f32) -> vec2<f32> {
-  let x = dot(direction, position) * frequency + timeshift;
-  let wave = exp(sin(x) - 1.0);
-  let dx = wave * cos(x);
-  return vec2(wave, -dx);
-}
-
 @fragment
 fn fragment(
     @builtin(front_facing) is_front: bool,
@@ -132,30 +110,12 @@ fn fragment(
     var chop = vec3<f32>(0.);
 
 #ifdef FRAGMENT_WAVES
-    var iter: f32 = 0.;
-    var frequency = 2.0;
-    var time_mult = 2.0;
-    var weight = 0.2;
-    for (var i = 0; i < 8; i++) {
-        let p: vec2<f32> = vec2(sin(iter), cos(iter));
-        let w = wavedx(uv, p, frequency, globals.time * time_mult);
-        chop.x += w.x * weight;
-        chop.z += w.y * weight;
-
-        frequency *= 1.18;
-        time_mult *= 1.07;
-        weight *= 0.82;
-        iter += 1232.399963;
-    }
-    normal = normalize(normal + chop);
-#endif
-#ifdef FRAGMENT_WAVES_2
     var d = 1. - min(1., length(uv) / 16.);
-    var motion = vec2(d, 0.);
+    var motion = vec2(0., 0.);
     var iter: f32 = 1.;
     var frequency = 0.05;
-    var time_mult = 0.9;
-    var weight = .1;
+    var time_mult = 0.4;
+    var weight = .07;
     for (var i = 0; i < 12; i++) {
         let s = sin(iter);
         let c = cos(iter);
@@ -169,8 +129,8 @@ fn fragment(
             n - textureSample(noise, noise_sampler, fract(p + vec2<f32>(0., 1.0 / 16.0))).x
         );
         chop += d * weight * w;
-        frequency *= 1.20;
-        // time_mult *= 1.07;
+        frequency *= 1.21;
+        time_mult *= 1.07;
         // weight *= 0.82;
         iter += 1232.399963;
     }
@@ -183,8 +143,12 @@ fn fragment(
     let angle = dot(view_vector, mesh.world_normal);
     let opacity = 0.2 + 1.6 * pow(1.0 - angle, 2.);
 
-    let sky_color = textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.2));
-    let color = mix(vec4(water_color.rgb, 0.9), sky_color, opacity - 0.1);
+    let sky_color = textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.1));
+    var color = mix(vec4(water_color.rgb, 0.9), sky_color * 0.5, opacity - 0.1);
+
+    var foam_level = 0.8 - pow(water_depth, 0.8); // + (n1 + n2 + n3 + n4 + n5);
+    foam_level = smoothstep(.3, .9, foam_level);
+    color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
 
     var pbr_input: fns::PbrInput = fns::pbr_input_new();
     pbr_input.material.base_color = color;
@@ -207,6 +171,10 @@ fn fragment(
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
     var out_color = fns::pbr(pbr_input);
-    out_color.a = opacity * clamp(water_depth * 4., 0., 1.);
+    pbr_input.material.perceptual_roughness = 0.6;
+    var out_color_2 = fns::pbr(pbr_input);
+    out_color = mix(out_color, out_color_2, 0.4);
+
+    out_color.a = opacity * clamp(water_depth * 8., 0., 1.);
     return tone_mapping(out_color, view.color_grading);
 }
