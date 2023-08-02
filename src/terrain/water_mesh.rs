@@ -13,7 +13,7 @@ use futures_lite::future;
 use crate::world::Realm;
 
 use super::{
-    compute_interpolated_mesh,
+    compute_interpolated_mesh, compute_smoothed_mesh,
     parcel::{Parcel, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT},
     square::SquareArray,
     terrain_map::TerrainMap,
@@ -120,6 +120,10 @@ fn compute_water_mesh(
     let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
     compute_interpolated_mesh(&mut ihm, shape_refs, shapes);
 
+    // `shm` stands for 'Smoothed height map`
+    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
+    compute_smoothed_mesh(&mut shm, &ihm);
+
     let shapes_table = shapes.lock().unwrap();
     let terrain_shape = shapes_table.get(shape_refs[4].shape as usize);
     if !terrain_shape.has_water {
@@ -139,9 +143,9 @@ fn compute_water_mesh(
         return match index_map.get(&UVec2::new(x as u32, z as u32)) {
             Some(&index) => index,
             None => {
-                let depth = ihm.get(x as i32 * 4 + 1, z as i32 * 4 + 1);
+                let depth = shm.get(x as i32 * 2, z as i32 * 2);
                 let index = position.len() as u32;
-                position.push([x as f32, WATER_HEIGHT, z as f32]);
+                position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
                 normal.push(n.to_array());
                 depth_motion.push([depth as f32 * -HEIGHT_SCALE, 0., 0.]);
                 index
@@ -151,10 +155,10 @@ fn compute_water_mesh(
 
     for z in 0..PARCEL_WATER_RESOLUTION {
         for x in 0..PARCEL_WATER_RESOLUTION {
-            let da = ihm.get(x as i32 * 4 + 1, z as i32 * 4);
-            let db = ihm.get(x as i32 * 4 + 2, z as i32 * 4);
-            let dc = ihm.get(x as i32 * 4 + 2, z as i32 * 4 + 2);
-            let dd = ihm.get(x as i32 * 4 + 1, z as i32 * 4 + 2);
+            let da = shm.get(x as i32 * 2, z as i32 * 2);
+            let db = shm.get(x as i32 * 2 + 1, z as i32 * 2);
+            let dc = shm.get(x as i32 * 2 + 1, z as i32 * 2 + 1);
+            let dd = shm.get(x as i32 * 2, z as i32 * 2 + 1);
             if da < 0. || db < 0. || dc < 0. || dd < 0. {
                 let a = vertex_at(x, z);
                 let b = vertex_at(x, z + 1);

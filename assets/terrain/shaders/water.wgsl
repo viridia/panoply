@@ -1,5 +1,5 @@
-#define VERTEX_WAVES 1
 #define FRAGMENT_WAVES 1
+#define VERTEX_WAVES 1
 
 #import bevy_pbr::mesh_view_bindings    globals
 #import bevy_pbr::mesh_view_bindings    view
@@ -12,14 +12,22 @@
 var<uniform> water_color: vec4<f32>;
 
 @group(1) @binding(2)
-var noise: texture_2d<f32>;
-@group(1) @binding(3)
-var noise_sampler: sampler;
+var<uniform> sky_color: array<vec4<f32>, 2>;
 
+@group(1) @binding(3)
+var waves: texture_2d<f32>;
 @group(1) @binding(4)
-var sky: texture_2d<f32>;
+var waves_sampler: sampler;
+
 @group(1) @binding(5)
+var sky: texture_2d<f32>;
+@group(1) @binding(6)
 var sky_sampler: sampler;
+
+@group(1) @binding(7)
+var foam: texture_2d<f32>;
+@group(1) @binding(8)
+var foam_sampler: sampler;
 
 struct Vertex {
     @location(0) position: vec3<f32>,
@@ -103,8 +111,8 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let uv = vec2<f32>(mesh.world_position.xz);
 
-    //   let water_depth = pow(max(0., mesh.world_position.y - mesh.depth), 0.5) * 2.;
     let water_depth = mesh.world_position.y + mesh.depth;
+    // let water_depth = pow(max(0., mesh.world_position.y + mesh.depth), 0.5) * 2.;
 
     var normal = mesh.world_normal;
     var chop = vec3<f32>(0.);
@@ -115,18 +123,18 @@ fn fragment(
     var iter: f32 = 1.;
     var frequency = 0.05;
     var time_mult = 0.4;
-    var weight = .07;
+    var weight = .02;
     for (var i = 0; i < 12; i++) {
         let s = sin(iter);
         let c = cos(iter);
         let w = dot(motion, vec2(c, s)) + 1.;
         let m = mat2x2(c, s, -s, c);
         let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
-        let n = textureSample(noise, noise_sampler, fract(p)).x;
+        let n = textureSample(waves, waves_sampler, fract(p)).x;
         let d = vec3<f32>(
-            n - textureSample(noise, noise_sampler, fract(p + vec2<f32>(1.0 / 16.0, 0.))).x,
+            n - textureSample(waves, waves_sampler, fract(p + vec2<f32>(1.0 / 16.0, 0.))).x,
             0.,
-            n - textureSample(noise, noise_sampler, fract(p + vec2<f32>(0., 1.0 / 16.0))).x
+            n - textureSample(waves, waves_sampler, fract(p + vec2<f32>(0., 1.0 / 16.0))).x
         );
         chop += d * weight * w;
         frequency *= 1.21;
@@ -143,17 +151,24 @@ fn fragment(
     let angle = dot(view_vector, mesh.world_normal);
     let opacity = 0.2 + 1.6 * pow(1.0 - angle, 2.);
 
-    let sky_color = textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.1));
-    var color = mix(vec4(water_color.rgb, 0.9), sky_color * 0.5, opacity - 0.1);
+    let sky_color = mix(
+        sky_color[0],
+        sky_color[1],
+        textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
+    var color = mix(vec4(water_color.rgb, 1.0), sky_color * 0.5, opacity * 0.5 - 0.1);
 
-    var foam_level = 0.8 - pow(water_depth, 0.8); // + (n1 + n2 + n3 + n4 + n5);
+    let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
+    let n2 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(-0.01, 0.03))).g;
+    let n3 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.03, -0.02))).g;
+    var foam_level = 0.8 - pow(water_depth * 2.0 + 0.3, 0.6) + (n1 + n2 + n3) * 0.3; // + (n1 + n2 + n3 + n4 + n5);
     foam_level = smoothstep(.3, .9, foam_level);
+
     color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
 
     var pbr_input: fns::PbrInput = fns::pbr_input_new();
     pbr_input.material.base_color = color;
     pbr_input.material.perceptual_roughness = 0.1;
-    pbr_input.material.metallic = 0.5;
+    pbr_input.material.metallic = 0.;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
     pbr_input.world_normal = fns::prepare_world_normal(
@@ -175,6 +190,6 @@ fn fragment(
     var out_color_2 = fns::pbr(pbr_input);
     out_color = mix(out_color, out_color_2, 0.4);
 
-    out_color.a = opacity * clamp(water_depth * 8., 0., 1.);
+    out_color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);
     return tone_mapping(out_color, view.color_grading);
 }

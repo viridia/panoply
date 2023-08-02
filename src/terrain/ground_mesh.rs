@@ -100,19 +100,7 @@ fn compute_ground_mesh(
 
     // `shm` stands for 'Smoothed height map`
     let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
-
-    // Compute smoothed mesh
-    for z in 0..PARCEL_MESH_STRIDE {
-        for x in 0..PARCEL_MESH_STRIDE {
-            let h4 = ihm.get(x, z + 1)
-                + ihm.get(x + 2, z + 1)
-                + ihm.get(x + 1, z)
-                + ihm.get(x + 1, z + 2);
-
-            shm.set(x, z, h4 * 0.25);
-            // shm[dstIndex] = h4 * 0.25 + hOffset[dstIndex];
-        }
-    }
+    compute_smoothed_mesh(&mut shm, &ihm);
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
@@ -217,6 +205,21 @@ pub fn compute_interpolated_mesh(
             if w > 0. {
                 *ihm.get_mut_ref(x, z) /= w;
             }
+        }
+    }
+}
+
+pub fn compute_smoothed_mesh(shm: &mut SquareArray<f32>, ihm: &SquareArray<f32>) {
+    // Compute smoothed mesh
+    for z in 0..PARCEL_MESH_STRIDE {
+        for x in 0..PARCEL_MESH_STRIDE {
+            let h4 = ihm.get(x, z + 1)
+                + ihm.get(x + 2, z + 1)
+                + ihm.get(x + 1, z)
+                + ihm.get(x + 1, z + 2);
+
+            shm.set(x, z, h4 * 0.25);
+            // shm[dstIndex] = h4 * 0.25 + hOffset[dstIndex];
         }
     }
 }

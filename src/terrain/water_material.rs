@@ -21,13 +21,20 @@ pub struct WaterMaterial {
     #[uniform(1)]
     pub water_color: Color,
 
-    #[texture(2)]
-    #[sampler(3)]
-    pub noise: Handle<Image>,
+    #[uniform(2)]
+    pub sky_color: [Color; 2],
 
-    #[texture(4)]
-    #[sampler(5)]
+    #[texture(3)]
+    #[sampler(4)]
+    pub waves: Handle<Image>,
+
+    #[texture(5)]
+    #[sampler(6)]
     pub sky: Handle<Image>,
+
+    #[texture(7)]
+    #[sampler(8)]
+    pub foam: Handle<Image>,
 }
 
 impl Material for WaterMaterial {
@@ -71,7 +78,9 @@ pub fn create_water_material(
 ) {
     resource.handle = materials.add(WaterMaterial {
         water_color: Color::rgb(0.0, 0.3, 0.0),
-        noise: asset_server.load("terrain/textures/water-waves-2.png"),
-        sky: asset_server.load("terrain/textures/water-sky.png"),
+        sky_color: [Color::rgb(0.5, 0.6, 0.8), Color::rgb(0.8, 0.9, 1.0)],
+        waves: asset_server.load("terrain/textures/water-waves-2.png"),
+        sky: asset_server.load("terrain/textures/water-clouds.png"),
+        foam: asset_server.load("terrain/textures/noise.png"),
     });
 }
