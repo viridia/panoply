@@ -1,13 +1,15 @@
 #![allow(dead_code)]
 mod biome;
+mod flora;
 mod ground_material;
 mod ground_mesh;
 mod parcel;
 mod parcel_cache;
 mod plugin;
+mod rotator;
 mod square;
+mod terrain_contours;
 mod terrain_map;
-mod terrain_shapes;
 mod water_material;
 mod water_mesh;
 

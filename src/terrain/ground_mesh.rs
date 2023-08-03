@@ -3,10 +3,11 @@ use std::sync::{Arc, Mutex};
 use crate::world::Realm;
 
 use super::{
-    parcel::{Parcel, ParcelContourChanged, ShapeRef, ADJACENT_COUNT},
-    square::{RotatingSquareArray, SquareArray},
+    parcel::{Parcel, ParcelContourChanged, ShapeRef, ADJACENT_COUNT, CENTER_SHAPE},
+    rotator::RotatingSquareArray,
+    square::SquareArray,
+    terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    terrain_shapes::{TerrainShapesAsset, TerrainShapesHandle, TerrainShapesTable},
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
     PARCEL_SIZE, PARCEL_SIZE_F,
 };
@@ -18,8 +19,12 @@ use bevy::{
 };
 use futures_lite::future;
 
+pub struct GroundMeshResult {
+    mesh: Mesh,
+}
+
 #[derive(Component)]
-pub struct ComputeGroundMeshTask(Task<Mesh>);
+pub struct ComputeGroundMeshTask(Task<Option<GroundMeshResult>>);
 
 pub const HEIGHT_SCALE: f32 = 0.5;
 
@@ -29,8 +34,8 @@ pub fn gen_ground_meshes(
     mut query: Query<(Entity, &mut Parcel), With<ParcelContourChanged>>,
     realms_query: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
-    ts_handle: Res<TerrainShapesHandle>,
-    ts_assets: Res<Assets<TerrainShapesAsset>>,
+    ts_handle: Res<TerrainContoursHandle>,
+    ts_assets: Res<Assets<TerrainContoursTableAsset>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
@@ -44,14 +49,14 @@ pub fn gen_ground_meshes(
             return;
         }
 
-        let shapes = ts_assets
+        let contours = ts_assets
             .get(&ts_handle.0)
             .expect("asset shapes required")
             .0
             .clone();
 
-        let shape_refs = parcel.shapes;
-        let task = pool.spawn(async move { compute_ground_mesh(shape_refs, &shapes) });
+        let shape_refs = parcel.contours;
+        let task = pool.spawn(async move { compute_ground_mesh(shape_refs, &contours) });
         commands
             .entity(entity)
             .insert(ComputeGroundMeshTask(task))
@@ -71,19 +76,21 @@ pub fn insert_ground_meshes(
         let realm = realms_query.get(parcel.realm);
         if realm.is_ok() {
             let (_, terrain_map) = realm.unwrap();
-            if let Some(mesh) = future::block_on(future::poll_once(&mut task.0)) {
-                // Add our new PbrBundle of components to our tagged entity
-                commands.entity(entity).insert(MaterialMeshBundle {
-                    mesh: meshes.add(mesh),
-                    material: terrain_map.ground_material.clone(),
-                    transform: Transform::from_xyz(
-                        parcel.coords.x as f32 * PARCEL_SIZE_F,
-                        0.,
-                        parcel.coords.y as f32 * PARCEL_SIZE_F,
-                    ),
-                    visibility: Visibility::Visible,
-                    ..default()
-                });
+            if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
+                if let Some(ground_result) = task_result {
+                    // Add our new PbrBundle of components to our tagged entity
+                    commands.entity(entity).insert(MaterialMeshBundle {
+                        mesh: meshes.add(ground_result.mesh),
+                        material: terrain_map.ground_material.clone(),
+                        transform: Transform::from_xyz(
+                            parcel.coords.x as f32 * PARCEL_SIZE_F,
+                            0.,
+                            parcel.coords.y as f32 * PARCEL_SIZE_F,
+                        ),
+                        visibility: Visibility::Visible,
+                        ..default()
+                    });
+                }
                 commands.entity(entity).remove::<ComputeGroundMeshTask>();
             }
         }
@@ -92,11 +99,17 @@ pub fn insert_ground_meshes(
 
 fn compute_ground_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
-    shapes: &Arc<Mutex<TerrainShapesTable>>,
-) -> Mesh {
+    shapes: &Arc<Mutex<TerrainContoursTable>>,
+) -> Option<GroundMeshResult> {
+    let shapes_table = shapes.lock().unwrap();
+    let terrain_shape = shapes_table.get(shape_refs[CENTER_SHAPE].shape as usize);
+    if !terrain_shape.has_terrain {
+        return None;
+    }
+
     // `ihm` stands for 'Interpolated height map.'
     let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
-    compute_interpolated_mesh(&mut ihm, shape_refs, shapes);
+    compute_interpolated_mesh(&mut ihm, shape_refs, &shapes_table);
 
     // `shm` stands for 'Smoothed height map`
     let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
@@ -164,18 +177,17 @@ fn compute_ground_mesh(
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.set_indices(Some(Indices::U32(indices)));
     mesh.compute_aabb();
-    mesh
+    Some(GroundMeshResult { mesh })
 }
 
 pub fn compute_interpolated_mesh(
     // `ihm` stands for 'Interpolated height map.'
     mut ihm: &mut SquareArray<f32>,
     shape_refs: [ShapeRef; ADJACENT_COUNT],
-    shapes: &Arc<Mutex<TerrainShapesTable>>,
+    shapes_table: &TerrainContoursTable,
 ) {
     let mut weights = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
 
-    let shapes_table = shapes.lock().unwrap();
     let center = shapes_table.get(shape_refs[4].shape as usize);
     if !center.has_terrain {
         println!("No terrain");

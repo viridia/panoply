@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use bevy::{
     asset::ChangeWatcher,
-    core_pipeline::tonemapping::Tonemapping,
+    core_pipeline::{clear_color::ClearColorConfig, tonemapping::Tonemapping},
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
@@ -18,6 +18,7 @@ extern crate directories;
 
 mod diagnostics;
 mod editor;
+mod instancing;
 mod random;
 mod settings;
 mod terrain;
@@ -375,7 +376,7 @@ fn setup(
             },
             camera_3d: Camera3d {
                 // don't clear on the second camera because the first camera already cleared the window
-                // clear_color: ClearColorConfig::None,
+                clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
             },
             tonemapping: Tonemapping::AcesFitted,
@@ -423,8 +424,8 @@ fn uv_debug_texture() -> Image {
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {
     for (entity, realm) in realms.iter() {
-        if realm.name == "overland" {
-            println!("Navigating to [overland]");
+        if realm.name == "playground" {
+            println!("Navigating to [playground]");
             viewpoint.realm = Some(entity)
         }
     }

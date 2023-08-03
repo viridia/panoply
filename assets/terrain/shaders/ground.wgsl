@@ -35,7 +35,16 @@ var<uniform> water_color: vec4<f32>;
 @group(1) @binding(12)
 var<uniform> realm_offset: vec2<f32>;
 
-const NUM_GROUND_TYPES = 8u;
+const NUM_GROUND_TYPES = 9u;
+const GT_ROCK = 0u;
+const GT_DIRT = 1u;
+const GT_GRASS = 2u;
+const GT_MOSS = 3u;
+const GT_TAIGA = 4u;
+const GT_SAND = 5u;
+const GT_TUNDRA = 6u;
+const GT_SNOW = 7u;
+const GT_CHAPARRAL = 8u;
 
 const UV_ROT = mat2x2<f32>(
     vec2<f32>(0.8775825618903728, 0.479425538604203),

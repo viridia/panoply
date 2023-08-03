@@ -16,8 +16,8 @@ use super::{
     compute_interpolated_mesh, compute_smoothed_mesh,
     parcel::{Parcel, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT},
     square::SquareArray,
+    terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    terrain_shapes::{TerrainShapesAsset, TerrainShapesHandle, TerrainShapesTable},
     water_material::{WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION},
     HEIGHT_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
     PARCEL_WATER_VERTEX_COUNT,
@@ -31,8 +31,8 @@ pub fn gen_water_meshes(
     mut query: Query<(Entity, &mut Parcel), With<ParcelWaterChanged>>,
     realms_query: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
-    ts_handle: Res<TerrainShapesHandle>,
-    ts_assets: Res<Assets<TerrainShapesAsset>>,
+    ts_handle: Res<TerrainContoursHandle>,
+    ts_assets: Res<Assets<TerrainContoursTableAsset>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
@@ -52,7 +52,7 @@ pub fn gen_water_meshes(
             .0
             .clone();
 
-        let shape_refs = parcel.shapes;
+        let shape_refs = parcel.contours;
         let task = pool.spawn(async move { compute_water_mesh(shape_refs, &shapes) });
         commands
             .entity(entity)
@@ -114,21 +114,21 @@ pub fn insert_water_meshes(
 
 fn compute_water_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
-    shapes: &Arc<Mutex<TerrainShapesTable>>,
+    shapes: &Arc<Mutex<TerrainContoursTable>>,
 ) -> Option<Mesh> {
-    // `ihm` stands for 'Interpolated height map.'
-    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
-    compute_interpolated_mesh(&mut ihm, shape_refs, shapes);
-
-    // `shm` stands for 'Smoothed height map`
-    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
-    compute_smoothed_mesh(&mut shm, &ihm);
-
     let shapes_table = shapes.lock().unwrap();
     let terrain_shape = shapes_table.get(shape_refs[4].shape as usize);
     if !terrain_shape.has_water {
         return None;
     }
+
+    // `ihm` stands for 'Interpolated height map.'
+    let mut ihm = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
+    compute_interpolated_mesh(&mut ihm, shape_refs, &shapes_table);
+
+    // `shm` stands for 'Smoothed height map`
+    let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
+    compute_smoothed_mesh(&mut shm, &ihm);
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);

@@ -8,15 +8,17 @@ use bevy::{
 
 use super::{
     biome::{load_biomes, BiomesAsset, BiomesHandle, BiomesLoader},
+    flora::{gen_flora, insert_flora},
     gen_ground_meshes,
     ground_material::GroundMaterial,
     insert_ground_meshes, spawn_parcels,
+    terrain_contours::{
+        load_terrain_shapes, TerrainContoursHandle, TerrainContoursTableAsset,
+        TerrainContoursTableLoader,
+    },
     terrain_map::{
         insert_terrain_maps, load_terrain_maps, update_ground_material, update_terrain_maps,
         TerrainMapAsset, TerrainMapLoader, TerrainMapsHandleResource,
-    },
-    terrain_shapes::{
-        load_terrain_shapes, TerrainShapesAsset, TerrainShapesHandle, TerrainShapesLoader,
     },
     water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
     water_mesh::{gen_water_meshes, insert_water_meshes},
@@ -28,14 +30,14 @@ pub struct TerrainPlugin;
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ParcelCache::new())
-            .add_asset_loader(TerrainShapesLoader)
+            .add_asset_loader(TerrainContoursTableLoader)
             .add_asset_loader(TerrainMapLoader)
             .add_asset_loader(BiomesLoader)
-            .add_asset::<TerrainShapesAsset>()
+            .add_asset::<TerrainContoursTableAsset>()
             .add_asset::<TerrainMapAsset>()
             .add_asset::<BiomesAsset>()
             .init_resource::<BiomesHandle>()
-            .init_resource::<TerrainShapesHandle>()
+            .init_resource::<TerrainContoursHandle>()
             .init_resource::<TerrainMapsHandleResource>()
             .init_resource::<WaterMaterialResource>()
             .add_plugins((
@@ -57,8 +59,10 @@ impl Plugin for TerrainPlugin {
                     spawn_parcels,
                     gen_ground_meshes,
                     gen_water_meshes,
+                    gen_flora,
                     insert_ground_meshes,
                     insert_water_meshes,
+                    insert_flora,
                     insert_terrain_maps,
                     update_terrain_maps,
                     update_ground_material,

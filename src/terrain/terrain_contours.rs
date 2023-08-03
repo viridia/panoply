@@ -1,3 +1,4 @@
+use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 
 use std::sync::{Arc, Mutex};
@@ -15,8 +16,30 @@ use serde::{Deserialize, Serialize};
 const HEIGHT_STRIDE: usize = (PARCEL_SIZE + 1) as usize;
 const FLORA_STRIDE: usize = PARCEL_SIZE as usize;
 
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, Copy, Clone)]
+#[repr(u8)]
+pub enum FloraType {
+    #[default]
+    None = 0,
+    RandomTree = 1,
+    RandomShrub = 2,
+    RandomHerb = 3,
+}
+
+impl FloraType {
+    fn from_u8(val: u8) -> FloraType {
+        match val {
+            0 => FloraType::None,
+            1 => FloraType::RandomTree,
+            2 => FloraType::RandomShrub,
+            3 => FloraType::RandomHerb,
+            _ => panic!("Invalid flora type"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-struct TerrainShapeSer {
+struct TerrainContourSer {
     pub id: usize,
 
     pub height: serde_bytes::ByteBuf,
@@ -31,15 +54,11 @@ struct TerrainShapeSer {
     pub has_water: bool,
 }
 
-pub struct TerrainShape {
+pub struct TerrainContour {
     pub id: usize,
-
     pub height: SquareArray<i8>,
-
-    pub flora: SquareArray<u8>,
-
+    pub flora: SquareArray<FloraType>,
     pub has_terrain: bool,
-
     pub has_water: bool,
 }
 
@@ -64,23 +83,23 @@ pub struct TerrainShape {
 //   }
 // }
 
-pub struct TerrainShapesTable {
+pub struct TerrainContoursTable {
     /// Array of shapes, in the order that they appear in the editor's shape catalog.
-    shapes: Vec<TerrainShape>,
+    shapes: Vec<TerrainContour>,
 
     /// Array, indexed by shape id, which returns the index of the shape in the shapes list.
     by_id: Vec<usize>,
 }
 
-impl TerrainShapesTable {
+impl TerrainContoursTable {
     /// Get a reference to a terrain shape by it's id.
-    pub fn get(&self, id: usize) -> &TerrainShape {
+    pub fn get(&self, id: usize) -> &TerrainContour {
         assert!(id < self.by_id.len());
         &self.shapes[self.by_id[id]]
     }
 
     /// Get a mutable reference to a terrain shape by it's id.
-    pub fn _get_mut(&mut self, id: usize) -> &TerrainShape {
+    pub fn _get_mut(&mut self, id: usize) -> &TerrainContour {
         assert!(id < self.by_id.len());
         &mut self.shapes[self.by_id[id]]
     }
@@ -88,30 +107,30 @@ impl TerrainShapesTable {
 
 #[derive(TypeUuid, TypePath)]
 #[uuid = "059f4368-4ad1-48f4-9151-9b75be1ebfb6"]
-pub struct TerrainShapesAsset(pub Arc<Mutex<TerrainShapesTable>>);
+pub struct TerrainContoursTableAsset(pub Arc<Mutex<TerrainContoursTable>>);
 
 #[derive(Default)]
-pub struct TerrainShapesLoader;
+pub struct TerrainContoursTableLoader;
 
-impl AssetLoader for TerrainShapesLoader {
+impl AssetLoader for TerrainContoursTableLoader {
     fn load<'a>(
         &'a self,
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let shapes_ser: Vec<TerrainShapeSer> =
+            let shapes_ser: Vec<TerrainContourSer> =
                 rmps::from_slice(bytes).expect("unable to decode terrain shape");
-            let mut res = TerrainShapesTable {
+            let mut res = TerrainContoursTable {
                 shapes: Vec::with_capacity(shapes_ser.len()),
                 by_id: Vec::with_capacity(shapes_ser.len()),
             };
 
             for (index, shape) in shapes_ser.iter().enumerate() {
-                let mut sh = TerrainShape {
+                let mut sh = TerrainContour {
                     id: shape.id,
                     height: SquareArray::<i8>::new(HEIGHT_STRIDE, 0),
-                    flora: SquareArray::<u8>::new(FLORA_STRIDE, 0),
+                    flora: SquareArray::<FloraType>::new(FLORA_STRIDE, FloraType::None),
                     has_terrain: shape.has_terrain,
                     has_water: shape.has_water,
                 };
@@ -120,7 +139,13 @@ impl AssetLoader for TerrainShapesLoader {
                     height[i] = shape.height[i] as i8;
                 }
                 sh.height.from_slice(height.as_slice());
-                sh.flora.from_slice(shape.flora.as_slice());
+                let mut flora = Vec::<FloraType>::with_capacity(shape.flora.len());
+                flora.resize(shape.flora.len(), FloraType::None);
+                for i in 0..shape.flora.len() {
+                    flora[i] = FloraType::from_u8(shape.flora[i]);
+                }
+                flora.resize(shape.flora.len(), FloraType::None);
+                sh.flora.from_slice(flora.as_slice());
                 res.shapes.push(sh);
                 if res.by_id.len() <= shape.id {
                     res.by_id.resize(shape.id + 1, 0);
@@ -128,7 +153,7 @@ impl AssetLoader for TerrainShapesLoader {
                 res.by_id[shape.id] = index;
             }
 
-            load_context.set_default_asset(LoadedAsset::new(TerrainShapesAsset(Arc::new(
+            load_context.set_default_asset(LoadedAsset::new(TerrainContoursTableAsset(Arc::new(
                 Mutex::new(res),
             ))));
             Ok(())
@@ -141,9 +166,9 @@ impl AssetLoader for TerrainShapesLoader {
 }
 
 #[derive(Resource, Default)]
-pub struct TerrainShapesHandle(pub Handle<TerrainShapesAsset>);
+pub struct TerrainContoursHandle(pub Handle<TerrainContoursTableAsset>);
 
-pub fn load_terrain_shapes(server: Res<AssetServer>, mut handle: ResMut<TerrainShapesHandle>) {
+pub fn load_terrain_shapes(server: Res<AssetServer>, mut handle: ResMut<TerrainContoursHandle>) {
     handle.0 = server.load("terrain/terrain.contours");
 }
 

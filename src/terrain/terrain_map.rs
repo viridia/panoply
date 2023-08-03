@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::world::Realm;
 
 use super::{
+    biome::{BiomesAsset, BiomesHandle},
     ground_material::GroundMaterial,
     parcel::{ShapeRef, ADJACENT_COUNT},
 };
@@ -39,11 +40,25 @@ pub struct TerrainMapAsset {
 }
 
 impl TerrainMapAsset {
-    // Return the shape id at the given parcel coords
+    /// Returns true if the terrain map includes the given coordinates. The bounds is
+    /// considered a half-open interval: a point at `min` is considered inside, at `max` is
+    /// considered outside.
+    pub fn contains_pt(&self, pt: IVec2) -> bool {
+        pt.x >= self.bounds.min.x
+            && pt.x < self.bounds.max.x
+            && pt.y >= self.bounds.min.y
+            && pt.y < self.bounds.max.y
+    }
+
+    /// Return the shape id and rotation at the given parcel coords
     pub fn shape_at(&self, pt: IVec2) -> ShapeRef {
-        if self.bounds.contains(pt) {
-            let d = self.shapes[((pt.y - self.bounds.min.y) * self.bounds.width() + pt.x
-                - self.bounds.min.x) as usize];
+        if self.contains_pt(pt) {
+            let index = ((pt.y - self.bounds.min.y) * self.bounds.width() + pt.x
+                - self.bounds.min.x) as usize;
+            if index >= self.shapes.len() {
+                println!("OOB: {:?} {:?}", pt, self.bounds);
+            }
+            let d = self.shapes[index];
             let shape = d >> 2;
             let rotation = (d & 3) as u8;
             return ShapeRef { shape, rotation };
@@ -54,13 +69,32 @@ impl TerrainMapAsset {
         }
     }
 
-    // Return the shape id at the given parcel coords as well as all neighboring parcels.
+    /// Return the shape id at the given parcel coords as well as all neighboring parcels.
     pub fn adjacent_shapes(&self, out: &mut [ShapeRef; ADJACENT_COUNT], pt: IVec2) {
-        for z in [-1, -0, 1] {
-            for x in [-1, -0, 1] {
+        for z in [-1, 0, 1] {
+            for x in [-1, 0, 1] {
                 out[(z * 3 + x + 4) as usize] = self.shape_at(pt + IVec2::new(x, z))
             }
         }
+    }
+
+    /// Return the biome index at the given parcel coords.
+    pub fn biome_at(&self, pt: IVec2) -> u8 {
+        if self.contains_pt(pt) {
+            return self.biomes[((pt.y - self.bounds.min.y) * self.bounds.width() + pt.x
+                - self.bounds.min.x) as usize];
+        }
+        self.default_biome
+    }
+
+    /// Return the biomes at the 4 corners of the parcel.
+    pub fn adjacent_biomes(&self, pt: IVec2) -> [u8; 4] {
+        [
+            self.biome_at(pt + IVec2::new(0, 0)),
+            self.biome_at(pt + IVec2::new(1, 0)),
+            self.biome_at(pt + IVec2::new(0, 1)),
+            self.biome_at(pt + IVec2::new(1, 1)),
+        ]
     }
 }
 
@@ -115,6 +149,7 @@ pub fn load_terrain_maps(server: Res<AssetServer>, mut handle: ResMut<TerrainMap
     handle.0 = server.load_folder("terrain/maps").unwrap();
 }
 
+/** Discover terrain map assets, load them, and bind them to realm entities. */
 pub fn insert_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
@@ -136,6 +171,7 @@ pub fn insert_terrain_maps(
     }
 }
 
+/** React when terrain map assets change and update the realm entities. */
 pub fn update_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
@@ -198,43 +234,52 @@ pub fn update_ground_material(
     mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
     mut images: ResMut<Assets<Image>>,
-    terrain_map_assets: Res<Assets<TerrainMapAsset>>,
+    bm_handle: Res<BiomesHandle>,
+    bm_assets: Res<Assets<BiomesAsset>>,
+    tm_assets: Res<Assets<TerrainMapAsset>>,
 ) {
-    for (entity, realm, terrain) in query.iter_mut() {
-        if let Some(terr) = terrain_map_assets.get(&terrain.handle) {
-            if let Some(m) = materials.get_mut(&terrain.ground_material) {
-                println!("Updating material {}", realm.name);
+    if let Some(biomes_asset) = bm_assets.get(&bm_handle.0) {
+        if let Ok(biomes) = biomes_asset.0.try_lock() {
+            let biomes_table = &biomes.biomes;
+            for (entity, realm, terrain) in query.iter_mut() {
+                if let Some(terr) = tm_assets.get(&terrain.handle) {
+                    if let Some(m) = materials.get_mut(&terrain.ground_material) {
+                        println!("Updating material {}", realm.name);
 
-                if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
-                    let mut texture_data = Vec::<u8>::new();
-                    let rows = terr.bounds.height() as usize;
-                    let stride = terr.bounds.width() as usize;
-                    texture_data.resize(rows * stride, 0);
-                    for z in 0..rows {
-                        for x in 0..stride {
-                            texture_data[z * stride + x] = if (x & 1) == 0 { 2 } else { 3 };
+                        if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
+                            let mut texture_data = Vec::<u8>::new();
+                            let rows = terr.bounds.height() as usize;
+                            let stride = terr.bounds.width() as usize;
+                            texture_data.resize(rows * stride, 0);
+                            for z in 0..rows {
+                                for x in 0..stride {
+                                    let bi = terr.biomes[z * stride + x];
+                                    let surface = biomes_table[bi as usize].surface;
+                                    texture_data[z * stride + x] = surface as u8;
+                                }
+                            }
+                            let mut res = Image::new_fill(
+                                Extent3d {
+                                    width: terr.bounds.width() as u32,
+                                    height: terr.bounds.height() as u32,
+                                    depth_or_array_layers: 1,
+                                },
+                                TextureDimension::D2,
+                                &texture_data,
+                                TextureFormat::R8Uint,
+                            );
+                            res.sampler_descriptor = ImageSampler::nearest();
+                            m.biomes = images.add(res);
                         }
+
+                        m.realm_offset =
+                            Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
                     }
-                    let mut res = Image::new_fill(
-                        Extent3d {
-                            width: terr.bounds.width() as u32,
-                            height: terr.bounds.height() as u32,
-                            depth_or_array_layers: 1,
-                        },
-                        TextureDimension::D2,
-                        &texture_data,
-                        TextureFormat::R8Uint,
-                    );
-                    res.sampler_descriptor = ImageSampler::nearest();
-                    m.biomes = images.add(res);
                 }
 
-                m.realm_offset =
-                    Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
+                commands.entity(entity).remove::<TerrainMapChanged>();
             }
         }
-
-        commands.entity(entity).remove::<TerrainMapChanged>();
     }
 }
 

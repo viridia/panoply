@@ -1,6 +1,4 @@
-pub trait Choice {
-    fn probability(&self) -> f32;
-}
+use super::Choice;
 
 pub struct WeightedRandom<T: Choice> {
     choices: Vec<T>,
@@ -8,6 +6,19 @@ pub struct WeightedRandom<T: Choice> {
 }
 
 impl<T: Choice> WeightedRandom<T> {
+    pub fn choice(choices: &[T], selection: f32) -> Option<&T> {
+        let total = choices.iter().fold(0., |acc, p| acc + p.probability());
+        let mut i = selection * total;
+        for entry in choices.iter() {
+            let p = entry.probability();
+            if i <= p {
+                return Some(&entry);
+            }
+            i -= p;
+        }
+        return None;
+    }
+
     pub fn new(choices: Vec<T>) -> WeightedRandom<T> {
         let total = choices.iter().fold(0., |acc, p| acc + p.probability());
         Self { choices, total }

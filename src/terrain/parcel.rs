@@ -7,6 +7,7 @@ pub struct ParcelKey {
 }
 
 pub const ADJACENT_COUNT: usize = 9;
+pub const CENTER_SHAPE: usize = 4;
 
 // A reference to a terrain shape
 #[derive(Default, Copy, Clone, PartialEq, Eq)]
@@ -29,8 +30,10 @@ pub struct Parcel {
     pub realm: Entity,
     pub coords: IVec2,
     pub visible: bool,
-    pub shapes: [ShapeRef; ADJACENT_COUNT],
+    pub contours: [ShapeRef; ADJACENT_COUNT],
+    pub biomes: [u8; 4],
     pub water_entity: Option<Entity>,
+    pub flora_entity: Option<Entity>,
 }
 
 #[derive(Component)]

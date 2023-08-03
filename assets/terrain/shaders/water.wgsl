@@ -112,8 +112,6 @@ fn fragment(
     let uv = vec2<f32>(mesh.world_position.xz);
 
     let water_depth = mesh.world_position.y + mesh.depth;
-    // let water_depth = pow(max(0., mesh.world_position.y + mesh.depth), 0.5) * 2.;
-
     var normal = mesh.world_normal;
     var chop = vec3<f32>(0.);
 
@@ -123,7 +121,7 @@ fn fragment(
     var iter: f32 = 1.;
     var frequency = 0.05;
     var time_mult = 0.4;
-    var weight = .02;
+    var weight = .05;
     for (var i = 0; i < 12; i++) {
         let s = sin(iter);
         let c = cos(iter);

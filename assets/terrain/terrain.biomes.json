@@ -1,67 +1,70 @@
-{
-  "meadow": {
+[
+  {
+    "name": "meadow",
     "trees": [
       {
         "probability": 5,
-        "proto": "trees/temperate:poplar-green"
+        "proto": "terrain/models/temperate#poplar-green"
       },
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-green2"
+        "proto": "terrain/models/temperate#poplar-green2"
       },
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-orange"
+        "proto": "terrain/models/temperate#poplar-orange"
       },
       {
         "probability": 0.5,
-        "proto": "trees/temperate:poplar-yellow"
+        "proto": "terrain/models/temperate#poplar-yellow"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:leechgrass"
+        "proto": "shrubs#leechgrass"
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "shrubs:buckberry"
+        "proto": "shrubs#buckberry"
       },
       {
         "probability": 1,
-        "proto": "shrubs:eldenthorn"
+        "proto": "shrubs#eldenthorn"
       },
       {
         "probability": 1,
-        "proto": "shrubs:dreamsage"
+        "proto": "shrubs#dreamsage"
       },
       {
         "probability": 1,
-        "proto": "shrubs:whitespear"
+        "proto": "shrubs#whitespear"
       },
       {
         "probability": 1,
-        "proto": "shrubs:wracknettle"
+        "proto": "shrubs#wracknettle"
       }
     ],
-    "surface": "grass"
+    "surface": 2
   },
-  "underground": {
+  {
+    "name": "underground",
     "trees": [],
     "shrubs": [],
     "herbs": [],
-    "surface": "grass"
+    "surface": 0
   },
-  "desert": {
+  {
+    "name": "desert",
     "trees": [
       {
         "probability": 9
       },
       {
         "probability": 1,
-        "proto": "trees/desert:desert1"
+        "proto": "terrain/models/desert#desert1"
       }
     ],
     "shrubs": [
@@ -70,7 +73,7 @@
       },
       {
         "probability": 1,
-        "proto": "shrubs:scragbush"
+        "proto": "shrubs#scragbush"
       }
     ],
     "herbs": [
@@ -79,104 +82,108 @@
       },
       {
         "probability": 2,
-        "proto": "shrubs:whitespear"
+        "proto": "shrubs#whitespear"
       },
       {
         "probability": 1,
-        "proto": "shrubs:fireweed"
+        "proto": "shrubs#fireweed"
       }
     ],
-    "surface": "sand"
+    "surface": 5
   },
-  "arctic": {
+  {
+    "name": "arctic",
     "trees": [
       {
         "probability": 2,
-        "proto": "trees/arctic:pine-arctic1"
+        "proto": "terrain/models/arctic#pine-arctic1"
       },
       {
         "probability": 1,
-        "proto": "trees/arctic:pine-arctic2"
+        "proto": "terrain/models/arctic#pine-arctic2"
       },
       {
         "probability": 1,
-        "proto": "trees/arctic:pine-arctic3"
+        "proto": "terrain/models/arctic#pine-arctic3"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:scrubthistle"
+        "proto": "shrubs#scrubthistle"
       },
       {
         "probability": 2,
-        "proto": "shrubs:rimeslip"
+        "proto": "shrubs#rimeslip"
       }
     ],
     "herbs": [],
-    "surface": "snow"
+    "surface": 7
   },
-  "tundra": {
+  {
+    "name": "tundra",
     "trees": [
       {
         "probability": 2,
-        "proto": "trees/coniferous:pine-fluffy"
+        "proto": "terrain/models/coniferous#pine-fluffy"
       },
       {
         "probability": 2,
-        "proto": "trees/coniferous:pine-drooping"
+        "proto": "terrain/models/coniferous#pine-drooping"
       }
     ],
     "shrubs": [
       {
         "probability": 3,
-        "proto": "shrubs:scrubthistle"
+        "proto": "shrubs#scrubthistle"
       },
       {
         "probability": 1,
-        "proto": "shrubs:rimeslip"
+        "proto": "shrubs#rimeslip"
       }
     ],
     "herbs": [],
-    "surface": "tundra"
+    "surface": 6
   },
-  "taiga": {
+  {
+    "name": "taiga",
     "trees": [
       {
         "probability": 2,
-        "proto": "trees/coniferous:pine-fluffy"
+        "proto": "terrain/models/coniferous#pine-fluffy"
       },
       {
         "probability": 2,
-        "proto": "trees/coniferous:pine-drooping"
+        "proto": "terrain/models/coniferous#pine-drooping"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:scrubthistle"
+        "proto": "shrubs#scrubthistle"
       }
     ],
     "herbs": [],
-    "surface": "taiga"
+    "surface": 4
   },
-  "barren": {
+  {
+    "name": "barren",
     "trees": [
       {
         "probability": 2,
-        "proto": "trees/dead:dead1"
+        "proto": "terrain/models/dead#dead1"
       },
       {
         "probability": 1,
-        "proto": "trees/dead:dead2"
+        "proto": "terrain/models/dead#dead2"
       },
       {
         "probability": 1,
-        "proto": "trees/dead:dead3"
+        "proto": "terrain/models/dead#dead3"
       },
       {
         "probability": 0.5,
-        "proto": "trees/dead:dead4"
+        "proto": "terrain/models/dead#dead4"
       }
     ],
     "shrubs": [
@@ -185,162 +192,165 @@
       },
       {
         "probability": 1,
-        "proto": "shrubs:scragbush"
+        "proto": "shrubs#scragbush"
       }
     ],
     "herbs": [],
-    "surface": "dirt"
+    "surface": 1
   },
-  "forest": {
+  {
+    "name": "forest",
     "trees": [
       {
         "probability": 2,
-        "proto": "trees/temperate:hemlock1"
+        "proto": "terrain/models/temperate#hemlock1"
       },
       {
         "probability": 2,
-        "proto": "trees/temperate:hemlock2"
+        "proto": "terrain/models/temperate#hemlock2"
       },
       {
         "probability": 3,
-        "proto": "trees/temperate:hemlock3"
+        "proto": "terrain/models/temperate#hemlock3"
       },
       {
         "probability": 3,
-        "proto": "trees/temperate:hemlock4"
+        "proto": "terrain/models/temperate#hemlock4"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:leechgrass"
+        "proto": "shrubs#leechgrass"
       }
     ],
     "herbs": [],
-    "surface": "moss"
+    "surface": 3
   },
-  "meadow-light": {
+  {
+    "name": "meadow-light",
     "trees": [
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-ivory"
+        "proto": "terrain/models/temperate#poplar-ivory"
       },
       {
         "probability": 0.5,
-        "proto": "trees/temperate:poplar-green2"
+        "proto": "terrain/models/temperate#poplar-green2"
       },
       {
         "probability": 3,
-        "proto": "trees/temperate:poplar-orange"
+        "proto": "terrain/models/temperate#poplar-orange"
       },
       {
         "probability": 4,
-        "proto": "trees/temperate:poplar-yellow"
+        "proto": "terrain/models/temperate#poplar-yellow"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:leechgrass"
+        "proto": "shrubs#leechgrass"
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "shrubs:buckberry"
+        "proto": "shrubs#buckberry"
       },
       {
         "probability": 1,
-        "proto": "shrubs:eldenthorn"
+        "proto": "shrubs#eldenthorn"
       },
       {
         "probability": 1,
-        "proto": "shrubs:dreamsage"
+        "proto": "shrubs#dreamsage"
       },
       {
         "probability": 1,
-        "proto": "shrubs:whitespear"
+        "proto": "shrubs#whitespear"
       },
       {
         "probability": 1,
-        "proto": "shrubs:wracknettle"
+        "proto": "shrubs#wracknettle"
       }
     ],
-    "surface": "grass"
+    "surface": 2
   },
-  "meadow-dark": {
+  {
     "name": "meadow-dark",
     "trees": [
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-green"
+        "proto": "terrain/models/temperate#poplar-green"
       },
       {
         "probability": 0.5,
-        "proto": "trees/temperate:poplar-green2"
+        "proto": "terrain/models/temperate#poplar-green2"
       },
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-green3"
+        "proto": "terrain/models/temperate#poplar-green3"
       },
       {
         "probability": 0.5,
-        "proto": "trees/temperate:hemlock1"
+        "proto": "terrain/models/temperate#hemlock1"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:leechgrass"
+        "proto": "shrubs#leechgrass"
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "shrubs:buckberry"
+        "proto": "shrubs#buckberry"
       },
       {
         "probability": 1,
-        "proto": "shrubs:eldenthorn"
+        "proto": "shrubs#eldenthorn"
       },
       {
         "probability": 1,
-        "proto": "shrubs:dreamsage"
+        "proto": "shrubs#dreamsage"
       },
       {
         "probability": 1,
-        "proto": "shrubs:whitespear"
+        "proto": "shrubs#whitespear"
       },
       {
         "probability": 1,
-        "proto": "shrubs:wracknettle"
+        "proto": "shrubs#wracknettle"
       }
     ],
-    "surface": "grass"
+    "surface": 2
   },
-  "chaparral": {
+  {
+    "name": "chaparral",
     "trees": [
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-green"
+        "proto": "terrain/models/temperate#poplar-green"
       },
       {
         "probability": 1,
-        "proto": "trees/temperate:poplar-green2"
+        "proto": "terrain/models/temperate#poplar-green2"
       },
       {
         "probability": 3,
-        "proto": "trees/temperate:poplar-orange"
+        "proto": "terrain/models/temperate#poplar-orange"
       },
       {
         "probability": 5,
-        "proto": "trees/temperate:poplar-yellow"
+        "proto": "terrain/models/temperate#poplar-yellow"
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "shrubs:sticklebrush"
+        "proto": "shrubs#sticklebrush"
       }
     ],
     "herbs": [
@@ -349,21 +359,21 @@
       },
       {
         "probability": 1,
-        "proto": "shrubs:eldenthorn"
+        "proto": "shrubs#eldenthorn"
       },
       {
         "probability": 1,
-        "proto": "shrubs:dreamsage"
+        "proto": "shrubs#dreamsage"
       },
       {
         "probability": 1,
-        "proto": "shrubs:whitespear"
+        "proto": "shrubs#whitespear"
       },
       {
         "probability": 1,
-        "proto": "shrubs:wracknettle"
+        "proto": "shrubs#wracknettle"
       }
     ],
-    "surface": "chaparral"
+    "surface": 8
   }
-}
+]

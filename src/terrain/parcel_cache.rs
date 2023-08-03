@@ -7,7 +7,8 @@ use crate::{
 
 use super::{
     parcel::{
-        Parcel, ParcelContourChanged, ParcelKey, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT,
+        Parcel, ParcelContourChanged, ParcelFloraChanged, ParcelKey, ParcelWaterChanged, ShapeRef,
+        ADJACENT_COUNT,
     },
     terrain_map::{TerrainMap, TerrainMapAsset},
     PARCEL_SIZE_F,
@@ -87,17 +88,21 @@ pub fn spawn_parcels(
                         x,
                         z,
                     };
-                    let mut shapes: [ShapeRef; 9] = [ShapeRef::new(); ADJACENT_COUNT];
-                    terrain_map.adjacent_shapes(&mut shapes, IVec2::new(x, z));
+                    let mut contours: [ShapeRef; 9] = [ShapeRef::new(); ADJACENT_COUNT];
+                    terrain_map.adjacent_shapes(&mut contours, IVec2::new(x, z));
+                    let biomes = terrain_map.adjacent_biomes(IVec2::new(x, z));
                     let entity = parcel_cache.parcels.get(&key);
                     match entity {
                         Some(entity) => {
                             if let Ok(mut parcel) = query.get_mut(*entity) {
-                                if parcel.shapes != shapes {
-                                    parcel.shapes = shapes;
-                                    commands
-                                        .entity(*entity)
-                                        .insert((ParcelContourChanged, ParcelWaterChanged));
+                                if parcel.contours != contours || parcel.biomes != biomes {
+                                    parcel.contours = contours;
+                                    parcel.biomes = biomes;
+                                    commands.entity(*entity).insert((
+                                        ParcelContourChanged,
+                                        ParcelWaterChanged,
+                                        ParcelFloraChanged,
+                                    ));
                                 }
                                 parcel.visible = true;
                             }
@@ -110,11 +115,14 @@ pub fn spawn_parcels(
                                     realm: rect.realm,
                                     coords: IVec2::new(x, z),
                                     visible: true,
-                                    shapes,
+                                    contours,
+                                    biomes,
                                     water_entity: None,
+                                    flora_entity: None,
                                 },
                                 ParcelContourChanged,
                                 ParcelWaterChanged,
+                                ParcelFloraChanged,
                             ));
                             parcel_cache.parcels.put(key, entity.id());
                         }
