@@ -1,5 +1,11 @@
 use bevy::{gltf::GltfMesh, prelude::*};
 
+mod instance;
+mod plugin;
+
+pub use instance::ModelInstanceRequest;
+pub use plugin::InstancedModelsPlugin;
+
 // export interface IModelInstance {
 //     component: IModelComponent;
 //     context?: any;
@@ -8,8 +14,13 @@ use bevy::{gltf::GltfMesh, prelude::*};
 
 /** Specifies the position and placement of a model instance. */
 pub struct ModelInstance {
+    /// Path to gltf asset, including fragment identifier
     pub model: String,
+
+    /// Transform for model
     pub transform: Transform,
+
+    /// Visibility flag, default is true
     pub visible: bool,
 }
 
@@ -40,7 +51,7 @@ pub struct ModelInstance {
 //     Thus, the number of actual mesh instances is the product of these two sets.
 // */
 struct ModelInstanceList {
-    model: Handle<GltfMesh>,
+    mesh: Handle<GltfMesh>,
     // rebuild: boolean;
     static_instances: Vec<ModelInstance>,
     static_instance_count: usize,

@@ -28,6 +28,7 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     diagnostics::ScreenDiagsPlugin,
+    instancing::InstancedModelsPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, ViewportInset},
@@ -116,7 +117,7 @@ fn main() {
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
-        .add_plugins((WorldPlugin, TerrainPlugin))
+        .add_plugins((WorldPlugin, TerrainPlugin, InstancedModelsPlugin))
         .run();
 
     println!("Exited!")
@@ -326,10 +327,10 @@ fn setup(
     });
 
     commands.insert_resource(AmbientLight {
-        brightness: 2.0,
+        brightness: 3.0,
         color: Color::Rgba {
             red: 0.5,
-            green: 0.5,
+            green: 0.7,
             blue: 1.,
             alpha: 1.,
         },
@@ -344,7 +345,7 @@ fn setup(
                 blue: 1.,
                 alpha: 1.,
             },
-            illuminance: 17000.,
+            illuminance: 12000.,
             ..default()
         },
         transform: Transform {
@@ -424,8 +425,8 @@ fn uv_debug_texture() -> Image {
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {
     for (entity, realm) in realms.iter() {
-        if realm.name == "playground" {
-            println!("Navigating to [playground]");
+        if realm.name == "overland" {
+            println!("Navigating to [overland]");
             viewpoint.realm = Some(entity)
         }
     }

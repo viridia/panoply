@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    instancing::ModelInstance,
+    instancing::{ModelInstance, ModelInstanceRequest},
     random::{noise3, WeightedRandom},
     world::Realm,
 };
@@ -32,18 +32,6 @@ pub struct ParcelFlora;
 
 pub struct FloraPlacementResult {
     models: HashMap<String, Vec<ModelInstance>>,
-}
-
-/// A component bundle for entities with a [`Mesh`] and a [`Material`].
-#[derive(Bundle, Clone, Default)]
-pub struct FloraGroupBundle {
-    pub flora: ParcelFlora,
-    pub transform: Transform,
-    pub global_transform: GlobalTransform,
-    /// User indication of whether an entity is visible
-    pub visibility: Visibility,
-    /// Algorithmically-computed indication of whether an entity is visible and should be extracted for rendering
-    pub computed_visibility: ComputedVisibility,
 }
 
 pub const HEIGHT_SCALE: f32 = 0.5;
@@ -120,13 +108,13 @@ pub fn insert_flora(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
     realms_query: Query<(&Realm, &TerrainMap)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let debug_material = materials.add(StandardMaterial {
-        base_color: Color::RED,
-        ..default()
-    });
+    // let debug_material = materials.add(StandardMaterial {
+    //     base_color: Color::RED,
+    //     ..default()
+    // });
 
     // Reset the visibility bits for all parcels.
     for (entity, mut parcel, mut task) in query.iter_mut() {
@@ -146,28 +134,48 @@ pub fn insert_flora(
                     let flora_entity = match parcel.flora_entity {
                         Some(entity) => entity,
                         None => {
-                            let child = commands.spawn(FloraGroupBundle { ..default() }).id();
+                            let child = commands
+                                .spawn((SpatialBundle { ..default() }, ParcelFlora))
+                                .id();
                             commands.entity(entity).add_child(child);
                             parcel.flora_entity = Some(child);
                             child
                         }
                     };
 
+                    let count = flora_placement.models.iter().fold(0, |n, c| n + c.1.len());
+                    let mut children = Vec::<Entity>::with_capacity(count);
                     for (_, value) in flora_placement.models.iter() {
                         for feature in value {
-                            let tree = commands
-                                .spawn(MaterialMeshBundle {
-                                    mesh: meshes
-                                        .add(shape::Icosphere::default().try_into().unwrap()),
-                                    material: debug_material.clone(),
-                                    transform: feature.transform,
-                                    visibility: Visibility::Visible,
-                                    ..default()
-                                })
-                                .id();
-                            commands.entity(flora_entity).add_child(tree);
+                            // children.push(
+                            //     commands
+                            //         .spawn(MaterialMeshBundle {
+                            //             mesh: meshes
+                            //                 .add(shape::Icosphere::default().try_into().unwrap()),
+                            //             material: debug_material.clone(),
+                            //             transform: feature.transform,
+                            //             visibility: Visibility::Visible,
+                            //             ..default()
+                            //         })
+                            //         .id(),
+                            // );
+                            children.push(
+                                commands
+                                    .spawn((
+                                        ModelInstanceRequest {
+                                            model: feature.model.clone(),
+                                            transform: feature.transform,
+                                            visible: true,
+                                        },
+                                        SpatialBundle { ..default() },
+                                    ))
+                                    .id(),
+                            );
                         }
                     }
+                    commands.entity(flora_entity).replace_children(&children);
+                } else if let Some(flora_entity) = parcel.flora_entity {
+                    commands.entity(flora_entity).despawn_descendants();
                 }
 
                 commands.entity(entity).remove::<ComputeFloraTask>();
@@ -249,13 +257,13 @@ fn compute_flora_placement(
 
             let tx = x as f32 + 0.2 + noise3(gx, gz, 4) * 0.6;
             let tz = z as f32 + 0.2 + noise3(gx, gz, 5) * 0.6;
-            let ty: f32 = heights.get_interpolated(tx, tz) * HEIGHT_SCALE
-                + match feature {
-                    FloraType::None => unreachable!(),
-                    FloraType::RandomTree => 1.25,
-                    FloraType::RandomShrub => 0.5,
-                    FloraType::RandomHerb => 0.75,
-                };
+            let ty: f32 = heights.get_interpolated(tx, tz) * HEIGHT_SCALE;
+            // + match feature {
+            //     FloraType::None => unreachable!(),
+            //     FloraType::RandomTree => 1.25,
+            //     FloraType::RandomShrub => 0.5,
+            //     FloraType::RandomHerb => 0.75,
+            // };
 
             let translation = Vec3::new(tx, ty, tz);
             let rotation = Quat::IDENTITY;
