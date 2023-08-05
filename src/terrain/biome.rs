@@ -80,9 +80,12 @@ impl AssetLoader for BiomesLoader {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct BiomesHandle(pub Handle<BiomesAsset>);
 
-pub fn load_biomes(server: Res<AssetServer>, mut handle: ResMut<BiomesHandle>) {
-    handle.0 = server.load("terrain/terrain.biomes.json");
+impl FromWorld for BiomesHandle {
+    fn from_world(world: &mut World) -> Self {
+        let server = world.resource::<AssetServer>();
+        BiomesHandle(server.load("terrain/terrain.biomes.json"))
+    }
 }

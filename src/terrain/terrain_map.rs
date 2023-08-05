@@ -142,11 +142,14 @@ impl AssetLoader for TerrainMapLoader {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct TerrainMapsHandleResource(pub Vec<HandleUntyped>);
 
-pub fn load_terrain_maps(server: Res<AssetServer>, mut handle: ResMut<TerrainMapsHandleResource>) {
-    handle.0 = server.load_folder("terrain/maps").unwrap();
+impl FromWorld for TerrainMapsHandleResource {
+    fn from_world(world: &mut World) -> Self {
+        let server = world.resource::<AssetServer>();
+        TerrainMapsHandleResource(server.load_folder("terrain/maps").unwrap())
+    }
 }
 
 /** Discover terrain map assets, load them, and bind them to realm entities. */

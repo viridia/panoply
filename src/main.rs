@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use bevy::{
     asset::ChangeWatcher,
-    core_pipeline::{clear_color::ClearColorConfig, tonemapping::Tonemapping},
+    core_pipeline::clear_color::ClearColorConfig,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
@@ -93,6 +93,7 @@ fn main() {
             // ImagePlugin::default_nearest(),
         ))
         .insert_resource(settings)
+        // .insert_resource(Msaa::Off)
         .init_resource::<ViewportInset>()
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
@@ -327,7 +328,7 @@ fn setup(
     });
 
     commands.insert_resource(AmbientLight {
-        brightness: 3.0,
+        brightness: 0.8,
         color: Color::Rgba {
             red: 0.5,
             green: 0.7,
@@ -371,7 +372,7 @@ fn setup(
             transform: Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
             camera: Camera {
                 // Renders the right camera after the left camera, which has a default priority of 0
-                hdr: true,
+                // hdr: true,
                 // order: 1,
                 ..default()
             },
@@ -380,7 +381,7 @@ fn setup(
                 clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
             },
-            tonemapping: Tonemapping::AcesFitted,
+            // tonemapping: Tonemapping::AcesFitted,
             ..default()
         },
         PrimaryCamera,

@@ -54,11 +54,14 @@ impl AssetLoader for RealmsLoader {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct RealmsHandleResource(pub Vec<HandleUntyped>);
 
-pub fn load_realms(server: Res<AssetServer>, mut handle: ResMut<RealmsHandleResource>) {
-    handle.0 = server.load_folder("realms").unwrap();
+impl FromWorld for RealmsHandleResource {
+    fn from_world(world: &mut World) -> Self {
+        let server = world.resource::<AssetServer>();
+        RealmsHandleResource(server.load_folder("realms").unwrap())
+    }
 }
 
 pub fn sync_realms(

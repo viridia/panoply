@@ -2,7 +2,33 @@ use bevy::{
     asset::LoadState,
     gltf::{Gltf, GltfMesh},
     prelude::*,
+    utils::HashMap,
 };
+
+/// Data for placing an individual instance.
+pub struct InstancePlacement {
+    pub transform: Transform,
+    pub visible: bool,
+    // TODO: animation
+}
+
+/// Resource key for a GLTF model.
+type ModelId = String;
+
+/// Map of model resource names to instances, used in building the instance components.
+type InstanceMap = HashMap<ModelId, Vec<InstancePlacement>>;
+
+/// A model id and a list of instance placements. Typically this is built from the InstanceMap.
+#[derive(Component)]
+pub struct InstancePlacementList {
+    model: ModelId,
+    placement_list: Vec<InstancePlacement>,
+}
+
+/// Marker component to let us know that the placement list has changed.
+/// TODO: Not sure we will need this.
+#[derive(Component)]
+pub struct InstancePlacementChanged;
 
 #[derive(Component)]
 pub struct ModelInstanceRequest {

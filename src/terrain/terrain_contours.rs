@@ -165,11 +165,14 @@ impl AssetLoader for TerrainContoursTableLoader {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct TerrainContoursHandle(pub Handle<TerrainContoursTableAsset>);
 
-pub fn load_terrain_shapes(server: Res<AssetServer>, mut handle: ResMut<TerrainContoursHandle>) {
-    handle.0 = server.load("terrain/terrain.contours");
+impl FromWorld for TerrainContoursHandle {
+    fn from_world(world: &mut World) -> Self {
+        let server = world.resource::<AssetServer>();
+        TerrainContoursHandle(server.load("terrain/terrain.contours"))
+    }
 }
 
 const PARCEL_BOUNDS: IRect = IRect {

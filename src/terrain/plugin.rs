@@ -7,18 +7,17 @@ use bevy::{
 };
 
 use super::{
-    biome::{load_biomes, BiomesAsset, BiomesHandle, BiomesLoader},
+    biome::{BiomesAsset, BiomesHandle, BiomesLoader},
     flora::{gen_flora, insert_flora},
     gen_ground_meshes,
     ground_material::GroundMaterial,
     insert_ground_meshes, spawn_parcels,
     terrain_contours::{
-        load_terrain_shapes, TerrainContoursHandle, TerrainContoursTableAsset,
-        TerrainContoursTableLoader,
+        TerrainContoursHandle, TerrainContoursTableAsset, TerrainContoursTableLoader,
     },
     terrain_map::{
-        insert_terrain_maps, load_terrain_maps, update_ground_material, update_terrain_maps,
-        TerrainMapAsset, TerrainMapLoader, TerrainMapsHandleResource,
+        insert_terrain_maps, update_ground_material, update_terrain_maps, TerrainMapAsset,
+        TerrainMapLoader, TerrainMapsHandleResource,
     },
     water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
     water_mesh::{gen_water_meshes, insert_water_meshes},
@@ -44,15 +43,7 @@ impl Plugin for TerrainPlugin {
                 MaterialPlugin::<GroundMaterial>::default(),
                 MaterialPlugin::<WaterMaterial>::default(),
             ))
-            .add_systems(
-                Startup,
-                (
-                    load_biomes,
-                    load_terrain_maps,
-                    load_terrain_shapes,
-                    create_water_material,
-                ),
-            )
+            .add_systems(Startup, create_water_material)
             .add_systems(
                 Update,
                 (

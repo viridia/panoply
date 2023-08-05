@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{load_realms, sync_realms, RealmData, RealmsHandleResource, RealmsLoader};
+use super::{sync_realms, RealmData, RealmsHandleResource, RealmsLoader};
 
 pub struct WorldPlugin;
 
@@ -9,7 +9,6 @@ impl Plugin for WorldPlugin {
         app.add_asset_loader(RealmsLoader)
             .add_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
-            .add_systems(Startup, load_realms)
             .add_systems(Update, sync_realms);
     }
 }

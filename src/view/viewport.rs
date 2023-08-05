@@ -42,5 +42,7 @@ pub fn update_camera_viewport(
         let aspect = vw / vh;
         perspective.aspect_ratio = aspect;
         perspective.fov = f32::min(DEFAULT_FOV, DEFAULT_FOV * 2. / aspect);
+        perspective.near = 0.5;
+        perspective.far = 100.;
     }
 }
