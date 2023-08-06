@@ -6,6 +6,6 @@ pub struct InstancedModelsPlugin;
 
 impl Plugin for InstancedModelsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (create_mesh_instances,));
+        app.add_systems(Update, create_mesh_instances);
     }
 }

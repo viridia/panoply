@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    instancing::{ModelInstance, ModelInstanceRequest},
+    instancing::{InstanceMap, ModelPlacement, ModelPlacementChanged, ModelPlacements},
     random::{noise3, WeightedRandom},
     world::Realm,
 };
@@ -20,7 +20,6 @@ use bevy::{
     asset::LoadState,
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
-    utils::HashMap,
 };
 use futures_lite::future;
 
@@ -31,7 +30,7 @@ pub struct ComputeFloraTask(Task<Option<FloraPlacementResult>>);
 pub struct ParcelFlora;
 
 pub struct FloraPlacementResult {
-    models: HashMap<String, Vec<ModelInstance>>,
+    models: InstanceMap,
 }
 
 pub const HEIGHT_SCALE: f32 = 0.5;
@@ -81,7 +80,7 @@ pub fn gen_flora(
         );
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
-                models: HashMap::new(),
+                models: InstanceMap::new(),
             };
             if compute_flora_placement(
                 coords,
@@ -108,20 +107,12 @@ pub fn insert_flora(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
     realms_query: Query<(&Realm, &TerrainMap)>,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // let debug_material = materials.add(StandardMaterial {
-    //     base_color: Color::RED,
-    //     ..default()
-    // });
-
     // Reset the visibility bits for all parcels.
     for (entity, mut parcel, mut task) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
         if realm.is_ok() {
-            // let (_, terrain_map) = realm.unwrap();
-            if let Some(result) = future::block_on(future::poll_once(&mut task.0)) {
+            if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 // Remove existing flora
                 if let Some(flora_entity) = parcel.flora_entity {
                     println!("Dropping flora");
@@ -129,7 +120,7 @@ pub fn insert_flora(
                 }
 
                 // If there is flora
-                if let Some(flora_placement) = result {
+                if let Some(mut flora_placement) = task_result {
                     // Get or create flora entity.
                     let flora_entity = match parcel.flora_entity {
                         Some(entity) => entity,
@@ -143,38 +134,26 @@ pub fn insert_flora(
                         }
                     };
 
+                    // Generate model placements for flora.
                     let count = flora_placement.models.iter().fold(0, |n, c| n + c.1.len());
                     let mut children = Vec::<Entity>::with_capacity(count);
-                    for (_, value) in flora_placement.models.iter() {
-                        for feature in value {
-                            // children.push(
-                            //     commands
-                            //         .spawn(MaterialMeshBundle {
-                            //             mesh: meshes
-                            //                 .add(shape::Icosphere::default().try_into().unwrap()),
-                            //             material: debug_material.clone(),
-                            //             transform: feature.transform,
-                            //             visibility: Visibility::Visible,
-                            //             ..default()
-                            //         })
-                            //         .id(),
-                            // );
-                            children.push(
-                                commands
-                                    .spawn((
-                                        ModelInstanceRequest {
-                                            model: feature.model.clone(),
-                                            transform: feature.transform,
-                                            visible: true,
-                                        },
-                                        SpatialBundle { ..default() },
-                                    ))
-                                    .id(),
-                            );
-                        }
+                    for (model, value) in flora_placement.models.drain() {
+                        children.push(
+                            commands
+                                .spawn((
+                                    SpatialBundle { ..default() },
+                                    ModelPlacements {
+                                        model: model.clone(),
+                                        placement_list: value,
+                                    },
+                                    ModelPlacementChanged,
+                                ))
+                                .id(),
+                        );
                     }
                     commands.entity(flora_entity).replace_children(&children);
                 } else if let Some(flora_entity) = parcel.flora_entity {
+                    // There was no flora so remove all entities.
                     commands.entity(flora_entity).despawn_descendants();
                 }
 
@@ -276,8 +255,7 @@ fn compute_flora_placement(
                         .models
                         .entry(model.clone())
                         .or_insert(Vec::with_capacity(6));
-                    entry.push(ModelInstance {
-                        model: model.clone(),
+                    entry.push(ModelPlacement {
                         transform: Transform {
                             translation,
                             rotation,

@@ -3,7 +3,7 @@ use bevy::{gltf::GltfMesh, prelude::*};
 mod instance;
 mod plugin;
 
-pub use instance::ModelInstanceRequest;
+pub use instance::*;
 pub use plugin::InstancedModelsPlugin;
 
 // export interface IModelInstance {

@@ -1,12 +1,12 @@
 use bevy::{
     asset::LoadState,
-    gltf::{Gltf, GltfMesh},
+    gltf::{Gltf, GltfExtras, GltfMesh},
     prelude::*,
     utils::HashMap,
 };
 
-/// Data for placing an individual instance.
-pub struct InstancePlacement {
+/// Data for placing an individual model instance.
+pub struct ModelPlacement {
     pub transform: Transform,
     pub visible: bool,
     // TODO: animation
@@ -16,30 +16,23 @@ pub struct InstancePlacement {
 type ModelId = String;
 
 /// Map of model resource names to instances, used in building the instance components.
-type InstanceMap = HashMap<ModelId, Vec<InstancePlacement>>;
+pub type InstanceMap = HashMap<ModelId, Vec<ModelPlacement>>;
 
 /// A model id and a list of instance placements. Typically this is built from the InstanceMap.
 #[derive(Component)]
-pub struct InstancePlacementList {
-    model: ModelId,
-    placement_list: Vec<InstancePlacement>,
+pub struct ModelPlacements {
+    pub model: ModelId,
+    pub placement_list: Vec<ModelPlacement>,
 }
 
 /// Marker component to let us know that the placement list has changed.
-/// TODO: Not sure we will need this.
 #[derive(Component)]
-pub struct InstancePlacementChanged;
+pub struct ModelPlacementChanged;
 
 #[derive(Component)]
-pub struct ModelInstanceRequest {
-    pub model: String,
-    pub transform: Transform,
-    pub visible: bool,
-}
-
-#[derive(Component)]
-pub struct ModelInstanceMesh {
+pub struct ModelInstances {
     pub handle: Handle<Gltf>,
+    pub asset_path: String,
     pub needs_rebuild: bool,
 }
 
@@ -57,71 +50,86 @@ pub fn create_mesh_instances(
     mut commands: Commands,
     mut query: Query<(
         Entity,
-        &ModelInstanceRequest,
-        Changed<ModelInstanceRequest>,
-        Option<&mut ModelInstanceMesh>,
+        &ModelPlacements,
+        Option<&ModelPlacementChanged>,
+        Option<&mut ModelInstances>,
     )>,
     // assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
     assets_gltf: Res<Assets<Gltf>>,
-    assets_gltf_meshes: Res<Assets<GltfMesh>>,
+    mut assets_scene: ResMut<Assets<Scene>>,
+    mut assets_mesh: ResMut<Assets<Mesh>>,
+    // assets_gltf_meshes: Res<Assets<GltfMesh>>,
 ) {
-    for (entity, minst, model_changed, mhandle) in query.iter_mut() {
-        if model_changed {
-            let handle: Handle<Gltf> = server.load(minst.model.clone());
-            commands.entity(entity).insert(ModelInstanceMesh {
-                handle,
-                needs_rebuild: true,
-            });
+    for (entity, placements, pl_changed, model_instances) in query.iter_mut() {
+        if pl_changed.is_some() {
+            if let Some((fname, fragment)) = placements.model.split_once('#') {
+                let handle: Handle<Gltf> = server.load(fname.clone());
+                commands
+                    .entity(entity)
+                    .insert(ModelInstances {
+                        handle,
+                        asset_path: String::from(fragment),
+                        needs_rebuild: true,
+                    })
+                    .remove::<ModelPlacementChanged>();
+            }
         }
 
-        if let Some(mut mesh) = mhandle {
-            if mesh.needs_rebuild {
-                mesh.needs_rebuild = false;
-            } else {
-                continue;
-            }
-            let result = server.get_load_state(&mesh.handle);
-            let mut children = Vec::<Entity>::new();
+        if let Some(mut m_instances) = model_instances {
+            let result = server.get_load_state(&m_instances.handle);
             if result == LoadState::Loaded {
-                let asset = assets_gltf.get(&mesh.handle);
+                if m_instances.needs_rebuild {
+                    m_instances.needs_rebuild = false;
+                } else {
+                    continue;
+                }
+                let mut children = Vec::<Entity>::new();
+                let asset = assets_gltf.get(&m_instances.handle);
                 if let Some(gltf) = asset {
-                    // println!("Primitives: {}", gltf.primitives.len());
-                    for mesh_handle in gltf.meshes.iter() {
-                        if let Some(mesh) = assets_gltf_meshes.get(&mesh_handle) {
-                            children.push(
-                                commands
-                                    .spawn(PbrBundle {
-                                        mesh: mesh.primitives[0].mesh.clone(),
-                                        // (unwrap: material is optional, we assume this primitive has one)
-                                        material: mesh.primitives[0].material.clone().unwrap(),
-                                        transform: minst.transform,
-                                        ..Default::default()
-                                    })
-                                    .id(),
-                            );
+                    if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
+                        if let Some(ref mut scene) = assets_scene.get_mut(&scene_handle) {
+                            println!("Scene found: [{}]", placements.model);
+                            let mut query = scene
+                                .world
+                                .query::<(&Handle<Mesh>, &Handle<StandardMaterial>)>();
+                            // TODO: Replace material handle
+                            // TODO: Cache mesh handle
+                            // TODO: Instance mesh.
+                            for (mesh, material) in query.iter(&scene.world) {
+                                if placements.placement_list.len() < 3 {
+                                    for placement in placements.placement_list.iter() {
+                                        children.push(
+                                            commands
+                                                .spawn(PbrBundle {
+                                                    mesh: mesh.clone(),
+                                                    material: material.clone(),
+                                                    transform: placement.transform,
+                                                    ..Default::default()
+                                                })
+                                                .id(),
+                                        );
+                                    }
+                                }
+                                // if let Some(m) = assets_mesh.get(&mesh) {
+                                //     println!(
+                                //         "Name: {}, entity {:?}, parent: {:?}",
+                                //         name, entity, parent
+                                //     );
+                                // }
+                            }
+                        }
+                    } else {
+                        println!("Scene not found: [{}]", placements.model);
+                        println!("Named scenes:");
+                        for (s, _) in gltf.named_scenes.iter() {
+                            println!(" * [{}]", s);
                         }
                     }
-                    commands.entity(entity).replace_children(&children);
                 } else {
-                    println!("Asset not found: [{}]", minst.model);
-                    // if let Some((fname, fragment)) = minst.model.split_once('#') {
-                    //     println!("Named scenes:");
-                    //     for (s, _) in root.named_scenes.iter() {
-                    //         println!(" * [{}]", s);
-                    //     }
-                    //     println!("Named meshes:");
-                    //     for (s, _) in root.named_meshes.iter() {
-                    //         println!(" * [{}]", s);
-                    //     }
-                    //     println!("Unnamed meshes: {}", root.meshes.len());
-                    //     println!("Named nodes:");
-                    //     for (s, _) in root.named_nodes.iter() {
-                    //         println!(" * [{}]", s);
-                    //     }
-                    // }
                     panic!("Asset not found.");
                 }
+                commands.entity(entity).replace_children(&children);
             }
         }
     }
