@@ -58,7 +58,7 @@ pub fn create_mesh_instances(
     server: Res<AssetServer>,
     assets_gltf: Res<Assets<Gltf>>,
     mut assets_scene: ResMut<Assets<Scene>>,
-    mut assets_mesh: ResMut<Assets<Mesh>>,
+    // assets_mesh: ResMut<Assets<Mesh>>,
     // assets_gltf_meshes: Res<Assets<GltfMesh>>,
 ) {
     for (entity, placements, pl_changed, model_instances) in query.iter_mut() {
@@ -88,36 +88,43 @@ pub fn create_mesh_instances(
                 let asset = assets_gltf.get(&m_instances.handle);
                 if let Some(gltf) = asset {
                     if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
-                        if let Some(ref mut scene) = assets_scene.get_mut(&scene_handle) {
-                            println!("Scene found: [{}]", placements.model);
-                            let mut query = scene
-                                .world
-                                .query::<(&Handle<Mesh>, &Handle<StandardMaterial>)>();
-                            // TODO: Replace material handle
-                            // TODO: Cache mesh handle
-                            // TODO: Instance mesh.
-                            for (mesh, material) in query.iter(&scene.world) {
-                                if placements.placement_list.len() < 3 {
-                                    for placement in placements.placement_list.iter() {
-                                        children.push(
-                                            commands
-                                                .spawn(PbrBundle {
-                                                    mesh: mesh.clone(),
-                                                    material: material.clone(),
-                                                    transform: placement.transform,
-                                                    ..Default::default()
-                                                })
-                                                .id(),
-                                        );
-                                    }
+                        let scene = assets_scene.get_mut(&scene_handle).unwrap();
+                        println!("Scene found: [{}]", placements.model);
+
+                        let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
+                        // let mut entity_components: HashMap<Entity, Vec<Box<dyn Reflect>>> =
+                        //     HashMap::new();
+                        for (name, extras) in extras_query.iter(&scene.world) {
+                            println!("Name: {}, extras: {:?}", name, extras);
+                        }
+
+                        let mut query = scene
+                            .world
+                            .query::<(&Handle<Mesh>, &Handle<StandardMaterial>)>();
+                        // TODO: Replace material handle
+                        // TODO: Cache mesh handle
+                        // TODO: Instance mesh.
+                        for (mesh, material) in query.iter(&scene.world) {
+                            if placements.placement_list.len() < 3 {
+                                for placement in placements.placement_list.iter() {
+                                    children.push(
+                                        commands
+                                            .spawn(PbrBundle {
+                                                mesh: mesh.clone(),
+                                                material: material.clone(),
+                                                transform: placement.transform,
+                                                ..Default::default()
+                                            })
+                                            .id(),
+                                    );
                                 }
-                                // if let Some(m) = assets_mesh.get(&mesh) {
-                                //     println!(
-                                //         "Name: {}, entity {:?}, parent: {:?}",
-                                //         name, entity, parent
-                                //     );
-                                // }
                             }
+                            // if let Some(m) = assets_mesh.get(&mesh) {
+                            //     println!(
+                            //         "Name: {}, entity {:?}, parent: {:?}",
+                            //         name, entity, parent
+                            //     );
+                            // }
                         }
                     } else {
                         println!("Scene not found: [{}]", placements.model);

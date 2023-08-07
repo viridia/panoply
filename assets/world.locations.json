@@ -1,0 +1,303 @@
+[
+  {
+    "name": "center",
+    "realm": "overland",
+    "pos": [0, 0, 0]
+  },
+  {
+    "name": "underworld",
+    "realm": "underworld",
+    "pos": [0, 0, 0]
+  },
+  {
+    "name": "playground",
+    "realm": "playground",
+    "pos": [0, 0, 0]
+  },
+  {
+    "name": "warehouse",
+    "realm": "playground",
+    "pos": [41.59800604609949, 4.733259878704557e-15, 41.48915667709594]
+  },
+  {
+    "name": "stick-village",
+    "realm": "playground",
+    "pos": [58.871484151397254, 2.9367030243551525e-14, 119.11684898108487]
+  },
+  {
+    "name": "test-inn",
+    "realm": "playground",
+    "pos": [56.65786741155058, 4.163799117100996e-15, 37.0414409317615]
+  },
+  {
+    "name": "demorun",
+    "realm": "demorun",
+    "pos": [0, 0, 0]
+  },
+  {
+    "name": "demo-start",
+    "realm": "demorun",
+    "pos": [13.03775111153588, 2.1988533278689404e-14, 15.029772666196129]
+  },
+  {
+    "name": "demo-village",
+    "realm": "demorun",
+    "pos": [148.86702104876613, 1.4003836148250004e-14, 162.92578178395175]
+  },
+  {
+    "name": "puzzle-palace",
+    "realm": "playground",
+    "pos": [104.98628543520705, 2.4964425000618215e-14, 6.062783051138985]
+  },
+  {
+    "name": "demo-cave",
+    "realm": "demorun",
+    "pos": [232.04487069337583, 2.3268289183799583e-15, 235.95694041669583]
+  },
+  {
+    "name": "demo-cave-inside",
+    "realm": "demorun",
+    "pos": [259.09694849106677, 3.857637417314167e-16, 193.92030956500108]
+  },
+  {
+    "name": "demo-dungeon",
+    "realm": "demorun",
+    "pos": [325.20386672348917, 1.2246467991473533e-17, 199.1180885453601]
+  },
+  {
+    "name": "demo-ruins",
+    "realm": "demorun",
+    "pos": [303.818438893532, 1.4781486865708553e-14, 292.4171827183296]
+  },
+  {
+    "name": "demo-ruins-exit",
+    "realm": "demorun",
+    "pos": [343.87509815979064, 1.5804066942996658e-14, 347.03592975613196]
+  },
+  {
+    "name": "marble-palace",
+    "realm": "playground",
+    "pos": [100.30680087670804, 2.149255132503575e-15, 23.07985153739023]
+  },
+  {
+    "name": "bestiary",
+    "realm": "playground",
+    "pos": [125.57080039986242, 2.2655965784225853e-15, 23.448053784608202]
+  },
+  {
+    "name": "town.caeth",
+    "realm": "holm-overland",
+    "pos": [142.9321758573427, 6.513284001265387e-14, 88.54997753163843],
+    "caption": "Caeth",
+    "icon": "village"
+  },
+  {
+    "name": "town.tambry",
+    "realm": "holm-overland",
+    "pos": [671.25, 1.6922169470620153e-13, 1061.1],
+    "caption": "Tambry",
+    "icon": "village"
+  },
+  {
+    "name": "town.marheim",
+    "realm": "holm-overland",
+    "pos": [499.29, 0.2, 700.93],
+    "caption": "Marheim",
+    "icon": "town"
+  },
+  {
+    "name": "town.corath",
+    "realm": "holm-overland",
+    "pos": [986.83, 1.938738347730396e-13, 860.35],
+    "caption": "Corath",
+    "icon": "village"
+  },
+  {
+    "name": "town.mirwen",
+    "realm": "holm-overland",
+    "pos": [608.1513832404084, 3.299198476902711e-13, 290.760813124991],
+    "caption": "Mirwen",
+    "icon": "village"
+  },
+  {
+    "name": "town.lordsgrave",
+    "realm": "holm-overland",
+    "pos": [349.50438541645224, 1.99899097024849e-13, 1245.1529436850278],
+    "caption": "Lordsgrave",
+    "icon": "village"
+  },
+  {
+    "name": "test-mine",
+    "realm": "playground",
+    "pos": [70.36378283156462, 5.923004244075253e-14, 160.80364350584037]
+  },
+  {
+    "name": "heron-creek-armory",
+    "realm": "holm-overland",
+    "pos": [797, 0, 1101],
+    "caption": "Heron Creek Armory",
+    "icon": "keep"
+  },
+  {
+    "name": "holm-underground.origin",
+    "realm": "holm-underground",
+    "pos": [0, 0, 0]
+  },
+  {
+    "name": "heron-creek-armory-basement",
+    "realm": "holm-underground",
+    "pos": [805.8156997186704, -2, 1115.9140438073812]
+  },
+  {
+    "name": "town.windhold",
+    "realm": "holm-overland",
+    "pos": [1452.5383988368287, 2.1185777301852057e-13, 1180.1542897525887],
+    "caption": "Windhold",
+    "icon": "village"
+  },
+  {
+    "name": "start",
+    "realm": "holm-overland",
+    "pos": [683.7680102870058, 0, 1067]
+  },
+  {
+    "name": "ruin.necropolis",
+    "realm": "holm-overland",
+    "pos": [1041.6, 0, 856.09],
+    "caption": "Necropolis",
+    "icon": "ruin"
+  },
+  {
+    "name": "keep.coldriver",
+    "realm": "holm-overland",
+    "pos": [717.4459385100877, 4.0183723097015264e-13, 1283.9423288622627],
+    "caption": "Coldriver Keep",
+    "icon": "keep"
+  },
+  {
+    "name": "ruin.maladrim",
+    "realm": "holm-overland",
+    "pos": [1123.5223460175166, 7.547988081863444e-13, 321.3660391139651],
+    "caption": "Maladrim",
+    "icon": "ruin"
+  },
+  {
+    "name": "spawn.feral-dog-1",
+    "realm": "holm-overland",
+    "pos": [663.2776680904626, 2.5742075718075382e-14, 951.7625159984941]
+  },
+  {
+    "name": "camp.victory",
+    "realm": "holm-overland",
+    "pos": [739.3248567333915, 0.2000000000000329, 742.7591062261863],
+    "caption": "Work Camp Victory",
+    "icon": "camp"
+  },
+  {
+    "name": "camp.liberty",
+    "realm": "holm-overland",
+    "pos": [611.2307579687618, 0.2000000000000196, 545.5783809025804],
+    "caption": "Work Camp Liberty",
+    "icon": "camp"
+  },
+  {
+    "name": "camp.ginyans",
+    "realm": "holm-overland",
+    "pos": [421.50092942344554, 0.20000000000001122, 391.6256202308198],
+    "caption": "Ginyan's Roost",
+    "icon": "camp"
+  },
+  {
+    "name": "town.murkstone",
+    "realm": "holm-overland",
+    "pos": [787.6540531442303, 1.2700705624237731, 593.1937100671104],
+    "caption": "Murkstone",
+    "icon": "village"
+  },
+  {
+    "name": "keep.vermilion",
+    "realm": "holm-overland",
+    "pos": [287.13575013825516, 2.0693469288595355e-13, 1278.4849195225613],
+    "caption": "Vermilion Manor",
+    "icon": "keep"
+  },
+  {
+    "name": "town.breakersbane",
+    "realm": "holm-overland",
+    "pos": [927.6859198933619, 9.223059973736655e-13, 287.7557564932626],
+    "caption": "Breakersbane",
+    "icon": "village"
+  },
+  {
+    "name": "town.stormfell",
+    "realm": "holm-overland",
+    "pos": [1303.2881741692388, 3.0633315033870524e-13, 1503.8691888047852],
+    "caption": "Stormfell",
+    "icon": "village"
+  },
+  {
+    "name": "ruin.gorchadoth",
+    "realm": "holm-overland",
+    "pos": [1439.9307775765424, 3.1785707671867633e-13, 1630.3503691854737],
+    "caption": "Gorchadoth",
+    "icon": "ruin"
+  },
+  {
+    "name": "camp.thrond",
+    "realm": "holm-overland",
+    "pos": [487.53629250448415, 4.44240626390695e-14, 1366.2676453551858],
+    "caption": "Thrond",
+    "icon": "camp"
+  },
+  {
+    "name": "camp.rockpaw",
+    "realm": "holm-overland",
+    "pos": [934.7257723500575, 5.834829674537421e-14, 1382.562989361583],
+    "caption": "Rockpaw",
+    "icon": "camp"
+  },
+  {
+    "name": "camp.krun",
+    "realm": "holm-overland",
+    "pos": [1239.047265290781, 8.712137329134361e-14, 1301.7770259573992],
+    "caption": "Krun",
+    "icon": "camp"
+  },
+  {
+    "name": "ruin.alchea",
+    "realm": "holm-overland",
+    "pos": [1534.5816957743114, 1.2688297052360795, 765.2049381770263],
+    "caption": "Alchea",
+    "icon": "ruin"
+  },
+  {
+    "name": "warehouse2",
+    "realm": "playground",
+    "pos": [171.85957307751235, 2.157215336698073e-14, 112.28446120737092]
+  },
+  {
+    "name": "marheim.entrance",
+    "realm": "holm-overland",
+    "pos": [571.008922643685, 4, 791.1441283093628]
+  },
+  {
+    "name": "cave.kreekin.entrance",
+    "realm": "holm-overland",
+    "pos": [548.4385910761183, 1.268385965294352, 1049.1760609624644]
+  },
+  {
+    "name": "cave.kreekin.exit",
+    "realm": "holm-underground",
+    "pos": [554.7577959535766, -4.347496136973109e-16, 1046.661517241872]
+  },
+  {
+    "name": "playground.start",
+    "realm": "playground",
+    "pos": [7.387398519758923, 8.266365894244645e-16, 9.622333684069508]
+  },
+  {
+    "name": "ruin.necropolis.under",
+    "realm": "holm-underground",
+    "pos": [1082.4135741890962, 2, 865.9199751478333]
+  }
+]
