@@ -18,6 +18,7 @@ extern crate directories;
 
 mod diagnostics;
 mod editor;
+mod guise;
 mod instancing;
 mod random;
 mod settings;
@@ -28,6 +29,7 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     diagnostics::ScreenDiagsPlugin,
+    guise::GuisePlugin,
     instancing::InstancedModelsPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
@@ -118,7 +120,12 @@ fn main() {
             ),
         )
         .add_systems(Update, bevy::window::close_on_esc)
-        .add_plugins((WorldPlugin, TerrainPlugin, InstancedModelsPlugin))
+        .add_plugins((
+            WorldPlugin,
+            TerrainPlugin,
+            InstancedModelsPlugin,
+            GuisePlugin,
+        ))
         .run();
 
     println!("Exited!")

@@ -1,0 +1,24 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<templates>
+  <style id="cpalette" gap="2px" flex-direction="horizontal" />
+  <template id="control-palette">
+    <param name="count" type="i32" />
+    <param name="mode" type="enum" />
+    <content>
+      <flex id="control-palette" styles="#panel">
+        <flex direction="horizontal">
+        </flex>
+        <switch>
+          <ui:invoke ui:case="world" target="#world" />
+          <flex ui:case="world"></flex>
+          <flex ui:case="terrain"></flex>
+          <flex ui:case="scenery"></flex>
+          <flex ui:case="meta"></flex>
+          <flex ui:case="play"></flex>
+        </switch>
+        <Button ui:ctrl="IncCount">Count {{count}}</Button>
+        <Button ui:ctrl="ResetCount">Count {{count}}</Button>
+      </flex>
+    </content>
+  </template>
+</templates>

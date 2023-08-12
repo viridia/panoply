@@ -89,14 +89,14 @@ pub fn create_mesh_instances(
                 if let Some(gltf) = asset {
                     if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
                         let scene = assets_scene.get_mut(&scene_handle).unwrap();
-                        println!("Scene found: [{}]", placements.model);
+                        // println!("Scene found: [{}]", placements.model);
 
-                        let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
+                        let mut _extras_query = scene.world.query::<(&Name, &GltfExtras)>();
                         // let mut entity_components: HashMap<Entity, Vec<Box<dyn Reflect>>> =
                         //     HashMap::new();
-                        for (name, extras) in extras_query.iter(&scene.world) {
-                            println!("Name: {}, extras: {:?}", name, extras);
-                        }
+                        // for (name, extras) in extras_query.iter(&scene.world) {
+                        //     println!("Name: {}, extras: {:?}", name, extras);
+                        // }
 
                         let mut query = scene
                             .world

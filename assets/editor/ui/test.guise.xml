@@ -1,0 +1,27 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<templates>
+  <style id="panel" display="flex" flex-direction="row" />
+  <style id="panel2" gap="2px" flex-direction="row" />
+  <template id="main">
+    <params>
+      <param name="count" type="i32" />
+      <param name="mode" type="enum" />
+    </params>
+    <content>
+      <!-- <flex id="control-palette" style="#panel">
+        <flex flex-direction="row">
+        </flex>
+        <switch>
+          <ui:invoke ui:case="world" target="#world" />
+          <flex ui:case="world"></flex>
+          <flex ui:case="terrain"></flex>
+          <flex ui:case="scenery"></flex>
+          <flex ui:case="meta"></flex>
+          <flex ui:case="play"></flex>
+        </switch>
+        <node ui:controller="panoply::guise::widget::IncCount">Count {{count}}</node>
+        <node ui:controller="panoply::guise::widget::ResetCount">Count {{count}}</node>
+      </flex> -->
+    </content>
+  </template>
+</templates>
