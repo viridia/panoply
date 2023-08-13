@@ -120,6 +120,7 @@ pub fn spawn_parcels(
                                     water_entity: None,
                                     flora_entity: None,
                                 },
+                                SpatialBundle { ..default() },
                                 ParcelContourChanged,
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,

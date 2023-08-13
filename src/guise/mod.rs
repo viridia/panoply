@@ -1,8 +1,10 @@
 mod asset;
 mod controller;
+mod controllers;
 mod plugin;
 mod style;
 mod template;
+mod view;
 
 pub use plugin::*;
 

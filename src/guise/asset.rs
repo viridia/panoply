@@ -1,5 +1,5 @@
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
-use bevy::prelude::*;
+use bevy::prelude::default;
 use bevy::utils::BoxedFuture;
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesStart, Event};
@@ -7,9 +7,9 @@ use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
 use crate::guise::style;
-use crate::guise::template::ParamType;
+use crate::guise::template::TemplateParam;
 
-use super::template::{Template, UiNodeList};
+use super::template::{Template, TemplateNode, TemplateNodeList, TemplateNodeType};
 use super::GuiseError;
 
 #[derive(Default)]
@@ -216,7 +216,7 @@ impl<'a> GuiseXmlVisitor<'a> {
             }
         }
 
-        println!("Template element loaded: {}", id);
+        // println!("Template element loaded: {}", id);
         load_context.set_labeled_asset(&id, LoadedAsset::new(result));
         Ok(())
     }
@@ -228,7 +228,7 @@ impl<'a> GuiseXmlVisitor<'a> {
     ) -> Result<(), GuiseError> {
         let id = require_attr(e, ATTR_ID)?.unescape_value().unwrap();
         let style = style::from_xml(&mut self.reader, e)?;
-        println!("Style element loaded: {}", id);
+        // println!("Style element loaded: {}", id);
         load_context.set_labeled_asset(&id, LoadedAsset::new(style));
         Ok(())
     }
@@ -268,7 +268,7 @@ impl<'a> GuiseXmlVisitor<'a> {
                 },
 
                 Ok(Event::End(e)) => match e.name().as_ref() {
-                    b"template" => break,
+                    b"params" => break,
 
                     _ => {
                         panic!(
@@ -291,56 +291,80 @@ impl<'a> GuiseXmlVisitor<'a> {
     ) -> Result<(), GuiseError> {
         let name = require_attr(e, ATTR_NAME)?.unescape_value().unwrap();
         let typ: &str = &require_attr(e, ATTR_TYPE)?.unescape_value().unwrap();
-        println!("Param element: {}:{}", name, typ);
-        template.params.insert(
-            name.to_string(),
-            match typ {
-                "bool" => ParamType::Bool,
-                "i32" => ParamType::I32,
-                "u32" => ParamType::U32,
-                "f32" => ParamType::F32,
-                "string" => ParamType::String,
-                _ => {
-                    return Err(GuiseError::InvalidAttributeValue(typ.to_string()));
-                }
-            },
-        );
+        // println!("Template param: {}: {}", name, typ);
+        template
+            .params
+            .insert(name.to_string(), TemplateParam::new(typ));
         Ok(())
     }
 
     fn visit_node_list<'b>(
         &mut self,
         e: &'b BytesStart,
-        nodes: &mut UiNodeList,
+        nodes: &mut TemplateNodeList,
     ) -> Result<(), GuiseError> {
-        // if let Some(Ok(id_attr)) = e.attributes().find(|a| match a {
-        //     Ok(a) => a.key == ATTR_ID,
-        //     _ => false,
-        // }) {
-        //     let id = id_attr.unescape_value().unwrap();
-        //     let template = template::from_xml(&mut self.reader, e)?;
-        //     println!("Template element loaded: {}", id);
-        //     load_context.set_labeled_asset(&id, LoadedAsset::new(template));
-        //     Ok(())
-        // } else {
-        //     panic!("<template> 'id' attribute is required'.");
-        // }
+        let name = e.name();
+        loop {
+            match self.reader.read_event() {
+                Err(e) => panic!(
+                    "Error at position {}: {:?}",
+                    self.reader.buffer_position(),
+                    e
+                ),
+                Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
+                Ok(Event::Start(e)) => self.visit_node(&e, nodes, false)?,
+                Ok(Event::Empty(e)) => self.visit_node(&e, nodes, true)?,
+                Ok(Event::End(e)) => {
+                    if e.name() == name {
+                        break;
+                    }
+                    panic!(
+                        "Unrecognized end tag: </{}>",
+                        std::str::from_utf8(e.name().as_ref()).unwrap()
+                    );
+                }
+
+                _ => (),
+            }
+        }
         Ok(())
     }
 
-    fn visit_node<'b>(&mut self, e: &'b BytesStart) -> Result<(), GuiseError> {
-        if let Some(Ok(id_attr)) = e.attributes().find(|a| match a {
-            Ok(a) => a.key == ATTR_ID,
-            _ => false,
-        }) {
-            let id = id_attr.unescape_value().unwrap();
-            // let template = template::from_xml(&mut self.reader, e)?;
-            println!("Template element loaded: {}", id);
-            // load_context.set_labeled_asset(&id, LoadedAsset::new(template));
-            Ok(())
-        } else {
-            panic!("<template> 'id' attribute is required'.");
+    fn visit_node<'b>(
+        &mut self,
+        e: &'b BytesStart,
+        parent: &mut TemplateNodeList,
+        empty: bool,
+    ) -> Result<(), GuiseError> {
+        let mut node = TemplateNode {
+            tag: match e.name().as_ref() {
+                b"node" => TemplateNodeType::Node,
+                b"flex" => TemplateNodeType::Flex,
+                b"grid" => TemplateNodeType::Grid,
+                b"fragment" => TemplateNodeType::Fragment,
+                _ => {
+                    return Err(GuiseError::InvalidElement(
+                        std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
+                    ))
+                }
+            },
+            ..default()
+        };
+
+        for attr in e.attributes() {
+            let a = attr.unwrap();
+            node.attrs.insert(
+                std::str::from_utf8(a.key.0).unwrap().to_string(),
+                a.unescape_value().unwrap().to_string(),
+            );
         }
+
+        if !empty {
+            self.visit_node_list(e, &mut node.children)?;
+        }
+
+        parent.push(Box::new(node));
+        Ok(())
     }
 }
 
@@ -357,14 +381,4 @@ pub fn require_attr<'a>(e: &'a BytesStart, name: QName) -> Result<Attribute<'a>,
     Err(GuiseError::MissingRequiredAttribute(
         std::str::from_utf8(name.into_inner()).unwrap().to_string(),
     ))
-}
-
-#[derive(Resource)]
-pub struct ControlPanelResource(pub Handle<Template>);
-
-impl FromWorld for ControlPanelResource {
-    fn from_world(world: &mut World) -> Self {
-        let server = world.resource::<AssetServer>();
-        ControlPanelResource(server.load("editor/ui/test.guise.xml#main"))
-    }
 }

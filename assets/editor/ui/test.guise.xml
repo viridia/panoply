@@ -5,9 +5,13 @@
   <template id="main">
     <params>
       <param name="count" type="i32" />
-      <param name="mode" type="enum" />
+      <param name="mode" type="panoply::editor::ui::EditorMode" />
     </params>
     <content>
+      <node
+        ui:controller="panoply::guise::controllers::button::ButtonController"
+        style="#panel">
+      </node>
       <!-- <flex id="control-palette" style="#panel">
         <flex flex-direction="row">
         </flex>

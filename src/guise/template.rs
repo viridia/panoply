@@ -1,16 +1,16 @@
 use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
-use serde::{Deserialize, Serialize};
 
-pub type UiNodeList = Vec<Box<UiNode>>;
+pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 
-#[derive(Debug, TypeUuid, TypePath, Serialize, Deserialize, Default)]
+#[derive(Debug, TypeUuid, TypePath, Default)]
 #[uuid = "b2ce477f-e4a4-40cf-b969-916a9dbd799e"]
 pub struct Template {
-    pub params: HashMap<String, ParamType>,
-    pub children: UiNodeList,
+    pub params: HashMap<String, TemplateParam>,
+    pub children: TemplateNodeList,
 }
 
+/// An instantiable template for a UI node
 impl Template {
     pub fn new() -> Self {
         Self {
@@ -20,30 +20,41 @@ impl Template {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ParamType {
-    Bool,
-    I32,
-    U32,
-    F32,
-    String,
+/// Defines the types of parameters that can be passed to a template.
+#[derive(Debug)]
+pub struct TemplateParam {
+    pub r#type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UiNode {
-    pub tag: UiNodeType,
-    // attrs
-    // style
+impl TemplateParam {
+    pub fn new(ty: &str) -> Self {
+        Self {
+            r#type: ty.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct TemplateNode {
+    /// Type of node
+    pub tag: TemplateNodeType,
+
+    /// Reference to style element
+    pub attrs: HashMap<String, String>,
+
     pub controller: Option<String>,
-    pub children: UiNodeList,
+    pub children: TemplateNodeList,
+    // special attrs
+    // each / if / match
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum UiNodeType {
+#[derive(Debug, Default)]
+pub enum TemplateNodeType {
+    #[default]
     Node,
     Flex,
     Grid,
-    // Fragment
+    Fragment,
     // Show
     // For / Each
     // Switch

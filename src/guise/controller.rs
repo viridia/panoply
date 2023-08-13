@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use super::template::TemplateNode;
+
 pub struct PointerEvent {
     target: Entity,
     pos: Vec2,
@@ -17,6 +19,7 @@ pub struct ChangeEvent {
 }
 
 pub enum UiEvent {
+    // Pointer events.
     PointerDown(PointerEvent),
     PointerUp(PointerEvent),
     PointerIn(PointerEvent),
@@ -24,15 +27,24 @@ pub enum UiEvent {
     PointerMove(PointerEvent),
     PointerCancel(PointerEvent),
 
+    // Triggered by a pointer up event while active (not rolled off).
+    Click(PointerEvent),
+
+    // Fired continuously while the widget state is updating.
+    Input(ChangeEvent),
+
+    // Fired when widget has finished updating.
     Change(ChangeEvent),
 
+    // Focus events.
     Focus(FocusEvent),
     Blur(FocusEvent),
 }
 
 /// A controller is an object which attaches to a UiComponent and handles events.
 pub trait Controller {
-    fn init(&self, commands: Commands);
-    fn cleanup(&self, commands: Commands);
-    fn on_event(&self, commands: Commands, entity: Entity, event: &UiEvent);
+    // fn init(&self, commands: Commands);
+    fn render(&mut self, commands: Commands, template_node: &TemplateNode) -> Entity;
+    fn cleanup(&mut self, _commands: Commands) {}
+    fn on_event(&mut self, _commands: Commands, _entity: Entity, _event: &UiEvent) {}
 }

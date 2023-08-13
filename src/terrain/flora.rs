@@ -102,13 +102,12 @@ pub fn gen_flora(
     }
 }
 
-/// Consumes the output of the compute task and creates a mesh component for the ground geometry.
+/// Consumes the output of the compute task and creates instances for trees and.
 pub fn insert_flora(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
     realms_query: Query<(&Realm, &TerrainMap)>,
 ) {
-    // Reset the visibility bits for all parcels.
     for (entity, mut parcel, mut task) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
         if realm.is_ok() {
