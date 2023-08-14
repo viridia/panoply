@@ -1,5 +1,15 @@
 # TODO
 
+* Guise
+  * Styles
+    * Finish unit tests
+    * Background and border colors
+    * Test layout
+    * Inline styles equal
+  * Bundle type
+  * Template params
+  * Controllers
+  * Conditional logic
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.

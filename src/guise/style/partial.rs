@@ -73,6 +73,17 @@ impl PartialStyle {
     }
 }
 
+impl PartialEq<PartialStyle> for PartialStyle {
+    fn eq(&self, other: &PartialStyle) -> bool {
+        self.attrs.len() == other.attrs.len()
+            && self
+                .attrs
+                .iter()
+                .enumerate()
+                .all(|(i, attr)| *attr == other.attrs[i])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use bevy::ui::{UiRect, Val};

@@ -117,7 +117,6 @@ fn reconcile_template(
         for i in 0..max_index {
             if i >= new_count {
                 // New list is smaller than the old list, so delete excess entities.
-                // println!("Despawning: #{}", i);
                 commands.entity(children[i]).despawn_recursive();
             } else {
                 let template_node = &parent_template_nodes[i];
@@ -130,16 +129,12 @@ fn reconcile_template(
                             // controller hasn't changed. Otherwise, fall through and
                             // destroy / re-create.
                             if view.controller.eq(&template_node.controller) {
-                                // println!("Patching: #{}", i);
                                 let mut changed = false;
-                                if !view.style.eq(&style) {
+                                if !view.style.eq(&style)
+                                    || view.inline_styles != template_node.inline_styles
+                                {
                                     changed = true;
                                 }
-                                // TODO
-                                // if !view.inline_styles.eq(template_node.inline_styles) {
-                                //     view.inline_styles = template_node.inline_styles.clone();
-                                //     changed = true;
-                                // }
 
                                 // Replace view element node.
                                 if changed {
@@ -164,14 +159,8 @@ fn reconcile_template(
                         Err(_) => {}
                     }
 
-                    // println!("Despawning: #{}", i);
                     commands.entity(old_child).despawn_recursive();
                 }
-
-                // println!("Spawning entity: #{}", i);
-
-                // Build the Ui bundle here - we need our own bundle type.
-                // We need template params
 
                 // let style = get_named_styles(ui_node, asset_path, server);
                 let new_entity = (*commands)

@@ -9,7 +9,7 @@ use crate::guise::GuiseError;
 use super::ComputedStyle;
 
 /** Set of style attributes that can be applied to construct a style. */
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
     BackgroundColor(Color),
     BorderColor(Color),
