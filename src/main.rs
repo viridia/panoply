@@ -9,6 +9,7 @@ use bevy::{
         texture::ImageSampler,
     },
 };
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::{f32::consts::PI, time::Duration};
 use world::Realm;
 
@@ -123,6 +124,7 @@ fn main() {
             TerrainPlugin,
             InstancedModelsPlugin,
             GuisePlugin,
+            // WorldInspectorPlugin::new(),
         ))
         .run();
 

@@ -1,12 +1,15 @@
 use std::{path::PathBuf, sync::Arc};
 
-use bevy::{asset::AssetPath, prelude::*};
+use bevy::{
+    asset::{AssetPath, LoadState},
+    prelude::*,
+};
 
 use crate::guise::style::ComputedStyle;
 
 use super::{
     partial_style::PartialStyle,
-    template::{Template, TemplateNode},
+    template::{Template, TemplateNodeList},
 };
 
 /// Component that defines the root of a view hierarchy and a template invocation.
@@ -27,19 +30,17 @@ pub struct ViewElement {
 
     /// ID of controller component associated with this element.
     /// Note: when this changes, we will need to remove the old controller components (somehow).
-    pub controller_key: Option<String>,
+    pub controller: Option<String>,
 }
 
-// impl Drop for ViewElement {
-//     fn drop(&mut self) {
-//         println!("View element dropped");
-//     }
-// }
+/// Marker that signals when a component's stylesheet handles have changed.
+#[derive(Component, Default)]
+pub struct StyleHandlesChanged;
 
 pub fn create_views(
     mut commands: Commands,
     mut root_query: Query<(Entity, Ref<ViewRoot>, Option<&Children>)>,
-    mut _elem_query: Query<(Entity, &ViewElement, Option<&Children>)>,
+    mut view_query: Query<&mut ViewElement, Option<&Children>>,
     server: Res<AssetServer>,
     assets: Res<Assets<Template>>,
     mut ev_template: EventReader<AssetEvent<Template>>,
@@ -51,14 +52,15 @@ pub fn create_views(
                     let template = assets.get(handle).unwrap();
                     for (entity, view_root, children) in root_query.iter_mut() {
                         if view_root.template.eq(handle) {
-                            println!("Template Root Entity found: {:?}", asset_path);
+                            // println!("Template Root Entity found: {:?}", asset_path);
                             reconcile_template(
                                 &mut commands,
                                 &server,
                                 &asset_path,
-                                template,
+                                &template.children,
                                 entity,
                                 children,
+                                &mut view_query,
                             );
                         }
                     }
@@ -82,66 +84,243 @@ fn reconcile_template(
     commands: &mut Commands,
     server: &AssetServer,
     asset_path: &AssetPath,
-    template: &Template,
-    root_entity: Entity,
+    template_node_list: &TemplateNodeList,
+    parent: Entity,
     children: Option<&Children>,
+    view_query: &mut Query<&mut ViewElement, Option<&Children>>,
 ) {
-    let path = asset_path.path();
-    let tm_children: &[Entity] = match children {
-        Some(ch) => ch,
-        None => &[],
+    // let path = asset_path.path();
+    let old_count = if children.is_some() {
+        children.unwrap().len()
+    } else {
+        0
     };
-    let mut new_children: Vec<Entity> = Vec::with_capacity(template.children.len());
-    let max_index = tm_children.len().max(template.children.len());
+    let new_count = template_node_list.len();
+    let max_index = old_count.max(new_count);
+    let mut new_children: Vec<Entity> = Vec::with_capacity(new_count);
+
     for i in 0..max_index {
-        if i < tm_children.len() {
-            if i < template.children.len() {
-                // Compare and Patch
-                println!("Patching: {:?}", path.display());
-            } else {
-                // Remove
-                println!("Despawning: {:?}", path.display());
-                commands.entity(tm_children[i]).despawn_recursive();
+        if i >= new_count {
+            // New list is smaller than the old list, so delete some entities.
+            println!("Despawning: #{}", i);
+            commands.entity(children.unwrap()[i]).despawn_recursive();
+        } else {
+            let template_node = &template_node_list[i];
+            let style = get_named_styles(template_node.attrs.get("style"), asset_path, server);
+            if i < old_count {
+                let old_child = children.unwrap()[i];
+                match view_query.get_mut(old_child) {
+                    Ok(mut view) => {
+                        // Patch the existing node instead of replacing it, but only if the controller
+                        // hasn't changed. Otherwise, fall through and destroy / re-create.
+                        if view.controller.eq(&template_node.controller) {
+                            let mut changed = false;
+                            if !view.style.eq(&style) {
+                                view.style = style.clone();
+                                changed = true;
+                            }
+                            // TODO
+                            // if !view.inline_styles.eq(template_node.inline_styles) {
+                            //     view.inline_styles = template_node.inline_styles.clone();
+                            //     changed = true;
+                            // }
+                            view.inline_styles = template_node.inline_styles.clone();
+
+                            if changed {
+                                commands.entity(old_child).insert(StyleHandlesChanged);
+                            }
+
+                            new_children.push(old_child);
+
+                            println!("Patching: #{}", i);
+                            // Recurse and reconcile children of this node.
+                            // reconcile_template(
+                            //     commands,
+                            //     server,
+                            //     asset_path,
+                            //     &template_node.children,
+                            //     child_entity,
+                            //     &mut elem_query,
+                            //     node_children,
+                            // );
+                            continue;
+                        }
+                    }
+                    Err(_) => {}
+                }
+
+                println!("Despawning: #{}", i);
+                commands.entity(old_child).despawn_recursive();
             }
-        } else if i < template.children.len() {
-            let ui_node = &template.children[i];
-            println!("Spawning entity: {}", path.display());
+
+            println!("Spawning entity: #{}", i);
 
             // Build the Ui bundle here - we need our own bundle type.
             // Recurse into template.
             // We need child entities
             // We need template params
 
-            let style = get_named_styles(ui_node, asset_path, server);
-            new_children.push(
-                (*commands)
-                    .spawn((
-                        ViewElement {
-                            style: style.clone(),
-                            inline_styles: ui_node.inline_styles.clone(),
-                            ..default()
-                        },
-                        NodeBundle {
-                            background_color: Color::rgb(0.65, 0.75, 0.65).into(),
-                            border_color: Color::BLUE.into(),
-                            ..default()
-                        },
-                    ))
-                    .id(),
-            )
+            // let style = get_named_styles(ui_node, asset_path, server);
+            let new_entity = (*commands)
+                .spawn((
+                    ViewElement {
+                        style: style.clone(),
+                        inline_styles: template_node.inline_styles.clone(),
+                        ..default()
+                    },
+                    StyleHandlesChanged,
+                    NodeBundle {
+                        background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                        border_color: Color::BLUE.into(),
+                        ..default()
+                    },
+                ))
+                .id();
+            new_children.push(new_entity);
+            // if template_node.children.len() > 0 {
+            //     to_visit.push(ToVisit {
+            //         entity: new_entity,
+            //         template: &template_node.children,
+            //     })
+            // }
         }
     }
 
-    commands.entity(root_entity).replace_children(&new_children);
+    commands.entity(parent).replace_children(&new_children);
 }
 
+// /// Function to update the view hierarchy in response to changes to the templates and params.
+// /// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
+// /// and re-create entire sub-trees of entities if it feels that differential updates are too
+// /// complicated.
+// fn reconcile_template(
+//     commands: &mut Commands,
+//     server: &AssetServer,
+//     asset_path: &AssetPath,
+//     template_node_list: &TemplateNodeList,
+//     parent: Entity,
+//     elem_query: &mut Query<(&mut ViewElement, Option<&Children>)>,
+//     children: Option<&Children>,
+// ) {
+//     let path = asset_path.path();
+//     let mut new_children: Vec<Entity> = Vec::with_capacity(template_node_list.len());
+//     let old_count = if children.is_some() {
+//         children.unwrap().len()
+//     } else {
+//         0
+//     };
+//     let new_count = template_node_list.len();
+//     let max_index = old_count.max(new_count);
+
+//     for i in 0..max_index {
+//         // New list is smaller than the old list, so delete some entities.
+//         if i >= new_count {
+//             println!("Despawning: {:?}", path.display());
+//             commands.entity(children.unwrap()[i]).despawn_recursive();
+//             continue;
+//         }
+
+//         let template_node = &template_node_list[i];
+//         let style = get_named_styles(template_node, asset_path, server);
+//         if i < old_count {
+//             let child_entity = children.unwrap()[i];
+//             match elem_query.get_mut(child_entity) {
+//                 Ok((mut view, node_children)) => {
+//                     // Patch the existing node instead of replacing it, but only if the controller
+//                     // hasn't changed. Otherwise, fall through and destroy / re-create.
+//                     if view.controller.eq(&template_node.controller) {
+//                         view.style = style.clone();
+//                         view.inline_styles = template_node.inline_styles.clone();
+//                         new_children.push(child_entity);
+//                         println!("Patching: {:?}/{}", path.display(), i);
+//                         // Recurse and reconcile children of this node.
+//                         // reconcile_template(
+//                         //     commands,
+//                         //     server,
+//                         //     asset_path,
+//                         //     &template_node.children,
+//                         //     child_entity,
+//                         //     &mut elem_query,
+//                         //     node_children,
+//                         // );
+//                         continue;
+//                     }
+//                 }
+//                 Err(_) => {}
+//             }
+//         }
+
+//         // If we're not keeping the old entity, then despawn it.
+//         if i < old_count {
+//             println!("Despawning: {:?}/{}", path.display(), i);
+//             commands.entity(children.unwrap()[i]).despawn_recursive();
+//         }
+
+//         if i < new_count {
+//             let ui_node = &template_node_list[i];
+//             println!("Spawning: {:?}/{}", path.display(), i);
+
+//             // TODO: Build the Ui bundle here - we need our own bundle type.
+//             // We need template params
+
+//             let style = get_named_styles(ui_node, asset_path, server);
+//             let new_entity = (*commands)
+//                 .spawn((
+//                     ViewElement {
+//                         style: style.clone(),
+//                         inline_styles: ui_node.inline_styles.clone(),
+//                         ..default()
+//                     },
+//                     NodeBundle {
+//                         background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+//                         border_color: Color::BLUE.into(),
+//                         ..default()
+//                     },
+//                 ))
+//                 .id();
+
+//             new_children.push(new_entity);
+//             // reconcile_template(
+//             //     commands,
+//             //     server,
+//             //     asset_path,
+//             //     &template_node.children,
+//             //     new_entity,
+//             //     &mut elem_query,
+//             //     None,
+//             // );
+//         }
+//     }
+
+//     // Update the parent's list of child ids.
+//     commands.entity(parent).replace_children(&new_children);
+
+//     // for (i, child) in new_children.iter().enumerate() {
+//     //     match elem_query.get(*child) {
+//     //         Ok((_, node_children)) => {
+//     //             let template_node = &template_node_list[i];
+//     //             reconcile_template(
+//     //                 commands,
+//     //                 server,
+//     //                 asset_path,
+//     //                 &template_node.children,
+//     //                 *child,
+//     //                 &mut elem_query,
+//     //                 node_children,
+//     //             );
+//     //         }
+//     //         Err(_) => {}
+//     //     }
+//     // }
+// }
+
 fn get_named_styles(
-    ui_node: &TemplateNode,
+    name: Option<&String>,
     base_path: &AssetPath,
     server: &AssetServer,
 ) -> Option<Handle<PartialStyle>> {
     // Check if template has a 'style' attribute
-    ui_node.attrs.get("style").map(|str| {
+    name.map(|str| {
         let style_path = relative_asset_path(&base_path, str);
         println!("Relative asset: {:?}", style_path);
         server.load(style_path)
@@ -150,7 +329,7 @@ fn get_named_styles(
 
 pub fn update_view_styles(
     mut commands: Commands,
-    query: Query<(Entity, Ref<ViewElement>)>,
+    query: Query<(Entity, &ViewElement)>,
     server: Res<AssetServer>,
     assets: Res<Assets<PartialStyle>>,
     mut ev_style: EventReader<AssetEvent<PartialStyle>>,
@@ -159,7 +338,7 @@ pub fn update_view_styles(
         match ev {
             AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
-                    println!("Style asset event {:?}", asset_path);
+                    println!("Style asset created/modified {:?}", asset_path);
                 }
 
                 for (entity, view) in query.iter() {
@@ -169,7 +348,10 @@ pub fn update_view_styles(
                                 let mut computed = ComputedStyle::default();
                                 ps.apply_to(&mut computed);
                                 println!("Style updated 1");
-                                commands.entity(entity).insert(computed.style);
+                                commands
+                                    .entity(entity)
+                                    .insert(computed.style)
+                                    .remove::<StyleHandlesChanged>();
                             }
                         }
                     }
@@ -183,19 +365,35 @@ pub fn update_view_styles(
             }
         }
     }
+}
 
+pub fn update_view_style_handles(
+    mut commands: Commands,
+    query: Query<(Entity, &ViewElement), With<StyleHandlesChanged>>,
+    server: Res<AssetServer>,
+    assets: Res<Assets<PartialStyle>>,
+) {
     for (entity, view) in query.iter() {
-        // if view.is_changed() {
-        if let Some(ref style) = view.style {
-            println!("Style load state: {:?}", server.get_load_state(style));
-            if let Some(ps) = assets.get(&style) {
-                let mut computed = ComputedStyle::default();
-                ps.apply_to(&mut computed);
-                println!("Style updated 2");
-                commands.entity(entity).insert(computed.style);
+        if let Some(ref style_handle) = view.style {
+            let loaded = server.get_load_state(style_handle);
+            // println!("Style load state: {:?}", loaded);
+            if matches!(loaded, LoadState::Loaded) {
+                if let Some(ps) = assets.get(&style_handle) {
+                    let mut computed = ComputedStyle::default();
+                    ps.apply_to(&mut computed);
+                    println!("Style updated 2");
+                    commands
+                        .entity(entity)
+                        .insert(computed.style)
+                        .remove::<StyleHandlesChanged>();
+                }
             }
+        } else {
+            commands
+                .entity(entity)
+                .remove::<StyleHandlesChanged>()
+                .remove::<Style>();
         }
-        // }
     }
 }
 
