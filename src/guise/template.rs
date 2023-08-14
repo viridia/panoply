@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
+
+use super::partial_style::PartialStyle;
 
 pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 
@@ -38,6 +42,10 @@ impl TemplateParam {
 pub struct TemplateNode {
     /// Type of node
     pub tag: TemplateNodeType,
+
+    /// Inline styles on the node
+    /// TODO: Make this RC?
+    pub inline_styles: Option<Arc<PartialStyle>>,
 
     /// Reference to style element
     pub attrs: HashMap<String, String>,

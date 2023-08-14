@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{
     asset::GuiseLoader,
     controllers::ButtonController,
-    style::PartialStyle,
+    partial_style::PartialStyle,
     template::Template,
     view::{create_views, update_view_styles, ViewRoot},
 };
@@ -22,9 +22,12 @@ impl Plugin for GuisePlugin {
 }
 
 fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
-    commands.spawn(ViewRoot {
-        template: server.load("editor/ui/test.guise.xml#main"),
-    });
+    commands.spawn((
+        ViewRoot {
+            template: server.load("editor/ui/test.guise.xml#main"),
+        },
+        SpatialBundle::default(),
+    ));
     // let something = type_registry.0.read();
     // for _x in something.iter() {
     //     println!("Name {}", x.type_name());

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 use bevy::prelude::default;
 use bevy::utils::BoxedFuture;
@@ -6,9 +8,10 @@ use quick_xml::events::{BytesStart, Event};
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
-use crate::guise::style;
+use crate::guise::partial_style;
 use crate::guise::template::TemplateParam;
 
+use super::partial_style::{PartialStyle, StyleAttr};
 use super::template::{Template, TemplateNode, TemplateNodeList, TemplateNodeType};
 use super::GuiseError;
 
@@ -227,8 +230,29 @@ impl<'a> GuiseXmlVisitor<'a> {
         load_context: &'b mut LoadContext,
     ) -> Result<(), GuiseError> {
         let id = require_attr(e, ATTR_ID)?.unescape_value().unwrap();
-        let style = style::from_xml(&mut self.reader, e)?;
+        let mut attrs: Vec<StyleAttr> = Vec::with_capacity(10);
+
+        for a in e.attributes() {
+            if let Ok(attr) = a {
+                if attr.key != ATTR_ID && attr.key.prefix().is_none() {
+                    let attr_name: &[u8] = attr.key.local_name().into_inner();
+                    let attr_value: &str = &attr.unescape_value().unwrap();
+                    match partial_style::StyleAttr::parse(attr_name, attr_value.trim()) {
+                        Ok(Some(attr)) => attrs.push(attr),
+                        Ok(None) => {
+                            // We didn't recognize the style attribute. That's an error
+                            // for <style> element but not an error for inline styles, since
+                            // nodes can have other attributes.
+                            return Err(GuiseError::UnknownAttribute(attr_name.to_vec()));
+                        }
+                        Err(err) => return Err(err),
+                    }
+                }
+            }
+        }
+
         // println!("Style element loaded: {}", id);
+        let style = partial_style::PartialStyle::from_attrs(&attrs);
         load_context.set_labeled_asset(&id, LoadedAsset::new(style));
         Ok(())
     }
@@ -351,12 +375,34 @@ impl<'a> GuiseXmlVisitor<'a> {
             ..default()
         };
 
+        // Parse inline style attributes
+        let mut style_attrs = Vec::<StyleAttr>::with_capacity(20);
         for attr in e.attributes() {
-            let a = attr.unwrap();
-            node.attrs.insert(
-                std::str::from_utf8(a.key.0).unwrap().to_string(),
-                a.unescape_value().unwrap().to_string(),
-            );
+            if let Ok(attr) = attr {
+                let attr_name: &[u8] = attr.key.local_name().into_inner();
+                let attr_value: &str = &attr.unescape_value().unwrap();
+
+                match StyleAttr::parse(attr_name, attr_value) {
+                    // If we recognized the attribute as a style, then add it to the style list.
+                    Ok(Some(attr)) => style_attrs.push(attr),
+
+                    // Otherwise, if we didn't recognize it, that's OK - treat it as a generic
+                    // atribute for this template node.
+                    Ok(None) => {
+                        node.attrs.insert(
+                            std::str::from_utf8(attr_name).unwrap().to_string(),
+                            attr_value.to_string(),
+                        );
+                    }
+
+                    // If the parser returned an error, then propagate it.
+                    Err(err) => return Err(err),
+                }
+            }
+        }
+
+        if style_attrs.len() > 0 {
+            node.inline_styles = Some(Arc::new(PartialStyle::from_attrs(&style_attrs)))
         }
 
         if !empty {

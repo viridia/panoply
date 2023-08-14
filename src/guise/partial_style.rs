@@ -1,22 +1,27 @@
-use super::GuiseError;
+use super::{style::ComputedStyle, GuiseError};
 use bevy::{
+    prelude::Color,
     reflect::{TypePath, TypeUuid},
     ui::*,
 };
 use lazy_static::lazy_static;
+use quick_xml::writer::Writer;
 use quick_xml::{
     events::{BytesStart, Event},
     name::QName,
 };
-use quick_xml::{writer::Writer, Reader};
 use regex::Regex;
 use std::str::FromStr;
 
 /** Set of style attributes that can be applied to construct a style. */
 #[derive(Debug, Clone)]
 pub enum StyleAttr {
+    BackgroundColor(Color),
+    BorderColor(Color),
+
     Display(bevy::ui::Display),
     Position(bevy::ui::PositionType),
+    Overflow(bevy::ui::OverflowAxis),
     OverflowX(bevy::ui::OverflowAxis),
     OverflowY(bevy::ui::OverflowAxis),
     Direction(bevy::ui::Direction),
@@ -79,149 +84,164 @@ pub enum StyleAttr {
 
 impl StyleAttr {
     /// Apply this style attribute to a computed style.
-    pub fn apply(&self, computed: &mut Style) {
+    pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
+            StyleAttr::BackgroundColor(val) => {
+                computed.background_color = Some(*val);
+            }
+            StyleAttr::BorderColor(val) => {
+                computed.border_color = Some(*val);
+            }
+
             StyleAttr::Display(val) => {
-                computed.display = *val;
+                computed.style.display = *val;
             }
             StyleAttr::Position(val) => {
-                computed.position_type = *val;
+                computed.style.position_type = *val;
+            }
+            StyleAttr::Overflow(val) => {
+                computed.style.overflow.x = *val;
+                computed.style.overflow.y = *val;
             }
             StyleAttr::OverflowX(val) => {
-                computed.overflow.x = *val;
+                computed.style.overflow.x = *val;
             }
             StyleAttr::OverflowY(val) => {
-                computed.overflow.y = *val;
+                computed.style.overflow.y = *val;
             }
             StyleAttr::Direction(val) => {
-                computed.direction = *val;
+                computed.style.direction = *val;
             }
 
             StyleAttr::Left(val) => {
-                computed.left = *val;
+                computed.style.left = *val;
             }
             StyleAttr::Right(val) => {
-                computed.right = *val;
+                computed.style.right = *val;
             }
             StyleAttr::Top(val) => {
-                computed.top = *val;
+                computed.style.top = *val;
             }
             StyleAttr::Bottom(val) => {
-                computed.bottom = *val;
+                computed.style.bottom = *val;
             }
 
             StyleAttr::Width(val) => {
-                computed.width = *val;
+                computed.style.width = *val;
             }
             StyleAttr::Height(val) => {
-                computed.height = *val;
+                computed.style.height = *val;
             }
             StyleAttr::MinWidth(val) => {
-                computed.min_width = *val;
+                computed.style.min_width = *val;
             }
             StyleAttr::MinHeight(val) => {
-                computed.min_height = *val;
+                computed.style.min_height = *val;
             }
             StyleAttr::MaxWidth(val) => {
-                computed.max_width = *val;
+                computed.style.max_width = *val;
             }
             StyleAttr::MaxHeight(val) => {
-                computed.max_height = *val;
+                computed.style.max_height = *val;
             }
 
             StyleAttr::AlignItems(val) => {
-                computed.align_items = *val;
+                computed.style.align_items = *val;
             }
             StyleAttr::JustifyItems(val) => {
-                computed.justify_items = *val;
+                computed.style.justify_items = *val;
             }
             StyleAttr::AlignSelf(val) => {
-                computed.align_self = *val;
+                computed.style.align_self = *val;
             }
             StyleAttr::JustifySelf(val) => {
-                computed.justify_self = *val;
+                computed.style.justify_self = *val;
             }
 
             StyleAttr::Margin(val) => {
-                computed.margin = *val;
+                computed.style.margin = *val;
             }
             StyleAttr::MarginLeft(val) => {
-                computed.margin.left = *val;
+                computed.style.margin.left = *val;
             }
             StyleAttr::MarginRight(val) => {
-                computed.margin.right = *val;
+                computed.style.margin.right = *val;
             }
             StyleAttr::MarginTop(val) => {
-                computed.margin.top = *val;
+                computed.style.margin.top = *val;
             }
             StyleAttr::MarginBottom(val) => {
-                computed.margin.bottom = *val;
+                computed.style.margin.bottom = *val;
             }
 
             StyleAttr::Padding(val) => {
-                computed.padding = *val;
+                computed.style.padding = *val;
             }
             StyleAttr::PaddingLeft(val) => {
-                computed.padding.left = *val;
+                computed.style.padding.left = *val;
             }
             StyleAttr::PaddingRight(val) => {
-                computed.padding.right = *val;
+                computed.style.padding.right = *val;
             }
             StyleAttr::PaddingTop(val) => {
-                computed.padding.top = *val;
+                computed.style.padding.top = *val;
             }
             StyleAttr::PaddingBottom(val) => {
-                computed.padding.bottom = *val;
+                computed.style.padding.bottom = *val;
             }
 
             StyleAttr::Border(val) => {
-                computed.border = *val;
+                computed.style.border = *val;
             }
             StyleAttr::BorderLeft(val) => {
-                computed.border.left = *val;
+                computed.style.border.left = *val;
             }
             StyleAttr::BorderRight(val) => {
-                computed.border.right = *val;
+                computed.style.border.right = *val;
             }
             StyleAttr::BorderTop(val) => {
-                computed.border.top = *val;
+                computed.style.border.top = *val;
             }
             StyleAttr::BorderBottom(val) => {
-                computed.border.bottom = *val;
+                computed.style.border.bottom = *val;
             }
 
             StyleAttr::FlexDirection(val) => {
-                computed.flex_direction = *val;
+                computed.style.flex_direction = *val;
             }
             StyleAttr::FlexWrap(val) => {
-                computed.flex_wrap = *val;
+                computed.style.flex_wrap = *val;
             }
             StyleAttr::FlexGrow(val) => {
-                computed.flex_grow = *val;
+                computed.style.flex_grow = *val;
             }
             StyleAttr::FlexShrink(val) => {
-                computed.flex_shrink = *val;
+                computed.style.flex_shrink = *val;
             }
             StyleAttr::FlexBasis(val) => {
-                computed.flex_basis = *val;
+                computed.style.flex_basis = *val;
             }
 
             StyleAttr::RowGap(val) => {
-                computed.row_gap = *val;
+                computed.style.row_gap = *val;
             }
             StyleAttr::ColumnGap(val) => {
-                computed.column_gap = *val;
+                computed.style.column_gap = *val;
             }
             StyleAttr::Gap(val) => {
-                computed.row_gap = *val;
-                computed.column_gap = *val;
+                computed.style.row_gap = *val;
+                computed.style.column_gap = *val;
             }
         }
     }
 
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
-    pub fn from_xml<'a>(name: &'a [u8], value: &str) -> Result<Self, GuiseError> {
-        Ok(match name {
+    pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
+        Ok(Some(match name {
+            b"background-color" => StyleAttr::BackgroundColor(StyleAttr::parse_color(value)?),
+
+            b"border-color" => StyleAttr::BorderColor(StyleAttr::parse_color(value)?),
+
             b"display" => StyleAttr::Display(match value {
                 "none" => Display::None,
                 "grid" => Display::Grid,
@@ -234,6 +254,14 @@ impl StyleAttr {
             b"position" => StyleAttr::Position(match value {
                 "absolute" => PositionType::Absolute,
                 "relative" => PositionType::Relative,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"overflow" => StyleAttr::Overflow(match value {
+                "clip" => OverflowAxis::Clip,
+                "visible" => OverflowAxis::Visible,
                 _ => {
                     return Err(GuiseError::UnknownAttributeValue(value.to_string()));
                 }
@@ -256,18 +284,17 @@ impl StyleAttr {
             }),
 
             //     Direction,
+            b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
+            b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
+            b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
+            b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
 
-            //     Left,
-            //     Right,
-            //     Top,
-            //     Bottom,
-
-            //     Width,
-            //     Height,
-            //     MinWidth,
-            //     MinHeight,
-            //     MaxWidth,
-            //     MaxHeight,
+            b"width" => StyleAttr::Width(StyleAttr::parse_val(value)?),
+            b"height" => StyleAttr::Height(StyleAttr::parse_val(value)?),
+            b"min-width" => StyleAttr::MinWidth(StyleAttr::parse_val(value)?),
+            b"min-height" => StyleAttr::MinHeight(StyleAttr::parse_val(value)?),
+            b"max-width" => StyleAttr::MaxWidth(StyleAttr::parse_val(value)?),
+            b"max-height" => StyleAttr::MaxHeight(StyleAttr::parse_val(value)?),
 
             //     // pub aspect_ratio: StyleProp<f32>,
             //     AlignItems,
@@ -318,17 +345,20 @@ impl StyleAttr {
             //     // pub grid_auto_columns: Option<Vec<GridTrack>>,
             //     // pub grid_row: GridPlacement,
             //     // pub grid_column: GridPlacement,
-            _ => {
-                panic!(
-                    "Unknown style attribute: {}",
-                    std::str::from_utf8(name).unwrap()
-                );
-            }
-        })
+            _ => return Ok(None),
+        }))
     }
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
+            StyleAttr::BackgroundColor(col) => {
+                elem.push_attribute(("background-color", StyleAttr::color_to_str(*col).as_str()));
+            }
+
+            StyleAttr::BorderColor(col) => {
+                elem.push_attribute(("border-color", StyleAttr::color_to_str(*col).as_str()));
+            }
+
             StyleAttr::Display(disp) => {
                 elem.push_attribute((
                     "display",
@@ -346,6 +376,16 @@ impl StyleAttr {
                     match pos {
                         PositionType::Absolute => "absolute",
                         PositionType::Relative => "relative",
+                    },
+                ));
+            }
+
+            StyleAttr::Overflow(ov) => {
+                elem.push_attribute((
+                    "overflow",
+                    match ov {
+                        OverflowAxis::Clip => "clip",
+                        OverflowAxis::Visible => "visible",
                     },
                 ));
             }
@@ -497,13 +537,48 @@ impl StyleAttr {
         }
     }
 
+    /// Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
+    fn parse_color(str: &str) -> Result<Color, GuiseError> {
+        lazy_static! {
+            static ref RE_RGBA: Regex =
+                Regex::new(r"^rgba\(([\d\.]+),\s*([\d\.]+),\s*([\d\.]+),\s*([\d\.]+)\)$").unwrap();
+            static ref RE_HSLA: Regex =
+                Regex::new(r"^hsla\(([\d\.]+),\s*([\d\.]+),\s*([\d\.]+),\s*([\d\.]+)\)$").unwrap();
+        }
+
+        let h = Color::hex(str);
+        if h.is_ok() {
+            return Ok(h.unwrap());
+        }
+
+        RE_RGBA
+            .captures(str)
+            .map(|cap| {
+                Color::rgba(
+                    f32::from_str(&cap[1]).unwrap(),
+                    f32::from_str(&cap[2]).unwrap(),
+                    f32::from_str(&cap[3]).unwrap(),
+                    f32::from_str(&cap[4]).unwrap(),
+                )
+            })
+            .or(RE_HSLA.captures(str).map(|cap| {
+                Color::hsla(
+                    f32::from_str(&cap[1]).unwrap(),
+                    f32::from_str(&cap[2]).unwrap(),
+                    f32::from_str(&cap[3]).unwrap(),
+                    f32::from_str(&cap[4]).unwrap(),
+                )
+            }))
+            .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
+    }
+
     /// Convert a CSS-style length string into a `Val`.
     fn parse_val(str: &str) -> Result<Val, GuiseError> {
         if str == "auto" {
             return Ok(Val::Auto);
         }
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^([\d\.]+)(px|vw|vh|vmin|vmax|%)?$").unwrap();
+            static ref RE: Regex = Regex::new(r"^([\-\d\.]+)(px|vw|vh|vmin|vmax|%)?$").unwrap();
         }
         RE.captures(str)
             .and_then(|cap| {
@@ -514,6 +589,7 @@ impl StyleAttr {
                 }
                 match &cap[2] {
                     "px" => Some(Val::Px(dist)),
+                    "%" => Some(Val::Percent(dist)),
                     "vw" => Some(Val::Vw(dist)),
                     "vh" => Some(Val::Vh(dist)),
                     "vmin" => Some(Val::VMin(dist)),
@@ -590,6 +666,28 @@ impl StyleAttr {
             StyleAttr::val_to_str(val.left)
         )
     }
+
+    fn color_to_str(col: Color) -> String {
+        match col {
+            Color::Rgba {
+                red,
+                green,
+                blue,
+                alpha,
+            } => format!("rgba({}, {}, {}, {})", red, green, blue, alpha),
+
+            Color::Hsla {
+                hue,
+                saturation,
+                lightness,
+                alpha,
+            } => format!("hsla({}, {}, {}, {})", hue, saturation, lightness, alpha),
+
+            _ => {
+                panic!("Unsupported color format")
+            }
+        }
+    }
 }
 
 const ATTR_ID: QName = QName(b"id");
@@ -599,7 +697,7 @@ const ATTR_ID: QName = QName(b"id");
 /// vector of enums, each of which stores a single style attribute. This "sparse" representation
 /// allows for fast (O(N) where N is the number of defined attributes) merging of styles,
 /// particularly for styles which have few or no attributes.
-#[derive(Debug, TypeUuid, TypePath, Default)]
+#[derive(Debug, TypeUuid, TypePath, Default, Clone)]
 #[uuid = "7d753986-2d0b-4e22-9ef3-166ffafa989e"]
 pub struct PartialStyle {
     attrs: Vec<StyleAttr>,
@@ -627,27 +725,13 @@ impl PartialStyle {
         }
     }
 
-    /// Construct a new `PartialStyle` from a Quick-XML `Attributes` collection.
-    pub fn from_xml<'a>(e: &'a BytesStart) -> Result<Self, GuiseError> {
-        let mut style = Self {
-            attrs: Vec::with_capacity(e.attributes().count()),
-        };
-        for a in e.attributes() {
-            if let Ok(attr) = a {
-                if attr.key != ATTR_ID && attr.key.prefix().is_none() {
-                    let attr_name: &[u8] = attr.key.local_name().into_inner();
-                    let attr_value: &str = &attr.unescape_value().unwrap();
-                    style
-                        .attrs
-                        .push(StyleAttr::from_xml(attr_name, attr_value.trim())?)
-                }
-            }
-        }
-        Ok(style)
+    /// True if there are no styles defined.
+    pub fn is_empty(&self) -> bool {
+        return self.attrs.is_empty();
     }
 
     /// Merge the style properties into a computed `Style` object.
-    pub fn apply_to(&self, computed: &mut Style) {
+    pub fn apply_to(&self, computed: &mut ComputedStyle) {
         for attr in self.attrs.iter() {
             attr.apply(computed);
         }
@@ -670,27 +754,6 @@ impl PartialStyle {
         }
         assert!(writer.write_event(Event::Empty(elem)).is_ok());
     }
-}
-
-pub fn from_xml<'a>(
-    _reader: &mut Reader<&[u8]>,
-    e: &'a BytesStart,
-) -> Result<PartialStyle, GuiseError> {
-    let mut result = PartialStyle {
-        attrs: Vec::with_capacity(e.attributes().count()),
-    };
-    for a in e.attributes() {
-        if let Ok(attr) = a {
-            if attr.key != ATTR_ID && attr.key.prefix().is_none() {
-                let attr_name: &[u8] = attr.key.local_name().into_inner();
-                let attr_value: &str = &attr.unescape_value().unwrap();
-                result
-                    .attrs
-                    .push(StyleAttr::from_xml(attr_name, attr_value.trim())?)
-            }
-        }
-    }
-    Ok(result)
 }
 
 #[cfg(test)]

@@ -1,0 +1,192 @@
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+  xmlns:ui="http://viridia.org/guise"
+  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <start>
+    <ref name="templates" />
+  </start>
+
+  <define name="templates">
+    <element name="templates">
+      <zeroOrMore>
+        <ref name="style-elt" />
+      </zeroOrMore>
+      <oneOrMore>
+        <ref name="template-elt" />
+      </oneOrMore>
+    </element>
+  </define>
+
+  <define name="style-elt">
+    <element name="style">
+      <attribute name="id" />
+      <ref name="style-attrs" />
+      <empty />
+    </element>
+  </define>
+
+  <define name="template-elt">
+    <element name="template">
+      <attribute name="id" />
+      <ref name="params" />
+      <ref name="content" />
+    </element>
+  </define>
+
+  <define name="params">
+    <element name="params">
+      <oneOrMore>
+        <ref name="param-def" />
+      </oneOrMore>
+    </element>
+  </define>
+
+  <define name="param-def">
+    <element name="param">
+      <attribute name="name" />
+      <attribute name="type" />
+    </element>
+  </define>
+
+  <define name="content">
+    <element name="content">
+      <ref name="node-list" />
+    </element>
+  </define>
+
+  <define name="node-list">
+    <zeroOrMore>
+      <choice>
+        <ref name="node" />
+        <ref name="flex" />
+      </choice>
+    </zeroOrMore>
+  </define>
+
+  <define name="node">
+    <element name="node">
+      <ref name="node-attrs" />
+      <ref name="style-attrs" />
+      <ref name="node-list" />
+    </element>
+  </define>
+
+  <define name="flex">
+    <element name="flex">
+      <ref name="node-attrs" />
+      <ref name="style-attrs" />
+      <ref name="node-list" />
+    </element>
+  </define>
+
+  <define name="node-attrs">
+    <optional>
+      <attribute name="id" />
+    </optional>
+    <optional>
+      <attribute name="style" />
+    </optional>
+    <optional>
+      <attribute name="ui:controller" />
+    </optional>
+  </define>
+
+  <define name="style-attrs">
+    <optional>
+      <attribute name="display">
+        <choice>
+          <value>flex</value>
+          <value>grid</value>
+          <value>none</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="position">
+        <choice>
+          <value>relative</value>
+          <value>absolute</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="overflow">
+        <choice>
+          <value>clip</value>
+          <value>visible</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="overflow-x">
+        <choice>
+          <value>clip</value>
+          <value>visible</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="overflow-y">
+        <choice>
+          <value>clip</value>
+          <value>visible</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="flex-direction" />
+    </optional>
+
+    <optional>
+      <attribute name="left" />
+    </optional>
+    <optional>
+      <attribute name="right" />
+    </optional>
+    <optional>
+      <attribute name="top" />
+    </optional>
+    <optional>
+      <attribute name="bottom" />
+    </optional>
+
+    <optional>
+      <attribute name="width" />
+    </optional>
+    <optional>
+      <attribute name="height" />
+    </optional>
+
+    <optional>
+      <attribute name="margin" />
+    </optional>
+
+    <optional>
+      <attribute name="padding" />
+    </optional>
+
+    <optional>
+      <attribute name="border" />
+    </optional>
+
+    <optional>
+      <attribute name="flex" />
+    </optional>
+
+    <optional>
+      <attribute name="gap" />
+    </optional>
+  </define>
+
+  <define name="val">
+    <choice>
+      <data type="float" />
+      <data type="float" />
+    </choice>
+  </define>
+
+</grammar>

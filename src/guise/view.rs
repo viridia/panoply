@@ -1,55 +1,39 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use bevy::{asset::AssetPath, prelude::*};
 
-use super::{style::PartialStyle, template::Template};
+use crate::guise::style::ComputedStyle;
 
+use super::{
+    partial_style::PartialStyle,
+    template::{Template, TemplateNode},
+};
+
+/// Component that defines the root of a view hierarchy and a template invocation.
 #[derive(Component, Default)]
 pub struct ViewRoot {
     pub template: Handle<Template>,
 }
 
+/// Component that defines a ui element, and which can differentially update when the
+/// template asset changes.
 #[derive(Component, Default)]
 pub struct ViewElement {
-    // Need a way to reference the template node.
-    // This needs to be stable across file changes.
+    /// Reference to style element by name
     pub style: Option<Handle<PartialStyle>>,
+
+    /// Inline styles for this view element
+    pub inline_styles: Option<Arc<PartialStyle>>,
+
+    /// ID of controller component associated with this element.
+    /// Note: when this changes, we will need to remove the old controller components (somehow).
+    pub controller_key: Option<String>,
 }
 
-pub struct VViewContext<'w, 's> {
-    pub world: &'w mut World,
-    pub commands: &'w mut Commands<'w, 's>,
-    server: Res<'w, AssetServer>,
-    templates: Res<'w, Assets<Template>>,
-    styles: Res<'w, Assets<PartialStyle>>,
-}
-
-impl<'w, 's> VViewContext<'w, 's> {
-    pub fn create() {}
-}
-
-#[derive(Default)]
-pub struct LocalViewContext {
-    handle: Handle<Template>,
-}
-
-impl LocalViewContext {
-    pub fn create_root(&mut self, path: &str) {
-        // self.handle = server.l
-    }
-}
-
-// pub fn create_control_panel(
-//     server: Res<AssetServer>,
-//     templates: Res<Assets<Template>>,
-//     styles: Res<Assets<PartialStyle>>,
-//     mut ctx: Local<LocalViewContext>,
-// ) {
-//     let handle_cpanel: Handle<Template> = server.load("editor/ui/test.guise.xml#main");
-//     let handle_panel: Handle<PartialStyle> = server.load("editor/ui/test.guise.xml#panel");
-//     let ui_cpanel = templates.get(&handle_cpanel);
-
-//     ctx.create_root("editor/ui/test.guise.xml#main");
+// impl Drop for ViewElement {
+//     fn drop(&mut self) {
+//         println!("View element dropped");
+//     }
 // }
 
 pub fn create_views(
@@ -65,84 +49,153 @@ pub fn create_views(
             AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
                     let template = assets.get(handle).unwrap();
-                    let path = asset_path.path();
-                    for (entity, root, children) in root_query.iter_mut() {
-                        if root.template.eq(handle) {
-                            println!("Root found: {}", path.display());
-                            let tm_children: &[Entity] = match children {
-                                Some(ch) => ch,
-                                None => &[],
-                            };
-                            let mut new_children: Vec<Entity> =
-                                Vec::with_capacity(template.children.len());
-                            let max_index = tm_children.len().max(template.children.len());
-                            for i in 0..max_index {
-                                if i < tm_children.len() {
-                                    if i < template.children.len() {
-                                        // Compare Patch
-                                    } else {
-                                        // Remove
-                                        commands.entity(tm_children[i]).despawn_recursive();
-                                    }
-                                } else if i < template.children.len() {
-                                    let ui_node = &template.children[i];
-                                    let style: Option<Handle<PartialStyle>> = match ui_node
-                                        .attrs
-                                        .get("style")
-                                    {
-                                        Some(str) => Some(server.load(if str.starts_with('#') {
-                                            AssetPath::new_ref(asset_path.path(), Some(str))
-                                        } else {
-                                            AssetPath::from(str)
-                                        })),
-
-                                        None => None,
-                                    };
-                                    // Add new child
-                                    new_children.push(
-                                        commands.spawn(ViewElement { style, ..default() }).id(),
-                                    )
-                                }
-                            }
-
-                            commands.entity(entity).replace_children(&new_children);
-                            // Build the Ui bundle here.
-                            // Recurse into template.
-                            // We need child entities
-                            // We need params
+                    for (entity, view_root, children) in root_query.iter_mut() {
+                        if view_root.template.eq(handle) {
+                            println!("Template Root Entity found: {:?}", asset_path);
+                            reconcile_template(
+                                &mut commands,
+                                &server,
+                                &asset_path,
+                                template,
+                                entity,
+                                children,
+                            );
                         }
                     }
                 }
             }
 
-            _ => {}
+            AssetEvent::Removed { handle } => {
+                if let Some(asset_path) = server.get_handle_path(handle) {
+                    println!("Template asset removed {:?}", asset_path);
+                }
+            }
         }
     }
 }
 
+/// Function to update the view hierarchy in response to changes to the templates and params.
+/// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
+/// and re-create entire sub-trees of entities if it feels that differential updates are too
+/// complicated.
+fn reconcile_template(
+    commands: &mut Commands,
+    server: &AssetServer,
+    asset_path: &AssetPath,
+    template: &Template,
+    root_entity: Entity,
+    children: Option<&Children>,
+) {
+    let path = asset_path.path();
+    let tm_children: &[Entity] = match children {
+        Some(ch) => ch,
+        None => &[],
+    };
+    let mut new_children: Vec<Entity> = Vec::with_capacity(template.children.len());
+    let max_index = tm_children.len().max(template.children.len());
+    for i in 0..max_index {
+        if i < tm_children.len() {
+            if i < template.children.len() {
+                // Compare and Patch
+                println!("Patching: {:?}", path.display());
+            } else {
+                // Remove
+                println!("Despawning: {:?}", path.display());
+                commands.entity(tm_children[i]).despawn_recursive();
+            }
+        } else if i < template.children.len() {
+            let ui_node = &template.children[i];
+            println!("Spawning entity: {}", path.display());
+
+            // Build the Ui bundle here - we need our own bundle type.
+            // Recurse into template.
+            // We need child entities
+            // We need template params
+
+            let style = get_named_styles(ui_node, asset_path, server);
+            new_children.push(
+                (*commands)
+                    .spawn((
+                        ViewElement {
+                            style: style.clone(),
+                            inline_styles: ui_node.inline_styles.clone(),
+                            ..default()
+                        },
+                        NodeBundle {
+                            background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                            border_color: Color::BLUE.into(),
+                            ..default()
+                        },
+                    ))
+                    .id(),
+            )
+        }
+    }
+
+    commands.entity(root_entity).replace_children(&new_children);
+}
+
+fn get_named_styles(
+    ui_node: &TemplateNode,
+    base_path: &AssetPath,
+    server: &AssetServer,
+) -> Option<Handle<PartialStyle>> {
+    // Check if template has a 'style' attribute
+    ui_node.attrs.get("style").map(|str| {
+        let style_path = relative_asset_path(&base_path, str);
+        println!("Relative asset: {:?}", style_path);
+        server.load(style_path)
+    })
+}
+
 pub fn update_view_styles(
     mut commands: Commands,
-    mut query: Query<(&ViewElement)>,
-    assets: Res<Assets<PartialStyle>>,
+    query: Query<(Entity, Ref<ViewElement>)>,
     server: Res<AssetServer>,
+    assets: Res<Assets<PartialStyle>>,
     mut ev_style: EventReader<AssetEvent<PartialStyle>>,
 ) {
     for ev in ev_style.iter() {
         match ev {
             AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
-                    println!("SS found: {}", asset_path.path().display());
+                    println!("Style asset event {:?}", asset_path);
                 }
-                for view in query.iter() {
+
+                for (entity, view) in query.iter() {
                     if let Some(ref style_handle) = view.style {
                         if style_handle.eq(handle) {
-                            println!("Style updated")
+                            if let Some(ps) = assets.get(handle) {
+                                let mut computed = ComputedStyle::default();
+                                ps.apply_to(&mut computed);
+                                println!("Style updated 1");
+                                commands.entity(entity).insert(computed.style);
+                            }
                         }
                     }
                 }
             }
-            _ => {}
+
+            AssetEvent::Removed { handle } => {
+                if let Some(asset_path) = server.get_handle_path(handle) {
+                    println!("Style asset removed {:?}", asset_path);
+                }
+            }
         }
+    }
+
+    for (entity, view) in query.iter() {
+        // if view.is_changed() {
+        if let Some(ref style) = view.style {
+            println!("Style load state: {:?}", server.get_load_state(style));
+            if let Some(ps) = assets.get(&style) {
+                let mut computed = ComputedStyle::default();
+                ps.apply_to(&mut computed);
+                println!("Style updated 2");
+                commands.entity(entity).insert(computed.style);
+            }
+        }
+        // }
     }
 }
 
@@ -200,18 +253,9 @@ mod tests {
             relative_asset_path(&base, "./martin#dave"),
             AssetPath::from("alice/martin#dave")
         );
-        // assert_eq!(
-        //     relative_asset_path(&base, "../martin#dave"),
-        //     AssetPath::from("martin#dave")
-        // );
-        // assert_eq!(StyleAttr::parse_val("1").unwrap(), Val::Px(1.));
-        // assert_eq!(StyleAttr::parse_val("1px").unwrap(), Val::Px(1.));
-        // assert_eq!(StyleAttr::parse_val("1vw").unwrap(), Val::Vw(1.));
-        // assert_eq!(StyleAttr::parse_val("1vh").unwrap(), Val::Vh(1.));
-        // assert_eq!(StyleAttr::parse_val("1.1px").unwrap(), Val::Px(1.1));
-
-        // assert!(StyleAttr::parse_val("1.1bad").is_err());
-        // assert!(StyleAttr::parse_val("bad").is_err());
-        // assert!(StyleAttr::parse_val("1.1.1bad").is_err());
+        assert_eq!(
+            relative_asset_path(&base, "../martin#dave"),
+            AssetPath::from("martin#dave")
+        );
     }
 }

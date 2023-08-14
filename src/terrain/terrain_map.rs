@@ -161,7 +161,7 @@ pub fn insert_terrain_maps(
     asset_server: Res<AssetServer>,
 ) {
     for (entity, realm) in query.iter_mut() {
-        println!("Inserting terrain map: [{}].", realm.name);
+        // println!("Inserting terrain map: [{}].", realm.name);
         commands.entity(entity).insert((
             TerrainMap {
                 handle: server.load(format!("terrain/maps/{}.terrain", realm.name)),
@@ -244,10 +244,10 @@ pub fn update_ground_material(
     if let Some(biomes_asset) = bm_assets.get(&bm_handle.0) {
         if let Ok(biomes) = biomes_asset.0.try_lock() {
             let biomes_table = &biomes.biomes;
-            for (entity, realm, terrain) in query.iter_mut() {
+            for (entity, _realm, terrain) in query.iter_mut() {
                 if let Some(terr) = tm_assets.get(&terrain.handle) {
                     if let Some(m) = materials.get_mut(&terrain.ground_material) {
-                        println!("Updating material {}", realm.name);
+                        // println!("Updating material {}", realm.name);
 
                         if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
                             let mut texture_data = Vec::<u8>::new();

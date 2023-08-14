@@ -1,6 +1,6 @@
 use bevy::{input::mouse::MouseWheel, prelude::*};
 
-use crate::view::Viewpoint;
+use crate::view::{PrimaryCamera, Viewpoint};
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
@@ -18,7 +18,7 @@ pub fn camera_controller(
     mut scroll_events: EventReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
-    mut query: Query<&mut Transform, With<Camera>>,
+    mut query: Query<&mut Transform, With<PrimaryCamera>>,
 ) {
     let mut transform = query.single_mut();
 

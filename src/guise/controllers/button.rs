@@ -15,7 +15,7 @@ use crate::guise::{controller::Controller, template::TemplateNode};
 pub struct ButtonController {}
 
 impl Controller for ButtonController {
-    fn render(&mut self, mut commands: Commands, node: &TemplateNode) -> Entity {
+    fn render(&mut self, mut commands: Commands, _node: &TemplateNode) -> Entity {
         commands
             .spawn((
                 NodeBundle {
