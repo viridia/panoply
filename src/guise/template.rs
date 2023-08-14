@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bevy::reflect::{TypePath, TypeUuid};
 use bevy::utils::HashMap;
 
-use super::partial_style::PartialStyle;
+use super::style::PartialStyle;
 
 pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 

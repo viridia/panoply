@@ -1,7 +1,6 @@
 mod asset;
 mod controller;
 mod controllers;
-mod partial_style;
 mod plugin;
 mod style;
 mod template;

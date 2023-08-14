@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{
     asset::GuiseLoader,
     controllers::ButtonController,
-    partial_style::PartialStyle,
+    style::PartialStyle,
     template::Template,
     view::{create_views, update_view_style_handles, update_view_styles, ViewRoot},
 };

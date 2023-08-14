@@ -8,7 +8,7 @@ use bevy::{
 use crate::guise::style::ComputedStyle;
 
 use super::{
-    partial_style::PartialStyle,
+    style::PartialStyle,
     template::{Template, TemplateNodeList},
 };
 
@@ -117,7 +117,7 @@ fn reconcile_template(
         for i in 0..max_index {
             if i >= new_count {
                 // New list is smaller than the old list, so delete excess entities.
-                println!("Despawning: #{}", i);
+                // println!("Despawning: #{}", i);
                 commands.entity(children[i]).despawn_recursive();
             } else {
                 let template_node = &parent_template_nodes[i];
@@ -130,7 +130,7 @@ fn reconcile_template(
                             // controller hasn't changed. Otherwise, fall through and
                             // destroy / re-create.
                             if view.controller.eq(&template_node.controller) {
-                                println!("Patching: #{}", i);
+                                // println!("Patching: #{}", i);
                                 let mut changed = false;
                                 if !view.style.eq(&style) {
                                     changed = true;
@@ -164,11 +164,11 @@ fn reconcile_template(
                         Err(_) => {}
                     }
 
-                    println!("Despawning: #{}", i);
+                    // println!("Despawning: #{}", i);
                     commands.entity(old_child).despawn_recursive();
                 }
 
-                println!("Spawning entity: #{}", i);
+                // println!("Spawning entity: #{}", i);
 
                 // Build the Ui bundle here - we need our own bundle type.
                 // We need template params

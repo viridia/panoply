@@ -8,10 +8,9 @@ use quick_xml::events::{BytesStart, Event};
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
-use crate::guise::partial_style;
 use crate::guise::template::TemplateParam;
 
-use super::partial_style::{PartialStyle, StyleAttr};
+use super::style::{PartialStyle, StyleAttr};
 use super::template::{Template, TemplateNode, TemplateNodeList, TemplateNodeType};
 use super::GuiseError;
 
@@ -237,7 +236,7 @@ impl<'a> GuiseXmlVisitor<'a> {
                 if attr.key != ATTR_ID && attr.key.prefix().is_none() {
                     let attr_name: &[u8] = attr.key.local_name().into_inner();
                     let attr_value: &str = &attr.unescape_value().unwrap();
-                    match partial_style::StyleAttr::parse(attr_name, attr_value.trim()) {
+                    match StyleAttr::parse(attr_name, attr_value.trim()) {
                         Ok(Some(attr)) => attrs.push(attr),
                         Ok(None) => {
                             // We didn't recognize the style attribute. That's an error
@@ -252,7 +251,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         }
 
         // println!("Style element loaded: {}", id);
-        let style = partial_style::PartialStyle::from_attrs(&attrs);
+        let style = PartialStyle::from_attrs(&attrs);
         load_context.set_labeled_asset(&id, LoadedAsset::new(style));
         Ok(())
     }
