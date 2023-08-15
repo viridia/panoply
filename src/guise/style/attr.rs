@@ -11,8 +11,8 @@ use super::ComputedStyle;
 /** Set of style attributes that can be applied to construct a style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
-    BackgroundColor(Color),
-    BorderColor(Color),
+    BackgroundColor(Option<Color>),
+    BorderColor(Option<Color>),
 
     Display(bevy::ui::Display),
     Position(bevy::ui::PositionType),
@@ -82,10 +82,10 @@ impl StyleAttr {
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
             StyleAttr::BackgroundColor(val) => {
-                computed.background_color = Some(*val);
+                computed.background_color = *val;
             }
             StyleAttr::BorderColor(val) => {
-                computed.border_color = Some(*val);
+                computed.border_color = *val;
             }
 
             StyleAttr::Display(val) => {
@@ -233,9 +233,17 @@ impl StyleAttr {
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {
-            b"background-color" => StyleAttr::BackgroundColor(StyleAttr::parse_color(value)?),
+            b"background-color" => StyleAttr::BackgroundColor(if value == "transparent" {
+                None
+            } else {
+                Some(StyleAttr::parse_color(value)?)
+            }),
 
-            b"border-color" => StyleAttr::BorderColor(StyleAttr::parse_color(value)?),
+            b"border-color" => StyleAttr::BorderColor(if value == "transparent" {
+                None
+            } else {
+                Some(StyleAttr::parse_color(value)?)
+            }),
 
             b"display" => StyleAttr::Display(match value {
                 "none" => Display::None,
@@ -346,12 +354,18 @@ impl StyleAttr {
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
-            StyleAttr::BackgroundColor(col) => {
+            StyleAttr::BackgroundColor(Some(col)) => {
                 elem.push_attribute(("background-color", StyleAttr::color_to_str(*col).as_str()));
             }
+            StyleAttr::BackgroundColor(None) => {
+                elem.push_attribute(("background-color", "transparent"));
+            }
 
-            StyleAttr::BorderColor(col) => {
+            StyleAttr::BorderColor(Some(col)) => {
                 elem.push_attribute(("border-color", StyleAttr::color_to_str(*col).as_str()));
+            }
+            StyleAttr::BorderColor(None) => {
+                elem.push_attribute(("border-color", "transparent"));
             }
 
             StyleAttr::Display(disp) => {

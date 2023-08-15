@@ -138,6 +138,14 @@
     </optional>
 
     <optional>
+      <attribute name="background-color" />
+    </optional>
+
+    <optional>
+      <attribute name="border-color" />
+    </optional>
+
+    <optional>
       <attribute name="flex-direction" />
     </optional>
 

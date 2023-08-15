@@ -2,7 +2,8 @@
 <?xml-model href="../../../schemas/guise.rng"?>
 <templates xmlns:ui="http://viridia.org/guise">
   <style id="panel" display="flex" flex-direction="row" left="10px" right="10" top="10px"
-    bottom="10px" position="absolute" border="12" overflow="clip" />
+    bottom="10px" position="absolute" border="12" overflow="clip"
+    background-color="#000" border-color="#ff0" />
   <style id="panel2" gap="2px" flex-direction="row" />
   <template id="main">
     <params>

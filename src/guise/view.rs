@@ -217,22 +217,23 @@ pub fn update_view_styles(
                 }
 
                 for (entity, view) in query.iter() {
-                    if let Some(ref style_handle) = view.style {
-                        if style_handle.eq(handle) {
-                            if let Some(ps) = assets.get(handle) {
-                                let mut computed = ComputedStyle::default();
-                                ps.apply_to(&mut computed);
-                                if let Some(ref inline) = view.inline_styles {
-                                    inline.apply_to(&mut computed);
-                                }
-                                println!("Style updated 1");
-                                commands
-                                    .entity(entity)
-                                    .insert(computed.style)
-                                    .remove::<StyleHandlesChanged>();
-                            }
-                        }
-                    }
+                    update_computed(&mut commands, entity, view, &assets);
+                    // if let Some(ref style_handle) = view.style {
+                    //     if style_handle.eq(handle) {
+                    //         if let Some(ps) = assets.get(handle) {
+                    //             let mut computed = ComputedStyle::default();
+                    //             ps.apply_to(&mut computed);
+                    //             if let Some(ref inline) = view.inline_styles {
+                    //                 inline.apply_to(&mut computed);
+                    //             }
+                    //             println!("Style updated 1");
+                    //             commands
+                    //                 .entity(entity)
+                    //                 .insert(computed.style)
+                    //                 .remove::<StyleHandlesChanged>();
+                    //         }
+                    //     }
+                    // }
                 }
             }
 
@@ -253,27 +254,42 @@ pub fn update_view_style_handles(
 ) {
     for (entity, view) in query.iter() {
         if let Some(ref style_handle) = view.style {
-            let loaded = server.get_load_state(style_handle);
-            // println!("Style load state: {:?}", loaded);
-            if matches!(loaded, LoadState::Loaded) {
-                if let Some(ps) = assets.get(&style_handle) {
-                    let mut computed = ComputedStyle::default();
-                    ps.apply_to(&mut computed);
-                    if let Some(ref inline) = view.inline_styles {
-                        inline.apply_to(&mut computed);
-                    }
-                    println!("Style updated 2");
-                    commands
-                        .entity(entity)
-                        .insert(computed.style)
-                        .remove::<StyleHandlesChanged>();
-                }
+            if server.get_load_state(style_handle) != LoadState::Loaded {
+                continue;
             }
-        } else {
-            // TODO: Make node invisible? What?
-            commands.entity(entity).remove::<StyleHandlesChanged>();
+        }
+        update_computed(&mut commands, entity, view, &assets);
+    }
+}
+
+fn update_computed(
+    commands: &mut Commands,
+    entity: Entity,
+    view: &ViewElement,
+    assets: &Assets<PartialStyle>,
+) {
+    let mut computed = ComputedStyle::default();
+    if let Some(ref style_handle) = view.style {
+        if let Some(ps) = assets.get(&style_handle) {
+            ps.apply_to(&mut computed);
         }
     }
+    // TODO: Controllers
+    if let Some(ref inline) = view.inline_styles {
+        inline.apply_to(&mut computed);
+    }
+
+    let mut e = commands.entity(entity);
+    match computed.background_color {
+        Some(color) => e.insert(BackgroundColor(color)),
+        None => e.remove::<BackgroundColor>(),
+    };
+    match computed.border_color {
+        Some(color) => e.insert(BorderColor(color)),
+        None => e.remove::<BorderColor>(),
+    };
+
+    e.insert((computed.style,)).remove::<StyleHandlesChanged>();
 }
 
 /// Resolves a relative asset path. The relative path can be one of:
