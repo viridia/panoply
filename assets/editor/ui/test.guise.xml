@@ -31,7 +31,6 @@
     </params>
     <content>
       <node
-        ui:controller="panoply::guise::controllers::button::ButtonController"
         style="#panel">
         <!-- Left -->
         <node width="200" style="#sub-panel" />
@@ -42,7 +41,12 @@
         </node>
 
         <!-- Center -->
-        <node flex="1" style="#center" background-color="transparent" />
+        <node
+          flex="1"
+          style="#center"
+          background-color="transparent"
+          ui:controller="InsetViewController"
+        />
 
         <!-- Right Splitter -->
         <node id="split2" style="#vsplitter">

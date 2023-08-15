@@ -40,7 +40,7 @@ pub struct StyleHandlesChanged;
 pub fn create_views(
     mut commands: Commands,
     mut root_query: Query<(Entity, Ref<ViewRoot>, Option<&Children>)>,
-    mut view_query: Query<(&ViewElement, Option<&Children>)>,
+    mut view_query: Query<(&mut ViewElement, Option<&Children>)>,
     server: Res<AssetServer>,
     assets: Res<Assets<Template>>,
     mut ev_template: EventReader<AssetEvent<Template>>,
@@ -86,7 +86,7 @@ fn reconcile_template(
     root: Entity,
     root_children: Option<&Children>,
     root_template_nodes: &TemplateNodeList,
-    view_query: &mut Query<(&ViewElement, Option<&Children>)>,
+    view_query: &mut Query<(&mut ViewElement, Option<&Children>)>,
 ) {
     // Use a queue to visit the tree; easier than trying to pass a borrowed query into a recursive
     // function.
@@ -113,11 +113,13 @@ fn reconcile_template(
         let new_count = parent_template_nodes.len();
         let max_index = old_count.max(new_count);
         let mut new_children: Vec<Entity> = Vec::with_capacity(new_count);
+        let mut children_changed = false;
 
         for i in 0..max_index {
             if i >= new_count {
                 // New list is smaller than the old list, so delete excess entities.
                 commands.entity(children[i]).despawn_recursive();
+                children_changed = true;
             } else {
                 let template_node = &parent_template_nodes[i];
                 let style = get_named_styles(template_node.attrs.get("style"), asset_path, server);
@@ -182,6 +184,7 @@ fn reconcile_template(
                         },
                     ))
                     .id();
+                children_changed = true;
                 new_children.push(new_entity);
                 if template_node.children.len() > 0 {
                     to_visit.push((new_entity, &template_node.children));
@@ -189,7 +192,9 @@ fn reconcile_template(
             }
         }
 
-        commands.entity(parent).replace_children(&new_children);
+        if children_changed {
+            commands.entity(parent).replace_children(&new_children);
+        }
     }
 }
 
