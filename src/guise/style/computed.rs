@@ -6,5 +6,5 @@ pub struct ComputedStyle {
     pub style: Style,
     pub border_color: Option<Color>,
     pub background_color: Option<Color>,
-    pub z_index: Option<f32>,
+    pub z_index: Option<i32>,
 }

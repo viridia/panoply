@@ -146,6 +146,10 @@
     </optional>
 
     <optional>
+      <attribute name="z-index" />
+    </optional>
+
+    <optional>
       <attribute name="flex-direction" />
     </optional>
 
@@ -174,7 +178,39 @@
     </optional>
 
     <optional>
+      <attribute name="margin-left" />
+    </optional>
+
+    <optional>
+      <attribute name="margin-right" />
+    </optional>
+
+    <optional>
+      <attribute name="margin-top" />
+    </optional>
+
+    <optional>
+      <attribute name="margin-bottom" />
+    </optional>
+
+    <optional>
       <attribute name="padding" />
+    </optional>
+
+    <optional>
+      <attribute name="padding-left" />
+    </optional>
+
+    <optional>
+      <attribute name="padding-right" />
+    </optional>
+
+    <optional>
+      <attribute name="padding-top" />
+    </optional>
+
+    <optional>
+      <attribute name="padding-bottom" />
     </optional>
 
     <optional>
@@ -182,11 +218,135 @@
     </optional>
 
     <optional>
+      <attribute name="border-left" />
+    </optional>
+
+    <optional>
+      <attribute name="border-right" />
+    </optional>
+
+    <optional>
+      <attribute name="border-top" />
+    </optional>
+
+    <optional>
+      <attribute name="border-bottom" />
+    </optional>
+
+    <optional>
       <attribute name="flex" />
     </optional>
 
     <optional>
+      <attribute name="flex-grow" />
+    </optional>
+
+    <optional>
+      <attribute name="flex-shrink" />
+    </optional>
+
+    <optional>
+      <attribute name="flex-basis" />
+    </optional>
+
+    <optional>
+      <attribute name="align-items">
+        <choice>
+          <value>default</value>
+          <value>start</value>
+          <value>end</value>
+          <value>flex-start</value>
+          <value>flex-end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>stretch</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="justify-items">
+        <choice>
+          <value>default</value>
+          <value>start</value>
+          <value>end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>stretch</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="align-self">
+        <choice>
+          <value>auto</value>
+          <value>start</value>
+          <value>end</value>
+          <value>flex-start</value>
+          <value>flex-end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>stretch</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="justify-self">
+        <choice>
+          <value>auto</value>
+          <value>start</value>
+          <value>end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>stretch</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="align-content">
+        <choice>
+          <value>default</value>
+          <value>start</value>
+          <value>end</value>
+          <value>flex-start</value>
+          <value>flex-end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>space-between</value>
+          <value>space-around</value>
+          <value>space-evenly</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
+      <attribute name="justify-content">
+        <choice>
+          <value>default</value>
+          <value>start</value>
+          <value>end</value>
+          <value>center</value>
+          <value>baseline</value>
+          <value>space-between</value>
+          <value>space-around</value>
+          <value>space-evenly</value>
+        </choice>
+      </attribute>
+    </optional>
+
+    <optional>
       <attribute name="gap" />
+    </optional>
+
+    <optional>
+      <attribute name="row-gap" />
+    </optional>
+
+    <optional>
+      <attribute name="column-gap" />
     </optional>
   </define>
 

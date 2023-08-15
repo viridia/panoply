@@ -36,10 +36,7 @@ fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
         ViewRoot {
             template: server.load("editor/ui/test.guise.xml#main"),
         },
-        // SpatialBundle::default(),
         NodeBundle {
-            // background_color: Color::TURQUOISE.into(),
-            // border_color: Color::YELLOW_GREEN.into(),
             style: Style {
                 position_type: PositionType::Absolute,
                 left: Val::Px(0.),

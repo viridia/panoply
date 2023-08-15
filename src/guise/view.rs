@@ -129,6 +129,7 @@ fn reconcile_template(
                             // controller hasn't changed. Otherwise, fall through and
                             // destroy / re-create.
                             if view.controller.eq(&template_node.controller) {
+                                println!("Patching VE {}", i);
                                 let mut changed = false;
                                 if !view.style.eq(&style)
                                     || view.inline_styles != template_node.inline_styles
@@ -156,9 +157,12 @@ fn reconcile_template(
                                 continue;
                             }
                         }
+
+                        // Fall through and replace the entity.
                         Err(_) => {}
                     }
 
+                    println!("Replacing VE {}", i);
                     commands.entity(old_child).despawn_recursive();
                 }
 
@@ -217,23 +221,7 @@ pub fn update_view_styles(
                 }
 
                 for (entity, view) in query.iter() {
-                    update_computed(&mut commands, entity, view, &assets);
-                    // if let Some(ref style_handle) = view.style {
-                    //     if style_handle.eq(handle) {
-                    //         if let Some(ps) = assets.get(handle) {
-                    //             let mut computed = ComputedStyle::default();
-                    //             ps.apply_to(&mut computed);
-                    //             if let Some(ref inline) = view.inline_styles {
-                    //                 inline.apply_to(&mut computed);
-                    //             }
-                    //             println!("Style updated 1");
-                    //             commands
-                    //                 .entity(entity)
-                    //                 .insert(computed.style)
-                    //                 .remove::<StyleHandlesChanged>();
-                    //         }
-                    //     }
-                    // }
+                    update_computed_style(&mut commands, entity, view, &assets);
                 }
             }
 
@@ -253,16 +241,17 @@ pub fn update_view_style_handles(
     assets: Res<Assets<PartialStyle>>,
 ) {
     for (entity, view) in query.iter() {
+        // Don't update style if stylesheet isn't loaded.
         if let Some(ref style_handle) = view.style {
             if server.get_load_state(style_handle) != LoadState::Loaded {
                 continue;
             }
         }
-        update_computed(&mut commands, entity, view, &assets);
+        update_computed_style(&mut commands, entity, view, &assets);
     }
 }
 
-fn update_computed(
+fn update_computed_style(
     commands: &mut Commands,
     entity: Entity,
     view: &ViewElement,

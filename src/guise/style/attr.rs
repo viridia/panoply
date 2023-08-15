@@ -13,6 +13,7 @@ use super::ComputedStyle;
 pub enum StyleAttr {
     BackgroundColor(Option<Color>),
     BorderColor(Option<Color>),
+    ZIndex(i32),
 
     Display(bevy::ui::Display),
     Position(bevy::ui::PositionType),
@@ -38,6 +39,8 @@ pub enum StyleAttr {
     JustifyItems(bevy::ui::JustifyItems),
     AlignSelf(bevy::ui::AlignSelf),
     JustifySelf(bevy::ui::JustifySelf),
+    AlignContent(bevy::ui::AlignContent),
+    JustifyContent(bevy::ui::JustifyContent),
 
     // Allow margin sides to be set individually
     Margin(bevy::ui::UiRect),
@@ -86,6 +89,9 @@ impl StyleAttr {
             }
             StyleAttr::BorderColor(val) => {
                 computed.border_color = *val;
+            }
+            StyleAttr::ZIndex(val) => {
+                computed.z_index = Some(*val);
             }
 
             StyleAttr::Display(val) => {
@@ -151,6 +157,12 @@ impl StyleAttr {
             }
             StyleAttr::JustifySelf(val) => {
                 computed.style.justify_self = *val;
+            }
+            StyleAttr::AlignContent(val) => {
+                computed.style.align_content = *val;
+            }
+            StyleAttr::JustifyContent(val) => {
+                computed.style.justify_content = *val;
             }
 
             StyleAttr::Margin(val) => {
@@ -245,6 +257,8 @@ impl StyleAttr {
                 Some(StyleAttr::parse_color(value)?)
             }),
 
+            b"z-index" => StyleAttr::ZIndex(StyleAttr::parse_i32(value)?),
+
             b"display" => StyleAttr::Display(match value {
                 "none" => Display::None,
                 "grid" => Display::Grid,
@@ -300,10 +314,89 @@ impl StyleAttr {
             b"max-height" => StyleAttr::MaxHeight(StyleAttr::parse_val(value)?),
 
             //     // pub aspect_ratio: StyleProp<f32>,
-            //     AlignItems,
-            //     JustifyItems,
-            //     AlignSelf,
-            //     JustifySelf,
+            b"align-items" => StyleAttr::AlignItems(match value {
+                "default" => AlignItems::Default,
+                "start" => AlignItems::Start,
+                "end" => AlignItems::End,
+                "flex-start" => AlignItems::FlexStart,
+                "flex-end" => AlignItems::FlexEnd,
+                "center" => AlignItems::Center,
+                "baseline" => AlignItems::Baseline,
+                "stretch" => AlignItems::Stretch,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"justify-items" => StyleAttr::JustifyItems(match value {
+                "default" => JustifyItems::Default,
+                "start" => JustifyItems::Start,
+                "end" => JustifyItems::End,
+                "center" => JustifyItems::Center,
+                "baseline" => JustifyItems::Baseline,
+                "stretch" => JustifyItems::Stretch,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"align-self" => StyleAttr::AlignSelf(match value {
+                "auto" => AlignSelf::Auto,
+                "start" => AlignSelf::Start,
+                "end" => AlignSelf::End,
+                "flex-start" => AlignSelf::FlexStart,
+                "flex-end" => AlignSelf::FlexEnd,
+                "center" => AlignSelf::Center,
+                "baseline" => AlignSelf::Baseline,
+                "stretch" => AlignSelf::Stretch,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"justify-self" => StyleAttr::JustifySelf(match value {
+                "auto" => JustifySelf::Auto,
+                "start" => JustifySelf::Start,
+                "end" => JustifySelf::End,
+                "center" => JustifySelf::Center,
+                "baseline" => JustifySelf::Baseline,
+                "stretch" => JustifySelf::Stretch,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"align-content" => StyleAttr::AlignContent(match value {
+                "default" => AlignContent::Default,
+                "start" => AlignContent::Start,
+                "end" => AlignContent::End,
+                "flex-start" => AlignContent::FlexStart,
+                "flex-end" => AlignContent::FlexEnd,
+                "center" => AlignContent::Center,
+                "stretch" => AlignContent::Stretch,
+                "space-between" => AlignContent::SpaceBetween,
+                "space-around" => AlignContent::SpaceAround,
+                "space-evenly" => AlignContent::SpaceEvenly,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
+            b"justify-content" => StyleAttr::JustifyContent(match value {
+                "default" => JustifyContent::Default,
+                "start" => JustifyContent::Start,
+                "end" => JustifyContent::End,
+                "flex-start" => JustifyContent::FlexStart,
+                "flex-end" => JustifyContent::FlexEnd,
+                "center" => JustifyContent::Center,
+                "space-between" => JustifyContent::SpaceBetween,
+                "space-around" => JustifyContent::SpaceAround,
+                "space-evenly" => JustifyContent::SpaceEvenly,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
             b"margin" => StyleAttr::Margin(StyleAttr::parse_uirect(value)?),
             b"margin-left" => StyleAttr::MarginLeft(StyleAttr::parse_val(value)?),
             b"margin-right" => StyleAttr::MarginRight(StyleAttr::parse_val(value)?),
@@ -333,9 +426,12 @@ impl StyleAttr {
             }),
 
             //     FlexWrap,
-            //     FlexGrow,
-            //     FlexShrink,
-            //     FlexBasis,
+            // TODO: Allow shortcut forms for flex.
+            b"flex" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
+            b"flex-grow" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
+            b"flex-shrink" => StyleAttr::FlexShrink(StyleAttr::parse_f32(value)?),
+            b"flex-basis" => StyleAttr::FlexBasis(StyleAttr::parse_val(value)?),
+
             b"row-gap" => StyleAttr::RowGap(StyleAttr::parse_val(value)?),
             b"column-gap" => StyleAttr::ColumnGap(StyleAttr::parse_val(value)?),
             b"gap" => StyleAttr::Gap(StyleAttr::parse_val(value)?),
@@ -366,6 +462,10 @@ impl StyleAttr {
             }
             StyleAttr::BorderColor(None) => {
                 elem.push_attribute(("border-color", "transparent"));
+            }
+
+            StyleAttr::ZIndex(val) => {
+                elem.push_attribute(("z-index", val.to_string().as_str()));
             }
 
             StyleAttr::Display(disp) => {
@@ -454,18 +554,101 @@ impl StyleAttr {
                 elem.push_attribute(("max-height", StyleAttr::val_to_str(*val).as_str()));
             }
 
-            // StyleAttr::AlignItems(val) => {
-            //     computed.align_items = *val;
-            // }
-            // StyleAttr::JustifyItems(val) => {
-            //     computed.justify_items = *val;
-            // }
-            // StyleAttr::AlignSelf(val) => {
-            //     computed.align_self = *val;
-            // }
-            // StyleAttr::JustifySelf(val) => {
-            //     computed.justify_self = *val;
-            // }
+            StyleAttr::AlignItems(align) => {
+                elem.push_attribute((
+                    "align-items",
+                    match align {
+                        AlignItems::Default => "default",
+                        AlignItems::Start => "start",
+                        AlignItems::End => "end",
+                        AlignItems::FlexStart => "flex-start",
+                        AlignItems::FlexEnd => "flex-end",
+                        AlignItems::Center => "center",
+                        AlignItems::Baseline => "baseline",
+                        AlignItems::Stretch => "stretch",
+                    },
+                ));
+            }
+
+            StyleAttr::JustifyItems(align) => {
+                elem.push_attribute((
+                    "justify-items",
+                    match align {
+                        JustifyItems::Default => "default",
+                        JustifyItems::Start => "start",
+                        JustifyItems::End => "end",
+                        JustifyItems::Center => "center",
+                        JustifyItems::Baseline => "baseline",
+                        JustifyItems::Stretch => "stretch",
+                    },
+                ));
+            }
+
+            StyleAttr::AlignSelf(align) => {
+                elem.push_attribute((
+                    "align-self",
+                    match align {
+                        AlignSelf::Auto => "auto",
+                        AlignSelf::Start => "start",
+                        AlignSelf::End => "end",
+                        AlignSelf::FlexStart => "flex-start",
+                        AlignSelf::FlexEnd => "flex-end",
+                        AlignSelf::Center => "center",
+                        AlignSelf::Baseline => "baseline",
+                        AlignSelf::Stretch => "stretch",
+                    },
+                ));
+            }
+
+            StyleAttr::JustifySelf(align) => {
+                elem.push_attribute((
+                    "justify-self",
+                    match align {
+                        JustifySelf::Auto => "auto",
+                        JustifySelf::Start => "start",
+                        JustifySelf::End => "end",
+                        JustifySelf::Center => "center",
+                        JustifySelf::Baseline => "baseline",
+                        JustifySelf::Stretch => "stretch",
+                    },
+                ));
+            }
+
+            StyleAttr::AlignContent(align) => {
+                elem.push_attribute((
+                    "align-content",
+                    match align {
+                        AlignContent::Default => "default",
+                        AlignContent::Start => "start",
+                        AlignContent::End => "end",
+                        AlignContent::FlexStart => "flex-start",
+                        AlignContent::FlexEnd => "flex-end",
+                        AlignContent::Center => "center",
+                        AlignContent::Stretch => "stretch",
+                        AlignContent::SpaceBetween => "space-between",
+                        AlignContent::SpaceAround => "space-around",
+                        AlignContent::SpaceEvenly => "space-evenly",
+                    },
+                ));
+            }
+
+            StyleAttr::JustifyContent(align) => {
+                elem.push_attribute((
+                    "justify-content",
+                    match align {
+                        JustifyContent::Default => "default",
+                        JustifyContent::Start => "start",
+                        JustifyContent::End => "end",
+                        JustifyContent::FlexStart => "flex-start",
+                        JustifyContent::FlexEnd => "flex-end",
+                        JustifyContent::Center => "center",
+                        JustifyContent::SpaceBetween => "space-between",
+                        JustifyContent::SpaceAround => "space-around",
+                        JustifyContent::SpaceEvenly => "space-evenly",
+                    },
+                ));
+            }
+
             StyleAttr::Margin(val) => {
                 elem.push_attribute(("margin", StyleAttr::uirect_to_str(*val).as_str()));
             }
@@ -517,29 +700,30 @@ impl StyleAttr {
             // StyleAttr::FlexDirection(val) => {
             //     computed.flex_direction = *val;
             // }
+
             // StyleAttr::FlexWrap(val) => {
             //     computed.flex_wrap = *val;
             // }
-            // StyleAttr::FlexGrow(val) => {
-            //     computed.flex_grow = *val;
-            // }
-            // StyleAttr::FlexShrink(val) => {
-            //     computed.flex_shrink = *val;
-            // }
-            // StyleAttr::FlexBasis(val) => {
-            //     computed.flex_basis = *val;
-            // }
+            StyleAttr::FlexGrow(val) => {
+                elem.push_attribute(("flex-grow", f32::to_string(val).as_str()));
+            }
+            StyleAttr::FlexShrink(val) => {
+                elem.push_attribute(("flex-shrink", f32::to_string(val).as_str()));
+            }
+            StyleAttr::FlexBasis(val) => {
+                elem.push_attribute(("flex-basis", StyleAttr::val_to_str(*val).as_str()));
+            }
 
-            // StyleAttr::RowGap(val) => {
-            //     computed.row_gap = *val;
-            // }
-            // StyleAttr::ColumnGap(val) => {
-            //     computed.column_gap = *val;
-            // }
-            // StyleAttr::Gap(val) => {
-            //     computed.row_gap = *val;
-            //     computed.column_gap = *val;
-            // }
+            StyleAttr::RowGap(val) => {
+                elem.push_attribute(("row-gap", StyleAttr::val_to_str(*val).as_str()));
+            }
+            StyleAttr::ColumnGap(val) => {
+                elem.push_attribute(("column-gap", StyleAttr::val_to_str(*val).as_str()));
+            }
+            StyleAttr::Gap(val) => {
+                elem.push_attribute(("gap", StyleAttr::val_to_str(*val).as_str()));
+            }
+
             _ => {
                 panic!("Unsupported tag")
             }
@@ -649,6 +833,16 @@ impl StyleAttr {
         } else {
             Err(GuiseError::InvalidAttributeValue(str.to_string()))
         }
+    }
+
+    /// Parse a scalar float.
+    fn parse_f32(str: &str) -> Result<f32, GuiseError> {
+        f32::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
+    }
+
+    /// Parse a scalar i32.
+    fn parse_i32(str: &str) -> Result<i32, GuiseError> {
+        i32::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
     }
 
     /// Convert a `Val` into a CSS-style string.

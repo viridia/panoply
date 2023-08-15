@@ -2,9 +2,28 @@
 <?xml-model href="../../../schemas/guise.rng"?>
 <templates xmlns:ui="http://viridia.org/guise">
   <style id="panel" display="flex" flex-direction="row" left="10px" right="10" top="10px"
-    bottom="10px" position="absolute" border="12" overflow="clip"
-    background-color="#000" border-color="#ff0" />
-  <style id="panel2" gap="2px" flex-direction="row" />
+    bottom="10px" position="absolute" border="2"
+    border-color="#ff0" />
+  <style id="sub-panel"
+    border="6"
+    background-color="#333"
+    border-color="#044" />
+  <style id="center"
+    border="1"
+    background-color="transparent"
+    border-color="#000" />
+  <style id="vsplitter"
+    display="flex"
+    width="7"
+    align-items="center"
+    justify-items="center"
+    justify-content="center"
+    background-color="#222" />
+  <style id="vsplitter-thumb"
+    width="3"
+    height="20%"
+    justify-self="center"
+    background-color="#444444" />
   <template id="main">
     <params>
       <param name="count" type="i32" />
@@ -15,21 +34,27 @@
         ui:controller="panoply::guise::controllers::button::ButtonController"
         style="#panel">
         <!-- Left -->
-        <node width="200">
+        <node width="200" style="#sub-panel" />
 
+        <!-- Left Splitter -->
+        <node id="split1" style="#vsplitter">
+          <node style="#vsplitter-thumb" />
         </node>
+
         <!-- Center -->
-        <node flex="1">
+        <node flex="1" style="#center" background-color="transparent" />
 
+        <!-- Right Splitter -->
+        <node id="split2" style="#vsplitter">
+          <node style="#vsplitter-thumb" />
         </node>
+
         <!-- Right -->
-        <node width="200">
+        <node width="200" style="#sub-panel">
 
         </node>
       </node>
       <!-- <flex id="control-palette" style="#panel">
-        <flex flex-direction="row">
-        </flex>
         <switch>
           <ui:invoke ui:case="world" target="#world" />
           <flex ui:case="world"></flex>
