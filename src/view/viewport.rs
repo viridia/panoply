@@ -49,19 +49,36 @@ pub fn update_camera_viewport(
     }
 }
 
+/// Controller which updates the margins of the main 3D view so that it fits within the
+/// designated 2D panel. There's probably an easier way to calculate this.
 #[derive(Reflect, Default, Component)]
 #[reflect(Default)]
 #[reflect(Component)]
 pub struct ViewportInsetController {}
 
 pub fn update_viewport_inset(
-    query: Query<&ViewElement, With<ViewportInsetController>>,
+    windows: Query<&Window, With<PrimaryWindow>>,
+    query: Query<(&ViewElement, &Node, &GlobalTransform), With<ViewportInsetController>>,
     mut viewport_inset: ResMut<ViewportInset>,
 ) {
-    let inset = ViewportInset::default();
+    let mut inset = ViewportInset::default();
     match query.get_single() {
-        Ok(_elt) => {
-            println!("Viewport inset node found")
+        Ok((_, node, transform)) => {
+            let position = transform.translation();
+            let ui_position = position.truncate();
+            let extents = node.size() / 2.0;
+            let min = ui_position - extents;
+            let max = ui_position + extents;
+
+            let window = windows.single();
+            let ww = window.resolution.physical_width() as f32;
+            let wh = window.resolution.physical_height() as f32;
+            let sf = window.resolution.scale_factor() as f32;
+
+            inset.left = min.x;
+            inset.top = min.y;
+            inset.right = ww / sf - max.x;
+            inset.bottom = wh / sf - max.y;
         }
         Err(_) => {}
     }
