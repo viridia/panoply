@@ -20,6 +20,7 @@ pub struct GuiseLoader;
 const ATTR_ID: QName = QName(b"id");
 const ATTR_NAME: QName = QName(b"name");
 const ATTR_TYPE: QName = QName(b"type");
+const ATTR_CONTROLLER: QName = QName(b"ui:controller");
 
 impl AssetLoader for GuiseLoader {
     fn load<'a>(
@@ -362,8 +363,6 @@ impl<'a> GuiseXmlVisitor<'a> {
         let mut node = TemplateNode {
             tag: match e.name().as_ref() {
                 b"node" => TemplateNodeType::Node,
-                b"flex" => TemplateNodeType::Flex,
-                b"grid" => TemplateNodeType::Grid,
                 b"fragment" => TemplateNodeType::Fragment,
                 _ => {
                     return Err(GuiseError::InvalidElement(
@@ -388,10 +387,18 @@ impl<'a> GuiseXmlVisitor<'a> {
                     // Otherwise, if we didn't recognize it, that's OK - treat it as a generic
                     // atribute for this template node.
                     Ok(None) => {
-                        node.attrs.insert(
-                            std::str::from_utf8(attr_name).unwrap().to_string(),
-                            attr_value.to_string(),
-                        );
+                        if attr.key == ATTR_CONTROLLER {
+                            // Controller type name
+                            node.controller = Some(attr_value.to_string());
+                        } else if attr.key == ATTR_ID {
+                            // Node id
+                            node.id = Some(attr_value.to_string());
+                        } else {
+                            node.attrs.insert(
+                                std::str::from_utf8(attr_name).unwrap().to_string(),
+                                attr_value.to_string(),
+                            );
+                        }
                     }
 
                     // If the parser returned an error, then propagate it.

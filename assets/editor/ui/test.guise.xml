@@ -45,7 +45,7 @@
           flex="1"
           style="#center"
           background-color="transparent"
-          ui:controller="InsetViewController"
+          ui:controller="ViewportInsetController"
         />
 
         <!-- Right Splitter -->

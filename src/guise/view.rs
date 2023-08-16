@@ -2,6 +2,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use bevy::{
     asset::{AssetPath, LoadState},
+    ecs::system::Command,
     prelude::*,
 };
 
@@ -36,6 +37,37 @@ pub struct ViewElement {
 /// Marker that signals when a component's stylesheet handles have changed.
 #[derive(Component, Default)]
 pub struct StyleHandlesChanged;
+
+pub struct InsertController {
+    entity: Entity,
+    controller: String,
+}
+
+/// Custom command to insert a Component by its type name.
+impl Command for InsertController {
+    fn apply(self, world: &mut World) {
+        let rcmp = {
+            let types = world.resource::<AppTypeRegistry>().read();
+            // TODO: Also lookup "full" name
+            match types.get_with_short_name(&self.controller) {
+                Some(controller_type) => {
+                    // TODO: Not sure cloning the ReflectComponent is a good idea here,
+                    // but needed to avoid borrowing World.
+                    Some(controller_type.data::<ReflectComponent>().unwrap().clone())
+                }
+                None => None,
+            }
+        };
+
+        if let Some(rcmp) = rcmp {
+            let controller = rcmp.from_world(world);
+            rcmp.insert(&mut world.entity_mut(self.entity), controller.as_ref());
+            println!("Here!");
+        } else {
+            println!("Controller type not found: [{}]", self.controller);
+        }
+    }
+}
 
 pub fn create_views(
     mut commands: Commands,
@@ -131,7 +163,7 @@ fn reconcile_template(
                             // controller hasn't changed. Otherwise, fall through and
                             // destroy / re-create.
                             if view.controller.eq(&template_node.controller) {
-                                println!("Patching VE {}", i);
+                                // println!("Patching VE {}", i);
                                 let mut changed = false;
                                 if !view.style.eq(&style)
                                     || view.inline_styles != template_node.inline_styles
@@ -140,6 +172,8 @@ fn reconcile_template(
                                 }
 
                                 // Replace view element node.
+                                // TODO: Mutate the view element in place rather than replacing
+                                // it. This will require splitting the query.
                                 if changed {
                                     commands.entity(old_child).insert((
                                         ViewElement {
@@ -164,12 +198,12 @@ fn reconcile_template(
                         Err(_) => {}
                     }
 
-                    println!("Replacing VE {}", i);
+                    // println!("Replacing VE {}", i);
                     commands.entity(old_child).despawn_recursive();
                 }
 
-                // let style = get_named_styles(ui_node, asset_path, server);
-                let new_entity = (*commands)
+                // Create the new entity
+                let new_entity = commands
                     .spawn((
                         ViewElement {
                             style: style.clone(),
@@ -184,6 +218,15 @@ fn reconcile_template(
                         },
                     ))
                     .id();
+
+                // See if there's a controller for this ui node.
+                if let Some(ref controller_id) = template_node.controller {
+                    commands.add(InsertController {
+                        entity: new_entity,
+                        controller: controller_id.clone(),
+                    });
+                }
+
                 children_changed = true;
                 new_children.push(new_entity);
                 if template_node.children.len() > 0 {

@@ -32,7 +32,7 @@ use crate::{
     instancing::InstancedModelsPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
-    view::{update_camera_viewport, ViewportInset},
+    view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
     world::WorldPlugin,
 };
 
@@ -103,6 +103,7 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
+        .register_type::<ViewportInsetController>()
         .insert_resource(ToolState {
             state: EditorState::World,
         })
@@ -110,8 +111,9 @@ fn main() {
         .add_systems(
             Update,
             (
-                editor_ui_system,
+                // editor_ui_system,
                 update_camera_viewport,
+                update_viewport_inset,
                 rotate_shapes,
                 editor::camera_controller,
                 update_window_settings,
@@ -141,13 +143,12 @@ fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
     });
 }
 
-fn editor_ui_system(
-    mut viewport_inset: ResMut<ViewportInset>,
+fn editor_ui_system(// mut viewport_inset: ResMut<ViewportInset>,
     // mut tool_state_res: ResMut<ToolState>,
     // images: Res<EditorImages>,
 ) {
-    viewport_inset.left = 100.;
-    viewport_inset.right = 100.;
+    // viewport_inset.left = 100.;
+    // viewport_inset.right = 100.;
     // let world_texture_id = contexts.add_image(images.world.clone());
     // let terrain_texture_id = contexts.add_image(images.terrain.clone());
     // let building_texture_id = contexts.add_image(images.building.clone());

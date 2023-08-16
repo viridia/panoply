@@ -7,6 +7,8 @@ mod template;
 mod view;
 
 pub use plugin::*;
+pub use view::ViewElement;
+pub use view::ViewRoot;
 
 #[derive(Debug)]
 pub enum GuiseError {

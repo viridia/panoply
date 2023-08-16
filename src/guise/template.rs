@@ -50,7 +50,13 @@ pub struct TemplateNode {
     /// Reference to style element
     pub attrs: HashMap<String, String>,
 
+    // ID of this node
+    pub id: Option<String>,
+
+    // Attached controller
     pub controller: Option<String>,
+
+    // List of child nodes
     pub children: TemplateNodeList,
     // special attrs
     // each / if / match

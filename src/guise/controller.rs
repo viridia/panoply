@@ -29,6 +29,7 @@ pub enum UiEvent {
 
     // Triggered by a pointer up event while active (not rolled off).
     Click(PointerEvent),
+    // Wheel(PointerEvent),
 
     // Fired continuously while the widget state is updating.
     Input(ChangeEvent),

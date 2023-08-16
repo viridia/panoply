@@ -1,11 +1,13 @@
-use bevy::{prelude::*, render::camera::Viewport, window::PrimaryWindow};
+use bevy::{prelude::*, reflect::Reflect, render::camera::Viewport, window::PrimaryWindow};
+
+use crate::guise::ViewElement;
 
 use super::PrimaryCamera;
 
 const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 
 /// Used to create margins around the viewport so that side panels don't overwrite the 3d scene.
-#[derive(Default, Resource)]
+#[derive(Default, Resource, PartialEq)]
 pub struct ViewportInset {
     pub left: f32,
     pub right: f32,
@@ -44,5 +46,27 @@ pub fn update_camera_viewport(
         perspective.fov = f32::min(DEFAULT_FOV, DEFAULT_FOV * 2. / aspect);
         perspective.near = 0.5;
         perspective.far = 100.;
+    }
+}
+
+#[derive(Reflect, Default, Component)]
+#[reflect(Default)]
+#[reflect(Component)]
+pub struct ViewportInsetController {}
+
+pub fn update_viewport_inset(
+    query: Query<&ViewElement, With<ViewportInsetController>>,
+    mut viewport_inset: ResMut<ViewportInset>,
+) {
+    let inset = ViewportInset::default();
+    match query.get_single() {
+        Ok(_elt) => {
+            println!("Viewport inset node found")
+        }
+        Err(_) => {}
+    }
+
+    if inset != *viewport_inset {
+        *viewport_inset.as_mut() = inset;
     }
 }
