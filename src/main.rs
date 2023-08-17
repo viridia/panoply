@@ -248,6 +248,22 @@ fn setup(
     });
 
     // TODO: Move to 'view' module
+    // Ui Camera
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                // HUD goes on top of 3D
+                order: 1,
+                ..default()
+            },
+            camera_2d: Camera2d {
+                clear_color: ClearColorConfig::None,
+                ..default()
+            },
+            ..default()
+        },
+        UiCameraConfig { show_ui: true },
+    ));
 
     // Primary Camera
     commands.spawn((
@@ -271,23 +287,6 @@ fn setup(
     ));
 
     // TODO: Move to 'hud' module
-
-    // Ui Camera
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                // HUD goes on top of 3D
-                order: 1,
-                ..default()
-            },
-            camera_2d: Camera2d {
-                clear_color: ClearColorConfig::None,
-                ..default()
-            },
-            ..default()
-        },
-        UiCameraConfig { show_ui: true },
-    ));
 }
 
 fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {

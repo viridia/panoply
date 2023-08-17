@@ -12,7 +12,9 @@
       "args": [],
       "cwd": "${workspaceFolder}",
       "env": {
-        "LD_LIBRARY_PATH": "${workspaceFolder}/target/debug/deps:${userHome}/.rustup/toolchains/stable-aarch64-apple-darwin/lib"
+        "BEVY_ASSET_ROOT": "${workspaceFolder}",
+        "LD_LIBRARY_PATH": "${workspaceFolder}/target/debug/deps:${userHome}/.rustup/toolchains/stable-aarch64-apple-darwin/lib",
+        "DYLD_LIBRARY_PATH": "${env:HOME}/.rustup/toolchains/stable-aarch64-apple-darwin/lib"
       }
     },
     {
@@ -20,11 +22,7 @@
       "request": "launch",
       "name": "Debug executable 'panoply' (cargo)",
       "cargo": {
-        "args": [
-          "build",
-          "--bin=panoply",
-          "--package=panoply"
-        ],
+        "args": ["build", "--bin=panoply", "--package=panoply"],
         "filter": {
           "name": "panoply",
           "kind": "bin"
@@ -33,7 +31,9 @@
       "args": [],
       "cwd": "${workspaceFolder}",
       "env": {
-        "LD_LIBRARY_PATH": "${workspaceFolder}/target/debug/deps:${userHome}/.rustup/toolchains/stable-aarch64-apple-darwin/lib"
+        "BEVY_ASSET_ROOT": "${workspaceFolder}",
+        "LD_LIBRARY_PATH": "${workspaceFolder}/target/debug/deps:${userHome}/.rustup/toolchains/stable-aarch64-apple-darwin/lib",
+        "DYLD_LIBRARY_PATH": "${env:HOME}/.rustup/toolchains/stable-aarch64-apple-darwin/lib"
       }
     },
     {
@@ -41,12 +41,7 @@
       "request": "launch",
       "name": "Debug unit tests in executable 'panoply'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=panoply",
-          "--package=panoply"
-        ],
+        "args": ["test", "--no-run", "--bin=panoply", "--package=panoply"],
         "filter": {
           "name": "panoply",
           "kind": "bin"

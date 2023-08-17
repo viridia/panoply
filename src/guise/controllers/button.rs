@@ -11,7 +11,7 @@ pub struct ButtonController {
 }
 
 impl FromWorld for ButtonController {
-    fn from_world(world: &mut World) -> Self {
+    fn from_world(_world: &mut World) -> Self {
         // let server = world.resource::<AssetServer>();
         // BiomesHandle(server.load("terrain/terrain.biomes.json"))
         println!("New ButtonController");
@@ -42,11 +42,52 @@ pub fn init_button(
 ) {
     for (entity, _) in query.iter() {
         commands.entity(entity).insert((
-            On::<Pointer<Over>>::run(|| println!("Over!")),
-            On::<Pointer<Out>>::listener_insert(BackgroundColor::from(NORMAL)),
-            On::<Pointer<Down>>::listener_insert(BackgroundColor::from(PRESSED)),
-            On::<Pointer<Up>>::listener_insert(BackgroundColor::from(HOVERED)),
+            On::<Pointer<Over>>::target_component_mut::<ButtonController>(|_, ctrl| {
+                ctrl.hover = true;
+            }),
+            On::<Pointer<Out>>::target_component_mut::<ButtonController>(|_, ctrl| {
+                ctrl.hover = false;
+            }),
+            On::<Pointer<Down>>::target_component_mut::<ButtonController>(|_, ctrl| {
+                ctrl.pressed = true;
+            }),
+            On::<Pointer<Up>>::target_component_mut::<ButtonController>(|_, ctrl| {
+                ctrl.pressed = false;
+            }),
+            // On::<PointerCancel>::target_component_mut::<ButtonController>(|_, ctrl| {
+            //     ctrl.pressed = false;
+            // }),
             FocusPolicy::Block,
         ));
+    }
+}
+
+pub fn update_button(
+    mut commands: Commands,
+    mut query: Query<
+        (
+            Entity,
+            &ButtonController,
+            &mut Style,
+            Option<&mut BackgroundColor>,
+            Option<&mut BorderColor>,
+        ),
+        Changed<ButtonController>,
+    >,
+) {
+    for (entity, ctrl, style, mut bg, border) in query.iter_mut() {
+        if ctrl.pressed {
+            commands
+                .entity(entity)
+                .insert(BackgroundColor::from(PRESSED));
+        } else if ctrl.hover {
+            commands
+                .entity(entity)
+                .insert(BackgroundColor::from(HOVERED));
+        } else {
+            commands
+                .entity(entity)
+                .insert(BackgroundColor::from(NORMAL));
+        }
     }
 }

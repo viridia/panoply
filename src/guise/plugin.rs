@@ -1,9 +1,9 @@
 use bevy::{prelude::*, ui::FocusPolicy};
-use bevy_mod_picking::{prelude::*, DefaultPickingPlugins};
+use bevy_mod_picking::DefaultPickingPlugins;
 
 use super::{
     asset::GuiseLoader,
-    controllers::{init_button, ButtonController},
+    controllers::{init_button, update_button, ButtonController},
     style::PartialStyle,
     template::Template,
     view::{create_views, update_view_style_handles, update_view_styles, ViewRoot},
@@ -28,6 +28,7 @@ impl Plugin for GuisePlugin {
                     apply_deferred,
                     update_view_style_handles,
                     init_button,
+                    update_button,
                 )
                     .chain(),),
             );
@@ -48,10 +49,8 @@ fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
                 bottom: Val::Px(0.),
                 ..default()
             },
-            focus_policy: FocusPolicy::Block,
+            focus_policy: FocusPolicy::Pass,
             ..default()
         },
-        On::<Pointer<Over>>::run(|| println!("Over!")),
-        On::<Pointer<Move>>::run(|| println!("Move!")),
     ));
 }
