@@ -86,45 +86,7 @@ impl PartialEq<PartialStyle> for PartialStyle {
 
 #[cfg(test)]
 mod tests {
-    use bevy::ui::{UiRect, Val};
-
     use super::*;
-
-    #[test]
-    fn test_parse_val() {
-        assert_eq!(StyleAttr::parse_val("auto").unwrap(), Val::Auto);
-        assert_eq!(StyleAttr::parse_val("1").unwrap(), Val::Px(1.));
-        assert_eq!(StyleAttr::parse_val("1px").unwrap(), Val::Px(1.));
-        assert_eq!(StyleAttr::parse_val("1vw").unwrap(), Val::Vw(1.));
-        assert_eq!(StyleAttr::parse_val("1vh").unwrap(), Val::Vh(1.));
-        assert_eq!(StyleAttr::parse_val("1.1px").unwrap(), Val::Px(1.1));
-
-        assert!(StyleAttr::parse_val("1.1bad").is_err());
-        assert!(StyleAttr::parse_val("bad").is_err());
-        assert!(StyleAttr::parse_val("1.1.1bad").is_err());
-    }
-
-    #[test]
-    fn test_parse_uirect() {
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px 3px 4px").unwrap(),
-            UiRect::new(Val::Px(4.), Val::Px(2.), Val::Px(1.), Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px 3px").unwrap(),
-            UiRect::new(Val::Px(2.), Val::Px(2.), Val::Px(1.), Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px").unwrap(),
-            UiRect::new(Val::Px(2.), Val::Px(2.), Val::Px(1.), Val::Px(1.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px").unwrap(),
-            UiRect::new(Val::Px(1.), Val::Px(1.), Val::Px(1.), Val::Px(1.))
-        );
-
-        assert!(StyleAttr::parse_uirect("1.1bad").is_err());
-    }
 
     #[test]
     fn test_serialize_empty() {

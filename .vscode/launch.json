@@ -7,8 +7,8 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'bevy_game'",
-      "program": "${workspaceRoot}/target/debug/bevy_game",
+      "name": "Debug executable 'panoply'",
+      "program": "${workspaceRoot}/target/debug/panoply",
       "args": [],
       "cwd": "${workspaceFolder}",
       "env": {
@@ -18,15 +18,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'bevy_game' (cargo)",
+      "name": "Debug executable 'panoply' (cargo)",
       "cargo": {
         "args": [
           "build",
-          "--bin=bevy_game",
-          "--package=bevy_game"
+          "--bin=panoply",
+          "--package=panoply"
         ],
         "filter": {
-          "name": "bevy_game",
+          "name": "panoply",
           "kind": "bin"
         }
       },
@@ -39,16 +39,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'bevy_game'",
+      "name": "Debug unit tests in executable 'panoply'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
-          "--bin=bevy_game",
-          "--package=bevy_game"
+          "--bin=panoply",
+          "--package=panoply"
         ],
         "filter": {
-          "name": "bevy_game",
+          "name": "panoply",
           "kind": "bin"
         }
       },

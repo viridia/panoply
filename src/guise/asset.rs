@@ -11,7 +11,7 @@ use quick_xml::reader::Reader;
 use crate::guise::template::TemplateParam;
 
 use super::style::{PartialStyle, StyleAttr};
-use super::template::{Template, TemplateNode, TemplateNodeList, TemplateNodeType};
+use super::template::{ElementNode, Template, TemplateNode, TemplateNodeList, TextNode};
 use super::GuiseError;
 
 #[derive(Default)]
@@ -336,8 +336,15 @@ impl<'a> GuiseXmlVisitor<'a> {
                     e
                 ),
                 Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
-                Ok(Event::Start(e)) => self.visit_node(&e, nodes, false)?,
-                Ok(Event::Empty(e)) => self.visit_node(&e, nodes, true)?,
+                Ok(Event::Start(e)) => match e.name().as_ref() {
+                    b"node" => self.visit_element_node(&e, nodes, false)?,
+                    _ => {
+                        return Err(GuiseError::InvalidElement(
+                            std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
+                        ))
+                    }
+                },
+                Ok(Event::Empty(e)) => self.visit_element_node(&e, nodes, true)?,
                 Ok(Event::End(e)) => {
                     if e.name() == name {
                         break;
@@ -348,30 +355,30 @@ impl<'a> GuiseXmlVisitor<'a> {
                     );
                 }
 
+                // TODO: Stateful trimming of whitespace.
+                Ok(Event::Text(e)) => {
+                    let mut node = TextNode { ..default() };
+                    let content = e.unescape().expect("string expected");
+                    let content = content.trim();
+                    if content.len() > 0 {
+                        node.content = content.to_string();
+                        nodes.push(Box::new(TemplateNode::Text(node)));
+                    }
+                }
+
                 _ => (),
             }
         }
         Ok(())
     }
 
-    fn visit_node<'b>(
+    fn visit_element_node<'b>(
         &mut self,
         e: &'b BytesStart,
         parent: &mut TemplateNodeList,
         empty: bool,
     ) -> Result<(), GuiseError> {
-        let mut node = TemplateNode {
-            tag: match e.name().as_ref() {
-                b"node" => TemplateNodeType::Node,
-                b"fragment" => TemplateNodeType::Fragment,
-                _ => {
-                    return Err(GuiseError::InvalidElement(
-                        std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
-                    ))
-                }
-            },
-            ..default()
-        };
+        let mut node = ElementNode { ..default() };
 
         // Parse inline style attributes
         let mut style_attrs = Vec::<StyleAttr>::with_capacity(20);
@@ -415,7 +422,7 @@ impl<'a> GuiseXmlVisitor<'a> {
             self.visit_node_list(e, &mut node.children)?;
         }
 
-        parent.push(Box::new(node));
+        parent.push(Box::new(TemplateNode::Element(node)));
         Ok(())
     }
 }

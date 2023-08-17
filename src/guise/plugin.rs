@@ -1,8 +1,9 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::FocusPolicy};
+use bevy_mod_picking::{prelude::*, DefaultPickingPlugins};
 
 use super::{
     asset::GuiseLoader,
-    controllers::ButtonController,
+    controllers::{init_button, ButtonController},
     style::PartialStyle,
     template::Template,
     view::{create_views, update_view_style_handles, update_view_styles, ViewRoot},
@@ -12,7 +13,8 @@ pub struct GuisePlugin;
 
 impl Plugin for GuisePlugin {
     fn build(&self, app: &mut App) {
-        app.add_asset_loader(GuiseLoader)
+        app.add_plugins(DefaultPickingPlugins)
+            .add_asset_loader(GuiseLoader)
             .add_asset::<Template>()
             .add_asset::<PartialStyle>()
             .register_type::<ButtonController>()
@@ -25,6 +27,7 @@ impl Plugin for GuisePlugin {
                     update_view_styles,
                     apply_deferred,
                     update_view_style_handles,
+                    init_button,
                 )
                     .chain(),),
             );
@@ -45,11 +48,10 @@ fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
                 bottom: Val::Px(0.),
                 ..default()
             },
+            focus_policy: FocusPolicy::Block,
             ..default()
         },
+        On::<Pointer<Over>>::run(|| println!("Over!")),
+        On::<Pointer<Move>>::run(|| println!("Move!")),
     ));
-    // let something = type_registry.0.read();
-    // for _x in something.iter() {
-    //     println!("Name {}", x.type_name());
-    // }
 }

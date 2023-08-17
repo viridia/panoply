@@ -38,11 +38,16 @@ impl TemplateParam {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct TemplateNode {
-    /// Type of node
-    pub tag: TemplateNodeType,
+#[derive(Debug)]
+pub enum TemplateNode {
+    Element(ElementNode),
+    Fragment(ElementNode),
+    Text(TextNode),
+}
 
+/// Node that represents a 'node' node.
+#[derive(Debug, Default)]
+pub struct ElementNode {
     /// Inline styles on the node
     /// TODO: Make this RC?
     pub inline_styles: Option<Arc<PartialStyle>>,
@@ -62,12 +67,21 @@ pub struct TemplateNode {
     // each / if / match
 }
 
+/// Node that represents a span of text.
+#[derive(Debug, Default)]
+pub struct TextNode {
+    /// Inline styles on the node
+    pub inline_styles: Option<Arc<PartialStyle>>,
+
+    // List of child nodes
+    pub content: String,
+}
+
 #[derive(Debug, Default)]
 pub enum TemplateNodeType {
     #[default]
     Node,
-    Flex,
-    Grid,
+    Text,
     Fragment,
     // Show
     // For / Each

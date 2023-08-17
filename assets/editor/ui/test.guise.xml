@@ -5,8 +5,8 @@
     bottom="10px" position="absolute" border="2"
     border-color="#ff0" />
   <style id="sub-panel"
-    border="6"
-    background-color="#333"
+    padding="6"
+    background-color="#222"
     border-color="#044" />
   <style id="center"
     border="1"
@@ -24,16 +24,37 @@
     height="20%"
     justify-self="center"
     background-color="#444444" />
+  <template id="button">
+    <params>
+      <param name="children" type="nodes" />
+    </params>
+    <content>
+      <node
+        ui:controller="ButtonController"
+        width="100"
+        height="20"
+        border="1"
+        border-color="#f00"
+        align-items="center"
+      >
+        {{children}}
+      </node>
+    </content>
+  </template>
   <template id="main">
     <params>
       <param name="count" type="i32" />
       <param name="mode" type="panoply::editor::ui::EditorMode" />
     </params>
     <content>
-      <node
-        style="#panel">
+      <node style="#panel">
         <!-- Left -->
-        <node width="200" style="#sub-panel" />
+        <node width="200" style="#sub-panel">
+          <node width="100" height="20" ui:controller="ButtonController"
+            border="1"
+            border-color="#f00"
+            align-items="center">Button</node>
+        </node>
 
         <!-- Left Splitter -->
         <node id="split1" style="#vsplitter">

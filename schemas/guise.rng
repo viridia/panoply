@@ -33,11 +33,13 @@
   </define>
 
   <define name="params">
-    <element name="params">
-      <oneOrMore>
-        <ref name="param-def" />
-      </oneOrMore>
-    </element>
+    <optional>
+      <element name="params">
+        <oneOrMore>
+          <ref name="param-def" />
+        </oneOrMore>
+      </element>
+    </optional>
   </define>
 
   <define name="param-def">
@@ -57,7 +59,8 @@
     <zeroOrMore>
       <choice>
         <ref name="node" />
-        <ref name="flex" />
+        <ref name="text" />
+        <text />
       </choice>
     </zeroOrMore>
   </define>
@@ -70,11 +73,10 @@
     </element>
   </define>
 
-  <define name="flex">
-    <element name="flex">
-      <ref name="node-attrs" />
+  <define name="text">
+    <element name="text">
       <ref name="style-attrs" />
-      <ref name="node-list" />
+      <text />
     </element>
   </define>
 

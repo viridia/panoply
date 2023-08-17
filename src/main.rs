@@ -89,9 +89,7 @@ fn main() {
                     watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
                     ..Default::default()
                 }),
-            // EguiPlugin,
             ScreenDiagsPlugin,
-            // ImagePlugin::default_nearest(),
         ))
         .insert_resource(settings)
         // .insert_resource(Msaa::Off)
@@ -111,7 +109,6 @@ fn main() {
         .add_systems(
             Update,
             (
-                // editor_ui_system,
                 update_camera_viewport,
                 update_viewport_inset,
                 rotate_shapes,
@@ -143,12 +140,9 @@ fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
     });
 }
 
-fn editor_ui_system(// mut viewport_inset: ResMut<ViewportInset>,
-    // mut tool_state_res: ResMut<ToolState>,
+fn editor_ui_system(// mut tool_state_res: ResMut<ToolState>,
     // images: Res<EditorImages>,
 ) {
-    // viewport_inset.left = 100.;
-    // viewport_inset.right = 100.;
     // let world_texture_id = contexts.add_image(images.world.clone());
     // let terrain_texture_id = contexts.add_image(images.terrain.clone());
     // let building_texture_id = contexts.add_image(images.building.clone());

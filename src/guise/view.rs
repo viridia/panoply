@@ -4,13 +4,14 @@ use bevy::{
     asset::{AssetPath, LoadState},
     ecs::system::Command,
     prelude::*,
+    ui::FocusPolicy,
 };
 
 use crate::guise::style::ComputedStyle;
 
 use super::{
     style::PartialStyle,
-    template::{Template, TemplateNodeList},
+    template::{Template, TemplateNode, TemplateNodeList},
 };
 
 /// Component that defines the root of a view hierarchy and a template invocation.
@@ -62,7 +63,6 @@ impl Command for InsertController {
         if let Some(rcmp) = rcmp {
             let controller = rcmp.from_world(world);
             rcmp.insert(&mut world.entity_mut(self.entity), controller.as_ref());
-            println!("Here!");
         } else {
             println!("Controller type not found: [{}]", self.controller);
         }
@@ -73,6 +73,7 @@ pub fn create_views(
     mut commands: Commands,
     mut root_query: Query<(Entity, Ref<ViewRoot>, Option<&Children>)>,
     mut view_query: Query<(&mut ViewElement, Option<&Children>)>,
+    // mut text_query: Query<&Text>,
     server: Res<AssetServer>,
     assets: Res<Assets<Template>>,
     mut ev_template: EventReader<AssetEvent<Template>>,
@@ -154,83 +155,164 @@ fn reconcile_template(
                 children_changed = true;
             } else {
                 let template_node = &parent_template_nodes[i];
-                let style = get_named_styles(template_node.attrs.get("style"), asset_path, server);
-                if i < old_count {
-                    let old_child = children[i];
-                    match view_query.get(old_child) {
-                        Ok((view, grand_children)) => {
-                            // Patch the existing node instead of replacing it, but only if the
-                            // controller hasn't changed. Otherwise, fall through and
-                            // destroy / re-create.
-                            if view.controller.eq(&template_node.controller) {
-                                // println!("Patching VE {}", i);
-                                let mut changed = false;
-                                if !view.style.eq(&style)
-                                    || view.inline_styles != template_node.inline_styles
-                                {
-                                    changed = true;
+                match template_node.as_ref() {
+                    TemplateNode::Element(elt) => {
+                        let style = get_named_styles(elt.attrs.get("style"), asset_path, server);
+                        if i < old_count {
+                            let old_child = children[i];
+                            match view_query.get(old_child) {
+                                Ok((view, grand_children)) => {
+                                    // Patch the existing node instead of replacing it, but only if the
+                                    // controller hasn't changed. Otherwise, fall through and
+                                    // destroy / re-create.
+                                    if view.controller.eq(&elt.controller) {
+                                        // println!("Patching VE {}", i);
+                                        let mut changed = false;
+                                        if !view.style.eq(&style)
+                                            || view.inline_styles != elt.inline_styles
+                                        {
+                                            changed = true;
+                                        }
+
+                                        // Replace view element node.
+                                        // TODO: Mutate the view element in place rather than replacing
+                                        // it. This will require splitting the query.
+                                        if changed {
+                                            commands.entity(old_child).insert((
+                                                ViewElement {
+                                                    style: style.clone(),
+                                                    inline_styles: elt.inline_styles.clone(),
+                                                    ..default()
+                                                },
+                                                StyleHandlesChanged,
+                                            ));
+                                        }
+
+                                        new_children.push(old_child);
+                                        if !elt.children.is_empty() || grand_children.is_some() {
+                                            to_visit.push((old_child, &elt.children));
+                                        }
+
+                                        continue;
+                                    }
                                 }
 
-                                // Replace view element node.
-                                // TODO: Mutate the view element in place rather than replacing
-                                // it. This will require splitting the query.
-                                if changed {
-                                    commands.entity(old_child).insert((
-                                        ViewElement {
-                                            style: style.clone(),
-                                            inline_styles: template_node.inline_styles.clone(),
-                                            ..default()
-                                        },
-                                        StyleHandlesChanged,
-                                    ));
-                                }
-
-                                new_children.push(old_child);
-                                if !template_node.children.is_empty() || grand_children.is_some() {
-                                    to_visit.push((old_child, &template_node.children));
-                                }
-
-                                continue;
+                                // Fall through and replace the entity.
+                                Err(_) => {}
                             }
+
+                            // println!("Replacing VE {}", i);
+                            commands.entity(old_child).despawn_recursive();
                         }
 
-                        // Fall through and replace the entity.
-                        Err(_) => {}
+                        // Create the new entity
+                        let new_entity = commands
+                            .spawn((
+                                ViewElement {
+                                    style: style.clone(),
+                                    inline_styles: elt.inline_styles.clone(),
+                                    ..default()
+                                },
+                                StyleHandlesChanged,
+                                NodeBundle {
+                                    background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                                    border_color: Color::BLUE.into(),
+                                    focus_policy: FocusPolicy::Pass,
+                                    ..default()
+                                },
+                            ))
+                            .id();
+
+                        // See if there's a controller for this ui node.
+                        if let Some(ref controller_id) = elt.controller {
+                            println!("Controller {}", controller_id);
+                            commands.add(InsertController {
+                                entity: new_entity,
+                                controller: controller_id.clone(),
+                            });
+                        }
+
+                        children_changed = true;
+                        new_children.push(new_entity);
+                        if elt.children.len() > 0 {
+                            to_visit.push((new_entity, &elt.children));
+                        }
                     }
 
-                    // println!("Replacing VE {}", i);
-                    commands.entity(old_child).despawn_recursive();
-                }
+                    TemplateNode::Text(text) => {
+                        if i < old_count {
+                            let old_child = children[i];
+                            // match view_query.get(old_child) {
+                            //     Ok((view, grand_children)) => {
+                            //         // Patch the existing node instead of replacing it, but only if the
+                            //         // controller hasn't changed. Otherwise, fall through and
+                            //         // destroy / re-create.
+                            //         if view.controller.eq(&elt.controller) {
+                            //             // println!("Patching VE {}", i);
+                            //             let mut changed = false;
+                            //             if !view.style.eq(&style)
+                            //                 || view.inline_styles != elt.inline_styles
+                            //             {
+                            //                 changed = true;
+                            //             }
 
-                // Create the new entity
-                let new_entity = commands
-                    .spawn((
-                        ViewElement {
-                            style: style.clone(),
-                            inline_styles: template_node.inline_styles.clone(),
-                            ..default()
-                        },
-                        StyleHandlesChanged,
-                        NodeBundle {
-                            background_color: Color::rgb(0.65, 0.75, 0.65).into(),
-                            border_color: Color::BLUE.into(),
-                            ..default()
-                        },
-                    ))
-                    .id();
+                            //             // Replace view element node.
+                            //             // TODO: Mutate the view element in place rather than replacing
+                            //             // it. This will require splitting the query.
+                            //             if changed {
+                            //                 commands.entity(old_child).insert((
+                            //                     ViewElement {
+                            //                         style: style.clone(),
+                            //                         inline_styles: elt.inline_styles.clone(),
+                            //                         ..default()
+                            //                     },
+                            //                     StyleHandlesChanged,
+                            //                 ));
+                            //             }
 
-                // See if there's a controller for this ui node.
-                if let Some(ref controller_id) = template_node.controller {
-                    commands.add(InsertController {
-                        entity: new_entity,
-                        controller: controller_id.clone(),
-                    });
-                }
+                            //             new_children.push(old_child);
+                            //             if !elt.children.is_empty() || grand_children.is_some() {
+                            //                 to_visit.push((old_child, &elt.children));
+                            //             }
 
-                children_changed = true;
-                new_children.push(new_entity);
-                if template_node.children.len() > 0 {
-                    to_visit.push((new_entity, &template_node.children));
+                            //             continue;
+                            //         }
+                            //     }
+
+                            //     // Fall through and replace the entity.
+                            //     Err(_) => {}
+                            // }
+
+                            // println!("Replacing VE {}", i);
+                            commands.entity(old_child).despawn_recursive();
+                        }
+
+                        // Create the new entity
+                        let new_entity = commands
+                            .spawn((TextBundle {
+                                text: Text::from_section(
+                                    text.content.clone(),
+                                    TextStyle { ..default() },
+                                ),
+                                // TextStyle {
+                                //     font_size: 40.0,
+                                //     color: Color::rgb(0.9, 0.9, 0.9),
+                                //     ..Default::default()
+                                // },
+                                // background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                                // border_color: Color::BLUE.into(),
+                                // focus_policy: FocusPolicy::Pass,
+                                ..default()
+                            },))
+                            .id();
+
+                        children_changed = true;
+                        new_children.push(new_entity);
+                    }
+
+                    TemplateNode::Fragment(_frag) => {
+                        panic!("Implement fragment")
+                    }
                 }
             }
         }
