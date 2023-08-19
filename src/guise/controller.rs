@@ -1,32 +1,31 @@
 use bevy::prelude::*;
 
-use super::template::TemplateNode;
+use super::{
+    style::{ComputedStyle, PartialStyle, UpdateComputedStyle},
+    ViewElement,
+};
 
-// pub struct PointerEvent {
-//     target: Entity,
-//     pos: Vec2,
-//     // buttons
-// }
+/// A controller is an object which attaches to a UiComponent and handles events.
+#[bevy_trait_query::queryable]
+pub trait Controller {
+    // TODO: This does nothing yet.
+    fn attach(&self, _commands: &Commands, _entity: Entity, _view: &ViewElement) {}
 
-// pub struct FocusEvent {
-//     target: Entity,
-//     // value: Any,
-// }
-
-// pub struct ChangeEvent {
-//     target: Entity,
-//     // value: Any,
-// }
+    fn update_styles(
+        &self,
+        commands: &mut Commands,
+        entity: Entity,
+        view: &ViewElement,
+        assets: &Assets<PartialStyle>,
+    ) {
+        let mut computed = ComputedStyle::default();
+        view.apply_base_styles(&mut computed, assets);
+        view.apply_inline_styles(&mut computed);
+        commands.add(UpdateComputedStyle { entity, computed });
+    }
+}
 
 // pub enum UiEvent {
-//     // Pointer events.
-//     PointerDown(PointerEvent),
-//     PointerUp(PointerEvent),
-//     PointerIn(PointerEvent),
-//     PointerOut(PointerEvent),
-//     PointerMove(PointerEvent),
-//     PointerCancel(PointerEvent),
-
 //     // Triggered by a pointer up event while active (not rolled off).
 //     Click(PointerEvent),
 //     // Wheel(PointerEvent),
@@ -41,9 +40,3 @@ use super::template::TemplateNode;
 //     Focus(FocusEvent),
 //     Blur(FocusEvent),
 // }
-
-/// A controller is an object which attaches to a UiComponent and handles events.
-pub trait Controller {
-    // TODO: This does nothing yet.
-    fn attach(&self, _commands: Commands, _entity: Entity, _template_node: &TemplateNode) {}
-}

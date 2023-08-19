@@ -1,9 +1,9 @@
 use bevy::{prelude::*, ui::FocusPolicy};
-use bevy_mod_picking::DefaultPickingPlugins;
 
 use super::{
     asset::GuiseLoader,
-    controllers::{init_button, update_button, ButtonController},
+    controller::Controller,
+    controllers::{button_controller_init, ButtonController, DefaultController},
     style::PartialStyle,
     template::Template,
     view::{create_views, update_view_style_handles, update_view_styles, ViewRoot},
@@ -13,25 +13,32 @@ pub struct GuisePlugin;
 
 impl Plugin for GuisePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPickingPlugins)
-            .add_asset_loader(GuiseLoader)
-            .add_asset::<Template>()
-            .add_asset::<PartialStyle>()
-            .register_type::<ButtonController>()
-            .add_systems(Startup, create_test_ui)
-            .add_systems(
-                Update,
-                ((
-                    create_views,
-                    apply_deferred,
-                    update_view_styles,
-                    apply_deferred,
-                    update_view_style_handles,
-                    init_button,
-                    update_button,
-                )
-                    .chain(),),
-            );
+        use bevy_trait_query::RegisterExt;
+        app.add_plugins((
+            bevy_mod_picking::picking_core::CorePlugin,
+            bevy_mod_picking::picking_core::InteractionPlugin,
+            bevy_mod_picking::input::InputPlugin,
+            bevy_mod_picking::backends::bevy_ui::BevyUiBackend,
+        ))
+        .add_asset_loader(GuiseLoader)
+        .add_asset::<Template>()
+        .add_asset::<PartialStyle>()
+        .register_component_as::<dyn Controller, DefaultController>()
+        .register_component_as::<dyn Controller, ButtonController>()
+        .register_type::<ButtonController>()
+        .add_systems(Startup, create_test_ui)
+        .add_systems(
+            Update,
+            ((
+                create_views,
+                button_controller_init,
+                apply_deferred,
+                update_view_styles,
+                apply_deferred,
+                update_view_style_handles,
+            )
+                .chain(),),
+        );
     }
 }
 

@@ -6,6 +6,7 @@ mod style;
 mod template;
 mod view;
 
+pub use controller::Controller;
 pub use plugin::*;
 pub use view::ViewElement;
 pub use view::ViewRoot;

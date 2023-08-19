@@ -73,7 +73,6 @@ pub enum StyleAttr {
 
     // TODO:
     GridAutoFlow(bevy::ui::GridAutoFlow),
-    // pub grid_auto_flow: StyleProp<GridAutoFlow>,
     // pub grid_template_rows: Option<Vec<RepeatedGridTrack>>,
     // pub grid_template_columns: Option<Vec<RepeatedGridTrack>>,
     // pub grid_auto_rows: Option<Vec<GridTrack>>,
@@ -86,8 +85,6 @@ pub enum StyleAttr {
     GridColumnStart(i16),
     GridColumnSpan(u16),
     GridColumnEnd(i16),
-    // pub grid_row: GridPlacement,
-    // pub grid_column: GridPlacement,
 }
 
 impl StyleAttr {

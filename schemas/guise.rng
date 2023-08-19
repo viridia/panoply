@@ -1,5 +1,6 @@
 <grammar xmlns="http://relaxng.org/ns/structure/1.0"
   xmlns:ui="http://viridia.org/guise"
+  xmlns:ctrl="http://viridia.org/guise/ctrl"
   datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
   <start>
     <ref name="templates" />
@@ -18,28 +19,25 @@
 
   <define name="style-elt">
     <element name="style">
-      <attribute name="id" />
+      <choice>
+        <attribute name="id" />
+        <attribute name="selector" />
+      </choice>
       <ref name="style-attrs" />
-      <empty />
+      <zeroOrMore>
+        <ref name="style-elt" />
+      </zeroOrMore>
     </element>
   </define>
 
   <define name="template-elt">
     <element name="template">
       <attribute name="id" />
-      <ref name="params" />
+      <zeroOrMore>
+        <ref name="param-def" />
+      </zeroOrMore>
       <ref name="content" />
     </element>
-  </define>
-
-  <define name="params">
-    <optional>
-      <element name="params">
-        <oneOrMore>
-          <ref name="param-def" />
-        </oneOrMore>
-      </element>
-    </optional>
   </define>
 
   <define name="param-def">
@@ -88,8 +86,14 @@
       <attribute name="style" />
     </optional>
     <optional>
-      <attribute name="ui:controller" />
+      <attribute name="controller" />
     </optional>
+    <zeroOrMore>
+      <attribute>
+        <nsName ns="http://viridia.org/guise/ctrl">
+        </nsName>
+      </attribute>
+    </zeroOrMore>
   </define>
 
   <define name="style-attrs">

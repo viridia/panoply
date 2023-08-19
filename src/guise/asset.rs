@@ -10,7 +10,7 @@ use quick_xml::reader::Reader;
 
 use crate::guise::template::TemplateParam;
 
-use super::style::{PartialStyle, StyleAttr};
+use super::style::{PartialStyle, Selector, StyleAttr};
 use super::template::{ElementNode, Template, TemplateNode, TemplateNodeList, TextNode};
 use super::GuiseError;
 
@@ -20,7 +20,8 @@ pub struct GuiseLoader;
 const ATTR_ID: QName = QName(b"id");
 const ATTR_NAME: QName = QName(b"name");
 const ATTR_TYPE: QName = QName(b"type");
-const ATTR_CONTROLLER: QName = QName(b"ui:controller");
+const ATTR_SELECTOR: QName = QName(b"selector");
+const ATTR_CONTROLLER: QName = QName(b"controller");
 
 impl AssetLoader for GuiseLoader {
     fn load<'a>(
@@ -118,8 +119,9 @@ impl<'a> GuiseXmlVisitor<'a> {
                     }
 
                     b"style" => {
-                        self.visit_style(&e, load_context)?;
-                        self.reader.read_to_end(e.name()).unwrap();
+                        let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
+                        let style = self.visit_style(&e, false)?;
+                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
                     _ => {
@@ -131,7 +133,9 @@ impl<'a> GuiseXmlVisitor<'a> {
 
                 Ok(Event::Empty(e)) => match e.name().as_ref() {
                     b"style" => {
-                        self.visit_style(&e, load_context)?;
+                        let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
+                        let style = self.visit_style(&e, true)?;
+                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
                     _ => {
@@ -177,10 +181,13 @@ impl<'a> GuiseXmlVisitor<'a> {
                 Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
 
                 Ok(Event::Start(e)) => match e.name().as_ref() {
-                    b"params" => {
-                        self.visit_params(&mut result)?;
+                    b"param" => {
+                        self.visit_param(&e, &mut result, false)?;
                     }
 
+                    // b"params" => {
+                    //     self.visit_params(&mut result)?;
+                    // }
                     b"content" => {
                         self.visit_node_list(&e, &mut result.children)?;
                     }
@@ -193,8 +200,13 @@ impl<'a> GuiseXmlVisitor<'a> {
                 },
 
                 Ok(Event::Empty(e)) => match e.name().as_ref() {
+                    b"param" => {
+                        self.visit_param(&e, &mut result, true)?;
+                    }
+
                     b"style" => {
-                        self.visit_style(&e, load_context)?;
+                        let style = self.visit_style(&e, true)?;
+                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
                     _ => {
@@ -227,14 +239,25 @@ impl<'a> GuiseXmlVisitor<'a> {
     fn visit_style<'b>(
         &mut self,
         e: &'b BytesStart,
-        load_context: &'b mut LoadContext,
-    ) -> Result<(), GuiseError> {
-        let id = require_attr(e, ATTR_ID)?.unescape_value().unwrap();
+        empty: bool,
+    ) -> Result<PartialStyle, GuiseError> {
         let mut attrs: Vec<StyleAttr> = Vec::with_capacity(10);
+        self.visit_style_attrs(e, &mut attrs)?;
+        let mut style = PartialStyle::from_attrs(&attrs);
+        if !empty {
+            self.visit_style_children(&mut style)?;
+        }
+        Ok(style)
+    }
 
+    fn visit_style_attrs<'b>(
+        &mut self,
+        e: &'b BytesStart,
+        attrs: &mut Vec<StyleAttr>,
+    ) -> Result<(), GuiseError> {
         for a in e.attributes() {
             if let Ok(attr) = a {
-                if attr.key != ATTR_ID && attr.key.prefix().is_none() {
+                if attr.key != ATTR_ID && attr.key != ATTR_SELECTOR && attr.key.prefix().is_none() {
                     let attr_name: &[u8] = attr.key.local_name().into_inner();
                     let attr_value: &str = &attr.unescape_value().unwrap();
                     match StyleAttr::parse(attr_name, attr_value.trim()) {
@@ -251,13 +274,12 @@ impl<'a> GuiseXmlVisitor<'a> {
             }
         }
 
-        // println!("Style element loaded: {}", id);
-        let style = PartialStyle::from_attrs(&attrs);
-        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
         Ok(())
     }
 
-    fn visit_params<'b>(&mut self, template: &mut Template) -> Result<(), GuiseError> {
+    fn visit_style_children<'b>(&mut self, parent: &mut PartialStyle) -> Result<(), GuiseError> {
+        let mut result = Template::new();
+
         loop {
             match self.reader.read_event() {
                 Err(e) => panic!(
@@ -268,8 +290,15 @@ impl<'a> GuiseXmlVisitor<'a> {
                 Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
 
                 Ok(Event::Start(e)) => match e.name().as_ref() {
-                    b"param" => {
-                        self.visit_param(&e, template)?;
+                    b"style" => {
+                        let selector = require_attr(&e, ATTR_SELECTOR)?.unescape_value().unwrap();
+                        let selector = Selector::parse(&selector)?;
+                        let style = self.visit_style(&e, false)?;
+                        parent.add_selector(selector, style);
+                    }
+
+                    b"content" => {
+                        self.visit_node_list(&e, &mut result.children)?;
                     }
 
                     _ => {
@@ -280,8 +309,11 @@ impl<'a> GuiseXmlVisitor<'a> {
                 },
 
                 Ok(Event::Empty(e)) => match e.name().as_ref() {
-                    b"param" => {
-                        self.visit_param(&e, template)?;
+                    b"style" => {
+                        let selector = require_attr(&e, ATTR_SELECTOR)?.unescape_value().unwrap();
+                        let selector = Selector::parse(&selector)?;
+                        let style = self.visit_style(&e, true)?;
+                        parent.add_selector(selector, style);
                     }
 
                     _ => {
@@ -292,7 +324,7 @@ impl<'a> GuiseXmlVisitor<'a> {
                 },
 
                 Ok(Event::End(e)) => match e.name().as_ref() {
-                    b"params" => break,
+                    b"style" => break,
 
                     _ => {
                         panic!(
@@ -305,6 +337,9 @@ impl<'a> GuiseXmlVisitor<'a> {
                 _ => (),
             }
         }
+
+        // println!("Template element loaded: {}", id);
+        // load_context.set_labeled_asset(&id, LoadedAsset::new(result));
         Ok(())
     }
 
@@ -312,6 +347,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         &mut self,
         e: &'b BytesStart,
         template: &mut Template,
+        empty: bool,
     ) -> Result<(), GuiseError> {
         let name = require_attr(e, ATTR_NAME)?.unescape_value().unwrap();
         let typ: &str = &require_attr(e, ATTR_TYPE)?.unescape_value().unwrap();
@@ -319,6 +355,10 @@ impl<'a> GuiseXmlVisitor<'a> {
         template
             .params
             .insert(name.to_string(), TemplateParam::new(typ));
+
+        if !empty {
+            self.reader.read_to_end(e.name()).unwrap();
+        }
         Ok(())
     }
 
@@ -387,29 +427,30 @@ impl<'a> GuiseXmlVisitor<'a> {
                 let attr_name: &[u8] = attr.key.local_name().into_inner();
                 let attr_value: &str = &attr.unescape_value().unwrap();
 
-                match StyleAttr::parse(attr_name, attr_value) {
-                    // If we recognized the attribute as a style, then add it to the style list.
-                    Ok(Some(attr)) => style_attrs.push(attr),
+                if attr.key == ATTR_ID {
+                    // Node id
+                    node.id = Some(attr_value.to_string());
+                } else if attr.key == ATTR_CONTROLLER {
+                    // Controller type name
+                    node.controller = Some(attr_value.to_string());
+                } else {
+                    match StyleAttr::parse(attr_name, attr_value) {
+                        // If we recognized the attribute as a style, then add it to the style list.
+                        Ok(Some(attr)) => style_attrs.push(attr),
 
-                    // Otherwise, if we didn't recognize it, that's OK - treat it as a generic
-                    // atribute for this template node.
-                    Ok(None) => {
-                        if attr.key == ATTR_CONTROLLER {
-                            // Controller type name
-                            node.controller = Some(attr_value.to_string());
-                        } else if attr.key == ATTR_ID {
-                            // Node id
-                            node.id = Some(attr_value.to_string());
-                        } else {
+                        // Otherwise, if we didn't recognize it, that's OK - treat it as a generic
+                        // atribute for this template node.
+                        // TODO: Use 'ui' or 'ctrl' namespace here.
+                        Ok(None) => {
                             node.attrs.insert(
                                 std::str::from_utf8(attr_name).unwrap().to_string(),
                                 attr_value.to_string(),
                             );
                         }
-                    }
 
-                    // If the parser returned an error, then propagate it.
-                    Err(err) => return Err(err),
+                        // If the parser returned an error, then propagate it.
+                        Err(err) => return Err(err),
+                    }
                 }
             }
         }

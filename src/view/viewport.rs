@@ -1,6 +1,6 @@
 use bevy::{prelude::*, reflect::Reflect, render::camera::Viewport, window::PrimaryWindow};
 
-use crate::guise::ViewElement;
+use crate::guise::{Controller, ViewElement};
 
 use super::PrimaryCamera;
 
@@ -55,6 +55,12 @@ pub fn update_camera_viewport(
 #[reflect(Default)]
 #[reflect(Component)]
 pub struct ViewportInsetController {}
+
+impl Controller for ViewportInsetController {
+    fn attach(&self, _commands: &Commands, _entity: Entity, _view: &ViewElement) {
+        println!("Attach view inset");
+    }
+}
 
 pub fn update_viewport_inset(
     windows: Query<&Window, With<PrimaryWindow>>,

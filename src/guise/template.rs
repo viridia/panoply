@@ -52,14 +52,14 @@ pub struct ElementNode {
     /// TODO: Make this RC?
     pub inline_styles: Option<Arc<PartialStyle>>,
 
-    /// Reference to style element
-    pub attrs: HashMap<String, String>,
-
     // ID of this node
     pub id: Option<String>,
 
     // Attached controller
     pub controller: Option<String>,
+
+    /// Controller parameters
+    pub attrs: HashMap<String, String>,
 
     // List of child nodes
     pub children: TemplateNodeList,
