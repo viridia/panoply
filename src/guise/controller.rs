@@ -9,7 +9,7 @@ use super::{
 #[bevy_trait_query::queryable]
 pub trait Controller {
     // TODO: This does nothing yet.
-    fn attach(&self, _commands: &Commands, _entity: Entity, _view: &ViewElement) {}
+    fn attach(&self, _commands: &mut Commands, _entity: Entity, _view: &ViewElement) {}
 
     fn update_styles(
         &self,

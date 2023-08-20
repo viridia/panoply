@@ -26,7 +26,7 @@
     background-color="#444444" />
   <style id="button"
     flex-direction="row"
-    background-color="#333"
+    background-color="#733"
     border="2"
     border-color="#f00"
     align-items="center"
@@ -69,7 +69,11 @@
         <!-- Left -->
         <node id="left" width="200" style="#sub-panel">
           <node
-            width="100" height="20" controller="ButtonController" style="#button"
+            id="test-button"
+            controller="ButtonController"
+            style="#button"
+            width="100"
+            height="20"
           >Button</node>
         </node>
 

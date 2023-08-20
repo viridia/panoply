@@ -56,11 +56,7 @@ pub fn update_camera_viewport(
 #[reflect(Component)]
 pub struct ViewportInsetController {}
 
-impl Controller for ViewportInsetController {
-    fn attach(&self, _commands: &Commands, _entity: Entity, _view: &ViewElement) {
-        println!("Attach view inset");
-    }
-}
+impl Controller for ViewportInsetController {}
 
 pub fn update_viewport_inset(
     windows: Query<&Window, With<PrimaryWindow>>,

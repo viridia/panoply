@@ -1,12 +1,14 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
+use crate::guise::view::attach_view_controllers;
+
 use super::{
     asset::GuiseLoader,
     controller::Controller,
-    controllers::{button_controller_init, ButtonController, DefaultController},
+    controllers::{ButtonController, DefaultController},
     style::PartialStyle,
     template::Template,
-    view::{create_views, update_view_style_handles, update_view_styles, ViewRoot},
+    view::{create_views, update_view_styles, update_view_styles_poll, ViewRoot},
 };
 
 pub struct GuisePlugin;
@@ -31,11 +33,11 @@ impl Plugin for GuisePlugin {
             Update,
             ((
                 create_views,
-                button_controller_init,
-                apply_deferred,
+                attach_view_controllers,
+                // apply_deferred,
                 update_view_styles,
-                apply_deferred,
-                update_view_style_handles,
+                // apply_deferred,
+                update_view_styles_poll,
             )
                 .chain(),),
         );

@@ -1,16 +1,12 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use crate::guise::{controller::Controller, ViewElement};
+use crate::guise::controller::Controller;
 
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct DefaultController;
 
-impl Controller for DefaultController {
-    fn attach(&self, _commands: &Commands, _entity: Entity, _view: &ViewElement) {
-        println!("Attach default");
-    }
-}
+impl Controller for DefaultController {}
 
 pub fn default_controller_init(
     mut commands: Commands,

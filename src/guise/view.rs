@@ -42,6 +42,13 @@ pub struct ViewElement {
 }
 
 impl ViewElement {
+    pub fn element_id<'a>(&'a self) -> &'a str {
+        match self.id {
+            Some(ref id) => &id,
+            None => "#unnamed",
+        }
+    }
+
     /// Calculate the "computed" style struct for this `ViewElement`.
     pub fn compute_style(&self, computed: &mut ComputedStyle, assets: &Assets<PartialStyle>) {
         // TODO: Style state selectors
@@ -61,6 +68,8 @@ impl ViewElement {
         if let Some(ref style_handle) = self.style {
             if let Some(ps) = assets.get(&style_handle) {
                 ps.apply_to(computed);
+            } else {
+                // warn!("Failed to get stylesheet for node '{}'", self.element_id());
             }
         }
     }
@@ -94,7 +103,7 @@ pub struct InsertController {
     controller: String,
 }
 
-/// Custom command to insert a Component by its type name.
+/// Custom command to insert a Component by its type name. This is used for Controllers.
 impl Command for InsertController {
     fn apply(self, world: &mut World) {
         let rcmp = {
@@ -150,7 +159,11 @@ pub fn create_views(
                         }
 
                         None => {
-                            warn!("Failure to load asset: {:?}", asset_path);
+                            let status = server.get_load_state(handle);
+                            warn!(
+                                "Failure to load template: {:?}, status [{:?}]",
+                                 asset_path, status
+                            );
                         }
                     }
                 }
@@ -158,7 +171,7 @@ pub fn create_views(
 
             AssetEvent::Removed { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
-                    info!("Template asset removed {:?}", asset_path);
+                    warn!("Asset Removed: Template {:?}", asset_path);
                 }
             }
         }
@@ -284,7 +297,7 @@ fn reconcile_template(
 
                         // See if there's a controller for this ui node.
                         if let Some(ref controller_id) = elt.controller {
-                            println!("Controller {}", controller_id);
+                            // println!("Controller {}", controller_id);
                             commands.add(InsertController {
                                 entity: new_entity,
                                 controller: controller_id.clone(),
@@ -397,6 +410,17 @@ fn get_named_styles(
     })
 }
 
+pub fn attach_view_controllers(
+    mut commands: Commands,
+    query: Query<(Entity, &ViewElement, One<&dyn Controller>), Added<ViewElement>>,
+) {
+    for (entity, view, controller) in query.iter() {
+        controller.attach(&mut commands, entity, view);
+    }
+}
+
+/// One of two updaters for computing the ui node styles, this one uses asset events to detect
+/// when a stylesheet is loaded or changed.
 pub fn update_view_styles(
     mut commands: Commands,
     query: Query<(Entity, &ViewElement, One<&dyn Controller>)>,
@@ -408,21 +432,15 @@ pub fn update_view_styles(
         match ev {
             AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
-                    println!("Style asset created/modified {:?}", asset_path);
+                    debug!("Asset Created/Modified: Style {:?}", asset_path);
                 }
 
                 for (entity, view, controller) in query.iter() {
                     if let Some(ref style_handle) = view.style {
                         if style_handle.eq(handle) {
-                            println!(
-                                "Updating styles from handle: {}",
-                                match view.id {
-                                    Some(ref id) => id.clone(),
-                                    None => "#unnamed".to_string(),
-                                }
-                            );
-                            controller.attach(&commands, entity, view);
+                            // println!("Updating styles for node: [{}]", view.element_id());
                             controller.update_styles(&mut commands, entity, &view, &assets);
+                            commands.entity(entity).remove::<StyleHandlesChanged>();
                             // view.set_changed();
                         }
                     }
@@ -431,14 +449,16 @@ pub fn update_view_styles(
 
             AssetEvent::Removed { handle } => {
                 if let Some(asset_path) = server.get_handle_path(handle) {
-                    println!("Style asset removed {:?}", asset_path);
+                    warn!("Asset Removed: Style {:?}", asset_path);
                 }
             }
         }
     }
 }
 
-pub fn update_view_style_handles(
+/// One of two updaters for computing the ui node styles, this one looks for a marker component
+/// on the entity.
+pub fn update_view_styles_poll(
     mut commands: Commands,
     query: Query<(Entity, &ViewElement, One<&dyn Controller>), With<StyleHandlesChanged>>,
     server: Res<AssetServer>,
@@ -447,11 +467,19 @@ pub fn update_view_style_handles(
     for (entity, view, controller) in query.iter() {
         // Don't update style if stylesheet isn't loaded.
         if let Some(ref style_handle) = view.style {
-            if server.get_load_state(style_handle) != LoadState::Loaded {
+            let load_state = server.get_load_state(style_handle);
+            println!(
+                "Updating node '{}' style handle status: '{:?}'",
+                view.element_id(),
+                load_state,
+            );
+            if load_state != LoadState::Loaded {
                 continue;
             }
         }
+
         controller.update_styles(&mut commands, entity, &view, &assets);
+        commands.entity(entity).remove::<StyleHandlesChanged>();
     }
 }
 
