@@ -24,7 +24,7 @@
     height="20%"
     justify-self="center"
     background-color="#444444" />
-  <style id="button"
+  <style id="button-style"
     flex-direction="row"
     background-color="#733"
     border="2"
@@ -71,7 +71,7 @@
           <node
             id="test-button"
             controller="ButtonController"
-            style="#button"
+            style="#button-style"
             width="100"
             height="20"
           >Button</node>

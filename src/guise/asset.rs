@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
-use bevy::prelude::default;
+use bevy::prelude::*;
 use bevy::utils::BoxedFuture;
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesStart, Event};
@@ -64,7 +64,7 @@ impl<'a> GuiseXmlVisitor<'a> {
 
                 Ok(Event::Start(e)) => match e.name().as_ref() {
                     b"templates" => {
-                        self.visit_templates(load_context)?;
+                        self.visit_root(load_context)?;
                     }
 
                     _ => {
@@ -103,7 +103,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         Ok(())
     }
 
-    fn visit_templates<'b>(&mut self, load_context: &'b mut LoadContext) -> Result<(), GuiseError> {
+    fn visit_root<'b>(&mut self, load_context: &'b mut LoadContext) -> Result<(), GuiseError> {
         loop {
             match self.reader.read_event() {
                 Err(e) => panic!(
@@ -121,6 +121,9 @@ impl<'a> GuiseXmlVisitor<'a> {
                     b"style" => {
                         let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
                         let style = self.visit_style(&e, false)?;
+                        if load_context.has_labeled_asset(&id) {
+                            error!("Duplicate id for style: {}", id);
+                        }
                         load_context.set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
@@ -135,6 +138,9 @@ impl<'a> GuiseXmlVisitor<'a> {
                     b"style" => {
                         let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
                         let style = self.visit_style(&e, true)?;
+                        if load_context.has_labeled_asset(&id) {
+                            error!("Duplicate id for template: {}", id);
+                        }
                         load_context.set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
@@ -204,11 +210,13 @@ impl<'a> GuiseXmlVisitor<'a> {
                         self.visit_param(&e, &mut result, true)?;
                     }
 
-                    b"style" => {
-                        let style = self.visit_style(&e, true)?;
-                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
-                    }
-
+                    // b"style" => {
+                    //     let style = self.visit_style(&e, true)?;
+                    //     if load_context.has_labeled_asset(&id) {
+                    //         error!("Duplicate id for style: {}", id);
+                    //     }
+                    //     load_context.set_labeled_asset(&id, LoadedAsset::new(style));
+                    // }
                     _ => {
                         return Err(GuiseError::InvalidElement(
                             std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
@@ -232,6 +240,9 @@ impl<'a> GuiseXmlVisitor<'a> {
         }
 
         // println!("Template element loaded: {}", id);
+        if load_context.has_labeled_asset(&id) {
+            error!("Duplicate id for template: {}", id);
+        }
         load_context.set_labeled_asset(&id, LoadedAsset::new(result));
         Ok(())
     }
@@ -338,8 +349,6 @@ impl<'a> GuiseXmlVisitor<'a> {
             }
         }
 
-        // println!("Template element loaded: {}", id);
-        // load_context.set_labeled_asset(&id, LoadedAsset::new(result));
         Ok(())
     }
 

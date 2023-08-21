@@ -1,14 +1,12 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
-use crate::guise::view::attach_view_controllers;
-
 use super::{
     asset::GuiseLoader,
     controller::Controller,
     controllers::{ButtonController, DefaultController},
     style::PartialStyle,
     template::Template,
-    view::{create_views, update_view_styles, update_view_styles_poll, ViewRoot},
+    view::*,
 };
 
 pub struct GuisePlugin;
