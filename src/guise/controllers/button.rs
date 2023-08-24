@@ -3,26 +3,24 @@ use bevy_mod_picking::prelude::*;
 
 use crate::guise::{
     controller::Controller,
-    style::{ComputedStyle, PartialStyle, UpdateComputedStyle},
-    view::StyleHandlesChanged,
+    style::{ComputedStyle, UpdateComputedStyle},
     ViewElement,
 };
 
 #[derive(Reflect, Component)]
 #[reflect(Component)]
 pub struct ButtonController {
-    pub pressed: bool,
-    pub hover: bool,
+    pub disabled: bool,
+    pub dragging: bool,
+    pub inside: bool,
 }
 
 impl FromWorld for ButtonController {
     fn from_world(_world: &mut World) -> Self {
-        // let server = world.resource::<AssetServer>();
-        // BiomesHandle(server.load("terrain/terrain.biomes.json"))
-        // println!("New ButtonController");
         ButtonController {
-            pressed: false,
-            hover: false,
+            disabled: false,
+            dragging: false,
+            inside: false,
         }
     }
 }
@@ -32,36 +30,28 @@ impl Controller for ButtonController {
         commands.entity(entity).insert((
             On::<Pointer<Over>>::run(button_pointer_over),
             On::<Pointer<Out>>::run(button_pointer_out),
-            On::<Pointer<Down>>::run(button_pointer_down),
-            On::<Pointer<Up>>::run(button_pointer_up),
-            // On::<PointerCancel>::listener_component_mut::<ButtonController>(|_, ctrl| {
-            //     ctrl.pressed = false;
-            // }),
+            On::<Pointer<DragStart>>::run(button_drag_start),
+            On::<Pointer<DragEnd>>::run(button_drag_end),
             FocusPolicy::Block,
         ));
-
-        // println!("Attach button");
     }
 
-    fn update_styles(
-        &self,
-        commands: &mut Commands,
-        entity: Entity,
-        view: &ViewElement,
-        assets: &Assets<PartialStyle>,
-    ) {
+    fn update_styles(&self, commands: &mut Commands, entity: Entity, view: &ViewElement) {
         let mut computed = ComputedStyle::default();
-        view.apply_base_styles(&mut computed, assets);
+        view.apply_base_styles(&mut computed);
 
-        if self.pressed {
-            computed.background_color = Some(PRESSED);
-        } else if self.hover {
-            computed.background_color = Some(HOVERED);
-            computed.border_color = Some(Color::WHITE);
-        } else {
-            computed.background_color = Some(NORMAL);
+        let mut classes: Vec<&str> = Vec::with_capacity(3);
+        if self.disabled {
+            classes.push("disabled");
+        } else if self.inside {
+            if self.dragging {
+                classes.push("pressed");
+            } else {
+                classes.push("hover");
+            }
         }
 
+        view.apply_selected_styles(&mut computed, &classes);
         view.apply_inline_styles(&mut computed);
         commands.add(UpdateComputedStyle { entity, computed });
     }
@@ -73,57 +63,42 @@ const PRESSED: Color = Color::rgb(0.35, 0.75, 0.35);
 
 fn button_pointer_over(
     event: Listener<Pointer<Over>>,
-    mut commands: Commands,
     mut query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
     if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        // info!("Button hover");
-        ctrl.hover = true;
-        commands
-            .entity(event.listener())
-            .insert(StyleHandlesChanged);
-        view.set_changed();
+        if !ctrl.disabled {
+            ctrl.inside = true;
+            view.set_changed();
+        }
     }
 }
 
 fn button_pointer_out(
     event: Listener<Pointer<Out>>,
-    mut commands: Commands,
     mut query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
     if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.hover = false;
-        commands
-            .entity(event.listener())
-            .insert(StyleHandlesChanged);
+        ctrl.inside = false;
         view.set_changed();
     }
 }
 
-fn button_pointer_down(
-    event: Listener<Pointer<Down>>,
-    mut commands: Commands,
+fn button_drag_start(
+    event: Listener<Pointer<DragStart>>,
     mut query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
     if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.pressed = true;
-        commands
-            .entity(event.listener())
-            .insert(StyleHandlesChanged);
+        ctrl.dragging = true;
         view.set_changed();
     }
 }
 
-fn button_pointer_up(
-    event: Listener<Pointer<Up>>,
-    mut commands: Commands,
+fn button_drag_end(
+    event: Listener<Pointer<DragEnd>>,
     mut query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
     if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.pressed = false;
-        commands
-            .entity(event.listener())
-            .insert(StyleHandlesChanged);
+        ctrl.dragging = false;
         view.set_changed();
     }
 }

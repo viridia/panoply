@@ -32,10 +32,8 @@ impl Plugin for GuisePlugin {
             ((
                 create_views,
                 attach_view_controllers,
-                // apply_deferred,
+                force_update,
                 update_view_styles,
-                // apply_deferred,
-                update_view_styles_poll,
             )
                 .chain(),),
         );
@@ -60,4 +58,10 @@ fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
             ..default()
         },
     ));
+}
+
+fn force_update(mut transforms: Query<&mut Transform>) {
+    for mut transform in transforms.iter_mut() {
+        transform.set_changed();
+    }
 }

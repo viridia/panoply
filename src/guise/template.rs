@@ -48,8 +48,11 @@ pub enum TemplateNode {
 /// Node that represents a 'node' node.
 #[derive(Debug, Default)]
 pub struct ElementNode {
+    /// Reference to named style.
+    /// Note: This is temporary, and required because of a Bevy bug #9337
+    pub style: Option<Arc<PartialStyle>>,
+
     /// Inline styles on the node
-    /// TODO: Make this RC?
     pub inline_styles: Option<Arc<PartialStyle>>,
 
     // ID of this node
@@ -70,6 +73,10 @@ pub struct ElementNode {
 /// Node that represents a span of text.
 #[derive(Debug, Default)]
 pub struct TextNode {
+    /// Reference to named style.
+    /// Note: This is temporary, and required because of a Bevy bug #9337
+    pub style: Option<Arc<PartialStyle>>,
+
     /// Inline styles on the node
     pub inline_styles: Option<Arc<PartialStyle>>,
 

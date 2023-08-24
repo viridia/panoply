@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    style::{ComputedStyle, PartialStyle, UpdateComputedStyle},
+    style::{ComputedStyle, UpdateComputedStyle},
     ViewElement,
 };
 
@@ -11,15 +11,9 @@ pub trait Controller {
     // TODO: This does nothing yet.
     fn attach(&self, _commands: &mut Commands, _entity: Entity, _view: &ViewElement) {}
 
-    fn update_styles(
-        &self,
-        commands: &mut Commands,
-        entity: Entity,
-        view: &ViewElement,
-        assets: &Assets<PartialStyle>,
-    ) {
+    fn update_styles(&self, commands: &mut Commands, entity: Entity, view: &ViewElement) {
         let mut computed = ComputedStyle::default();
-        view.apply_base_styles(&mut computed, assets);
+        view.apply_base_styles(&mut computed);
         view.apply_inline_styles(&mut computed);
         commands.add(UpdateComputedStyle { entity, computed });
     }

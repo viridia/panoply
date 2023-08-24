@@ -1,17 +1,13 @@
-use bevy::{
-    asset::{AssetPath, LoadState},
-    ecs::system::Command,
-    prelude::*,
-    ui::FocusPolicy,
-};
+use bevy::{asset::AssetPath, ecs::system::Command, prelude::*, ui::FocusPolicy};
 use bevy_trait_query::One;
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use crate::guise::style::ComputedStyle;
 
 use super::{
     controller::Controller,
     controllers::DefaultController,
+    path::relative_asset_path,
     style::PartialStyle,
     template::{Template, TemplateNode, TemplateNodeList},
 };
@@ -30,7 +26,7 @@ pub struct ViewElement {
     pub id: Option<String>,
 
     /// Reference to style element by name
-    pub style: Option<Handle<PartialStyle>>,
+    pub style: Option<Arc<PartialStyle>>,
 
     /// Inline styles for this view element
     pub inline_styles: Option<Arc<PartialStyle>>,
@@ -50,40 +46,15 @@ impl ViewElement {
     }
 
     /// Calculate the "computed" style struct for this `ViewElement`.
-    pub fn compute_style(&self, computed: &mut ComputedStyle, assets: &Assets<PartialStyle>) {
-        // TODO: Style state selectors
+    pub fn apply_base_styles(&self, computed: &mut ComputedStyle) {
         if let Some(ref style_handle) = self.style {
-            if let Some(ps) = assets.get(&style_handle) {
-                ps.apply_to(computed);
-            }
-        }
-
-        if let Some(ref inline) = self.inline_styles {
-            inline.apply_to(computed);
+            style_handle.apply_to(computed);
         }
     }
 
-    /// Calculate the "computed" style struct for this `ViewElement`.
-    pub fn apply_base_styles(&self, computed: &mut ComputedStyle, assets: &Assets<PartialStyle>) {
+    pub fn apply_selected_styles(&self, computed: &mut ComputedStyle, class_names: &[&str]) {
         if let Some(ref style_handle) = self.style {
-            if let Some(ps) = assets.get(&style_handle) {
-                ps.apply_to(computed);
-            } else {
-                // warn!("Failed to get stylesheet for node '{}'", self.element_id());
-            }
-        }
-    }
-
-    pub fn apply_selected_styles(
-        &self,
-        computed: &mut ComputedStyle,
-        assets: &Assets<PartialStyle>,
-        class_names: &[&str],
-    ) {
-        if let Some(ref style_handle) = self.style {
-            if let Some(ps) = assets.get(&style_handle) {
-                ps.apply_selected_to(computed, class_names);
-            }
+            style_handle.apply_selected_to(computed, class_names);
         }
     }
 
@@ -93,10 +64,6 @@ impl ViewElement {
         }
     }
 }
-
-/// Marker that signals when a component's stylesheet handles have changed.
-#[derive(Component, Default)]
-pub struct StyleHandlesChanged;
 
 pub struct InsertController {
     entity: Entity,
@@ -147,8 +114,8 @@ pub fn create_views(
                                 if view_root.template.eq(handle) {
                                     reconcile_template(
                                         &mut commands,
-                                        &server,
-                                        &asset_path,
+                                        // &server,
+                                        // &asset_path,
                                         entity,
                                         children,
                                         &template.children,
@@ -162,7 +129,7 @@ pub fn create_views(
                             let status = server.get_load_state(handle);
                             warn!(
                                 "Failure to load template: {:?}, status [{:?}]",
-                                 asset_path, status
+                                asset_path, status
                             );
                         }
                     }
@@ -184,8 +151,8 @@ pub fn create_views(
 /// complicated.
 fn reconcile_template(
     commands: &mut Commands,
-    server: &AssetServer,
-    asset_path: &AssetPath,
+    // server: &AssetServer,
+    // asset_path: &AssetPath,
     root: Entity,
     root_children: Option<&Children>,
     root_template_nodes: &TemplateNodeList,
@@ -227,7 +194,7 @@ fn reconcile_template(
                 let template_node = &parent_template_nodes[i];
                 match template_node.as_ref() {
                     TemplateNode::Element(elt) => {
-                        let style = get_named_styles(elt.attrs.get("style"), asset_path, server);
+                        // let style = elt.style;
                         if i < old_count {
                             let old_child = children[i];
                             match view_query.get(old_child) {
@@ -238,7 +205,7 @@ fn reconcile_template(
                                     if view.controller.eq(&elt.controller) {
                                         // println!("Patching VE {}", i);
                                         let mut changed = false;
-                                        if !view.style.eq(&style)
+                                        if !view.style.eq(&elt.style)
                                             || view.inline_styles != elt.inline_styles
                                         {
                                             changed = true;
@@ -248,15 +215,12 @@ fn reconcile_template(
                                         // TODO: Mutate the view element in place rather than replacing
                                         // it. This will require splitting the query.
                                         if changed {
-                                            commands.entity(old_child).insert((
-                                                ViewElement {
-                                                    id: elt.id.clone(),
-                                                    style: style.clone(),
-                                                    inline_styles: elt.inline_styles.clone(),
-                                                    ..default()
-                                                },
-                                                StyleHandlesChanged,
-                                            ));
+                                            commands.entity(old_child).insert((ViewElement {
+                                                id: elt.id.clone(),
+                                                style: elt.style.clone(),
+                                                inline_styles: elt.inline_styles.clone(),
+                                                ..default()
+                                            },));
                                         }
 
                                         new_children.push(old_child);
@@ -281,11 +245,10 @@ fn reconcile_template(
                             .spawn((
                                 ViewElement {
                                     id: elt.id.clone(),
-                                    style: style.clone(),
+                                    style: elt.style.clone(),
                                     inline_styles: elt.inline_styles.clone(),
                                     ..default()
                                 },
-                                StyleHandlesChanged,
                                 NodeBundle {
                                     background_color: Color::rgb(0.65, 0.75, 0.65).into(),
                                     border_color: Color::BLUE.into(),
@@ -421,129 +384,48 @@ pub fn attach_view_controllers(
 
 /// One of two updaters for computing the ui node styles, this one uses asset events to detect
 /// when a stylesheet is loaded or changed.
-pub fn update_view_styles(
-    mut commands: Commands,
-    query: Query<(Entity, &ViewElement, One<&dyn Controller>)>,
-    server: Res<AssetServer>,
-    assets: Res<Assets<PartialStyle>>,
-    mut ev_style: EventReader<AssetEvent<PartialStyle>>,
-) {
-    for ev in ev_style.iter() {
-        match ev {
-            AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
-                if let Some(asset_path) = server.get_handle_path(handle) {
-                    debug!("Asset Created/Modified: Style {:?}", asset_path);
-                }
+// pub fn update_view_styles(
+//     mut commands: Commands,
+//     query: Query<(Entity, &ViewElement, One<&dyn Controller>)>,
+//     server: Res<AssetServer>,
+//     assets: Res<Assets<PartialStyle>>,
+//     mut ev_style: EventReader<AssetEvent<PartialStyle>>,
+// ) {
+//     for ev in ev_style.iter() {
+//         match ev {
+//             AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
+//                 if let Some(asset_path) = server.get_handle_path(handle) {
+//                     debug!("Asset Created/Modified: Style {:?}", asset_path);
+//                 }
 
-                for (entity, view, controller) in query.iter() {
-                    if let Some(ref style_handle) = view.style {
-                        if style_handle.eq(handle) {
-                            // println!("Updating styles for node: [{}]", view.element_id());
-                            controller.update_styles(&mut commands, entity, &view, &assets);
-                            commands.entity(entity).remove::<StyleHandlesChanged>();
-                            // view.set_changed();
-                        }
-                    }
-                }
-            }
+//                 for (entity, view, controller) in query.iter() {
+//                     if let Some(ref style_handle) = view.style {
+//                         if style_handle.eq(handle) {
+//                             // println!("Updating styles for node: [{}]", view.element_id());
+//                             controller.update_styles(&mut commands, entity, &view, &assets);
+//                             commands.entity(entity).remove::<StyleHandlesChanged>();
+//                             // view.set_changed();
+//                         }
+//                     }
+//                 }
+//             }
 
-            AssetEvent::Removed { handle } => {
-                if let Some(asset_path) = server.get_handle_path(handle) {
-                    warn!("Asset Removed: Style {:?}", asset_path);
-                }
-            }
-        }
-    }
-}
+//             AssetEvent::Removed { handle } => {
+//                 if let Some(asset_path) = server.get_handle_path(handle) {
+//                     warn!("Asset Removed: Style {:?}", asset_path);
+//                 }
+//             }
+//         }
+//     }
+// }
 
 /// One of two updaters for computing the ui node styles, this one looks for a marker component
 /// on the entity.
-pub fn update_view_styles_poll(
+pub fn update_view_styles(
     mut commands: Commands,
-    query: Query<(Entity, &ViewElement, One<&dyn Controller>), With<StyleHandlesChanged>>,
-    server: Res<AssetServer>,
-    assets: Res<Assets<PartialStyle>>,
+    mut query: Query<(Entity, &mut ViewElement, One<&dyn Controller>), Changed<ViewElement>>,
 ) {
-    for (entity, view, controller) in query.iter() {
-        // Don't update style if stylesheet isn't loaded.
-        if let Some(ref style_handle) = view.style {
-            let load_state = server.get_load_state(style_handle);
-            println!(
-                "Updating node '{}' style handle status: '{:?}'",
-                view.element_id(),
-                load_state,
-            );
-            if load_state != LoadState::Loaded {
-                continue;
-            }
-        }
-
-        controller.update_styles(&mut commands, entity, &view, &assets);
-        commands.entity(entity).remove::<StyleHandlesChanged>();
-    }
-}
-
-/// Resolves a relative asset path. The relative path can be one of:
-/// * An absolute path e.g. `foo/bar#fragment`
-/// * A path starting with './' or '../', e.g. `./bar#fragment`, in which case it is resolved
-///   relative to the current directory.
-/// * Just a label, `#fragment`.
-fn relative_asset_path<'a>(base: &'a AssetPath<'a>, relative_path: &'a str) -> AssetPath<'a> {
-    if relative_path.starts_with('#') {
-        AssetPath::new_ref(base.path(), Some(&relative_path[1..]))
-    } else if relative_path.starts_with("./") || relative_path.starts_with("../") {
-        let mut rpath = relative_path;
-        let mut fpath = PathBuf::from(base.path());
-        if !fpath.pop() {
-            panic!("Can't compute relative path");
-        }
-        loop {
-            if rpath.starts_with("./") {
-                rpath = &rpath[2..];
-            } else if rpath.starts_with("../") {
-                rpath = &rpath[3..];
-                if !fpath.pop() {
-                    panic!("Can't compute relative path");
-                }
-            } else {
-                break;
-            }
-        }
-        fpath.push(rpath);
-        // Note: converting from a string causes AssetPath to look for the separator, while
-        // passing fpath directly does not.
-        AssetPath::from(String::from(fpath.to_str().unwrap()))
-    } else {
-        AssetPath::from(relative_path)
-    }
-}
-
-// pub fn display_asset_path(path: AssetPath) -> String {
-//     // path.path().
-// }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_relative_path() {
-        let base = AssetPath::from("alice/bob#carol");
-        assert_eq!(
-            relative_asset_path(&base, "joe/next"),
-            AssetPath::from("joe/next")
-        );
-        assert_eq!(
-            relative_asset_path(&base, "#dave"),
-            AssetPath::from("alice/bob#dave")
-        );
-        assert_eq!(
-            relative_asset_path(&base, "./martin#dave"),
-            AssetPath::from("alice/martin#dave")
-        );
-        assert_eq!(
-            relative_asset_path(&base, "../martin#dave"),
-            AssetPath::from("martin#dave")
-        );
+    for (entity, view, controller) in query.iter_mut() {
+        controller.update_styles(&mut commands, entity, &view);
     }
 }

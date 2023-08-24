@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
-use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
+use bevy::asset::{AssetLoader, AssetPath, LoadContext, LoadedAsset};
 use bevy::prelude::*;
-use bevy::utils::BoxedFuture;
+use bevy::utils::{BoxedFuture, HashMap, HashSet};
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
+use crate::guise::path::relative_asset_path;
 use crate::guise::template::TemplateParam;
 
 use super::style::{PartialStyle, Selector, StyleAttr};
@@ -22,6 +23,7 @@ const ATTR_NAME: QName = QName(b"name");
 const ATTR_TYPE: QName = QName(b"type");
 const ATTR_SELECTOR: QName = QName(b"selector");
 const ATTR_CONTROLLER: QName = QName(b"controller");
+const ATTR_STYLE: QName = QName(b"style");
 
 impl AssetLoader for GuiseLoader {
     fn load<'a>(
@@ -30,10 +32,8 @@ impl AssetLoader for GuiseLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let mut visitor = GuiseXmlVisitor::<'a> {
-                reader: Reader::from_reader(bytes),
-            };
-            match visitor.visit(load_context) {
+            let mut visitor = GuiseXmlVisitor::new(bytes, load_context);
+            match visitor.visit() {
                 Ok(()) => Ok(()),
                 Err(e) => {
                     panic!("Parsing error: {:?}", e);
@@ -47,12 +47,24 @@ impl AssetLoader for GuiseLoader {
     }
 }
 
-struct GuiseXmlVisitor<'a> {
+struct GuiseXmlVisitor<'a, 'c> {
+    path: AssetPath<'a>,
     reader: Reader<&'a [u8]>,
+    load_context: &'a mut LoadContext<'c>,
+    styles: HashMap<String, Arc<PartialStyle>>,
 }
 
-impl<'a> GuiseXmlVisitor<'a> {
-    fn visit(&mut self, load_context: &'a mut LoadContext) -> Result<(), GuiseError> {
+impl<'a, 'c: 'a> GuiseXmlVisitor<'a, 'c> {
+    pub fn new(bytes: &'a [u8], load_context: &'a mut LoadContext<'c>) -> Self {
+        Self {
+            path: AssetPath::from(load_context.path()).to_owned(),
+            reader: Reader::from_reader(bytes),
+            load_context,
+            styles: HashMap::new(),
+        }
+    }
+
+    fn visit(&mut self) -> Result<(), GuiseError> {
         loop {
             match self.reader.read_event() {
                 Err(e) => panic!(
@@ -64,7 +76,7 @@ impl<'a> GuiseXmlVisitor<'a> {
 
                 Ok(Event::Start(e)) => match e.name().as_ref() {
                     b"templates" => {
-                        self.visit_root(load_context)?;
+                        self.visit_root()?;
                     }
 
                     _ => {
@@ -103,7 +115,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         Ok(())
     }
 
-    fn visit_root<'b>(&mut self, load_context: &'b mut LoadContext) -> Result<(), GuiseError> {
+    fn visit_root(&mut self) -> Result<(), GuiseError> {
         loop {
             match self.reader.read_event() {
                 Err(e) => panic!(
@@ -115,16 +127,18 @@ impl<'a> GuiseXmlVisitor<'a> {
 
                 Ok(Event::Start(e)) => match e.name().as_ref() {
                     b"template" => {
-                        self.visit_template(&e, load_context)?;
+                        self.visit_template(&e)?;
                     }
 
                     b"style" => {
                         let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
                         let style = self.visit_style(&e, false)?;
-                        if load_context.has_labeled_asset(&id) {
+                        if self.load_context.has_labeled_asset(&id) {
                             error!("Duplicate id for style: {}", id);
                         }
-                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
+                        self.styles.insert(id.to_string(), Arc::new(style.clone()));
+                        self.load_context
+                            .set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
                     _ => {
@@ -138,10 +152,12 @@ impl<'a> GuiseXmlVisitor<'a> {
                     b"style" => {
                         let id = require_attr(&e, ATTR_ID)?.unescape_value().unwrap();
                         let style = self.visit_style(&e, true)?;
-                        if load_context.has_labeled_asset(&id) {
+                        if self.load_context.has_labeled_asset(&id) {
                             error!("Duplicate id for template: {}", id);
                         }
-                        load_context.set_labeled_asset(&id, LoadedAsset::new(style));
+                        self.styles.insert(id.to_string(), Arc::new(style.clone()));
+                        self.load_context
+                            .set_labeled_asset(&id, LoadedAsset::new(style));
                     }
 
                     _ => {
@@ -165,85 +181,6 @@ impl<'a> GuiseXmlVisitor<'a> {
                 _ => (),
             }
         }
-        Ok(())
-    }
-
-    fn visit_template<'b>(
-        &mut self,
-        e: &'b BytesStart,
-        load_context: &'b mut LoadContext,
-    ) -> Result<(), GuiseError> {
-        let id = require_attr(e, ATTR_ID)?.unescape_value().unwrap();
-
-        let mut result = Template::new();
-
-        loop {
-            match self.reader.read_event() {
-                Err(e) => panic!(
-                    "Error at position {}: {:?}",
-                    self.reader.buffer_position(),
-                    e
-                ),
-                Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
-
-                Ok(Event::Start(e)) => match e.name().as_ref() {
-                    b"param" => {
-                        self.visit_param(&e, &mut result, false)?;
-                    }
-
-                    // b"params" => {
-                    //     self.visit_params(&mut result)?;
-                    // }
-                    b"content" => {
-                        self.visit_node_list(&e, &mut result.children)?;
-                    }
-
-                    _ => {
-                        return Err(GuiseError::InvalidElement(
-                            std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
-                        ))
-                    }
-                },
-
-                Ok(Event::Empty(e)) => match e.name().as_ref() {
-                    b"param" => {
-                        self.visit_param(&e, &mut result, true)?;
-                    }
-
-                    // b"style" => {
-                    //     let style = self.visit_style(&e, true)?;
-                    //     if load_context.has_labeled_asset(&id) {
-                    //         error!("Duplicate id for style: {}", id);
-                    //     }
-                    //     load_context.set_labeled_asset(&id, LoadedAsset::new(style));
-                    // }
-                    _ => {
-                        return Err(GuiseError::InvalidElement(
-                            std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
-                        ))
-                    }
-                },
-
-                Ok(Event::End(e)) => match e.name().as_ref() {
-                    b"template" => break,
-
-                    _ => {
-                        panic!(
-                            "Unrecognized end tag: </{}>",
-                            std::str::from_utf8(e.name().as_ref()).unwrap()
-                        );
-                    }
-                },
-
-                _ => (),
-            }
-        }
-
-        // println!("Template element loaded: {}", id);
-        if load_context.has_labeled_asset(&id) {
-            error!("Duplicate id for template: {}", id);
-        }
-        load_context.set_labeled_asset(&id, LoadedAsset::new(result));
         Ok(())
     }
 
@@ -289,8 +226,6 @@ impl<'a> GuiseXmlVisitor<'a> {
     }
 
     fn visit_style_children<'b>(&mut self, parent: &mut PartialStyle) -> Result<(), GuiseError> {
-        let mut result = Template::new();
-
         loop {
             match self.reader.read_event() {
                 Err(e) => panic!(
@@ -306,10 +241,6 @@ impl<'a> GuiseXmlVisitor<'a> {
                         let selector = Selector::parse(&selector)?;
                         let style = self.visit_style(&e, false)?;
                         parent.add_selector(selector, style);
-                    }
-
-                    b"content" => {
-                        self.visit_node_list(&e, &mut result.children)?;
                     }
 
                     _ => {
@@ -352,6 +283,77 @@ impl<'a> GuiseXmlVisitor<'a> {
         Ok(())
     }
 
+    fn visit_template<'b>(&mut self, e: &'b BytesStart) -> Result<(), GuiseError> {
+        let id = require_attr(e, ATTR_ID)?.unescape_value().unwrap();
+
+        let mut result = Template::new();
+        let mut deps = HashSet::<AssetPath>::new();
+
+        loop {
+            match self.reader.read_event() {
+                Err(e) => panic!(
+                    "Error at position {}: {:?}",
+                    self.reader.buffer_position(),
+                    e
+                ),
+                Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
+
+                Ok(Event::Start(e)) => match e.name().as_ref() {
+                    b"param" => {
+                        self.visit_param(&e, &mut result, false)?;
+                    }
+
+                    b"content" => {
+                        self.visit_node_list(&e, &mut result.children, &mut deps)?;
+                    }
+
+                    _ => {
+                        return Err(GuiseError::InvalidElement(
+                            std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
+                        ))
+                    }
+                },
+
+                Ok(Event::Empty(e)) => match e.name().as_ref() {
+                    b"param" => {
+                        self.visit_param(&e, &mut result, true)?;
+                    }
+
+                    _ => {
+                        return Err(GuiseError::InvalidElement(
+                            std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
+                        ))
+                    }
+                },
+
+                Ok(Event::End(e)) => match e.name().as_ref() {
+                    b"template" => break,
+
+                    _ => {
+                        panic!(
+                            "Unrecognized end tag: </{}>",
+                            std::str::from_utf8(e.name().as_ref()).unwrap()
+                        );
+                    }
+                },
+
+                _ => (),
+            }
+        }
+
+        if self.load_context.has_labeled_asset(&id) {
+            error!("Duplicate id for template: {}", id);
+        }
+        let mut loaded_asset = LoadedAsset::new(result);
+        for dep in deps {
+            println!("Style attribute {:?}", dep);
+            loaded_asset.add_dependency(dep);
+        }
+
+        self.load_context.set_labeled_asset(&id, loaded_asset);
+        Ok(())
+    }
+
     fn visit_param<'b>(
         &mut self,
         e: &'b BytesStart,
@@ -375,6 +377,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         &mut self,
         e: &'b BytesStart,
         nodes: &mut TemplateNodeList,
+        deps: &mut HashSet<AssetPath>,
     ) -> Result<(), GuiseError> {
         let name = e.name();
         loop {
@@ -386,14 +389,14 @@ impl<'a> GuiseXmlVisitor<'a> {
                 ),
                 Ok(Event::Eof) => return Err(GuiseError::PrematureEof),
                 Ok(Event::Start(e)) => match e.name().as_ref() {
-                    b"node" => self.visit_element_node(&e, nodes, false)?,
+                    b"node" => self.visit_element_node(&e, nodes, deps, false)?,
                     _ => {
                         return Err(GuiseError::InvalidElement(
                             std::str::from_utf8(e.name().as_ref()).unwrap().to_string(),
                         ))
                     }
                 },
-                Ok(Event::Empty(e)) => self.visit_element_node(&e, nodes, true)?,
+                Ok(Event::Empty(e)) => self.visit_element_node(&e, nodes, deps, true)?,
                 Ok(Event::End(e)) => {
                     if e.name() == name {
                         break;
@@ -425,6 +428,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         &mut self,
         e: &'b BytesStart,
         parent: &mut TemplateNodeList,
+        deps: &mut HashSet<AssetPath>,
         empty: bool,
     ) -> Result<(), GuiseError> {
         let mut node = ElementNode { ..default() };
@@ -442,6 +446,16 @@ impl<'a> GuiseXmlVisitor<'a> {
                 } else if attr.key == ATTR_CONTROLLER {
                     // Controller type name
                     node.controller = Some(attr_value.to_string());
+                } else if attr.key == ATTR_STYLE {
+                    let style_path = attr_value.to_string();
+                    let style_path_resolved = relative_asset_path(&self.path, attr_value);
+                    if style_path.starts_with('#') {
+                        if let Some(style_ref) = self.styles.get(&style_path[1..]) {
+                            node.style = Some(style_ref.to_owned());
+                        }
+                    }
+                    deps.insert(style_path_resolved.to_owned());
+                    node.attrs.insert("style".to_string(), style_path);
                 } else {
                     match StyleAttr::parse(attr_name, attr_value) {
                         // If we recognized the attribute as a style, then add it to the style list.
@@ -469,7 +483,7 @@ impl<'a> GuiseXmlVisitor<'a> {
         }
 
         if !empty {
-            self.visit_node_list(e, &mut node.children)?;
+            self.visit_node_list(e, &mut node.children, deps)?;
         }
 
         parent.push(Box::new(TemplateNode::Element(node)));
