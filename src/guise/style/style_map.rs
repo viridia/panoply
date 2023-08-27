@@ -45,6 +45,8 @@ impl Serialize for StyleMap {
             match attr {
                 StyleAttr::BackgroundColor(val) => st.serialize_field("background-color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
+                StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
+                StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
                 _ => todo!("Implement serialization"),
             };
         }
@@ -52,7 +54,13 @@ impl Serialize for StyleMap {
     }
 }
 
-const FIELDS: &'static [&'static str] = &["background-color", "border-color", "z-index"];
+const FIELDS: &'static [&'static str] = &[
+    "background-color",
+    "border-color",
+    "z-index",
+    "flex-grow",
+    "flex-shrink",
+];
 
 impl<'de> Deserialize<'de> for StyleMap {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -114,8 +122,8 @@ impl<'de> Deserialize<'de> for StyleMap {
 
             // FlexDirection(bevy::ui::FlexDirection),
             // FlexWrap(bevy::ui::FlexWrap),
-            // FlexGrow(f32),
-            // FlexShrink(f32),
+            FlexGrow,
+            FlexShrink,
             // FlexBasis(bevy::ui::Val),
 
             // RowGap(bevy::ui::Val),
@@ -169,6 +177,13 @@ impl<'de> Deserialize<'de> for StyleMap {
                         Field::ZIndex => {
                             result.push(StyleAttr::ZIndex(map.next_value::<StyleValue<i32>>()?));
                         }
+                        Field::FlexGrow => {
+                            result.push(StyleAttr::FlexGrow(map.next_value::<StyleValue<f32>>()?));
+                        }
+                        Field::FlexShrink => {
+                            result
+                                .push(StyleAttr::FlexShrink(map.next_value::<StyleValue<f32>>()?));
+                        }
                     }
                 }
                 Ok(result)
@@ -197,11 +212,38 @@ mod tests {
     }
 
     #[test]
+    fn test_serialize_misc_props() {
+        let map = StyleMap::from_attrs(&[
+            StyleAttr::ZIndex(StyleValue::Constant(7)),
+            StyleAttr::FlexGrow(StyleValue::Constant(2.)),
+            StyleAttr::FlexShrink(StyleValue::Constant(3.)),
+        ]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(
+            ser.unwrap(),
+            r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#
+        );
+    }
+
+    #[test]
     fn test_deserialize_basic_prop() {
         let des = serde_json::from_str::<StyleMap>(r#"{"background-color":"rgba(255, 0, 0, 1)"}"#)
             .unwrap();
         assert_eq!(des.len(), 1);
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"background-color":"rgba(255, 0, 0, 1)"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_misc_props() {
+        let des =
+            serde_json::from_str::<StyleMap>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#)
+                .unwrap();
+        assert_eq!(des.len(), 3);
+        let ser = serde_json::to_string(&des);
+        assert_eq!(
+            ser.unwrap(),
+            r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#
+        );
     }
 }

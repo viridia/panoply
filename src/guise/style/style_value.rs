@@ -1,4 +1,7 @@
+use bevy::prelude::Color;
 use serde::{Deserialize, Serialize};
+
+use super::color::ColorValue;
 
 // use super::color::ColorValue;
 
@@ -43,6 +46,77 @@ pub enum StyleExpr {
     // Format
     // And
     // Or
+}
+
+impl StyleValue<ColorValue> {
+    /// True if the color is 'transparent'.
+    pub fn is_transparent(&self) -> bool {
+        match self {
+            Self::Constant(color) => color.is_transparent(),
+            Self::Var(_var) => {
+                todo!("Extract color from StyleValue")
+            }
+            Self::Expr(_expr) => {
+                todo!("Evaluate expression")
+            }
+        }
+    }
+
+    /// Extract the color value
+    pub fn to_color_value(&self) -> ColorValue {
+        match self {
+            Self::Constant(color) => *color,
+            Self::Var(_var) => {
+                todo!("Extract color from StyleValue")
+            }
+            Self::Expr(_expr) => {
+                todo!("Evaluate expression")
+            }
+        }
+    }
+
+    /// Extract the actual color
+    pub fn to_color(&self) -> Color {
+        match self {
+            Self::Constant(color) => color.color(),
+            Self::Var(_var) => {
+                todo!("Extract color from StyleValue")
+            }
+            Self::Expr(_expr) => {
+                todo!("Evaluate expression")
+            }
+        }
+    }
+}
+
+impl StyleValue<i32> {
+    /// Extract the color value
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Self::Constant(v) => *v,
+            Self::Var(_var) => {
+                todo!("Extract i32 from StyleValue")
+            }
+            Self::Expr(_expr) => {
+                todo!("Evaluate expression")
+            }
+        }
+    }
+}
+
+impl StyleValue<f32> {
+    /// Extract the color value
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Self::Constant(v) => *v,
+            Self::Var(_var) => {
+                todo!("Extract f32 from StyleValue")
+            }
+            Self::Expr(_expr) => {
+                todo!("Evaluate expression")
+            }
+        }
+    }
 }
 
 #[cfg(test)]

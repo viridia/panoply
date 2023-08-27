@@ -11,7 +11,6 @@ use super::{color::ColorValue, style_value::StyleValue, ComputedStyle};
 /** Set of style attributes that can be applied to construct a style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
-    // BackgroundColor(StyleValue<Color>),
     BackgroundColor(StyleValue<ColorValue>),
     BorderColor(Option<Color>),
     Color(Option<Color>),
@@ -66,8 +65,8 @@ pub enum StyleAttr {
 
     FlexDirection(bevy::ui::FlexDirection),
     FlexWrap(bevy::ui::FlexWrap),
-    FlexGrow(f32),
-    FlexShrink(f32),
+    FlexGrow(StyleValue<f32>),
+    FlexShrink(StyleValue<f32>),
     FlexBasis(bevy::ui::Val),
 
     RowGap(bevy::ui::Val),
@@ -96,17 +95,9 @@ impl StyleAttr {
     /// Apply this style attribute to a computed style.
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
-            StyleAttr::BackgroundColor(val) => match val {
-                StyleValue::Constant(color) => {
-                    computed.background_color = *color;
-                }
-                StyleValue::Var(_z) => {
-                    todo!("BG var");
-                }
-                StyleValue::Expr(_z) => {
-                    todo!("BG color");
-                }
-            },
+            StyleAttr::BackgroundColor(val) => {
+                computed.background_color = val.to_color_value();
+            }
             StyleAttr::BorderColor(val) => {
                 computed.border_color = *val;
             }
@@ -114,17 +105,7 @@ impl StyleAttr {
                 computed.color = *val;
             }
             StyleAttr::ZIndex(val) => {
-                match val {
-                    StyleValue::Constant(z) => {
-                        computed.z_index = Some(*z);
-                    }
-                    StyleValue::Var(_z) => {
-                        todo!("Z var");
-                    }
-                    StyleValue::Expr(_z) => {
-                        todo!("Z expr");
-                    }
-                };
+                computed.z_index = Some(val.to_i32());
             }
 
             StyleAttr::Display(val) => {
@@ -253,10 +234,10 @@ impl StyleAttr {
                 computed.style.flex_wrap = *val;
             }
             StyleAttr::FlexGrow(val) => {
-                computed.style.flex_grow = *val;
+                computed.style.flex_grow = val.to_f32();
             }
             StyleAttr::FlexShrink(val) => {
-                computed.style.flex_shrink = *val;
+                computed.style.flex_shrink = val.to_f32();
             }
             StyleAttr::FlexBasis(val) => {
                 computed.style.flex_basis = *val;
@@ -512,9 +493,9 @@ impl StyleAttr {
             }),
 
             // TODO: Allow shortcut forms for flex.
-            b"flex" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
-            b"flex-grow" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
-            b"flex-shrink" => StyleAttr::FlexShrink(StyleAttr::parse_f32(value)?),
+            // b"flex" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
+            // b"flex-grow" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
+            // b"flex-shrink" => StyleAttr::FlexShrink(StyleAttr::parse_f32(value)?),
             b"flex-basis" => StyleAttr::FlexBasis(StyleAttr::parse_val(value)?),
 
             b"row-gap" => StyleAttr::RowGap(StyleAttr::parse_val(value)?),
@@ -842,12 +823,12 @@ impl StyleAttr {
                 ));
             }
 
-            StyleAttr::FlexGrow(val) => {
-                elem.push_attribute(("flex-grow", f32::to_string(val).as_str()));
-            }
-            StyleAttr::FlexShrink(val) => {
-                elem.push_attribute(("flex-shrink", f32::to_string(val).as_str()));
-            }
+            // StyleAttr::FlexGrow(val) => {
+            //     elem.push_attribute(("flex-grow", f32::to_string(val).as_str()));
+            // }
+            // StyleAttr::FlexShrink(val) => {
+            //     elem.push_attribute(("flex-shrink", f32::to_string(val).as_str()));
+            // }
             StyleAttr::FlexBasis(val) => {
                 elem.push_attribute(("flex-basis", StyleAttr::val_to_str(*val).as_str()));
             }
