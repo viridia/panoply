@@ -152,6 +152,10 @@
     </optional>
 
     <optional>
+      <attribute name="color" />
+    </optional>
+
+    <optional>
       <attribute name="z-index" />
     </optional>
 
@@ -353,6 +357,16 @@
 
     <optional>
       <attribute name="column-gap" />
+    </optional>
+
+    <optional>
+      <attribute name="line-break">
+        <choice>
+          <value>nowrap</value>
+          <value>word</value>
+          <value>char</value>
+        </choice>
+      </attribute>
     </optional>
   </define>
 

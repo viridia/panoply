@@ -2,7 +2,7 @@ use crate::guise::GuiseError;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use super::attr::StyleAttr;
+use super::style_attr::StyleAttr;
 use super::ComputedStyle;
 use bevy::reflect::{TypePath, TypeUuid};
 use quick_xml::writer::Writer;
@@ -128,16 +128,6 @@ impl PartialStyle {
                     attr.apply(computed);
                 }
             }
-        }
-    }
-
-    /// Returns either the current style or an empty style based on a condition.
-    /// Used for dynamic styling in response to state changes.
-    pub fn if_cond(&self, cond: bool) -> &PartialStyle {
-        if cond {
-            &self
-        } else {
-            PartialStyle::EMPTY
         }
     }
 

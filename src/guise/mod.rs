@@ -1,4 +1,5 @@
 mod asset;
+mod asset2;
 mod controller;
 mod controllers;
 mod path;

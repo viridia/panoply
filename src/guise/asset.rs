@@ -346,7 +346,7 @@ impl<'a, 'c: 'a> GuiseXmlVisitor<'a, 'c> {
         }
         let mut loaded_asset = LoadedAsset::new(result);
         for dep in deps {
-            println!("Style attribute {:?}", dep);
+            // println!("Style attribute {:?}", dep);
             loaded_asset.add_dependency(dep);
         }
 

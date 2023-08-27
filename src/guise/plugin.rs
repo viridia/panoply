@@ -1,5 +1,7 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
+use crate::guise::{asset2::GuiseTemplatesLoader, controllers::SliderController};
+
 use super::{
     asset::GuiseLoader,
     controller::Controller,
@@ -21,11 +23,14 @@ impl Plugin for GuisePlugin {
             bevy_mod_picking::backends::bevy_ui::BevyUiBackend,
         ))
         .add_asset_loader(GuiseLoader)
+        .add_asset_loader(GuiseTemplatesLoader)
         .add_asset::<Template>()
         .add_asset::<PartialStyle>()
         .register_component_as::<dyn Controller, DefaultController>()
         .register_component_as::<dyn Controller, ButtonController>()
+        .register_component_as::<dyn Controller, SliderController>()
         .register_type::<ButtonController>()
+        .register_type::<SliderController>()
         .add_systems(Startup, create_test_ui)
         .add_systems(
             Update,
@@ -41,6 +46,7 @@ impl Plugin for GuisePlugin {
 }
 
 fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
+    let _handle: Handle<Template> = server.load("editor/ui/test.guise.json#templates/main");
     commands.spawn((
         ViewRoot {
             template: server.load("editor/ui/test.guise.xml#main"),

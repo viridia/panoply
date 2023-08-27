@@ -26,23 +26,45 @@
     background-color="#444444" />
   <style id="button-style"
     flex-direction="row"
-    background-color="#733"
-    border="2"
-    border-color="#f00"
+    background-color="#444"
+    border="1"
+    color="#ff0"
+    border-color="#111"
     align-items="center"
     align-content="center"
+    line-break="nowrap"
+    padding="0 8px"
   >
     <style selector="self.hover"
-      background-color="#444"
-      border-color="#f22"
+      background-color="#4c4c4c"
+      color="#ff8"
     />
     <style selector="self.pressed"
       background-color="#555"
-      border-color="#f0f"
+      border-color="#000"
+      color="#ffa"
     />
     <style selector="self.disabled"
       background-color="#000"
       border-color="#111"
+    />
+  </style>
+  <style id="slider-style"
+    background-color="#733"
+  >
+    <style selector="self.track"
+      background-color="#f44"
+      border-color="#f22"
+      position="absolute"
+      left="0"
+      right="0"
+      top="4px"
+      bottom="4px"
+    />
+    <style selector="self.thumb"
+      background-color="#44f"
+      border-color="#f2f"
+      position="absolute"
     />
   </style>
   <template id="button">
@@ -67,14 +89,48 @@
     <content>
       <node id="main" style="#panel">
         <!-- Left -->
-        <node id="left" width="200" style="#sub-panel">
+        <node id="left" width="200" style="#sub-panel" flex-direction="column" gap="4">
           <node
             id="test-button"
             controller="ButtonController"
             style="#button-style"
             width="100"
             height="20"
-          >Button</node>
+          >Button {{count}}</node>
+          <node
+            id="test-button"
+            controller="ButtonController"
+            ctrl:disabled="true"
+            style="#button-style"
+            width="100"
+            height="20"
+          >Disabled Button</node>
+          <node
+            id="test-slider"
+            controller="SliderController"
+            style="#slider-style"
+            ctrl:value="50"
+            ctrl:min="0"
+            ctrl:max="200"
+            width="140"
+            height="16"
+          >
+            <node id="track" />
+            <node id="thumb" />
+          </node>
+          <node
+            id="test-slider-2"
+            controller="SliderController"
+            style="#slider-style"
+            ctrl:value="0"
+            ctrl:min="0"
+            ctrl:max="20"
+            width="140"
+            height="16"
+          >
+            <node id="track" />
+            <node id="thumb" />
+          </node>
         </node>
 
         <!-- Left Splitter -->

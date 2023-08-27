@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viridia.org/panoply/guise.schema.json",
+  "title": "Guise Templates",
+  "description": "Schema for Guise templates",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "templates": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+          "$ref": "#/definitions/template"
+        }
+      },
+      "additionalProperties": false
+    },
+    "styles": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+          "$ref": "#/definitions/style-set"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "style-set": {
+      "type": "object",
+      "properties": {
+        "base": {
+          "$ref": "#/definitions/style"
+        },
+        "selectors": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+              "$ref": "#/definitions/style"
+            },
+            "^&[A-Za-z0-9_\\.-]*$": {
+              "$ref": "#/definitions/style"
+            },
+            "^&(\\s*>\\s*[A-Za-z0-9_\\.-]*)*$": {
+              "$ref": "#/definitions/style"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/color"
+        },
+        "background-color": {
+          "$ref": "#/definitions/color"
+        },
+        "border-color": {
+          "$ref": "#/definitions/color"
+        },
+        "display": {
+          "enum": ["flex", "grid"]
+        },
+        "padding": {
+          "$ref": "#/definitions/val"
+        },
+        "image": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/var-ref"
+            }
+          ]
+        },
+        "vars": {
+          "type": "object",
+          "patternProperties": {
+            "^--[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "color": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{3}$"
+        },
+        {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      ]
+    },
+    "val": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "pattern": "^\\d+px$"
+        }
+      ]
+    },
+    "var-ref": {
+      "type": "object",
+      "properties": {
+        "var": {
+          "pattern": "^--[A-Za-z_][A-Za-z0-9_\\.-]*$"
+        }
+      }
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "params": {},
+        "content": {}
+      },
+      "required": ["content"],
+      "additionalProperties": false
+    }
+  }
+}

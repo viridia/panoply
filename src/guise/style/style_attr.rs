@@ -1,4 +1,4 @@
-use bevy::{prelude::Color, ui::*};
+use bevy::{prelude::Color, text::BreakLineOn, ui::*};
 use lazy_static::lazy_static;
 use quick_xml::events::BytesStart;
 use regex::Regex;
@@ -6,14 +6,17 @@ use std::str::FromStr;
 
 use crate::guise::GuiseError;
 
-use super::ComputedStyle;
+use super::{color::ColorValue, style_value::StyleValue, ComputedStyle};
 
 /** Set of style attributes that can be applied to construct a style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
-    BackgroundColor(Option<Color>),
+    // BackgroundColor(StyleValue<Color>),
+    BackgroundColor(StyleValue<ColorValue>),
     BorderColor(Option<Color>),
-    ZIndex(i32),
+    Color(Option<Color>),
+
+    ZIndex(StyleValue<i32>),
 
     Display(bevy::ui::Display),
     Position(bevy::ui::PositionType),
@@ -85,20 +88,43 @@ pub enum StyleAttr {
     GridColumnStart(i16),
     GridColumnSpan(u16),
     GridColumnEnd(i16),
+
+    LineBreak(BreakLineOn),
 }
 
 impl StyleAttr {
     /// Apply this style attribute to a computed style.
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
-            StyleAttr::BackgroundColor(val) => {
-                computed.background_color = *val;
-            }
+            StyleAttr::BackgroundColor(val) => match val {
+                StyleValue::Constant(color) => {
+                    computed.background_color = *color;
+                }
+                StyleValue::Var(_z) => {
+                    todo!("BG var");
+                }
+                StyleValue::Expr(_z) => {
+                    todo!("BG color");
+                }
+            },
             StyleAttr::BorderColor(val) => {
                 computed.border_color = *val;
             }
+            StyleAttr::Color(val) => {
+                computed.color = *val;
+            }
             StyleAttr::ZIndex(val) => {
-                computed.z_index = Some(*val);
+                match val {
+                    StyleValue::Constant(z) => {
+                        computed.z_index = Some(*z);
+                    }
+                    StyleValue::Var(_z) => {
+                        todo!("Z var");
+                    }
+                    StyleValue::Expr(_z) => {
+                        todo!("Z expr");
+                    }
+                };
             }
 
             StyleAttr::Display(val) => {
@@ -275,26 +301,33 @@ impl StyleAttr {
             StyleAttr::GridColumnEnd(val) => {
                 computed.style.grid_column.set_end(*val);
             }
+            StyleAttr::LineBreak(val) => {
+                computed.line_break = Some(*val);
+            }
         }
     }
 
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {
-            b"background-color" => StyleAttr::BackgroundColor(if value == "transparent" {
-                None
-            } else {
-                Some(StyleAttr::parse_color(value)?)
-            }),
-
+            // b"background-color" => StyleAttr::BackgroundColor(if value == "transparent" {
+            //     None
+            // } else {
+            //     Some(StyleAttr::parse_color(value)?)
+            // }),
             b"border-color" => StyleAttr::BorderColor(if value == "transparent" {
                 None
             } else {
                 Some(StyleAttr::parse_color(value)?)
             }),
 
-            b"z-index" => StyleAttr::ZIndex(StyleAttr::parse_i32(value)?),
+            b"color" => StyleAttr::BorderColor(if value == "transparent" {
+                None
+            } else {
+                Some(StyleAttr::parse_color(value)?)
+            }),
 
+            // b"z-index" => StyleAttr::ZIndex(StyleAttr::parse_i32(value)?),
             b"display" => StyleAttr::Display(match value {
                 "none" => Display::None,
                 "grid" => Display::Grid,
@@ -510,19 +543,28 @@ impl StyleAttr {
             b"grid-column-start" => StyleAttr::GridColumnStart(StyleAttr::parse_i16(value)?),
             b"grid-column-span" => StyleAttr::GridColumnSpan(StyleAttr::parse_u16(value)?),
             b"grid-column-end" => StyleAttr::GridColumnEnd(StyleAttr::parse_i16(value)?),
+
+            b"line-break" => StyleAttr::LineBreak(match value {
+                "nowrap" => bevy::text::BreakLineOn::NoWrap,
+                "word" => bevy::text::BreakLineOn::WordBoundary,
+                "char" => bevy::text::BreakLineOn::AnyCharacter,
+                _ => {
+                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+                }
+            }),
+
             _ => return Ok(None),
         }))
     }
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
-            StyleAttr::BackgroundColor(Some(col)) => {
-                elem.push_attribute(("background-color", StyleAttr::color_to_str(*col).as_str()));
-            }
-            StyleAttr::BackgroundColor(None) => {
-                elem.push_attribute(("background-color", "transparent"));
-            }
-
+            // StyleAttr::BackgroundColor(Some(col)) => {
+            //     elem.push_attribute(("background-color", StyleAttr::color_to_str(*col).as_str()));
+            // }
+            // StyleAttr::BackgroundColor(None) => {
+            //     elem.push_attribute(("background-color", "transparent"));
+            // }
             StyleAttr::BorderColor(Some(col)) => {
                 elem.push_attribute(("border-color", StyleAttr::color_to_str(*col).as_str()));
             }
@@ -530,10 +572,16 @@ impl StyleAttr {
                 elem.push_attribute(("border-color", "transparent"));
             }
 
-            StyleAttr::ZIndex(val) => {
-                elem.push_attribute(("z-index", val.to_string().as_str()));
+            StyleAttr::Color(Some(col)) => {
+                elem.push_attribute(("color", StyleAttr::color_to_str(*col).as_str()));
+            }
+            StyleAttr::Color(None) => {
+                elem.push_attribute(("color", "transparent"));
             }
 
+            // StyleAttr::ZIndex(val) => {
+            //     elem.push_attribute(("z-index", val.to_string().as_str()));
+            // }
             StyleAttr::Display(disp) => {
                 elem.push_attribute((
                     "display",
@@ -850,9 +898,22 @@ impl StyleAttr {
             }
             StyleAttr::GridColumnEnd(val) => {
                 elem.push_attribute(("grid-column-end", i16::to_string(val).as_str()));
-            } // _ => {
-              //     panic!("Unsupported tag")
-              // }
+            }
+
+            StyleAttr::LineBreak(dir) => {
+                elem.push_attribute((
+                    "line-break",
+                    match dir {
+                        bevy::text::BreakLineOn::NoWrap => "nowrap",
+                        bevy::text::BreakLineOn::WordBoundary => "word",
+                        bevy::text::BreakLineOn::AnyCharacter => "char",
+                    },
+                ));
+            }
+
+            _ => {
+                todo!("Implement attr")
+            }
         }
     }
 
@@ -1094,19 +1155,19 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-        assert_eq!(
-            StyleAttr::parse(b"background-color", "#123")
-                .unwrap()
-                .unwrap(),
-            StyleAttr::BackgroundColor(Some(Color::hex("#123").unwrap()))
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"background-color", "#123")
+        //         .unwrap()
+        //         .unwrap(),
+        //     StyleAttr::BackgroundColor(Some(Color::hex("#123").unwrap()))
+        // );
 
-        assert_eq!(
-            StyleAttr::parse(b"background-color", "transparent")
-                .unwrap()
-                .unwrap(),
-            StyleAttr::BackgroundColor(None)
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"background-color", "transparent")
+        //         .unwrap()
+        //         .unwrap(),
+        //     StyleAttr::BackgroundColor(None)
+        // );
 
         assert_eq!(
             StyleAttr::parse(b"border-color", "#123").unwrap().unwrap(),
@@ -1120,10 +1181,10 @@ mod tests {
             StyleAttr::BorderColor(None)
         );
 
-        assert_eq!(
-            StyleAttr::parse(b"z-index", "33").unwrap().unwrap(),
-            StyleAttr::ZIndex(33)
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"z-index", "33").unwrap().unwrap(),
+        //     StyleAttr::ZIndex(33)
+        // );
 
         assert_eq!(
             StyleAttr::parse(b"display", "none").unwrap().unwrap(),

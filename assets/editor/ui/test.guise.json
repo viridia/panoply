@@ -1,0 +1,102 @@
+{
+  "$schema": "../../../schemas/guise.schema.json",
+  "styles": {
+    "obs-button": {
+      "base": {
+        "padding": 6,
+        "background-color": "#222",
+        "border-color": "#404",
+        "vars": {
+          "--button-image": "../images/button-blue.png"
+        }
+      },
+      "selectors": {
+        "&.hover": {
+          "vars": {
+            "--button-image": "../images/button-blue-hover.png"
+          }
+        },
+        "&.pressed": {
+          "vars": {
+            "--button-image": "../images/button-blue-pressed.png"
+          }
+        },
+        "&.disabled": {
+          "vars": {
+            "--button-image": "../images/button-blue-disabled.png"
+          }
+        },
+        "& > .background": {
+          "display": "grid"
+        },
+        "& > .background > .ul": {
+          "image": { "var": "--button-image" }
+          // "image-rect": [0, 0, 20, 20]
+        },
+        "& > .background > .uc": {},
+        "& > .background > .ur": {},
+        "& > .background > .ml": {},
+        "& > .background > .mc": {},
+        "& > .background > .mr": {},
+        "& > .background > .ll": {},
+        "& > .background > .lc": {},
+        "& > .background > .lr": {}
+      }
+    },
+    "obs-button-green": {
+      "extends": "#styles/obs-button",
+      "base": {
+        "vars": {
+          "--button-image": "../images/button-green.png"
+        }
+      }
+    },
+    "sub-panel": {
+      "base": {
+        "padding": 6,
+        "background-color": "#222",
+        "border-color": "#404"
+      }
+    }
+  },
+  "templates": {
+    "main": {
+      "params": {},
+      "content": {
+        "style": {},
+        "children": [
+          {
+            "id": "left",
+            "styleset": "#/styles/sub-panel",
+            "style": {
+              "width": 200
+            }
+          },
+          {
+            "id": "center",
+            "controller": "ViewportInsetController",
+            "style": {
+              "flex": 1
+            }
+          },
+          {
+            "id": "right",
+            "styleset": "#/styles/sub-panel",
+            "style": {
+              "width": 200
+            }
+          }
+        ]
+      }
+    },
+    "demo-button": {
+      "content": {}
+    },
+    "demo-counter": {
+      "content": {
+        "controller": "CounterController",
+        "children": []
+      }
+    }
+  }
+}
