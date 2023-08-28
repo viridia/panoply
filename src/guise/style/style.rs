@@ -71,6 +71,8 @@ impl Serialize for Style {
                 StyleAttr::Color(val) => st.serialize_field("color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
 
+                StyleAttr::Display(val) => st.serialize_field("display", val)?,
+
                 StyleAttr::Left(val) => st.serialize_field("left", val)?,
                 StyleAttr::Right(val) => st.serialize_field("right", val)?,
                 StyleAttr::Top(val) => st.serialize_field("top", val)?,
@@ -97,6 +99,7 @@ const FIELDS: &'static [&'static str] = &[
     "border-color",
     "color",
     "z-index",
+    "display",
     "left",
     "right",
     "top",
@@ -126,7 +129,7 @@ impl<'de> Deserialize<'de> for Style {
             Color,
 
             ZIndex,
-            // Display(bevy::ui::Display),
+            Display,
             // Position(bevy::ui::PositionType),
             // Overflow(bevy::ui::OverflowAxis),
             // OverflowX(bevy::ui::OverflowAxis),
@@ -228,6 +231,10 @@ impl<'de> Deserialize<'de> for Style {
                         Field::Color => attrs.push(SA::Color(map.next_value::<Expr>()?)),
                         Field::ZIndex => attrs.push(SA::ZIndex(map.next_value::<Expr>()?)),
 
+                        Field::Display => {
+                            attrs.push(SA::Display(map.next_value::<Expr>()?.into_display_const()))
+                        }
+
                         Field::Left => attrs.push(SA::Left(map.next_value::<Expr>()?)),
                         Field::Right => attrs.push(SA::Right(map.next_value::<Expr>()?)),
                         Field::Top => attrs.push(SA::Top(map.next_value::<Expr>()?)),
@@ -260,6 +267,8 @@ impl<'de> Deserialize<'de> for Style {
 
 #[cfg(test)]
 mod tests {
+    use bevy::ui;
+
     use super::*;
 
     #[test]
@@ -312,5 +321,26 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"right":7}"#);
+    }
+
+    #[test]
+    fn test_serialize_display() {
+        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Ident("grid".to_string()))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
+
+        let map2 = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
+        let ser2 = serde_json::to_string(&map2);
+        assert_eq!(ser2.unwrap(), r#"{"display":"grid"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_display() {
+        let des = serde_json::from_str::<Style>(r#"{"display":"grid"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Display(Expr::Display(ui::Display::Grid))
+        );
     }
 }

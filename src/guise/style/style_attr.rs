@@ -17,7 +17,7 @@ pub enum StyleAttr {
 
     ZIndex(Expr),
 
-    Display(bevy::ui::Display),
+    Display(Expr),
     Position(bevy::ui::PositionType),
     Overflow(bevy::ui::OverflowAxis),
     OverflowX(bevy::ui::OverflowAxis),
@@ -117,7 +117,9 @@ impl StyleAttr {
             }
 
             StyleAttr::Display(val) => {
-                computed.style.display = *val;
+                if let Some(d) = val.into_display() {
+                    computed.style.display = d;
+                }
             }
             StyleAttr::Position(val) => {
                 computed.style.position_type = *val;
@@ -323,33 +325,6 @@ impl StyleAttr {
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {
-            // b"background-color" => StyleAttr::BackgroundColor(if value == "transparent" {
-            //     None
-            // } else {
-            //     Some(StyleAttr::parse_color(value)?)
-            // }),
-            // b"border-color" => StyleAttr::BorderColor(if value == "transparent" {
-            //     None
-            // } else {
-            //     Some(StyleAttr::parse_color(value)?)
-            // }),
-
-            // b"color" => StyleAttr::BorderColor(if value == "transparent" {
-            //     None
-            // } else {
-            //     Some(StyleAttr::parse_color(value)?)
-            // }),
-
-            // b"z-index" => StyleAttr::ZIndex(StyleAttr::parse_i32(value)?),
-            b"display" => StyleAttr::Display(match value {
-                "none" => Display::None,
-                "grid" => Display::Grid,
-                "flex" => Display::Flex,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
             b"position" => StyleAttr::Position(match value {
                 "absolute" => PositionType::Absolute,
                 "relative" => PositionType::Relative,
@@ -572,20 +547,6 @@ impl StyleAttr {
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
-            // StyleAttr::ZIndex(val) => {
-            //     elem.push_attribute(("z-index", val.to_string().as_str()));
-            // }
-            StyleAttr::Display(disp) => {
-                elem.push_attribute((
-                    "display",
-                    match disp {
-                        Display::None => "none",
-                        Display::Flex => "flex",
-                        Display::Grid => "grid",
-                    },
-                ));
-            }
-
             StyleAttr::Position(pos) => {
                 elem.push_attribute((
                     "position",
@@ -1147,19 +1108,6 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-        assert_eq!(
-            StyleAttr::parse(b"display", "none").unwrap().unwrap(),
-            StyleAttr::Display(bevy::ui::Display::None)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"display", "flex").unwrap().unwrap(),
-            StyleAttr::Display(bevy::ui::Display::Flex)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"display", "grid").unwrap().unwrap(),
-            StyleAttr::Display(bevy::ui::Display::Grid)
-        );
-
         assert_eq!(
             StyleAttr::parse(b"position", "absolute").unwrap().unwrap(),
             StyleAttr::Position(bevy::ui::PositionType::Absolute)

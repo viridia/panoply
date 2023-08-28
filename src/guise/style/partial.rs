@@ -165,15 +165,4 @@ mod tests {
             r#"<style/>"#
         );
     }
-
-    #[test]
-    fn test_serialize_display() {
-        let style = PartialStyle::from_attrs(&[StyleAttr::Display(bevy::ui::Display::Flex)]);
-        let mut writer = Writer::new(std::io::Cursor::new(Vec::new()));
-        style.write_xml(&mut writer);
-        assert_eq!(
-            String::from_utf8(writer.into_inner().into_inner()).unwrap(),
-            r#"<style display="flex"/>"#
-        );
-    }
 }

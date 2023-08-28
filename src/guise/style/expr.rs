@@ -94,6 +94,25 @@ impl Expr {
             _ => None,
         }
     }
+
+    /// Evaluate the expression and coerce to a ui::Display
+    pub fn into_display(&self) -> Option<ui::Display> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "grid" => Some(ui::Display::Grid),
+                "flex" => Some(ui::Display::Flex),
+                "none" => Some(ui::Display::None),
+                _ => None,
+            },
+            Expr::Display(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Fold constants
+    pub fn into_display_const(self) -> Self {
+        self.into_display().map_or(self, |f| Self::Display(f))
+    }
 }
 
 impl From<i32> for Expr {
