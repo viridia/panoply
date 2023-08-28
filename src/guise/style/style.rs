@@ -2,52 +2,78 @@ use std::fmt;
 
 use crate::guise::style::{color::ColorValue, style_value::StyleValue};
 
-use super::StyleAttr;
+use super::{Selector, StyleAttr};
+use bevy::utils::HashMap;
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
-pub struct StyleMap(Vec<StyleAttr>);
-
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
-/// Rather than storing the attributes in a struct full of optional fields, we store a flat
-/// vector of enums, each of which stores a single style attribute. This "sparse" representation
-/// allows for fast merging of styles, particularly for styles which have few or no attributes.
-impl StyleMap {
+pub struct Style {
+    /// List of style attributes.
+    /// Rather than storing the attributes in a struct full of optional fields, we store a flat
+    /// vector of enums, each of which stores a single style attribute. This "sparse" representation
+    /// allows for fast merging of styles, particularly for styles which have few or no attributes.
+    attrs: Vec<StyleAttr>,
+
+    /// List of style variables to define when this style is invoked.
+    /// TODO: Var values are not strings...
+    vars: HashMap<String, String>,
+
+    /// List of conditional styles
+    selectors: Vec<(Selector, Box<Style>)>,
+}
+
+impl Style {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self {
+            attrs: Vec::new(),
+            vars: HashMap::new(),
+            selectors: Vec::new(),
+        }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        Self(Vec::with_capacity(capacity))
+        Self {
+            attrs: Vec::with_capacity(capacity),
+            vars: HashMap::new(),
+            selectors: Vec::new(),
+        }
     }
 
     /// Construct a new `StyleMap` from a list of `StyleAttr`s.
     pub fn from_attrs(attrs: &[StyleAttr]) -> Self {
-        Self(Vec::from(attrs))
+        Self {
+            attrs: Vec::from(attrs),
+            vars: HashMap::new(),
+            selectors: Vec::new(),
+        }
     }
 
-    /// Number of style attributes in the map.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
+    // Number of style attributes in the map.
+    // pub fn len(&self) -> usize {
+    //     self.att.len()
+    // }
 
-    pub fn push(&mut self, attr: StyleAttr) {
-        self.0.push(attr);
-    }
+    // pub fn push(&mut self, attr: StyleAttr) {
+    //     self.0.push(attr);
+    // }
 }
 
-impl Serialize for StyleMap {
+impl Serialize for Style {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let mut st = serializer.serialize_struct("StyleMap", self.0.len())?;
-        for attr in self.0.iter() {
+        let mut st = serializer.serialize_struct("StyleMap", self.attrs.len())?;
+        for attr in self.attrs.iter() {
             match attr {
                 StyleAttr::BackgroundColor(val) => st.serialize_field("background-color", val)?,
+                StyleAttr::BorderColor(val) => st.serialize_field("border-color", val)?,
+                StyleAttr::Color(val) => st.serialize_field("color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
+                StyleAttr::Left(val) => st.serialize_field("left", val)?,
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
-                _ => todo!("Implement serialization"),
+                _ => todo!("Implement serialization for {:?}", attr),
             };
         }
         st.end()
@@ -57,12 +83,15 @@ impl Serialize for StyleMap {
 const FIELDS: &'static [&'static str] = &[
     "background-color",
     "border-color",
+    "color",
     "z-index",
     "flex-grow",
     "flex-shrink",
+    "vars",
+    "selectors",
 ];
 
-impl<'de> Deserialize<'de> for StyleMap {
+impl<'de> Deserialize<'de> for Style {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -72,7 +101,8 @@ impl<'de> Deserialize<'de> for StyleMap {
         enum Field {
             BackgroundColor,
             BorderColor,
-            // Color,
+            Color,
+
             ZIndex,
             // Display(bevy::ui::Display),
             // Position(bevy::ui::PositionType),
@@ -146,43 +176,61 @@ impl<'de> Deserialize<'de> for StyleMap {
             // GridColumnEnd(i16),
 
             // LineBreak(BreakLineOn),
+            Vars,
+            Selectors,
         }
 
         struct StyleMapVisitor;
 
         impl<'de> Visitor<'de> for StyleMapVisitor {
-            type Value = StyleMap;
+            type Value = Style;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a style definition")
+                formatter.write_str("style definition")
             }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
                 A: serde::de::MapAccess<'de>,
             {
-                let mut result = StyleMap::with_capacity(map.size_hint().unwrap_or(0));
+                let mut result = Style::with_capacity(map.size_hint().unwrap_or(0));
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::BackgroundColor => {
-                            result.push(StyleAttr::BackgroundColor(
+                            result.attrs.push(StyleAttr::BackgroundColor(
                                 map.next_value::<StyleValue<ColorValue>>()?,
                             ));
                         }
                         Field::BorderColor => {
-                            // result.0.push(StyleAttr::BorderColor(
-                            //     map.next_value::<StyleColor>().unwrap(),
-                            // ));
+                            result.attrs.push(StyleAttr::BorderColor(
+                                map.next_value::<StyleValue<ColorValue>>()?,
+                            ));
+                        }
+                        Field::Color => {
+                            result.attrs.push(StyleAttr::Color(
+                                map.next_value::<StyleValue<ColorValue>>()?,
+                            ));
                         }
                         Field::ZIndex => {
-                            result.push(StyleAttr::ZIndex(map.next_value::<StyleValue<i32>>()?));
+                            result
+                                .attrs
+                                .push(StyleAttr::ZIndex(map.next_value::<StyleValue<i32>>()?));
                         }
                         Field::FlexGrow => {
-                            result.push(StyleAttr::FlexGrow(map.next_value::<StyleValue<f32>>()?));
+                            result
+                                .attrs
+                                .push(StyleAttr::FlexGrow(map.next_value::<StyleValue<f32>>()?));
                         }
                         Field::FlexShrink => {
                             result
+                                .attrs
                                 .push(StyleAttr::FlexShrink(map.next_value::<StyleValue<f32>>()?));
+                        }
+                        Field::Vars => {
+                            todo!()
+                        }
+                        Field::Selectors => {
+                            todo!()
                         }
                     }
                 }
@@ -204,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_serialize_basic_prop() {
-        let map = StyleMap::from_attrs(&[StyleAttr::BackgroundColor(StyleValue::Constant(
+        let map = Style::from_attrs(&[StyleAttr::BackgroundColor(StyleValue::Constant(
             ColorValue::Color(Color::RED),
         ))]);
         let ser = serde_json::to_string(&map);
@@ -213,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_serialize_misc_props() {
-        let map = StyleMap::from_attrs(&[
+        let map = Style::from_attrs(&[
             StyleAttr::ZIndex(StyleValue::Constant(7)),
             StyleAttr::FlexGrow(StyleValue::Constant(2.)),
             StyleAttr::FlexShrink(StyleValue::Constant(3.)),
@@ -227,9 +275,9 @@ mod tests {
 
     #[test]
     fn test_deserialize_basic_prop() {
-        let des = serde_json::from_str::<StyleMap>(r#"{"background-color":"rgba(255, 0, 0, 1)"}"#)
-            .unwrap();
-        assert_eq!(des.len(), 1);
+        let des =
+            serde_json::from_str::<Style>(r#"{"background-color":"rgba(255, 0, 0, 1)"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"background-color":"rgba(255, 0, 0, 1)"}"#);
     }
@@ -237,9 +285,9 @@ mod tests {
     #[test]
     fn test_deserialize_misc_props() {
         let des =
-            serde_json::from_str::<StyleMap>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#)
+            serde_json::from_str::<Style>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#)
                 .unwrap();
-        assert_eq!(des.len(), 3);
+        assert_eq!(des.attrs.len(), 3);
         let ser = serde_json::to_string(&des);
         assert_eq!(
             ser.unwrap(),

@@ -326,3 +326,26 @@ Properties
 * sequin
 * fluid
 * guise
+
+## CSS attribute syntax:
+
+```
+  declaration
+    : property ':' S* expr prio?
+    ;
+  prio
+    : IMPORTANT_SYM S*
+    ;
+  expr
+    : term [ operator? term ]*
+    ;
+  term
+    : unary_operator?
+      [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* |
+        TIME S* | FREQ S* ]
+    | STRING S* | IDENT S* | URI S* | hexcolor | function
+    ;
+  function
+    : FUNCTION S* expr ')' S*
+    ;
+```

@@ -31,26 +31,17 @@
   "definitions": {
     "style-set": {
       "type": "object",
-      "properties": {
-        "base": {
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
           "$ref": "#/definitions/style"
-        },
-        "selectors": {
-          "type": "object",
-          "patternProperties": {
-            "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
-              "$ref": "#/definitions/style"
-            },
-            "^&[A-Za-z0-9_\\.-]*$": {
-              "$ref": "#/definitions/style"
-            },
-            "^&(\\s*>\\s*[A-Za-z0-9_\\.-]*)*$": {
-              "$ref": "#/definitions/style"
-            }
-          },
-          "additionalProperties": false
         }
-      }
+      },
+      "properties": {
+        "extends": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "style": {
       "type": "object",
@@ -85,6 +76,15 @@
           "patternProperties": {
             "^--[A-Za-z_][A-Za-z0-9_\\.-]*$": {
               "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "selectors": {
+          "type": "object",
+          "patternProperties": {
+            "^((\\*|\\.[A-Za-z_][A-Za-z0-9_\\.-]*)\\s*>\\s*)*&(\\.[A-Za-z_][A-Za-z0-9_\\.-]*)*$": {
+              "$ref": "#/definitions/style"
             }
           },
           "additionalProperties": false

@@ -85,7 +85,7 @@ impl<'de> Visitor<'de> for ColorValueVisitor {
     type Value = ColorValue;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a CSS color")
+        formatter.write_str("CSS color")
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>

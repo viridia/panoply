@@ -12,8 +12,8 @@ use super::{color::ColorValue, style_value::StyleValue, ComputedStyle};
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
     BackgroundColor(StyleValue<ColorValue>),
-    BorderColor(Option<Color>),
-    Color(Option<Color>),
+    BorderColor(StyleValue<ColorValue>),
+    Color(StyleValue<ColorValue>),
 
     ZIndex(StyleValue<i32>),
 
@@ -24,7 +24,7 @@ pub enum StyleAttr {
     OverflowY(bevy::ui::OverflowAxis),
     Direction(bevy::ui::Direction),
 
-    Left(bevy::ui::Val),
+    Left(StyleValue<Val>),
     Right(bevy::ui::Val),
     Top(bevy::ui::Val),
     Bottom(bevy::ui::Val),
@@ -99,10 +99,10 @@ impl StyleAttr {
                 computed.background_color = val.to_color_value();
             }
             StyleAttr::BorderColor(val) => {
-                computed.border_color = *val;
+                computed.border_color = val.to_color_value();
             }
             StyleAttr::Color(val) => {
-                computed.color = *val;
+                computed.color = val.to_color_value();
             }
             StyleAttr::ZIndex(val) => {
                 computed.z_index = Some(val.to_i32());
@@ -129,7 +129,7 @@ impl StyleAttr {
             }
 
             StyleAttr::Left(val) => {
-                computed.style.left = *val;
+                computed.style.left = val.to_val();
             }
             StyleAttr::Right(val) => {
                 computed.style.right = *val;
@@ -296,17 +296,17 @@ impl StyleAttr {
             // } else {
             //     Some(StyleAttr::parse_color(value)?)
             // }),
-            b"border-color" => StyleAttr::BorderColor(if value == "transparent" {
-                None
-            } else {
-                Some(StyleAttr::parse_color(value)?)
-            }),
+            // b"border-color" => StyleAttr::BorderColor(if value == "transparent" {
+            //     None
+            // } else {
+            //     Some(StyleAttr::parse_color(value)?)
+            // }),
 
-            b"color" => StyleAttr::BorderColor(if value == "transparent" {
-                None
-            } else {
-                Some(StyleAttr::parse_color(value)?)
-            }),
+            // b"color" => StyleAttr::BorderColor(if value == "transparent" {
+            //     None
+            // } else {
+            //     Some(StyleAttr::parse_color(value)?)
+            // }),
 
             // b"z-index" => StyleAttr::ZIndex(StyleAttr::parse_i32(value)?),
             b"display" => StyleAttr::Display(match value {
@@ -359,7 +359,7 @@ impl StyleAttr {
                 }
             }),
 
-            b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
+            // b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
             b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
             b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
             b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
@@ -540,26 +540,6 @@ impl StyleAttr {
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
-            // StyleAttr::BackgroundColor(Some(col)) => {
-            //     elem.push_attribute(("background-color", StyleAttr::color_to_str(*col).as_str()));
-            // }
-            // StyleAttr::BackgroundColor(None) => {
-            //     elem.push_attribute(("background-color", "transparent"));
-            // }
-            StyleAttr::BorderColor(Some(col)) => {
-                elem.push_attribute(("border-color", StyleAttr::color_to_str(*col).as_str()));
-            }
-            StyleAttr::BorderColor(None) => {
-                elem.push_attribute(("border-color", "transparent"));
-            }
-
-            StyleAttr::Color(Some(col)) => {
-                elem.push_attribute(("color", StyleAttr::color_to_str(*col).as_str()));
-            }
-            StyleAttr::Color(None) => {
-                elem.push_attribute(("color", "transparent"));
-            }
-
             // StyleAttr::ZIndex(val) => {
             //     elem.push_attribute(("z-index", val.to_string().as_str()));
             // }
@@ -625,9 +605,9 @@ impl StyleAttr {
                 ));
             }
 
-            StyleAttr::Left(val) => {
-                elem.push_attribute(("left", StyleAttr::val_to_str(*val).as_str()));
-            }
+            // StyleAttr::Left(val) => {
+            //     elem.push_attribute(("left", StyleAttr::val_to_str(*val).as_str()));
+            // }
             StyleAttr::Right(val) => {
                 elem.push_attribute(("right", StyleAttr::val_to_str(*val).as_str()));
             }
@@ -1136,37 +1116,6 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-        // assert_eq!(
-        //     StyleAttr::parse(b"background-color", "#123")
-        //         .unwrap()
-        //         .unwrap(),
-        //     StyleAttr::BackgroundColor(Some(Color::hex("#123").unwrap()))
-        // );
-
-        // assert_eq!(
-        //     StyleAttr::parse(b"background-color", "transparent")
-        //         .unwrap()
-        //         .unwrap(),
-        //     StyleAttr::BackgroundColor(None)
-        // );
-
-        assert_eq!(
-            StyleAttr::parse(b"border-color", "#123").unwrap().unwrap(),
-            StyleAttr::BorderColor(Some(Color::hex("#123").unwrap()))
-        );
-
-        assert_eq!(
-            StyleAttr::parse(b"border-color", "transparent")
-                .unwrap()
-                .unwrap(),
-            StyleAttr::BorderColor(None)
-        );
-
-        // assert_eq!(
-        //     StyleAttr::parse(b"z-index", "33").unwrap().unwrap(),
-        //     StyleAttr::ZIndex(33)
-        // );
-
         assert_eq!(
             StyleAttr::parse(b"display", "none").unwrap().unwrap(),
             StyleAttr::Display(bevy::ui::Display::None)
@@ -1227,10 +1176,10 @@ mod tests {
             StyleAttr::Direction(bevy::ui::Direction::RightToLeft)
         );
 
-        assert_eq!(
-            StyleAttr::parse(b"left", "3").unwrap().unwrap(),
-            StyleAttr::Left(bevy::ui::Val::Px(3.))
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"left", "3").unwrap().unwrap(),
+        //     StyleAttr::Left(bevy::ui::Val::Px(3.))
+        // );
         assert_eq!(
             StyleAttr::parse(b"right", "3").unwrap().unwrap(),
             StyleAttr::Right(bevy::ui::Val::Px(3.))

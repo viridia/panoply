@@ -11,13 +11,13 @@ pub struct ComputedStyle {
 
     // Text properties
     pub alignment: Option<TextAlignment>,
-    pub color: Option<Color>,
+    pub color: ColorValue,
     pub font_size: Option<f32>,
     pub font: Option<Handle<Font>>,
     pub line_break: Option<BreakLineOn>,
 
     // pub text_style: TextStyle,
-    pub border_color: Option<Color>,
+    pub border_color: ColorValue,
     pub background_color: ColorValue,
     pub z_index: Option<i32>,
 }
@@ -64,8 +64,11 @@ impl Command for UpdateComputedStyle {
 
             match e.get_mut::<Text>() {
                 Some(mut text) => {
-                    if let Some(color) = self.computed.color {
-                        for section in text.sections.iter_mut() {
+                    // TODO: This is never executed
+                    // TODO: Compare and mutate
+                    let color = self.computed.color.color();
+                    for section in text.sections.iter_mut() {
+                        if section.style.color != color {
                             section.style.color = color;
                         }
                     }
@@ -104,21 +107,21 @@ impl Command for UpdateComputedStyle {
 
             match e.get_mut::<BorderColor>() {
                 Some(mut bc_comp) => {
-                    if let Some(bc_computed) = self.computed.border_color {
-                        // Mutate the border color
-                        if bc_comp.0 != bc_computed {
-                            bc_comp.0 = bc_computed
-                        }
-                    } else {
+                    if self.computed.border_color.is_transparent() {
                         // Remove the border color
                         e.remove::<BorderColor>();
+                    } else {
+                        let color = self.computed.border_color.color();
+                        if bc_comp.0 != color {
+                            bc_comp.0 = color
+                        }
                     }
                 }
 
                 None => {
-                    if let Some(bc_comp) = self.computed.border_color {
+                    if !self.computed.border_color.is_transparent() {
                         // Insert a new background color
-                        e.insert(BorderColor(bc_comp));
+                        e.insert(BorderColor(self.computed.border_color.color()));
                     }
                 }
             }

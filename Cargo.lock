@@ -3111,6 +3111,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_repr",
+ "winnow",
 ]
 
 [[package]]
@@ -4442,9 +4443,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.5.12"
+version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83817bbecf72c73bad717ee86820ebf286203d2e04c3951f3cd538869c897364"
+checksum = "7c2e3184b9c4e92ad5167ca73039d0c42476302ab603e2fec4487511f38ccefc"
 dependencies = [
  "memchr",
 ]

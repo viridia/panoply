@@ -1,8 +1,10 @@
 mod color;
 mod computed;
+mod expr;
 mod partial;
+mod selector;
+mod style;
 mod style_attr;
-mod style_map;
 mod style_value;
 
 pub use computed::*;

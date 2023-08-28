@@ -8,39 +8,35 @@
         "border-color": "#404",
         "vars": {
           "--button-image": "../images/button-blue.png"
+        },
+        "selectors": {
+          "&.hover": {
+            "vars": {
+              "--button-image": "../images/button-blue-hover.png"
+            }
+          },
+          "&.pressed": {
+            "vars": {
+              "--button-image": "../images/button-blue-pressed.png"
+            }
+          },
+          "&.disabled": {
+            "vars": {
+              "--button-image": "../images/button-blue-disabled.png"
+            }
+          }
         }
       },
-      "selectors": {
-        "&.hover": {
-          "vars": {
-            "--button-image": "../images/button-blue-hover.png"
+      "background": {
+        "display": "grid"
+      },
+      "background-patch": {
+        "image": "var(--button-image)",
+        "selectors": {
+          ".disabled > * > &": {
+            // "opacity": 0.5
           }
-        },
-        "&.pressed": {
-          "vars": {
-            "--button-image": "../images/button-blue-pressed.png"
-          }
-        },
-        "&.disabled": {
-          "vars": {
-            "--button-image": "../images/button-blue-disabled.png"
-          }
-        },
-        "& > .background": {
-          "display": "grid"
-        },
-        "& > .background > .ul": {
-          "image": { "var": "--button-image" }
-          // "image-rect": [0, 0, 20, 20]
-        },
-        "& > .background > .uc": {},
-        "& > .background > .ur": {},
-        "& > .background > .ml": {},
-        "& > .background > .mc": {},
-        "& > .background > .mr": {},
-        "& > .background > .ll": {},
-        "& > .background > .lc": {},
-        "& > .background > .lr": {}
+        }
       }
     },
     "obs-button-green": {
