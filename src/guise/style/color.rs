@@ -29,17 +29,18 @@ impl ColorValue {
     }
 }
 
-impl ToString for ColorValue {
-    fn to_string(&self) -> String {
+impl fmt::Display for ColorValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Transparent => "transparent".to_string(),
+            Self::Transparent => write!(f, "transparent"),
             Self::Color(color) => match color {
                 Color::Rgba {
                     red,
                     green,
                     blue,
                     alpha,
-                } => format!(
+                } => write!(
+                    f,
                     "rgba({}, {}, {}, {})",
                     red * 255.0,
                     green * 255.0,
@@ -52,7 +53,7 @@ impl ToString for ColorValue {
                     saturation,
                     lightness,
                     alpha,
-                } => format!("hsla({}, {}, {}, {})", hue, saturation, lightness, alpha),
+                } => write!(f, "hsla({}, {}, {}, {})", hue, saturation, lightness, alpha),
 
                 _ => {
                     panic!("Unsupported color format")

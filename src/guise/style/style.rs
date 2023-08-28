@@ -70,8 +70,19 @@ impl Serialize for Style {
                 StyleAttr::BorderColor(val) => st.serialize_field("border-color", val)?,
                 StyleAttr::Color(val) => st.serialize_field("color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
+
                 StyleAttr::Left(val) => st.serialize_field("left", val)?,
                 StyleAttr::Right(val) => st.serialize_field("right", val)?,
+                StyleAttr::Top(val) => st.serialize_field("top", val)?,
+                StyleAttr::Bottom(val) => st.serialize_field("bottom", val)?,
+
+                StyleAttr::Width(val) => st.serialize_field("width", val)?,
+                StyleAttr::Height(val) => st.serialize_field("height", val)?,
+                StyleAttr::MinWidth(val) => st.serialize_field("min-width", val)?,
+                StyleAttr::MinHeight(val) => st.serialize_field("min-height", val)?,
+                StyleAttr::MaxWidth(val) => st.serialize_field("max-width", val)?,
+                StyleAttr::MaxHeight(val) => st.serialize_field("max-height", val)?,
+
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
                 _ => todo!("Implement serialization for {:?}", attr),
@@ -88,6 +99,14 @@ const FIELDS: &'static [&'static str] = &[
     "z-index",
     "left",
     "right",
+    "top",
+    "bottom",
+    "width",
+    "height",
+    "min-width",
+    "min-height",
+    "max-width",
+    "max-height",
     "flex-grow",
     "flex-shrink",
     "vars",
@@ -115,15 +134,15 @@ impl<'de> Deserialize<'de> for Style {
             // Direction(bevy::ui::Direction),
             Left,
             Right,
-            // Top(bevy::ui::Val),
-            // Bottom(bevy::ui::Val),
+            Top,
+            Bottom,
 
-            // Width(bevy::ui::Val),
-            // Height(bevy::ui::Val),
-            // MinWidth(bevy::ui::Val),
-            // MinHeight(bevy::ui::Val),
-            // MaxWidth(bevy::ui::Val),
-            // MaxHeight(bevy::ui::Val),
+            Width,
+            Height,
+            MinWidth,
+            MinHeight,
+            MaxWidth,
+            MaxHeight,
 
             // // pub aspect_ratio: StyleProp<f32>,
             // AlignItems(bevy::ui::AlignItems),
@@ -195,49 +214,34 @@ impl<'de> Deserialize<'de> for Style {
             where
                 A: serde::de::MapAccess<'de>,
             {
-                let mut result = Style::with_capacity(map.size_hint().unwrap_or(0));
+                type SA = StyleAttr;
+                let mut st = Style::with_capacity(map.size_hint().unwrap_or(0));
+                let attrs = &mut st.attrs;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::BackgroundColor => {
-                            result
-                                .attrs
-                                .push(StyleAttr::BackgroundColor(map.next_value::<Expr>()?));
+                            attrs.push(SA::BackgroundColor(map.next_value::<Expr>()?))
                         }
                         Field::BorderColor => {
-                            result
-                                .attrs
-                                .push(StyleAttr::BorderColor(map.next_value::<Expr>()?));
+                            attrs.push(SA::BorderColor(map.next_value::<Expr>()?))
                         }
-                        Field::Color => {
-                            result
-                                .attrs
-                                .push(StyleAttr::Color(map.next_value::<Expr>()?));
-                        }
-                        Field::ZIndex => {
-                            result
-                                .attrs
-                                .push(StyleAttr::ZIndex(map.next_value::<Expr>()?));
-                        }
-                        Field::Left => {
-                            result
-                                .attrs
-                                .push(StyleAttr::Left(map.next_value::<Expr>()?));
-                        }
-                        Field::Right => {
-                            result
-                                .attrs
-                                .push(StyleAttr::Right(map.next_value::<Expr>()?));
-                        }
-                        Field::FlexGrow => {
-                            result
-                                .attrs
-                                .push(StyleAttr::FlexGrow(map.next_value::<Expr>()?));
-                        }
-                        Field::FlexShrink => {
-                            result
-                                .attrs
-                                .push(StyleAttr::FlexShrink(map.next_value::<Expr>()?));
-                        }
+                        Field::Color => attrs.push(SA::Color(map.next_value::<Expr>()?)),
+                        Field::ZIndex => attrs.push(SA::ZIndex(map.next_value::<Expr>()?)),
+
+                        Field::Left => attrs.push(SA::Left(map.next_value::<Expr>()?)),
+                        Field::Right => attrs.push(SA::Right(map.next_value::<Expr>()?)),
+                        Field::Top => attrs.push(SA::Top(map.next_value::<Expr>()?)),
+                        Field::Bottom => attrs.push(SA::Bottom(map.next_value::<Expr>()?)),
+
+                        Field::Width => attrs.push(SA::Width(map.next_value::<Expr>()?)),
+                        Field::Height => attrs.push(SA::Height(map.next_value::<Expr>()?)),
+                        Field::MinWidth => attrs.push(SA::MinWidth(map.next_value::<Expr>()?)),
+                        Field::MinHeight => attrs.push(SA::MinHeight(map.next_value::<Expr>()?)),
+                        Field::MaxWidth => attrs.push(SA::MaxWidth(map.next_value::<Expr>()?)),
+                        Field::MaxHeight => attrs.push(SA::MaxHeight(map.next_value::<Expr>()?)),
+
+                        Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
+                        Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
                         Field::Vars => {
                             todo!()
                         }
@@ -246,7 +250,7 @@ impl<'de> Deserialize<'de> for Style {
                         }
                     }
                 }
-                Ok(result)
+                Ok(st)
             }
         }
 

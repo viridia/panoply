@@ -42,13 +42,10 @@ pub enum Expr {
     // Time
 
     // FUNCTIONS
-    // RGB
-    // RGBA
-    // HSL
-    // HSLA
     // CALC
     // LIGHTEN
     // DARKEN
+    Display(ui::Display),
 }
 
 pub enum CssFn {
@@ -82,19 +79,19 @@ impl Expr {
     }
 
     /// Evaluate the expression and coerce to a length.
-    pub fn as_length(&self) -> ui::Val {
+    pub fn into_length(&self) -> Option<ui::Val> {
         match self {
-            Expr::Length(v) => *v,
-            Expr::Number(v) => ui::Val::Px(*v),
-            _ => ui::Val::Auto,
+            Expr::Length(v) => Some(*v),
+            Expr::Number(v) => Some(ui::Val::Px(*v)),
+            _ => None,
         }
     }
 
     /// Evaluate the expression and coerce to a color
-    pub fn as_color(&self) -> ColorValue {
+    pub fn into_color(&self) -> Option<ColorValue> {
         match self {
-            Expr::Color(c) => *c,
-            _ => ColorValue::Transparent,
+            Expr::Color(c) => Some(*c),
+            _ => None,
         }
     }
 }
@@ -257,19 +254,44 @@ impl std::str::FromStr for Expr {
     }
 }
 
-impl ToString for Expr {
-    fn to_string(&self) -> String {
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Ident(name) => name.clone(),
-            Expr::Number(n) => n.to_string(),
+            Expr::Ident(name) => write!(f, "{}", name),
+            Expr::Number(n) => write!(f, "{}", n),
             Expr::Length(_) => todo!(),
-            Expr::Color(c) => c.to_string(),
+            Expr::Color(c) => c.fmt(f),
             Expr::AssetPath(_) => todo!(),
             Expr::Rect(_) => todo!(),
-            Expr::Var(name) => format!("var(--{})", name),
+            Expr::Display(d) => match d {
+                ui::Display::Flex => write!(f, "flex"),
+                ui::Display::Grid => write!(f, "grid"),
+                ui::Display::None => write!(f, "none"),
+            },
+            Expr::Var(name) => write!(f, "var(--{})", name),
         }
+        // write!(f, "({}, {})", self.x, self.y)
     }
 }
+
+// impl ToString for Expr {
+//     fn to_string(&self) -> String {
+//         match self {
+//             Expr::Ident(name) => name.clone(),
+//             Expr::Number(n) => n.to_string(),
+//             Expr::Length(_) => todo!(),
+//             Expr::Color(c) => c.to_string(),
+//             Expr::AssetPath(_) => todo!(),
+//             Expr::Rect(_) => todo!(),
+//             Expr::Display(d) => match d {
+//                 ui::Display::Flex => "flex".to_string(),
+//                 ui::Display::Grid => "grid".to_string(),
+//                 ui::Display::None => "none".to_string(),
+//             },
+//             Expr::Var(name) => format!("var(--{})", name),
+//         }
+//     }
+// }
 
 impl Serialize for Expr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

@@ -26,15 +26,15 @@ pub enum StyleAttr {
 
     Left(Expr),
     Right(Expr),
-    Top(bevy::ui::Val),
-    Bottom(bevy::ui::Val),
+    Top(Expr),
+    Bottom(Expr),
 
-    Width(bevy::ui::Val),
-    Height(bevy::ui::Val),
-    MinWidth(bevy::ui::Val),
-    MinHeight(bevy::ui::Val),
-    MaxWidth(bevy::ui::Val),
-    MaxHeight(bevy::ui::Val),
+    Width(Expr),
+    Height(Expr),
+    MinWidth(Expr),
+    MinHeight(Expr),
+    MaxWidth(Expr),
+    MaxHeight(Expr),
 
     // pub aspect_ratio: StyleProp<f32>,
     AlignItems(bevy::ui::AlignItems),
@@ -96,13 +96,19 @@ impl StyleAttr {
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
             StyleAttr::BackgroundColor(val) => {
-                computed.background_color = val.as_color();
+                if let Some(c) = val.into_color() {
+                    computed.background_color = c;
+                }
             }
             StyleAttr::BorderColor(val) => {
-                computed.border_color = val.as_color();
+                if let Some(c) = val.into_color() {
+                    computed.border_color = c;
+                }
             }
             StyleAttr::Color(val) => {
-                computed.color = val.as_color();
+                if let Some(c) = val.into_color() {
+                    computed.color = c;
+                }
             }
             StyleAttr::ZIndex(val) => {
                 if let Some(z) = val.into_i32() {
@@ -131,35 +137,55 @@ impl StyleAttr {
             }
 
             StyleAttr::Left(val) => {
-                computed.style.left = val.as_length();
+                if let Some(l) = val.into_length() {
+                    computed.style.left = l;
+                }
             }
             StyleAttr::Right(val) => {
-                computed.style.right = val.as_length();
+                if let Some(l) = val.into_length() {
+                    computed.style.right = l;
+                }
             }
             StyleAttr::Top(val) => {
-                computed.style.top = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.top = l;
+                }
             }
             StyleAttr::Bottom(val) => {
-                computed.style.bottom = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.bottom = l;
+                }
             }
 
             StyleAttr::Width(val) => {
-                computed.style.width = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.width = l;
+                }
             }
             StyleAttr::Height(val) => {
-                computed.style.height = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.height = l;
+                }
             }
             StyleAttr::MinWidth(val) => {
-                computed.style.min_width = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.min_width = l;
+                }
             }
             StyleAttr::MinHeight(val) => {
-                computed.style.min_height = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.min_height = l;
+                }
             }
             StyleAttr::MaxWidth(val) => {
-                computed.style.max_width = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.max_width = l;
+                }
             }
             StyleAttr::MaxHeight(val) => {
-                computed.style.max_height = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.max_height = l;
+                }
             }
 
             StyleAttr::AlignItems(val) => {
@@ -367,15 +393,15 @@ impl StyleAttr {
 
             // b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
             // b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
-            b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
-            b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
+            // b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
+            // b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
 
-            b"width" => StyleAttr::Width(StyleAttr::parse_val(value)?),
-            b"height" => StyleAttr::Height(StyleAttr::parse_val(value)?),
-            b"min-width" => StyleAttr::MinWidth(StyleAttr::parse_val(value)?),
-            b"min-height" => StyleAttr::MinHeight(StyleAttr::parse_val(value)?),
-            b"max-width" => StyleAttr::MaxWidth(StyleAttr::parse_val(value)?),
-            b"max-height" => StyleAttr::MaxHeight(StyleAttr::parse_val(value)?),
+            // b"width" => StyleAttr::Width(StyleAttr::parse_val(value)?),
+            // b"height" => StyleAttr::Height(StyleAttr::parse_val(value)?),
+            // b"min-width" => StyleAttr::MinWidth(StyleAttr::parse_val(value)?),
+            // b"min-height" => StyleAttr::MinHeight(StyleAttr::parse_val(value)?),
+            // b"max-width" => StyleAttr::MaxWidth(StyleAttr::parse_val(value)?),
+            // b"max-height" => StyleAttr::MaxHeight(StyleAttr::parse_val(value)?),
 
             //     // pub aspect_ratio: StyleProp<f32>,
             b"align-items" => StyleAttr::AlignItems(match value {
@@ -617,32 +643,31 @@ impl StyleAttr {
             // StyleAttr::Right(val) => {
             //     elem.push_attribute(("right", val.to_string()));
             // }
-            StyleAttr::Top(val) => {
-                elem.push_attribute(("top", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::Bottom(val) => {
-                elem.push_attribute(("bottom", StyleAttr::val_to_str(*val).as_str()));
-            }
+            // StyleAttr::Top(val) => {
+            //     elem.push_attribute(("top", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::Bottom(val) => {
+            //     elem.push_attribute(("bottom", StyleAttr::val_to_str(*val).as_str()));
+            // }
 
-            StyleAttr::Width(val) => {
-                elem.push_attribute(("width", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::Height(val) => {
-                elem.push_attribute(("height", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MinWidth(val) => {
-                elem.push_attribute(("min-width", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MinHeight(val) => {
-                elem.push_attribute(("min-height", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MaxWidth(val) => {
-                elem.push_attribute(("max-width", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MaxHeight(val) => {
-                elem.push_attribute(("max-height", StyleAttr::val_to_str(*val).as_str()));
-            }
-
+            // StyleAttr::Width(val) => {
+            //     elem.push_attribute(("width", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::Height(val) => {
+            //     elem.push_attribute(("height", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::MinWidth(val) => {
+            //     elem.push_attribute(("min-width", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::MinHeight(val) => {
+            //     elem.push_attribute(("min-height", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::MaxWidth(val) => {
+            //     elem.push_attribute(("max-width", StyleAttr::val_to_str(*val).as_str()));
+            // }
+            // StyleAttr::MaxHeight(val) => {
+            //     elem.push_attribute(("max-height", StyleAttr::val_to_str(*val).as_str()));
+            // }
             StyleAttr::AlignItems(align) => {
                 elem.push_attribute((
                     "align-items",
@@ -1190,39 +1215,39 @@ mod tests {
         //     StyleAttr::parse(b"right", "3").unwrap().unwrap(),
         //     bevy::ui::Val::Px(3.)
         // );
-        assert_eq!(
-            StyleAttr::parse(b"top", "3").unwrap().unwrap(),
-            StyleAttr::Top(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"bottom", "3").unwrap().unwrap(),
-            StyleAttr::Bottom(bevy::ui::Val::Px(3.))
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"top", "3").unwrap().unwrap(),
+        //     StyleAttr::Top(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"bottom", "3").unwrap().unwrap(),
+        //     StyleAttr::Bottom(bevy::ui::Val::Px(3.))
+        // );
 
-        assert_eq!(
-            StyleAttr::parse(b"width", "3").unwrap().unwrap(),
-            StyleAttr::Width(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"height", "3").unwrap().unwrap(),
-            StyleAttr::Height(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"min-width", "3").unwrap().unwrap(),
-            StyleAttr::MinWidth(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"min-height", "3").unwrap().unwrap(),
-            StyleAttr::MinHeight(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"max-width", "3").unwrap().unwrap(),
-            StyleAttr::MaxWidth(bevy::ui::Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse(b"max-height", "3").unwrap().unwrap(),
-            StyleAttr::MaxHeight(bevy::ui::Val::Px(3.))
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"width", "3").unwrap().unwrap(),
+        //     StyleAttr::Width(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"height", "3").unwrap().unwrap(),
+        //     StyleAttr::Height(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"min-width", "3").unwrap().unwrap(),
+        //     StyleAttr::MinWidth(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"min-height", "3").unwrap().unwrap(),
+        //     StyleAttr::MinHeight(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"max-width", "3").unwrap().unwrap(),
+        //     StyleAttr::MaxWidth(bevy::ui::Val::Px(3.))
+        // );
+        // assert_eq!(
+        //     StyleAttr::parse(b"max-height", "3").unwrap().unwrap(),
+        //     StyleAttr::MaxHeight(bevy::ui::Val::Px(3.))
+        // );
 
         //         //     // pub aspect_ratio: StyleProp<f32>,
         //         b"align-items" => StyleAttr::AlignItems(match value {
