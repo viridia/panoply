@@ -270,28 +270,8 @@ impl fmt::Display for Expr {
             },
             Expr::Var(name) => write!(f, "var(--{})", name),
         }
-        // write!(f, "({}, {})", self.x, self.y)
     }
 }
-
-// impl ToString for Expr {
-//     fn to_string(&self) -> String {
-//         match self {
-//             Expr::Ident(name) => name.clone(),
-//             Expr::Number(n) => n.to_string(),
-//             Expr::Length(_) => todo!(),
-//             Expr::Color(c) => c.to_string(),
-//             Expr::AssetPath(_) => todo!(),
-//             Expr::Rect(_) => todo!(),
-//             Expr::Display(d) => match d {
-//                 ui::Display::Flex => "flex".to_string(),
-//                 ui::Display::Grid => "grid".to_string(),
-//                 ui::Display::None => "none".to_string(),
-//             },
-//             Expr::Var(name) => format!("var(--{})", name),
-//         }
-//     }
-// }
 
 impl Serialize for Expr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -313,7 +293,7 @@ impl Serialize for Expr {
                     serializer.serialize_f32(*n)
                 }
             }
-            _ => serializer.serialize_str(&self.to_string()),
+            _ => serializer.collect_str(&self),
         }
     }
 }

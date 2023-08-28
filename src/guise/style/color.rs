@@ -68,7 +68,7 @@ impl Serialize for ColorValue {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        serializer.collect_str(&self)
     }
 }
 
