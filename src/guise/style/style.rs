@@ -1,6 +1,9 @@
 use std::fmt;
 
-use crate::guise::style::expr::Expr;
+use crate::guise::style::{
+    expr::{Expr, TypeHint},
+    expr_list::ExprList,
+};
 
 use super::{Selector, StyleAttr};
 use bevy::utils::HashMap;
@@ -52,10 +55,6 @@ impl Style {
     // pub fn len(&self) -> usize {
     //     self.att.len()
     // }
-
-    // pub fn push(&mut self, attr: StyleAttr) {
-    //     self.0.push(attr);
-    // }
 }
 
 impl Serialize for Style {
@@ -85,6 +84,24 @@ impl Serialize for Style {
                 StyleAttr::MaxWidth(val) => st.serialize_field("max-width", val)?,
                 StyleAttr::MaxHeight(val) => st.serialize_field("max-height", val)?,
 
+                StyleAttr::Margin(val) => st.serialize_field("margin", val)?,
+                StyleAttr::MarginLeft(val) => st.serialize_field("margin-left", val)?,
+                StyleAttr::MarginRight(val) => st.serialize_field("margin-right", val)?,
+                StyleAttr::MarginTop(val) => st.serialize_field("margin-top", val)?,
+                StyleAttr::MarginBottom(val) => st.serialize_field("margin-bottom", val)?,
+
+                StyleAttr::Padding(val) => st.serialize_field("padding", val)?,
+                StyleAttr::PaddingLeft(val) => st.serialize_field("padding-left", val)?,
+                StyleAttr::PaddingRight(val) => st.serialize_field("padding-right", val)?,
+                StyleAttr::PaddingTop(val) => st.serialize_field("padding-top", val)?,
+                StyleAttr::PaddingBottom(val) => st.serialize_field("padding-bottom", val)?,
+
+                StyleAttr::Border(val) => st.serialize_field("border", val)?,
+                StyleAttr::BorderLeft(val) => st.serialize_field("border-left", val)?,
+                StyleAttr::BorderRight(val) => st.serialize_field("border-right", val)?,
+                StyleAttr::BorderTop(val) => st.serialize_field("border-top", val)?,
+                StyleAttr::BorderBottom(val) => st.serialize_field("border-bottom", val)?,
+
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
                 _ => todo!("Implement serialization for {:?}", attr),
@@ -95,21 +112,44 @@ impl Serialize for Style {
 }
 
 const FIELDS: &'static [&'static str] = &[
+    // Colors
     "background-color",
     "border-color",
     "color",
+    // Positioning
     "z-index",
     "display",
+    // Rect
     "left",
     "right",
     "top",
     "bottom",
+    // Size
     "width",
     "height",
     "min-width",
     "min-height",
     "max-width",
     "max-height",
+    // Margins
+    "margin",
+    "margin-left",
+    "margin-right",
+    "margin-top",
+    "margin-bottom",
+    // Padding
+    "padding",
+    "padding-left",
+    "padding-right",
+    "padding-top",
+    "padding-bottom",
+    // Border
+    "border",
+    "border-left",
+    "border-right",
+    "border-top",
+    "border-bottom",
+    // Flex
     "flex-grow",
     "flex-shrink",
     "vars",
@@ -154,25 +194,23 @@ impl<'de> Deserialize<'de> for Style {
             // JustifySelf(bevy::ui::JustifySelf),
             // AlignContent(bevy::ui::AlignContent),
             // JustifyContent(bevy::ui::JustifyContent),
+            Margin,
+            MarginLeft,
+            MarginRight,
+            MarginTop,
+            MarginBottom,
 
-            // // Allow margin sides to be set individually
-            // Margin(bevy::ui::UiRect),
-            // MarginLeft(bevy::ui::Val),
-            // MarginRight(bevy::ui::Val),
-            // MarginTop(bevy::ui::Val),
-            // MarginBottom(bevy::ui::Val),
+            Padding,
+            PaddingLeft,
+            PaddingRight,
+            PaddingTop,
+            PaddingBottom,
 
-            // Padding(bevy::ui::UiRect),
-            // PaddingLeft(bevy::ui::Val),
-            // PaddingRight(bevy::ui::Val),
-            // PaddingTop(bevy::ui::Val),
-            // PaddingBottom(bevy::ui::Val),
-
-            // Border(bevy::ui::UiRect),
-            // BorderLeft(bevy::ui::Val),
-            // BorderRight(bevy::ui::Val),
-            // BorderTop(bevy::ui::Val),
-            // BorderBottom(bevy::ui::Val),
+            Border,
+            BorderLeft,
+            BorderRight,
+            BorderTop,
+            BorderBottom,
 
             // FlexDirection(bevy::ui::FlexDirection),
             // FlexWrap(bevy::ui::FlexWrap),
@@ -220,6 +258,7 @@ impl<'de> Deserialize<'de> for Style {
                 type SA = StyleAttr;
                 let mut st = Style::with_capacity(map.size_hint().unwrap_or(0));
                 let attrs = &mut st.attrs;
+
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::BackgroundColor => {
@@ -232,20 +271,148 @@ impl<'de> Deserialize<'de> for Style {
                         Field::ZIndex => attrs.push(SA::ZIndex(map.next_value::<Expr>()?)),
 
                         Field::Display => {
-                            attrs.push(SA::Display(map.next_value::<Expr>()?.into_display_const()))
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Display);
+                            attrs.push(SA::Display(val))
                         }
 
-                        Field::Left => attrs.push(SA::Left(map.next_value::<Expr>()?)),
-                        Field::Right => attrs.push(SA::Right(map.next_value::<Expr>()?)),
-                        Field::Top => attrs.push(SA::Top(map.next_value::<Expr>()?)),
-                        Field::Bottom => attrs.push(SA::Bottom(map.next_value::<Expr>()?)),
+                        Field::Left => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Left(val))
+                        }
 
-                        Field::Width => attrs.push(SA::Width(map.next_value::<Expr>()?)),
-                        Field::Height => attrs.push(SA::Height(map.next_value::<Expr>()?)),
-                        Field::MinWidth => attrs.push(SA::MinWidth(map.next_value::<Expr>()?)),
-                        Field::MinHeight => attrs.push(SA::MinHeight(map.next_value::<Expr>()?)),
-                        Field::MaxWidth => attrs.push(SA::MaxWidth(map.next_value::<Expr>()?)),
-                        Field::MaxHeight => attrs.push(SA::MaxHeight(map.next_value::<Expr>()?)),
+                        Field::Right => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Right(val))
+                        }
+
+                        Field::Top => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Top(val))
+                        }
+
+                        Field::Bottom => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Bottom(val))
+                        }
+
+                        Field::Width => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Width(val))
+                        }
+
+                        Field::Height => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Height(val))
+                        }
+
+                        Field::MinWidth => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MinWidth(val))
+                        }
+
+                        Field::MinHeight => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MinHeight(val))
+                        }
+
+                        Field::MaxWidth => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MaxWidth(val))
+                        }
+
+                        Field::MaxHeight => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MaxHeight(val))
+                        }
+
+                        Field::Margin => {
+                            let mut val = map.next_value::<ExprList>()?.to_expr();
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Margin(val))
+                        }
+                        Field::MarginLeft => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MarginLeft(val))
+                        }
+                        Field::MarginRight => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MarginRight(val))
+                        }
+                        Field::MarginTop => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MarginTop(val))
+                        }
+                        Field::MarginBottom => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::MarginBottom(val))
+                        }
+
+                        Field::Padding => {
+                            let mut val = map.next_value::<ExprList>()?.to_expr();
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Padding(val))
+                        }
+                        Field::PaddingLeft => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::PaddingLeft(val))
+                        }
+                        Field::PaddingRight => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::PaddingRight(val))
+                        }
+                        Field::PaddingTop => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::PaddingTop(val))
+                        }
+                        Field::PaddingBottom => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::PaddingBottom(val))
+                        }
+
+                        Field::Border => {
+                            let mut val = map.next_value::<ExprList>()?.to_expr();
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Border(val))
+                        }
+                        Field::BorderLeft => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::BorderLeft(val))
+                        }
+                        Field::BorderRight => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::BorderRight(val))
+                        }
+                        Field::BorderTop => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::BorderTop(val))
+                        }
+                        Field::BorderBottom => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::BorderBottom(val))
+                        }
 
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
@@ -311,6 +478,7 @@ mod tests {
     fn test_deserialize_length_no_unit() {
         let des = serde_json::from_str::<Style>(r#"{"right":7}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
+        assert_eq!(des.attrs[0], StyleAttr::Right(Expr::Number(7.)));
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"right":7}"#);
     }
@@ -319,8 +487,19 @@ mod tests {
     fn test_deserialize_length_px() {
         let des = serde_json::from_str::<Style>(r#"{"right":"7px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Right(Expr::Length(ui::Val::Px(7.)))
+        );
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"right":7}"#);
+    }
+
+    #[test]
+    fn test_deserialize_auto() {
+        let des = serde_json::from_str::<Style>(r#"{"right":"auto"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(des.attrs[0], StyleAttr::Right(Expr::Length(ui::Val::Auto)));
     }
 
     #[test]
@@ -341,6 +520,54 @@ mod tests {
         assert_eq!(
             des.attrs[0],
             StyleAttr::Display(Expr::Display(ui::Display::Grid))
+        );
+    }
+
+    #[test]
+    fn test_serialize_uirect() {
+        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Ident("grid".to_string()))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
+
+        let map2 = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
+        let ser2 = serde_json::to_string(&map2);
+        assert_eq!(ser2.unwrap(), r#"{"display":"grid"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_uirect() {
+        let des = serde_json::from_str::<Style>(r#"{"margin":"0"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))
+        );
+
+        let des = serde_json::from_str::<Style>(r#"{"margin":"0px"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Margin(Expr::List(vec![Expr::Length(ui::Val::Px(0.))]))
+        );
+
+        let des = serde_json::from_str::<Style>(r#"{"margin":"0px 0px"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Margin(Expr::List(vec![
+                Expr::Length(ui::Val::Px(0.)),
+                Expr::Length(ui::Val::Px(0.))
+            ]))
+        );
+
+        let des = serde_json::from_str::<Style>(r#"{"margin":"0px auto"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Margin(Expr::List(vec![
+                Expr::Length(ui::Val::Px(0.)),
+                Expr::Length(ui::Val::Auto)
+            ]))
         );
     }
 }

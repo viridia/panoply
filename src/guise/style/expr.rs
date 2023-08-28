@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use bevy::{prelude::Color, ui::UiRect};
 use serde::{de::Visitor, Deserialize, Serialize};
@@ -26,14 +26,14 @@ pub enum Expr {
     /// A length
     Length(ui::Val),
 
+    /// A list of expressions
+    List(Vec<Expr>),
+
     /// A color value
     Color(ColorValue),
 
     /// A reference to an asset
     AssetPath(String),
-
-    /// Top, Right, Bottom, Left.
-    Rect(UiRect),
 
     /// A reference to a named style variable.
     Var(String),
@@ -61,7 +61,25 @@ pub enum CssFn {
     // Gradients
 }
 
+/// Type hints for optimization.
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum TypeHint {
+    Length,
+    Display,
+}
+
 impl Expr {
+    pub fn parser(input: &mut &str) -> PResult<Expr> {
+        alt((
+            parse_hex_color,
+            parse_length,
+            parse_var_ref,
+            parse_color_ctor,
+            parse_ident,
+        ))
+        .parse_next(input)
+    }
+
     /// Evaluate the expression and coerce to an int.
     pub fn into_i32(&self) -> Option<i32> {
         match self {
@@ -109,9 +127,79 @@ impl Expr {
         }
     }
 
+    /// Evaluate the expression and coerce to a length.
+    pub fn into_uirect(&self) -> Option<ui::UiRect> {
+        match self {
+            Expr::Length(v) => Some(UiRect {
+                left: *v,
+                right: *v,
+                top: *v,
+                bottom: *v,
+            }),
+            Expr::Number(v) => Some(UiRect {
+                left: ui::Val::Px(*v),
+                right: ui::Val::Px(*v),
+                top: ui::Val::Px(*v),
+                bottom: ui::Val::Px(*v),
+            }),
+            Expr::List(v) if v.len() > 0 => {
+                let top = v[0].into_length()?;
+                let right = if v.len() > 1 {
+                    top
+                } else {
+                    v[1].into_length()?
+                };
+                let bottom = if v.len() > 2 {
+                    top
+                } else {
+                    v[2].into_length()?
+                };
+                let left = if v.len() > 3 {
+                    right
+                } else {
+                    v[3].into_length()?
+                };
+                Some(UiRect {
+                    left,
+                    right,
+                    top,
+                    bottom,
+                })
+            }
+            _ => None,
+        }
+    }
+
     /// Fold constants
     pub fn into_display_const(self) -> Self {
         self.into_display().map_or(self, |f| Self::Display(f))
+    }
+
+    /// Optimize constant expression with type hints
+    pub fn optimize(&mut self, hint: TypeHint) -> &Self {
+        if let Self::List(l) = self {
+            for x in l.iter_mut() {
+                x.optimize(hint);
+            }
+            return self;
+        }
+
+        match hint {
+            TypeHint::Length => {
+                if let Self::Ident(s) = self {
+                    if s == "auto" {
+                        *self = Self::Length(ui::Val::Auto)
+                    }
+                }
+            }
+            TypeHint::Display => {
+                let opt = self.into_display();
+                if let Some(disp) = opt {
+                    *self = Self::Display(disp)
+                }
+            }
+        }
+        self
     }
 }
 
@@ -174,14 +262,14 @@ fn parse_color_fn<'s>(input: &mut &'s str) -> PResult<&'s str> {
 fn parse_color_ctor<'s>(input: &mut &'s str) -> PResult<Expr> {
     (
         parse_color_fn,
-        preceded((space0, '(', space0), parse_number),
+        preceded((space0, '(', space0), cut_err(parse_number)),
         preceded((space0, opt((',', space0))), parse_number),
         preceded((space0, opt((',', space0))), parse_number),
         opt(preceded(
             (space0, opt(one_of((',', '/'))), space0),
             parse_number,
         )),
-        (space0, ')', space0),
+        (space0, ')'),
     )
         .map(|(f, a1, a2, a3, a4, _)| match f {
             "rgba" | "rgb" => Expr::Color(ColorValue::Color(Color::Rgba {
@@ -254,22 +342,11 @@ fn parse_var_ref<'s>(input: &mut &'s str) -> PResult<Expr> {
         .parse_next(input)
 }
 
-fn parse_expr(input: &mut &str) -> PResult<Expr> {
-    alt((
-        parse_hex_color,
-        parse_length,
-        parse_var_ref,
-        parse_color_ctor,
-        parse_ident,
-    ))
-    .parse_next(input)
-}
-
 impl std::str::FromStr for Expr {
     type Err = String;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        parse_expr.parse(input).map_err(|e| e.to_string())
+        Expr::parser.parse(input.trim()).map_err(|e| e.to_string())
     }
 }
 
@@ -278,10 +355,26 @@ impl fmt::Display for Expr {
         match self {
             Expr::Ident(name) => write!(f, "{}", name),
             Expr::Number(n) => write!(f, "{}", n),
-            Expr::Length(_) => todo!(),
-            Expr::Color(c) => c.fmt(f),
+            Expr::Length(l) => match l {
+                ui::Val::Auto => write!(f, "auto"),
+                ui::Val::Px(v) => write!(f, "{}px", v),
+                ui::Val::Percent(v) => write!(f, "{}%", v),
+                ui::Val::Vw(v) => write!(f, "{}vw", v),
+                ui::Val::Vh(v) => write!(f, "{}vh", v),
+                ui::Val::VMin(v) => write!(f, "{}vmin", v),
+                ui::Val::VMax(v) => write!(f, "{}vmax", v),
+            },
+            Expr::List(r) => {
+                for (i, x) in r.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, " ")?
+                    }
+                    fmt::Display::fmt(&x, f)?
+                }
+                Ok(())
+            }
+            Expr::Color(c) => fmt::Display::fmt(&c, f),
             Expr::AssetPath(_) => todo!(),
-            Expr::Rect(_) => todo!(),
             Expr::Display(d) => match d {
                 ui::Display::Flex => write!(f, "flex"),
                 ui::Display::Grid => write!(f, "grid"),
@@ -396,6 +489,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_trailing_space() {
+        assert_eq!(
+            "#f00 ".parse::<Expr>().unwrap(),
+            Expr::Color(ColorValue::Color(Color::RED))
+        );
+        assert_eq!("1 ".parse::<Expr>().unwrap(), Expr::Number(1.));
+    }
+
+    #[test]
     fn test_parse_color() {
         assert_eq!(
             "#f00".parse::<Expr>().unwrap(),
@@ -451,9 +553,18 @@ mod tests {
         assert_eq!("1.0".parse::<Expr>().unwrap(), Expr::Number(1.0));
         assert_eq!(".1".parse::<Expr>().unwrap(), Expr::Number(0.1));
         assert_eq!("1.".parse::<Expr>().unwrap(), Expr::Number(1.0));
-        assert_eq!(parse_expr.parse_peek("1.e2"), Ok(("", Expr::Number(100.0))));
-        assert_eq!(parse_expr.parse_peek("1.e-2"), Ok(("", Expr::Number(0.01))));
-        assert_eq!(parse_expr.parse_peek("1e2"), Ok(("", Expr::Number(100.0))));
+        assert_eq!(
+            Expr::parser.parse_peek("1.e2"),
+            Ok(("", Expr::Number(100.0)))
+        );
+        assert_eq!(
+            Expr::parser.parse_peek("1.e-2"),
+            Ok(("", Expr::Number(0.01)))
+        );
+        assert_eq!(
+            Expr::parser.parse_peek("1e2"),
+            Ok(("", Expr::Number(100.0)))
+        );
         assert_eq!("-1.".parse::<Expr>().unwrap(), Expr::Number(-1.0));
     }
 

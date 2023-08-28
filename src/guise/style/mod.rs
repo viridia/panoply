@@ -1,6 +1,7 @@
 mod color;
 mod computed;
 mod expr;
+mod expr_list;
 mod partial;
 mod selector;
 mod style;

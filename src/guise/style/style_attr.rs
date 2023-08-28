@@ -45,23 +45,23 @@ pub enum StyleAttr {
     JustifyContent(bevy::ui::JustifyContent),
 
     // Allow margin sides to be set individually
-    Margin(bevy::ui::UiRect),
-    MarginLeft(bevy::ui::Val),
-    MarginRight(bevy::ui::Val),
-    MarginTop(bevy::ui::Val),
-    MarginBottom(bevy::ui::Val),
+    Margin(Expr),
+    MarginLeft(Expr),
+    MarginRight(Expr),
+    MarginTop(Expr),
+    MarginBottom(Expr),
 
-    Padding(bevy::ui::UiRect),
-    PaddingLeft(bevy::ui::Val),
-    PaddingRight(bevy::ui::Val),
-    PaddingTop(bevy::ui::Val),
-    PaddingBottom(bevy::ui::Val),
+    Padding(Expr),
+    PaddingLeft(Expr),
+    PaddingRight(Expr),
+    PaddingTop(Expr),
+    PaddingBottom(Expr),
 
-    Border(bevy::ui::UiRect),
-    BorderLeft(bevy::ui::Val),
-    BorderRight(bevy::ui::Val),
-    BorderTop(bevy::ui::Val),
-    BorderBottom(bevy::ui::Val),
+    Border(Expr),
+    BorderLeft(Expr),
+    BorderRight(Expr),
+    BorderTop(Expr),
+    BorderBottom(Expr),
 
     FlexDirection(bevy::ui::FlexDirection),
     FlexWrap(bevy::ui::FlexWrap),
@@ -210,51 +210,81 @@ impl StyleAttr {
             }
 
             StyleAttr::Margin(val) => {
-                computed.style.margin = *val;
+                if let Some(r) = val.into_uirect() {
+                    computed.style.margin = r;
+                }
             }
             StyleAttr::MarginLeft(val) => {
-                computed.style.margin.left = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.margin.left = l;
+                }
             }
             StyleAttr::MarginRight(val) => {
-                computed.style.margin.right = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.margin.right = l;
+                }
             }
             StyleAttr::MarginTop(val) => {
-                computed.style.margin.top = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.margin.top = l;
+                }
             }
             StyleAttr::MarginBottom(val) => {
-                computed.style.margin.bottom = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.margin.bottom = l;
+                }
             }
 
             StyleAttr::Padding(val) => {
-                computed.style.padding = *val;
+                if let Some(r) = val.into_uirect() {
+                    computed.style.padding = r;
+                }
             }
             StyleAttr::PaddingLeft(val) => {
-                computed.style.padding.left = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.padding.left = l;
+                }
             }
             StyleAttr::PaddingRight(val) => {
-                computed.style.padding.right = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.padding.right = l;
+                }
             }
             StyleAttr::PaddingTop(val) => {
-                computed.style.padding.top = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.padding.top = l;
+                }
             }
             StyleAttr::PaddingBottom(val) => {
-                computed.style.padding.bottom = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.padding.bottom = l;
+                }
             }
 
             StyleAttr::Border(val) => {
-                computed.style.border = *val;
+                if let Some(r) = val.into_uirect() {
+                    computed.style.border = r;
+                }
             }
             StyleAttr::BorderLeft(val) => {
-                computed.style.border.left = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.border.left = l;
+                }
             }
             StyleAttr::BorderRight(val) => {
-                computed.style.border.right = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.border.right = l;
+                }
             }
             StyleAttr::BorderTop(val) => {
-                computed.style.border.top = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.border.top = l;
+                }
             }
             StyleAttr::BorderBottom(val) => {
-                computed.style.border.bottom = *val;
+                if let Some(l) = val.into_length() {
+                    computed.style.border.bottom = l
+                }
             }
 
             StyleAttr::FlexDirection(val) => {
@@ -462,24 +492,21 @@ impl StyleAttr {
                 }
             }),
 
-            b"margin" => StyleAttr::Margin(StyleAttr::parse_uirect(value)?),
-            b"margin-left" => StyleAttr::MarginLeft(StyleAttr::parse_val(value)?),
-            b"margin-right" => StyleAttr::MarginRight(StyleAttr::parse_val(value)?),
-            b"margin-top" => StyleAttr::MarginTop(StyleAttr::parse_val(value)?),
-            b"margin-bottom" => StyleAttr::MarginBottom(StyleAttr::parse_val(value)?),
-
-            b"padding" => StyleAttr::Padding(StyleAttr::parse_uirect(value)?),
-            b"padding-left" => StyleAttr::PaddingLeft(StyleAttr::parse_val(value)?),
-            b"padding-right" => StyleAttr::PaddingRight(StyleAttr::parse_val(value)?),
-            b"padding-top" => StyleAttr::PaddingTop(StyleAttr::parse_val(value)?),
-            b"padding-bottom" => StyleAttr::PaddingBottom(StyleAttr::parse_val(value)?),
-
-            b"border" => StyleAttr::Border(StyleAttr::parse_uirect(value)?),
-            b"border-left" => StyleAttr::BorderLeft(StyleAttr::parse_val(value)?),
-            b"border-right" => StyleAttr::BorderRight(StyleAttr::parse_val(value)?),
-            b"border-top" => StyleAttr::BorderTop(StyleAttr::parse_val(value)?),
-            b"border-bottom" => StyleAttr::BorderBottom(StyleAttr::parse_val(value)?),
-
+            // b"margin" => StyleAttr::Margin(StyleAttr::parse_uirect(value)?),
+            // b"margin-left" => StyleAttr::MarginLeft(StyleAttr::parse_val(value)?),
+            // b"margin-right" => StyleAttr::MarginRight(StyleAttr::parse_val(value)?),
+            // b"margin-top" => StyleAttr::MarginTop(StyleAttr::parse_val(value)?),
+            // b"margin-bottom" => StyleAttr::MarginBottom(StyleAttr::parse_val(value)?),
+            // b"padding" => StyleAttr::Padding(StyleAttr::parse_uirect(value)?),
+            // b"padding-left" => StyleAttr::PaddingLeft(StyleAttr::parse_val(value)?),
+            // b"padding-right" => StyleAttr::PaddingRight(StyleAttr::parse_val(value)?),
+            // b"padding-top" => StyleAttr::PaddingTop(StyleAttr::parse_val(value)?),
+            // b"padding-bottom" => StyleAttr::PaddingBottom(StyleAttr::parse_val(value)?),
+            // b"border" => StyleAttr::Border(StyleAttr::parse_uirect(value)?),
+            // b"border-left" => StyleAttr::BorderLeft(StyleAttr::parse_val(value)?),
+            // b"border-right" => StyleAttr::BorderRight(StyleAttr::parse_val(value)?),
+            // b"border-top" => StyleAttr::BorderTop(StyleAttr::parse_val(value)?),
+            // b"border-bottom" => StyleAttr::BorderBottom(StyleAttr::parse_val(value)?),
             b"flex-direction" => StyleAttr::FlexDirection(match value {
                 "row" => FlexDirection::Row,
                 "column" => FlexDirection::Column,
@@ -722,54 +749,6 @@ impl StyleAttr {
                         JustifyContent::SpaceEvenly => "space-evenly",
                     },
                 ));
-            }
-
-            StyleAttr::Margin(val) => {
-                elem.push_attribute(("margin", StyleAttr::uirect_to_str(*val).as_str()));
-            }
-            StyleAttr::MarginLeft(val) => {
-                elem.push_attribute(("margin-left", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MarginRight(val) => {
-                elem.push_attribute(("margin-right", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MarginTop(val) => {
-                elem.push_attribute(("margin-top", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::MarginBottom(val) => {
-                elem.push_attribute(("margin-bottom", StyleAttr::val_to_str(*val).as_str()));
-            }
-
-            StyleAttr::Padding(val) => {
-                elem.push_attribute(("padding", StyleAttr::uirect_to_str(*val).as_str()));
-            }
-            StyleAttr::PaddingLeft(val) => {
-                elem.push_attribute(("padding-left", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::PaddingRight(val) => {
-                elem.push_attribute(("padding-right", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::PaddingTop(val) => {
-                elem.push_attribute(("padding-top", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::PaddingBottom(val) => {
-                elem.push_attribute(("padding-bottom", StyleAttr::val_to_str(*val).as_str()));
-            }
-
-            StyleAttr::Border(val) => {
-                elem.push_attribute(("border", StyleAttr::uirect_to_str(*val).as_str()));
-            }
-            StyleAttr::BorderLeft(val) => {
-                elem.push_attribute(("border-left", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::BorderRight(val) => {
-                elem.push_attribute(("border-right", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::BorderTop(val) => {
-                elem.push_attribute(("border-top", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::BorderBottom(val) => {
-                elem.push_attribute(("border-bottom", StyleAttr::val_to_str(*val).as_str()));
             }
 
             StyleAttr::FlexDirection(dir) => {
@@ -1155,48 +1134,6 @@ mod tests {
             StyleAttr::Direction(bevy::ui::Direction::RightToLeft)
         );
 
-        // assert_eq!(
-        //     StyleAttr::parse(b"left", "3").unwrap().unwrap(),
-        //     StyleAttr::Left(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"right", "3").unwrap().unwrap(),
-        //     bevy::ui::Val::Px(3.)
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"top", "3").unwrap().unwrap(),
-        //     StyleAttr::Top(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"bottom", "3").unwrap().unwrap(),
-        //     StyleAttr::Bottom(bevy::ui::Val::Px(3.))
-        // );
-
-        // assert_eq!(
-        //     StyleAttr::parse(b"width", "3").unwrap().unwrap(),
-        //     StyleAttr::Width(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"height", "3").unwrap().unwrap(),
-        //     StyleAttr::Height(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"min-width", "3").unwrap().unwrap(),
-        //     StyleAttr::MinWidth(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"min-height", "3").unwrap().unwrap(),
-        //     StyleAttr::MinHeight(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"max-width", "3").unwrap().unwrap(),
-        //     StyleAttr::MaxWidth(bevy::ui::Val::Px(3.))
-        // );
-        // assert_eq!(
-        //     StyleAttr::parse(b"max-height", "3").unwrap().unwrap(),
-        //     StyleAttr::MaxHeight(bevy::ui::Val::Px(3.))
-        // );
-
         //         //     // pub aspect_ratio: StyleProp<f32>,
         //         b"align-items" => StyleAttr::AlignItems(match value {
         //             "default" => AlignItems::Default,
@@ -1280,24 +1217,6 @@ mod tests {
         //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
         //             }
         //         }),
-
-        //         b"margin" => StyleAttr::Margin(StyleAttr::parse_uirect(value)?),
-        //         b"margin-left" => StyleAttr::MarginLeft(StyleAttr::parse_val(value)?),
-        //         b"margin-right" => StyleAttr::MarginRight(StyleAttr::parse_val(value)?),
-        //         b"margin-top" => StyleAttr::MarginTop(StyleAttr::parse_val(value)?),
-        //         b"margin-bottom" => StyleAttr::MarginBottom(StyleAttr::parse_val(value)?),
-
-        //         b"padding" => StyleAttr::Padding(StyleAttr::parse_uirect(value)?),
-        //         b"padding-left" => StyleAttr::PaddingLeft(StyleAttr::parse_val(value)?),
-        //         b"padding-right" => StyleAttr::PaddingRight(StyleAttr::parse_val(value)?),
-        //         b"padding-top" => StyleAttr::PaddingTop(StyleAttr::parse_val(value)?),
-        //         b"padding-bottom" => StyleAttr::PaddingBottom(StyleAttr::parse_val(value)?),
-
-        //         b"border" => StyleAttr::Border(StyleAttr::parse_uirect(value)?),
-        //         b"border-left" => StyleAttr::BorderLeft(StyleAttr::parse_val(value)?),
-        //         b"border-right" => StyleAttr::BorderRight(StyleAttr::parse_val(value)?),
-        //         b"border-top" => StyleAttr::BorderTop(StyleAttr::parse_val(value)?),
-        //         b"border-bottom" => StyleAttr::BorderBottom(StyleAttr::parse_val(value)?),
 
         //         b"flex-direction" => StyleAttr::FlexDirection(match value {
         //             "row" => FlexDirection::Row,
