@@ -7,22 +7,22 @@
         "background-color": "#222",
         "border-color": "#404",
         "vars": {
-          "--button-image": "../images/button-blue.png"
+          "--button-image": "asset(../images/button-blue.png)"
         },
         "selectors": {
           "&.hover": {
             "vars": {
-              "--button-image": "../images/button-blue-hover.png"
+              "--button-image": "asset(../images/button-blue-hover.png)"
             }
           },
           "&.pressed": {
             "vars": {
-              "--button-image": "../images/button-blue-pressed.png"
+              "--button-image": "asset(../images/button-blue-pressed.png)"
             }
           },
           "&.disabled": {
             "vars": {
-              "--button-image": "../images/button-blue-disabled.png"
+              "--button-image": "asset(../images/button-blue-disabled.png)"
             }
           }
         }
@@ -43,7 +43,7 @@
       "extends": "#styles/obs-button",
       "base": {
         "vars": {
-          "--button-image": "../images/button-green.png"
+          "--button-image": "asset(../images/button-green.png)"
         }
       }
     },

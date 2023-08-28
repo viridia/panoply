@@ -5,13 +5,15 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::style::StyleCatalog;
+
 #[derive(TypeUuid, TypePath)]
 #[uuid = "29066844-f877-4c2c-9b21-e886de093dfe"]
 struct TemplatesAsset {}
 
 #[derive(Serialize, Deserialize, Debug)]
-struct TemplatesSerial {
-    pub styles: HashMap<String, StyleSetSerial>,
+struct TemplatesSerial<'a> {
+    pub styles: HashMap<String, StyleCatalog<'a>>,
     pub templates: HashMap<String, TemplateSerial>,
 }
 
@@ -19,20 +21,6 @@ struct TemplatesSerial {
 struct TemplateSerial {
     // pub base: StylePropsSerial,
     // pub selectors: HashMap<String, StylePropsSerial>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct StyleSetSerial(HashMap<String, StyleSerial>);
-
-#[derive(Serialize, Deserialize, Debug)]
-struct StyleSerial {
-    pub base: StylePropsSerial,
-    pub selectors: HashMap<String, StylePropsSerial>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct StylePropsSerial {
-    vars: HashMap<String, String>,
 }
 
 pub struct GuiseTemplatesLoader;

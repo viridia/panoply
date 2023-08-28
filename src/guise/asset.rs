@@ -201,23 +201,24 @@ impl<'a, 'c: 'a> GuiseXmlVisitor<'a, 'c> {
     fn visit_style_attrs<'b>(
         &mut self,
         e: &'b BytesStart,
-        attrs: &mut Vec<StyleAttr>,
+        _attrs: &mut Vec<StyleAttr>,
     ) -> Result<(), GuiseError> {
         for a in e.attributes() {
             if let Ok(attr) = a {
                 if attr.key != ATTR_ID && attr.key != ATTR_SELECTOR && attr.key.prefix().is_none() {
-                    let attr_name: &[u8] = attr.key.local_name().into_inner();
-                    let attr_value: &str = &attr.unescape_value().unwrap();
-                    match StyleAttr::parse(attr_name, attr_value.trim()) {
-                        Ok(Some(attr)) => attrs.push(attr),
-                        Ok(None) => {
-                            // We didn't recognize the style attribute. That's an error
-                            // for <style> element but not an error for inline styles, since
-                            // nodes can have other attributes.
-                            return Err(GuiseError::UnknownAttribute(attr_name.to_vec()));
-                        }
-                        Err(err) => return Err(err),
-                    }
+                    // let attr_name: &[u8] = attr.key.local_name().into_inner();
+                    // let attr_value: &str = &attr.unescape_value().unwrap();
+                    // match StyleAttr::parse(attr_name, attr_value.trim()) {
+                    //     Ok(Some(attr)) => attrs.push(attr),
+                    //     Ok(None) => {
+                    //         // We didn't recognize the style attribute. That's an error
+                    //         // for <style> element but not an error for inline styles, since
+                    //         // nodes can have other attributes.
+                    //         error!("Invalid attribute: {:?}", attr.key.local_name());
+                    //         return Err(GuiseError::UnknownAttribute(attr_name.to_vec()));
+                    //     }
+                    //     Err(err) => return Err(err),
+                    // }
                 }
             }
         }

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt, marker::PhantomData};
 
 use crate::guise::style::{
     expr::{Expr, TypeHint},
@@ -10,7 +10,8 @@ use bevy::utils::HashMap;
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
-pub struct Style {
+#[derive(Debug, Default, Clone)]
+pub struct Style<'a> {
     /// List of style attributes.
     /// Rather than storing the attributes in a struct full of optional fields, we store a flat
     /// vector of enums, each of which stores a single style attribute. This "sparse" representation
@@ -18,14 +19,13 @@ pub struct Style {
     attrs: Vec<StyleAttr>,
 
     /// List of style variables to define when this style is invoked.
-    /// TODO: Var values are not strings...
-    vars: HashMap<String, String>,
+    vars: HashMap<Cow<'a, str>, Expr>,
 
     /// List of conditional styles
-    selectors: Vec<(Selector, Box<Style>)>,
+    selectors: Vec<(Selector, Box<Style<'a>>)>,
 }
 
-impl Style {
+impl<'a> Style<'a> {
     pub fn new() -> Self {
         Self {
             attrs: Vec::new(),
@@ -51,13 +51,13 @@ impl Style {
         }
     }
 
-    // Number of style attributes in the map.
-    // pub fn len(&self) -> usize {
-    //     self.att.len()
-    // }
+    /// Number of style attributes in the map.
+    pub fn len_attrs(&self) -> usize {
+        self.attrs.len()
+    }
 }
 
-impl Serialize for Style {
+impl<'a> Serialize for Style<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -156,7 +156,7 @@ const FIELDS: &'static [&'static str] = &[
     "selectors",
 ];
 
-impl<'de> Deserialize<'de> for Style {
+impl<'de, 'a> Deserialize<'de> for Style<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -245,7 +245,7 @@ impl<'de> Deserialize<'de> for Style {
         struct StyleMapVisitor;
 
         impl<'de> Visitor<'de> for StyleMapVisitor {
-            type Value = Style;
+            type Value = Style<'static>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("style definition")
@@ -417,7 +417,7 @@ impl<'de> Deserialize<'de> for Style {
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
                         Field::Vars => {
-                            todo!()
+                            st.vars = map.next_value::<VarsMapSer>()?.0;
                         }
                         Field::Selectors => {
                             todo!()
@@ -429,6 +429,52 @@ impl<'de> Deserialize<'de> for Style {
         }
 
         deserializer.deserialize_struct("StyleMap", FIELDS, StyleMapVisitor)
+    }
+}
+
+struct VarsMapSer<'a>(HashMap<Cow<'a, str>, Expr>);
+
+impl<'de, 'a> Deserialize<'de> for VarsMapSer<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(VarsMapVisitor::<'a> {
+            marker: &PhantomData,
+        })
+    }
+}
+
+struct VarsMapVisitor<'a> {
+    marker: &'a PhantomData<()>,
+}
+
+impl<'de, 'a> Visitor<'de> for VarsMapVisitor<'a> {
+    type Value = VarsMapSer<'a>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("style definition")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::MapAccess<'de>,
+        A::Error: serde::de::Error,
+    {
+        let mut result: HashMap<Cow<'a, str>, Expr> =
+            HashMap::with_capacity(map.size_hint().unwrap_or(0));
+        while let Some(key) = map.next_key::<String>()? {
+            let expr = map.next_value::<Expr>()?;
+            if key.starts_with("--") {
+                result.insert(key[2..].to_owned().into(), expr);
+            } else {
+                return Err(serde::de::Error::invalid_type(
+                    serde::de::Unexpected::Str(&key),
+                    &"Expression list",
+                ));
+            }
+        }
+        Ok(VarsMapSer(result))
     }
 }
 
@@ -508,9 +554,9 @@ mod tests {
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
 
-        let map2 = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
-        let ser2 = serde_json::to_string(&map2);
-        assert_eq!(ser2.unwrap(), r#"{"display":"grid"}"#);
+        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
     }
 
     #[test]
@@ -525,17 +571,36 @@ mod tests {
 
     #[test]
     fn test_serialize_uirect() {
-        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Ident("grid".to_string()))]);
+        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))]);
         let ser = serde_json::to_string(&map);
-        assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
+        assert_eq!(ser.unwrap(), r#"{"margin":"0"}"#);
 
-        let map2 = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
-        let ser2 = serde_json::to_string(&map2);
-        assert_eq!(ser2.unwrap(), r#"{"display":"grid"}"#);
+        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
+            Expr::Number(0.),
+            Expr::Number(0.),
+        ]))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"margin":"0 0"}"#);
+
+        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
+            Expr::Length(ui::Val::Auto),
+            Expr::Length(ui::Val::Px(7.)),
+        ]))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"margin":"auto 7px"}"#);
     }
 
     #[test]
     fn test_deserialize_uirect() {
+        // Unitless number
+        let des = serde_json::from_str::<Style>(r#"{"margin":0}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))
+        );
+
+        // Unitless string
         let des = serde_json::from_str::<Style>(r#"{"margin":"0"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
@@ -543,6 +608,7 @@ mod tests {
             StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))
         );
 
+        // Pixel units
         let des = serde_json::from_str::<Style>(r#"{"margin":"0px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
@@ -550,6 +616,7 @@ mod tests {
             StyleAttr::Margin(Expr::List(vec![Expr::Length(ui::Val::Px(0.))]))
         );
 
+        // Multiple values
         let des = serde_json::from_str::<Style>(r#"{"margin":"0px 0px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
@@ -560,6 +627,7 @@ mod tests {
             ]))
         );
 
+        // Optimize ident to 'auto'
         let des = serde_json::from_str::<Style>(r#"{"margin":"0px auto"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
@@ -568,6 +636,23 @@ mod tests {
                 Expr::Length(ui::Val::Px(0.)),
                 Expr::Length(ui::Val::Auto)
             ]))
+        );
+    }
+
+    #[test]
+    fn test_deserialize_vars() {
+        let des = serde_json::from_str::<Style>(r#"{"vars":{}}"#).unwrap();
+        assert_eq!(des.vars.len(), 0);
+
+        let des = serde_json::from_str::<Style>(r#"{"vars":{"--x":1}}"#).unwrap();
+        assert_eq!(des.vars.len(), 1);
+        assert_eq!(des.vars.get("x").unwrap(), &Expr::Number(1.));
+
+        let des = serde_json::from_str::<Style>(r#"{"vars":{"--bg":"auto"}}"#).unwrap();
+        assert_eq!(des.vars.len(), 1);
+        assert_eq!(
+            des.vars.get("bg").unwrap(),
+            &Expr::Ident("auto".to_string())
         );
     }
 }

@@ -4,9 +4,9 @@ use bevy::{prelude::Color, ui::UiRect};
 use serde::{de::Visitor, Deserialize, Serialize};
 use winnow::{
     ascii::space0,
-    combinator::{alt, cut_err, opt, preceded},
+    combinator::{alt, cut_err, delimited, opt, preceded},
     error::StrContext,
-    token::{one_of, take_while},
+    token::{one_of, take_until1, take_while},
     PResult, Parser,
 };
 
@@ -33,7 +33,7 @@ pub enum Expr {
     Color(ColorValue),
 
     /// A reference to an asset
-    AssetPath(String),
+    Asset(String),
 
     /// A reference to a named style variable.
     Var(String),
@@ -75,6 +75,7 @@ impl Expr {
             parse_length,
             parse_var_ref,
             parse_color_ctor,
+            parse_asset,
             parse_ident,
         ))
         .parse_next(input)
@@ -217,6 +218,10 @@ fn parse_decimal_digits<'s>(input: &mut &'s str) -> PResult<&'s str> {
     take_while(1.., '0'..='9').parse_next(input)
 }
 
+fn parse_asset_key<'s>(input: &mut &'s str) -> PResult<&'s str> {
+    take_until1(")").parse_next(input)
+}
+
 fn parse_exponent<'s>(input: &mut &'s str) -> PResult<()> {
     (
         one_of(['E', 'e']),
@@ -255,13 +260,9 @@ fn parse_hex_color(input: &mut &str) -> PResult<Expr> {
         .parse_next(input)
 }
 
-fn parse_color_fn<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    alt(("rgba", "rgb", "hsla", "hsl")).parse_next(input)
-}
-
 fn parse_color_ctor<'s>(input: &mut &'s str) -> PResult<Expr> {
     (
-        parse_color_fn,
+        alt(("rgba", "rgb", "hsla", "hsl")),
         preceded((space0, '(', space0), cut_err(parse_number)),
         preceded((space0, opt((',', space0))), parse_number),
         preceded((space0, opt((',', space0))), parse_number),
@@ -289,12 +290,9 @@ fn parse_color_ctor<'s>(input: &mut &'s str) -> PResult<Expr> {
         .parse_next(input)
 }
 
-fn parse_color_ctor2<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    (
-        parse_color_fn,
-        '(', // preceded((space0, '(', space0), parse_number),
-    )
-        .recognize()
+fn parse_asset<'s>(input: &mut &'s str) -> PResult<Expr> {
+    ("asset", space0, delimited('(', parse_asset_key, ')'))
+        .map(|(_, _, path)| Expr::Asset(path.to_string()))
         .parse_next(input)
 }
 
@@ -374,7 +372,7 @@ impl fmt::Display for Expr {
                 Ok(())
             }
             Expr::Color(c) => fmt::Display::fmt(&c, f),
-            Expr::AssetPath(_) => todo!(),
+            Expr::Asset(_) => todo!(),
             Expr::Display(d) => match d {
                 ui::Display::Flex => write!(f, "flex"),
                 ui::Display::Grid => write!(f, "grid"),
@@ -477,8 +475,8 @@ impl<'de> Visitor<'de> for ExprVisitor {
         match s.parse::<Expr>() {
             Ok(expr) => Ok(expr),
             Err(_) => Err(E::invalid_type(
-                serde::de::Unexpected::Other("expr"),
-                &"Invalid type",
+                serde::de::Unexpected::Str(s),
+                &"CSS expression",
             )),
         }
     }
@@ -609,6 +607,14 @@ mod tests {
         assert_eq!(
             "var(--foo)".parse::<Expr>().unwrap(),
             Expr::Var("foo".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_asset() {
+        assert_eq!(
+            "asset(../image.png)".parse::<Expr>().unwrap(),
+            Expr::Asset("../image.png".to_string())
         );
     }
 }
