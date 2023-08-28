@@ -1,5 +1,7 @@
+use std::fmt;
+
 use bevy::{prelude::Color, ui::UiRect};
-use serde::Serialize;
+use serde::{de::Visitor, Deserialize, Serialize};
 use winnow::{
     ascii::space0,
     combinator::{alt, cut_err, opt, preceded},
@@ -63,16 +65,43 @@ pub enum CssFn {
 }
 
 impl Expr {
-    // Fold constants with type hint.
-    // pub fn fold_constants(&self, fallback: &Self) -> Self {
-    //     self.clone()
-    // }
-
-    pub fn as_length(&self) -> Self {
+    /// Evaluate the expression and coerce to an int.
+    pub fn into_i32(&self) -> Option<i32> {
         match self {
-            Expr::Length(_) => self.clone(),
-            _ => Expr::Length(ui::Val::Auto),
+            Expr::Number(v) => Some(*v as i32),
+            _ => None,
         }
+    }
+
+    /// Evaluate the expression and coerce to a float.
+    pub fn into_f32(&self) -> Option<f32> {
+        match self {
+            Expr::Number(v) => Some(*v),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a length.
+    pub fn as_length(&self) -> ui::Val {
+        match self {
+            Expr::Length(v) => *v,
+            Expr::Number(v) => ui::Val::Px(*v),
+            _ => ui::Val::Auto,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a color
+    pub fn as_color(&self) -> ColorValue {
+        match self {
+            Expr::Color(c) => *c,
+            _ => ColorValue::Transparent,
+        }
+    }
+}
+
+impl From<i32> for Expr {
+    fn from(value: i32) -> Self {
+        Self::Number(value as f32)
     }
 }
 
@@ -234,7 +263,7 @@ impl ToString for Expr {
             Expr::Ident(name) => name.clone(),
             Expr::Number(n) => n.to_string(),
             Expr::Length(_) => todo!(),
-            Expr::Color(_) => todo!(),
+            Expr::Color(c) => c.to_string(),
             Expr::AssetPath(_) => todo!(),
             Expr::Rect(_) => todo!(),
             Expr::Var(name) => format!("var(--{})", name),
@@ -247,7 +276,97 @@ impl Serialize for Expr {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        match self {
+            Self::Number(n) => {
+                if n.round() == *n {
+                    serializer.serialize_i32(*n as i32)
+                } else {
+                    serializer.serialize_f32(*n)
+                }
+            }
+            Self::Length(ui::Val::Px(n)) => {
+                if n.round() == *n {
+                    serializer.serialize_i32(*n as i32)
+                } else {
+                    serializer.serialize_f32(*n)
+                }
+            }
+            _ => serializer.serialize_str(&self.to_string()),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Expr {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(ExprVisitor)
+    }
+}
+
+struct ExprVisitor;
+
+impl<'de> Visitor<'de> for ExprVisitor {
+    type Value = Expr;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("CSS expression")
+    }
+
+    fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v as f32))
+    }
+
+    fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v as f32))
+    }
+
+    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v as f32))
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v as f32))
+    }
+
+    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Expr::Number(v as f32))
+    }
+
+    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match s.parse::<Expr>() {
+            Ok(expr) => Ok(expr),
+            Err(_) => Err(E::invalid_type(
+                serde::de::Unexpected::Other("expr"),
+                &"Invalid type",
+            )),
+        }
     }
 }
 
@@ -281,6 +400,22 @@ mod tests {
         assert_eq!(
             "rgba(255, 255, 255)".parse::<Expr>().unwrap(),
             Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 1.)))
+        );
+        assert_eq!(
+            "rgba(255, 255, 255, 0.5)".parse::<Expr>().unwrap(),
+            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+        );
+        assert_eq!(
+            "rgba(255 255 255 / 0.5)".parse::<Expr>().unwrap(),
+            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+        );
+        assert_eq!(
+            "rgb(255 255 255 / 0.5)".parse::<Expr>().unwrap(),
+            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+        );
+        assert_eq!(
+            "hsla(360 100 100 / 0.5)".parse::<Expr>().unwrap(),
+            Expr::Color(ColorValue::Color(Color::hsla(1., 1., 1., 0.5)))
         );
     }
 

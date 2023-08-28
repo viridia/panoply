@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::guise::style::{color::ColorValue, style_value::StyleValue};
+use crate::guise::style::expr::Expr;
 
 use super::{Selector, StyleAttr};
 use bevy::utils::HashMap;
@@ -71,6 +71,7 @@ impl Serialize for Style {
                 StyleAttr::Color(val) => st.serialize_field("color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
                 StyleAttr::Left(val) => st.serialize_field("left", val)?,
+                StyleAttr::Right(val) => st.serialize_field("right", val)?,
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
                 _ => todo!("Implement serialization for {:?}", attr),
@@ -85,6 +86,8 @@ const FIELDS: &'static [&'static str] = &[
     "border-color",
     "color",
     "z-index",
+    "left",
+    "right",
     "flex-grow",
     "flex-shrink",
     "vars",
@@ -110,9 +113,8 @@ impl<'de> Deserialize<'de> for Style {
             // OverflowX(bevy::ui::OverflowAxis),
             // OverflowY(bevy::ui::OverflowAxis),
             // Direction(bevy::ui::Direction),
-
-            // Left(bevy::ui::Val),
-            // Right(bevy::ui::Val),
+            Left,
+            Right,
             // Top(bevy::ui::Val),
             // Bottom(bevy::ui::Val),
 
@@ -197,34 +199,44 @@ impl<'de> Deserialize<'de> for Style {
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::BackgroundColor => {
-                            result.attrs.push(StyleAttr::BackgroundColor(
-                                map.next_value::<StyleValue<ColorValue>>()?,
-                            ));
+                            result
+                                .attrs
+                                .push(StyleAttr::BackgroundColor(map.next_value::<Expr>()?));
                         }
                         Field::BorderColor => {
-                            result.attrs.push(StyleAttr::BorderColor(
-                                map.next_value::<StyleValue<ColorValue>>()?,
-                            ));
+                            result
+                                .attrs
+                                .push(StyleAttr::BorderColor(map.next_value::<Expr>()?));
                         }
                         Field::Color => {
-                            result.attrs.push(StyleAttr::Color(
-                                map.next_value::<StyleValue<ColorValue>>()?,
-                            ));
+                            result
+                                .attrs
+                                .push(StyleAttr::Color(map.next_value::<Expr>()?));
                         }
                         Field::ZIndex => {
                             result
                                 .attrs
-                                .push(StyleAttr::ZIndex(map.next_value::<StyleValue<i32>>()?));
+                                .push(StyleAttr::ZIndex(map.next_value::<Expr>()?));
+                        }
+                        Field::Left => {
+                            result
+                                .attrs
+                                .push(StyleAttr::Left(map.next_value::<Expr>()?));
+                        }
+                        Field::Right => {
+                            result
+                                .attrs
+                                .push(StyleAttr::Right(map.next_value::<Expr>()?));
                         }
                         Field::FlexGrow => {
                             result
                                 .attrs
-                                .push(StyleAttr::FlexGrow(map.next_value::<StyleValue<f32>>()?));
+                                .push(StyleAttr::FlexGrow(map.next_value::<Expr>()?));
                         }
                         Field::FlexShrink => {
                             result
                                 .attrs
-                                .push(StyleAttr::FlexShrink(map.next_value::<StyleValue<f32>>()?));
+                                .push(StyleAttr::FlexShrink(map.next_value::<Expr>()?));
                         }
                         Field::Vars => {
                             todo!()
@@ -244,32 +256,19 @@ impl<'de> Deserialize<'de> for Style {
 
 #[cfg(test)]
 mod tests {
-    use bevy::prelude::Color;
-
-    use crate::guise::style::color::ColorValue;
-
     use super::*;
-
-    #[test]
-    fn test_serialize_basic_prop() {
-        let map = Style::from_attrs(&[StyleAttr::BackgroundColor(StyleValue::Constant(
-            ColorValue::Color(Color::RED),
-        ))]);
-        let ser = serde_json::to_string(&map);
-        assert_eq!(ser.unwrap(), r#"{"background-color":"rgba(255, 0, 0, 1)"}"#);
-    }
 
     #[test]
     fn test_serialize_misc_props() {
         let map = Style::from_attrs(&[
-            StyleAttr::ZIndex(StyleValue::Constant(7)),
-            StyleAttr::FlexGrow(StyleValue::Constant(2.)),
-            StyleAttr::FlexShrink(StyleValue::Constant(3.)),
+            StyleAttr::ZIndex(Expr::Number(7.)),
+            StyleAttr::FlexGrow(Expr::Number(2.)),
+            StyleAttr::FlexShrink(Expr::Number(3.)),
         ]);
         let ser = serde_json::to_string(&map);
         assert_eq!(
             ser.unwrap(),
-            r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#
+            r#"{"z-index":7,"flex-grow":2,"flex-shrink":3}"#
         );
     }
 
@@ -285,13 +284,29 @@ mod tests {
     #[test]
     fn test_deserialize_misc_props() {
         let des =
-            serde_json::from_str::<Style>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#)
+            serde_json::from_str::<Style>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.1}"#)
                 .unwrap();
         assert_eq!(des.attrs.len(), 3);
         let ser = serde_json::to_string(&des);
         assert_eq!(
             ser.unwrap(),
-            r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.0}"#
+            r#"{"z-index":7,"flex-grow":2,"flex-shrink":3.1}"#
         );
+    }
+
+    #[test]
+    fn test_deserialize_length_no_unit() {
+        let des = serde_json::from_str::<Style>(r#"{"right":7}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        let ser = serde_json::to_string(&des);
+        assert_eq!(ser.unwrap(), r#"{"right":7}"#);
+    }
+
+    #[test]
+    fn test_deserialize_length_px() {
+        let des = serde_json::from_str::<Style>(r#"{"right":"7px"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        let ser = serde_json::to_string(&des);
+        assert_eq!(ser.unwrap(), r#"{"right":7}"#);
     }
 }

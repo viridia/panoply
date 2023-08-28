@@ -29,28 +29,22 @@ impl ColorValue {
     }
 }
 
-impl Serialize for ColorValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+impl ToString for ColorValue {
+    fn to_string(&self) -> String {
         match self {
-            Self::Transparent => serializer.serialize_str("transparent"),
+            Self::Transparent => "transparent".to_string(),
             Self::Color(color) => match color {
                 Color::Rgba {
                     red,
                     green,
                     blue,
                     alpha,
-                } => serializer.serialize_str(
-                    format!(
-                        "rgba({}, {}, {}, {})",
-                        red * 255.0,
-                        green * 255.0,
-                        blue * 255.0,
-                        alpha
-                    )
-                    .as_str(),
+                } => format!(
+                    "rgba({}, {}, {}, {})",
+                    red * 255.0,
+                    green * 255.0,
+                    blue * 255.0,
+                    alpha
                 ),
 
                 Color::Hsla {
@@ -58,15 +52,22 @@ impl Serialize for ColorValue {
                     saturation,
                     lightness,
                     alpha,
-                } => serializer.serialize_str(
-                    format!("hsla({}, {}, {}, {})", hue, saturation, lightness, alpha).as_str(),
-                ),
+                } => format!("hsla({}, {}, {}, {})", hue, saturation, lightness, alpha),
 
                 _ => {
                     panic!("Unsupported color format")
                 }
             },
         }
+    }
+}
+
+impl Serialize for ColorValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 

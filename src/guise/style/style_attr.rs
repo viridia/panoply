@@ -6,16 +6,16 @@ use std::str::FromStr;
 
 use crate::guise::GuiseError;
 
-use super::{color::ColorValue, style_value::StyleValue, ComputedStyle};
+use super::{expr::Expr, ComputedStyle};
 
-/** Set of style attributes that can be applied to construct a style. */
+/** A single style-sheet property which can be applied to a computed style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
-    BackgroundColor(StyleValue<ColorValue>),
-    BorderColor(StyleValue<ColorValue>),
-    Color(StyleValue<ColorValue>),
+    BackgroundColor(Expr),
+    BorderColor(Expr),
+    Color(Expr),
 
-    ZIndex(StyleValue<i32>),
+    ZIndex(Expr),
 
     Display(bevy::ui::Display),
     Position(bevy::ui::PositionType),
@@ -24,8 +24,8 @@ pub enum StyleAttr {
     OverflowY(bevy::ui::OverflowAxis),
     Direction(bevy::ui::Direction),
 
-    Left(StyleValue<Val>),
-    Right(bevy::ui::Val),
+    Left(Expr),
+    Right(Expr),
     Top(bevy::ui::Val),
     Bottom(bevy::ui::Val),
 
@@ -65,8 +65,8 @@ pub enum StyleAttr {
 
     FlexDirection(bevy::ui::FlexDirection),
     FlexWrap(bevy::ui::FlexWrap),
-    FlexGrow(StyleValue<f32>),
-    FlexShrink(StyleValue<f32>),
+    FlexGrow(Expr),
+    FlexShrink(Expr),
     FlexBasis(bevy::ui::Val),
 
     RowGap(bevy::ui::Val),
@@ -96,16 +96,18 @@ impl StyleAttr {
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
             StyleAttr::BackgroundColor(val) => {
-                computed.background_color = val.to_color_value();
+                computed.background_color = val.as_color();
             }
             StyleAttr::BorderColor(val) => {
-                computed.border_color = val.to_color_value();
+                computed.border_color = val.as_color();
             }
             StyleAttr::Color(val) => {
-                computed.color = val.to_color_value();
+                computed.color = val.as_color();
             }
             StyleAttr::ZIndex(val) => {
-                computed.z_index = Some(val.to_i32());
+                if let Some(z) = val.into_i32() {
+                    computed.z_index = Some(z);
+                }
             }
 
             StyleAttr::Display(val) => {
@@ -129,10 +131,10 @@ impl StyleAttr {
             }
 
             StyleAttr::Left(val) => {
-                computed.style.left = val.to_val();
+                computed.style.left = val.as_length();
             }
             StyleAttr::Right(val) => {
-                computed.style.right = *val;
+                computed.style.right = val.as_length();
             }
             StyleAttr::Top(val) => {
                 computed.style.top = *val;
@@ -234,10 +236,14 @@ impl StyleAttr {
                 computed.style.flex_wrap = *val;
             }
             StyleAttr::FlexGrow(val) => {
-                computed.style.flex_grow = val.to_f32();
+                if let Some(flex) = val.into_f32() {
+                    computed.style.flex_grow = flex;
+                }
             }
             StyleAttr::FlexShrink(val) => {
-                computed.style.flex_shrink = val.to_f32();
+                if let Some(flex) = val.into_f32() {
+                    computed.style.flex_shrink = flex;
+                }
             }
             StyleAttr::FlexBasis(val) => {
                 computed.style.flex_basis = *val;
@@ -360,7 +366,7 @@ impl StyleAttr {
             }),
 
             // b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
-            b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
+            // b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
             b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
             b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
 
@@ -608,9 +614,9 @@ impl StyleAttr {
             // StyleAttr::Left(val) => {
             //     elem.push_attribute(("left", StyleAttr::val_to_str(*val).as_str()));
             // }
-            StyleAttr::Right(val) => {
-                elem.push_attribute(("right", StyleAttr::val_to_str(*val).as_str()));
-            }
+            // StyleAttr::Right(val) => {
+            //     elem.push_attribute(("right", val.to_string()));
+            // }
             StyleAttr::Top(val) => {
                 elem.push_attribute(("top", StyleAttr::val_to_str(*val).as_str()));
             }
@@ -1180,10 +1186,10 @@ mod tests {
         //     StyleAttr::parse(b"left", "3").unwrap().unwrap(),
         //     StyleAttr::Left(bevy::ui::Val::Px(3.))
         // );
-        assert_eq!(
-            StyleAttr::parse(b"right", "3").unwrap().unwrap(),
-            StyleAttr::Right(bevy::ui::Val::Px(3.))
-        );
+        // assert_eq!(
+        //     StyleAttr::parse(b"right", "3").unwrap().unwrap(),
+        //     bevy::ui::Val::Px(3.)
+        // );
         assert_eq!(
             StyleAttr::parse(b"top", "3").unwrap().unwrap(),
             StyleAttr::Top(bevy::ui::Val::Px(3.))

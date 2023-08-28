@@ -243,16 +243,6 @@ fn router(ctx: UiContext, something: bool) -> UiComponent {
 
 stylex(style, style, if const { style } else Style::Empty)
 
-enum StyleValue {
-  Unset,
-  Initial,
-  Inherit,
-  Var,
-  // Length, (units / percent / auto)
-  // Size
-  // Space
-}
-
 type StyleAttributes = HashMap<key, StyleValue>;
 
 enum Style {
