@@ -46,6 +46,15 @@ pub enum Expr {
     // LIGHTEN
     // DARKEN
     Display(ui::Display),
+    PositionType(ui::PositionType),
+    OverflowAxis(ui::OverflowAxis),
+    Direction(ui::Direction),
+    AlignItems(ui::AlignItems),
+    AlignContent(ui::AlignContent),
+    AlignSelf(ui::AlignSelf),
+    JustifyItems(ui::JustifyItems),
+    JustifyContent(ui::JustifyContent),
+    JustifySelf(ui::JustifySelf),
 }
 
 pub enum CssFn {
@@ -66,6 +75,15 @@ pub enum CssFn {
 pub enum TypeHint {
     Length,
     Display,
+    Position,
+    OverflowAxis,
+    Direction,
+    AlignItems,
+    AlignContent,
+    AlignSelf,
+    JustifyItems,
+    JustifyContent,
+    JustifySelf,
 }
 
 impl Expr {
@@ -114,7 +132,7 @@ impl Expr {
         }
     }
 
-    /// Evaluate the expression and coerce to a ui::Display
+    /// Evaluate the expression and coerce to a `ui::Display`
     pub fn into_display(&self) -> Option<ui::Display> {
         match self {
             Expr::Ident(ref n) => match n.as_str() {
@@ -124,6 +142,153 @@ impl Expr {
                 _ => None,
             },
             Expr::Display(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a `ui::PositionType`
+    pub fn into_position(&self) -> Option<ui::PositionType> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "relative" => Some(ui::PositionType::Relative),
+                "absolute" => Some(ui::PositionType::Absolute),
+                _ => None,
+            },
+            Expr::PositionType(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a `ui::OverflowAxis`
+    pub fn into_overflow(&self) -> Option<ui::OverflowAxis> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "clip" => Some(ui::OverflowAxis::Clip),
+                "visible" => Some(ui::OverflowAxis::Visible),
+                _ => None,
+            },
+            Expr::OverflowAxis(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a `ui::Direction`
+    pub fn into_direction(&self) -> Option<ui::Direction> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "inherit" => Some(ui::Direction::Inherit),
+                "ltr" => Some(ui::Direction::LeftToRight),
+                "rtl" => Some(ui::Direction::RightToLeft),
+                _ => None,
+            },
+            Expr::Direction(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_align_items(&self) -> Option<ui::AlignItems> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "default" => Some(ui::AlignItems::Default),
+                "start" => Some(ui::AlignItems::Start),
+                "end" => Some(ui::AlignItems::End),
+                "flex-start" => Some(ui::AlignItems::FlexStart),
+                "flex-end" => Some(ui::AlignItems::FlexEnd),
+                "center" => Some(ui::AlignItems::Center),
+                "baseline" => Some(ui::AlignItems::Baseline),
+                "stretch" => Some(ui::AlignItems::Stretch),
+                _ => None,
+            },
+            Expr::AlignItems(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_align_content(&self) -> Option<ui::AlignContent> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "default" => Some(ui::AlignContent::Default),
+                "start" => Some(ui::AlignContent::Start),
+                "end" => Some(ui::AlignContent::End),
+                "flex-start" => Some(ui::AlignContent::FlexStart),
+                "flex-end" => Some(ui::AlignContent::FlexEnd),
+                "center" => Some(ui::AlignContent::Center),
+                "space-between" => Some(ui::AlignContent::SpaceBetween),
+                "space-around" => Some(ui::AlignContent::SpaceAround),
+                "space-evenly" => Some(ui::AlignContent::SpaceEvenly),
+                "stretch" => Some(ui::AlignContent::Stretch),
+                _ => None,
+            },
+            Expr::AlignContent(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_align_self(&self) -> Option<ui::AlignSelf> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "auto" => Some(ui::AlignSelf::Auto),
+                "start" => Some(ui::AlignSelf::Start),
+                "end" => Some(ui::AlignSelf::End),
+                "flex-start" => Some(ui::AlignSelf::FlexStart),
+                "flex-end" => Some(ui::AlignSelf::FlexEnd),
+                "center" => Some(ui::AlignSelf::Center),
+                "baseline" => Some(ui::AlignSelf::Baseline),
+                "stretch" => Some(ui::AlignSelf::Stretch),
+                _ => None,
+            },
+            Expr::AlignSelf(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_justify_items(&self) -> Option<ui::JustifyItems> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "default" => Some(ui::JustifyItems::Default),
+                "start" => Some(ui::JustifyItems::Start),
+                "end" => Some(ui::JustifyItems::End),
+                "center" => Some(ui::JustifyItems::Center),
+                "baseline" => Some(ui::JustifyItems::Baseline),
+                "stretch" => Some(ui::JustifyItems::Stretch),
+                _ => None,
+            },
+            Expr::JustifyItems(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_justify_content(&self) -> Option<ui::JustifyContent> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "default" => Some(ui::JustifyContent::Default),
+                "start" => Some(ui::JustifyContent::Start),
+                "end" => Some(ui::JustifyContent::End),
+                "flex-start" => Some(ui::JustifyContent::FlexStart),
+                "flex-end" => Some(ui::JustifyContent::FlexEnd),
+                "center" => Some(ui::JustifyContent::Center),
+                "space-between" => Some(ui::JustifyContent::SpaceBetween),
+                "space-around" => Some(ui::JustifyContent::SpaceAround),
+                "space-evenly" => Some(ui::JustifyContent::SpaceEvenly),
+                _ => None,
+            },
+            Expr::JustifyContent(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    pub fn into_justify_self(&self) -> Option<ui::JustifySelf> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "auto" => Some(ui::JustifySelf::Auto),
+                "start" => Some(ui::JustifySelf::Start),
+                "end" => Some(ui::JustifySelf::End),
+                "center" => Some(ui::JustifySelf::Center),
+                "baseline" => Some(ui::JustifySelf::Baseline),
+                "stretch" => Some(ui::JustifySelf::Stretch),
+                _ => None,
+            },
+            Expr::JustifySelf(d) => Some(*d),
             _ => None,
         }
     }
@@ -197,6 +362,60 @@ impl Expr {
                 let opt = self.into_display();
                 if let Some(disp) = opt {
                     *self = Self::Display(disp)
+                }
+            }
+            TypeHint::Position => {
+                let opt = self.into_position();
+                if let Some(disp) = opt {
+                    *self = Self::PositionType(disp)
+                }
+            }
+            TypeHint::OverflowAxis => {
+                let opt = self.into_overflow();
+                if let Some(disp) = opt {
+                    *self = Self::OverflowAxis(disp)
+                }
+            }
+            TypeHint::Direction => {
+                let opt = self.into_direction();
+                if let Some(disp) = opt {
+                    *self = Self::Direction(disp)
+                }
+            }
+            TypeHint::AlignItems => {
+                let opt = self.into_align_items();
+                if let Some(disp) = opt {
+                    *self = Self::AlignItems(disp)
+                }
+            }
+            TypeHint::AlignContent => {
+                let opt = self.into_align_content();
+                if let Some(disp) = opt {
+                    *self = Self::AlignContent(disp)
+                }
+            }
+            TypeHint::AlignSelf => {
+                let opt = self.into_align_self();
+                if let Some(disp) = opt {
+                    *self = Self::AlignSelf(disp)
+                }
+            }
+            TypeHint::JustifyItems => {
+                let opt = self.into_justify_items();
+                if let Some(disp) = opt {
+                    *self = Self::JustifyItems(disp)
+                }
+            }
+            TypeHint::JustifyContent => {
+                let opt = self.into_justify_content();
+                if let Some(disp) = opt {
+                    *self = Self::JustifyContent(disp)
+                }
+            }
+            TypeHint::JustifySelf => {
+                let opt = self.into_justify_self();
+                if let Some(disp) = opt {
+                    *self = Self::JustifySelf(disp)
                 }
             }
         }
@@ -378,6 +597,79 @@ impl fmt::Display for Expr {
                 ui::Display::Grid => write!(f, "grid"),
                 ui::Display::None => write!(f, "none"),
             },
+            Expr::PositionType(d) => match d {
+                ui::PositionType::Relative => write!(f, "relative"),
+                ui::PositionType::Absolute => write!(f, "absolute"),
+            },
+            Expr::OverflowAxis(d) => match d {
+                ui::OverflowAxis::Clip => write!(f, "clip"),
+                ui::OverflowAxis::Visible => write!(f, "visible"),
+            },
+            Expr::Direction(d) => match d {
+                ui::Direction::Inherit => write!(f, "inherit"),
+                ui::Direction::LeftToRight => write!(f, "ltr"),
+                ui::Direction::RightToLeft => write!(f, "rtl"),
+            },
+            Expr::AlignItems(d) => match d {
+                ui::AlignItems::Default => write!(f, "default"),
+                ui::AlignItems::Start => write!(f, "start"),
+                ui::AlignItems::End => write!(f, "end"),
+                ui::AlignItems::FlexStart => write!(f, "flex-start"),
+                ui::AlignItems::FlexEnd => write!(f, "flex-end"),
+                ui::AlignItems::Center => write!(f, "center"),
+                ui::AlignItems::Baseline => write!(f, "baseline"),
+                ui::AlignItems::Stretch => write!(f, "stretch"),
+            },
+            Expr::AlignContent(d) => match d {
+                ui::AlignContent::Default => write!(f, "default"),
+                ui::AlignContent::Start => write!(f, "start"),
+                ui::AlignContent::End => write!(f, "end"),
+                ui::AlignContent::FlexStart => write!(f, "flex-start"),
+                ui::AlignContent::FlexEnd => write!(f, "flex-end"),
+                ui::AlignContent::Center => write!(f, "center"),
+                ui::AlignContent::SpaceBetween => write!(f, "space-between"),
+                ui::AlignContent::SpaceAround => write!(f, "space-around"),
+                ui::AlignContent::SpaceEvenly => write!(f, "space-evenly"),
+                ui::AlignContent::Stretch => write!(f, "stretch"),
+            },
+            Expr::AlignSelf(d) => match d {
+                ui::AlignSelf::Auto => write!(f, "auto"),
+                ui::AlignSelf::Start => write!(f, "start"),
+                ui::AlignSelf::End => write!(f, "end"),
+                ui::AlignSelf::FlexStart => write!(f, "flex-start"),
+                ui::AlignSelf::FlexEnd => write!(f, "flex-end"),
+                ui::AlignSelf::Center => write!(f, "center"),
+                ui::AlignSelf::Baseline => write!(f, "baseline"),
+                ui::AlignSelf::Stretch => write!(f, "stretch"),
+            },
+            Expr::JustifyItems(d) => match d {
+                ui::JustifyItems::Default => write!(f, "default"),
+                ui::JustifyItems::Start => write!(f, "start"),
+                ui::JustifyItems::End => write!(f, "end"),
+                ui::JustifyItems::Center => write!(f, "center"),
+                ui::JustifyItems::Baseline => write!(f, "baseline"),
+                ui::JustifyItems::Stretch => write!(f, "stretch"),
+            },
+            Expr::JustifyContent(d) => match d {
+                ui::JustifyContent::Default => write!(f, "default"),
+                ui::JustifyContent::Start => write!(f, "start"),
+                ui::JustifyContent::End => write!(f, "end"),
+                ui::JustifyContent::FlexStart => write!(f, "flex-start"),
+                ui::JustifyContent::FlexEnd => write!(f, "flex-end"),
+                ui::JustifyContent::Center => write!(f, "center"),
+                ui::JustifyContent::SpaceBetween => write!(f, "space-between"),
+                ui::JustifyContent::SpaceAround => write!(f, "space-around"),
+                ui::JustifyContent::SpaceEvenly => write!(f, "space-evenly"),
+            },
+            Expr::JustifySelf(d) => match d {
+                ui::JustifySelf::Auto => write!(f, "auto"),
+                ui::JustifySelf::Start => write!(f, "start"),
+                ui::JustifySelf::End => write!(f, "end"),
+                ui::JustifySelf::Center => write!(f, "center"),
+                ui::JustifySelf::Baseline => write!(f, "baseline"),
+                ui::JustifySelf::Stretch => write!(f, "stretch"),
+            },
+
             Expr::Var(name) => write!(f, "var(--{})", name),
         }
     }

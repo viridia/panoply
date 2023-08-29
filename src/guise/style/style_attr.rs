@@ -11,6 +11,7 @@ use super::{expr::Expr, ComputedStyle};
 /** A single style-sheet property which can be applied to a computed style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
+    BackgroundImage(Expr),
     BackgroundColor(Expr),
     BorderColor(Expr),
     Color(Expr),
@@ -18,11 +19,11 @@ pub enum StyleAttr {
     ZIndex(Expr),
 
     Display(Expr),
-    Position(bevy::ui::PositionType),
-    Overflow(bevy::ui::OverflowAxis),
-    OverflowX(bevy::ui::OverflowAxis),
-    OverflowY(bevy::ui::OverflowAxis),
-    Direction(bevy::ui::Direction),
+    Position(Expr),
+    Overflow(Expr),
+    OverflowX(Expr),
+    OverflowY(Expr),
+    Direction(Expr),
 
     Left(Expr),
     Right(Expr),
@@ -37,12 +38,12 @@ pub enum StyleAttr {
     MaxHeight(Expr),
 
     // pub aspect_ratio: StyleProp<f32>,
-    AlignItems(bevy::ui::AlignItems),
-    JustifyItems(bevy::ui::JustifyItems),
-    AlignSelf(bevy::ui::AlignSelf),
-    JustifySelf(bevy::ui::JustifySelf),
-    AlignContent(bevy::ui::AlignContent),
-    JustifyContent(bevy::ui::JustifyContent),
+    AlignItems(Expr),
+    JustifyItems(Expr),
+    AlignSelf(Expr),
+    JustifySelf(Expr),
+    AlignContent(Expr),
+    JustifyContent(Expr),
 
     // Allow margin sides to be set individually
     Margin(Expr),
@@ -95,6 +96,12 @@ impl StyleAttr {
     /// Apply this style attribute to a computed style.
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
+            StyleAttr::BackgroundImage(_asset) => {
+                todo!("Implement background-image")
+                // if let Some(c) = val.into_color() {
+                //     computed.background_color = c;
+                // }
+            }
             StyleAttr::BackgroundColor(val) => {
                 if let Some(c) = val.into_color() {
                     computed.background_color = c;
@@ -122,20 +129,30 @@ impl StyleAttr {
                 }
             }
             StyleAttr::Position(val) => {
-                computed.style.position_type = *val;
+                if let Some(d) = val.into_position() {
+                    computed.style.position_type = d;
+                }
             }
             StyleAttr::Overflow(val) => {
-                computed.style.overflow.x = *val;
-                computed.style.overflow.y = *val;
+                if let Some(d) = val.into_overflow() {
+                    computed.style.overflow.x = d;
+                    computed.style.overflow.y = d;
+                }
             }
             StyleAttr::OverflowX(val) => {
-                computed.style.overflow.x = *val;
+                if let Some(d) = val.into_overflow() {
+                    computed.style.overflow.x = d;
+                }
             }
             StyleAttr::OverflowY(val) => {
-                computed.style.overflow.y = *val;
+                if let Some(d) = val.into_overflow() {
+                    computed.style.overflow.y = d;
+                }
             }
             StyleAttr::Direction(val) => {
-                computed.style.direction = *val;
+                if let Some(d) = val.into_direction() {
+                    computed.style.direction = d;
+                }
             }
 
             StyleAttr::Left(val) => {
@@ -191,22 +208,34 @@ impl StyleAttr {
             }
 
             StyleAttr::AlignItems(val) => {
-                computed.style.align_items = *val;
+                if let Some(l) = val.into_align_items() {
+                    computed.style.align_items = l;
+                }
             }
             StyleAttr::JustifyItems(val) => {
-                computed.style.justify_items = *val;
+                if let Some(l) = val.into_justify_items() {
+                    computed.style.justify_items = l;
+                }
             }
             StyleAttr::AlignSelf(val) => {
-                computed.style.align_self = *val;
+                if let Some(l) = val.into_align_self() {
+                    computed.style.align_self = l;
+                }
             }
             StyleAttr::JustifySelf(val) => {
-                computed.style.justify_self = *val;
+                if let Some(l) = val.into_justify_self() {
+                    computed.style.justify_self = l;
+                }
             }
             StyleAttr::AlignContent(val) => {
-                computed.style.align_content = *val;
+                if let Some(l) = val.into_align_content() {
+                    computed.style.align_content = l;
+                }
             }
             StyleAttr::JustifyContent(val) => {
-                computed.style.justify_content = *val;
+                if let Some(l) = val.into_justify_content() {
+                    computed.style.justify_content = l;
+                }
             }
 
             StyleAttr::Margin(val) => {
@@ -355,158 +384,6 @@ impl StyleAttr {
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {
-            b"position" => StyleAttr::Position(match value {
-                "absolute" => PositionType::Absolute,
-                "relative" => PositionType::Relative,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"overflow" => StyleAttr::Overflow(match value {
-                "clip" => OverflowAxis::Clip,
-                "visible" => OverflowAxis::Visible,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"overflow-x" => StyleAttr::OverflowX(match value {
-                "clip" => OverflowAxis::Clip,
-                "visible" => OverflowAxis::Visible,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"overflow-y" => StyleAttr::OverflowY(match value {
-                "clip" => OverflowAxis::Clip,
-                "visible" => OverflowAxis::Visible,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"direction" => StyleAttr::Direction(match value {
-                "inherit" => bevy::ui::Direction::Inherit,
-                "ltr" => bevy::ui::Direction::LeftToRight,
-                "rtl" => bevy::ui::Direction::RightToLeft,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            // b"left" => StyleAttr::Left(StyleAttr::parse_val(value)?),
-            // b"right" => StyleAttr::Right(StyleAttr::parse_val(value)?),
-            // b"top" => StyleAttr::Top(StyleAttr::parse_val(value)?),
-            // b"bottom" => StyleAttr::Bottom(StyleAttr::parse_val(value)?),
-
-            // b"width" => StyleAttr::Width(StyleAttr::parse_val(value)?),
-            // b"height" => StyleAttr::Height(StyleAttr::parse_val(value)?),
-            // b"min-width" => StyleAttr::MinWidth(StyleAttr::parse_val(value)?),
-            // b"min-height" => StyleAttr::MinHeight(StyleAttr::parse_val(value)?),
-            // b"max-width" => StyleAttr::MaxWidth(StyleAttr::parse_val(value)?),
-            // b"max-height" => StyleAttr::MaxHeight(StyleAttr::parse_val(value)?),
-
-            //     // pub aspect_ratio: StyleProp<f32>,
-            b"align-items" => StyleAttr::AlignItems(match value {
-                "default" => AlignItems::Default,
-                "start" => AlignItems::Start,
-                "end" => AlignItems::End,
-                "flex-start" => AlignItems::FlexStart,
-                "flex-end" => AlignItems::FlexEnd,
-                "center" => AlignItems::Center,
-                "baseline" => AlignItems::Baseline,
-                "stretch" => AlignItems::Stretch,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"justify-items" => StyleAttr::JustifyItems(match value {
-                "default" => JustifyItems::Default,
-                "start" => JustifyItems::Start,
-                "end" => JustifyItems::End,
-                "center" => JustifyItems::Center,
-                "baseline" => JustifyItems::Baseline,
-                "stretch" => JustifyItems::Stretch,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"align-self" => StyleAttr::AlignSelf(match value {
-                "auto" => AlignSelf::Auto,
-                "start" => AlignSelf::Start,
-                "end" => AlignSelf::End,
-                "flex-start" => AlignSelf::FlexStart,
-                "flex-end" => AlignSelf::FlexEnd,
-                "center" => AlignSelf::Center,
-                "baseline" => AlignSelf::Baseline,
-                "stretch" => AlignSelf::Stretch,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"justify-self" => StyleAttr::JustifySelf(match value {
-                "auto" => JustifySelf::Auto,
-                "start" => JustifySelf::Start,
-                "end" => JustifySelf::End,
-                "center" => JustifySelf::Center,
-                "baseline" => JustifySelf::Baseline,
-                "stretch" => JustifySelf::Stretch,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"align-content" => StyleAttr::AlignContent(match value {
-                "default" => AlignContent::Default,
-                "start" => AlignContent::Start,
-                "end" => AlignContent::End,
-                "flex-start" => AlignContent::FlexStart,
-                "flex-end" => AlignContent::FlexEnd,
-                "center" => AlignContent::Center,
-                "stretch" => AlignContent::Stretch,
-                "space-between" => AlignContent::SpaceBetween,
-                "space-around" => AlignContent::SpaceAround,
-                "space-evenly" => AlignContent::SpaceEvenly,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"justify-content" => StyleAttr::JustifyContent(match value {
-                "default" => JustifyContent::Default,
-                "start" => JustifyContent::Start,
-                "end" => JustifyContent::End,
-                "flex-start" => JustifyContent::FlexStart,
-                "flex-end" => JustifyContent::FlexEnd,
-                "center" => JustifyContent::Center,
-                "space-between" => JustifyContent::SpaceBetween,
-                "space-around" => JustifyContent::SpaceAround,
-                "space-evenly" => JustifyContent::SpaceEvenly,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            // b"margin" => StyleAttr::Margin(StyleAttr::parse_uirect(value)?),
-            // b"margin-left" => StyleAttr::MarginLeft(StyleAttr::parse_val(value)?),
-            // b"margin-right" => StyleAttr::MarginRight(StyleAttr::parse_val(value)?),
-            // b"margin-top" => StyleAttr::MarginTop(StyleAttr::parse_val(value)?),
-            // b"margin-bottom" => StyleAttr::MarginBottom(StyleAttr::parse_val(value)?),
-            // b"padding" => StyleAttr::Padding(StyleAttr::parse_uirect(value)?),
-            // b"padding-left" => StyleAttr::PaddingLeft(StyleAttr::parse_val(value)?),
-            // b"padding-right" => StyleAttr::PaddingRight(StyleAttr::parse_val(value)?),
-            // b"padding-top" => StyleAttr::PaddingTop(StyleAttr::parse_val(value)?),
-            // b"padding-bottom" => StyleAttr::PaddingBottom(StyleAttr::parse_val(value)?),
-            // b"border" => StyleAttr::Border(StyleAttr::parse_uirect(value)?),
-            // b"border-left" => StyleAttr::BorderLeft(StyleAttr::parse_val(value)?),
-            // b"border-right" => StyleAttr::BorderRight(StyleAttr::parse_val(value)?),
-            // b"border-top" => StyleAttr::BorderTop(StyleAttr::parse_val(value)?),
-            // b"border-bottom" => StyleAttr::BorderBottom(StyleAttr::parse_val(value)?),
             b"flex-direction" => StyleAttr::FlexDirection(match value {
                 "row" => FlexDirection::Row,
                 "column" => FlexDirection::Column,
@@ -574,183 +451,6 @@ impl StyleAttr {
 
     pub fn write_xml(&self, elem: &mut BytesStart) {
         match self {
-            StyleAttr::Position(pos) => {
-                elem.push_attribute((
-                    "position",
-                    match pos {
-                        PositionType::Absolute => "absolute",
-                        PositionType::Relative => "relative",
-                    },
-                ));
-            }
-
-            StyleAttr::Overflow(ov) => {
-                elem.push_attribute((
-                    "overflow",
-                    match ov {
-                        OverflowAxis::Clip => "clip",
-                        OverflowAxis::Visible => "visible",
-                    },
-                ));
-            }
-
-            StyleAttr::OverflowX(ov) => {
-                elem.push_attribute((
-                    "overflow-x",
-                    match ov {
-                        OverflowAxis::Clip => "clip",
-                        OverflowAxis::Visible => "visible",
-                    },
-                ));
-            }
-
-            StyleAttr::OverflowY(ov) => {
-                elem.push_attribute((
-                    "overflow-y",
-                    match ov {
-                        OverflowAxis::Clip => "clip",
-                        OverflowAxis::Visible => "visible",
-                    },
-                ));
-            }
-
-            StyleAttr::Direction(dir) => {
-                elem.push_attribute((
-                    "direction",
-                    match dir {
-                        bevy::ui::Direction::Inherit => "inherit",
-                        bevy::ui::Direction::LeftToRight => "ltr",
-                        bevy::ui::Direction::RightToLeft => "rtl",
-                    },
-                ));
-            }
-
-            // StyleAttr::Left(val) => {
-            //     elem.push_attribute(("left", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::Right(val) => {
-            //     elem.push_attribute(("right", val.to_string()));
-            // }
-            // StyleAttr::Top(val) => {
-            //     elem.push_attribute(("top", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::Bottom(val) => {
-            //     elem.push_attribute(("bottom", StyleAttr::val_to_str(*val).as_str()));
-            // }
-
-            // StyleAttr::Width(val) => {
-            //     elem.push_attribute(("width", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::Height(val) => {
-            //     elem.push_attribute(("height", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::MinWidth(val) => {
-            //     elem.push_attribute(("min-width", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::MinHeight(val) => {
-            //     elem.push_attribute(("min-height", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::MaxWidth(val) => {
-            //     elem.push_attribute(("max-width", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            // StyleAttr::MaxHeight(val) => {
-            //     elem.push_attribute(("max-height", StyleAttr::val_to_str(*val).as_str()));
-            // }
-            StyleAttr::AlignItems(align) => {
-                elem.push_attribute((
-                    "align-items",
-                    match align {
-                        AlignItems::Default => "default",
-                        AlignItems::Start => "start",
-                        AlignItems::End => "end",
-                        AlignItems::FlexStart => "flex-start",
-                        AlignItems::FlexEnd => "flex-end",
-                        AlignItems::Center => "center",
-                        AlignItems::Baseline => "baseline",
-                        AlignItems::Stretch => "stretch",
-                    },
-                ));
-            }
-
-            StyleAttr::JustifyItems(align) => {
-                elem.push_attribute((
-                    "justify-items",
-                    match align {
-                        JustifyItems::Default => "default",
-                        JustifyItems::Start => "start",
-                        JustifyItems::End => "end",
-                        JustifyItems::Center => "center",
-                        JustifyItems::Baseline => "baseline",
-                        JustifyItems::Stretch => "stretch",
-                    },
-                ));
-            }
-
-            StyleAttr::AlignSelf(align) => {
-                elem.push_attribute((
-                    "align-self",
-                    match align {
-                        AlignSelf::Auto => "auto",
-                        AlignSelf::Start => "start",
-                        AlignSelf::End => "end",
-                        AlignSelf::FlexStart => "flex-start",
-                        AlignSelf::FlexEnd => "flex-end",
-                        AlignSelf::Center => "center",
-                        AlignSelf::Baseline => "baseline",
-                        AlignSelf::Stretch => "stretch",
-                    },
-                ));
-            }
-
-            StyleAttr::JustifySelf(align) => {
-                elem.push_attribute((
-                    "justify-self",
-                    match align {
-                        JustifySelf::Auto => "auto",
-                        JustifySelf::Start => "start",
-                        JustifySelf::End => "end",
-                        JustifySelf::Center => "center",
-                        JustifySelf::Baseline => "baseline",
-                        JustifySelf::Stretch => "stretch",
-                    },
-                ));
-            }
-
-            StyleAttr::AlignContent(align) => {
-                elem.push_attribute((
-                    "align-content",
-                    match align {
-                        AlignContent::Default => "default",
-                        AlignContent::Start => "start",
-                        AlignContent::End => "end",
-                        AlignContent::FlexStart => "flex-start",
-                        AlignContent::FlexEnd => "flex-end",
-                        AlignContent::Center => "center",
-                        AlignContent::Stretch => "stretch",
-                        AlignContent::SpaceBetween => "space-between",
-                        AlignContent::SpaceAround => "space-around",
-                        AlignContent::SpaceEvenly => "space-evenly",
-                    },
-                ));
-            }
-
-            StyleAttr::JustifyContent(align) => {
-                elem.push_attribute((
-                    "justify-content",
-                    match align {
-                        JustifyContent::Default => "default",
-                        JustifyContent::Start => "start",
-                        JustifyContent::End => "end",
-                        JustifyContent::FlexStart => "flex-start",
-                        JustifyContent::FlexEnd => "flex-end",
-                        JustifyContent::Center => "center",
-                        JustifyContent::SpaceBetween => "space-between",
-                        JustifyContent::SpaceAround => "space-around",
-                        JustifyContent::SpaceEvenly => "space-evenly",
-                    },
-                ));
-            }
-
             StyleAttr::FlexDirection(dir) => {
                 elem.push_attribute((
                     "flex-direction",
@@ -1087,52 +787,6 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-        assert_eq!(
-            StyleAttr::parse(b"position", "absolute").unwrap().unwrap(),
-            StyleAttr::Position(bevy::ui::PositionType::Absolute)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"position", "relative").unwrap().unwrap(),
-            StyleAttr::Position(bevy::ui::PositionType::Relative)
-        );
-
-        assert_eq!(
-            StyleAttr::parse(b"overflow", "clip").unwrap().unwrap(),
-            StyleAttr::Overflow(bevy::ui::OverflowAxis::Clip)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"overflow", "visible").unwrap().unwrap(),
-            StyleAttr::Overflow(bevy::ui::OverflowAxis::Visible)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"overflow-x", "clip").unwrap().unwrap(),
-            StyleAttr::OverflowX(bevy::ui::OverflowAxis::Clip)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"overflow-x", "visible").unwrap().unwrap(),
-            StyleAttr::OverflowX(bevy::ui::OverflowAxis::Visible)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"overflow-y", "clip").unwrap().unwrap(),
-            StyleAttr::OverflowY(bevy::ui::OverflowAxis::Clip)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"overflow-y", "visible").unwrap().unwrap(),
-            StyleAttr::OverflowY(bevy::ui::OverflowAxis::Visible)
-        );
-
-        assert_eq!(
-            StyleAttr::parse(b"direction", "inherit").unwrap().unwrap(),
-            StyleAttr::Direction(bevy::ui::Direction::Inherit)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"direction", "ltr").unwrap().unwrap(),
-            StyleAttr::Direction(bevy::ui::Direction::LeftToRight)
-        );
-        assert_eq!(
-            StyleAttr::parse(b"direction", "rtl").unwrap().unwrap(),
-            StyleAttr::Direction(bevy::ui::Direction::RightToLeft)
-        );
 
         //         //     // pub aspect_ratio: StyleProp<f32>,
         //         b"align-items" => StyleAttr::AlignItems(match value {

@@ -67,12 +67,18 @@ impl<'a> Serialize for Style<'a> {
             serializer.serialize_struct("StyleMap", self.attrs.len() + has_vars + has_selectors)?;
         for attr in self.attrs.iter() {
             match attr {
+                StyleAttr::BackgroundImage(val) => st.serialize_field("background-image", val)?,
                 StyleAttr::BackgroundColor(val) => st.serialize_field("background-color", val)?,
                 StyleAttr::BorderColor(val) => st.serialize_field("border-color", val)?,
                 StyleAttr::Color(val) => st.serialize_field("color", val)?,
                 StyleAttr::ZIndex(val) => st.serialize_field("z-index", val)?,
 
                 StyleAttr::Display(val) => st.serialize_field("display", val)?,
+                StyleAttr::Position(val) => st.serialize_field("position", val)?,
+                StyleAttr::Overflow(val) => st.serialize_field("overflow", val)?,
+                StyleAttr::OverflowX(val) => st.serialize_field("overflow-x", val)?,
+                StyleAttr::OverflowY(val) => st.serialize_field("overflow-y", val)?,
+                StyleAttr::Direction(val) => st.serialize_field("direction", val)?,
 
                 StyleAttr::Left(val) => st.serialize_field("left", val)?,
                 StyleAttr::Right(val) => st.serialize_field("right", val)?,
@@ -85,6 +91,13 @@ impl<'a> Serialize for Style<'a> {
                 StyleAttr::MinHeight(val) => st.serialize_field("min-height", val)?,
                 StyleAttr::MaxWidth(val) => st.serialize_field("max-width", val)?,
                 StyleAttr::MaxHeight(val) => st.serialize_field("max-height", val)?,
+
+                StyleAttr::AlignItems(val) => st.serialize_field("align-items", val)?,
+                StyleAttr::AlignContent(val) => st.serialize_field("align-content", val)?,
+                StyleAttr::AlignSelf(val) => st.serialize_field("align-self", val)?,
+                StyleAttr::JustifyItems(val) => st.serialize_field("justify-items", val)?,
+                StyleAttr::JustifyContent(val) => st.serialize_field("justify-content", val)?,
+                StyleAttr::JustifySelf(val) => st.serialize_field("justify-self", val)?,
 
                 StyleAttr::Margin(val) => st.serialize_field("margin", val)?,
                 StyleAttr::MarginLeft(val) => st.serialize_field("margin-left", val)?,
@@ -124,12 +137,18 @@ impl<'a> Serialize for Style<'a> {
 
 const FIELDS: &'static [&'static str] = &[
     // Colors
+    "background-image",
     "background-color",
     "border-color",
     "color",
     // Positioning
     "z-index",
     "display",
+    "position",
+    "overflow",
+    "overflow-x",
+    "overflow-y",
+    "direction",
     // Rect
     "left",
     "right",
@@ -142,6 +161,13 @@ const FIELDS: &'static [&'static str] = &[
     "min-height",
     "max-width",
     "max-height",
+    // Flex-alignment
+    "align-items",
+    "align-self",
+    "align-content",
+    "justify-items",
+    "justify-self",
+    "justify-content",
     // Margins
     "margin",
     "margin-left",
@@ -175,17 +201,18 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
         #[derive(Deserialize)]
         #[serde(field_identifier, rename_all = "kebab-case")]
         enum Field {
+            BackgroundImage,
             BackgroundColor,
             BorderColor,
             Color,
 
             ZIndex,
             Display,
-            // Position(bevy::ui::PositionType),
-            // Overflow(bevy::ui::OverflowAxis),
-            // OverflowX(bevy::ui::OverflowAxis),
-            // OverflowY(bevy::ui::OverflowAxis),
-            // Direction(bevy::ui::Direction),
+            Position,
+            Overflow,
+            OverflowX,
+            OverflowY,
+            Direction,
             Left,
             Right,
             Top,
@@ -198,13 +225,14 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
             MaxWidth,
             MaxHeight,
 
-            // // pub aspect_ratio: StyleProp<f32>,
-            // AlignItems(bevy::ui::AlignItems),
-            // JustifyItems(bevy::ui::JustifyItems),
-            // AlignSelf(bevy::ui::AlignSelf),
-            // JustifySelf(bevy::ui::JustifySelf),
-            // AlignContent(bevy::ui::AlignContent),
-            // JustifyContent(bevy::ui::JustifyContent),
+            // pub aspect_ratio: StyleProp<f32>,
+            AlignItems,
+            JustifyItems,
+            AlignSelf,
+            JustifySelf,
+            AlignContent,
+            JustifyContent,
+
             Margin,
             MarginLeft,
             MarginRight,
@@ -272,6 +300,9 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
 
                 while let Some(key) = map.next_key()? {
                     match key {
+                        Field::BackgroundImage => {
+                            attrs.push(SA::BackgroundImage(map.next_value::<Expr>()?))
+                        }
                         Field::BackgroundColor => {
                             attrs.push(SA::BackgroundColor(map.next_value::<Expr>()?))
                         }
@@ -285,6 +316,31 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
                             let mut val = map.next_value::<Expr>()?;
                             val.optimize(TypeHint::Display);
                             attrs.push(SA::Display(val))
+                        }
+                        Field::Position => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Position);
+                            attrs.push(SA::Position(val))
+                        }
+                        Field::Overflow => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::OverflowAxis);
+                            attrs.push(SA::Overflow(val))
+                        }
+                        Field::OverflowX => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::OverflowAxis);
+                            attrs.push(SA::OverflowX(val))
+                        }
+                        Field::OverflowY => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::OverflowAxis);
+                            attrs.push(SA::OverflowY(val))
+                        }
+                        Field::Direction => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Direction);
+                            attrs.push(SA::Direction(val))
                         }
 
                         Field::Left => {
@@ -345,6 +401,38 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
                             let mut val = map.next_value::<Expr>()?;
                             val.optimize(TypeHint::Length);
                             attrs.push(SA::MaxHeight(val))
+                        }
+
+                        Field::AlignItems => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::AlignItems);
+                            attrs.push(SA::AlignItems(val))
+                        }
+                        Field::AlignContent => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::AlignContent);
+                            attrs.push(SA::AlignContent(val))
+                        }
+                        Field::AlignSelf => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::AlignSelf);
+                            attrs.push(SA::AlignSelf(val))
+                        }
+
+                        Field::JustifyItems => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::JustifyItems);
+                            attrs.push(SA::JustifyItems(val))
+                        }
+                        Field::JustifyContent => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::JustifyContent);
+                            attrs.push(SA::JustifyContent(val))
+                        }
+                        Field::JustifySelf => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::JustifySelf);
+                            attrs.push(SA::JustifySelf(val))
                         }
 
                         Field::Margin => {
@@ -533,6 +621,201 @@ mod tests {
         assert_eq!(
             des.attrs[0],
             StyleAttr::Display(Expr::Display(ui::Display::Grid))
+        );
+    }
+
+    #[test]
+    fn test_serialize_position() {
+        let map = Style::from_attrs(&[StyleAttr::Position(Expr::PositionType(
+            ui::PositionType::Relative,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"position":"relative"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_position() {
+        let des = serde_json::from_str::<Style>(r#"{"position":"relative"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Position(Expr::PositionType(ui::PositionType::Relative,))
+        );
+    }
+
+    #[test]
+    fn test_serialize_overflow() {
+        let map = Style::from_attrs(&[StyleAttr::Overflow(Expr::OverflowAxis(
+            ui::OverflowAxis::Clip,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"overflow":"clip"}"#);
+
+        let map = Style::from_attrs(&[StyleAttr::OverflowX(Expr::OverflowAxis(
+            ui::OverflowAxis::Clip,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"overflow-x":"clip"}"#);
+
+        let map = Style::from_attrs(&[StyleAttr::OverflowY(Expr::OverflowAxis(
+            ui::OverflowAxis::Clip,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"overflow-y":"clip"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_overflow() {
+        let des = serde_json::from_str::<Style>(r#"{"overflow":"clip"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Overflow(Expr::OverflowAxis(ui::OverflowAxis::Clip,))
+        );
+
+        let des = serde_json::from_str::<Style>(r#"{"overflow-x":"clip"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::OverflowX(Expr::OverflowAxis(ui::OverflowAxis::Clip,))
+        );
+
+        let des = serde_json::from_str::<Style>(r#"{"overflow-y":"clip"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::OverflowY(Expr::OverflowAxis(ui::OverflowAxis::Clip,))
+        );
+    }
+
+    #[test]
+    fn test_serialize_direction() {
+        let map = Style::from_attrs(&[StyleAttr::Direction(Expr::Direction(
+            ui::Direction::LeftToRight,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"direction":"ltr"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_direction() {
+        let des = serde_json::from_str::<Style>(r#"{"direction":"ltr"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::Direction(Expr::Direction(ui::Direction::LeftToRight,))
+        );
+    }
+
+    #[test]
+    fn test_serialize_align_items() {
+        let map = Style::from_attrs(&[StyleAttr::AlignItems(Expr::AlignItems(
+            ui::AlignItems::Start,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"align-items":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_align_items() {
+        let des = serde_json::from_str::<Style>(r#"{"align-items":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::AlignItems(Expr::AlignItems(ui::AlignItems::Start))
+        );
+    }
+
+    #[test]
+    fn test_serialize_align_content() {
+        let map = Style::from_attrs(&[StyleAttr::AlignContent(Expr::AlignContent(
+            ui::AlignContent::Start,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"align-content":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_align_content() {
+        let des = serde_json::from_str::<Style>(r#"{"align-content":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::AlignContent(Expr::AlignContent(ui::AlignContent::Start))
+        );
+    }
+
+    #[test]
+    fn test_serialize_align_self() {
+        let map = Style::from_attrs(&[StyleAttr::AlignSelf(Expr::AlignSelf(ui::AlignSelf::Start))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"align-self":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_align_self() {
+        let des = serde_json::from_str::<Style>(r#"{"align-self":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::AlignSelf(Expr::AlignSelf(ui::AlignSelf::Start))
+        );
+    }
+
+    #[test]
+    fn test_serialize_justify_items() {
+        let map = Style::from_attrs(&[StyleAttr::JustifyItems(Expr::JustifyItems(
+            ui::JustifyItems::Start,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"justify-items":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_justify_items() {
+        let des = serde_json::from_str::<Style>(r#"{"justify-items":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::JustifyItems(Expr::JustifyItems(ui::JustifyItems::Start))
+        );
+    }
+
+    #[test]
+    fn test_serialize_justify_content() {
+        let map = Style::from_attrs(&[StyleAttr::JustifyContent(Expr::JustifyContent(
+            ui::JustifyContent::Start,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"justify-content":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_justify_content() {
+        let des = serde_json::from_str::<Style>(r#"{"justify-content":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::JustifyContent(Expr::JustifyContent(ui::JustifyContent::Start))
+        );
+    }
+
+    #[test]
+    fn test_serialize_justify_self() {
+        let map = Style::from_attrs(&[StyleAttr::JustifySelf(Expr::JustifySelf(
+            ui::JustifySelf::Start,
+        ))]);
+        let ser = serde_json::to_string(&map);
+        assert_eq!(ser.unwrap(), r#"{"justify-self":"start"}"#);
+    }
+
+    #[test]
+    fn test_deserialize_justify_self() {
+        let des = serde_json::from_str::<Style>(r#"{"justify-self":"start"}"#).unwrap();
+        assert_eq!(des.attrs.len(), 1);
+        assert_eq!(
+            des.attrs[0],
+            StyleAttr::JustifySelf(Expr::JustifySelf(ui::JustifySelf::Start))
         );
     }
 

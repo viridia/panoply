@@ -51,11 +51,9 @@
         "display": "grid"
       },
       "background-patch": {
-        "image": "var(--button-image)",
+        "background-image": "var(--button-image)",
         "selectors": {
-          ".disabled > * > &": {
-            // "opacity": 0.5
-          }
+          ".disabled > * > &": {}
         }
       }
     },

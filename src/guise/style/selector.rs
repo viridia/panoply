@@ -11,6 +11,12 @@ use winnow::{
 /// Represents a predicate which can be used to conditionally style a node.
 /// Selectors support a subset of CSS grammar:
 ///
+/// * Current element (`&`)
+/// * Classname matching
+/// * Parent element (`>`) pattern
+/// * Multiple patterns can be specified by commas.
+///
+/// Examples:
 /// ```
 ///   &
 ///   &.name
@@ -18,7 +24,10 @@ use winnow::{
 ///   .state > * > &.name
 /// ```
 ///
-/// The last selector in an expression must be the current element ('&').
+/// Selectors must target the "current element": this means that the "`&`" selector is
+/// required, and it can only appear on the last term of the selector expression. This means
+/// that parent elements cannot implicitly style their children; child elements must have styles
+/// explicitly specified (although those styles can be conditional on the state of their parents).
 #[derive(Debug, PartialEq, Clone)]
 pub enum Selector<'a> {
     /// If we reach this state, it means the match was successful

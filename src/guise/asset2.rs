@@ -32,11 +32,13 @@ impl AssetLoader for GuiseTemplatesLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let _templates: TemplatesSerial =
+            let entries: TemplatesSerial =
                 serde_json::from_slice(bytes).expect("unable to decode templates");
-            let result: TemplatesAsset = TemplatesAsset {};
+            entries.styles.iter().for_each(|(key, style)| {
+                // load_context.set_labeled_asset(key, LoadedAsset::new(*style));
+            });
 
-            load_context.set_default_asset(LoadedAsset::new(result));
+            // load_context.set_default_asset(LoadedAsset::new(result));
             Ok(())
         })
     }

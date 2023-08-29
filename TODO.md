@@ -5,11 +5,9 @@
     * Picking
     * Splitters
   * Styles
-    * Selectors - parse
+    * Image prop
     * Selectors - eval
-    * Vars - define
     * Vars - use
-    * Deserialize sheet
     * Inherited props
     * Finish unit tests
   * Guise Bundle type
