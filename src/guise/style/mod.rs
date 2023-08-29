@@ -4,9 +4,11 @@ mod expr;
 mod expr_list;
 mod partial;
 mod selector;
+mod selectors_map;
 mod style;
 mod style_attr;
 mod style_catalog;
+mod vars_map;
 // mod style_value;
 
 pub use computed::*;

@@ -25,6 +25,15 @@
         }
       },
       "additionalProperties": false
+    },
+    "fonts": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+          "$ref": "#/definitions/font"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,
@@ -131,6 +140,25 @@
       },
       "required": ["content"],
       "additionalProperties": false
+    },
+    "font": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "src": {
+            "type": "string"
+          },
+          "font-weight": {
+            "enum": ["nornal", "bold"]
+          },
+          "font-style": {
+            "enum": ["nornmal", "italic"]
+          }
+        },
+        "required": ["src"],
+        "additionalProperties": false
+      }
     }
   }
 }

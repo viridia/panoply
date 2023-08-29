@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 
 use winnow::{
     ascii::space0,
@@ -130,6 +130,41 @@ impl<'a> std::str::FromStr for Selector<'a> {
     }
 }
 
+impl<'a> fmt::Display for Selector<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Selector::Accept => Ok(()),
+            Selector::Current(prev) => {
+                // Because 'current' comes first, reverse order
+                let mut str = String::with_capacity(64);
+                let mut p = prev.as_ref();
+                while let Selector::Class(name, desc) = p {
+                    str.insert_str(0, name);
+                    str.insert_str(0, ".");
+                    p = desc.as_ref()
+                }
+                str.insert_str(0, "&");
+                write!(f, "{}{}", p, str)
+            }
+
+            Selector::Class(name, prev) => write!(f, "{}.{}", prev, name),
+            Selector::Parent(prev) => match prev.as_ref() {
+                Selector::Parent(_) => write!(f, "{}* > ", prev),
+                _ => write!(f, "{} > ", prev),
+            },
+            Selector::Either(items) => {
+                for (index, item) in items.iter().enumerate() {
+                    if index > 0 {
+                        write!(f, ", ")?;
+                    }
+                    item.fmt(f)?
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -139,6 +174,45 @@ mod tests {
         assert_eq!(
             "&".parse::<Selector>().unwrap(),
             Selector::Current(Box::new(Selector::Accept))
+        );
+    }
+
+    #[test]
+    fn test_serialize() {
+        assert_eq!(
+            Selector::Current(Box::new(Selector::Accept)).to_string(),
+            "&",
+        );
+        assert_eq!(
+            Selector::Class("x".to_owned().into(), Box::new(Selector::Accept)).to_string(),
+            ".x",
+        );
+        assert_eq!(
+            ".foo > &.bar".parse::<Selector>().unwrap().to_string(),
+            ".foo > &.bar",
+        );
+        assert_eq!(
+            ".foo > .bar.baz".parse::<Selector>().unwrap().to_string(),
+            ".foo > .bar.baz",
+        );
+        assert_eq!(
+            ".foo > * > .bar".parse::<Selector>().unwrap().to_string(),
+            ".foo > * > .bar",
+        );
+        assert_eq!(
+            ".foo > &.bar.baz".parse::<Selector>().unwrap().to_string(),
+            ".foo > &.bar.baz",
+        );
+        assert_eq!(
+            ".a.b.c > .d.e.f > &.g.h.i"
+                .parse::<Selector>()
+                .unwrap()
+                .to_string(),
+            ".a.b.c > .d.e.f > &.g.h.i",
+        );
+        assert_eq!(
+            ".foo, .bar".parse::<Selector>().unwrap().to_string(),
+            ".foo, .bar",
         );
     }
 

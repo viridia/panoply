@@ -1,12 +1,11 @@
-use std::{borrow::Cow, fmt, marker::PhantomData};
+use std::fmt;
 
 use crate::guise::style::{
     expr::{Expr, TypeHint},
     expr_list::ExprList,
 };
 
-use super::{Selector, StyleAttr};
-use bevy::utils::HashMap;
+use super::{selectors_map::SelectorsMap, vars_map::VarsMap, StyleAttr};
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
@@ -19,26 +18,26 @@ pub struct Style<'a> {
     attrs: Vec<StyleAttr>,
 
     /// List of style variables to define when this style is invoked.
-    vars: HashMap<Cow<'a, str>, Expr>,
+    vars: VarsMap<'a>,
 
     /// List of conditional styles
-    selectors: Vec<(Selector, Box<Style<'a>>)>,
+    selectors: SelectorsMap<'a>,
 }
 
 impl<'a> Style<'a> {
     pub fn new() -> Self {
         Self {
             attrs: Vec::new(),
-            vars: HashMap::new(),
-            selectors: Vec::new(),
+            vars: VarsMap::new(),
+            selectors: SelectorsMap::new(),
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             attrs: Vec::with_capacity(capacity),
-            vars: HashMap::new(),
-            selectors: Vec::new(),
+            vars: VarsMap::new(),
+            selectors: SelectorsMap::new(),
         }
     }
 
@@ -46,8 +45,8 @@ impl<'a> Style<'a> {
     pub fn from_attrs(attrs: &[StyleAttr]) -> Self {
         Self {
             attrs: Vec::from(attrs),
-            vars: HashMap::new(),
-            selectors: Vec::new(),
+            vars: VarsMap::new(),
+            selectors: SelectorsMap::new(),
         }
     }
 
@@ -62,7 +61,10 @@ impl<'a> Serialize for Style<'a> {
     where
         S: serde::Serializer,
     {
-        let mut st = serializer.serialize_struct("StyleMap", self.attrs.len())?;
+        let has_vars: usize = if self.vars.len() > 0 { 1 } else { 0 };
+        let has_selectors: usize = if self.selectors.len() > 0 { 1 } else { 0 };
+        let mut st =
+            serializer.serialize_struct("StyleMap", self.attrs.len() + has_vars + has_selectors)?;
         for attr in self.attrs.iter() {
             match attr {
                 StyleAttr::BackgroundColor(val) => st.serialize_field("background-color", val)?,
@@ -107,6 +109,15 @@ impl<'a> Serialize for Style<'a> {
                 _ => todo!("Implement serialization for {:?}", attr),
             };
         }
+
+        if self.vars.len() > 0 {
+            st.serialize_field("vars", &self.vars)?;
+        }
+
+        if self.selectors.len() > 0 {
+            st.serialize_field("selectors", &self.selectors)?;
+        }
+
         st.end()
     }
 }
@@ -417,10 +428,10 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
                         Field::Vars => {
-                            st.vars = map.next_value::<VarsMapSer>()?.0;
+                            st.vars = map.next_value::<VarsMap>()?;
                         }
                         Field::Selectors => {
-                            todo!()
+                            st.selectors = map.next_value::<SelectorsMap>()?;
                         }
                     }
                 }
@@ -432,55 +443,11 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
     }
 }
 
-struct VarsMapSer<'a>(HashMap<Cow<'a, str>, Expr>);
-
-impl<'de, 'a> Deserialize<'de> for VarsMapSer<'a> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_map(VarsMapVisitor::<'a> {
-            marker: &PhantomData,
-        })
-    }
-}
-
-struct VarsMapVisitor<'a> {
-    marker: &'a PhantomData<()>,
-}
-
-impl<'de, 'a> Visitor<'de> for VarsMapVisitor<'a> {
-    type Value = VarsMapSer<'a>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("style definition")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::MapAccess<'de>,
-        A::Error: serde::de::Error,
-    {
-        let mut result: HashMap<Cow<'a, str>, Expr> =
-            HashMap::with_capacity(map.size_hint().unwrap_or(0));
-        while let Some(key) = map.next_key::<String>()? {
-            let expr = map.next_value::<Expr>()?;
-            if key.starts_with("--") {
-                result.insert(key[2..].to_owned().into(), expr);
-            } else {
-                return Err(serde::de::Error::invalid_type(
-                    serde::de::Unexpected::Str(&key),
-                    &"Expression list",
-                ));
-            }
-        }
-        Ok(VarsMapSer(result))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use bevy::ui;
+
+    use crate::guise::style::selector::Selector;
 
     use super::*;
 
@@ -654,5 +621,43 @@ mod tests {
             des.vars.get("bg").unwrap(),
             &Expr::Ident("auto".to_string())
         );
+    }
+
+    #[test]
+    fn test_serialize_vars() {
+        let mut style = Style::new();
+        style.vars.insert("x".into(), Expr::Number(7.));
+        let ser = serde_json::to_string(&style);
+        assert_eq!(ser.unwrap(), r#"{"vars":{"--x":7}}"#);
+    }
+
+    #[test]
+    fn test_deserialize_selectors() {
+        let des = serde_json::from_str::<Style>(r#"{"selectors":{}}"#).unwrap();
+        assert_eq!(des.selectors.len(), 0);
+
+        let des =
+            serde_json::from_str::<Style>(r#"{"selectors":{"&.name": {"margin":0}}}"#).unwrap();
+        assert_eq!(des.selectors.len(), 1);
+        let (ref sel, ref style) = des.selectors.entries()[0];
+        assert_eq!(
+            sel,
+            &Selector::Current(Box::new(Selector::Class(
+                "name".into(),
+                Box::new(Selector::Accept)
+            )))
+        );
+        assert_eq!(style.len_attrs(), 1);
+    }
+
+    #[test]
+    fn test_serialize_selectors() {
+        let mut style = Style::new();
+        style.selectors.insert(
+            Selector::Current(Box::new(Selector::Accept)),
+            Box::new(Style::new()),
+        );
+        let ser = serde_json::to_string(&style);
+        assert_eq!(ser.unwrap(), r#"{"selectors":{"&":{}}}"#);
     }
 }

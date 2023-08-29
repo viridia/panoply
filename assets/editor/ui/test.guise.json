@@ -1,5 +1,25 @@
 {
   "$schema": "../../../schemas/guise.schema.json",
+  "fonts": {
+    "Rubik": [
+      {
+        "src": "asset(../fonts/Rubik/Rubik-VariableFont_wght.ttf)"
+      },
+      {
+        "src": "asset(../fonts/Rubik/Rubik-VariableFont_wght.ttf)",
+        "font-weight": "bold"
+      },
+      {
+        "src": "asset(../fonts/Rubik/Rubik-Italic-VariableFont_wght.ttf)",
+        "font-style": "italic"
+      },
+      {
+        "src": "asset(../fonts/Rubik/Rubik-Italic-VariableFont_wght.ttf)",
+        "font-weight": "bold",
+        "font-style": "italic"
+      }
+    ]
+  },
   "styles": {
     "obs-button": {
       "base": {
