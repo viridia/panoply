@@ -32,7 +32,7 @@ pub enum Expr {
     /// A color value
     Color(ColorValue),
 
-    /// A reference to an asset
+    /// A reference to an asset: "asset(path)"
     Asset(String),
 
     /// A reference to a named style variable.
