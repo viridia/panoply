@@ -1,6 +1,5 @@
 use bevy::{prelude::Color, text::BreakLineOn, ui::*};
 use lazy_static::lazy_static;
-use quick_xml::events::BytesStart;
 use regex::Regex;
 use std::str::FromStr;
 
@@ -475,85 +474,85 @@ impl StyleAttr {
         }))
     }
 
-    pub fn write_xml(&self, elem: &mut BytesStart) {
-        match self {
-            StyleAttr::FlexDirection(dir) => {
-                elem.push_attribute((
-                    "flex-direction",
-                    match dir {
-                        bevy::ui::FlexDirection::Row => "row",
-                        bevy::ui::FlexDirection::Column => "column",
-                        bevy::ui::FlexDirection::RowReverse => "row-reverse",
-                        bevy::ui::FlexDirection::ColumnReverse => "column-reverse",
-                    },
-                ));
-            }
+    // pub fn write_xml(&self, elem: &mut BytesStart) {
+    //     match self {
+    //         StyleAttr::FlexDirection(dir) => {
+    //             elem.push_attribute((
+    //                 "flex-direction",
+    //                 match dir {
+    //                     bevy::ui::FlexDirection::Row => "row",
+    //                     bevy::ui::FlexDirection::Column => "column",
+    //                     bevy::ui::FlexDirection::RowReverse => "row-reverse",
+    //                     bevy::ui::FlexDirection::ColumnReverse => "column-reverse",
+    //                 },
+    //             ));
+    //         }
 
-            StyleAttr::FlexWrap(dir) => {
-                elem.push_attribute((
-                    "flex-wrap",
-                    match dir {
-                        bevy::ui::FlexWrap::NoWrap => "nowrap",
-                        bevy::ui::FlexWrap::Wrap => "wrap",
-                        bevy::ui::FlexWrap::WrapReverse => "wrap-reverse",
-                    },
-                ));
-            }
+    //         StyleAttr::FlexWrap(dir) => {
+    //             elem.push_attribute((
+    //                 "flex-wrap",
+    //                 match dir {
+    //                     bevy::ui::FlexWrap::NoWrap => "nowrap",
+    //                     bevy::ui::FlexWrap::Wrap => "wrap",
+    //                     bevy::ui::FlexWrap::WrapReverse => "wrap-reverse",
+    //                 },
+    //             ));
+    //         }
 
-            StyleAttr::GridAutoFlow(val) => {
-                elem.push_attribute((
-                    "grid-auto-flow",
-                    match val {
-                        GridAutoFlow::Row => "row",
-                        GridAutoFlow::Column => "column",
-                        GridAutoFlow::RowDense => "row-dense",
-                        GridAutoFlow::ColumnDense => "column-dense",
-                    },
-                ));
-            }
+    //         StyleAttr::GridAutoFlow(val) => {
+    //             elem.push_attribute((
+    //                 "grid-auto-flow",
+    //                 match val {
+    //                     GridAutoFlow::Row => "row",
+    //                     GridAutoFlow::Column => "column",
+    //                     GridAutoFlow::RowDense => "row-dense",
+    //                     GridAutoFlow::ColumnDense => "column-dense",
+    //                 },
+    //             ));
+    //         }
 
-            StyleAttr::GridRow(_) => {
-                panic!("Unsupported, can't write GridPlacement");
-            }
-            StyleAttr::GridRowStart(val) => {
-                elem.push_attribute(("grid-row-start", i16::to_string(val).as_str()));
-            }
-            StyleAttr::GridRowSpan(val) => {
-                elem.push_attribute(("grid-row-span", u16::to_string(val).as_str()));
-            }
-            StyleAttr::GridRowEnd(val) => {
-                elem.push_attribute(("grid-row-end", i16::to_string(val).as_str()));
-            }
+    //         StyleAttr::GridRow(_) => {
+    //             panic!("Unsupported, can't write GridPlacement");
+    //         }
+    //         StyleAttr::GridRowStart(val) => {
+    //             elem.push_attribute(("grid-row-start", i16::to_string(val).as_str()));
+    //         }
+    //         StyleAttr::GridRowSpan(val) => {
+    //             elem.push_attribute(("grid-row-span", u16::to_string(val).as_str()));
+    //         }
+    //         StyleAttr::GridRowEnd(val) => {
+    //             elem.push_attribute(("grid-row-end", i16::to_string(val).as_str()));
+    //         }
 
-            StyleAttr::GridColumn(_) => {
-                panic!("Unsupported, can't write GridPlacement");
-            }
-            StyleAttr::GridColumnStart(val) => {
-                elem.push_attribute(("grid-column-start", i16::to_string(val).as_str()));
-            }
-            StyleAttr::GridColumnSpan(val) => {
-                elem.push_attribute(("grid-column-span", u16::to_string(val).as_str()));
-            }
-            StyleAttr::GridColumnEnd(val) => {
-                elem.push_attribute(("grid-column-end", i16::to_string(val).as_str()));
-            }
+    //         StyleAttr::GridColumn(_) => {
+    //             panic!("Unsupported, can't write GridPlacement");
+    //         }
+    //         StyleAttr::GridColumnStart(val) => {
+    //             elem.push_attribute(("grid-column-start", i16::to_string(val).as_str()));
+    //         }
+    //         StyleAttr::GridColumnSpan(val) => {
+    //             elem.push_attribute(("grid-column-span", u16::to_string(val).as_str()));
+    //         }
+    //         StyleAttr::GridColumnEnd(val) => {
+    //             elem.push_attribute(("grid-column-end", i16::to_string(val).as_str()));
+    //         }
 
-            StyleAttr::LineBreak(dir) => {
-                elem.push_attribute((
-                    "line-break",
-                    match dir {
-                        bevy::text::BreakLineOn::NoWrap => "nowrap",
-                        bevy::text::BreakLineOn::WordBoundary => "word",
-                        bevy::text::BreakLineOn::AnyCharacter => "char",
-                    },
-                ));
-            }
+    //         StyleAttr::LineBreak(dir) => {
+    //             elem.push_attribute((
+    //                 "line-break",
+    //                 match dir {
+    //                     bevy::text::BreakLineOn::NoWrap => "nowrap",
+    //                     bevy::text::BreakLineOn::WordBoundary => "word",
+    //                     bevy::text::BreakLineOn::AnyCharacter => "char",
+    //                 },
+    //             ));
+    //         }
 
-            _ => {
-                todo!("Implement attr")
-            }
-        }
-    }
+    //         _ => {
+    //             todo!("Implement attr")
+    //         }
+    //     }
+    // }
 
     /// Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
     fn parse_color(str: &str) -> Result<Color, GuiseError> {

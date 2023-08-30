@@ -21,6 +21,7 @@ pub trait Controller {
         let mut computed = ComputedStyle::default();
         for handle in view.styleset_handles.iter() {
             if let Some(style) = assets.get(handle) {
+                info!("Applying style.");
                 style.apply_to(&mut computed);
             } else {
                 warn!("Failed to load style.");

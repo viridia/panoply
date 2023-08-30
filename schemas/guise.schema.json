@@ -55,13 +55,13 @@
     "style": {
       "type": "object",
       "properties": {
-        "color": {
-          "$ref": "#/definitions/color"
-        },
         "background-color": {
           "$ref": "#/definitions/color"
         },
         "border-color": {
+          "$ref": "#/definitions/color"
+        },
+        "color": {
           "$ref": "#/definitions/color"
         },
         "display": {
@@ -73,7 +73,8 @@
         "background-image": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "pattern": "asset\\(.*?\\)"
             },
             {
               "$ref": "#/definitions/var-ref"
@@ -120,17 +121,13 @@
         },
         {
           "type": "string",
-          "pattern": "^\\d+px$"
+          "pattern": "^\\d+(\\.\\d*)(px|%|vw|vh|vmin|vmax)$"
         }
       ]
     },
     "var-ref": {
-      "type": "object",
-      "properties": {
-        "var": {
-          "pattern": "^--[A-Za-z_][A-Za-z0-9_\\.-]*$"
-        }
-      }
+      "type": "string",
+      "pattern": "^var\\(--[A-Za-z_][A-Za-z0-9_\\.-]*\\)$"
     },
     "template": {
       "type": "object",

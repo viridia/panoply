@@ -311,19 +311,19 @@ impl Expr {
             Expr::List(v) if v.len() > 0 => {
                 let top = v[0].into_length()?;
                 let right = if v.len() > 1 {
-                    top
-                } else {
                     v[1].into_length()?
+                } else {
+                    top
                 };
                 let bottom = if v.len() > 2 {
-                    top
-                } else {
                     v[2].into_length()?
+                } else {
+                    top
                 };
                 let left = if v.len() > 3 {
-                    right
-                } else {
                     v[3].into_length()?
+                } else {
+                    right
                 };
                 Some(UiRect {
                     left,

@@ -126,7 +126,6 @@ pub fn create_views(
                                     if let Some(ref element) = template.content {
                                         let root = reconcile_element(
                                             &mut commands,
-                                            // &server,
                                             children.map(|list| list[0]),
                                             &element,
                                             &mut view_query,
@@ -322,8 +321,6 @@ fn reconcile_element(
 /// complicated.
 fn reconcile_template(
     commands: &mut Commands,
-    // server: &AssetServer,
-    // asset_path: &AssetPath,
     root: Entity,
     root_children: Option<&Children>,
     root_template_nodes: &TemplateNodeList,
@@ -564,15 +561,77 @@ pub fn update_view_styles(
     >,
     assets: Res<Assets<StyleAsset>>,
     server: Res<AssetServer>,
+    mut ev_style: EventReader<AssetEvent<StyleAsset>>,
 ) {
     for (entity, view, controller, _parent) in query.iter_mut() {
         let ready =
             server.get_group_load_state(view.styleset_handles.iter().map(|handle| handle.id()));
         if ready == LoadState::Loaded {
-            info!("{} styles ready", view.styleset_handles.len());
+            // info!("{} styles ready", view.styleset_handles.len());
+            for handle in view.styleset_handles.iter() {
+                let st = server.get_load_state(handle);
+                if st != LoadState::Loaded {
+                    error!("You lied: load state is {:?}", st);
+                } else {
+                    let st = assets.get(handle);
+                    if st.is_none() {
+                        error!(
+                            "Failed to load stylesheet: {:?}",
+                            server.get_handle_path(handle).unwrap()
+                        )
+                    }
+                }
+            }
+
             controller.update_styles(&mut commands, entity, &view, &assets);
         } else {
             warn!("Styles not ready!");
+        }
+    }
+
+    for ev in ev_style.iter() {
+        match ev {
+            AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
+                if let Some(asset_path) = server.get_handle_path(handle) {
+                    info!("Asset Created/Modified: Style {:?}", asset_path);
+                }
+
+                for (entity, view, controller, _parent) in query.iter() {
+                    if view.styleset_handles.iter().any(|h| h.id() == handle.id()) {
+                        println!("Found handle!");
+                    }
+                    // if let Some(ref style_handle) = view.style {
+                    //     if style_handle.eq(handle) {
+                    //         // println!("Updating styles for node: [{}]", view.element_id());
+                    //         controller.update_styles(&mut commands, entity, &view, &assets);
+                    //         commands.entity(entity).remove::<StyleHandlesChanged>();
+                    //         // view.set_changed();
+                    //     }
+                    // }
+                }
+            }
+
+            AssetEvent::Removed { handle } => {
+                if let Some(asset_path) = server.get_handle_path(handle) {
+                    warn!("Asset Removed: Style {:?}", asset_path);
+                }
+
+                for (entity, view, controller, _parent) in query.iter() {
+                    for style_handle in view.styleset_handles.iter() {
+                        if style_handle.id() == handle.id() {
+                            println!("That was still being used!");
+                        }
+                    }
+                    // if let Some(ref style_handle) = view.style {
+                    //     if style_handle.eq(handle) {
+                    //         // println!("Updating styles for node: [{}]", view.element_id());
+                    //         controller.update_styles(&mut commands, entity, &view, &assets);
+                    //         commands.entity(entity).remove::<StyleHandlesChanged>();
+                    //         // view.set_changed();
+                    //     }
+                    // }
+                }
+            }
         }
     }
 }

@@ -76,7 +76,7 @@
           {
             "type": "element",
             "id": "left",
-            "styleset": ["#/styles/sub-panel"],
+            "styleset": ["#styles/sub-panel"],
             "style": {
               "width": 200
             }
@@ -92,7 +92,7 @@
           {
             "type": "element",
             "id": "right",
-            "styleset": ["#/styles/sub-panel"],
+            "styleset": ["#styles/sub-panel"],
             "style": {
               "width": 200
             }

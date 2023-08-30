@@ -7,8 +7,6 @@ use crate::guise::{
 use super::{
     controller::Controller,
     controllers::{ButtonController, DefaultController},
-    style::PartialStyle,
-    // template_old::Template,
     view::*,
 };
 
@@ -26,7 +24,6 @@ impl Plugin for GuisePlugin {
         .add_asset_loader(GuiseTemplatesLoader)
         .add_asset::<StyleAsset>()
         .add_asset::<Template>()
-        .add_asset::<PartialStyle>()
         .register_component_as::<dyn Controller, DefaultController>()
         .register_component_as::<dyn Controller, ButtonController>()
         .register_component_as::<dyn Controller, SliderController>()
