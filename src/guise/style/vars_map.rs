@@ -6,7 +6,7 @@ use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 
 use super::Expr;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct VarsMap(HashMap<String, Expr>);
 
 impl VarsMap {

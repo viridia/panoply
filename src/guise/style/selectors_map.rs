@@ -3,10 +3,10 @@ use std::marker::PhantomData;
 
 use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 
-use super::{selector::Selector, Style};
+use super::{selector::Selector, StyleAsset};
 
-#[derive(Debug, Default, Clone)]
-pub struct SelectorsMap(Vec<(Selector, Box<Style>)>);
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct SelectorsMap(Vec<(Selector, Box<StyleAsset>)>);
 
 impl SelectorsMap {
     pub fn new() -> Self {
@@ -21,11 +21,11 @@ impl SelectorsMap {
         self.0.len()
     }
 
-    pub fn entries(&self) -> &[(Selector, Box<Style>)] {
+    pub fn entries(&self) -> &[(Selector, Box<StyleAsset>)] {
         &self.0
     }
 
-    pub fn insert(&mut self, key: Selector, value: Box<Style>) {
+    pub fn insert(&mut self, key: Selector, value: Box<StyleAsset>) {
         self.0.push((key, value))
     }
 }
@@ -77,7 +77,7 @@ impl<'de, 'a> Visitor<'de> for SelectorsMapVisitor<'a> {
             let sel = key
                 .parse::<Selector>()
                 .map_err(|err| serde::de::Error::custom(err.as_str()))?;
-            let style = map.next_value::<Style>()?;
+            let style = map.next_value::<StyleAsset>()?;
             result.0.push((sel, Box::new(style)));
         }
         Ok(result)

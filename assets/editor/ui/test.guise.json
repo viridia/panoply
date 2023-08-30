@@ -22,55 +22,48 @@
   },
   "styles": {
     "obs-button": {
-      "base": {
-        "padding": 6,
-        "background-color": "#222",
-        "border-color": "#404",
-        "vars": {
-          "--button-image": "asset(../images/button-blue.png)"
+      "padding": 6,
+      "background-color": "#222",
+      "border-color": "#404",
+      "vars": {
+        "--button-image": "asset(../images/button-blue.png)"
+      },
+      "selectors": {
+        "&.hover": {
+          "vars": {
+            "--button-image": "asset(../images/button-blue-hover.png)"
+          }
         },
-        "selectors": {
-          "&.hover": {
-            "vars": {
-              "--button-image": "asset(../images/button-blue-hover.png)"
-            }
-          },
-          "&.pressed": {
-            "vars": {
-              "--button-image": "asset(../images/button-blue-pressed.png)"
-            }
-          },
-          "&.disabled": {
-            "vars": {
-              "--button-image": "asset(../images/button-blue-disabled.png)"
-            }
+        "&.pressed": {
+          "vars": {
+            "--button-image": "asset(../images/button-blue-pressed.png)"
+          }
+        },
+        "&.disabled": {
+          "vars": {
+            "--button-image": "asset(../images/button-blue-disabled.png)"
           }
         }
-      },
-      "background": {
-        "display": "grid"
-      },
-      "background-patch": {
-        "background-image": "var(--button-image)",
-        "selectors": {
-          ".disabled > * > &": {}
-        }
+      }
+    },
+    "obs-button-background": {
+      "display": "grid"
+    },
+    "obs-button-background-patch": {
+      "background-image": "var(--button-image)",
+      "selectors": {
+        ".disabled > * > &": {}
       }
     },
     "obs-button-green": {
-      "extends": "#styles/obs-button",
-      "base": {
-        "vars": {
-          "--button-image": "asset(../images/button-green.png)"
-        }
+      "vars": {
+        "--button-image": "asset(../images/button-green.png)"
       }
     },
     "sub-panel": {
-      "base": {
-        "padding": 6,
-        "background-color": "#222",
-        "border-color": "#404"
-      }
+      "padding": 6,
+      "background-color": "#222",
+      "border-color": "#404"
     }
   },
   "templates": {
@@ -83,7 +76,7 @@
           {
             "type": "element",
             "id": "left",
-            "styleset": "#/styles/sub-panel",
+            "styleset": ["#/styles/sub-panel"],
             "style": {
               "width": 200
             }
@@ -99,7 +92,7 @@
           {
             "type": "element",
             "id": "right",
-            "styleset": "#/styles/sub-panel",
+            "styleset": ["#/styles/sub-panel"],
             "style": {
               "width": 200
             }

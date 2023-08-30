@@ -1,15 +1,14 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::guise::{
-    asset2::GuiseTemplatesLoader, controllers::SliderController, style::StyleCatalog,
+    asset::GuiseTemplatesLoader, controllers::SliderController, template::Template, StyleAsset,
 };
 
 use super::{
-    asset::GuiseLoader,
     controller::Controller,
     controllers::{ButtonController, DefaultController},
     style::PartialStyle,
-    template_old::Template,
+    // template_old::Template,
     view::*,
 };
 
@@ -24,9 +23,8 @@ impl Plugin for GuisePlugin {
             bevy_mod_picking::input::InputPlugin,
             bevy_mod_picking::backends::bevy_ui::BevyUiBackend,
         ))
-        .add_asset_loader(GuiseLoader)
         .add_asset_loader(GuiseTemplatesLoader)
-        .add_asset::<StyleCatalog>()
+        .add_asset::<StyleAsset>()
         .add_asset::<Template>()
         .add_asset::<PartialStyle>()
         .register_component_as::<dyn Controller, DefaultController>()
@@ -49,10 +47,10 @@ impl Plugin for GuisePlugin {
 }
 
 fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
-    let _handle: Handle<Template> = server.load("editor/ui/test.guise.json#templates/main");
+    // let _handle: Handle<Template> = server.load("editor/ui/test.guise.json#templates/main");
     commands.spawn((
         ViewRoot {
-            template: server.load("editor/ui/test.guise.xml#main"),
+            template: server.load("editor/ui/test.guise.json#templates/main"),
         },
         NodeBundle {
             style: Style {

@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 use super::element::Element;
 use super::text::Text;
 
-pub type NodeList = Vec<Box<Node>>;
+pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 
 #[derive(Debug, TypeUuid, TypePath, Default, Serialize, Deserialize)]
 #[uuid = "b2ce477f-e4a4-40cf-b969-916a9dbd799e"]
 pub struct Template {
     #[serde(default)]
     pub params: HashMap<String, TemplateParam>,
-    pub content: Option<Node>,
+    pub content: Option<Box<TemplateNode>>,
 }
 
 /// An instantiable template for a UI node
@@ -41,8 +41,8 @@ impl TemplateParam {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
-pub enum Node {
+pub enum TemplateNode {
     Element(Element),
-    Fragment(NodeList),
+    Fragment(TemplateNodeList),
     Text(Text),
 }

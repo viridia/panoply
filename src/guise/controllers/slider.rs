@@ -3,7 +3,7 @@ use bevy_mod_picking::prelude::*;
 
 use crate::guise::{
     controller::Controller,
-    style::{ComputedStyle, UpdateComputedStyle},
+    style::{ComputedStyle, StyleAsset, UpdateComputedStyle},
     ViewElement,
 };
 
@@ -42,9 +42,15 @@ impl Controller for SliderController {
         ));
     }
 
-    fn update_styles(&self, commands: &mut Commands, entity: Entity, view: &ViewElement) {
+    fn update_styles(
+        &self,
+        commands: &mut Commands,
+        entity: Entity,
+        view: &ViewElement,
+        assets: &Assets<StyleAsset>,
+    ) {
         let mut computed = ComputedStyle::default();
-        view.apply_base_styles(&mut computed);
+        view.apply_base_styles(&mut computed, assets);
 
         let mut classes: Vec<&str> = Vec::with_capacity(3);
         if self.disabled {

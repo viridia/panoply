@@ -1,18 +1,18 @@
 mod asset;
-mod asset2;
 mod controller;
 mod controllers;
 mod path;
 mod plugin;
 mod style;
 mod template;
-mod template_old;
+// mod template_old;
 mod view;
 
 use std::fmt;
 
 pub use controller::Controller;
 pub use plugin::*;
+pub use style::StyleAsset;
 pub use view::ViewElement;
 pub use view::ViewRoot;
 

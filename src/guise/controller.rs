@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    style::{ComputedStyle, UpdateComputedStyle},
+    style::{ComputedStyle, StyleAsset, UpdateComputedStyle},
     ViewElement,
 };
 
@@ -11,9 +11,22 @@ pub trait Controller {
     // TODO: This does nothing yet.
     fn attach(&self, _commands: &mut Commands, _entity: Entity, _view: &ViewElement) {}
 
-    fn update_styles(&self, commands: &mut Commands, entity: Entity, view: &ViewElement) {
+    fn update_styles(
+        &self,
+        commands: &mut Commands,
+        entity: Entity,
+        view: &ViewElement,
+        assets: &Assets<StyleAsset>,
+    ) {
         let mut computed = ComputedStyle::default();
-        view.apply_base_styles(&mut computed);
+        for handle in view.styleset_handles.iter() {
+            if let Some(style) = assets.get(handle) {
+                style.apply_to(&mut computed);
+            } else {
+                warn!("Failed to load style.");
+            }
+        }
+        // view.apply_base_styles(&mut computed, assets);
         view.apply_inline_styles(&mut computed);
         commands.add(UpdateComputedStyle { entity, computed });
     }

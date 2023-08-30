@@ -1,4 +1,9 @@
-use bevy::{asset::AssetPath, ecs::system::Command, prelude::*, ui::FocusPolicy};
+use bevy::{
+    asset::{AssetPath, LoadState},
+    ecs::system::Command,
+    prelude::*,
+    ui::FocusPolicy,
+};
 use bevy_trait_query::One;
 use std::sync::Arc;
 
@@ -8,8 +13,8 @@ use super::{
     controller::Controller,
     controllers::DefaultController,
     path::relative_asset_path,
-    style::PartialStyle,
-    template_old::{Template, TemplateNode, TemplateNodeList},
+    template::{Template, TemplateNode, TemplateNodeList},
+    StyleAsset,
 };
 
 /// Component that defines the root of a view hierarchy and a template invocation.
@@ -25,15 +30,20 @@ pub struct ViewElement {
     /// Element id
     pub id: Option<String>,
 
-    /// Reference to style element by name
-    pub style: Option<Arc<PartialStyle>>,
+    /// Reference to style element by name.
+    pub styleset: Vec<String>,
 
-    /// Inline styles for this view element
-    pub inline_styles: Option<Arc<PartialStyle>>,
+    /// Cached handles for stylesets.
+    pub styleset_handles: Vec<Handle<StyleAsset>>,
+
+    /// Inline styles defined on this element.
+    pub inline_style: Option<Arc<StyleAsset>>,
 
     /// ID of controller component associated with this element.
     pub controller: Option<String>,
+
     // pub controller_instance: Option<Arc<dyn Controller>>,
+    // Class names used for style selectors.
     pub classes: Vec<String>,
 }
 
@@ -46,20 +56,20 @@ impl ViewElement {
     }
 
     /// Calculate the "computed" style struct for this `ViewElement`.
-    pub fn apply_base_styles(&self, computed: &mut ComputedStyle) {
-        if let Some(ref style_handle) = self.style {
-            style_handle.apply_to(computed);
-        }
+    pub fn apply_base_styles(&self, computed: &mut ComputedStyle, assets: &Assets<StyleAsset>) {
+        // if let Some(ref style_handle) = self.style {
+        // style_handle.apply_to(computed);
+        // }
     }
 
     pub fn apply_selected_styles(&self, computed: &mut ComputedStyle, class_names: &[&str]) {
-        if let Some(ref style_handle) = self.style {
-            style_handle.apply_selected_to(computed, class_names);
-        }
+        // if let Some(ref style_handle) = self.style {
+        // style_handle.apply_selected_to(computed, class_names);
+        // }
     }
 
     pub fn apply_inline_styles(&self, computed: &mut ComputedStyle) {
-        if let Some(ref inline) = self.inline_styles {
+        if let Some(ref inline) = self.inline_style {
             inline.apply_to(computed);
         }
     }
@@ -98,7 +108,8 @@ impl Command for InsertController {
 pub fn create_views(
     mut commands: Commands,
     mut root_query: Query<(Entity, Ref<ViewRoot>, Option<&Children>)>,
-    mut view_query: Query<(&mut ViewElement, Option<&Children>)>,
+    mut view_query: Query<&mut ViewElement>,
+    view_children_query: Query<&Children, With<ViewElement>>,
     // mut text_query: Query<&Text>,
     server: Res<AssetServer>,
     assets: Res<Assets<Template>>,
@@ -112,15 +123,19 @@ pub fn create_views(
                         Some(template) => {
                             for (entity, view_root, children) in root_query.iter_mut() {
                                 if view_root.template.eq(handle) {
-                                    reconcile_template(
-                                        &mut commands,
-                                        // &server,
-                                        // &asset_path,
-                                        entity,
-                                        children,
-                                        &template.children,
-                                        &mut view_query,
-                                    );
+                                    if let Some(ref element) = template.content {
+                                        let root = reconcile_element(
+                                            &mut commands,
+                                            // &server,
+                                            children.map(|list| list[0]),
+                                            &element,
+                                            &mut view_query,
+                                            &view_children_query,
+                                            &server,
+                                            &asset_path,
+                                        );
+                                        commands.entity(entity).replace_children(&[root]);
+                                    }
                                 }
                             }
                         }
@@ -141,6 +156,162 @@ pub fn create_views(
                     warn!("Asset Removed: Template {:?}", asset_path);
                 }
             }
+        }
+    }
+}
+
+/// Function to update the view hierarchy in response to changes to the templates and params.
+/// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
+/// and re-create entire sub-trees of entities if it feels that differential updates are too
+/// complicated.
+fn reconcile_element(
+    commands: &mut Commands,
+    view_entity: Option<Entity>,
+    template_node: &Box<TemplateNode>,
+    view_query: &mut Query<&mut ViewElement>,
+    view_children_query: &Query<&Children, With<ViewElement>>,
+    server: &AssetServer,
+    asset_path: &AssetPath,
+) -> Entity {
+    match template_node.as_ref() {
+        TemplateNode::Element(template) => {
+            if let Some(view_entity) = view_entity {
+                if let Ok(mut old_view) = view_query.get_mut(view_entity) {
+                    if old_view.controller == template.controller {
+                        // Update view element node with changed properties.
+                        if old_view.id != template.id {
+                            old_view.id = template.id.clone();
+                        }
+
+                        if !old_view.styleset.eq(&template.styleset) {
+                            old_view.styleset = template.styleset.clone();
+                            let mut handles: Vec<Handle<StyleAsset>> =
+                                Vec::with_capacity(template.styleset.len());
+                            for style_path in template.styleset.iter() {
+                                handles
+                                    .push(server.load(relative_asset_path(asset_path, &style_path)))
+                            }
+                            old_view.styleset_handles = handles;
+                        }
+
+                        if old_view.inline_style != template.inline_style {
+                            old_view.inline_style = template.inline_style.clone();
+                        }
+
+                        // Visit and reconcile children
+                        let old_children: &[Entity] = match view_children_query.get(view_entity) {
+                            Ok(children) => children,
+                            _ => &[],
+                        };
+                        let old_count = old_children.len();
+                        let new_count = template.children.len();
+                        let max_index = old_count.max(new_count);
+                        let mut new_children: Vec<Entity> = Vec::with_capacity(new_count);
+                        let mut children_changed = false;
+
+                        for i in 0..max_index {
+                            if i >= new_count {
+                                // New list is smaller than the old list, so delete excess entities.
+                                commands.entity(old_children[i]).despawn_recursive();
+                                children_changed = true;
+                            } else {
+                                let old_child = if i < old_count {
+                                    Some(old_children[i])
+                                } else {
+                                    None
+                                };
+                                let new_child = reconcile_element(
+                                    commands,
+                                    old_child,
+                                    &template.children[i],
+                                    view_query,
+                                    view_children_query,
+                                    &server,
+                                    &asset_path,
+                                );
+                                if old_child != Some(new_child) {
+                                    children_changed = true;
+                                }
+                                new_children.push(new_child)
+                            }
+                        }
+
+                        if children_changed {
+                            commands.entity(view_entity).replace_children(&new_children);
+                        }
+
+                        return view_entity;
+                    }
+                    commands.entity(view_entity).despawn_recursive();
+                }
+            }
+
+            // Replace entire entity
+            let mut handles: Vec<Handle<StyleAsset>> = Vec::with_capacity(template.styleset.len());
+            for style_path in template.styleset.iter() {
+                handles.push(server.load(relative_asset_path(asset_path, &style_path)))
+            }
+
+            let new_entity = commands
+                .spawn((
+                    ViewElement {
+                        id: template.id.clone(),
+                        styleset: template.styleset.clone(),
+                        styleset_handles: handles,
+                        inline_style: template.inline_style.clone(),
+                        ..default()
+                    },
+                    NodeBundle {
+                        background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                        border_color: Color::BLUE.into(),
+                        focus_policy: FocusPolicy::Pass,
+                        ..default()
+                    },
+                ))
+                .id();
+
+            // See if there's a controller for this ui node.
+            if let Some(ref controller_id) = template.controller {
+                // println!("Controller {}", controller_id);
+                commands.add(InsertController {
+                    entity: new_entity,
+                    controller: controller_id.clone(),
+                });
+            } else {
+                commands.entity(new_entity).insert(DefaultController);
+            }
+
+            // Visit and create children
+            if !template.children.is_empty() {
+                let child_entities = template
+                    .children
+                    .iter()
+                    .map(|child| {
+                        reconcile_element(
+                            commands,
+                            None,
+                            child,
+                            view_query,
+                            view_children_query,
+                            &server,
+                            &asset_path,
+                        )
+                    })
+                    .collect::<Vec<Entity>>();
+                commands
+                    .entity(new_entity)
+                    .replace_children(&child_entities);
+            }
+
+            return new_entity;
+        }
+
+        TemplateNode::Text(text) => {
+            todo!("Render Text")
+        }
+
+        TemplateNode::Fragment(text) => {
+            todo!("Render Fragment")
         }
     }
 }
@@ -205,8 +376,8 @@ fn reconcile_template(
                                     if view.controller.eq(&elt.controller) {
                                         // println!("Patching VE {}", i);
                                         let mut changed = false;
-                                        if !view.style.eq(&elt.style)
-                                            || view.inline_styles != elt.inline_styles
+                                        if !view.styleset.eq(&elt.styleset)
+                                            || view.inline_style != elt.inline_style
                                         {
                                             changed = true;
                                         }
@@ -217,8 +388,8 @@ fn reconcile_template(
                                         if changed {
                                             commands.entity(old_child).insert((ViewElement {
                                                 id: elt.id.clone(),
-                                                style: elt.style.clone(),
-                                                inline_styles: elt.inline_styles.clone(),
+                                                styleset: elt.styleset.clone(),
+                                                inline_style: elt.inline_style.clone(),
                                                 ..default()
                                             },));
                                         }
@@ -245,8 +416,8 @@ fn reconcile_template(
                             .spawn((
                                 ViewElement {
                                     id: elt.id.clone(),
-                                    style: elt.style.clone(),
-                                    inline_styles: elt.inline_styles.clone(),
+                                    styleset: elt.styleset.clone(),
+                                    inline_style: elt.inline_style.clone(),
                                     ..default()
                                 },
                                 NodeBundle {
@@ -279,47 +450,6 @@ fn reconcile_template(
                     TemplateNode::Text(text) => {
                         if i < old_count {
                             let old_child = children[i];
-                            // match view_query.get(old_child) {
-                            //     Ok((view, grand_children)) => {
-                            //         // Patch the existing node instead of replacing it, but only if the
-                            //         // controller hasn't changed. Otherwise, fall through and
-                            //         // destroy / re-create.
-                            //         if view.controller.eq(&elt.controller) {
-                            //             // println!("Patching VE {}", i);
-                            //             let mut changed = false;
-                            //             if !view.style.eq(&style)
-                            //                 || view.inline_styles != elt.inline_styles
-                            //             {
-                            //                 changed = true;
-                            //             }
-
-                            //             // Replace view element node.
-                            //             // TODO: Mutate the view element in place rather than replacing
-                            //             // it. This will require splitting the query.
-                            //             if changed {
-                            //                 commands.entity(old_child).insert((
-                            //                     ViewElement {
-                            //                         style: style.clone(),
-                            //                         inline_styles: elt.inline_styles.clone(),
-                            //                         ..default()
-                            //                     },
-                            //                     StyleHandlesChanged,
-                            //                 ));
-                            //             }
-
-                            //             new_children.push(old_child);
-                            //             if !elt.children.is_empty() || grand_children.is_some() {
-                            //                 to_visit.push((old_child, &elt.children));
-                            //             }
-
-                            //             continue;
-                            //         }
-                            //     }
-
-                            //     // Fall through and replace the entity.
-                            //     Err(_) => {}
-                            // }
-
                             // println!("Replacing VE {}", i);
                             commands.entity(old_child).despawn_recursive();
                         }
@@ -360,18 +490,18 @@ fn reconcile_template(
     }
 }
 
-fn get_named_styles(
-    name: Option<&String>,
-    base_path: &AssetPath,
-    server: &AssetServer,
-) -> Option<Handle<PartialStyle>> {
-    // Check if template has a 'style' attribute
-    name.map(|str| {
-        let style_path = relative_asset_path(&base_path, str);
-        // println!("Relative asset: {:?}", style_path);
-        server.load(style_path)
-    })
-}
+// fn get_named_styles(
+//     name: Option<&String>,
+//     base_path: &AssetPath,
+//     server: &AssetServer,
+// ) -> Option<Handle<StyleAsset>> {
+//     // Check if template has a 'style' attribute
+//     name.map(|str| {
+//         let style_path = relative_asset_path(&base_path, str);
+//         // println!("Relative asset: {:?}", style_path);
+//         server.load(style_path)
+//     })
+// }
 
 pub fn attach_view_controllers(
     mut commands: Commands,
@@ -423,9 +553,26 @@ pub fn attach_view_controllers(
 /// on the entity.
 pub fn update_view_styles(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut ViewElement, One<&dyn Controller>), Changed<ViewElement>>,
+    mut query: Query<
+        (
+            Entity,
+            &mut ViewElement,
+            One<&dyn Controller>,
+            Option<&Parent>,
+        ),
+        Changed<ViewElement>,
+    >,
+    assets: Res<Assets<StyleAsset>>,
+    server: Res<AssetServer>,
 ) {
-    for (entity, view, controller) in query.iter_mut() {
-        controller.update_styles(&mut commands, entity, &view);
+    for (entity, view, controller, _parent) in query.iter_mut() {
+        let ready =
+            server.get_group_load_state(view.styleset_handles.iter().map(|handle| handle.id()));
+        if ready == LoadState::Loaded {
+            info!("{} styles ready", view.styleset_handles.len());
+            controller.update_styles(&mut commands, entity, &view, &assets);
+        } else {
+            warn!("Styles not ready!");
+        }
     }
 }

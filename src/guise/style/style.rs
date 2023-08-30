@@ -5,12 +5,14 @@ use crate::guise::style::{
     expr_list::ExprList,
 };
 
-use super::{selectors_map::SelectorsMap, vars_map::VarsMap, StyleAttr};
+use super::{selectors_map::SelectorsMap, vars_map::VarsMap, ComputedStyle, StyleAttr};
+use bevy::reflect::{TypePath, TypeUuid};
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
-#[derive(Debug, Default, Clone)]
-pub struct Style {
+#[derive(Debug, Default, Clone, TypeUuid, TypePath, PartialEq)]
+#[uuid = "4af40b07-f427-46f5-bdb2-f4b6f6c8ccef"]
+pub struct StyleAsset {
     /// List of style attributes.
     /// Rather than storing the attributes in a struct full of optional fields, we store a flat
     /// vector of enums, each of which stores a single style attribute. This "sparse" representation
@@ -24,7 +26,7 @@ pub struct Style {
     selectors: SelectorsMap,
 }
 
-impl Style {
+impl StyleAsset {
     pub fn new() -> Self {
         Self {
             attrs: Vec::new(),
@@ -54,9 +56,16 @@ impl Style {
     pub fn len_attrs(&self) -> usize {
         self.attrs.len()
     }
+
+    /// Merge the style properties into a computed `Style` object.
+    pub fn apply_to(&self, computed: &mut ComputedStyle) {
+        for attr in self.attrs.iter() {
+            attr.apply(computed);
+        }
+    }
 }
 
-impl Serialize for Style {
+impl Serialize for StyleAsset {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -206,7 +215,7 @@ const FIELDS: &'static [&'static str] = &[
     "selectors",
 ];
 
-impl<'de, 'a> Deserialize<'de> for Style {
+impl<'de, 'a> Deserialize<'de> for StyleAsset {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -298,7 +307,7 @@ impl<'de, 'a> Deserialize<'de> for Style {
         struct StyleMapVisitor;
 
         impl<'de> Visitor<'de> for StyleMapVisitor {
-            type Value = Style;
+            type Value = StyleAsset;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("style definition")
@@ -309,7 +318,7 @@ impl<'de, 'a> Deserialize<'de> for Style {
                 A: serde::de::MapAccess<'de>,
             {
                 type SA = StyleAttr;
-                let mut st = Style::with_capacity(map.size_hint().unwrap_or(0));
+                let mut st = StyleAsset::with_capacity(map.size_hint().unwrap_or(0));
                 let attrs = &mut st.attrs;
 
                 while let Some(key) = map.next_key()? {
@@ -578,7 +587,7 @@ mod tests {
 
     #[test]
     fn test_serialize_misc_props() {
-        let map = Style::from_attrs(&[
+        let map = StyleAsset::from_attrs(&[
             StyleAttr::ZIndex(Expr::Number(7.)),
             StyleAttr::FlexGrow(Expr::Number(2.)),
             StyleAttr::FlexShrink(Expr::Number(3.)),
@@ -593,7 +602,8 @@ mod tests {
     #[test]
     fn test_deserialize_basic_prop() {
         let des =
-            serde_json::from_str::<Style>(r#"{"background-color":"rgba(255, 0, 0, 1)"}"#).unwrap();
+            serde_json::from_str::<StyleAsset>(r#"{"background-color":"rgba(255, 0, 0, 1)"}"#)
+                .unwrap();
         assert_eq!(des.attrs.len(), 1);
         let ser = serde_json::to_string(&des);
         assert_eq!(ser.unwrap(), r#"{"background-color":"rgba(255, 0, 0, 1)"}"#);
@@ -601,9 +611,10 @@ mod tests {
 
     #[test]
     fn test_deserialize_misc_props() {
-        let des =
-            serde_json::from_str::<Style>(r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.1}"#)
-                .unwrap();
+        let des = serde_json::from_str::<StyleAsset>(
+            r#"{"z-index":7,"flex-grow":2.0,"flex-shrink":3.1}"#,
+        )
+        .unwrap();
         assert_eq!(des.attrs.len(), 3);
         let ser = serde_json::to_string(&des);
         assert_eq!(
@@ -614,7 +625,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_length_no_unit() {
-        let des = serde_json::from_str::<Style>(r#"{"right":7}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"right":7}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(des.attrs[0], StyleAttr::Right(Expr::Number(7.)));
         let ser = serde_json::to_string(&des);
@@ -623,7 +634,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_length_px() {
-        let des = serde_json::from_str::<Style>(r#"{"right":"7px"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"right":"7px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -635,25 +646,25 @@ mod tests {
 
     #[test]
     fn test_deserialize_auto() {
-        let des = serde_json::from_str::<Style>(r#"{"right":"auto"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"right":"auto"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(des.attrs[0], StyleAttr::Right(Expr::Length(ui::Val::Auto)));
     }
 
     #[test]
     fn test_serialize_display() {
-        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Ident("grid".to_string()))]);
+        let map = StyleAsset::from_attrs(&[StyleAttr::Display(Expr::Ident("grid".to_string()))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
 
-        let map = Style::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
+        let map = StyleAsset::from_attrs(&[StyleAttr::Display(Expr::Display(ui::Display::Grid))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
     }
 
     #[test]
     fn test_deserialize_display() {
-        let des = serde_json::from_str::<Style>(r#"{"display":"grid"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"display":"grid"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -663,7 +674,7 @@ mod tests {
 
     #[test]
     fn test_serialize_position() {
-        let map = Style::from_attrs(&[StyleAttr::Position(Expr::PositionType(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Position(Expr::PositionType(
             ui::PositionType::Relative,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -672,7 +683,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_position() {
-        let des = serde_json::from_str::<Style>(r#"{"position":"relative"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"position":"relative"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -682,19 +693,19 @@ mod tests {
 
     #[test]
     fn test_serialize_overflow() {
-        let map = Style::from_attrs(&[StyleAttr::Overflow(Expr::OverflowAxis(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Overflow(Expr::OverflowAxis(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"overflow":"clip"}"#);
 
-        let map = Style::from_attrs(&[StyleAttr::OverflowX(Expr::OverflowAxis(
+        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowX(Expr::OverflowAxis(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"overflow-x":"clip"}"#);
 
-        let map = Style::from_attrs(&[StyleAttr::OverflowY(Expr::OverflowAxis(
+        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowY(Expr::OverflowAxis(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -703,21 +714,21 @@ mod tests {
 
     #[test]
     fn test_deserialize_overflow() {
-        let des = serde_json::from_str::<Style>(r#"{"overflow":"clip"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"overflow":"clip"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
             StyleAttr::Overflow(Expr::OverflowAxis(ui::OverflowAxis::Clip,))
         );
 
-        let des = serde_json::from_str::<Style>(r#"{"overflow-x":"clip"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"overflow-x":"clip"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
             StyleAttr::OverflowX(Expr::OverflowAxis(ui::OverflowAxis::Clip,))
         );
 
-        let des = serde_json::from_str::<Style>(r#"{"overflow-y":"clip"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"overflow-y":"clip"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -727,7 +738,7 @@ mod tests {
 
     #[test]
     fn test_serialize_direction() {
-        let map = Style::from_attrs(&[StyleAttr::Direction(Expr::Direction(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Direction(Expr::Direction(
             ui::Direction::LeftToRight,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -736,7 +747,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_direction() {
-        let des = serde_json::from_str::<Style>(r#"{"direction":"ltr"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"direction":"ltr"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -746,7 +757,7 @@ mod tests {
 
     #[test]
     fn test_serialize_align_items() {
-        let map = Style::from_attrs(&[StyleAttr::AlignItems(Expr::AlignItems(
+        let map = StyleAsset::from_attrs(&[StyleAttr::AlignItems(Expr::AlignItems(
             ui::AlignItems::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -755,7 +766,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_align_items() {
-        let des = serde_json::from_str::<Style>(r#"{"align-items":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"align-items":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -765,7 +776,7 @@ mod tests {
 
     #[test]
     fn test_serialize_align_content() {
-        let map = Style::from_attrs(&[StyleAttr::AlignContent(Expr::AlignContent(
+        let map = StyleAsset::from_attrs(&[StyleAttr::AlignContent(Expr::AlignContent(
             ui::AlignContent::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -774,7 +785,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_align_content() {
-        let des = serde_json::from_str::<Style>(r#"{"align-content":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"align-content":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -784,14 +795,15 @@ mod tests {
 
     #[test]
     fn test_serialize_align_self() {
-        let map = Style::from_attrs(&[StyleAttr::AlignSelf(Expr::AlignSelf(ui::AlignSelf::Start))]);
+        let map =
+            StyleAsset::from_attrs(&[StyleAttr::AlignSelf(Expr::AlignSelf(ui::AlignSelf::Start))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"align-self":"start"}"#);
     }
 
     #[test]
     fn test_deserialize_align_self() {
-        let des = serde_json::from_str::<Style>(r#"{"align-self":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"align-self":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -801,7 +813,7 @@ mod tests {
 
     #[test]
     fn test_serialize_justify_items() {
-        let map = Style::from_attrs(&[StyleAttr::JustifyItems(Expr::JustifyItems(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyItems(Expr::JustifyItems(
             ui::JustifyItems::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -810,7 +822,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_justify_items() {
-        let des = serde_json::from_str::<Style>(r#"{"justify-items":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"justify-items":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -820,7 +832,7 @@ mod tests {
 
     #[test]
     fn test_serialize_justify_content() {
-        let map = Style::from_attrs(&[StyleAttr::JustifyContent(Expr::JustifyContent(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyContent(Expr::JustifyContent(
             ui::JustifyContent::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -829,7 +841,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_justify_content() {
-        let des = serde_json::from_str::<Style>(r#"{"justify-content":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"justify-content":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -839,7 +851,7 @@ mod tests {
 
     #[test]
     fn test_serialize_justify_self() {
-        let map = Style::from_attrs(&[StyleAttr::JustifySelf(Expr::JustifySelf(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifySelf(Expr::JustifySelf(
             ui::JustifySelf::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -848,7 +860,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_justify_self() {
-        let des = serde_json::from_str::<Style>(r#"{"justify-self":"start"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"justify-self":"start"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -858,18 +870,18 @@ mod tests {
 
     #[test]
     fn test_serialize_uirect() {
-        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))]);
+        let map = StyleAsset::from_attrs(&[StyleAttr::Margin(Expr::List(vec![Expr::Number(0.)]))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"margin":"0"}"#);
 
-        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
+        let map = StyleAsset::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
             Expr::Number(0.),
             Expr::Number(0.),
         ]))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"margin":"0 0"}"#);
 
-        let map = Style::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
+        let map = StyleAsset::from_attrs(&[StyleAttr::Margin(Expr::List(vec![
             Expr::Length(ui::Val::Auto),
             Expr::Length(ui::Val::Px(7.)),
         ]))]);
@@ -880,7 +892,7 @@ mod tests {
     #[test]
     fn test_deserialize_uirect() {
         // Unitless number
-        let des = serde_json::from_str::<Style>(r#"{"margin":0}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"margin":0}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -888,7 +900,7 @@ mod tests {
         );
 
         // Unitless string
-        let des = serde_json::from_str::<Style>(r#"{"margin":"0"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"margin":"0"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -896,7 +908,7 @@ mod tests {
         );
 
         // Pixel units
-        let des = serde_json::from_str::<Style>(r#"{"margin":"0px"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"margin":"0px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -904,7 +916,7 @@ mod tests {
         );
 
         // Multiple values
-        let des = serde_json::from_str::<Style>(r#"{"margin":"0px 0px"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"margin":"0px 0px"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -915,7 +927,7 @@ mod tests {
         );
 
         // Optimize ident to 'auto'
-        let des = serde_json::from_str::<Style>(r#"{"margin":"0px auto"}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"margin":"0px auto"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
@@ -928,14 +940,14 @@ mod tests {
 
     #[test]
     fn test_deserialize_vars() {
-        let des = serde_json::from_str::<Style>(r#"{"vars":{}}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"vars":{}}"#).unwrap();
         assert_eq!(des.vars.len(), 0);
 
-        let des = serde_json::from_str::<Style>(r#"{"vars":{"--x":1}}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"vars":{"--x":1}}"#).unwrap();
         assert_eq!(des.vars.len(), 1);
         assert_eq!(des.vars.get("x").unwrap(), &Expr::Number(1.));
 
-        let des = serde_json::from_str::<Style>(r#"{"vars":{"--bg":"auto"}}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"vars":{"--bg":"auto"}}"#).unwrap();
         assert_eq!(des.vars.len(), 1);
         assert_eq!(
             des.vars.get("bg").unwrap(),
@@ -945,7 +957,7 @@ mod tests {
 
     #[test]
     fn test_serialize_vars() {
-        let mut style = Style::new();
+        let mut style = StyleAsset::new();
         style.vars.insert("x".into(), Expr::Number(7.));
         let ser = serde_json::to_string(&style);
         assert_eq!(ser.unwrap(), r#"{"vars":{"--x":7}}"#);
@@ -953,11 +965,11 @@ mod tests {
 
     #[test]
     fn test_deserialize_selectors() {
-        let des = serde_json::from_str::<Style>(r#"{"selectors":{}}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"selectors":{}}"#).unwrap();
         assert_eq!(des.selectors.len(), 0);
 
-        let des =
-            serde_json::from_str::<Style>(r#"{"selectors":{"&.name": {"margin":0}}}"#).unwrap();
+        let des = serde_json::from_str::<StyleAsset>(r#"{"selectors":{"&.name": {"margin":0}}}"#)
+            .unwrap();
         assert_eq!(des.selectors.len(), 1);
         let (ref sel, ref style) = des.selectors.entries()[0];
         assert_eq!(
@@ -972,10 +984,10 @@ mod tests {
 
     #[test]
     fn test_serialize_selectors() {
-        let mut style = Style::new();
+        let mut style = StyleAsset::new();
         style.selectors.insert(
             Selector::Current(Box::new(Selector::Accept)),
-            Box::new(Style::new()),
+            Box::new(StyleAsset::new()),
         );
         let ser = serde_json::to_string(&style);
         assert_eq!(ser.unwrap(), r#"{"selectors":{"&":{}}}"#);
