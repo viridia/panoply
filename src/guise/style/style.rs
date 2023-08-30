@@ -10,7 +10,7 @@ use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
 #[derive(Debug, Default, Clone)]
-pub struct Style<'a> {
+pub struct Style {
     /// List of style attributes.
     /// Rather than storing the attributes in a struct full of optional fields, we store a flat
     /// vector of enums, each of which stores a single style attribute. This "sparse" representation
@@ -18,13 +18,13 @@ pub struct Style<'a> {
     attrs: Vec<StyleAttr>,
 
     /// List of style variables to define when this style is invoked.
-    vars: VarsMap<'a>,
+    vars: VarsMap,
 
     /// List of conditional styles
-    selectors: SelectorsMap<'a>,
+    selectors: SelectorsMap,
 }
 
-impl<'a> Style<'a> {
+impl Style {
     pub fn new() -> Self {
         Self {
             attrs: Vec::new(),
@@ -56,7 +56,7 @@ impl<'a> Style<'a> {
     }
 }
 
-impl<'a> Serialize for Style<'a> {
+impl Serialize for Style {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -117,8 +117,14 @@ impl<'a> Serialize for Style<'a> {
                 StyleAttr::BorderTop(val) => st.serialize_field("border-top", val)?,
                 StyleAttr::BorderBottom(val) => st.serialize_field("border-bottom", val)?,
 
+                StyleAttr::Flex(val) => st.serialize_field("flex", val)?,
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
+                StyleAttr::FlexBasis(val) => st.serialize_field("flex-basis", val)?,
+
+                StyleAttr::RowGap(val) => st.serialize_field("row-gap", val)?,
+                StyleAttr::ColumnGap(val) => st.serialize_field("column-gap", val)?,
+                StyleAttr::Gap(val) => st.serialize_field("gap", val)?,
                 _ => todo!("Implement serialization for {:?}", attr),
             };
         }
@@ -187,13 +193,20 @@ const FIELDS: &'static [&'static str] = &[
     "border-top",
     "border-bottom",
     // Flex
+    "flex",
     "flex-grow",
     "flex-shrink",
+    "flex-basis",
+    // Gap
+    "row-gap",
+    "column-gap",
+    "gap",
+    // Other
     "vars",
     "selectors",
 ];
 
-impl<'de, 'a> Deserialize<'de> for Style<'a> {
+impl<'de, 'a> Deserialize<'de> for Style {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -251,15 +264,16 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
             BorderTop,
             BorderBottom,
 
+            Flex,
             // FlexDirection(bevy::ui::FlexDirection),
             // FlexWrap(bevy::ui::FlexWrap),
             FlexGrow,
             FlexShrink,
-            // FlexBasis(bevy::ui::Val),
+            FlexBasis,
 
-            // RowGap(bevy::ui::Val),
-            // ColumnGap(bevy::ui::Val),
-            // Gap(bevy::ui::Val),
+            RowGap,
+            ColumnGap,
+            Gap,
 
             // // TODO:
             // GridAutoFlow(bevy::ui::GridAutoFlow),
@@ -284,7 +298,7 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
         struct StyleMapVisitor;
 
         impl<'de> Visitor<'de> for StyleMapVisitor {
-            type Value = Style<'static>;
+            type Value = Style;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("style definition")
@@ -513,8 +527,31 @@ impl<'de, 'a> Deserialize<'de> for Style<'a> {
                             attrs.push(SA::BorderBottom(val))
                         }
 
+                        Field::Flex => {
+                            attrs.push(SA::Flex(map.next_value::<ExprList>()?.to_expr()))
+                        }
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
+                        Field::FlexBasis => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::FlexBasis(val))
+                        }
+                        Field::RowGap => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::RowGap(val))
+                        }
+                        Field::ColumnGap => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::ColumnGap(val))
+                        }
+                        Field::Gap => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::Length);
+                            attrs.push(SA::Gap(val))
+                        }
                         Field::Vars => {
                             st.vars = map.next_value::<VarsMap>()?;
                         }

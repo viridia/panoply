@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{borrow::Cow, marker::PhantomData};
+use std::marker::PhantomData;
 
 use bevy::utils::HashMap;
 use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
@@ -7,9 +7,9 @@ use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 use super::Expr;
 
 #[derive(Debug, Default, Clone)]
-pub struct VarsMap<'a>(HashMap<Cow<'a, str>, Expr>);
+pub struct VarsMap(HashMap<String, Expr>);
 
-impl<'a> VarsMap<'a> {
+impl VarsMap {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
@@ -27,11 +27,11 @@ impl<'a> VarsMap<'a> {
     }
 
     pub fn insert(&mut self, key: &str, value: Expr) -> Option<Expr> {
-        self.0.insert(key.to_owned().into(), value)
+        self.0.insert(key.into(), value)
     }
 }
 
-impl<'a> Serialize for VarsMap<'a> {
+impl Serialize for VarsMap {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -45,12 +45,12 @@ impl<'a> Serialize for VarsMap<'a> {
     }
 }
 
-impl<'de, 'a> Deserialize<'de> for VarsMap<'a> {
+impl<'de> Deserialize<'de> for VarsMap {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_map(VarsMapVisitor::<'a> {
+        deserializer.deserialize_map(VarsMapVisitor {
             marker: &PhantomData,
         })
     }
@@ -60,7 +60,7 @@ struct VarsMapVisitor<'a> {
 }
 
 impl<'de, 'a> Visitor<'de> for VarsMapVisitor<'a> {
-    type Value = VarsMap<'a>;
+    type Value = VarsMap;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("style definition")
@@ -71,12 +71,12 @@ impl<'de, 'a> Visitor<'de> for VarsMapVisitor<'a> {
         A: serde::de::MapAccess<'de>,
         A::Error: serde::de::Error,
     {
-        let mut result: HashMap<Cow<'a, str>, Expr> =
+        let mut result: HashMap<String, Expr> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             let expr = map.next_value::<Expr>()?;
             if key.starts_with("--") {
-                result.insert(key[2..].to_owned().into(), expr);
+                result.insert(key[2..].into(), expr);
             } else {
                 return Err(serde::de::Error::invalid_type(
                     serde::de::Unexpected::Str(&key),

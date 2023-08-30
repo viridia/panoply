@@ -9,10 +9,10 @@ use quick_xml::name::QName;
 use quick_xml::reader::Reader;
 
 use crate::guise::path::relative_asset_path;
-use crate::guise::template::TemplateParam;
+use crate::guise::template_old::TemplateParam;
 
 use super::style::{PartialStyle, Selector, StyleAttr};
-use super::template::{ElementNode, Template, TemplateNode, TemplateNodeList, TextNode};
+use super::template_old::{ElementNode, Template, TemplateNode, TemplateNodeList, TextNode};
 use super::GuiseError;
 
 #[derive(Default)]

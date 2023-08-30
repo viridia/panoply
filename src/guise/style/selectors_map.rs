@@ -6,9 +6,9 @@ use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 use super::{selector::Selector, Style};
 
 #[derive(Debug, Default, Clone)]
-pub struct SelectorsMap<'a>(Vec<(Selector<'a>, Box<Style<'a>>)>);
+pub struct SelectorsMap(Vec<(Selector, Box<Style>)>);
 
-impl<'a> SelectorsMap<'a> {
+impl SelectorsMap {
     pub fn new() -> Self {
         Self(Vec::new())
     }
@@ -21,16 +21,16 @@ impl<'a> SelectorsMap<'a> {
         self.0.len()
     }
 
-    pub fn entries(&self) -> &[(Selector<'a>, Box<Style<'a>>)] {
+    pub fn entries(&self) -> &[(Selector, Box<Style>)] {
         &self.0
     }
 
-    pub fn insert(&mut self, key: Selector<'a>, value: Box<Style<'a>>) {
+    pub fn insert(&mut self, key: Selector, value: Box<Style>) {
         self.0.push((key, value))
     }
 }
 
-impl<'a> Serialize for SelectorsMap<'a> {
+impl Serialize for SelectorsMap {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -45,12 +45,12 @@ impl<'a> Serialize for SelectorsMap<'a> {
     }
 }
 
-impl<'de, 'a> Deserialize<'de> for SelectorsMap<'a> {
+impl<'de> Deserialize<'de> for SelectorsMap {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_map(SelectorsMapVisitor::<'a> {
+        deserializer.deserialize_map(SelectorsMapVisitor {
             marker: &PhantomData,
         })
     }
@@ -61,7 +61,7 @@ struct SelectorsMapVisitor<'a> {
 }
 
 impl<'de, 'a> Visitor<'de> for SelectorsMapVisitor<'a> {
-    type Value = SelectorsMap<'a>;
+    type Value = SelectorsMap;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("selector map")
@@ -72,11 +72,10 @@ impl<'de, 'a> Visitor<'de> for SelectorsMapVisitor<'a> {
         A: serde::de::MapAccess<'de>,
         A::Error: serde::de::Error,
     {
-        let mut result: SelectorsMap<'a> =
-            SelectorsMap::with_capacity(map.size_hint().unwrap_or(0));
+        let mut result: SelectorsMap = SelectorsMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             let sel = key
-                .parse::<Selector<'a>>()
+                .parse::<Selector>()
                 .map_err(|err| serde::de::Error::custom(err.as_str()))?;
             let style = map.next_value::<Style>()?;
             result.0.push((sel, Box::new(style)));

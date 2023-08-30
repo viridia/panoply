@@ -1,21 +1,22 @@
-use std::borrow::Cow;
-
-use bevy::{reflect::TypeUuid, utils::HashMap};
+use bevy::{
+    reflect::{TypePath, TypeUuid},
+    utils::HashMap,
+};
 use serde_derive::{Deserialize, Serialize};
 
 use super::style::Style;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, TypeUuid)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, TypeUuid, TypePath)]
 #[uuid = "4af40b07-f427-46f5-bdb2-f4b6f6c8ccef"]
-pub struct StyleCatalog<'a> {
+pub struct StyleCatalog {
     #[serde(skip_serializing_if = "Option::is_none")]
     extends: Option<String>,
 
     #[serde(flatten)]
-    styles: HashMap<Cow<'a, str>, Style<'a>>,
+    styles: HashMap<String, Style>,
 }
 
-impl<'a> StyleCatalog<'a> {
+impl StyleCatalog {
     pub fn new() -> Self {
         Self {
             extends: None,

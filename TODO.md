@@ -10,6 +10,7 @@
     * Vars - use
     * Inherited props
     * Finish unit tests
+    * JSON array as UiRect
   * Guise Bundle type
   * Template invocation
   * Template params

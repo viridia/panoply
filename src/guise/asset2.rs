@@ -5,22 +5,16 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::style::StyleCatalog;
+use super::{style::StyleCatalog, template::Template};
 
 #[derive(TypeUuid, TypePath)]
 #[uuid = "29066844-f877-4c2c-9b21-e886de093dfe"]
 struct TemplatesAsset {}
 
 #[derive(Serialize, Deserialize, Debug)]
-struct TemplatesSerial<'a> {
-    pub styles: HashMap<String, StyleCatalog<'a>>,
-    pub templates: HashMap<String, TemplateSerial>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct TemplateSerial {
-    // pub base: StylePropsSerial,
-    // pub selectors: HashMap<String, StylePropsSerial>,
+struct AssetSerial {
+    pub styles: HashMap<String, StyleCatalog>,
+    pub templates: HashMap<String, Template>,
 }
 
 pub struct GuiseTemplatesLoader;
@@ -32,13 +26,11 @@ impl AssetLoader for GuiseTemplatesLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let entries: TemplatesSerial =
+            let mut entries: AssetSerial =
                 serde_json::from_slice(bytes).expect("unable to decode templates");
-            entries.styles.iter().for_each(|(key, style)| {
-                // load_context.set_labeled_asset(key, LoadedAsset::new(*style));
+            entries.styles.drain().for_each(|(key, style)| {
+                load_context.set_labeled_asset(&key, LoadedAsset::new(style));
             });
-
-            // load_context.set_default_asset(LoadedAsset::new(result));
             Ok(())
         })
     }

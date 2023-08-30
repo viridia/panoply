@@ -77,9 +77,11 @@
     "main": {
       "params": {},
       "content": {
+        "type": "element",
         "style": {},
         "children": [
           {
+            "type": "element",
             "id": "left",
             "styleset": "#/styles/sub-panel",
             "style": {
@@ -87,6 +89,7 @@
             }
           },
           {
+            "type": "element",
             "id": "center",
             "controller": "ViewportInsetController",
             "style": {
@@ -94,6 +97,7 @@
             }
           },
           {
+            "type": "element",
             "id": "right",
             "styleset": "#/styles/sub-panel",
             "style": {
@@ -104,10 +108,13 @@
       }
     },
     "demo-button": {
-      "content": {}
+      "content": {
+        "type": "element"
+      }
     },
     "demo-counter": {
       "content": {
+        "type": "element",
         "controller": "CounterController",
         "children": []
       }

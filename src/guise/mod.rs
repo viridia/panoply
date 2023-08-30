@@ -6,6 +6,7 @@ mod path;
 mod plugin;
 mod style;
 mod template;
+mod template_old;
 mod view;
 
 use std::fmt;

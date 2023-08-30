@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt};
+use std::fmt;
 
 use winnow::{
     ascii::space0,
@@ -29,21 +29,21 @@ use winnow::{
 /// that parent elements cannot implicitly style their children; child elements must have styles
 /// explicitly specified (although those styles can be conditional on the state of their parents).
 #[derive(Debug, PartialEq, Clone)]
-pub enum Selector<'a> {
+pub enum Selector {
     /// If we reach this state, it means the match was successful
     Accept,
 
     /// Match an element with a specific class name.
-    Class(Cow<'a, str>, Box<Selector<'a>>),
+    Class(String, Box<Selector>),
 
     /// Reference to the current element.
-    Current(Box<Selector<'a>>),
+    Current(Box<Selector>),
 
     /// Reference to the parent of this element.
-    Parent(Box<Selector<'a>>),
+    Parent(Box<Selector>),
 
     /// List of alternate choices.
-    Either(Vec<Box<Selector<'a>>>),
+    Either(Vec<Box<Selector>>),
 }
 
 fn amp<'s>(input: &mut &'s str) -> PResult<()> {
@@ -78,28 +78,28 @@ fn simple_selector<'s>(input: &mut &'s str) -> PResult<(Option<char>, Vec<&'s st
     (opt(alt(('*', '&'))), repeat(0.., class_name)).parse_next(input)
 }
 
-fn combo_selector<'s, 'a>(input: &mut &'s str) -> PResult<Box<Selector<'a>>> {
-    let mut sel = Box::new(Selector::<'a>::Accept);
+fn combo_selector<'s, 'a>(input: &mut &'s str) -> PResult<Box<Selector>> {
+    let mut sel = Box::new(Selector::Accept);
     let (prefix, classes) = simple_selector.parse_next(input)?;
     for cls in classes {
-        sel = Box::new(Selector::<'a>::Class(cls[1..].to_owned().into(), sel));
+        sel = Box::new(Selector::Class(cls[1..].into(), sel));
     }
     if let Some(ch) = prefix {
         if ch == '&' {
-            sel = Box::new(Selector::<'a>::Current(sel));
+            sel = Box::new(Selector::Current(sel));
         }
     }
     Ok(sel)
 }
 
-impl<'a> Selector<'a> {
-    pub fn parser<'s>(input: &mut &'s str) -> PResult<Box<Selector<'a>>> {
+impl<'a> Selector {
+    pub fn parser<'s>(input: &mut &'s str) -> PResult<Box<Selector>> {
         Self::either.parse_next(input)
     }
 
-    fn either<'s>(input: &mut &'s str) -> PResult<Box<Selector<'a>>> {
+    fn either<'s>(input: &mut &'s str) -> PResult<Box<Selector>> {
         separated1(Self::desc_selector, (space0, ',', space0))
-            .map(|mut items: Vec<Box<Selector<'a>>>| {
+            .map(|mut items: Vec<Box<Selector>>| {
                 if items.len() == 1 {
                     items.pop().unwrap()
                 } else {
@@ -109,17 +109,17 @@ impl<'a> Selector<'a> {
             .parse_next(input)
     }
 
-    fn desc_selector<'s>(input: &mut &'s str) -> PResult<Box<Selector<'a>>> {
+    fn desc_selector<'s>(input: &mut &'s str) -> PResult<Box<Selector>> {
         let mut sel = combo_selector.parse_next(input)?;
         while parent.parse_next(input).is_ok() {
-            sel = Box::new(Selector::<'a>::Parent(sel));
+            sel = Box::new(Selector::Parent(sel));
             let (prefix, classes) = simple_selector.parse_next(input)?;
             for cls in classes {
-                sel = Box::new(Selector::<'a>::Class(cls[1..].to_owned().into(), sel));
+                sel = Box::new(Selector::Class(cls[1..].into(), sel));
             }
             if let Some(ch) = prefix {
                 if ch == '&' {
-                    sel = Box::new(Selector::<'a>::Current(sel));
+                    sel = Box::new(Selector::Current(sel));
                 }
             }
         }
@@ -128,18 +128,18 @@ impl<'a> Selector<'a> {
     }
 }
 
-impl<'a> std::str::FromStr for Selector<'a> {
+impl std::str::FromStr for Selector {
     type Err = String;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Selector::<'a>::parser
+        Selector::parser
             .parse(input.trim())
             .map(|a| *a)
             .map_err(|e| e.to_string())
     }
 }
 
-impl<'a> fmt::Display for Selector<'a> {
+impl fmt::Display for Selector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Selector::Accept => Ok(()),
@@ -193,7 +193,7 @@ mod tests {
             "&",
         );
         assert_eq!(
-            Selector::Class("x".to_owned().into(), Box::new(Selector::Accept)).to_string(),
+            Selector::Class("x".into(), Box::new(Selector::Accept)).to_string(),
             ".x",
         );
         assert_eq!(
@@ -230,7 +230,7 @@ mod tests {
         assert_eq!(
             "&.foo".parse::<Selector>().unwrap(),
             Selector::Current(Box::new(Selector::Class(
-                "foo".to_owned().into(),
+                "foo".into(),
                 Box::new(Selector::Accept)
             )))
         );
@@ -240,7 +240,7 @@ mod tests {
     fn test_parse_class() {
         assert_eq!(
             ".foo".parse::<Selector>().unwrap(),
-            Selector::Class("foo".to_owned().into(), Box::new(Selector::Accept))
+            Selector::Class("foo".into(), Box::new(Selector::Accept))
         );
     }
 
@@ -249,9 +249,9 @@ mod tests {
         assert_eq!(
             "&.foo > .bar".parse::<Selector>().unwrap(),
             Selector::Class(
-                "bar".to_owned().into(),
+                "bar".into(),
                 Box::new(Selector::Parent(Box::new(Selector::Current(Box::new(
-                    Selector::Class("foo".to_owned().into(), Box::new(Selector::Accept))
+                    Selector::Class("foo".into(), Box::new(Selector::Accept))
                 )))))
             )
         );
@@ -259,9 +259,9 @@ mod tests {
         assert_eq!(
             ".foo > &.bar".parse::<Selector>().unwrap(),
             Selector::Current(Box::new(Selector::Class(
-                "bar".to_owned().into(),
+                "bar".into(),
                 Box::new(Selector::Parent(Box::new(Selector::Class(
-                    "foo".to_owned().into(),
+                    "foo".into(),
                     Box::new(Selector::Accept)
                 ))))
             )))
@@ -274,13 +274,10 @@ mod tests {
             "&.foo, .bar".parse::<Selector>().unwrap(),
             Selector::Either(vec!(
                 Box::new(Selector::Current(Box::new(Selector::Class(
-                    "foo".to_owned().into(),
+                    "foo".into(),
                     Box::new(Selector::Accept)
                 )))),
-                Box::new(Selector::Class(
-                    "bar".to_owned().into(),
-                    Box::new(Selector::Accept)
-                ))
+                Box::new(Selector::Class("bar".into(), Box::new(Selector::Accept)))
             ))
         );
     }

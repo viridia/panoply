@@ -336,11 +336,6 @@ impl Expr {
         }
     }
 
-    /// Fold constants
-    pub fn into_display_const(self) -> Self {
-        self.into_display().map_or(self, |f| Self::Display(f))
-    }
-
     /// Optimize constant expression with type hints
     pub fn optimize(&mut self, hint: TypeHint) -> &Self {
         if let Self::List(l) = self {
@@ -420,6 +415,45 @@ impl Expr {
             }
         }
         self
+    }
+}
+
+pub trait Coerce<T> {
+    fn coerce(&self) -> Option<T>;
+}
+
+impl Coerce<ui::Display> for Expr {
+    fn coerce(&self) -> Option<ui::Display> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "grid" => Some(ui::Display::Grid),
+                "flex" => Some(ui::Display::Flex),
+                "none" => Some(ui::Display::None),
+                _ => None,
+            },
+            Expr::Display(d) => Some(*d),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<ui::AlignSelf> for Expr {
+    fn coerce(&self) -> Option<ui::AlignSelf> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "auto" => Some(ui::AlignSelf::Auto),
+                "start" => Some(ui::AlignSelf::Start),
+                "end" => Some(ui::AlignSelf::End),
+                "flex-start" => Some(ui::AlignSelf::FlexStart),
+                "flex-end" => Some(ui::AlignSelf::FlexEnd),
+                "center" => Some(ui::AlignSelf::Center),
+                "baseline" => Some(ui::AlignSelf::Baseline),
+                "stretch" => Some(ui::AlignSelf::Stretch),
+                _ => None,
+            },
+            Expr::AlignSelf(d) => Some(*d),
+            _ => None,
+        }
     }
 }
 

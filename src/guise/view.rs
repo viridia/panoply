@@ -9,7 +9,7 @@ use super::{
     controllers::DefaultController,
     path::relative_asset_path,
     style::PartialStyle,
-    template::{Template, TemplateNode, TemplateNodeList},
+    template_old::{Template, TemplateNode, TemplateNodeList},
 };
 
 /// Component that defines the root of a view hierarchy and a template invocation.

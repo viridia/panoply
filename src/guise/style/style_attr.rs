@@ -66,13 +66,14 @@ pub enum StyleAttr {
 
     FlexDirection(bevy::ui::FlexDirection),
     FlexWrap(bevy::ui::FlexWrap),
+    Flex(Expr),
     FlexGrow(Expr),
     FlexShrink(Expr),
-    FlexBasis(bevy::ui::Val),
+    FlexBasis(Expr),
 
-    RowGap(bevy::ui::Val),
-    ColumnGap(bevy::ui::Val),
-    Gap(bevy::ui::Val),
+    RowGap(Expr),
+    ColumnGap(Expr),
+    Gap(Expr),
 
     // TODO:
     GridAutoFlow(bevy::ui::GridAutoFlow),
@@ -322,6 +323,33 @@ impl StyleAttr {
             StyleAttr::FlexWrap(val) => {
                 computed.style.flex_wrap = *val;
             }
+            StyleAttr::Flex(val) => match val {
+                Expr::Number(flex) => {
+                    computed.style.flex_grow = *flex;
+                    computed.style.flex_shrink = *flex;
+                    computed.style.flex_basis = Val::Auto;
+                }
+                Expr::List(items) => {
+                    if items.len() == 3 {
+                        match items[0] {
+                            Expr::Number(n) => {
+                                computed.style.flex_grow = n;
+                            }
+                            _ => (),
+                        };
+                        match items[1] {
+                            Expr::Number(n) => {
+                                computed.style.flex_shrink = n;
+                            }
+                            _ => (),
+                        };
+                        if let Some(basis) = items[3].into_length() {
+                            computed.style.flex_basis = basis;
+                        }
+                    }
+                }
+                _ => (),
+            },
             StyleAttr::FlexGrow(val) => {
                 if let Some(flex) = val.into_f32() {
                     computed.style.flex_grow = flex;
@@ -333,18 +361,26 @@ impl StyleAttr {
                 }
             }
             StyleAttr::FlexBasis(val) => {
-                computed.style.flex_basis = *val;
+                if let Some(len) = val.into_length() {
+                    computed.style.flex_basis = len;
+                }
             }
 
             StyleAttr::RowGap(val) => {
-                computed.style.row_gap = *val;
+                if let Some(len) = val.into_length() {
+                    computed.style.row_gap = len;
+                }
             }
             StyleAttr::ColumnGap(val) => {
-                computed.style.column_gap = *val;
+                if let Some(len) = val.into_length() {
+                    computed.style.column_gap = len;
+                }
             }
             StyleAttr::Gap(val) => {
-                computed.style.row_gap = *val;
-                computed.style.column_gap = *val;
+                if let Some(len) = val.into_length() {
+                    computed.style.row_gap = len;
+                    computed.style.column_gap = len;
+                }
             }
 
             StyleAttr::GridAutoFlow(val) => {
@@ -402,16 +438,6 @@ impl StyleAttr {
                     return Err(GuiseError::UnknownAttributeValue(value.to_string()));
                 }
             }),
-
-            // TODO: Allow shortcut forms for flex.
-            // b"flex" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
-            // b"flex-grow" => StyleAttr::FlexGrow(StyleAttr::parse_f32(value)?),
-            // b"flex-shrink" => StyleAttr::FlexShrink(StyleAttr::parse_f32(value)?),
-            b"flex-basis" => StyleAttr::FlexBasis(StyleAttr::parse_val(value)?),
-
-            b"row-gap" => StyleAttr::RowGap(StyleAttr::parse_val(value)?),
-            b"column-gap" => StyleAttr::ColumnGap(StyleAttr::parse_val(value)?),
-            b"gap" => StyleAttr::Gap(StyleAttr::parse_val(value)?),
 
             b"grid-auto-flow" => StyleAttr::GridAutoFlow(match value {
                 "row" => GridAutoFlow::Row,
@@ -472,26 +498,6 @@ impl StyleAttr {
                         bevy::ui::FlexWrap::WrapReverse => "wrap-reverse",
                     },
                 ));
-            }
-
-            // StyleAttr::FlexGrow(val) => {
-            //     elem.push_attribute(("flex-grow", f32::to_string(val).as_str()));
-            // }
-            // StyleAttr::FlexShrink(val) => {
-            //     elem.push_attribute(("flex-shrink", f32::to_string(val).as_str()));
-            // }
-            StyleAttr::FlexBasis(val) => {
-                elem.push_attribute(("flex-basis", StyleAttr::val_to_str(*val).as_str()));
-            }
-
-            StyleAttr::RowGap(val) => {
-                elem.push_attribute(("row-gap", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::ColumnGap(val) => {
-                elem.push_attribute(("column-gap", StyleAttr::val_to_str(*val).as_str()));
-            }
-            StyleAttr::Gap(val) => {
-                elem.push_attribute(("gap", StyleAttr::val_to_str(*val).as_str()));
             }
 
             StyleAttr::GridAutoFlow(val) => {
@@ -787,90 +793,6 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-
-        //         //     // pub aspect_ratio: StyleProp<f32>,
-        //         b"align-items" => StyleAttr::AlignItems(match value {
-        //             "default" => AlignItems::Default,
-        //             "start" => AlignItems::Start,
-        //             "end" => AlignItems::End,
-        //             "flex-start" => AlignItems::FlexStart,
-        //             "flex-end" => AlignItems::FlexEnd,
-        //             "center" => AlignItems::Center,
-        //             "baseline" => AlignItems::Baseline,
-        //             "stretch" => AlignItems::Stretch,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
-
-        //         b"justify-items" => StyleAttr::JustifyItems(match value {
-        //             "default" => JustifyItems::Default,
-        //             "start" => JustifyItems::Start,
-        //             "end" => JustifyItems::End,
-        //             "center" => JustifyItems::Center,
-        //             "baseline" => JustifyItems::Baseline,
-        //             "stretch" => JustifyItems::Stretch,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
-
-        //         b"align-self" => StyleAttr::AlignSelf(match value {
-        //             "auto" => AlignSelf::Auto,
-        //             "start" => AlignSelf::Start,
-        //             "end" => AlignSelf::End,
-        //             "flex-start" => AlignSelf::FlexStart,
-        //             "flex-end" => AlignSelf::FlexEnd,
-        //             "center" => AlignSelf::Center,
-        //             "baseline" => AlignSelf::Baseline,
-        //             "stretch" => AlignSelf::Stretch,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
-
-        //         b"justify-self" => StyleAttr::JustifySelf(match value {
-        //             "auto" => JustifySelf::Auto,
-        //             "start" => JustifySelf::Start,
-        //             "end" => JustifySelf::End,
-        //             "center" => JustifySelf::Center,
-        //             "baseline" => JustifySelf::Baseline,
-        //             "stretch" => JustifySelf::Stretch,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
-
-        //         b"align-content" => StyleAttr::AlignContent(match value {
-        //             "default" => AlignContent::Default,
-        //             "start" => AlignContent::Start,
-        //             "end" => AlignContent::End,
-        //             "flex-start" => AlignContent::FlexStart,
-        //             "flex-end" => AlignContent::FlexEnd,
-        //             "center" => AlignContent::Center,
-        //             "stretch" => AlignContent::Stretch,
-        //             "space-between" => AlignContent::SpaceBetween,
-        //             "space-around" => AlignContent::SpaceAround,
-        //             "space-evenly" => AlignContent::SpaceEvenly,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
-
-        //         b"justify-content" => StyleAttr::JustifyContent(match value {
-        //             "default" => JustifyContent::Default,
-        //             "start" => JustifyContent::Start,
-        //             "end" => JustifyContent::End,
-        //             "flex-start" => JustifyContent::FlexStart,
-        //             "flex-end" => JustifyContent::FlexEnd,
-        //             "center" => JustifyContent::Center,
-        //             "space-between" => JustifyContent::SpaceBetween,
-        //             "space-around" => JustifyContent::SpaceAround,
-        //             "space-evenly" => JustifyContent::SpaceEvenly,
-        //             _ => {
-        //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-        //             }
-        //         }),
 
         //         b"flex-direction" => StyleAttr::FlexDirection(match value {
         //             "row" => FlexDirection::Row,
