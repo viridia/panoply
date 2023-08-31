@@ -13,14 +13,14 @@ use super::{
     controller::Controller,
     controllers::DefaultController,
     path::relative_asset_path,
-    template::{Template, TemplateNode, TemplateNodeList},
+    template::{TemplateAsset, TemplateNode, TemplateNodeList},
     StyleAsset,
 };
 
 /// Component that defines the root of a view hierarchy and a template invocation.
 #[derive(Component, Default)]
 pub struct ViewRoot {
-    pub template: Handle<Template>,
+    pub template: Handle<TemplateAsset>,
 }
 
 /// Component that defines a ui element, and which can differentially update when the
@@ -112,8 +112,8 @@ pub fn create_views(
     view_children_query: Query<&Children, With<ViewElement>>,
     // mut text_query: Query<&Text>,
     server: Res<AssetServer>,
-    assets: Res<Assets<Template>>,
-    mut ev_template: EventReader<AssetEvent<Template>>,
+    assets: Res<Assets<TemplateAsset>>,
+    mut ev_template: EventReader<AssetEvent<TemplateAsset>>,
 ) {
     for ev in ev_template.iter() {
         match ev {
@@ -184,13 +184,7 @@ fn reconcile_element(
 
                         if !old_view.styleset.eq(&template.styleset) {
                             old_view.styleset = template.styleset.clone();
-                            let mut handles: Vec<Handle<StyleAsset>> =
-                                Vec::with_capacity(template.styleset.len());
-                            for style_path in template.styleset.iter() {
-                                handles
-                                    .push(server.load(relative_asset_path(asset_path, &style_path)))
-                            }
-                            old_view.styleset_handles = handles;
+                            old_view.styleset_handles = template.styleset_handles.clone();
                         }
 
                         if old_view.inline_style != template.inline_style {
@@ -245,18 +239,16 @@ fn reconcile_element(
                 }
             }
 
-            // Replace entire entity
-            let mut handles: Vec<Handle<StyleAsset>> = Vec::with_capacity(template.styleset.len());
-            for style_path in template.styleset.iter() {
-                handles.push(server.load(relative_asset_path(asset_path, &style_path)))
-            }
+            // for handle in template.styleset_handles {
+            //     server.load(path)
+            // }
 
             let new_entity = commands
                 .spawn((
                     ViewElement {
                         id: template.id.clone(),
                         styleset: template.styleset.clone(),
-                        styleset_handles: handles,
+                        styleset_handles: template.styleset_handles.clone(),
                         inline_style: template.inline_style.clone(),
                         ..default()
                     },

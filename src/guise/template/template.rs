@@ -9,14 +9,14 @@ pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 
 #[derive(Debug, TypeUuid, TypePath, Default, Serialize, Deserialize)]
 #[uuid = "b2ce477f-e4a4-40cf-b969-916a9dbd799e"]
-pub struct Template {
+pub struct TemplateAsset {
     #[serde(default)]
     pub params: HashMap<String, TemplateParam>,
     pub content: Option<Box<TemplateNode>>,
 }
 
 /// An instantiable template for a UI node
-impl Template {
+impl TemplateAsset {
     pub fn new() -> Self {
         Self {
             params: HashMap::new(),

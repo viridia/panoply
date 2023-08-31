@@ -1,7 +1,7 @@
 use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::guise::{
-    asset::GuiseTemplatesLoader, controllers::SliderController, template::Template, StyleAsset,
+    asset::GuiseTemplatesLoader, controllers::SliderController, template::TemplateAsset, StyleAsset,
 };
 
 use super::{
@@ -23,7 +23,7 @@ impl Plugin for GuisePlugin {
         ))
         .add_asset_loader(GuiseTemplatesLoader)
         .add_asset::<StyleAsset>()
-        .add_asset::<Template>()
+        .add_asset::<TemplateAsset>()
         .register_component_as::<dyn Controller, DefaultController>()
         .register_component_as::<dyn Controller, ButtonController>()
         .register_component_as::<dyn Controller, SliderController>()
