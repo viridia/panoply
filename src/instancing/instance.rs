@@ -43,7 +43,7 @@ pub struct ModelInstanceBundle<M: Material> {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
-    pub computed_visibility: ComputedVisibility,
+    pub computed_visibility: InheritedVisibility,
 }
 
 pub fn create_mesh_instances(
@@ -77,7 +77,7 @@ pub fn create_mesh_instances(
         }
 
         if let Some(mut m_instances) = model_instances {
-            let result = server.get_load_state(&m_instances.handle);
+            let result = server.load_state(&m_instances.handle);
             if result == LoadState::Loaded {
                 if m_instances.needs_rebuild {
                     m_instances.needs_rebuild = false;
@@ -88,7 +88,7 @@ pub fn create_mesh_instances(
                 let asset = assets_gltf.get(&m_instances.handle);
                 if let Some(gltf) = asset {
                     if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
-                        let scene = assets_scene.get_mut(&scene_handle).unwrap();
+                        let scene = assets_scene.get_mut(scene_handle).unwrap();
                         // println!("Scene found: [{}]", placements.model);
 
                         let mut _extras_query = scene.world.query::<(&Name, &GltfExtras)>();

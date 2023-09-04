@@ -31,7 +31,7 @@ pub fn camera_controller(
     let down = keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S);
 
     use bevy::input::mouse::MouseScrollUnit;
-    for ev in scroll_events.iter() {
+    for ev in scroll_events.read() {
         match ev.unit {
             MouseScrollUnit::Line => {}
             MouseScrollUnit::Pixel => {

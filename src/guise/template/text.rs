@@ -6,10 +6,11 @@ use crate::guise::style::StyleAsset;
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Text {
     /// Reference to named style.
+    #[serde(rename = "styleset", default)]
     pub style: Option<String>,
 
     /// Inline styles on the node
-    pub inline_styles: Option<StyleAsset>,
+    pub inline_style: Option<StyleAsset>,
 
     // List of child nodes
     pub content: String,

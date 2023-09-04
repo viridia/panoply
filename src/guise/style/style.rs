@@ -6,12 +6,11 @@ use crate::guise::style::{
 };
 
 use super::{selectors_map::SelectorsMap, vars_map::VarsMap, ComputedStyle, StyleAttr};
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::{prelude::Asset, reflect::TypePath};
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
-#[derive(Debug, Default, Clone, TypeUuid, TypePath, PartialEq)]
-#[uuid = "4af40b07-f427-46f5-bdb2-f4b6f6c8ccef"]
+#[derive(Debug, Default, Clone, TypePath, PartialEq, Asset)]
 pub struct StyleAsset {
     /// List of style attributes.
     /// Rather than storing the attributes in a struct full of optional fields, we store a flat
@@ -130,6 +129,8 @@ impl Serialize for StyleAsset {
                 StyleAttr::FlexGrow(val) => st.serialize_field("flex-grow", val)?,
                 StyleAttr::FlexShrink(val) => st.serialize_field("flex-shrink", val)?,
                 StyleAttr::FlexBasis(val) => st.serialize_field("flex-basis", val)?,
+                StyleAttr::FlexWrap(val) => st.serialize_field("flex-wrap", val)?,
+                StyleAttr::FlexDirection(val) => st.serialize_field("flex-direction", val)?,
 
                 StyleAttr::RowGap(val) => st.serialize_field("row-gap", val)?,
                 StyleAttr::ColumnGap(val) => st.serialize_field("column-gap", val)?,
@@ -274,8 +275,8 @@ impl<'de, 'a> Deserialize<'de> for StyleAsset {
             BorderBottom,
 
             Flex,
-            // FlexDirection(bevy::ui::FlexDirection),
-            // FlexWrap(bevy::ui::FlexWrap),
+            FlexDirection,
+            FlexWrap,
             FlexGrow,
             FlexShrink,
             FlexBasis,
@@ -539,6 +540,10 @@ impl<'de, 'a> Deserialize<'de> for StyleAsset {
                         Field::Flex => {
                             attrs.push(SA::Flex(map.next_value::<ExprList>()?.to_expr()))
                         }
+                        Field::FlexDirection => {
+                            attrs.push(SA::FlexDirection(map.next_value::<Expr>()?))
+                        }
+                        Field::FlexWrap => attrs.push(SA::FlexWrap(map.next_value::<Expr>()?)),
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
                         Field::FlexBasis => {

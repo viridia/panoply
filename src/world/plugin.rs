@@ -9,10 +9,10 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_asset_loader(RealmsLoader)
-            .add_asset_loader(WorldLocationsLoader)
-            .add_asset::<RealmData>()
-            .add_asset::<WorldLocationsAsset>()
+        app.register_asset_loader(RealmsLoader)
+            .register_asset_loader(WorldLocationsLoader)
+            .init_asset::<RealmData>()
+            .init_asset::<WorldLocationsAsset>()
             .init_resource::<RealmsHandleResource>()
             .init_resource::<WorldLocationsResource>()
             .add_systems(Update, sync_realms);

@@ -1,7 +1,9 @@
-use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
+use bevy::asset::io::Reader;
+use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::reflect::TypePath;
 use bevy::utils::BoxedFuture;
+use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 
 /// Represents a map location or nav point that can be teleported to.
@@ -27,25 +29,29 @@ pub struct WorldLocation {
     pub map_pos: Option<Vec3>,
 }
 
-#[derive(TypeUuid, TypePath)]
-#[uuid = "fcd3a8fa-ab24-4938-b047-e7c71571a06b"]
+#[derive(TypePath, Asset)]
 pub struct WorldLocationsAsset(pub Vec<WorldLocation>);
 
 #[derive(Default)]
 pub struct WorldLocationsLoader;
 
 impl AssetLoader for WorldLocationsLoader {
+    type Asset = WorldLocationsAsset;
+    type Settings = ();
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
         Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
             let locations: Vec<WorldLocation> =
-                serde_json::from_slice(bytes).expect("unable to decode biomes");
+                serde_json::from_slice(&bytes).expect("unable to decode locations");
 
-            load_context.set_default_asset(LoadedAsset::new(WorldLocationsAsset(locations)));
-            Ok(())
+            Ok(WorldLocationsAsset(locations))
         })
     }
 

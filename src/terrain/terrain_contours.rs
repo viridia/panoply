@@ -1,3 +1,4 @@
+use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 
@@ -5,10 +6,10 @@ use std::sync::{Arc, Mutex};
 
 use super::{square::SquareArray, PARCEL_SIZE};
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset},
+    asset::{io::Reader, AssetLoader, LoadContext},
     math::IRect,
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
@@ -105,22 +106,27 @@ impl TerrainContoursTable {
     }
 }
 
-#[derive(TypeUuid, TypePath)]
-#[uuid = "059f4368-4ad1-48f4-9151-9b75be1ebfb6"]
+#[derive(TypePath, Asset)]
 pub struct TerrainContoursTableAsset(pub Arc<Mutex<TerrainContoursTable>>);
 
 #[derive(Default)]
 pub struct TerrainContoursTableLoader;
 
 impl AssetLoader for TerrainContoursTableLoader {
+    type Asset = TerrainContoursTableAsset;
+    type Settings = ();
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
         Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
             let shapes_ser: Vec<TerrainContourSer> =
-                rmps::from_slice(bytes).expect("unable to decode terrain shape");
+                rmps::from_slice(&bytes).expect("unable to decode terrain shape");
             let mut res = TerrainContoursTable {
                 shapes: Vec::with_capacity(shapes_ser.len()),
                 by_id: Vec::with_capacity(shapes_ser.len()),
@@ -153,10 +159,7 @@ impl AssetLoader for TerrainContoursTableLoader {
                 res.by_id[shape.id] = index;
             }
 
-            load_context.set_default_asset(LoadedAsset::new(TerrainContoursTableAsset(Arc::new(
-                Mutex::new(res),
-            ))));
-            Ok(())
+            Ok(TerrainContoursTableAsset(Arc::new(Mutex::new(res))))
         })
     }
 

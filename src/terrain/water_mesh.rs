@@ -42,7 +42,7 @@ pub fn gen_water_meshes(
             return;
         }
 
-        if server.get_load_state(&ts_handle.0) != LoadState::Loaded {
+        if server.load_state(&ts_handle.0) != LoadState::Loaded {
             return;
         }
 

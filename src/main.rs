@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use bevy::{
-    asset::ChangeWatcher,
     core_pipeline::clear_color::ClearColorConfig,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
@@ -10,7 +9,7 @@ use bevy::{
     },
 };
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use std::{f32::consts::PI, time::Duration};
+use std::f32::consts::PI;
 use world::Realm;
 
 extern crate directories;
@@ -86,10 +85,7 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(AssetPlugin {
-                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
-                    ..Default::default()
-                }),
+                .set(AssetPlugin::default().watch_for_changes()),
             ScreenDiagsPlugin,
         ))
         .insert_resource(settings)

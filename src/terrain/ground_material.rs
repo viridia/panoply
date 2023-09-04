@@ -1,12 +1,11 @@
 use bevy::{
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 // This is the struct that will be passed to your shader
-#[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
-#[uuid = "c666955b-c00f-4de6-a4d6-49c9581d6139"]
+#[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct GroundMaterial {
     #[texture(1)]
     #[sampler(2)]

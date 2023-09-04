@@ -1,15 +1,16 @@
 extern crate rmp_serde as rmps;
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset},
+    asset::{io::Reader, AssetLoader, LoadContext, LoadedFolder},
     math::IRect,
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
     utils::BoxedFuture,
 };
+use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 
 use crate::world::Realm;
@@ -20,8 +21,7 @@ use super::{
     parcel::{ShapeRef, ADJACENT_COUNT},
 };
 
-#[derive(Default, Serialize, Deserialize, TypeUuid, TypePath)]
-#[uuid = "42827d83-1cb9-4d78-aa38-108ee87fbb2b"]
+#[derive(Default, Serialize, Deserialize, TypePath, Asset)]
 pub struct TerrainMapAsset {
     /** Boundary of the map relative to the world origin. */
     pub bounds: IRect,
@@ -121,19 +121,24 @@ pub struct TerrainMapChanged;
 pub struct TerrainMapLoader;
 
 impl AssetLoader for TerrainMapLoader {
+    type Asset = TerrainMapAsset;
+    type Settings = ();
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
         Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
             let map: TerrainMapAsset =
-                rmps::from_slice(bytes).expect("unable to decode terrain map data");
+                rmps::from_slice(&bytes).expect("unable to decode terrain map data");
             let area = (map.bounds.width() * map.bounds.height()) as usize;
             assert!(map.shapes.len() == area);
             assert!(map.biomes.len() == area);
-            load_context.set_default_asset(LoadedAsset::new(map));
-            Ok(())
+            Ok(map)
         })
     }
 
@@ -143,12 +148,12 @@ impl AssetLoader for TerrainMapLoader {
 }
 
 #[derive(Resource)]
-pub struct TerrainMapsHandleResource(pub Vec<HandleUntyped>);
+pub struct TerrainMapsHandleResource(pub Handle<LoadedFolder>);
 
 impl FromWorld for TerrainMapsHandleResource {
     fn from_world(world: &mut World) -> Self {
         let server = world.resource::<AssetServer>();
-        TerrainMapsHandleResource(server.load_folder("terrain/maps").unwrap())
+        TerrainMapsHandleResource(server.load_folder("terrain/maps"))
     }
 }
 
@@ -158,15 +163,16 @@ pub fn insert_terrain_maps(
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm), Without<TerrainMap>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
+    mut images: ResMut<Assets<Image>>,
     asset_server: Res<AssetServer>,
 ) {
     for (entity, realm) in query.iter_mut() {
         // println!("Inserting terrain map: [{}].", realm.name);
         commands.entity(entity).insert((
             TerrainMap {
-                handle: server.load(format!("terrain/maps/{}.terrain", realm.name)),
+                handle: server.load(&format!("terrain/maps/{}.terrain", realm.name).to_string()),
                 biome_texture: Image::default(),
-                ground_material: create_material(&mut materials, &asset_server),
+                ground_material: create_material(&mut materials, &mut images, &asset_server),
                 needs_rebuild_biomes: false,
             },
             TerrainMapChanged,
@@ -181,18 +187,23 @@ pub fn update_terrain_maps(
     mut query: Query<(Entity, &mut Realm, Option<&mut TerrainMap>)>,
     mut ev_asset: EventReader<AssetEvent<TerrainMapAsset>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
+    mut images: ResMut<Assets<Image>>,
     asset_server: Res<AssetServer>,
 ) {
-    for ev in ev_asset.iter() {
+    for ev in ev_asset.read() {
         match ev {
-            AssetEvent::Created { handle } => {
-                let realm_name = asset_name_from_handle(&server, handle);
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
+                let realm_name = asset_name_from_handle(&server, id);
                 if let Some(realm) = query.iter().find(|r| r.1.name == realm_name) {
                     commands.entity(realm.0).insert((
                         TerrainMap {
-                            handle: handle.clone(),
+                            handle: server.get_id_handle(*id).unwrap(),
                             biome_texture: Image::default(),
-                            ground_material: create_material(&mut materials, &asset_server),
+                            ground_material: create_material(
+                                &mut materials,
+                                &mut images,
+                                &asset_server,
+                            ),
                             needs_rebuild_biomes: false,
                         },
                         TerrainMapChanged,
@@ -201,16 +212,16 @@ pub fn update_terrain_maps(
                 }
             }
 
-            AssetEvent::Modified { handle } => {
-                let realm_name = asset_name_from_handle(&server, handle);
+            AssetEvent::Modified { id } => {
+                let realm_name = asset_name_from_handle(&server, id);
                 if let Some((entity, _, _)) = query.iter().find(|(_, r, _)| r.name == realm_name) {
                     println!("Terrain map modified: [{}].", realm_name);
                     commands.entity(entity).insert(TerrainMapChanged);
                 }
             }
 
-            AssetEvent::Removed { handle } => {
-                let map_name = asset_name_from_handle(&server, handle);
+            AssetEvent::Removed { id } => {
+                let map_name = asset_name_from_handle(&server, id);
                 println!("Terrain map removed: [{}].", map_name);
                 for (entity, realm, _terrain) in query.iter_mut() {
                     if realm.name == map_name {
@@ -223,8 +234,8 @@ pub fn update_terrain_maps(
     }
 }
 
-fn asset_name_from_handle(server: &Res<AssetServer>, handle: &Handle<TerrainMapAsset>) -> String {
-    let asset_path = server.get_handle_path(handle).unwrap();
+fn asset_name_from_handle(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) -> String {
+    let asset_path = server.get_path(*id).unwrap();
     let path = asset_path.path();
     let filename = path.file_name().expect("Asset has no file name!");
     let filename_str = filename.to_str().unwrap();
@@ -288,8 +299,22 @@ pub fn update_ground_material(
 
 fn create_material(
     materials: &mut Assets<GroundMaterial>,
+    images: &mut Assets<Image>,
     asset_server: &AssetServer,
 ) -> Handle<GroundMaterial> {
+    let mut res = Image::new_fill(
+        Extent3d {
+            width: 1u32,
+            height: 1u32,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[0u8],
+        TextureFormat::R8Uint,
+    );
+    res.sampler_descriptor = ImageSampler::nearest();
+    let biomes = images.add(res);
+
     materials.add(GroundMaterial {
         noise: asset_server.load("terrain/textures/noise.png"),
         grass: asset_server.load("terrain/textures/grass.png"),
@@ -297,6 +322,6 @@ fn create_material(
         moss: asset_server.load("terrain/textures/moss.png"),
         water_color: Color::rgb(0.0, 0.1, 0.3),
         realm_offset: Vec2::new(0., 0.),
-        biomes: Handle::default(),
+        biomes,
     })
 }

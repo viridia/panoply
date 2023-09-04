@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.11.2", features = ["dynamic_linking"] }
-# bevy = { git = "https://github.com/bevyengine/bevy", features = ["dynamic_linking"] }
+anyhow = "1.0.75"
+# bevy = { version = "0.11.2", features = ["dynamic_linking"] }
+bevy = { git = "https://github.com/cart/bevy", features = ["dynamic_linking"], branch = "bevy_asset_v2" }
 bevy-inspector-egui = "0.19.0"
-bevy-trait-query = "0.3.0"
+# bevy-trait-query = "0.3.0"
+bevy-trait-query = { git = "https://github.com/hymm/bevy-trait-query", branch = "bevy_asset_v2" }
 bevy_mod_picking = { git = "https://github.com/aevyrie/bevy_mod_picking.git",  branch = "main" }
 cargo-wgsl = "0.0.14"
 directories = "5.0.1"

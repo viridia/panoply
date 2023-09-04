@@ -27,12 +27,12 @@ pub fn update_window_settings(
     mut settings: ResMut<UserSettings>,
     windows: Query<&mut Window>,
 ) {
-    for event in move_events.iter() {
+    for event in move_events.read() {
         settings.window.position = event.position;
         // println!("Window moved: {} {}", event.position.x, event.position.y);
     }
 
-    for _ in close_requested_events.iter() {
+    for _ in close_requested_events.read() {
         let window = windows.single();
         settings.window.size = UVec2::new(
             window.resolution.physical_width(),

@@ -7,33 +7,40 @@ use bevy::asset::AssetPath;
 /// * A path starting with './' or '../', e.g. `./bar#fragment`, in which case it is resolved
 ///   relative to the current directory.
 /// * Just a label, `#fragment`.
-pub fn relative_asset_path<'a>(base: &'a AssetPath<'a>, relative_path: &'a str) -> AssetPath<'a> {
-    if relative_path.starts_with('#') {
-        AssetPath::new_ref(base.path(), Some(&relative_path[1..]))
-    } else if relative_path.starts_with("./") || relative_path.starts_with("../") {
-        let mut rpath = relative_path;
+pub fn relative_asset_path<'a>(base: &'a AssetPath<'a>, path: &'a str) -> AssetPath<'a> {
+    if let Some(label) = path.strip_prefix('#') {
+        // It's a label only
+        AssetPath::new_ref(&base.path, Some(label))
+    } else {
+        let (rpath, rlabel) = match path.split_once('#') {
+            Some((path, label)) => (path, Some(label.to_string())),
+            None => (path, None),
+        };
         let mut fpath = PathBuf::from(base.path());
         if !fpath.pop() {
-            panic!("Can't compute relative path");
+            panic!("Can't compute relative path - not enough path elements");
         }
-        loop {
-            if rpath.starts_with("./") {
-                rpath = &rpath[2..];
-            } else if rpath.starts_with("../") {
-                rpath = &rpath[3..];
+
+        let rpath = PathBuf::from(rpath);
+        let mut first = true;
+        for elt in rpath.iter() {
+            if elt == "." {
+                // Skip
+            } else if elt == ".." {
                 if !fpath.pop() {
-                    panic!("Can't compute relative path");
+                    panic!("Can't compute relative path - not enough path elements");
                 }
             } else {
-                break;
+                if first {
+                    // If the first path element is not '.' or '..' then start fresh.
+                    fpath.clear();
+                }
+                fpath.push(elt);
             }
+            first = false;
         }
-        fpath.push(rpath);
-        // Note: converting from a string causes AssetPath to look for the '#' separator, while
-        // passing fpath directly does not. We want the former.
-        AssetPath::from(String::from(fpath.to_str().unwrap()))
-    } else {
-        AssetPath::from(relative_path)
+
+        AssetPath::new(fpath, rlabel)
     }
 }
 

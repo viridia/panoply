@@ -1,10 +1,11 @@
+use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
 
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset},
+    asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
@@ -51,27 +52,29 @@ pub struct BiomesTable {
     pub biomes: Vec<BiomeData>,
 }
 
-#[derive(TypeUuid, TypePath)]
-#[uuid = "3b62e8db-8f42-485a-adb1-b28ce331bfa7"]
+#[derive(TypePath, Asset)]
 pub struct BiomesAsset(pub Arc<Mutex<BiomesTable>>);
 
 #[derive(Default)]
 pub struct BiomesLoader;
 
 impl AssetLoader for BiomesLoader {
+    type Asset = BiomesAsset;
+    type Settings = ();
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
         Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
             let biomes: Vec<BiomeData> =
-                serde_json::from_slice(bytes).expect("unable to decode biomes");
+                serde_json::from_slice(&bytes).expect("unable to decode biomes");
 
-            load_context.set_default_asset(LoadedAsset::new(BiomesAsset(Arc::new(Mutex::new(
-                BiomesTable { biomes },
-            )))));
-            Ok(())
+            Ok(BiomesAsset(Arc::new(Mutex::new(BiomesTable { biomes }))))
         })
     }
 

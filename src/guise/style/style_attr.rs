@@ -1,4 +1,4 @@
-use bevy::{prelude::Color, text::BreakLineOn, ui::*};
+use bevy::{prelude::*, text::BreakLineOn};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::str::FromStr;
@@ -63,8 +63,8 @@ pub enum StyleAttr {
     BorderTop(Expr),
     BorderBottom(Expr),
 
-    FlexDirection(bevy::ui::FlexDirection),
-    FlexWrap(bevy::ui::FlexWrap),
+    FlexDirection(Expr),
+    FlexWrap(Expr),
     Flex(Expr),
     FlexGrow(Expr),
     FlexShrink(Expr),
@@ -317,17 +317,23 @@ impl StyleAttr {
             }
 
             StyleAttr::FlexDirection(val) => {
-                computed.style.flex_direction = *val;
+                if let Some(l) = val.into_flex_direction() {
+                    computed.style.flex_direction = l;
+                }
             }
             StyleAttr::FlexWrap(val) => {
-                computed.style.flex_wrap = *val;
+                if let Some(l) = val.into_flex_wrap() {
+                    computed.style.flex_wrap = l;
+                }
             }
+
             StyleAttr::Flex(val) => match val {
                 Expr::Number(flex) => {
                     computed.style.flex_grow = *flex;
                     computed.style.flex_shrink = *flex;
                     computed.style.flex_basis = Val::Auto;
                 }
+
                 Expr::List(items) => {
                     if items.len() == 3 {
                         match items[0] {
@@ -345,10 +351,25 @@ impl StyleAttr {
                         if let Some(basis) = items[3].into_length() {
                             computed.style.flex_basis = basis;
                         }
+                    } else if items.len() == 1 {
+                        match items[0] {
+                            Expr::Number(n) => {
+                                computed.style.flex_grow = n;
+                                computed.style.flex_shrink = n;
+                                computed.style.flex_basis = Val::Auto;
+                            }
+                            _ => (),
+                        };
+                    } else {
+                        warn!("Invalid flex value: {}", val);
                     }
                 }
-                _ => (),
+
+                _ => {
+                    warn!("Invalid flex value: {}", val);
+                }
             },
+
             StyleAttr::FlexGrow(val) => {
                 if let Some(flex) = val.into_f32() {
                     computed.style.flex_grow = flex;
@@ -419,25 +440,6 @@ impl StyleAttr {
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {
-            b"flex-direction" => StyleAttr::FlexDirection(match value {
-                "row" => FlexDirection::Row,
-                "column" => FlexDirection::Column,
-                "row-reverse" => FlexDirection::RowReverse,
-                "column-reverse" => FlexDirection::ColumnReverse,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
-            b"flex-wrap" => StyleAttr::FlexWrap(match value {
-                "nowrap" => FlexWrap::NoWrap,
-                "wrap" => FlexWrap::Wrap,
-                "wrap-reverse" => FlexWrap::WrapReverse,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-
             b"grid-auto-flow" => StyleAttr::GridAutoFlow(match value {
                 "row" => GridAutoFlow::Row,
                 "column" => GridAutoFlow::Column,
@@ -476,29 +478,6 @@ impl StyleAttr {
 
     // pub fn write_xml(&self, elem: &mut BytesStart) {
     //     match self {
-    //         StyleAttr::FlexDirection(dir) => {
-    //             elem.push_attribute((
-    //                 "flex-direction",
-    //                 match dir {
-    //                     bevy::ui::FlexDirection::Row => "row",
-    //                     bevy::ui::FlexDirection::Column => "column",
-    //                     bevy::ui::FlexDirection::RowReverse => "row-reverse",
-    //                     bevy::ui::FlexDirection::ColumnReverse => "column-reverse",
-    //                 },
-    //             ));
-    //         }
-
-    //         StyleAttr::FlexWrap(dir) => {
-    //             elem.push_attribute((
-    //                 "flex-wrap",
-    //                 match dir {
-    //                     bevy::ui::FlexWrap::NoWrap => "nowrap",
-    //                     bevy::ui::FlexWrap::Wrap => "wrap",
-    //                     bevy::ui::FlexWrap::WrapReverse => "wrap-reverse",
-    //                 },
-    //             ));
-    //         }
-
     //         StyleAttr::GridAutoFlow(val) => {
     //             elem.push_attribute((
     //                 "grid-auto-flow",
@@ -553,41 +532,6 @@ impl StyleAttr {
     //         }
     //     }
     // }
-
-    /// Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
-    fn parse_color(str: &str) -> Result<Color, GuiseError> {
-        lazy_static! {
-            static ref RE_RGBA: Regex =
-                Regex::new(r"^rgba\(([\d\.]+),\s*([\d\.]+),\s*([\d\.]+),\s*([\d\.]+)\)$").unwrap();
-            static ref RE_HSLA: Regex =
-                Regex::new(r"^hsla\(([\d\.]+),\s*([\d\.]+),\s*([\d\.]+),\s*([\d\.]+)\)$").unwrap();
-        }
-
-        let h = Color::hex(str);
-        if h.is_ok() {
-            return Ok(h.unwrap());
-        }
-
-        RE_RGBA
-            .captures(str)
-            .map(|cap| {
-                Color::rgba(
-                    f32::from_str(&cap[1]).unwrap(),
-                    f32::from_str(&cap[2]).unwrap(),
-                    f32::from_str(&cap[3]).unwrap(),
-                    f32::from_str(&cap[4]).unwrap(),
-                )
-            })
-            .or(RE_HSLA.captures(str).map(|cap| {
-                Color::hsla(
-                    f32::from_str(&cap[1]).unwrap(),
-                    f32::from_str(&cap[2]).unwrap(),
-                    f32::from_str(&cap[3]).unwrap(),
-                    f32::from_str(&cap[4]).unwrap(),
-                )
-            }))
-            .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
-    }
 
     /// Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
     fn parse_grid_placement(str: &str) -> Result<GridPlacement, GuiseError> {
@@ -688,11 +632,6 @@ impl StyleAttr {
     }
 
     /// Parse a scalar i32.
-    fn parse_i32(str: &str) -> Result<i32, GuiseError> {
-        i32::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
-    }
-
-    /// Parse a scalar i32.
     fn parse_i16(str: &str) -> Result<i16, GuiseError> {
         i16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
     }
@@ -700,53 +639,6 @@ impl StyleAttr {
     /// Parse a scalar i32.
     fn parse_u16(str: &str) -> Result<u16, GuiseError> {
         u16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
-    }
-
-    /// Convert a `Val` into a CSS-style string.
-    fn val_to_str(val: Val) -> String {
-        match val {
-            Val::Auto => "auto".to_string(),
-            Val::Px(px) => format!("{}px", px),
-            Val::Percent(pct) => format!("{}%", pct),
-            Val::Vw(v) => format!("{}vw", v),
-            Val::Vh(v) => format!("{}vh", v),
-            Val::VMin(v) => format!("{}vmin", v),
-            Val::VMax(v) => format!("{}vmax", v),
-        }
-    }
-
-    /// Convert a `UiRect` into a CSS-style string. The order of the values is (top, right, bottom,
-    /// left).
-    fn uirect_to_str(val: UiRect) -> String {
-        format!(
-            "{} {} {} {}",
-            StyleAttr::val_to_str(val.top),
-            StyleAttr::val_to_str(val.right),
-            StyleAttr::val_to_str(val.bottom),
-            StyleAttr::val_to_str(val.left)
-        )
-    }
-
-    fn color_to_str(col: Color) -> String {
-        match col {
-            Color::Rgba {
-                red,
-                green,
-                blue,
-                alpha,
-            } => format!("rgba({}, {}, {}, {})", red, green, blue, alpha),
-
-            Color::Hsla {
-                hue,
-                saturation,
-                lightness,
-                alpha,
-            } => format!("hsla({}, {}, {}, {})", hue, saturation, lightness, alpha),
-
-            _ => {
-                panic!("Unsupported color format")
-            }
-        }
     }
 }
 
@@ -766,28 +658,6 @@ mod tests {
         assert!(StyleAttr::parse_val("1.1bad").is_err());
         assert!(StyleAttr::parse_val("bad").is_err());
         assert!(StyleAttr::parse_val("1.1.1bad").is_err());
-    }
-
-    #[test]
-    fn test_parse_uirect() {
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px 3px 4px").unwrap(),
-            UiRect::new(Val::Px(4.), Val::Px(2.), Val::Px(1.), Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px 3px").unwrap(),
-            UiRect::new(Val::Px(2.), Val::Px(2.), Val::Px(1.), Val::Px(3.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px 2px").unwrap(),
-            UiRect::new(Val::Px(2.), Val::Px(2.), Val::Px(1.), Val::Px(1.))
-        );
-        assert_eq!(
-            StyleAttr::parse_uirect("1px").unwrap(),
-            UiRect::new(Val::Px(1.), Val::Px(1.), Val::Px(1.), Val::Px(1.))
-        );
-
-        assert!(StyleAttr::parse_uirect("1.1bad").is_err());
     }
 
     #[test]

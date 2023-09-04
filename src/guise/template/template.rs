@@ -1,4 +1,5 @@
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::prelude::Asset;
+use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
@@ -7,8 +8,7 @@ use super::text::Text;
 
 pub type TemplateNodeList = Vec<Box<TemplateNode>>;
 
-#[derive(Debug, TypeUuid, TypePath, Default, Serialize, Deserialize)]
-#[uuid = "b2ce477f-e4a4-40cf-b969-916a9dbd799e"]
+#[derive(Debug, TypePath, Default, Serialize, Deserialize, Asset)]
 pub struct TemplateAsset {
     #[serde(default)]
     pub params: HashMap<String, TemplateParam>,

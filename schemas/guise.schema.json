@@ -67,8 +67,66 @@
         "display": {
           "enum": ["flex", "grid"]
         },
+        "position": {
+          "enum": ["absolute", "relative"]
+        },
+        "left": {
+          "$ref": "#/definitions/val"
+        },
+        "right": {
+          "$ref": "#/definitions/val"
+        },
+        "top": {
+          "$ref": "#/definitions/val"
+        },
+        "bottom": {
+          "$ref": "#/definitions/val"
+        },
+        "width": {
+          "$ref": "#/definitions/val"
+        },
+        "height": {
+          "$ref": "#/definitions/val"
+        },
+        "min-width": {
+          "$ref": "#/definitions/val"
+        },
+        "min-height": {
+          "$ref": "#/definitions/val"
+        },
+        "max-width": {
+          "$ref": "#/definitions/val"
+        },
+        "max-height": {
+          "$ref": "#/definitions/val"
+        },
         "padding": {
           "$ref": "#/definitions/val"
+        },
+        "border": {
+          "$ref": "#/definitions/val"
+        },
+        "flex": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            }
+          ]
+        },
+        "flex-grow": {
+          "type": "number",
+          "minimum": 0
+        },
+        "flex-shrink": {
+          "type": "number",
+          "minimum": 0
+        },
+        "flex-basis": {
+          "$ref": "#/definitions/val"
+        },
+        "flex-direction": {
+          "enum": ["row", "row-reverse", "column", "column-reverse"]
         },
         "background-image": {
           "oneOf": [
@@ -122,6 +180,10 @@
         {
           "type": "string",
           "pattern": "^\\d+(\\.\\d*)(px|%|vw|vh|vmin|vmax)$"
+        },
+        {
+          "type": "string",
+          "const": "auto"
         }
       ]
     },
@@ -133,9 +195,94 @@
       "type": "object",
       "properties": {
         "params": {},
-        "content": {}
+        "content": {
+          "$ref": "#/definitions/template-node"
+        }
       },
       "required": ["content"],
+      "additionalProperties": false
+    },
+    "template-node": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/element-node"
+        },
+        {
+          "$ref": "#/definitions/text-node"
+        },
+        {
+          "$ref": "#/definitions/fragment-node"
+        }
+      ]
+    },
+    "element-node": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": ["element"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "styleset": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "style": {
+          "$ref": "#/definitions/style"
+        },
+        "controller": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/template-node"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "text-node": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": ["text"]
+        },
+        "styleset": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "style": {
+          "$ref": "#/definitions/style"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "content"],
+      "additionalProperties": false
+    },
+    "fragment-node": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": ["fragment"]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/template-node"
+          }
+        }
+      },
+      "required": ["type"],
       "additionalProperties": false
     },
     "font": {

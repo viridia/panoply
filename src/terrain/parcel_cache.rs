@@ -73,7 +73,7 @@ pub fn spawn_parcels(
         let realm = realm_query.get(rect.realm);
         if realm.is_ok() {
             let (_, terrain) = realm.unwrap();
-            if server.get_load_state(&terrain.handle) != LoadState::Loaded {
+            if server.load_state(&terrain.handle) != LoadState::Loaded {
                 return;
             }
             let terrain_map = terrain_map_assets

@@ -1,7 +1,9 @@
-use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
+use bevy::asset::io::Reader;
+use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::prelude::*;
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::reflect::TypePath;
 use bevy::utils::BoxedFuture;
+use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 
 pub type RealmLayer = usize;
@@ -13,15 +15,13 @@ pub enum RealmLighting {
     Exterior,
 }
 
-// #[derive(Default, Serialize, Deserialize)]
-#[derive(Default, Serialize, Deserialize, TypeUuid, TypePath)]
-#[uuid = "dace4039-ec2b-46ff-8dd1-92b8704e8b73"]
+#[derive(Default, Serialize, Deserialize, TypePath, Asset)]
 pub struct RealmData {
     /** Type of lighting for this realm. */
     pub lighting: RealmLighting,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Asset, TypePath)]
 pub struct Realm {
     /** Realm index, also used as layer index for rendering. */
     pub layer: RealmLayer,
@@ -37,15 +37,21 @@ pub struct Realm {
 pub struct RealmsLoader;
 
 impl AssetLoader for RealmsLoader {
+    type Asset = RealmData;
+    type Settings = ();
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        _load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
         Box::pin(async move {
-            let map: RealmData = serde_json::from_slice(bytes).expect("unable to decode RealmData");
-            load_context.set_default_asset(LoadedAsset::new(map));
-            Ok(())
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+            let map: RealmData =
+                serde_json::from_slice(&bytes).expect("unable to decode RealmData");
+            Ok(map)
         })
     }
 
@@ -55,12 +61,12 @@ impl AssetLoader for RealmsLoader {
 }
 
 #[derive(Resource)]
-pub struct RealmsHandleResource(pub Vec<HandleUntyped>);
+pub struct RealmsHandleResource(pub Handle<LoadedFolder>);
 
 impl FromWorld for RealmsHandleResource {
     fn from_world(world: &mut World) -> Self {
         let server = world.resource::<AssetServer>();
-        RealmsHandleResource(server.load_folder("realms").unwrap())
+        RealmsHandleResource(server.load_folder("realms"))
     }
 }
 
@@ -71,9 +77,9 @@ pub fn sync_realms(
     mut query: Query<(Entity, &mut Realm)>,
     mut ev_asset: EventReader<AssetEvent<RealmData>>,
 ) {
-    for ev in ev_asset.iter() {
+    for ev in ev_asset.read() {
         match ev {
-            AssetEvent::Created { handle } => {
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
                 // Assign first unused id.
                 let mut layer: RealmLayer = 1;
                 loop {
@@ -89,8 +95,8 @@ pub fn sync_realms(
                     }
                 }
 
-                let realm = assets.get(handle).unwrap();
-                let realm_name = realm_name_from_handle(&server, handle);
+                let realm = assets.get(*id).unwrap();
+                let realm_name = realm_name_from_handle(&server, id);
                 println!("Realm created: [{}].", realm_name);
                 commands.spawn(Realm {
                     layer,
@@ -99,9 +105,9 @@ pub fn sync_realms(
                 });
             }
 
-            AssetEvent::Modified { handle } => {
-                let realm = assets.get(handle).unwrap();
-                let realm_name = realm_name_from_handle(&server, handle);
+            AssetEvent::Modified { id } => {
+                let realm = assets.get(*id).unwrap();
+                let realm_name = realm_name_from_handle(&server, id);
                 println!("Realm modified: [{}].", realm_name);
                 for (_, mut comp) in query.iter_mut() {
                     if comp.name == realm_name {
@@ -110,8 +116,8 @@ pub fn sync_realms(
                 }
             }
 
-            AssetEvent::Removed { handle } => {
-                let realm_name = realm_name_from_handle(&server, handle);
+            AssetEvent::Removed { id } => {
+                let realm_name = realm_name_from_handle(&server, id);
                 println!("Realm removed: [{}].", realm_name);
                 for (entity, comp) in query.iter_mut() {
                     if comp.name == realm_name {
@@ -123,8 +129,8 @@ pub fn sync_realms(
     }
 }
 
-fn realm_name_from_handle(server: &Res<AssetServer>, handle: &Handle<RealmData>) -> String {
-    let asset_path = server.get_handle_path(handle).unwrap();
+fn realm_name_from_handle(server: &Res<AssetServer>, handle: &AssetId<RealmData>) -> String {
+    let asset_path = server.get_path(*handle).unwrap();
     let path = asset_path.path();
     let filename = path.file_name().expect("Asset has no file name!");
     let filename_str = filename.to_str().unwrap();

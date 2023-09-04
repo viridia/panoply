@@ -1,7 +1,7 @@
 use bevy::{
     pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::{
         mesh::{MeshVertexAttribute, MeshVertexBufferLayout},
         render_resource::{
@@ -15,8 +15,7 @@ pub const ATTRIBUTE_DEPTH_MOTION: MeshVertexAttribute =
     MeshVertexAttribute::new("depth_motion", 0x1000, VertexFormat::Float32x3);
 
 // This is the struct that will be passed to your shader
-#[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
-#[uuid = "e9fd10a4-0a9d-409a-ae07-0142783fc98d"]
+#[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct WaterMaterial {
     #[uniform(1)]
     pub water_color: Color,

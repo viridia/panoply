@@ -55,6 +55,8 @@ pub enum Expr {
     JustifyItems(ui::JustifyItems),
     JustifyContent(ui::JustifyContent),
     JustifySelf(ui::JustifySelf),
+    FlexDirection(ui::FlexDirection),
+    FlexWrap(ui::FlexWrap),
 }
 
 pub enum CssFn {
@@ -289,6 +291,35 @@ impl Expr {
                 _ => None,
             },
             Expr::JustifySelf(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a `ui::FlexDirection`
+    pub fn into_flex_direction(&self) -> Option<ui::FlexDirection> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "row" => Some(ui::FlexDirection::Row),
+                "row-reverse" => Some(ui::FlexDirection::RowReverse),
+                "column" => Some(ui::FlexDirection::Column),
+                "column-reverse" => Some(ui::FlexDirection::ColumnReverse),
+                _ => None,
+            },
+            Expr::FlexDirection(d) => Some(*d),
+            _ => None,
+        }
+    }
+
+    /// Evaluate the expression and coerce to a `ui::FlexWrap`
+    pub fn into_flex_wrap(&self) -> Option<ui::FlexWrap> {
+        match self {
+            Expr::Ident(ref n) => match n.as_str() {
+                "nowrap" => Some(ui::FlexWrap::NoWrap),
+                "wrap" => Some(ui::FlexWrap::Wrap),
+                "wrap-reverse" => Some(ui::FlexWrap::WrapReverse),
+                _ => None,
+            },
+            Expr::FlexWrap(d) => Some(*d),
             _ => None,
         }
     }
@@ -702,6 +733,17 @@ impl fmt::Display for Expr {
                 ui::JustifySelf::Center => write!(f, "center"),
                 ui::JustifySelf::Baseline => write!(f, "baseline"),
                 ui::JustifySelf::Stretch => write!(f, "stretch"),
+            },
+            Expr::FlexDirection(d) => match d {
+                ui::FlexDirection::Row => write!(f, "row"),
+                ui::FlexDirection::RowReverse => write!(f, "row-reverse"),
+                ui::FlexDirection::Column => write!(f, "column"),
+                ui::FlexDirection::ColumnReverse => write!(f, "column-reverse"),
+            },
+            Expr::FlexWrap(d) => match d {
+                ui::FlexWrap::NoWrap => write!(f, "nowrap"),
+                ui::FlexWrap::Wrap => write!(f, "wrap"),
+                ui::FlexWrap::WrapReverse => write!(f, "wrap-reverse"),
             },
 
             Expr::Var(name) => write!(f, "var(--{})", name),

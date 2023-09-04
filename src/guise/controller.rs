@@ -19,17 +19,27 @@ pub trait Controller {
         assets: &Assets<StyleAsset>,
     ) {
         let mut computed = ComputedStyle::default();
+        self.compute_style(&mut computed, view, assets);
+        commands.add(UpdateComputedStyle { entity, computed });
+    }
+
+    fn compute_style(
+        &self,
+        computed: &mut ComputedStyle,
+        view: &ViewElement,
+        assets: &Assets<StyleAsset>,
+    ) {
         for handle in view.styleset_handles.iter() {
             if let Some(style) = assets.get(handle) {
                 info!("Applying style.");
-                style.apply_to(&mut computed);
+                style.apply_to(computed);
             } else {
                 warn!("Failed to load style.");
             }
         }
-        // view.apply_base_styles(&mut computed, assets);
-        view.apply_inline_styles(&mut computed);
-        commands.add(UpdateComputedStyle { entity, computed });
+        if let Some(ref inline) = view.inline_style {
+            inline.apply_to(computed);
+        }
     }
 }
 

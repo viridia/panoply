@@ -29,12 +29,12 @@ pub struct TerrainPlugin;
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ParcelCache::new())
-            .add_asset_loader(TerrainContoursTableLoader)
-            .add_asset_loader(TerrainMapLoader)
-            .add_asset_loader(BiomesLoader)
-            .add_asset::<TerrainContoursTableAsset>()
-            .add_asset::<TerrainMapAsset>()
-            .add_asset::<BiomesAsset>()
+            .register_asset_loader(TerrainContoursTableLoader)
+            .register_asset_loader(TerrainMapLoader)
+            .register_asset_loader(BiomesLoader)
+            .init_asset::<TerrainContoursTableAsset>()
+            .init_asset::<TerrainMapAsset>()
+            .init_asset::<BiomesAsset>()
             .init_resource::<BiomesHandle>()
             .init_resource::<TerrainContoursHandle>()
             .init_resource::<TerrainMapsHandleResource>()
@@ -68,13 +68,13 @@ pub fn config_textures_modes(
     mut assets: ResMut<Assets<Image>>,
     mut ev_image: EventReader<AssetEvent<Image>>,
 ) {
-    for ev in ev_image.iter() {
+    for ev in ev_image.read() {
         match ev {
-            AssetEvent::Created { handle } => {
-                if let Some(asset_path) = server.get_handle_path(handle) {
+            AssetEvent::Added { id } => {
+                if let Some(asset_path) = server.get_path(*id) {
                     let path = asset_path.path();
                     if path.parent().expect("path").to_str().expect("path") == "textures" {
-                        if let Some(image) = assets.get_mut(handle) {
+                        if let Some(image) = assets.get_mut(*id) {
                             image.sampler_descriptor =
                                 ImageSampler::Descriptor(SamplerDescriptor {
                                     label: Some("Terrain textures"),

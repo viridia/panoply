@@ -27,13 +27,14 @@ impl FromWorld for ButtonController {
 
 impl Controller for ButtonController {
     fn attach(&self, commands: &mut Commands, entity: Entity, _view: &ViewElement) {
-        commands.entity(entity).insert((
-            On::<Pointer<Over>>::run(button_pointer_over),
-            On::<Pointer<Out>>::run(button_pointer_out),
-            On::<Pointer<DragStart>>::run(button_drag_start),
-            On::<Pointer<DragEnd>>::run(button_drag_end),
-            FocusPolicy::Block,
-        ));
+        // REINSTATE
+        // commands.entity(entity).insert((
+        //     On::<Pointer<Over>>::run(button_pointer_over),
+        //     On::<Pointer<Out>>::run(button_pointer_out),
+        //     On::<Pointer<DragStart>>::run(button_drag_start),
+        //     On::<Pointer<DragEnd>>::run(button_drag_end),
+        //     FocusPolicy::Block,
+        // ));
     }
 
     fn update_styles(
@@ -44,8 +45,6 @@ impl Controller for ButtonController {
         assets: &Assets<StyleAsset>,
     ) {
         let mut computed = ComputedStyle::default();
-        view.apply_base_styles(&mut computed, assets);
-
         let mut classes: Vec<&str> = Vec::with_capacity(3);
         if self.disabled {
             classes.push("disabled");
@@ -57,8 +56,9 @@ impl Controller for ButtonController {
             }
         }
 
-        view.apply_selected_styles(&mut computed, &classes);
-        view.apply_inline_styles(&mut computed);
+        self.compute_style(&mut computed, view, assets);
+        // view.apply_selected_styles(&mut computed, &classes);
+        // view.apply_inline_styles(&mut computed);
         commands.add(UpdateComputedStyle { entity, computed });
     }
 }
@@ -68,43 +68,43 @@ const HOVERED: Color = Color::rgb(0.25, 0.25, 0.35);
 const PRESSED: Color = Color::rgb(0.35, 0.75, 0.35);
 
 fn button_pointer_over(
-    event: Listener<Pointer<Over>>,
-    mut query: Query<(&mut ViewElement, &mut ButtonController)>,
+    _event: Listener<Pointer<Over>>,
+    mut _query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
-    if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        if !ctrl.disabled {
-            ctrl.inside = true;
-            view.set_changed();
-        }
-    }
+    // if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
+    //     if !ctrl.disabled {
+    //         ctrl.inside = true;
+    //         view.set_changed();
+    //     }
+    // }
 }
 
 fn button_pointer_out(
-    event: Listener<Pointer<Out>>,
-    mut query: Query<(&mut ViewElement, &mut ButtonController)>,
+    _event: Listener<Pointer<Out>>,
+    mut _query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
-    if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.inside = false;
-        view.set_changed();
-    }
+    // if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
+    //     ctrl.inside = false;
+    //     view.set_changed();
+    // }
 }
 
 fn button_drag_start(
-    event: Listener<Pointer<DragStart>>,
-    mut query: Query<(&mut ViewElement, &mut ButtonController)>,
+    _event: Listener<Pointer<DragStart>>,
+    mut _query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
-    if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.dragging = true;
-        view.set_changed();
-    }
+    // if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
+    //     ctrl.dragging = true;
+    //     view.set_changed();
+    // }
 }
 
 fn button_drag_end(
-    event: Listener<Pointer<DragEnd>>,
-    mut query: Query<(&mut ViewElement, &mut ButtonController)>,
+    _event: Listener<Pointer<DragEnd>>,
+    mut _query: Query<(&mut ViewElement, &mut ButtonController)>,
 ) {
-    if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
-        ctrl.dragging = false;
-        view.set_changed();
-    }
+    // if let Ok((mut view, mut ctrl)) = query.get_mut(event.listener()) {
+    //     ctrl.dragging = false;
+    //     view.set_changed();
+    // }
 }
