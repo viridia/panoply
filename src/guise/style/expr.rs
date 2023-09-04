@@ -103,6 +103,28 @@ impl Expr {
         .parse_next(input)
     }
 
+    pub fn coerce<T>(&self) -> Option<T>
+    where
+        Coerce: CoerceExpr<T>,
+    {
+        Coerce::coerce(&self)
+    }
+
+    pub fn opt<T>(&mut self) -> &Self
+    where
+        Coerce: CoerceExpr<T>,
+    {
+        if let Self::List(l) = self {
+            for x in l.iter_mut() {
+                x.opt();
+            }
+            return self;
+        }
+
+        Coerce::optimize(self);
+        self
+    }
+
     /// Optimize constant expression with type hints
     pub fn optimize(&mut self, hint: TypeHint) -> &Self {
         if let Self::List(l) = self {
@@ -121,73 +143,73 @@ impl Expr {
                 }
             }
             TypeHint::Display => {
-                let opt = coerce::<ui::Display>(self);
+                let opt = self.coerce::<ui::Display>();
                 if let Some(disp) = opt {
                     *self = Self::Display(disp)
                 }
             }
             TypeHint::Position => {
-                let opt = coerce::<ui::PositionType>(self);
+                let opt = self.coerce::<ui::PositionType>();
                 if let Some(disp) = opt {
                     *self = Self::PositionType(disp)
                 }
             }
             TypeHint::OverflowAxis => {
-                let opt = coerce::<ui::OverflowAxis>(self);
+                let opt = self.coerce::<ui::OverflowAxis>();
                 if let Some(disp) = opt {
                     *self = Self::OverflowAxis(disp)
                 }
             }
             TypeHint::Direction => {
-                let opt = coerce::<ui::Direction>(self);
+                let opt = self.coerce::<ui::Direction>();
                 if let Some(disp) = opt {
                     *self = Self::Direction(disp)
                 }
             }
             TypeHint::AlignItems => {
-                let opt = coerce::<ui::AlignItems>(self);
+                let opt = self.coerce::<ui::AlignItems>();
                 if let Some(disp) = opt {
                     *self = Self::AlignItems(disp)
                 }
             }
             TypeHint::AlignContent => {
-                let opt = coerce::<ui::AlignContent>(self);
+                let opt = self.coerce::<ui::AlignContent>();
                 if let Some(disp) = opt {
                     *self = Self::AlignContent(disp)
                 }
             }
             TypeHint::AlignSelf => {
-                let opt = coerce::<ui::AlignSelf>(self);
+                let opt = self.coerce::<ui::AlignSelf>();
                 if let Some(disp) = opt {
                     *self = Self::AlignSelf(disp)
                 }
             }
             TypeHint::JustifyItems => {
-                let opt = coerce::<ui::JustifyItems>(self);
+                let opt = self.coerce::<ui::JustifyItems>();
                 if let Some(disp) = opt {
                     *self = Self::JustifyItems(disp)
                 }
             }
             TypeHint::JustifyContent => {
-                let opt = coerce::<ui::JustifyContent>(self);
+                let opt = self.coerce::<ui::JustifyContent>();
                 if let Some(disp) = opt {
                     *self = Self::JustifyContent(disp)
                 }
             }
             TypeHint::JustifySelf => {
-                let opt = coerce::<ui::JustifySelf>(self);
+                let opt = self.coerce::<ui::JustifySelf>();
                 if let Some(disp) = opt {
                     *self = Self::JustifySelf(disp)
                 }
             }
             TypeHint::FlexDirection => {
-                let opt = coerce::<ui::FlexDirection>(self);
+                let opt = self.coerce::<ui::FlexDirection>();
                 if let Some(v) = opt {
                     *self = Self::FlexDirection(v)
                 }
             }
             TypeHint::FlexWrap => {
-                let opt = coerce::<ui::FlexWrap>(self);
+                let opt = self.coerce::<ui::FlexWrap>();
                 if let Some(v) = opt {
                     *self = Self::FlexWrap(v)
                 }
@@ -197,18 +219,11 @@ impl Expr {
     }
 }
 
-pub fn coerce<T>(e: &Expr) -> Option<T>
-where
-    Coerce: CoerceExpr<T>,
-{
-    Coerce::coerce(e)
-}
-
 pub struct Coerce;
 
 pub trait CoerceExpr<T> {
     fn coerce(e: &Expr) -> Option<T>;
-    // fn optimize(_e: &mut Expr) {}
+    fn optimize(_e: &mut Expr) {}
 }
 
 impl CoerceExpr<i32> for Coerce {
@@ -248,12 +263,12 @@ impl CoerceExpr<ui::Val> for Coerce {
         }
     }
 
-    // fn optimize(e: &mut Expr) {
-    //     let opt = Self::coerce(e);
-    //     if let Some(val) = opt {
-    //         *e = Expr::Length(val)
-    //     }
-    // }
+    fn optimize(e: &mut Expr) {
+        let opt = Self::coerce(e);
+        if let Some(val) = opt {
+            *e = Expr::Length(val)
+        }
+    }
 }
 
 impl CoerceExpr<ui::Display> for Coerce {
@@ -483,19 +498,19 @@ impl CoerceExpr<ui::UiRect> for Coerce {
                 bottom: ui::Val::Px(*v),
             }),
             Expr::List(v) if v.len() > 0 => {
-                let top = coerce::<ui::Val>(&v[0])?;
+                let top = v[0].coerce::<ui::Val>()?;
                 let right = if v.len() > 1 {
-                    coerce::<ui::Val>(&v[1])?
+                    v[1].coerce::<ui::Val>()?
                 } else {
                     top
                 };
                 let bottom = if v.len() > 2 {
-                    coerce::<ui::Val>(&v[2])?
+                    v[2].coerce::<ui::Val>()?
                 } else {
                     top
                 };
                 let left = if v.len() > 3 {
-                    coerce::<ui::Val>(&v[3])?
+                    v[3].coerce::<ui::Val>()?
                 } else {
                     right
                 };

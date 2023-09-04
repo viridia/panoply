@@ -5,11 +5,7 @@ use std::str::FromStr;
 
 use crate::guise::GuiseError;
 
-use super::{
-    color::ColorValue,
-    expr::{coerce, Expr},
-    ComputedStyle,
-};
+use super::{color::ColorValue, expr::Expr, ComputedStyle};
 
 /** A single style-sheet property which can be applied to a computed style. */
 #[derive(Debug, Clone, PartialEq)]
@@ -104,226 +100,226 @@ impl StyleAttr {
                 todo!("Implement background-image")
             }
             StyleAttr::BackgroundColor(val) => {
-                if let Some(c) = coerce::<ColorValue>(val) {
+                if let Some(c) = val.coerce::<ColorValue>() {
                     computed.background_color = c;
                 }
             }
             StyleAttr::BorderColor(val) => {
-                if let Some(c) = coerce::<ColorValue>(val) {
+                if let Some(c) = val.coerce::<ColorValue>() {
                     computed.border_color = c;
                 }
             }
             StyleAttr::Color(val) => {
-                if let Some(c) = coerce::<ColorValue>(val) {
+                if let Some(c) = val.coerce::<ColorValue>() {
                     computed.color = c;
                 }
             }
             StyleAttr::ZIndex(val) => {
-                if let Some(z) = coerce::<i32>(val) {
+                if let Some(z) = val.coerce::<i32>() {
                     computed.z_index = Some(z);
                 }
             }
 
             StyleAttr::Display(val) => {
-                if let Some(d) = coerce::<ui::Display>(val) {
+                if let Some(d) = val.coerce::<ui::Display>() {
                     computed.style.display = d;
                 }
             }
             StyleAttr::Position(val) => {
-                if let Some(d) = coerce::<ui::PositionType>(val) {
+                if let Some(d) = val.coerce::<ui::PositionType>() {
                     computed.style.position_type = d;
                 }
             }
             StyleAttr::Overflow(val) => {
-                if let Some(d) = coerce::<ui::OverflowAxis>(val) {
+                if let Some(d) = val.coerce::<ui::OverflowAxis>() {
                     computed.style.overflow.x = d;
                     computed.style.overflow.y = d;
                 }
             }
             StyleAttr::OverflowX(val) => {
-                if let Some(d) = coerce::<ui::OverflowAxis>(val) {
+                if let Some(d) = val.coerce::<ui::OverflowAxis>() {
                     computed.style.overflow.x = d;
                 }
             }
             StyleAttr::OverflowY(val) => {
-                if let Some(d) = coerce::<ui::OverflowAxis>(val) {
+                if let Some(d) = val.coerce::<ui::OverflowAxis>() {
                     computed.style.overflow.y = d;
                 }
             }
             StyleAttr::Direction(val) => {
-                if let Some(d) = coerce::<ui::Direction>(val) {
+                if let Some(d) = val.coerce::<ui::Direction>() {
                     computed.style.direction = d;
                 }
             }
 
             StyleAttr::Left(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.left = l;
                 }
             }
             StyleAttr::Right(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.right = l;
                 }
             }
             StyleAttr::Top(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.top = l;
                 }
             }
             StyleAttr::Bottom(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.bottom = l;
                 }
             }
 
             StyleAttr::Width(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.width = l;
                 }
             }
             StyleAttr::Height(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.height = l;
                 }
             }
             StyleAttr::MinWidth(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.min_width = l;
                 }
             }
             StyleAttr::MinHeight(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.min_height = l;
                 }
             }
             StyleAttr::MaxWidth(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.max_width = l;
                 }
             }
             StyleAttr::MaxHeight(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.max_height = l;
                 }
             }
 
             StyleAttr::AlignItems(val) => {
-                if let Some(l) = coerce::<ui::AlignItems>(val) {
+                if let Some(l) = val.coerce::<ui::AlignItems>() {
                     computed.style.align_items = l;
                 }
             }
             StyleAttr::JustifyItems(val) => {
-                if let Some(l) = coerce::<ui::JustifyItems>(val) {
+                if let Some(l) = val.coerce::<ui::JustifyItems>() {
                     computed.style.justify_items = l;
                 }
             }
             StyleAttr::AlignSelf(val) => {
-                if let Some(l) = coerce::<ui::AlignSelf>(val) {
+                if let Some(l) = val.coerce::<ui::AlignSelf>() {
                     computed.style.align_self = l;
                 }
             }
             StyleAttr::JustifySelf(val) => {
-                if let Some(l) = coerce::<ui::JustifySelf>(val) {
+                if let Some(l) = val.coerce::<ui::JustifySelf>() {
                     computed.style.justify_self = l;
                 }
             }
             StyleAttr::AlignContent(val) => {
-                if let Some(l) = coerce::<ui::AlignContent>(val) {
+                if let Some(l) = val.coerce::<ui::AlignContent>() {
                     computed.style.align_content = l;
                 }
             }
             StyleAttr::JustifyContent(val) => {
-                if let Some(l) = coerce::<ui::JustifyContent>(val) {
+                if let Some(l) = val.coerce::<ui::JustifyContent>() {
                     computed.style.justify_content = l;
                 }
             }
 
             StyleAttr::Margin(val) => {
-                if let Some(r) = coerce::<ui::UiRect>(val) {
+                if let Some(r) = val.coerce::<ui::UiRect>() {
                     computed.style.margin = r;
                 }
             }
             StyleAttr::MarginLeft(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.margin.left = l;
                 }
             }
             StyleAttr::MarginRight(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.margin.right = l;
                 }
             }
             StyleAttr::MarginTop(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.margin.top = l;
                 }
             }
             StyleAttr::MarginBottom(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.margin.bottom = l;
                 }
             }
 
             StyleAttr::Padding(val) => {
-                if let Some(r) = coerce::<ui::UiRect>(val) {
+                if let Some(r) = val.coerce::<ui::UiRect>() {
                     computed.style.padding = r;
                 }
             }
             StyleAttr::PaddingLeft(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.padding.left = l;
                 }
             }
             StyleAttr::PaddingRight(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.padding.right = l;
                 }
             }
             StyleAttr::PaddingTop(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.padding.top = l;
                 }
             }
             StyleAttr::PaddingBottom(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.padding.bottom = l;
                 }
             }
 
             StyleAttr::Border(val) => {
-                if let Some(r) = coerce::<ui::UiRect>(val) {
+                if let Some(r) = val.coerce::<ui::UiRect>() {
                     computed.style.border = r;
                 }
             }
             StyleAttr::BorderLeft(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.border.left = l;
                 }
             }
             StyleAttr::BorderRight(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.border.right = l;
                 }
             }
             StyleAttr::BorderTop(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.border.top = l;
                 }
             }
             StyleAttr::BorderBottom(val) => {
-                if let Some(l) = coerce::<ui::Val>(&val) {
+                if let Some(l) = val.coerce::<ui::Val>() {
                     computed.style.border.bottom = l
                 }
             }
 
             StyleAttr::FlexDirection(val) => {
-                if let Some(l) = coerce::<ui::FlexDirection>(val) {
+                if let Some(l) = val.coerce::<ui::FlexDirection>() {
                     computed.style.flex_direction = l;
                 }
             }
             StyleAttr::FlexWrap(val) => {
-                if let Some(l) = coerce::<ui::FlexWrap>(val) {
+                if let Some(l) = val.coerce::<ui::FlexWrap>() {
                     computed.style.flex_wrap = l;
                 }
             }
@@ -349,7 +345,7 @@ impl StyleAttr {
                             }
                             _ => (),
                         };
-                        if let Some(basis) = coerce::<ui::Val>(&items[3]) {
+                        if let Some(basis) = items[3].coerce::<ui::Val>() {
                             computed.style.flex_basis = basis;
                         }
                     } else if items.len() == 1 {
@@ -372,33 +368,33 @@ impl StyleAttr {
             },
 
             StyleAttr::FlexGrow(val) => {
-                if let Some(flex) = coerce::<f32>(val) {
+                if let Some(flex) = val.coerce::<f32>() {
                     computed.style.flex_grow = flex;
                 }
             }
             StyleAttr::FlexShrink(val) => {
-                if let Some(flex) = coerce::<f32>(val) {
+                if let Some(flex) = val.coerce::<f32>() {
                     computed.style.flex_shrink = flex;
                 }
             }
             StyleAttr::FlexBasis(val) => {
-                if let Some(len) = coerce::<ui::Val>(&val) {
+                if let Some(len) = val.coerce::<ui::Val>() {
                     computed.style.flex_basis = len;
                 }
             }
 
             StyleAttr::RowGap(val) => {
-                if let Some(len) = coerce::<ui::Val>(&val) {
+                if let Some(len) = val.coerce::<ui::Val>() {
                     computed.style.row_gap = len;
                 }
             }
             StyleAttr::ColumnGap(val) => {
-                if let Some(len) = coerce::<ui::Val>(&val) {
+                if let Some(len) = val.coerce::<ui::Val>() {
                     computed.style.column_gap = len;
                 }
             }
             StyleAttr::Gap(val) => {
-                if let Some(len) = coerce::<ui::Val>(&val) {
+                if let Some(len) = val.coerce::<ui::Val>() {
                     computed.style.row_gap = len;
                     computed.style.column_gap = len;
                 }
