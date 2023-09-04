@@ -103,53 +103,6 @@ impl Expr {
         .parse_next(input)
     }
 
-    /// Evaluate the expression and coerce to an int.
-    pub fn into_i32(&self) -> Option<i32> {
-        match self {
-            Expr::Number(v) => Some(*v as i32),
-            _ => None,
-        }
-    }
-
-    /// Evaluate the expression and coerce to a float.
-    pub fn into_f32(&self) -> Option<f32> {
-        match self {
-            Expr::Number(v) => Some(*v),
-            _ => None,
-        }
-    }
-
-    /// Evaluate the expression and coerce to a length.
-    pub fn into_length(&self) -> Option<ui::Val> {
-        match self {
-            Expr::Length(v) => Some(*v),
-            Expr::Number(v) => Some(ui::Val::Px(*v)),
-            _ => None,
-        }
-    }
-
-    /// Evaluate the expression and coerce to a color
-    pub fn into_color(&self) -> Option<ColorValue> {
-        match self {
-            Expr::Color(c) => Some(*c),
-            _ => None,
-        }
-    }
-
-    /// Evaluate the expression and coerce to a `ui::Display`
-    pub fn into_display(&self) -> Option<ui::Display> {
-        match self {
-            Expr::Ident(ref n) => match n.as_str() {
-                "grid" => Some(ui::Display::Grid),
-                "flex" => Some(ui::Display::Flex),
-                "none" => Some(ui::Display::None),
-                _ => None,
-            },
-            Expr::Display(d) => Some(*d),
-            _ => None,
-        }
-    }
-
     /// Evaluate the expression and coerce to a `ui::PositionType`
     pub fn into_position(&self) -> Option<ui::PositionType> {
         match self {
@@ -342,19 +295,19 @@ impl Expr {
                 bottom: ui::Val::Px(*v),
             }),
             Expr::List(v) if v.len() > 0 => {
-                let top = v[0].into_length()?;
+                let top = coerce::<ui::Val>(&v[0])?;
                 let right = if v.len() > 1 {
-                    v[1].into_length()?
+                    coerce::<ui::Val>(&v[1])?
                 } else {
                     top
                 };
                 let bottom = if v.len() > 2 {
-                    v[2].into_length()?
+                    coerce::<ui::Val>(&v[2])?
                 } else {
                     top
                 };
                 let left = if v.len() > 3 {
-                    v[3].into_length()?
+                    coerce::<ui::Val>(&v[3])?
                 } else {
                     right
                 };
@@ -387,7 +340,7 @@ impl Expr {
                 }
             }
             TypeHint::Display => {
-                let opt = self.into_display();
+                let opt = coerce::<ui::Display>(self);
                 if let Some(disp) = opt {
                     *self = Self::Display(disp)
                 }
@@ -423,7 +376,7 @@ impl Expr {
                 }
             }
             TypeHint::AlignSelf => {
-                let opt = self.into_align_self();
+                let opt = coerce::<ui::AlignSelf>(self);
                 if let Some(disp) = opt {
                     *self = Self::AlignSelf(disp)
                 }
@@ -463,13 +416,53 @@ impl Expr {
     }
 }
 
-pub trait Coerce<T> {
-    fn coerce(&self) -> Option<T>;
+pub struct Coerce;
+
+pub trait CoerceImpl<T> {
+    fn coerce(e: &Expr) -> Option<T>;
 }
 
-impl Coerce<ui::Display> for Expr {
-    fn coerce(&self) -> Option<ui::Display> {
-        match self {
+impl CoerceImpl<i32> for Coerce {
+    fn coerce(e: &Expr) -> Option<i32> {
+        match e {
+            Expr::Number(v) => Some(*v as i32),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceImpl<f32> for Coerce {
+    fn coerce(e: &Expr) -> Option<f32> {
+        match e {
+            Expr::Number(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceImpl<ColorValue> for Coerce {
+    fn coerce(e: &Expr) -> Option<ColorValue> {
+        match e {
+            Expr::Color(c) => Some(*c),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceImpl<ui::Val> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::Val> {
+        match e {
+            Expr::Length(v) => Some(*v),
+            Expr::Number(v) => Some(ui::Val::Px(*v)),
+            Expr::Ident(v) if v == "auto" => Some(ui::Val::Auto),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceImpl<ui::Display> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::Display> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "grid" => Some(ui::Display::Grid),
                 "flex" => Some(ui::Display::Flex),
@@ -482,9 +475,9 @@ impl Coerce<ui::Display> for Expr {
     }
 }
 
-impl Coerce<ui::AlignSelf> for Expr {
-    fn coerce(&self) -> Option<ui::AlignSelf> {
-        match self {
+impl CoerceImpl<ui::AlignSelf> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::AlignSelf> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "auto" => Some(ui::AlignSelf::Auto),
                 "start" => Some(ui::AlignSelf::Start),
@@ -500,6 +493,13 @@ impl Coerce<ui::AlignSelf> for Expr {
             _ => None,
         }
     }
+}
+
+pub fn coerce<T>(e: &Expr) -> Option<T>
+where
+    Coerce: CoerceImpl<T>,
+{
+    Coerce::coerce(e)
 }
 
 impl From<i32> for Expr {

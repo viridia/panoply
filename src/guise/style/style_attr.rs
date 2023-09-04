@@ -1,11 +1,15 @@
-use bevy::{prelude::*, text::BreakLineOn};
+use bevy::{prelude::*, text::BreakLineOn, ui};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::str::FromStr;
 
 use crate::guise::GuiseError;
 
-use super::{expr::Expr, ComputedStyle};
+use super::{
+    color::ColorValue,
+    expr::{coerce, Expr},
+    ComputedStyle,
+};
 
 /** A single style-sheet property which can be applied to a computed style. */
 #[derive(Debug, Clone, PartialEq)]
@@ -98,33 +102,30 @@ impl StyleAttr {
         match self {
             StyleAttr::BackgroundImage(_asset) => {
                 todo!("Implement background-image")
-                // if let Some(c) = val.into_color() {
-                //     computed.background_color = c;
-                // }
             }
             StyleAttr::BackgroundColor(val) => {
-                if let Some(c) = val.into_color() {
+                if let Some(c) = coerce::<ColorValue>(val) {
                     computed.background_color = c;
                 }
             }
             StyleAttr::BorderColor(val) => {
-                if let Some(c) = val.into_color() {
+                if let Some(c) = coerce::<ColorValue>(val) {
                     computed.border_color = c;
                 }
             }
             StyleAttr::Color(val) => {
-                if let Some(c) = val.into_color() {
+                if let Some(c) = coerce::<ColorValue>(val) {
                     computed.color = c;
                 }
             }
             StyleAttr::ZIndex(val) => {
-                if let Some(z) = val.into_i32() {
+                if let Some(z) = coerce::<i32>(val) {
                     computed.z_index = Some(z);
                 }
             }
 
             StyleAttr::Display(val) => {
-                if let Some(d) = val.into_display() {
+                if let Some(d) = coerce::<ui::Display>(val) {
                     computed.style.display = d;
                 }
             }
@@ -156,53 +157,53 @@ impl StyleAttr {
             }
 
             StyleAttr::Left(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.left = l;
                 }
             }
             StyleAttr::Right(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.right = l;
                 }
             }
             StyleAttr::Top(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.top = l;
                 }
             }
             StyleAttr::Bottom(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.bottom = l;
                 }
             }
 
             StyleAttr::Width(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.width = l;
                 }
             }
             StyleAttr::Height(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.height = l;
                 }
             }
             StyleAttr::MinWidth(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.min_width = l;
                 }
             }
             StyleAttr::MinHeight(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.min_height = l;
                 }
             }
             StyleAttr::MaxWidth(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.max_width = l;
                 }
             }
             StyleAttr::MaxHeight(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.max_height = l;
                 }
             }
@@ -218,7 +219,7 @@ impl StyleAttr {
                 }
             }
             StyleAttr::AlignSelf(val) => {
-                if let Some(l) = val.into_align_self() {
+                if let Some(l) = coerce::<ui::AlignSelf>(val) {
                     computed.style.align_self = l;
                 }
             }
@@ -244,22 +245,22 @@ impl StyleAttr {
                 }
             }
             StyleAttr::MarginLeft(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.margin.left = l;
                 }
             }
             StyleAttr::MarginRight(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.margin.right = l;
                 }
             }
             StyleAttr::MarginTop(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.margin.top = l;
                 }
             }
             StyleAttr::MarginBottom(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.margin.bottom = l;
                 }
             }
@@ -270,22 +271,22 @@ impl StyleAttr {
                 }
             }
             StyleAttr::PaddingLeft(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.padding.left = l;
                 }
             }
             StyleAttr::PaddingRight(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.padding.right = l;
                 }
             }
             StyleAttr::PaddingTop(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.padding.top = l;
                 }
             }
             StyleAttr::PaddingBottom(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.padding.bottom = l;
                 }
             }
@@ -296,22 +297,22 @@ impl StyleAttr {
                 }
             }
             StyleAttr::BorderLeft(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.border.left = l;
                 }
             }
             StyleAttr::BorderRight(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.border.right = l;
                 }
             }
             StyleAttr::BorderTop(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.border.top = l;
                 }
             }
             StyleAttr::BorderBottom(val) => {
-                if let Some(l) = val.into_length() {
+                if let Some(l) = coerce::<ui::Val>(&val) {
                     computed.style.border.bottom = l
                 }
             }
@@ -348,7 +349,7 @@ impl StyleAttr {
                             }
                             _ => (),
                         };
-                        if let Some(basis) = items[3].into_length() {
+                        if let Some(basis) = coerce::<ui::Val>(&items[3]) {
                             computed.style.flex_basis = basis;
                         }
                     } else if items.len() == 1 {
@@ -371,33 +372,33 @@ impl StyleAttr {
             },
 
             StyleAttr::FlexGrow(val) => {
-                if let Some(flex) = val.into_f32() {
+                if let Some(flex) = coerce::<f32>(val) {
                     computed.style.flex_grow = flex;
                 }
             }
             StyleAttr::FlexShrink(val) => {
-                if let Some(flex) = val.into_f32() {
+                if let Some(flex) = coerce::<f32>(val) {
                     computed.style.flex_shrink = flex;
                 }
             }
             StyleAttr::FlexBasis(val) => {
-                if let Some(len) = val.into_length() {
+                if let Some(len) = coerce::<ui::Val>(&val) {
                     computed.style.flex_basis = len;
                 }
             }
 
             StyleAttr::RowGap(val) => {
-                if let Some(len) = val.into_length() {
+                if let Some(len) = coerce::<ui::Val>(&val) {
                     computed.style.row_gap = len;
                 }
             }
             StyleAttr::ColumnGap(val) => {
-                if let Some(len) = val.into_length() {
+                if let Some(len) = coerce::<ui::Val>(&val) {
                     computed.style.column_gap = len;
                 }
             }
             StyleAttr::Gap(val) => {
-                if let Some(len) = val.into_length() {
+                if let Some(len) = coerce::<ui::Val>(&val) {
                     computed.style.row_gap = len;
                     computed.style.column_gap = len;
                 }
