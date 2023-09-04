@@ -103,9 +103,178 @@ impl Expr {
         .parse_next(input)
     }
 
-    /// Evaluate the expression and coerce to a `ui::PositionType`
-    pub fn into_position(&self) -> Option<ui::PositionType> {
-        match self {
+    /// Optimize constant expression with type hints
+    pub fn optimize(&mut self, hint: TypeHint) -> &Self {
+        if let Self::List(l) = self {
+            for x in l.iter_mut() {
+                x.optimize(hint);
+            }
+            return self;
+        }
+
+        match hint {
+            TypeHint::Length => {
+                if let Self::Ident(s) = self {
+                    if s == "auto" {
+                        *self = Self::Length(ui::Val::Auto)
+                    }
+                }
+            }
+            TypeHint::Display => {
+                let opt = coerce::<ui::Display>(self);
+                if let Some(disp) = opt {
+                    *self = Self::Display(disp)
+                }
+            }
+            TypeHint::Position => {
+                let opt = coerce::<ui::PositionType>(self);
+                if let Some(disp) = opt {
+                    *self = Self::PositionType(disp)
+                }
+            }
+            TypeHint::OverflowAxis => {
+                let opt = coerce::<ui::OverflowAxis>(self);
+                if let Some(disp) = opt {
+                    *self = Self::OverflowAxis(disp)
+                }
+            }
+            TypeHint::Direction => {
+                let opt = coerce::<ui::Direction>(self);
+                if let Some(disp) = opt {
+                    *self = Self::Direction(disp)
+                }
+            }
+            TypeHint::AlignItems => {
+                let opt = coerce::<ui::AlignItems>(self);
+                if let Some(disp) = opt {
+                    *self = Self::AlignItems(disp)
+                }
+            }
+            TypeHint::AlignContent => {
+                let opt = coerce::<ui::AlignContent>(self);
+                if let Some(disp) = opt {
+                    *self = Self::AlignContent(disp)
+                }
+            }
+            TypeHint::AlignSelf => {
+                let opt = coerce::<ui::AlignSelf>(self);
+                if let Some(disp) = opt {
+                    *self = Self::AlignSelf(disp)
+                }
+            }
+            TypeHint::JustifyItems => {
+                let opt = coerce::<ui::JustifyItems>(self);
+                if let Some(disp) = opt {
+                    *self = Self::JustifyItems(disp)
+                }
+            }
+            TypeHint::JustifyContent => {
+                let opt = coerce::<ui::JustifyContent>(self);
+                if let Some(disp) = opt {
+                    *self = Self::JustifyContent(disp)
+                }
+            }
+            TypeHint::JustifySelf => {
+                let opt = coerce::<ui::JustifySelf>(self);
+                if let Some(disp) = opt {
+                    *self = Self::JustifySelf(disp)
+                }
+            }
+            TypeHint::FlexDirection => {
+                let opt = coerce::<ui::FlexDirection>(self);
+                if let Some(v) = opt {
+                    *self = Self::FlexDirection(v)
+                }
+            }
+            TypeHint::FlexWrap => {
+                let opt = coerce::<ui::FlexWrap>(self);
+                if let Some(v) = opt {
+                    *self = Self::FlexWrap(v)
+                }
+            }
+        }
+        self
+    }
+}
+
+pub fn coerce<T>(e: &Expr) -> Option<T>
+where
+    Coerce: CoerceExpr<T>,
+{
+    Coerce::coerce(e)
+}
+
+pub struct Coerce;
+
+pub trait CoerceExpr<T> {
+    fn coerce(e: &Expr) -> Option<T>;
+    // fn optimize(_e: &mut Expr) {}
+}
+
+impl CoerceExpr<i32> for Coerce {
+    fn coerce(e: &Expr) -> Option<i32> {
+        match e {
+            Expr::Number(v) => Some(*v as i32),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceExpr<f32> for Coerce {
+    fn coerce(e: &Expr) -> Option<f32> {
+        match e {
+            Expr::Number(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceExpr<ColorValue> for Coerce {
+    fn coerce(e: &Expr) -> Option<ColorValue> {
+        match e {
+            Expr::Color(c) => Some(*c),
+            _ => None,
+        }
+    }
+}
+
+impl CoerceExpr<ui::Val> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::Val> {
+        match e {
+            Expr::Length(v) => Some(*v),
+            Expr::Number(v) => Some(ui::Val::Px(*v)),
+            Expr::Ident(v) if v == "auto" => Some(ui::Val::Auto),
+            _ => None,
+        }
+    }
+
+    // fn optimize(e: &mut Expr) {
+    //     let opt = Self::coerce(e);
+    //     if let Some(val) = opt {
+    //         *e = Expr::Length(val)
+    //     }
+    // }
+}
+
+impl CoerceExpr<ui::Display> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::Display> {
+        match e {
+            Expr::Ident(ref n) => match n.as_str() {
+                "grid" => Some(ui::Display::Grid),
+                "flex" => Some(ui::Display::Flex),
+                "none" => Some(ui::Display::None),
+                _ => None,
+            },
+            Expr::Display(d) => Some(*d),
+            _ => None,
+        }
+    }
+}
+
+/// Evaluate the expression and coerce to a `ui::PositionType`
+impl CoerceExpr<ui::PositionType> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::PositionType> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "relative" => Some(ui::PositionType::Relative),
                 "absolute" => Some(ui::PositionType::Absolute),
@@ -115,10 +284,12 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    /// Evaluate the expression and coerce to a `ui::OverflowAxis`
-    pub fn into_overflow(&self) -> Option<ui::OverflowAxis> {
-        match self {
+/// Evaluate the expression and coerce to a `ui::OverflowAxis`
+impl CoerceExpr<ui::OverflowAxis> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::OverflowAxis> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "clip" => Some(ui::OverflowAxis::Clip),
                 "visible" => Some(ui::OverflowAxis::Visible),
@@ -128,10 +299,12 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    /// Evaluate the expression and coerce to a `ui::Direction`
-    pub fn into_direction(&self) -> Option<ui::Direction> {
-        match self {
+/// Evaluate the expression and coerce to a `ui::Direction`
+impl CoerceExpr<ui::Direction> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::Direction> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "inherit" => Some(ui::Direction::Inherit),
                 "ltr" => Some(ui::Direction::LeftToRight),
@@ -142,9 +315,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_align_items(&self) -> Option<ui::AlignItems> {
-        match self {
+impl CoerceExpr<ui::AlignItems> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::AlignItems> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::AlignItems::Default),
                 "start" => Some(ui::AlignItems::Start),
@@ -160,9 +335,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_align_content(&self) -> Option<ui::AlignContent> {
-        match self {
+impl CoerceExpr<ui::AlignContent> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::AlignContent> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::AlignContent::Default),
                 "start" => Some(ui::AlignContent::Start),
@@ -180,9 +357,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_align_self(&self) -> Option<ui::AlignSelf> {
-        match self {
+impl CoerceExpr<ui::AlignSelf> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::AlignSelf> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "auto" => Some(ui::AlignSelf::Auto),
                 "start" => Some(ui::AlignSelf::Start),
@@ -198,9 +377,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_justify_items(&self) -> Option<ui::JustifyItems> {
-        match self {
+impl CoerceExpr<ui::JustifyItems> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::JustifyItems> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::JustifyItems::Default),
                 "start" => Some(ui::JustifyItems::Start),
@@ -214,9 +395,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_justify_content(&self) -> Option<ui::JustifyContent> {
-        match self {
+impl CoerceExpr<ui::JustifyContent> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::JustifyContent> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::JustifyContent::Default),
                 "start" => Some(ui::JustifyContent::Start),
@@ -233,9 +416,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    pub fn into_justify_self(&self) -> Option<ui::JustifySelf> {
-        match self {
+impl CoerceExpr<ui::JustifySelf> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::JustifySelf> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "auto" => Some(ui::JustifySelf::Auto),
                 "start" => Some(ui::JustifySelf::Start),
@@ -249,10 +434,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    /// Evaluate the expression and coerce to a `ui::FlexDirection`
-    pub fn into_flex_direction(&self) -> Option<ui::FlexDirection> {
-        match self {
+impl CoerceExpr<ui::FlexDirection> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::FlexDirection> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "row" => Some(ui::FlexDirection::Row),
                 "row-reverse" => Some(ui::FlexDirection::RowReverse),
@@ -264,10 +450,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    /// Evaluate the expression and coerce to a `ui::FlexWrap`
-    pub fn into_flex_wrap(&self) -> Option<ui::FlexWrap> {
-        match self {
+impl CoerceExpr<ui::FlexWrap> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::FlexWrap> {
+        match e {
             Expr::Ident(ref n) => match n.as_str() {
                 "nowrap" => Some(ui::FlexWrap::NoWrap),
                 "wrap" => Some(ui::FlexWrap::Wrap),
@@ -278,10 +465,11 @@ impl Expr {
             _ => None,
         }
     }
+}
 
-    /// Evaluate the expression and coerce to a length.
-    pub fn into_uirect(&self) -> Option<ui::UiRect> {
-        match self {
+impl CoerceExpr<ui::UiRect> for Coerce {
+    fn coerce(e: &Expr) -> Option<ui::UiRect> {
+        match e {
             Expr::Length(v) => Some(UiRect {
                 left: *v,
                 right: *v,
@@ -320,191 +508,6 @@ impl Expr {
             }
             _ => None,
         }
-    }
-
-    /// Optimize constant expression with type hints
-    pub fn optimize(&mut self, hint: TypeHint) -> &Self {
-        if let Self::List(l) = self {
-            for x in l.iter_mut() {
-                x.optimize(hint);
-            }
-            return self;
-        }
-
-        match hint {
-            TypeHint::Length => {
-                if let Self::Ident(s) = self {
-                    if s == "auto" {
-                        *self = Self::Length(ui::Val::Auto)
-                    }
-                }
-            }
-            TypeHint::Display => {
-                let opt = coerce::<ui::Display>(self);
-                if let Some(disp) = opt {
-                    *self = Self::Display(disp)
-                }
-            }
-            TypeHint::Position => {
-                let opt = self.into_position();
-                if let Some(disp) = opt {
-                    *self = Self::PositionType(disp)
-                }
-            }
-            TypeHint::OverflowAxis => {
-                let opt = self.into_overflow();
-                if let Some(disp) = opt {
-                    *self = Self::OverflowAxis(disp)
-                }
-            }
-            TypeHint::Direction => {
-                let opt = self.into_direction();
-                if let Some(disp) = opt {
-                    *self = Self::Direction(disp)
-                }
-            }
-            TypeHint::AlignItems => {
-                let opt = self.into_align_items();
-                if let Some(disp) = opt {
-                    *self = Self::AlignItems(disp)
-                }
-            }
-            TypeHint::AlignContent => {
-                let opt = self.into_align_content();
-                if let Some(disp) = opt {
-                    *self = Self::AlignContent(disp)
-                }
-            }
-            TypeHint::AlignSelf => {
-                let opt = coerce::<ui::AlignSelf>(self);
-                if let Some(disp) = opt {
-                    *self = Self::AlignSelf(disp)
-                }
-            }
-            TypeHint::JustifyItems => {
-                let opt = self.into_justify_items();
-                if let Some(disp) = opt {
-                    *self = Self::JustifyItems(disp)
-                }
-            }
-            TypeHint::JustifyContent => {
-                let opt = self.into_justify_content();
-                if let Some(disp) = opt {
-                    *self = Self::JustifyContent(disp)
-                }
-            }
-            TypeHint::JustifySelf => {
-                let opt = self.into_justify_self();
-                if let Some(disp) = opt {
-                    *self = Self::JustifySelf(disp)
-                }
-            }
-            TypeHint::FlexDirection => {
-                let opt = self.into_flex_direction();
-                if let Some(v) = opt {
-                    *self = Self::FlexDirection(v)
-                }
-            }
-            TypeHint::FlexWrap => {
-                let opt = self.into_flex_wrap();
-                if let Some(v) = opt {
-                    *self = Self::FlexWrap(v)
-                }
-            }
-        }
-        self
-    }
-}
-
-pub struct Coerce;
-
-pub trait CoerceImpl<T> {
-    fn coerce(e: &Expr) -> Option<T>;
-}
-
-impl CoerceImpl<i32> for Coerce {
-    fn coerce(e: &Expr) -> Option<i32> {
-        match e {
-            Expr::Number(v) => Some(*v as i32),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceImpl<f32> for Coerce {
-    fn coerce(e: &Expr) -> Option<f32> {
-        match e {
-            Expr::Number(v) => Some(*v),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceImpl<ColorValue> for Coerce {
-    fn coerce(e: &Expr) -> Option<ColorValue> {
-        match e {
-            Expr::Color(c) => Some(*c),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceImpl<ui::Val> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::Val> {
-        match e {
-            Expr::Length(v) => Some(*v),
-            Expr::Number(v) => Some(ui::Val::Px(*v)),
-            Expr::Ident(v) if v == "auto" => Some(ui::Val::Auto),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceImpl<ui::Display> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::Display> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
-                "grid" => Some(ui::Display::Grid),
-                "flex" => Some(ui::Display::Flex),
-                "none" => Some(ui::Display::None),
-                _ => None,
-            },
-            Expr::Display(d) => Some(*d),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceImpl<ui::AlignSelf> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::AlignSelf> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
-                "auto" => Some(ui::AlignSelf::Auto),
-                "start" => Some(ui::AlignSelf::Start),
-                "end" => Some(ui::AlignSelf::End),
-                "flex-start" => Some(ui::AlignSelf::FlexStart),
-                "flex-end" => Some(ui::AlignSelf::FlexEnd),
-                "center" => Some(ui::AlignSelf::Center),
-                "baseline" => Some(ui::AlignSelf::Baseline),
-                "stretch" => Some(ui::AlignSelf::Stretch),
-                _ => None,
-            },
-            Expr::AlignSelf(d) => Some(*d),
-            _ => None,
-        }
-    }
-}
-
-pub fn coerce<T>(e: &Expr) -> Option<T>
-where
-    Coerce: CoerceImpl<T>,
-{
-    Coerce::coerce(e)
-}
-
-impl From<i32> for Expr {
-    fn from(value: i32) -> Self {
-        Self::Number(value as f32)
     }
 }
 
