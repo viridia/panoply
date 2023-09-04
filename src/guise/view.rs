@@ -400,7 +400,7 @@ pub fn update_view_styles(
 
                 for (entity, view, controller, _parent) in query.iter() {
                     if view.styleset_handles.iter().any(|h| h.id() == *id) {
-                        println!("Found handle!");
+                        // println!("Found handle!");
                         controller.update_styles(&mut commands, entity, &view, &assets);
                         // commands.entity(entity).remove::<StyleHandlesChanged>();
                     }

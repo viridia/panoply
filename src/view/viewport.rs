@@ -50,7 +50,7 @@ pub fn update_camera_viewport(
 }
 
 /// Controller which updates the margins of the main 3D view so that it fits within the
-/// designated 2D panel. There's probably an easier way to calculate this.
+/// designated 2D panel.
 #[derive(Reflect, Default, Component)]
 #[reflect(Default)]
 #[reflect(Component)]

@@ -86,6 +86,8 @@ pub enum TypeHint {
     JustifyItems,
     JustifyContent,
     JustifySelf,
+    FlexDirection,
+    FlexWrap,
 }
 
 impl Expr {
@@ -442,6 +444,18 @@ impl Expr {
                 let opt = self.into_justify_self();
                 if let Some(disp) = opt {
                     *self = Self::JustifySelf(disp)
+                }
+            }
+            TypeHint::FlexDirection => {
+                let opt = self.into_flex_direction();
+                if let Some(v) = opt {
+                    *self = Self::FlexDirection(v)
+                }
+            }
+            TypeHint::FlexWrap => {
+                let opt = self.into_flex_wrap();
+                if let Some(v) = opt {
+                    *self = Self::FlexWrap(v)
                 }
             }
         }

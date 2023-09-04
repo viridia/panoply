@@ -541,9 +541,15 @@ impl<'de, 'a> Deserialize<'de> for StyleAsset {
                             attrs.push(SA::Flex(map.next_value::<ExprList>()?.to_expr()))
                         }
                         Field::FlexDirection => {
-                            attrs.push(SA::FlexDirection(map.next_value::<Expr>()?))
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::FlexDirection);
+                            attrs.push(SA::FlexDirection(val));
                         }
-                        Field::FlexWrap => attrs.push(SA::FlexWrap(map.next_value::<Expr>()?)),
+                        Field::FlexWrap => {
+                            let mut val = map.next_value::<Expr>()?;
+                            val.optimize(TypeHint::FlexWrap);
+                            attrs.push(SA::FlexWrap(val))
+                        }
                         Field::FlexGrow => attrs.push(SA::FlexGrow(map.next_value::<Expr>()?)),
                         Field::FlexShrink => attrs.push(SA::FlexShrink(map.next_value::<Expr>()?)),
                         Field::FlexBasis => {
