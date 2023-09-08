@@ -1,6 +1,6 @@
 extern crate rmp_serde as rmps;
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext, LoadedFolder},
+    asset::{io::Reader, AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState},
     math::IRect,
     prelude::*,
     reflect::TypePath,
@@ -164,15 +164,35 @@ pub fn insert_terrain_maps(
     mut query: Query<(Entity, &mut Realm), Without<TerrainMap>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
     mut images: ResMut<Assets<Image>>,
-    asset_server: Res<AssetServer>,
+    terrain_folder: Res<TerrainMapsHandleResource>,
+    terrain_folder_asset: Res<Assets<LoadedFolder>>,
 ) {
+    if let Some(st) = server.get_recursive_dependency_load_state(&terrain_folder.0) {
+        if st != RecursiveDependencyLoadState::Loaded {
+            return;
+        }
+    }
+
+    let files: &LoadedFolder = terrain_folder_asset.get(&terrain_folder.0).unwrap();
     for (entity, realm) in query.iter_mut() {
+        let terrain_path = format!("terrain/maps/{}.terrain", realm.name);
+        if !files.handles.iter().any(|handle| {
+            server
+                .get_path(handle.id())
+                .unwrap()
+                .path()
+                .to_str()
+                .unwrap()
+                == terrain_path
+        }) {
+            continue;
+        }
         // println!("Inserting terrain map: [{}].", realm.name);
         commands.entity(entity).insert((
             TerrainMap {
-                handle: server.load(&format!("terrain/maps/{}.terrain", realm.name).to_string()),
+                handle: server.load(&terrain_path.to_string()),
                 biome_texture: Image::default(),
-                ground_material: create_material(&mut materials, &mut images, &asset_server),
+                ground_material: create_material(&mut materials, &mut images, &server),
                 needs_rebuild_biomes: false,
             },
             TerrainMapChanged,

@@ -125,9 +125,6 @@ pub fn create_views(
                                             &asset_path,
                                         );
                                         if view_root.entity != Some(root) {
-                                            // if let Some(old_root) = view_root.entity {
-                                            //     commands.entity(old_root).despawn_recursive();
-                                            // }
                                             view_root.entity = Some(root);
                                         }
                                     }
