@@ -82,7 +82,9 @@ pub fn update_viewport_inset(
             inset.right = ww / sf - max.x;
             inset.bottom = wh / sf - max.y;
         }
-        Err(_) => {}
+        Err(_) => {
+            error!("Multiple ViewportInsetControllers!");
+        }
     }
 
     if inset != *viewport_inset {

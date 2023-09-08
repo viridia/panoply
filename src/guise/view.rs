@@ -106,6 +106,7 @@ pub fn create_views(
             AssetEvent::Added { id }
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
+                // info!("Template event: {:?}", ev);
                 if let Some(asset_path) = server.get_path(*id) {
                     match assets.get(*id) {
                         Some(template) => {
@@ -124,9 +125,9 @@ pub fn create_views(
                                             &asset_path,
                                         );
                                         if view_root.entity != Some(root) {
-                                            if let Some(old_root) = view_root.entity {
-                                                commands.entity(old_root).despawn_recursive();
-                                            }
+                                            // if let Some(old_root) = view_root.entity {
+                                            //     commands.entity(old_root).despawn_recursive();
+                                            // }
                                             view_root.entity = Some(root);
                                         }
                                     }
@@ -235,10 +236,14 @@ fn reconcile_element(
                             commands.entity(elt_entity).replace_children(&new_children);
                         }
 
+                        // We patched the old entity, so just return the same entity id.
                         return elt_entity;
                     }
-                    commands.entity(elt_entity).despawn_recursive();
                 }
+
+                // Delete the old entity as we are going to re-create it.
+                info!("Deleting old entity");
+                commands.entity(elt_entity).despawn_recursive();
             }
 
             let mut handles: Vec<Handle<StyleAsset>> = Vec::with_capacity(template.styleset.len());
@@ -253,6 +258,7 @@ fn reconcile_element(
                         styleset: template.styleset.clone(),
                         styleset_handles: handles,
                         inline_style: template.inline_style.clone(),
+                        controller: template.controller.clone(),
                         ..default()
                     },
                     NodeBundle {
@@ -265,6 +271,7 @@ fn reconcile_element(
 
             // See if there's a controller for this ui node.
             if let Some(ref controller_id) = template.controller {
+                info!("Creating controller {}", controller_id);
                 commands.add(InsertController {
                     entity: new_entity,
                     controller: controller_id.clone(),

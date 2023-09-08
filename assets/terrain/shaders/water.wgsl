@@ -65,12 +65,12 @@ fn add_wave(
 }
 
 @vertex
-fn vertex(vertex: Vertex) -> VertexOutput {
+fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
     var position = vertex.position;
     var normal = vertex.normal;
     var wposition = mfns::mesh_position_local_to_world(
-        mesh.model,
+        mfns::get_model_matrix(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
     let uv = wposition.xz;
@@ -91,15 +91,15 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     position.z -= normal.z * 0.7;
 
     out.world_position = mfns::mesh_position_local_to_world(
-        mesh.model,
+        mfns::get_model_matrix(instance_index),
         vec4<f32>(position, 1.0)
     );
     out.position = mfns::mesh_position_local_to_clip(
-        mesh.model,
+        mfns::get_model_matrix(instance_index),
         vec4<f32>(position, 1.0)
     );
 
-    out.world_normal = mfns::mesh_normal_local_to_world(normal);
+    out.world_normal = mfns::mesh_normal_local_to_world(normal, instance_index);
     out.depth = vertex.depth_motion.x;
     return out;
 }

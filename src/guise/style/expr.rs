@@ -284,6 +284,13 @@ impl CoerceExpr<ui::Display> for Coerce {
             _ => None,
         }
     }
+
+    fn optimize(e: &mut Expr) {
+        let opt = Self::coerce(e);
+        if let Some(val) = opt {
+            *e = Expr::Display(val)
+        }
+    }
 }
 
 /// Evaluate the expression and coerce to a `ui::PositionType`
@@ -297,6 +304,13 @@ impl CoerceExpr<ui::PositionType> for Coerce {
             },
             Expr::PositionType(d) => Some(*d),
             _ => None,
+        }
+    }
+
+    fn optimize(e: &mut Expr) {
+        let opt = Self::coerce(e);
+        if let Some(val) = opt {
+            *e = Expr::PositionType(val)
         }
     }
 }

@@ -149,10 +149,10 @@ fn blend_biome(
 }
 
 @vertex
-fn vertex(vertex: Vertex) -> VertexOutput {
+fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
     var wposition = mfns::mesh_position_local_to_world(
-        mesh.model,
+        mfns::get_model_matrix(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
 
@@ -194,11 +194,11 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
     out.world_position = wposition;
     out.position = mfns::mesh_position_local_to_clip(
-        mesh.model,
+        mfns::get_model_matrix(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
 
-    out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal);
+    out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal, instance_index);
     out.slope = -out.world_normal.y;
     out.biome_weight_0 = vec4<f32>(
         biome_weight[0],
