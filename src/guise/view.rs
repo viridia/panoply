@@ -106,7 +106,7 @@ pub fn create_views(
             AssetEvent::Added { id }
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
-                // info!("Template event: {:?}", ev);
+                info!("Template event: {:?}", ev);
                 if let Some(asset_path) = server.get_path(*id) {
                     match assets.get(*id) {
                         Some(template) => {
