@@ -50,10 +50,9 @@ impl Plugin for GuisePlugin {
 }
 
 fn create_test_ui(mut commands: Commands, server: Res<AssetServer>) {
-    commands.spawn((ViewRoot {
-        template: server.load("editor/ui/test.guise.json#templates/main"),
-        entity: None,
-    },));
+    commands.spawn(ViewRoot::new(
+        server.load("editor/ui/test.guise.json#templates/main"),
+    ));
 }
 
 fn force_update(mut transforms: Query<&mut Transform>) {

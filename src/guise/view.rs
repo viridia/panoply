@@ -15,11 +15,66 @@ use super::{
     StyleAsset,
 };
 
+/// Output of a rendered node, which may be a single node or a fragment (multiple nodes).
+/// This gets flattened before attaching to the parent node.
+#[derive(Debug, PartialEq, Clone)]
+pub(crate) enum ViewChild {
+    Empty,
+
+    Node(Entity),
+    Fragment(Box<[ViewChild]>),
+}
+
+impl ViewChild {
+    fn count(&self) -> usize {
+        match self {
+            Self::Empty => 0,
+            Self::Node(_) => 1,
+            Self::Fragment(nodes) => nodes.iter().map(|node| node.count()).sum(),
+        }
+    }
+
+    fn flatten(&self, out: &mut Vec<Entity>) {
+        match self {
+            Self::Empty => {}
+            Self::Node(entity) => out.push(*entity),
+            Self::Fragment(nodes) => nodes.iter().for_each(|node| node.flatten(out)),
+        }
+    }
+
+    fn despawn_recursive(&self, commands: &mut Commands) {
+        match self {
+            Self::Empty => {}
+            Self::Node(entity) => commands.entity(*entity).despawn_recursive(),
+            Self::Fragment(nodes) => nodes
+                .iter()
+                .for_each(|node| node.despawn_recursive(commands)),
+        }
+    }
+}
+
+impl Default for ViewChild {
+    fn default() -> Self {
+        Self::Empty
+    }
+}
+
 /// Component that defines the root of a view hierarchy and a template invocation.
 #[derive(Component, Default)]
 pub struct ViewRoot {
     pub template: Handle<TemplateAsset>,
-    pub entity: Option<Entity>,
+
+    /// Generated list of entities
+    entities: ViewChild,
+}
+
+impl ViewRoot {
+    pub fn new(template: Handle<TemplateAsset>) -> Self {
+        Self {
+            template,
+            ..default()
+        }
+    }
 }
 
 /// Component that defines a ui element, and which can differentially update when the
@@ -44,6 +99,9 @@ pub struct ViewElement {
     // pub controller_instance: Option<Arc<dyn Controller>>,
     // Class names used for style selectors.
     pub classes: Vec<String>,
+
+    /// Generated list of entities
+    children: Vec<ViewChild>,
 }
 
 impl ViewElement {
@@ -94,9 +152,8 @@ impl Command for InsertController {
 pub fn create_views(
     mut commands: Commands,
     mut root_query: Query<&mut ViewRoot>,
-    mut view_query: Query<&mut ViewElement>,
+    mut element_query: Query<&mut ViewElement>,
     mut text_query: Query<&mut Text>,
-    view_children_query: Query<&Children, With<ViewElement>>,
     server: Res<AssetServer>,
     assets: Res<Assets<TemplateAsset>>,
     mut ev_template: EventReader<AssetEvent<TemplateAsset>>,
@@ -116,17 +173,16 @@ pub fn create_views(
                                     if let Some(ref element) = template.content {
                                         let root = reconcile_element(
                                             &mut commands,
-                                            view_root.entity,
+                                            &mut view_root.entities,
                                             &element,
-                                            &mut view_query,
-                                            &view_children_query,
+                                            &mut element_query,
                                             &mut text_query,
                                             &server,
                                             &assets,
                                             &asset_path,
                                         );
-                                        if view_root.entity != Some(root) {
-                                            view_root.entity = Some(root);
+                                        if view_root.entities != root {
+                                            view_root.entities = root;
                                         }
                                     }
                                 }
@@ -159,90 +215,95 @@ pub fn create_views(
 /// complicated.
 fn reconcile_element(
     commands: &mut Commands,
-    view_entity: Option<Entity>,
+    view_child: &ViewChild,
     template_node: &Box<TemplateNode>,
-    view_query: &mut Query<&mut ViewElement>,
-    view_children_query: &Query<&Children, With<ViewElement>>,
+    element_query: &mut Query<&mut ViewElement>,
     text_query: &mut Query<&mut Text>,
     server: &AssetServer,
     assets: &Assets<TemplateAsset>,
     asset_path: &AssetPath,
-) -> Entity {
+) -> ViewChild {
     match template_node.as_ref() {
         TemplateNode::Element(template) => {
-            if let Some(elt_entity) = view_entity {
-                if let Ok(mut old_view) = view_query.get_mut(elt_entity) {
-                    if old_view.controller == template.controller {
+            if let ViewChild::Node(elt_entity) = *view_child {
+                if let Ok(mut element) = element_query.get_mut(elt_entity) {
+                    if element.controller == template.controller {
                         // Update view element node with changed properties.
-                        if old_view.id != template.id {
-                            old_view.id = template.id.clone();
+                        if element.id != template.id {
+                            element.id = template.id.clone();
                         }
 
-                        if !old_view.styleset.eq(&template.styleset) {
-                            old_view.styleset = template.styleset.clone();
+                        if !element.styleset.eq(&template.styleset) {
+                            element.styleset = template.styleset.clone();
                             let mut handles: Vec<Handle<StyleAsset>> =
-                                Vec::with_capacity(old_view.styleset.len());
-                            old_view.styleset.iter().for_each(|ss| {
+                                Vec::with_capacity(element.styleset.len());
+                            element.styleset.iter().for_each(|ss| {
                                 handles.push(server.load(relative_asset_path(asset_path, ss)));
                             });
-                            old_view.styleset_handles = handles;
+                            element.styleset_handles = handles;
                         }
 
-                        if old_view.inline_style != template.inline_style {
-                            old_view.inline_style = template.inline_style.clone();
+                        if element.inline_style != template.inline_style {
+                            element.inline_style = template.inline_style.clone();
                         }
 
                         // Visit and reconcile children
-                        let old_children: &[Entity] = match view_children_query.get(elt_entity) {
-                            Ok(children) => children,
-                            _ => &[],
-                        };
-                        let old_count = old_children.len();
                         let new_count = template.children.len();
-                        let max_index = old_count.max(new_count);
-                        let mut new_children: Vec<Entity> = Vec::with_capacity(new_count);
+                        let mut children: Vec<ViewChild> =
+                            vec![ViewChild::Empty; template.children.len()];
                         let mut children_changed = false;
 
-                        for i in 0..max_index {
-                            if i >= new_count {
-                                // New list is smaller than the old list, so delete excess entities.
-                                commands.entity(old_children[i]).despawn_recursive();
-                                children_changed = true;
+                        if new_count > 0 {
+                            warn!(
+                                "Reconciling children: {} {}",
+                                new_count,
+                                element.children.len()
+                            );
+                        }
+
+                        for i in 0..element.children.len() {
+                            if i < new_count {
+                                children[i] = element.children[i].clone()
                             } else {
-                                let old_child = if i < old_count {
-                                    Some(old_children[i])
-                                } else {
-                                    None
-                                };
-                                let new_child = reconcile_element(
-                                    commands,
-                                    old_child,
-                                    &template.children[i],
-                                    view_query,
-                                    view_children_query,
-                                    text_query,
-                                    &server,
-                                    &assets,
-                                    &asset_path,
-                                );
-                                if old_child != Some(new_child) {
-                                    children_changed = true;
-                                }
-                                new_children.push(new_child)
+                                warn!("Despawn child: {}/{}", i, new_count,);
+                                element.children[i].despawn_recursive(commands);
+                                children_changed = true;
+                            }
+                        }
+
+                        for i in 0..new_count {
+                            let new_child = reconcile_element(
+                                commands,
+                                &children[i],
+                                &template.children[i],
+                                element_query,
+                                text_query,
+                                &server,
+                                &assets,
+                                &asset_path,
+                            );
+                            if children[i] != new_child {
+                                children[i] = new_child;
+                                children_changed = true;
                             }
                         }
 
                         if children_changed {
-                            commands.entity(elt_entity).replace_children(&new_children);
+                            let count = children.iter().map(|child| child.count()).sum();
+                            let mut flat = Vec::<Entity>::with_capacity(count);
+                            children.iter().for_each(|child| child.flatten(&mut flat));
+                            commands.entity(elt_entity).replace_children(&flat);
+                            if let Ok(mut element) = element_query.get_mut(elt_entity) {
+                                element.children = children;
+                            }
                         }
 
                         // We patched the old entity, so just return the same entity id.
-                        return elt_entity;
+                        return ViewChild::Node(elt_entity);
                     }
                 }
 
                 // Delete the old entity as we are going to re-create it.
-                info!("Deleting old entity");
                 commands.entity(elt_entity).despawn_recursive();
             }
 
@@ -250,6 +311,31 @@ fn reconcile_element(
             template.styleset.iter().for_each(|ss| {
                 handles.push(server.load(relative_asset_path(asset_path, ss)));
             });
+
+            if template.children.len() > 0 {
+                warn!("Creating children: {}", template.children.len());
+            }
+
+            // Visit and create children
+            let mut children = vec![ViewChild::Empty; template.children.len()];
+            let mut flat = Vec::<Entity>::new();
+            if !template.children.is_empty() {
+                for i in 0..template.children.len() {
+                    children[i] = reconcile_element(
+                        commands,
+                        &children[i],
+                        &template.children[i],
+                        element_query,
+                        text_query,
+                        &server,
+                        &assets,
+                        &asset_path,
+                    )
+                }
+                let count = children.iter().map(|child| child.count()).sum();
+                flat.reserve(count);
+                children.iter().for_each(|child| child.flatten(&mut flat));
+            }
 
             let new_entity = commands
                 .spawn((
@@ -259,6 +345,7 @@ fn reconcile_element(
                         styleset_handles: handles,
                         inline_style: template.inline_style.clone(),
                         controller: template.controller.clone(),
+                        children,
                         ..default()
                     },
                     NodeBundle {
@@ -267,6 +354,7 @@ fn reconcile_element(
                         ..default()
                     },
                 ))
+                .replace_children(&flat)
                 .id();
 
             // See if there's a controller for this ui node.
@@ -280,42 +368,18 @@ fn reconcile_element(
                 commands.entity(new_entity).insert(DefaultController);
             }
 
-            // Visit and create children
-            if !template.children.is_empty() {
-                let child_entities = template
-                    .children
-                    .iter()
-                    .map(|child| {
-                        reconcile_element(
-                            commands,
-                            None,
-                            child,
-                            view_query,
-                            view_children_query,
-                            text_query,
-                            &server,
-                            &assets,
-                            &asset_path,
-                        )
-                    })
-                    .collect::<Vec<Entity>>();
-                commands
-                    .entity(new_entity)
-                    .replace_children(&child_entities);
-            }
-
-            return new_entity;
+            return ViewChild::Node(new_entity);
         }
 
         TemplateNode::Text(template) => {
-            if let Some(text_entity) = view_entity {
+            if let ViewChild::Node(text_entity) = *view_child {
                 if let Ok(mut old_text) = text_query.get_mut(text_entity) {
                     old_text.sections.clear();
                     old_text.sections.push(TextSection {
                         value: template.content.clone(),
                         style: TextStyle { ..default() },
                     });
-                    return text_entity;
+                    return ViewChild::Node(text_entity);
                 }
             }
 
@@ -334,17 +398,16 @@ fn reconcile_element(
                 },))
                 .id();
 
-            return new_entity;
+            return ViewChild::Node(new_entity);
         }
 
         TemplateNode::Call(call) => {
             let template = assets.get(call.template_handle.id()).unwrap();
             reconcile_element(
                 commands,
-                view_entity,
+                view_child,
                 template.content.as_ref().unwrap(),
-                view_query,
-                view_children_query,
+                element_query,
                 text_query,
                 &server,
                 &assets,
@@ -418,7 +481,7 @@ pub fn update_view_styles(
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
                 if let Some(asset_path) = server.get_path(*id) {
-                    info!("Asset Created/Modified: Style {:?}", asset_path);
+                    info!("Asset Created/Modified: Style {}", asset_path);
                 }
 
                 for (entity, view, controller, _parent) in query.iter() {
