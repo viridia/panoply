@@ -60,16 +60,26 @@
         "--button-image": "asset(../images/button-green.png)"
       }
     },
+    "obs-splitter": {
+      "display": "flex",
+      "width": 7,
+      "align-items": "center",
+      "justify-items": "center",
+      "justify-content": "center",
+      "background-color": "#202020"
+    },
+    "obs-splitter-thumb": {
+      "width": 3,
+      "height": "20%",
+      "justify-self": "center",
+      "background-color": "#444444"
+    },
     "main-panel": {
-      "border-color": "#4f0",
-      "border": 2,
       "flex-grow": 1
     },
     "sub-panel": {
       "padding": 6,
-      "background-color": "#222",
-      "border-color": "#f04",
-      "border": 2
+      "background-color": "#222"
     }
   },
   "templates": {
@@ -103,6 +113,13 @@
             ]
           },
           {
+            "type": "call",
+            "template": "#templates/splitter",
+            "params": {
+              "id": "right"
+            }
+          },
+          {
             "type": "element",
             "id": "center",
             "controller": "ViewportInsetController",
@@ -112,12 +129,37 @@
             }
           },
           {
+            "type": "call",
+            "template": "#templates/splitter",
+            "params": {
+              "id": "right"
+            }
+          },
+          {
             "type": "element",
             "id": "right",
             "styleset": ["#styles/sub-panel"],
             "style": {
               "width": 200
             }
+          }
+        ]
+      }
+    },
+    "splitter": {
+      "params": {
+        "id": {
+          "type": "string?"
+        }
+      },
+      "content": {
+        "type": "element",
+        "id": "${id}",
+        "styleset": ["#styles/obs-splitter"],
+        "children": [
+          {
+            "type": "element",
+            "styleset": ["#styles/obs-splitter-thumb"]
           }
         ]
       }

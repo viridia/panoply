@@ -122,6 +122,7 @@ pub fn create_views(
                                             &view_children_query,
                                             &mut text_query,
                                             &server,
+                                            &assets,
                                             &asset_path,
                                         );
                                         if view_root.entity != Some(root) {
@@ -164,6 +165,7 @@ fn reconcile_element(
     view_children_query: &Query<&Children, With<ViewElement>>,
     text_query: &mut Query<&mut Text>,
     server: &AssetServer,
+    assets: &Assets<TemplateAsset>,
     asset_path: &AssetPath,
 ) -> Entity {
     match template_node.as_ref() {
@@ -220,6 +222,7 @@ fn reconcile_element(
                                     view_children_query,
                                     text_query,
                                     &server,
+                                    &assets,
                                     &asset_path,
                                 );
                                 if old_child != Some(new_child) {
@@ -291,6 +294,7 @@ fn reconcile_element(
                             view_children_query,
                             text_query,
                             &server,
+                            &assets,
                             &asset_path,
                         )
                     })
@@ -331,6 +335,21 @@ fn reconcile_element(
                 .id();
 
             return new_entity;
+        }
+
+        TemplateNode::Call(call) => {
+            let template = assets.get(call.template_handle.id()).unwrap();
+            reconcile_element(
+                commands,
+                view_entity,
+                template.content.as_ref().unwrap(),
+                view_query,
+                view_children_query,
+                text_query,
+                &server,
+                &assets,
+                &asset_path,
+            )
         }
 
         TemplateNode::Fragment(_template) => {

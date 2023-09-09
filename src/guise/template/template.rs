@@ -3,6 +3,7 @@ use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
+use super::call::Call;
 use super::element::Element;
 use super::text::Text;
 
@@ -45,4 +46,5 @@ pub enum TemplateNode {
     Element(Element),
     Fragment(TemplateNodeList),
     Text(Text),
+    Call(Call),
 }
