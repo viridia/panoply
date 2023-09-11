@@ -6,7 +6,7 @@ use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 use super::{selector::Selector, StyleAsset};
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct SelectorsMap(Vec<(Selector, Box<StyleAsset>)>);
+pub struct SelectorsMap(pub Vec<(Selector, Box<StyleAsset>)>);
 
 impl SelectorsMap {
     pub fn new() -> Self {

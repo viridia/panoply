@@ -1,6 +1,8 @@
 use bevy::ecs::system::Command;
 use bevy::prelude::*;
 use bevy::text::BreakLineOn;
+use bevy::ui::widget::UiImageSize;
+use bevy::ui::ContentSize;
 
 use super::color::ColorValue;
 
@@ -91,8 +93,10 @@ impl Command for UpdateComputedStyle {
             match e.get_mut::<BackgroundColor>() {
                 Some(mut bg_comp) => {
                     if self.computed.background_color.is_transparent() {
-                        // Remove the background
-                        e.remove::<BackgroundColor>();
+                        if self.computed.image.is_none() {
+                            // Remove the background
+                            e.remove::<BackgroundColor>();
+                        }
                     } else {
                         let color = self.computed.background_color.color();
                         // Mutate the background
@@ -106,6 +110,9 @@ impl Command for UpdateComputedStyle {
                     if !self.computed.background_color.is_transparent() {
                         // Insert a new background
                         e.insert(BackgroundColor(self.computed.background_color.color()));
+                    } else if self.computed.image.is_some() {
+                        // Images require a background color to be set.
+                        e.insert(BackgroundColor::DEFAULT);
                     }
                 }
             }
@@ -155,11 +162,15 @@ impl Command for UpdateComputedStyle {
                 None => {
                     if let Some(src) = self.computed.image {
                         // Create image component
-                        e.insert(UiImage {
-                            texture: src,
-                            flip_x: self.computed.flip_x,
-                            flip_y: self.computed.flip_y,
-                        });
+                        e.insert((
+                            UiImage {
+                                texture: src,
+                                flip_x: self.computed.flip_x,
+                                flip_y: self.computed.flip_y,
+                            },
+                            ContentSize::default(),
+                            UiImageSize::default(),
+                        ));
                     }
                 }
             }

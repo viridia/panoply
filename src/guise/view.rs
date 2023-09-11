@@ -531,7 +531,7 @@ pub fn update_view_styles(
                 }
             }
 
-            controller.update_styles(&mut commands, entity, &view, &assets);
+            controller.update_styles(&mut commands, entity, &view, &assets, &server);
         } else {
             warn!("Styles not ready!");
         }
@@ -549,7 +549,7 @@ pub fn update_view_styles(
                 for (entity, view, controller, _parent) in query.iter() {
                     if view.styleset_handles.iter().any(|h| h.id() == *id) {
                         // println!("Found handle!");
-                        controller.update_styles(&mut commands, entity, &view, &assets);
+                        controller.update_styles(&mut commands, entity, &view, &assets, &server);
                         // commands.entity(entity).remove::<StyleHandlesChanged>();
                     }
                     // if let Some(ref style_handle) = view.style {

@@ -94,10 +94,15 @@ pub enum StyleAttr {
 
 impl StyleAttr {
     /// Apply this style attribute to a computed style.
-    pub fn apply(&self, computed: &mut ComputedStyle) {
+    pub fn apply(&self, computed: &mut ComputedStyle, server: &AssetServer) {
         match self {
-            StyleAttr::BackgroundImage(_asset) => {
-                warn!("Implement background-image")
+            StyleAttr::BackgroundImage(val) => {
+                if let Expr::Asset(ref asset) = val {
+                    // TODO: Get rid of clone here.
+                    computed.image = Some(server.load(asset.resolved().clone()));
+                } else {
+                    warn!("Incorrect expression type for background-image: {:?}", val);
+                }
             }
             StyleAttr::BackgroundColor(val) => {
                 if let Some(c) = val.coerce::<ColorValue>() {

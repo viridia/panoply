@@ -17,9 +17,10 @@ pub trait Controller {
         entity: Entity,
         view: &ViewElement,
         assets: &Assets<StyleAsset>,
+        server: &AssetServer,
     ) {
         let mut computed = ComputedStyle::default();
-        self.compute_style(&mut computed, view, assets);
+        self.compute_style(&mut computed, view, assets, server);
         commands.add(UpdateComputedStyle { entity, computed });
     }
 
@@ -28,17 +29,18 @@ pub trait Controller {
         computed: &mut ComputedStyle,
         view: &ViewElement,
         assets: &Assets<StyleAsset>,
+        server: &AssetServer,
     ) {
         for handle in view.styleset_handles.iter() {
             if let Some(style) = assets.get(handle) {
                 // info!("Applying style.");
-                style.apply_to(computed);
+                style.apply_to(computed, server);
             } else {
                 warn!("Failed to load style.");
             }
         }
         if let Some(ref inline) = view.inline_style {
-            inline.apply_to(computed);
+            inline.apply_to(computed, server);
         }
     }
 }

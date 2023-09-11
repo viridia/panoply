@@ -49,6 +49,7 @@ impl Controller for SliderController {
         entity: Entity,
         view: &ViewElement,
         assets: &Assets<StyleAsset>,
+        server: &AssetServer,
     ) {
         let mut computed = ComputedStyle::default();
 
@@ -63,7 +64,7 @@ impl Controller for SliderController {
             }
         }
 
-        self.compute_style(&mut computed, view, assets);
+        self.compute_style(&mut computed, view, assets, server);
         commands.add(UpdateComputedStyle { entity, computed });
     }
 }

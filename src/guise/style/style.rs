@@ -6,7 +6,11 @@ use crate::guise::style::{
 };
 
 use super::{selectors_map::SelectorsMap, vars_map::VarsMap, ComputedStyle, StyleAttr};
-use bevy::{prelude::Asset, reflect::TypePath};
+use bevy::{
+    asset::AssetPath,
+    prelude::{Asset, AssetServer},
+    reflect::TypePath,
+};
 use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
@@ -57,10 +61,22 @@ impl StyleAsset {
     }
 
     /// Merge the style properties into a computed `Style` object.
-    pub fn apply_to(&self, computed: &mut ComputedStyle) {
+    pub fn apply_to(&self, computed: &mut ComputedStyle, server: &AssetServer) {
         for attr in self.attrs.iter() {
-            attr.apply(computed);
+            attr.apply(computed, server);
         }
+    }
+
+    /// Find any relative asset paths and convert them to fully-resolved paths.
+    pub fn resolve_asset_paths(&mut self, base: &AssetPath) {
+        self.attrs.iter_mut().for_each(|attr| match attr {
+            StyleAttr::BackgroundImage(expr) => expr.resolve_asset_paths(base),
+            _ => {}
+        });
+        self.selectors
+            .0
+            .iter_mut()
+            .for_each(|(_sel, style)| style.resolve_asset_paths(base))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 
-use bevy::{prelude::Color, ui::UiRect};
+use bevy::{asset::AssetPath, prelude::*, ui::UiRect};
 use serde::{de::Visitor, Deserialize, Serialize};
 use winnow::{
     ascii::space0,
@@ -12,7 +12,7 @@ use winnow::{
 
 use bevy::ui;
 
-use super::color::ColorValue;
+use super::{asset_ref::AssetRef, color::ColorValue};
 
 /// An expression which represents the possible values of a style attribute.
 #[derive(Debug, Clone, PartialEq)]
@@ -33,7 +33,7 @@ pub enum Expr {
     Color(ColorValue),
 
     /// A reference to an asset: "asset(path)"
-    Asset(String),
+    Asset(AssetRef),
 
     /// A reference to a named style variable.
     Var(String),
@@ -103,26 +103,22 @@ impl Expr {
         .parse_next(input)
     }
 
+    /// Resolve relative paths to full paths
+    pub fn resolve_asset_paths(&mut self, base: &AssetPath) {
+        match self {
+            Expr::List(exprs) => exprs
+                .iter_mut()
+                .for_each(|expr| expr.resolve_asset_paths(base)),
+            Expr::Asset(ref mut asset_ref) => asset_ref.resolve_asset_path(base),
+            _ => {}
+        }
+    }
+
     pub fn coerce<T>(&self) -> Option<T>
     where
         Coerce: CoerceExpr<T>,
     {
         Coerce::coerce(&self)
-    }
-
-    pub fn opt<T>(&mut self) -> &Self
-    where
-        Coerce: CoerceExpr<T>,
-    {
-        if let Self::List(l) = self {
-            for x in l.iter_mut() {
-                x.opt();
-            }
-            return self;
-        }
-
-        Coerce::optimize(self);
-        self
     }
 
     /// Optimize constant expression with type hints
@@ -622,7 +618,7 @@ fn parse_color_ctor<'s>(input: &mut &'s str) -> PResult<Expr> {
 
 fn parse_asset<'s>(input: &mut &'s str) -> PResult<Expr> {
     ("asset", space0, delimited('(', parse_asset_key, ')'))
-        .map(|(_, _, path)| Expr::Asset(path.to_string()))
+        .map(|(_, _, path)| Expr::Asset(AssetRef::new(path)))
         .parse_next(input)
 }
 
@@ -1028,7 +1024,7 @@ mod tests {
     fn test_parse_asset() {
         assert_eq!(
             "asset(../image.png)".parse::<Expr>().unwrap(),
-            Expr::Asset("../image.png".to_string())
+            Expr::Asset(AssetRef::new("../image.png"))
         );
     }
 }

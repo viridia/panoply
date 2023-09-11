@@ -79,7 +79,7 @@
     },
     "sub-panel": {
       "padding": 6,
-      "background-color": "#222"
+      "background-color": "#22f"
     }
   },
   "templates": {
@@ -104,7 +104,8 @@
             "styleset": ["#styles/sub-panel"],
             "style": {
               "width": 200,
-              "background-image": "asset(editor/icons/building.png)"
+              "background-image": "asset(editor/icons/building.png)",
+              "background-color": "#fff"
             },
             "children": [
               {

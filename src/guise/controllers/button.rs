@@ -43,6 +43,7 @@ impl Controller for ButtonController {
         entity: Entity,
         view: &ViewElement,
         assets: &Assets<StyleAsset>,
+        server: &AssetServer,
     ) {
         let mut computed = ComputedStyle::default();
         let mut classes: Vec<&str> = Vec::with_capacity(3);
@@ -56,7 +57,7 @@ impl Controller for ButtonController {
             }
         }
 
-        self.compute_style(&mut computed, view, assets);
+        self.compute_style(&mut computed, view, assets, server);
         // view.apply_selected_styles(&mut computed, &classes);
         // view.apply_inline_styles(&mut computed);
         commands.add(UpdateComputedStyle { entity, computed });
