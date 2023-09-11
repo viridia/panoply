@@ -12,7 +12,6 @@
     * Finish unit tests
     * JSON array as UiRect
   * Guise Bundle type
-  * Template invocation
   * Template params
   * Conditional logic
   * Text styles
@@ -244,103 +243,146 @@ fn router(ctx: UiContext, something: bool) -> UiComponent {
   ));
 }
 
-.with_styles((style, cond(style, cond)));
+```
 
-stylex(style, style, if const { style } else Style::Empty)
+# Templating Take 2
 
-type StyleAttributes = HashMap<key, StyleValue>;
-
-enum Style {
-  layer: usize,
-  base: StyleAttributes,
-  selectors: Map<String, StyleAttributes>,
-  variants: Map<String, StyleAttributes>,
+```rust
+struct Counter {
+  count: i32,
 }
-```
 
-Vanilla-extract:
+impl Controller for Counter {
+  fn render(elt: &mut ViewElement, template: &Box<TemplateNode>) -> UiComponent {
+    let mut count = ctx.select_resource::<Counter>(|res| &res.count);
+    return FlexBox::new(style, (
+      Button::new(format!("count: {}", count.get())).on_click(|| *count = *count + 1),
+      Button::new("reset", || *count = 0),
+    ));
 
-- styles
-- recipes
-- sprinkles
-- css vars
-- theme vars
-- descendants?
+    return Element {
+      style: {
+        display: "flex",
+        background_color: Expr::Var("button-fill"),
+        vars: [
+          ("button-fill", Expr::new(Color.RED)),
+        ],
+        selectors: [
+          ("&.selected", {
+            vars: [
+              ("button-fill", Expr::new(Color.GREEN)),
+            ],
+          }),
+          ("&.disabled", {
+            "opacity": 0.5,
+          }),
+       ]
+      },
+      stylesets: &[server.load("editor/ui/button.ui#button")],
+      children: &[
+        Slider {
 
-Properties
-* display: ['flex', 'grid', 'block', 'inline'],
-* alignItems: ['stretch', 'center', 'flex-start', 'flex-end'],
-* alignSelf: ['stretch', 'center', 'flex-start', 'flex-end'],
-* alignContent: ['stretch', 'center', 'flex-start', 'flex-end'],
-* justifySelf
-* justifyContent
-* justifyItems
-* gap: Space
-* flexDirection
-* flexWrap
-* flexGrow: [0, 1, 2, 3],
-* flexShrink: [0, 1, 2, 3],
-* flexBasis:
-* minHeight: Size,
-* minWidth: Size,
-* maxHeight: Size,
-* maxWidth: Size,
-* height: Size,
-* width: Size,
+        },
+        Element {
 
-* marginLeft: Space,
-* marginRight: Space,
-* marginTop: Space,
-* marginBottom: Space,
+        },
+        Text {
 
-* paddingLeft: Space,
-* paddingRight: Space,
-* paddingTop: Space,
-* paddingBottom: Space,
+        }
+      ],
+    }
+  }
+}
 
-* overflow: ['auto'],
-* overflowX: ['auto'],
-* overflowY: ['auto'],
+struct UiContext {
+  capture
+  focus
+  context vars.
+}
 
-  shorthands: {
-    w: ['width'],
-    h: ['height'],
-    ml: ['marginLeft'],
-    mr: ['marginRight'],
-    mt: ['marginTop'],
-    mb: ['marginBottom'],
-    m: ['marginLeft', 'marginRight', 'marginTop', 'marginBottom'],
-    pl: ['paddingLeft'],
-    pr: ['paddingRight'],
-    pt: ['paddingTop'],
-    pb: ['paddingBottom'],
-    p: ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'],
-  },
+struct Button {
+  hover: bool,
+  pressed: bool,
+  disabled: bool,
+  label: Element,
+}
 
-* aquifer
-* sequin
-* fluid
-* guise
+impl Control for Button {
+  // FIX: We need variable params like systems.
+  fn render(state: &mut ResMut<Self>, ctx: &UiContext) -> Element {
+    Element {
+      events: (
+        On::<Pointer<Over>>::run(button_pointer_over),
+        On::<Pointer<Out>>::run(button_pointer_out),
+        On::<Pointer<DragStart>>::run(button_drag_start),
+        On::<Pointer<DragEnd>>::run(button_drag_end),
+      ),
+      stylesets: &[server.load("editor/ui/button.ui#button")],
+      classes: &[
+        ("hover", state.hover),
+        ("pressed", state.pressed),
+        ("disabled", state.disabled),
+      ],
+      children: &[
+        // Background element
+        Element {
+          stylesets: &[server.load("editor/ui/button.ui#button-background")],
+          children: &[
+            Element {
 
-## CSS attribute syntax:
+            },
+          ],
+        },
+        state.label,
+      ],
+      ..default()
+    }
+  }
+}
 
-```
-  declaration
-    : property ':' S* expr prio?
-    ;
-  prio
-    : IMPORTANT_SYM S*
-    ;
-  expr
-    : term [ operator? term ]*
-    ;
-  term
-    : unary_operator?
-      [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* |
-        TIME S* | FREQ S* ]
-    | STRING S* | IDENT S* | URI S* | hexcolor | function
-    ;
-  function
-    : FUNCTION S* expr ')' S*
-    ;
+struct Patch {
+  rect: Rect,
+}
+
+struct NinePatch {
+  image: Handle<Image>,
+  patches: Vec<Patch>,
+}
+
+impl NinePatch {
+  fn with_margins(rect: Rect) -> Self {
+    patches.push(Patch {
+      rect: Rect(0, 0, rect.x0, rect.y0),
+    },
+    Patch {
+      rect: Rect(rect.x0, 0, rect.x1, rect.y0),
+    },
+    Patch {
+      rect: Rect(rect.x1, 0, rect.x1, rect.y0),
+    },
+    )
+  }
+}
+
+impl Control for NinePatch {
+  fn render(state: &Res<Self>) -> Element {
+    Element {
+      style: {
+        display: "grid",
+      },
+      children: 0..9.map(|n| {
+        let x = n % 3;
+        let y = n / 3;
+        Element {
+          style: {
+            background_image: state.image,
+            clip: CalculatedClip {
+
+            }
+          }
+        }
+      })
+    }
+  }
+}
 ```

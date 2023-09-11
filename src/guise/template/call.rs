@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use bevy::{prelude::Handle, utils::HashMap};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -25,7 +25,7 @@ pub struct Call {
 
     // Resource key of template
     #[serde(skip)]
-    pub template_handle: Handle<TemplateAsset>,
+    pub template_handle: RwLock<Handle<TemplateAsset>>,
 
     /// Controller parameters
     pub params: HashMap<String, String>,

@@ -1,3 +1,6 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use bevy::prelude::Asset;
 use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
@@ -7,13 +10,13 @@ use super::call::Call;
 use super::element::Element;
 use super::text::Text;
 
-pub type TemplateNodeList = Vec<Box<TemplateNode>>;
+pub type TemplateNodeList = Vec<TemplateNodeRef>;
 
 #[derive(Debug, TypePath, Default, Serialize, Deserialize, Asset)]
 pub struct TemplateAsset {
     #[serde(default)]
     pub params: HashMap<String, TemplateParam>,
-    pub content: Option<Box<TemplateNode>>,
+    pub content: Option<TemplateNodeRef>,
 }
 
 /// An instantiable template for a UI node
@@ -47,4 +50,39 @@ pub enum TemplateNode {
     Fragment(TemplateNodeList),
     Text(Text),
     Call(Call),
+    // Cond
+    // Each
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(from = "TemplateNode")]
+pub struct TemplateNodeRef(pub Arc<Box<TemplateNode>>);
+
+impl Deref for TemplateNodeRef {
+    type Target = TemplateNode;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref()
+    }
+}
+
+impl AsRef<TemplateNode> for TemplateNodeRef {
+    fn as_ref(&self) -> &TemplateNode {
+        self.0.as_ref()
+    }
+}
+
+impl Serialize for TemplateNodeRef {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.as_ref().serialize(serializer)
+    }
+}
+
+impl From<TemplateNode> for TemplateNodeRef {
+    fn from(value: TemplateNode) -> Self {
+        TemplateNodeRef(Arc::new(Box::new(value)))
+    }
 }

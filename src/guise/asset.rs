@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     path::relative_asset_path,
-    template::{TemplateAsset, TemplateNode},
+    template::{TemplateAsset, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
@@ -25,16 +25,17 @@ pub struct AssetSerial {
 pub struct GuiseTemplatesLoader;
 
 impl GuiseTemplatesLoader {
-    fn visit_node<'a>(&self, node: &mut TemplateNode, lc: &'a mut LoadContext, base: &AssetPath) {
-        match node {
+    fn visit_node<'a>(&self, node: &TemplateNodeRef, lc: &'a mut LoadContext, base: &AssetPath) {
+        match node.0.as_ref().as_ref() {
             TemplateNode::Element(elt) => elt
                 .children
-                .iter_mut()
+                .iter()
                 .for_each(|child| self.visit_node(child, lc, base)),
             TemplateNode::Fragment(_) => todo!(),
             TemplateNode::Text(_) => {}
             TemplateNode::Call(call) => {
-                call.template_handle = lc.load(relative_asset_path(base, &call.template))
+                *call.template_handle.write().unwrap() =
+                    lc.load(relative_asset_path(base, &call.template))
             }
         };
     }
@@ -58,7 +59,7 @@ impl AssetLoader for GuiseTemplatesLoader {
             entries.styles.drain().for_each(|(key, style)| {
                 load_context.add_labeled_asset(format!("styles/{}", key), style);
             });
-            entries.templates.drain().for_each(|(key, mut template)| {
+            entries.templates.drain().for_each(|(key, template)| {
                 let label = format!("templates/{}", key);
                 // TODO: Lots of string copying here.
                 let base = AssetPath::new(
@@ -66,7 +67,7 @@ impl AssetLoader for GuiseTemplatesLoader {
                     Some(label.clone()),
                 );
                 load_context.begin_labeled_asset();
-                if let Some(content) = template.content.as_mut() {
+                if let Some(content) = template.content.as_ref() {
                     self.visit_node(content, load_context, &base);
                 }
                 load_context.add_labeled_asset(label, template);

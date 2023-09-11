@@ -11,21 +11,27 @@ use super::{
     controller::Controller,
     controllers::DefaultController,
     path::relative_asset_path,
-    template::{TemplateAsset, TemplateNode},
+    template::{TemplateAsset, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
 /// Output of a rendered node, which may be a single node or a fragment (multiple nodes).
 /// This gets flattened before attaching to the parent node.
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) enum ViewChild {
+pub(crate) enum TemplateOutput {
+    // Means that nothing was rendered. This can represent either an initial state
+    // before the first render, or a conditional render operation.
     Empty,
 
+    // Template rendered a single node
     Node(Entity),
-    Fragment(Box<[ViewChild]>),
+
+    // Template rendered a fragment or a list of nodes.
+    Fragment(Box<[TemplateOutput]>),
 }
 
-impl ViewChild {
+impl TemplateOutput {
+    /// Returns the number of actual entities in the template output.
     fn count(&self) -> usize {
         match self {
             Self::Empty => 0,
@@ -34,6 +40,7 @@ impl ViewChild {
         }
     }
 
+    /// Flattens the list of entities into a vector.
     fn flatten(&self, out: &mut Vec<Entity>) {
         match self {
             Self::Empty => {}
@@ -42,6 +49,7 @@ impl ViewChild {
         }
     }
 
+    /// Despawn all entities held.
     fn despawn_recursive(&self, commands: &mut Commands) {
         match self {
             Self::Empty => {}
@@ -53,7 +61,7 @@ impl ViewChild {
     }
 }
 
-impl Default for ViewChild {
+impl Default for TemplateOutput {
     fn default() -> Self {
         Self::Empty
     }
@@ -65,7 +73,7 @@ pub struct ViewRoot {
     pub template: Handle<TemplateAsset>,
 
     /// Generated list of entities
-    entities: ViewChild,
+    entities: TemplateOutput,
 }
 
 impl ViewRoot {
@@ -79,8 +87,11 @@ impl ViewRoot {
 
 /// Component that defines a ui element, and which can differentially update when the
 /// template asset changes.
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct ViewElement {
+    /// Template node used to generate this element
+    template: TemplateNodeRef,
+
     /// Element id
     pub id: Option<String>,
 
@@ -96,13 +107,23 @@ pub struct ViewElement {
     /// ID of controller component associated with this element.
     pub controller: Option<String>,
 
-    // pub controller_instance: Option<Arc<dyn Controller>>,
     // Class names used for style selectors.
     pub classes: Vec<String>,
 
     /// Generated list of entities
-    children: Vec<ViewChild>,
+    children: Vec<TemplateOutput>,
+    // Other possible props:
+    // template node - the template node that caused this
+    // memoized - whether this node should be re-evaluated when parent changes.
+    // template parameters
+    // context vars, inherited context vars.
+    // 'modified' flag. That should probably be a separate component.
+    // Idea: what about having the view nodes be separate entities from the ui nodes?
 }
+
+/// Marker that a view element needs to be rebuilt from it's template.
+#[derive(Component, Default)]
+pub struct NeedsRebuild;
 
 impl ViewElement {
     pub fn element_id<'a>(&'a self) -> &'a str {
@@ -170,11 +191,11 @@ pub fn create_views(
                             for mut view_root in root_query.iter_mut() {
                                 if view_root.template.id().eq(id) {
                                     // println!("create_views: {} {:?}", asset_path, ev);
-                                    if let Some(ref element) = template.content {
-                                        let root = reconcile_element(
+                                    if let Some(ref template_node) = template.content {
+                                        let root = reconcile(
                                             &mut commands,
                                             &mut view_root.entities,
-                                            &element,
+                                            &template_node,
                                             &mut element_query,
                                             &mut text_query,
                                             &server,
@@ -187,6 +208,11 @@ pub fn create_views(
                                     }
                                 }
                             }
+
+                            // Search for called template
+                            // for mut view_element in root_query.iter_mut() {
+
+                            // }
                         }
 
                         None => {
@@ -213,19 +239,19 @@ pub fn create_views(
 /// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
 /// and re-create entire sub-trees of entities if it feels that differential updates are too
 /// complicated.
-fn reconcile_element(
+fn reconcile(
     commands: &mut Commands,
-    view_child: &ViewChild,
-    template_node: &Box<TemplateNode>,
+    view_child: &TemplateOutput,
+    template_node: &TemplateNodeRef,
     element_query: &mut Query<&mut ViewElement>,
     text_query: &mut Query<&mut Text>,
     server: &AssetServer,
     assets: &Assets<TemplateAsset>,
     asset_path: &AssetPath,
-) -> ViewChild {
+) -> TemplateOutput {
     match template_node.as_ref() {
         TemplateNode::Element(template) => {
-            if let ViewChild::Node(elt_entity) = *view_child {
+            if let TemplateOutput::Node(elt_entity) = *view_child {
                 if let Ok(mut element) = element_query.get_mut(elt_entity) {
                     if element.controller == template.controller {
                         // Update view element node with changed properties.
@@ -249,30 +275,21 @@ fn reconcile_element(
 
                         // Visit and reconcile children
                         let new_count = template.children.len();
-                        let mut children: Vec<ViewChild> =
-                            vec![ViewChild::Empty; template.children.len()];
+                        let mut children: Vec<TemplateOutput> =
+                            vec![TemplateOutput::Empty; template.children.len()];
                         let mut children_changed = false;
-
-                        if new_count > 0 {
-                            warn!(
-                                "Reconciling children: {} {}",
-                                new_count,
-                                element.children.len()
-                            );
-                        }
 
                         for i in 0..element.children.len() {
                             if i < new_count {
                                 children[i] = element.children[i].clone()
                             } else {
-                                warn!("Despawn child: {}/{}", i, new_count,);
                                 element.children[i].despawn_recursive(commands);
                                 children_changed = true;
                             }
                         }
 
                         for i in 0..new_count {
-                            let new_child = reconcile_element(
+                            let new_child = reconcile(
                                 commands,
                                 &children[i],
                                 &template.children[i],
@@ -299,7 +316,7 @@ fn reconcile_element(
                         }
 
                         // We patched the old entity, so just return the same entity id.
-                        return ViewChild::Node(elt_entity);
+                        return TemplateOutput::Node(elt_entity);
                     }
                 }
 
@@ -312,16 +329,12 @@ fn reconcile_element(
                 handles.push(server.load(relative_asset_path(asset_path, ss)));
             });
 
-            if template.children.len() > 0 {
-                warn!("Creating children: {}", template.children.len());
-            }
-
             // Visit and create children
-            let mut children = vec![ViewChild::Empty; template.children.len()];
+            let mut children = vec![TemplateOutput::Empty; template.children.len()];
             let mut flat = Vec::<Entity>::new();
             if !template.children.is_empty() {
                 for i in 0..template.children.len() {
-                    children[i] = reconcile_element(
+                    children[i] = reconcile(
                         commands,
                         &children[i],
                         &template.children[i],
@@ -340,13 +353,14 @@ fn reconcile_element(
             let new_entity = commands
                 .spawn((
                     ViewElement {
+                        template: (*template_node).clone(),
                         id: template.id.clone(),
                         styleset: template.styleset.clone(),
                         styleset_handles: handles,
                         inline_style: template.inline_style.clone(),
                         controller: template.controller.clone(),
                         children,
-                        ..default()
+                        classes: Vec::new(),
                     },
                     NodeBundle {
                         focus_policy: FocusPolicy::Pass,
@@ -368,18 +382,18 @@ fn reconcile_element(
                 commands.entity(new_entity).insert(DefaultController);
             }
 
-            return ViewChild::Node(new_entity);
+            return TemplateOutput::Node(new_entity);
         }
 
         TemplateNode::Text(template) => {
-            if let ViewChild::Node(text_entity) = *view_child {
+            if let TemplateOutput::Node(text_entity) = *view_child {
                 if let Ok(mut old_text) = text_query.get_mut(text_entity) {
                     old_text.sections.clear();
                     old_text.sections.push(TextSection {
                         value: template.content.clone(),
                         style: TextStyle { ..default() },
                     });
-                    return ViewChild::Node(text_entity);
+                    return TemplateOutput::Node(text_entity);
                 }
             }
 
@@ -398,12 +412,14 @@ fn reconcile_element(
                 },))
                 .id();
 
-            return ViewChild::Node(new_entity);
+            return TemplateOutput::Node(new_entity);
         }
 
         TemplateNode::Call(call) => {
-            let template = assets.get(call.template_handle.id()).unwrap();
-            reconcile_element(
+            let template = assets
+                .get(call.template_handle.read().unwrap().id())
+                .unwrap();
+            reconcile(
                 commands,
                 view_child,
                 template.content.as_ref().unwrap(),
