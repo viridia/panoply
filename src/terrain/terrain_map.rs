@@ -115,6 +115,7 @@ pub struct TerrainMap {
 
 /// Marker component that a terrain map has changed.
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct TerrainMapChanged;
 
 #[derive(Default)]

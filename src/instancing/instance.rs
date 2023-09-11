@@ -27,6 +27,7 @@ pub struct ModelPlacements {
 
 /// Marker component to let us know that the placement list has changed.
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ModelPlacementChanged;
 
 #[derive(Component)]

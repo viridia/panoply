@@ -37,12 +37,15 @@ pub struct Parcel {
 }
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ParcelContourChanged;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ParcelWaterChanged;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ParcelFloraChanged;
 
 #[derive(Bundle)]

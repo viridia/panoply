@@ -20,6 +20,11 @@ pub struct ComputedStyle {
     pub border_color: ColorValue,
     pub background_color: ColorValue,
     pub z_index: Option<i32>,
+
+    // Image properties
+    pub image: Option<Handle<Image>>,
+    pub flip_x: bool,
+    pub flip_y: bool,
 }
 
 impl ComputedStyle {
@@ -122,6 +127,39 @@ impl Command for UpdateComputedStyle {
                     if !self.computed.border_color.is_transparent() {
                         // Insert a new background color
                         e.insert(BorderColor(self.computed.border_color.color()));
+                    }
+                }
+            }
+
+            match e.get_mut::<UiImage>() {
+                Some(mut img) => {
+                    match self.computed.image {
+                        Some(src) => {
+                            if img.texture != src {
+                                img.texture = src;
+                            }
+                            if img.flip_x != self.computed.flip_x {
+                                img.flip_x = self.computed.flip_x;
+                            }
+                            if img.flip_y != self.computed.flip_y {
+                                img.flip_y = self.computed.flip_y;
+                            }
+                        }
+                        None => {
+                            // Remove the image.
+                            e.remove::<UiImage>();
+                        }
+                    }
+                }
+
+                None => {
+                    if let Some(src) = self.computed.image {
+                        // Create image component
+                        e.insert(UiImage {
+                            texture: src,
+                            flip_x: self.computed.flip_x,
+                            flip_y: self.computed.flip_y,
+                        });
                     }
                 }
             }

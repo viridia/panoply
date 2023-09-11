@@ -16,7 +16,7 @@ use super::{
 };
 
 /// Output of a rendered node, which may be a single node or a fragment (multiple nodes).
-/// This gets flattened before attaching to the parent node.
+/// This gets flattened before attaching to the parent UiNode.
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) enum TemplateOutput {
     // Means that nothing was rendered. This can represent either an initial state
@@ -95,9 +95,6 @@ pub struct ViewElement {
     /// Element id
     pub id: Option<String>,
 
-    /// Reference to style element by name.
-    pub styleset: Vec<String>,
-
     /// Cached handles for stylesets.
     pub styleset_handles: Vec<Handle<StyleAsset>>,
 
@@ -113,7 +110,6 @@ pub struct ViewElement {
     /// Generated list of entities
     children: Vec<TemplateOutput>,
     // Other possible props:
-    // template node - the template node that caused this
     // memoized - whether this node should be re-evaluated when parent changes.
     // template parameters
     // context vars, inherited context vars.
@@ -123,6 +119,7 @@ pub struct ViewElement {
 
 /// Marker that a view element needs to be rebuilt from it's template.
 #[derive(Component, Default)]
+#[component(storage = "SparseSet")]
 pub struct NeedsRebuild;
 
 impl ViewElement {
@@ -184,7 +181,7 @@ pub fn create_views(
             AssetEvent::Added { id }
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
-                info!("Template event: {:?}", ev);
+                // info!("Template event: {:?}", ev);
                 if let Some(asset_path) = server.get_path(*id) {
                     match assets.get(*id) {
                         Some(template) => {
@@ -235,6 +232,64 @@ pub fn create_views(
     }
 }
 
+// fn update_views(
+//     mut commands: Commands,
+//     mut root_query: Query<&mut ViewRoot>,
+//     mut element_query: Query<(Entity, &mut ViewElement, Option<&NeedsRebuild>)>,
+//     mut text_query: Query<&mut Text>,
+//     server: Res<AssetServer>,
+//     assets: Res<Assets<TemplateAsset>>,
+// ) {
+//     for (entity, mut element, rebuild) in element_query.iter_mut() {
+//         if rebuild.is_some() {
+//             // Might need to recompute styles.
+//             commands.entity(entity).remove::<NeedsRebuild>();
+//             if let TemplateNode::Element(ref template) = element.template.0.as_ref().as_ref() {
+//                 let new_count = template.children.len();
+//                 let mut children: Vec<TemplateOutput> =
+//                     vec![TemplateOutput::Empty; template.children.len()];
+//                 let mut children_changed = false;
+
+//                 for i in 0..element.children.len() {
+//                     if i < new_count {
+//                         children[i] = element.children[i].clone()
+//                     } else {
+//                         element.children[i].despawn_recursive(&mut commands);
+//                         children_changed = true;
+//                     }
+//                 }
+
+//                 for i in 0..new_count {
+//                     let new_child = reconcile(
+//                         &mut commands,
+//                         &children[i],
+//                         &template.children[i],
+//                         &element_query,
+//                         &mut text_query,
+//                         &server,
+//                         &assets,
+//                         &asset_path,
+//                     );
+//                     if children[i] != new_child {
+//                         children[i] = new_child;
+//                         children_changed = true;
+//                     }
+//                 }
+
+//                 if children_changed {
+//                     let count = children.iter().map(|child| child.count()).sum();
+//                     let mut flat = Vec::<Entity>::with_capacity(count);
+//                     children.iter().for_each(|child| child.flatten(&mut flat));
+//                     commands.entity(entity).replace_children(&flat);
+//                     if let Ok(mut element) = element_query.get_mut(entity) {
+//                         element.1.children = children;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
 /// Function to update the view hierarchy in response to changes to the templates and params.
 /// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
 /// and re-create entire sub-trees of entities if it feels that differential updates are too
@@ -259,14 +314,8 @@ fn reconcile(
                             element.id = template.id.clone();
                         }
 
-                        if !element.styleset.eq(&template.styleset) {
-                            element.styleset = template.styleset.clone();
-                            let mut handles: Vec<Handle<StyleAsset>> =
-                                Vec::with_capacity(element.styleset.len());
-                            element.styleset.iter().for_each(|ss| {
-                                handles.push(server.load(relative_asset_path(asset_path, ss)));
-                            });
-                            element.styleset_handles = handles;
+                        if !element.styleset_handles.eq(&template.styleset_handles) {
+                            element.styleset_handles = template.styleset_handles.clone();
                         }
 
                         if element.inline_style != template.inline_style {
@@ -355,8 +404,7 @@ fn reconcile(
                     ViewElement {
                         template: (*template_node).clone(),
                         id: template.id.clone(),
-                        styleset: template.styleset.clone(),
-                        styleset_handles: handles,
+                        styleset_handles: template.styleset_handles.clone(),
                         inline_style: template.inline_style.clone(),
                         controller: template.controller.clone(),
                         children,
@@ -416,9 +464,7 @@ fn reconcile(
         }
 
         TemplateNode::Call(call) => {
-            let template = assets
-                .get(call.template_handle.read().unwrap().id())
-                .unwrap();
+            let template = assets.get(call.template_handle.id()).unwrap();
             reconcile(
                 commands,
                 view_child,

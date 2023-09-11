@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     path::relative_asset_path,
-    template::{TemplateAsset, TemplateNode, TemplateNodeRef},
+    template::{Call, Element, TemplateAsset, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
@@ -25,19 +25,47 @@ pub struct AssetSerial {
 pub struct GuiseTemplatesLoader;
 
 impl GuiseTemplatesLoader {
-    fn visit_node<'a>(&self, node: &TemplateNodeRef, lc: &'a mut LoadContext, base: &AssetPath) {
+    // Transform nodes into a form that has resolved handles.
+    fn visit_template_node<'a>(
+        &self,
+        node: &TemplateNodeRef,
+        lc: &'a mut LoadContext,
+        base: &AssetPath,
+    ) -> TemplateNodeRef {
         match node.0.as_ref().as_ref() {
-            TemplateNode::Element(elt) => elt
-                .children
-                .iter()
-                .for_each(|child| self.visit_node(child, lc, base)),
-            TemplateNode::Fragment(_) => todo!(),
-            TemplateNode::Text(_) => {}
-            TemplateNode::Call(call) => {
-                *call.template_handle.write().unwrap() =
-                    lc.load(relative_asset_path(base, &call.template))
+            TemplateNode::Element(elt) => {
+                // TODO: Resolve styleset handles.
+                TemplateNodeRef::new(TemplateNode::Element(Element {
+                    styleset: elt.styleset.clone(),
+                    styleset_handles: elt
+                        .styleset
+                        .iter()
+                        .map(|path| lc.load(relative_asset_path(base, &path)))
+                        .collect(),
+                    inline_style: elt.inline_style.clone(),
+                    id: elt.id.clone(),
+                    controller: elt.controller.clone(),
+                    attrs: elt.attrs.clone(),
+                    children: elt
+                        .children
+                        .iter()
+                        .map(|child| self.visit_template_node(child, lc, base))
+                        .collect(),
+                }))
             }
-        };
+            TemplateNode::Fragment(frag) => TemplateNodeRef::new(TemplateNode::Fragment(
+                frag.iter()
+                    .map(|child| self.visit_template_node(child, lc, base))
+                    .collect(),
+            )),
+            TemplateNode::Text(_) => node.clone(),
+            TemplateNode::Call(call) => TemplateNodeRef::new(TemplateNode::Call(Call {
+                inline_style: call.inline_style.clone(),
+                template: call.template.clone(),
+                template_handle: lc.load(relative_asset_path(base, &call.template)),
+                params: call.params.clone(),
+            })),
+        }
     }
 }
 
@@ -59,7 +87,7 @@ impl AssetLoader for GuiseTemplatesLoader {
             entries.styles.drain().for_each(|(key, style)| {
                 load_context.add_labeled_asset(format!("styles/{}", key), style);
             });
-            entries.templates.drain().for_each(|(key, template)| {
+            entries.templates.drain().for_each(|(key, mut template)| {
                 let label = format!("templates/{}", key);
                 // TODO: Lots of string copying here.
                 let base = AssetPath::new(
@@ -68,7 +96,7 @@ impl AssetLoader for GuiseTemplatesLoader {
                 );
                 load_context.begin_labeled_asset();
                 if let Some(content) = template.content.as_ref() {
-                    self.visit_node(content, load_context, &base);
+                    template.content = Some(self.visit_template_node(content, load_context, &base));
                 }
                 load_context.add_labeled_asset(label, template);
             });

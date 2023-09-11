@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bevy::utils::HashMap;
+use bevy::{prelude::Handle, utils::HashMap};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::guise::style::StyleAsset;
@@ -13,6 +13,10 @@ pub struct Element {
     /// Reference to named style.
     #[serde(rename = "styleset", default)]
     pub styleset: Vec<String>,
+
+    /// Cached handles for stylesets.
+    #[serde(skip)]
+    pub styleset_handles: Vec<Handle<StyleAsset>>,
 
     /// Inline styles on the node
     #[serde(

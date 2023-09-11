@@ -58,6 +58,12 @@ pub enum TemplateNode {
 #[serde(from = "TemplateNode")]
 pub struct TemplateNodeRef(pub Arc<Box<TemplateNode>>);
 
+impl TemplateNodeRef {
+    pub fn new(node: TemplateNode) -> Self {
+        Self(Arc::new(Box::new(node)))
+    }
+}
+
 impl Deref for TemplateNodeRef {
     type Target = TemplateNode;
 

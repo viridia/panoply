@@ -97,7 +97,7 @@ impl StyleAttr {
     pub fn apply(&self, computed: &mut ComputedStyle) {
         match self {
             StyleAttr::BackgroundImage(_asset) => {
-                todo!("Implement background-image")
+                warn!("Implement background-image")
             }
             StyleAttr::BackgroundColor(val) => {
                 if let Some(c) = val.coerce::<ColorValue>() {

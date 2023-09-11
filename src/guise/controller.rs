@@ -31,7 +31,7 @@ pub trait Controller {
     ) {
         for handle in view.styleset_handles.iter() {
             if let Some(style) = assets.get(handle) {
-                info!("Applying style.");
+                // info!("Applying style.");
                 style.apply_to(computed);
             } else {
                 warn!("Failed to load style.");
