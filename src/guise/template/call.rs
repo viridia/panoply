@@ -28,6 +28,7 @@ pub struct Call {
     pub template_handle: Handle<TemplateAsset>,
 
     /// Controller parameters
+    #[serde(skip)]
     pub params: HashMap<String, String>,
 }
 

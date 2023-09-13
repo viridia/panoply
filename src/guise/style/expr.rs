@@ -1,22 +1,17 @@
 use std::fmt::{self, Debug};
 
-use bevy::{asset::AssetPath, prelude::*, ui::UiRect};
-use serde::{de::Visitor, Deserialize, Serialize};
-use winnow::{
-    ascii::space0,
-    combinator::{alt, cut_err, delimited, opt, preceded},
-    error::StrContext,
-    token::{one_of, take_until1, take_while},
-    PResult, Parser,
-};
+use serde::{Deserialize, Serialize};
 
 use bevy::ui;
 
-use super::{asset_ref::AssetRef, color::ColorValue};
+use super::{asset_ref::AssetRef, coerce::Coerce, color::ColorValue, untyped_expr::UntypedExpr};
 
 /// An expression which represents the possible values of a style attribute.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
+pub enum TypedExpr<T> {
+    /// A constant value of the type of the expression.
+    Constant(T),
+
     /// An identifier
     Ident(String),
 
@@ -27,7 +22,7 @@ pub enum Expr {
     Length(ui::Val),
 
     /// A list of expressions
-    List(Vec<Expr>),
+    // List(Box<[UntypedExpr]>),
 
     /// A color value
     Color(ColorValue),
@@ -45,307 +40,179 @@ pub enum Expr {
     // CALC
     // LIGHTEN
     // DARKEN
-    Display(ui::Display),
-    PositionType(ui::PositionType),
-    OverflowAxis(ui::OverflowAxis),
-    Direction(ui::Direction),
-    AlignItems(ui::AlignItems),
-    AlignContent(ui::AlignContent),
-    AlignSelf(ui::AlignSelf),
-    JustifyItems(ui::JustifyItems),
-    JustifyContent(ui::JustifyContent),
-    JustifySelf(ui::JustifySelf),
-    FlexDirection(ui::FlexDirection),
-    FlexWrap(ui::FlexWrap),
 }
 
-pub enum CssFn {
-    Rgb,
-    Rgba,
-    Hsl,
-    Hsla,
-    Lighten,
-    Darken,
-    Calc,
-    Max,
-    Min,
-    // Gradients
-}
-
-/// Type hints for optimization.
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub enum TypeHint {
-    Length,
-    Display,
-    Position,
-    OverflowAxis,
-    Direction,
-    AlignItems,
-    AlignContent,
-    AlignSelf,
-    JustifyItems,
-    JustifyContent,
-    JustifySelf,
-    FlexDirection,
-    FlexWrap,
-}
-
-impl Expr {
-    pub fn parser(input: &mut &str) -> PResult<Expr> {
-        alt((
-            parse_hex_color,
-            parse_length,
-            parse_var_ref,
-            parse_color_ctor,
-            parse_asset,
-            parse_ident,
-        ))
-        .parse_next(input)
-    }
-
-    /// Resolve relative paths to full paths
-    pub fn resolve_asset_paths(&mut self, base: &AssetPath) {
+impl<T> TypedExpr<T> {
+    fn fmt_untyped(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::List(exprs) => exprs
-                .iter_mut()
-                .for_each(|expr| expr.resolve_asset_paths(base)),
-            Expr::Asset(ref mut asset_ref) => asset_ref.resolve_asset_path(base),
-            _ => {}
-        }
-    }
-
-    pub fn coerce<T>(&self) -> Option<T>
-    where
-        Coerce: CoerceExpr<T>,
-    {
-        Coerce::coerce(&self)
-    }
-
-    /// Optimize constant expression with type hints
-    pub fn optimize(&mut self, hint: TypeHint) -> &Self {
-        if let Self::List(l) = self {
-            for x in l.iter_mut() {
-                x.optimize(hint);
+            Self::Ident(name) => write!(f, "{}", name),
+            Self::Number(n) => write!(f, "{}", n),
+            Self::Length(l) => match l {
+                ui::Val::Auto => write!(f, "auto"),
+                ui::Val::Px(v) => write!(f, "{}px", v),
+                ui::Val::Percent(v) => write!(f, "{}%", v),
+                ui::Val::Vw(v) => write!(f, "{}vw", v),
+                ui::Val::Vh(v) => write!(f, "{}vh", v),
+                ui::Val::VMin(v) => write!(f, "{}vmin", v),
+                ui::Val::VMax(v) => write!(f, "{}vmax", v),
+            },
+            Self::Color(c) => fmt::Display::fmt(&c, f),
+            Self::Asset(_) => todo!(),
+            Self::Var(name) => write!(f, "var(--{})", name),
+            _ => {
+                panic!("Call to fmt_untyped with Self::Constant");
             }
-            return self;
-        }
-
-        match hint {
-            TypeHint::Length => {
-                if let Self::Ident(s) = self {
-                    if s == "auto" {
-                        *self = Self::Length(ui::Val::Auto)
-                    }
-                }
-            }
-            TypeHint::Display => {
-                let opt = self.coerce::<ui::Display>();
-                if let Some(disp) = opt {
-                    *self = Self::Display(disp)
-                }
-            }
-            TypeHint::Position => {
-                let opt = self.coerce::<ui::PositionType>();
-                if let Some(disp) = opt {
-                    *self = Self::PositionType(disp)
-                }
-            }
-            TypeHint::OverflowAxis => {
-                let opt = self.coerce::<ui::OverflowAxis>();
-                if let Some(disp) = opt {
-                    *self = Self::OverflowAxis(disp)
-                }
-            }
-            TypeHint::Direction => {
-                let opt = self.coerce::<ui::Direction>();
-                if let Some(disp) = opt {
-                    *self = Self::Direction(disp)
-                }
-            }
-            TypeHint::AlignItems => {
-                let opt = self.coerce::<ui::AlignItems>();
-                if let Some(disp) = opt {
-                    *self = Self::AlignItems(disp)
-                }
-            }
-            TypeHint::AlignContent => {
-                let opt = self.coerce::<ui::AlignContent>();
-                if let Some(disp) = opt {
-                    *self = Self::AlignContent(disp)
-                }
-            }
-            TypeHint::AlignSelf => {
-                let opt = self.coerce::<ui::AlignSelf>();
-                if let Some(disp) = opt {
-                    *self = Self::AlignSelf(disp)
-                }
-            }
-            TypeHint::JustifyItems => {
-                let opt = self.coerce::<ui::JustifyItems>();
-                if let Some(disp) = opt {
-                    *self = Self::JustifyItems(disp)
-                }
-            }
-            TypeHint::JustifyContent => {
-                let opt = self.coerce::<ui::JustifyContent>();
-                if let Some(disp) = opt {
-                    *self = Self::JustifyContent(disp)
-                }
-            }
-            TypeHint::JustifySelf => {
-                let opt = self.coerce::<ui::JustifySelf>();
-                if let Some(disp) = opt {
-                    *self = Self::JustifySelf(disp)
-                }
-            }
-            TypeHint::FlexDirection => {
-                let opt = self.coerce::<ui::FlexDirection>();
-                if let Some(v) = opt {
-                    *self = Self::FlexDirection(v)
-                }
-            }
-            TypeHint::FlexWrap => {
-                let opt = self.coerce::<ui::FlexWrap>();
-                if let Some(v) = opt {
-                    *self = Self::FlexWrap(v)
-                }
-            }
-        }
-        self
-    }
-}
-
-pub struct Coerce;
-
-pub trait CoerceExpr<T> {
-    fn coerce(e: &Expr) -> Option<T>;
-    fn optimize(_e: &mut Expr) {}
-}
-
-impl CoerceExpr<i32> for Coerce {
-    fn coerce(e: &Expr) -> Option<i32> {
-        match e {
-            Expr::Number(v) => Some(*v as i32),
-            _ => None,
         }
     }
 }
 
-impl CoerceExpr<f32> for Coerce {
-    fn coerce(e: &Expr) -> Option<f32> {
-        match e {
-            Expr::Number(v) => Some(*v),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceExpr<ColorValue> for Coerce {
-    fn coerce(e: &Expr) -> Option<ColorValue> {
-        match e {
-            Expr::Color(c) => Some(*c),
-            _ => None,
-        }
-    }
-}
-
-impl CoerceExpr<ui::Val> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::Val> {
-        match e {
-            Expr::Length(v) => Some(*v),
-            Expr::Number(v) => Some(ui::Val::Px(*v)),
-            Expr::Ident(v) if v == "auto" => Some(ui::Val::Auto),
-            _ => None,
-        }
-    }
-
-    fn optimize(e: &mut Expr) {
-        let opt = Self::coerce(e);
+impl<T> TypedExpr<T>
+where
+    TypedExpr<T>: Coerce<T>,
+{
+    fn optimize(&mut self) {
+        let opt = self.coerce();
         if let Some(val) = opt {
-            *e = Expr::Length(val)
+            *self = Self::Constant(val);
         }
     }
 }
 
-impl CoerceExpr<ui::Display> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::Display> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<i16> for TypedExpr<i16> {
+    fn coerce(&self) -> Option<i16> {
+        match self {
+            Self::Constant(v) => Some(*v as i16),
+            Self::Number(v) => Some(*v as i16),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<u16> for TypedExpr<u16> {
+    fn coerce(&self) -> Option<u16> {
+        match self {
+            Self::Constant(v) => Some(*v as u16),
+            Self::Number(v) => Some(*v as u16),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<i32> for TypedExpr<i32> {
+    fn coerce(&self) -> Option<i32> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Number(v) => Some(*v as i32),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<f32> for TypedExpr<f32> {
+    fn coerce(&self) -> Option<f32> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Number(v) => Some(*v),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<AssetRef> for TypedExpr<AssetRef> {
+    fn coerce(&self) -> Option<AssetRef> {
+        match self {
+            Self::Constant(v) => Some(v.clone()),
+            Self::Asset(c) => Some(c.clone()),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<ColorValue> for TypedExpr<ColorValue> {
+    fn coerce(&self) -> Option<ColorValue> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Color(c) => Some(*c),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<ui::Val> for TypedExpr<ui::Val> {
+    fn coerce(&self) -> Option<ui::Val> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Length(v) => Some(*v),
+            Self::Number(v) => Some(ui::Val::Px(*v)),
+            Self::Ident(v) if v == "auto" => Some(ui::Val::Auto),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<ui::Display> for TypedExpr<ui::Display> {
+    fn coerce(&self) -> Option<ui::Display> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "grid" => Some(ui::Display::Grid),
                 "flex" => Some(ui::Display::Flex),
                 "none" => Some(ui::Display::None),
                 _ => None,
             },
-            Expr::Display(d) => Some(*d),
             _ => None,
-        }
-    }
-
-    fn optimize(e: &mut Expr) {
-        let opt = Self::coerce(e);
-        if let Some(val) = opt {
-            *e = Expr::Display(val)
         }
     }
 }
 
-/// Evaluate the expression and coerce to a `ui::PositionType`
-impl CoerceExpr<ui::PositionType> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::PositionType> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::PositionType> for TypedExpr<ui::PositionType> {
+    fn coerce(&self) -> Option<ui::PositionType> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "relative" => Some(ui::PositionType::Relative),
                 "absolute" => Some(ui::PositionType::Absolute),
                 _ => None,
             },
-            Expr::PositionType(d) => Some(*d),
             _ => None,
-        }
-    }
-
-    fn optimize(e: &mut Expr) {
-        let opt = Self::coerce(e);
-        if let Some(val) = opt {
-            *e = Expr::PositionType(val)
         }
     }
 }
 
-/// Evaluate the expression and coerce to a `ui::OverflowAxis`
-impl CoerceExpr<ui::OverflowAxis> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::OverflowAxis> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::OverflowAxis> for TypedExpr<ui::OverflowAxis> {
+    fn coerce(&self) -> Option<ui::OverflowAxis> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "clip" => Some(ui::OverflowAxis::Clip),
                 "visible" => Some(ui::OverflowAxis::Visible),
                 _ => None,
             },
-            Expr::OverflowAxis(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-/// Evaluate the expression and coerce to a `ui::Direction`
-impl CoerceExpr<ui::Direction> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::Direction> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::Direction> for TypedExpr<ui::Direction> {
+    fn coerce(&self) -> Option<ui::Direction> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "inherit" => Some(ui::Direction::Inherit),
                 "ltr" => Some(ui::Direction::LeftToRight),
                 "rtl" => Some(ui::Direction::RightToLeft),
                 _ => None,
             },
-            Expr::Direction(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::AlignItems> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::AlignItems> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::AlignItems> for TypedExpr<ui::AlignItems> {
+    fn coerce(&self) -> Option<ui::AlignItems> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::AlignItems::Default),
                 "start" => Some(ui::AlignItems::Start),
                 "end" => Some(ui::AlignItems::End),
@@ -356,16 +223,16 @@ impl CoerceExpr<ui::AlignItems> for Coerce {
                 "stretch" => Some(ui::AlignItems::Stretch),
                 _ => None,
             },
-            Expr::AlignItems(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::AlignContent> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::AlignContent> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::AlignContent> for TypedExpr<ui::AlignContent> {
+    fn coerce(&self) -> Option<ui::AlignContent> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::AlignContent::Default),
                 "start" => Some(ui::AlignContent::Start),
                 "end" => Some(ui::AlignContent::End),
@@ -378,16 +245,16 @@ impl CoerceExpr<ui::AlignContent> for Coerce {
                 "stretch" => Some(ui::AlignContent::Stretch),
                 _ => None,
             },
-            Expr::AlignContent(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::AlignSelf> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::AlignSelf> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::AlignSelf> for TypedExpr<ui::AlignSelf> {
+    fn coerce(&self) -> Option<ui::AlignSelf> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "auto" => Some(ui::AlignSelf::Auto),
                 "start" => Some(ui::AlignSelf::Start),
                 "end" => Some(ui::AlignSelf::End),
@@ -398,16 +265,16 @@ impl CoerceExpr<ui::AlignSelf> for Coerce {
                 "stretch" => Some(ui::AlignSelf::Stretch),
                 _ => None,
             },
-            Expr::AlignSelf(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::JustifyItems> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::JustifyItems> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::JustifyItems> for TypedExpr<ui::JustifyItems> {
+    fn coerce(&self) -> Option<ui::JustifyItems> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::JustifyItems::Default),
                 "start" => Some(ui::JustifyItems::Start),
                 "end" => Some(ui::JustifyItems::End),
@@ -416,16 +283,16 @@ impl CoerceExpr<ui::JustifyItems> for Coerce {
                 "stretch" => Some(ui::JustifyItems::Stretch),
                 _ => None,
             },
-            Expr::JustifyItems(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::JustifyContent> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::JustifyContent> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::JustifyContent> for TypedExpr<ui::JustifyContent> {
+    fn coerce(&self) -> Option<ui::JustifyContent> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "default" => Some(ui::JustifyContent::Default),
                 "start" => Some(ui::JustifyContent::Start),
                 "end" => Some(ui::JustifyContent::End),
@@ -437,16 +304,16 @@ impl CoerceExpr<ui::JustifyContent> for Coerce {
                 "space-evenly" => Some(ui::JustifyContent::SpaceEvenly),
                 _ => None,
             },
-            Expr::JustifyContent(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::JustifySelf> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::JustifySelf> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::JustifySelf> for TypedExpr<ui::JustifySelf> {
+    fn coerce(&self) -> Option<ui::JustifySelf> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "auto" => Some(ui::JustifySelf::Auto),
                 "start" => Some(ui::JustifySelf::Start),
                 "end" => Some(ui::JustifySelf::End),
@@ -455,269 +322,181 @@ impl CoerceExpr<ui::JustifySelf> for Coerce {
                 "stretch" => Some(ui::JustifySelf::Stretch),
                 _ => None,
             },
-            Expr::JustifySelf(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::FlexDirection> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::FlexDirection> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::FlexDirection> for TypedExpr<ui::FlexDirection> {
+    fn coerce(&self) -> Option<ui::FlexDirection> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "row" => Some(ui::FlexDirection::Row),
                 "row-reverse" => Some(ui::FlexDirection::RowReverse),
                 "column" => Some(ui::FlexDirection::Column),
                 "column-reverse" => Some(ui::FlexDirection::ColumnReverse),
                 _ => None,
             },
-            Expr::FlexDirection(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::FlexWrap> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::FlexWrap> {
-        match e {
-            Expr::Ident(ref n) => match n.as_str() {
+impl Coerce<ui::FlexWrap> for TypedExpr<ui::FlexWrap> {
+    fn coerce(&self) -> Option<ui::FlexWrap> {
+        match self {
+            Self::Constant(v) => Some(*v),
+            Self::Ident(ref n) => match n.as_str() {
                 "nowrap" => Some(ui::FlexWrap::NoWrap),
                 "wrap" => Some(ui::FlexWrap::Wrap),
                 "wrap-reverse" => Some(ui::FlexWrap::WrapReverse),
                 _ => None,
             },
-            Expr::FlexWrap(d) => Some(*d),
             _ => None,
         }
     }
 }
 
-impl CoerceExpr<ui::UiRect> for Coerce {
-    fn coerce(e: &Expr) -> Option<ui::UiRect> {
-        match e {
-            Expr::Length(v) => Some(UiRect {
-                left: *v,
-                right: *v,
-                top: *v,
-                bottom: *v,
-            }),
-            Expr::Number(v) => Some(UiRect {
-                left: ui::Val::Px(*v),
-                right: ui::Val::Px(*v),
-                top: ui::Val::Px(*v),
-                bottom: ui::Val::Px(*v),
-            }),
-            Expr::List(v) if v.len() > 0 => {
-                let top = v[0].coerce::<ui::Val>()?;
-                let right = if v.len() > 1 {
-                    v[1].coerce::<ui::Val>()?
-                } else {
-                    top
-                };
-                let bottom = if v.len() > 2 {
-                    v[2].coerce::<ui::Val>()?
-                } else {
-                    top
-                };
-                let left = if v.len() > 3 {
-                    v[3].coerce::<ui::Val>()?
-                } else {
-                    right
-                };
-                Some(UiRect {
-                    left,
-                    right,
-                    top,
-                    bottom,
-                })
-            }
-            _ => None,
+// Convert from an untyped expression.
+impl<T> From<UntypedExpr> for TypedExpr<T> {
+    fn from(value: UntypedExpr) -> Self {
+        match value {
+            UntypedExpr::Ident(v) => Self::Ident(v),
+            UntypedExpr::Number(v) => Self::Number(v),
+            UntypedExpr::Length(v) => Self::Length(v),
+            UntypedExpr::Color(v) => Self::Color(v),
+            UntypedExpr::Asset(v) => Self::Asset(v),
+            UntypedExpr::Var(v) => Self::Var(v),
         }
     }
 }
 
-fn parse_hex_color_digits<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    take_while(1..8, ('0'..='9', 'a'..='f', 'A'..='F')).parse_next(input)
-}
-
-fn parse_decimal_digits<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    take_while(1.., '0'..='9').parse_next(input)
-}
-
-fn parse_asset_key<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    take_until1(")").parse_next(input)
-}
-
-fn parse_exponent<'s>(input: &mut &'s str) -> PResult<()> {
-    (
-        one_of(['E', 'e']),
-        opt(one_of(['+', '-'])),
-        take_while(1.., '0'..='9'),
-    )
-        .void()
-        .parse_next(input)
-}
-
-fn parse_number<'s>(input: &mut &'s str) -> PResult<f32> {
-    alt((
-        (opt('-'), '.', parse_decimal_digits, opt(parse_exponent)).recognize(),
-        (
-            opt('-'),
-            parse_decimal_digits,
-            opt(('.', opt(parse_decimal_digits))),
-            opt(parse_exponent),
-        )
-            .recognize(),
-    ))
-    .map(|s| s.parse::<f32>().unwrap())
-    .parse_next(input)
-}
-
-fn parse_hex_color(input: &mut &str) -> PResult<Expr> {
-    (
-        '#',
-        cut_err(parse_hex_color_digits).context(StrContext::Label("color")),
-    )
-        .map(|(_, str)| match str.len() {
-            3 | 4 | 6 | 8 => Expr::Color(ColorValue::Color(Color::hex(str).unwrap())),
-            // TODO: Return error here? Not sure how to do that.
-            _ => Expr::Color(ColorValue::Color(Color::NONE)),
-        })
-        .parse_next(input)
-}
-
-fn parse_color_ctor<'s>(input: &mut &'s str) -> PResult<Expr> {
-    (
-        alt(("rgba", "rgb", "hsla", "hsl")),
-        preceded((space0, '(', space0), cut_err(parse_number)),
-        preceded((space0, opt((',', space0))), parse_number),
-        preceded((space0, opt((',', space0))), parse_number),
-        opt(preceded(
-            (space0, opt(one_of((',', '/'))), space0),
-            parse_number,
-        )),
-        (space0, ')'),
-    )
-        .map(|(f, a1, a2, a3, a4, _)| match f {
-            "rgba" | "rgb" => Expr::Color(ColorValue::Color(Color::Rgba {
-                red: a1 / 255.0,
-                green: a2 / 255.0,
-                blue: a3 / 255.0,
-                alpha: a4.unwrap_or(1.),
-            })),
-            "hsla" | "hsl" => Expr::Color(ColorValue::Color(Color::Hsla {
-                hue: a1 / 360.0,
-                saturation: a2 / 100.0,
-                lightness: a3 / 100.0,
-                alpha: a4.unwrap_or(1.),
-            })),
-            _ => unreachable!(),
-        })
-        .parse_next(input)
-}
-
-fn parse_asset<'s>(input: &mut &'s str) -> PResult<Expr> {
-    ("asset", space0, delimited('(', parse_asset_key, ')'))
-        .map(|(_, _, path)| Expr::Asset(AssetRef::new(path)))
-        .parse_next(input)
-}
-
-fn parse_length<'s>(input: &mut &'s str) -> PResult<Expr> {
-    (
-        parse_number,
-        opt(alt(("px", "%", "vh", "vw", "vmin", "vmax"))),
-    )
-        .map(|(f, suffix)| {
-            if suffix.is_none() {
-                Expr::Number(f)
-            } else {
-                match suffix {
-                    Some("px") => Expr::Length(ui::Val::Px(f)),
-                    Some("%") => Expr::Length(ui::Val::Percent(f)),
-                    Some("vw") => Expr::Length(ui::Val::Vw(f)),
-                    Some("vh") => Expr::Length(ui::Val::Vh(f)),
-                    Some("vmin") => Expr::Length(ui::Val::VMin(f)),
-                    Some("vmax") => Expr::Length(ui::Val::VMax(f)),
-                    _ => unreachable!(),
-                }
-            }
-        })
-        .parse_next(input)
-}
-
-fn parse_name<'s>(input: &mut &'s str) -> PResult<&'s str> {
-    (
-        one_of(('A'..'Z', 'a'..'z', '_')),
-        take_while(0.., ('A'..'Z', 'a'..'z', '0'..'9', '_', '-')),
-    )
-        .recognize()
-        .parse_next(input)
-}
-
-fn parse_ident<'s>(input: &mut &'s str) -> PResult<Expr> {
-    parse_name
-        .map(|s| Expr::Ident(s.to_string()))
-        .parse_next(input)
-}
-
-fn parse_var_ref<'s>(input: &mut &'s str) -> PResult<Expr> {
-    ("var(--", parse_name, ")")
-        .map(|(_, name, _)| Expr::Var(name.to_string()))
-        .parse_next(input)
-}
-
-impl std::str::FromStr for Expr {
+impl<T> std::str::FromStr for TypedExpr<T> {
     type Err = String;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Expr::parser.parse(input.trim()).map_err(|e| e.to_string())
+        UntypedExpr::from_str(input).map(|expr| Self::from(expr))
     }
 }
 
-impl fmt::Display for Expr {
+impl fmt::Display for TypedExpr<i16> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Ident(name) => write!(f, "{}", name),
-            Expr::Number(n) => write!(f, "{}", n),
-            Expr::Length(l) => match l {
-                ui::Val::Auto => write!(f, "auto"),
-                ui::Val::Px(v) => write!(f, "{}px", v),
-                ui::Val::Percent(v) => write!(f, "{}%", v),
-                ui::Val::Vw(v) => write!(f, "{}vw", v),
-                ui::Val::Vh(v) => write!(f, "{}vh", v),
-                ui::Val::VMin(v) => write!(f, "{}vmin", v),
-                ui::Val::VMax(v) => write!(f, "{}vmax", v),
-            },
-            Expr::List(r) => {
-                for (i, x) in r.iter().enumerate() {
-                    if i != 0 {
-                        write!(f, " ")?
-                    }
-                    fmt::Display::fmt(&x, f)?
-                }
-                Ok(())
-            }
-            Expr::Color(c) => fmt::Display::fmt(&c, f),
-            Expr::Asset(_) => todo!(),
-            Expr::Display(d) => match d {
+            Self::Constant(n) => write!(f, "{}", n),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<u16> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(n) => write!(f, "{}", n),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<i32> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(n) => write!(f, "{}", n),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<f32> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(n) => write!(f, "{}", n),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<AssetRef> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(asset) => write!(f, "asset({})", asset.resolved()),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ColorValue> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(n) => write!(f, "{}", n),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::Val> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(n) => Self::Length(*n).fmt_untyped(f),
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::Display> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::Display::Flex => write!(f, "flex"),
                 ui::Display::Grid => write!(f, "grid"),
                 ui::Display::None => write!(f, "none"),
             },
-            Expr::PositionType(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::PositionType> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::PositionType::Relative => write!(f, "relative"),
                 ui::PositionType::Absolute => write!(f, "absolute"),
             },
-            Expr::OverflowAxis(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::OverflowAxis> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::OverflowAxis::Clip => write!(f, "clip"),
                 ui::OverflowAxis::Visible => write!(f, "visible"),
             },
-            Expr::Direction(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::Direction> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::Direction::Inherit => write!(f, "inherit"),
                 ui::Direction::LeftToRight => write!(f, "ltr"),
                 ui::Direction::RightToLeft => write!(f, "rtl"),
             },
-            Expr::AlignItems(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::AlignItems> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::AlignItems::Default => write!(f, "default"),
                 ui::AlignItems::Start => write!(f, "start"),
                 ui::AlignItems::End => write!(f, "end"),
@@ -727,7 +506,15 @@ impl fmt::Display for Expr {
                 ui::AlignItems::Baseline => write!(f, "baseline"),
                 ui::AlignItems::Stretch => write!(f, "stretch"),
             },
-            Expr::AlignContent(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::AlignContent> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::AlignContent::Default => write!(f, "default"),
                 ui::AlignContent::Start => write!(f, "start"),
                 ui::AlignContent::End => write!(f, "end"),
@@ -739,7 +526,15 @@ impl fmt::Display for Expr {
                 ui::AlignContent::SpaceEvenly => write!(f, "space-evenly"),
                 ui::AlignContent::Stretch => write!(f, "stretch"),
             },
-            Expr::AlignSelf(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::AlignSelf> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::AlignSelf::Auto => write!(f, "auto"),
                 ui::AlignSelf::Start => write!(f, "start"),
                 ui::AlignSelf::End => write!(f, "end"),
@@ -749,7 +544,15 @@ impl fmt::Display for Expr {
                 ui::AlignSelf::Baseline => write!(f, "baseline"),
                 ui::AlignSelf::Stretch => write!(f, "stretch"),
             },
-            Expr::JustifyItems(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::JustifyItems> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::JustifyItems::Default => write!(f, "default"),
                 ui::JustifyItems::Start => write!(f, "start"),
                 ui::JustifyItems::End => write!(f, "end"),
@@ -757,7 +560,15 @@ impl fmt::Display for Expr {
                 ui::JustifyItems::Baseline => write!(f, "baseline"),
                 ui::JustifyItems::Stretch => write!(f, "stretch"),
             },
-            Expr::JustifyContent(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::JustifyContent> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::JustifyContent::Default => write!(f, "default"),
                 ui::JustifyContent::Start => write!(f, "start"),
                 ui::JustifyContent::End => write!(f, "end"),
@@ -768,7 +579,15 @@ impl fmt::Display for Expr {
                 ui::JustifyContent::SpaceAround => write!(f, "space-around"),
                 ui::JustifyContent::SpaceEvenly => write!(f, "space-evenly"),
             },
-            Expr::JustifySelf(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::JustifySelf> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::JustifySelf::Auto => write!(f, "auto"),
                 ui::JustifySelf::Start => write!(f, "start"),
                 ui::JustifySelf::End => write!(f, "end"),
@@ -776,29 +595,180 @@ impl fmt::Display for Expr {
                 ui::JustifySelf::Baseline => write!(f, "baseline"),
                 ui::JustifySelf::Stretch => write!(f, "stretch"),
             },
-            Expr::FlexDirection(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+
+impl fmt::Display for TypedExpr<ui::FlexDirection> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::FlexDirection::Row => write!(f, "row"),
                 ui::FlexDirection::RowReverse => write!(f, "row-reverse"),
                 ui::FlexDirection::Column => write!(f, "column"),
                 ui::FlexDirection::ColumnReverse => write!(f, "column-reverse"),
             },
-            Expr::FlexWrap(d) => match d {
+            _ => self.fmt_untyped(f),
+        }
+    }
+}
+impl fmt::Display for TypedExpr<ui::FlexWrap> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Constant(val) => match val {
                 ui::FlexWrap::NoWrap => write!(f, "nowrap"),
                 ui::FlexWrap::Wrap => write!(f, "wrap"),
                 ui::FlexWrap::WrapReverse => write!(f, "wrap-reverse"),
             },
-
-            Expr::Var(name) => write!(f, "var(--{})", name),
+            _ => self.fmt_untyped(f),
         }
     }
 }
 
-impl Serialize for Expr {
+trait Ser<T>
+where
+    TypedExpr<T>: fmt::Display,
+{
+    fn serialize<S>(expr: TypedExpr<T>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match expr {
+            TypedExpr::Number(n) => {
+                if n.round() == n {
+                    serializer.serialize_i32(n as i32)
+                } else {
+                    serializer.serialize_f32(n)
+                }
+            }
+            TypedExpr::Length(ui::Val::Px(n)) => {
+                if n.round() == n {
+                    serializer.serialize_i32(n as i32)
+                } else {
+                    serializer.serialize_f32(n)
+                }
+            }
+            _ => serializer.collect_str(&expr),
+        }
+    }
+}
+
+trait SerializeHelper
+where
+    Self: fmt::Display,
+{
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.collect_str(self)
+    }
+}
+
+impl SerializeHelper for TypedExpr<i16> {
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let TypedExpr::Constant(n) = self {
+            serializer.serialize_i16(*n)
+        } else {
+            panic!("Invalid serialization")
+        }
+    }
+}
+
+impl SerializeHelper for TypedExpr<u16> {
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let TypedExpr::Constant(n) = self {
+            serializer.serialize_u16(*n)
+        } else {
+            panic!("Invalid serialization")
+        }
+    }
+}
+
+impl SerializeHelper for TypedExpr<i32> {
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let TypedExpr::Constant(n) = self {
+            serializer.serialize_i32(*n)
+        } else {
+            panic!("Invalid serialization")
+        }
+    }
+}
+
+impl SerializeHelper for TypedExpr<f32> {
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let TypedExpr::Constant(n) = self {
+            if n.round() == *n {
+                serializer.serialize_i32(*n as i32)
+            } else {
+                serializer.serialize_f32(*n)
+            }
+        } else {
+            panic!("Invalid serialization")
+        }
+    }
+}
+
+impl SerializeHelper for TypedExpr<ui::Val> {
+    fn serialize_const<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            TypedExpr::Constant(ui::Val::Px(n)) => {
+                if n.round() == *n {
+                    serializer.serialize_i32(*n as i32)
+                } else {
+                    serializer.serialize_f32(*n)
+                }
+            }
+            TypedExpr::Constant(_) => serializer.collect_str(&self),
+            _ => {
+                panic!("Invalid serialization")
+            }
+        }
+    }
+}
+
+impl SerializeHelper for TypedExpr<AssetRef> {}
+impl SerializeHelper for TypedExpr<ColorValue> {}
+impl SerializeHelper for TypedExpr<ui::Display> {}
+impl SerializeHelper for TypedExpr<ui::PositionType> {}
+impl SerializeHelper for TypedExpr<ui::OverflowAxis> {}
+impl SerializeHelper for TypedExpr<ui::Direction> {}
+impl SerializeHelper for TypedExpr<ui::AlignItems> {}
+impl SerializeHelper for TypedExpr<ui::AlignContent> {}
+impl SerializeHelper for TypedExpr<ui::AlignSelf> {}
+impl SerializeHelper for TypedExpr<ui::JustifyItems> {}
+impl SerializeHelper for TypedExpr<ui::JustifyContent> {}
+impl SerializeHelper for TypedExpr<ui::JustifySelf> {}
+impl SerializeHelper for TypedExpr<ui::FlexWrap> {}
+impl SerializeHelper for TypedExpr<ui::FlexDirection> {}
+
+impl<T> Serialize for TypedExpr<T>
+where
+    TypedExpr<T>: fmt::Display,
+    TypedExpr<T>: SerializeHelper,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         match self {
+            Self::Constant(_) => self.serialize_const(serializer),
             Self::Number(n) => {
                 if n.round() == *n {
                     serializer.serialize_i32(*n as i32)
@@ -818,213 +788,104 @@ impl Serialize for Expr {
     }
 }
 
-impl<'de> Deserialize<'de> for Expr {
+impl<'de, T> Deserialize<'de> for TypedExpr<T>
+where
+    TypedExpr<T>: Coerce<T>,
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        deserializer.deserialize_any(ExprVisitor)
-    }
-}
-
-struct ExprVisitor;
-
-impl<'de> Visitor<'de> for ExprVisitor {
-    type Value = Expr;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("CSS expression")
-    }
-
-    fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v as f32))
-    }
-
-    fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v as f32))
-    }
-
-    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v as f32))
-    }
-
-    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v as f32))
-    }
-
-    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v))
-    }
-
-    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(Expr::Number(v as f32))
-    }
-
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        match s.parse::<Expr>() {
-            Ok(expr) => Ok(expr),
-            Err(_) => Err(E::invalid_type(
-                serde::de::Unexpected::Str(s),
-                &"CSS expression",
-            )),
-        }
+        UntypedExpr::deserialize(deserializer).map(|expr| {
+            let mut val = Self::from(expr);
+            val.optimize();
+            val
+        })
+        // deserializer.deserialize_any(ExprVisitor)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::Color;
+
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_trailing_space() {
         assert_eq!(
-            "#f00 ".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::RED))
+            TypedExpr::<f32>::from_str("#f00 ").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::RED))
         );
-        assert_eq!("1 ".parse::<Expr>().unwrap(), Expr::Number(1.));
+        assert_eq!(
+            TypedExpr::<f32>::from_str("1 ").unwrap(),
+            TypedExpr::Number(1.)
+        );
     }
 
     #[test]
     fn test_parse_color() {
         assert_eq!(
-            "#f00".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::RED))
+            TypedExpr::<f32>::from_str("#f00").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::RED))
         );
         assert_eq!(
-            "#00f".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::BLUE))
+            TypedExpr::<f32>::from_str("#00f").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::BLUE))
         );
         // Invalid color value parsed as NONE
         assert_eq!(
-            "#0f".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::NONE))
+            TypedExpr::<f32>::from_str("#0f").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::NONE))
         );
     }
 
     #[test]
     fn test_parse_color_fn() {
         assert_eq!(
-            "rgba( 255 255 255 )".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 1.)))
+            TypedExpr::<f32>::from_str("rgba( 255 255 255 )").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 1.)))
         );
         assert_eq!(
-            "rgba(255, 255, 255)".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 1.)))
+            TypedExpr::<f32>::from_str("rgba(255, 255, 255)").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 1.)))
         );
         assert_eq!(
-            "rgba(255, 255, 255, 0.5)".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+            TypedExpr::<f32>::from_str("rgba(255, 255, 255, 0.5)").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
         );
         assert_eq!(
-            "rgba(255 255 255 / 0.5)".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+            TypedExpr::<f32>::from_str("rgba(255 255 255 / 0.5)").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
         );
         assert_eq!(
-            "rgb(255 255 255 / 0.5)".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
+            TypedExpr::<f32>::from_str("rgb(255 255 255 / 0.5)").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::rgba(1., 1., 1., 0.5)))
         );
         assert_eq!(
-            "hsla(360 100 100 / 0.5)".parse::<Expr>().unwrap(),
-            Expr::Color(ColorValue::Color(Color::hsla(1., 1., 1., 0.5)))
+            TypedExpr::<f32>::from_str("hsla(360 100 100 / 0.5)").unwrap(),
+            TypedExpr::Color(ColorValue::Color(Color::hsla(1., 1., 1., 0.5)))
         );
     }
 
     #[test]
     fn test_parse_int() {
-        assert_eq!("1".parse::<Expr>().unwrap(), Expr::Number(1.));
-        assert_eq!("77".parse::<Expr>().unwrap(), Expr::Number(77.));
-    }
-
-    #[test]
-    fn test_parse_float() {
-        assert_eq!("1.0".parse::<Expr>().unwrap(), Expr::Number(1.0));
-        assert_eq!(".1".parse::<Expr>().unwrap(), Expr::Number(0.1));
-        assert_eq!("1.".parse::<Expr>().unwrap(), Expr::Number(1.0));
         assert_eq!(
-            Expr::parser.parse_peek("1.e2"),
-            Ok(("", Expr::Number(100.0)))
+            TypedExpr::<f32>::from_str("1").unwrap(),
+            TypedExpr::Number(1.)
         );
         assert_eq!(
-            Expr::parser.parse_peek("1.e-2"),
-            Ok(("", Expr::Number(0.01)))
-        );
-        assert_eq!(
-            Expr::parser.parse_peek("1e2"),
-            Ok(("", Expr::Number(100.0)))
-        );
-        assert_eq!("-1.".parse::<Expr>().unwrap(), Expr::Number(-1.0));
-    }
-
-    #[test]
-    fn test_parse_length() {
-        assert_eq!(
-            "1px".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::Px(1.))
-        );
-        assert_eq!(
-            "10%".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::Percent(10.))
-        );
-        assert_eq!(
-            "7vw".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::Vw(7.))
-        );
-        assert_eq!(
-            "7e-1vh".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::Vh(0.7))
-        );
-        assert_eq!(
-            "7vmin".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::VMin(7.))
-        );
-        assert_eq!(
-            "7vmax".parse::<Expr>().unwrap(),
-            Expr::Length(ui::Val::VMax(7.))
-        );
-    }
-
-    #[test]
-    fn test_parse_ident() {
-        assert_eq!(
-            "foo".parse::<Expr>().unwrap(),
-            Expr::Ident("foo".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_var_ref() {
-        assert_eq!(
-            "var(--foo)".parse::<Expr>().unwrap(),
-            Expr::Var("foo".to_string())
+            TypedExpr::<f32>::from_str("77").unwrap(),
+            TypedExpr::Number(77.)
         );
     }
 
     #[test]
     fn test_parse_asset() {
         assert_eq!(
-            "asset(../image.png)".parse::<Expr>().unwrap(),
-            Expr::Asset(AssetRef::new("../image.png"))
+            TypedExpr::<f32>::from_str("asset(../image.png)").unwrap(),
+            TypedExpr::Asset(AssetRef::new("../image.png"))
         );
     }
 }

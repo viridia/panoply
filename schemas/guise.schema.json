@@ -357,23 +357,35 @@
           "type": "object",
           "patternProperties": {
             "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "$ref": "#/definitions/param-expr"
             }
           }
         }
       },
       "required": ["type", "template"],
       "additionalProperties": false
+    },
+    "param-expr": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/definitions/template-node"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/param-expr"
+          }
+        }
+      ]
     },
     "font": {
       "type": "array",

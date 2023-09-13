@@ -4,10 +4,10 @@ use std::marker::PhantomData;
 use bevy::utils::HashMap;
 use serde::{de::Visitor, ser::SerializeMap, Deserialize, Serialize};
 
-use super::Expr;
+use super::UntypedExpr;
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct VarsMap(HashMap<String, Expr>);
+pub struct VarsMap(HashMap<String, UntypedExpr>);
 
 impl VarsMap {
     pub fn new() -> Self {
@@ -22,11 +22,11 @@ impl VarsMap {
         self.0.len()
     }
 
-    pub fn get(&self, key: &str) -> Option<&Expr> {
+    pub fn get(&self, key: &str) -> Option<&UntypedExpr> {
         self.0.get(key)
     }
 
-    pub fn insert(&mut self, key: &str, value: Expr) -> Option<Expr> {
+    pub fn insert(&mut self, key: &str, value: UntypedExpr) -> Option<UntypedExpr> {
         self.0.insert(key.into(), value)
     }
 }
@@ -71,10 +71,10 @@ impl<'de, 'a> Visitor<'de> for VarsMapVisitor<'a> {
         A: serde::de::MapAccess<'de>,
         A::Error: serde::de::Error,
     {
-        let mut result: HashMap<String, Expr> =
+        let mut result: HashMap<String, UntypedExpr> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
-            let expr = map.next_value::<Expr>()?;
+            let expr = map.next_value::<UntypedExpr>()?;
             if key.starts_with("--") {
                 result.insert(key[2..].into(), expr);
             } else {

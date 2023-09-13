@@ -1,30 +1,59 @@
 use std::fmt::{self};
 
-use serde::{de::Visitor, Deserialize};
+use bevy::ui::{self, UiRect};
+use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 use winnow::{ascii::space1, combinator::separated1, PResult, Parser};
 
-use super::expr::Expr;
+use super::{coerce::Coerce, UntypedExpr};
 
-/// Helper class for serializing lists of exprs
-pub struct ExprList(pub Vec<Expr>);
+/// A list of expressions
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExprList(pub Box<[UntypedExpr]>);
 
 impl ExprList {
-    pub fn new() -> Self {
-        Self(Vec::new())
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
-    pub fn from_exprs(exprs: &[Expr]) -> Self {
-        Self(Vec::from(exprs))
+    pub fn from_exprs(exprs: &[UntypedExpr]) -> Self {
+        Self(Box::from(exprs))
     }
+}
 
-    pub fn to_expr(&self) -> Expr {
-        Expr::List(self.0.clone())
+impl Coerce<UiRect> for ExprList {
+    fn coerce(&self) -> Option<UiRect> {
+        if self.len() > 0 {
+            let top: ui::Val = self.0[0].coerce()?;
+            let right: ui::Val = if self.len() > 1 {
+                self.0[1].coerce()?
+            } else {
+                top
+            };
+            let bottom: ui::Val = if self.len() > 2 {
+                self.0[2].coerce()?
+            } else {
+                top
+            };
+            let left: ui::Val = if self.len() > 3 {
+                self.0[3].coerce()?
+            } else {
+                right
+            };
+            Some(UiRect {
+                left,
+                right,
+                top,
+                bottom,
+            })
+        } else {
+            None
+        }
     }
 }
 
 fn parse_expr_list(input: &mut &str) -> PResult<ExprList> {
-    separated1(Expr::parser, space1)
-        .map(|items| ExprList(items))
+    separated1(UntypedExpr::parser, space1)
+        .map(|items: Vec<UntypedExpr>| ExprList(items.into_boxed_slice()))
         .parse_next(input)
 }
 
@@ -62,42 +91,42 @@ impl<'de> Visitor<'de> for ExprVisitor {
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v as f32)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v as f32)]))
     }
 
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v as f32)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v as f32)]))
     }
 
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v as f32)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v as f32)]))
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v as f32)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v as f32)]))
     }
 
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v)]))
     }
 
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(ExprList::from_exprs(&[Expr::Number(v as f32)]))
+        Ok(ExprList::from_exprs(&[UntypedExpr::Number(v as f32)]))
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
@@ -114,21 +143,18 @@ impl<'de> Visitor<'de> for ExprVisitor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use bevy::ui;
-
-    use super::*;
-
-    #[test]
-    fn test_parse_expr_list() {
-        assert_eq!(
-            "0px auto 1%".parse::<ExprList>().unwrap().to_expr(),
-            Expr::List(vec![
-                Expr::Length(ui::Val::Px(0.)),
-                Expr::Ident("auto".to_string()),
-                Expr::Length(ui::Val::Percent(1.))
-            ])
-        );
+impl Serialize for ExprList {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if self.len() == 1 {
+            return self.0.serialize(serializer);
+        }
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;
+        for item in self.0.iter() {
+            seq.serialize_element(item)?;
+        }
+        seq.end()
     }
 }

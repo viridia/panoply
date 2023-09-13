@@ -1,21 +1,24 @@
 # TODO
 
 * Guise
+  * Rethinks:
+    * Folder objects
+    * TypedExpr
   * Controllers
     * Picking
     * Splitters
   * Styles
-    * Image prop
+    * Image Section prop
     * Selectors - eval
     * Vars - use
     * Inherited props
+    * Styles passed into to call
     * Finish unit tests
     * JSON array as UiRect
   * Guise Bundle type
   * Template params
   * Conditional logic
   * Text styles
-  * Whitespace trimming
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.
