@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::guise::style::StyleAsset;
 
-use super::TemplateAsset;
+use super::{param_val::ParamValue, TemplateAsset};
 
 /// Node that represents an invocation of another template.
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -28,8 +28,7 @@ pub struct Call {
     pub template_handle: Handle<TemplateAsset>,
 
     /// Controller parameters
-    #[serde(skip)]
-    pub params: HashMap<String, String>,
+    pub params: Option<HashMap<String, ParamValue>>,
 }
 
 fn serialize_inline_style<S: Serializer>(

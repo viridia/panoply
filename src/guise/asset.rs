@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     path::relative_asset_path,
-    template::{Call, Element, TemplateAsset, TemplateNode, TemplateNodeRef},
+    template::{Call, Element, ParamValue, TemplateAsset, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
@@ -85,8 +85,38 @@ impl GuiseTemplatesLoader {
                 },
                 template: call.template.clone(),
                 template_handle: lc.load(relative_asset_path(base, &call.template)),
-                params: call.params.clone(),
+                params: match call.params {
+                    Some(ref map) => {
+                        let mut m = HashMap::<String, ParamValue>::with_capacity(map.len());
+                        map.iter().for_each(|(key, value)| {
+                            m.insert(key.clone(), self.visit_param_value(value, lc, base));
+                        });
+                        Some(m)
+                    }
+                    None => None,
+                },
             })),
+        }
+    }
+
+    fn visit_param_value<'a>(
+        &self,
+        val: &ParamValue,
+        lc: &'a mut LoadContext,
+        base: &AssetPath,
+    ) -> ParamValue {
+        match val {
+            ParamValue::None => ParamValue::None,
+            ParamValue::Bool(b) => ParamValue::Bool(*b),
+            ParamValue::Number(n) => ParamValue::Number(*n),
+            ParamValue::String(s) => ParamValue::String(s.clone()),
+            ParamValue::Node(node) => ParamValue::Node(self.visit_template_node(node, lc, base)),
+            ParamValue::List(list) => ParamValue::List(
+                list.as_ref()
+                    .iter()
+                    .map(|p| self.visit_param_value(p, lc, base))
+                    .collect(),
+            ),
         }
     }
 }
@@ -122,11 +152,12 @@ impl AssetLoader for GuiseTemplatesLoader {
                     load_context.path().to_path_buf().clone(),
                     Some(label.clone()),
                 );
-                load_context.begin_labeled_asset();
-                if let Some(content) = template.content.as_ref() {
-                    template.content = Some(self.visit_template_node(content, load_context, &base));
-                }
-                load_context.add_labeled_asset(label, template);
+                load_context.labeled_asset_scope(label, |lc| {
+                    if let Some(content) = template.content.as_ref() {
+                        template.content = Some(self.visit_template_node(content, lc, &base));
+                    }
+                    template
+                });
             });
             Ok(entries)
         })

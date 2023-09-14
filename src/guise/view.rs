@@ -464,7 +464,7 @@ fn reconcile(
         }
 
         TemplateNode::Call(call) => {
-            let template = assets.get(call.template_handle.id()).unwrap();
+            let template = assets.get(&call.template_handle).unwrap();
             reconcile(
                 commands,
                 view_child,

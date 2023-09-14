@@ -434,6 +434,8 @@ impl StyleAttr {
         }
     }
 
+    // TODO: Remove all this parsing code and tests once migrated to willow / serde.
+
     /// Parse a `StyleAttr` from an XML attribute name/value pair.
     pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
         Ok(Some(match name {

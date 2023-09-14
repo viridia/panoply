@@ -37,9 +37,6 @@ pub enum UntypedExpr {
 
     /// A reference to a named style variable.
     Var(String),
-    // Other CSS properties
-    // Angle
-    // Time
 }
 
 impl UntypedExpr {
