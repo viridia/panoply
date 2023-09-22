@@ -195,6 +195,15 @@
             }
           ]
         },
+        "row-gap": {
+          "$ref": "#/definitions/val"
+        },
+        "column-gap": {
+          "$ref": "#/definitions/val"
+        },
+        "gap": {
+          "$ref": "#/definitions/val"
+        },
         "vars": {
           "type": "object",
           "patternProperties": {

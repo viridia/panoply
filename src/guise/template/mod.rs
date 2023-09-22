@@ -1,10 +1,11 @@
 mod call;
 mod element;
-mod param_val;
 mod template;
+mod template_expr;
 mod text;
 
 pub use call::Call;
 pub use element::Element;
-pub use param_val::ParamValue;
 pub use template::*;
+pub use template_expr::EvalContext;
+pub use template_expr::TemplateExpr;

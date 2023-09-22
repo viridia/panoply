@@ -14,7 +14,7 @@ mod vars_map;
 
 pub use asset_ref::AssetRef;
 pub use computed::*;
-pub use expr::TypedExpr;
+pub use expr::StyleExpr;
 pub use expr_list::ExprList;
 pub use style::StyleAsset;
 pub use style_attr::*;

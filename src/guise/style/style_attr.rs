@@ -6,76 +6,76 @@ use std::str::FromStr;
 use crate::guise::GuiseError;
 
 use super::{
-    coerce::Coerce, color::ColorValue, expr::TypedExpr, expr_list::ExprList, AssetRef,
+    coerce::Coerce, color::ColorValue, expr::StyleExpr, expr_list::ExprList, AssetRef,
     ComputedStyle, UntypedExpr,
 };
 
 /** A single style-sheet property which can be applied to a computed style. */
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleAttr {
-    BackgroundImage(TypedExpr<AssetRef>),
-    BackgroundColor(TypedExpr<ColorValue>),
-    BorderColor(TypedExpr<ColorValue>),
-    Color(TypedExpr<ColorValue>),
+    BackgroundImage(StyleExpr<AssetRef>),
+    BackgroundColor(StyleExpr<ColorValue>),
+    BorderColor(StyleExpr<ColorValue>),
+    Color(StyleExpr<ColorValue>),
 
-    ZIndex(TypedExpr<i32>),
+    ZIndex(StyleExpr<i32>),
 
-    Display(TypedExpr<ui::Display>),
-    Position(TypedExpr<ui::PositionType>),
-    Overflow(TypedExpr<ui::OverflowAxis>),
-    OverflowX(TypedExpr<ui::OverflowAxis>),
-    OverflowY(TypedExpr<ui::OverflowAxis>),
-    Direction(TypedExpr<ui::Direction>),
+    Display(StyleExpr<ui::Display>),
+    Position(StyleExpr<ui::PositionType>),
+    Overflow(StyleExpr<ui::OverflowAxis>),
+    OverflowX(StyleExpr<ui::OverflowAxis>),
+    OverflowY(StyleExpr<ui::OverflowAxis>),
+    Direction(StyleExpr<ui::Direction>),
 
-    Left(TypedExpr<ui::Val>),
-    Right(TypedExpr<ui::Val>),
-    Top(TypedExpr<ui::Val>),
-    Bottom(TypedExpr<ui::Val>),
+    Left(StyleExpr<ui::Val>),
+    Right(StyleExpr<ui::Val>),
+    Top(StyleExpr<ui::Val>),
+    Bottom(StyleExpr<ui::Val>),
 
-    Width(TypedExpr<ui::Val>),
-    Height(TypedExpr<ui::Val>),
-    MinWidth(TypedExpr<ui::Val>),
-    MinHeight(TypedExpr<ui::Val>),
-    MaxWidth(TypedExpr<ui::Val>),
-    MaxHeight(TypedExpr<ui::Val>),
+    Width(StyleExpr<ui::Val>),
+    Height(StyleExpr<ui::Val>),
+    MinWidth(StyleExpr<ui::Val>),
+    MinHeight(StyleExpr<ui::Val>),
+    MaxWidth(StyleExpr<ui::Val>),
+    MaxHeight(StyleExpr<ui::Val>),
 
     // pub aspect_ratio: StyleProp<f32>,
-    AlignItems(TypedExpr<ui::AlignItems>),
-    AlignSelf(TypedExpr<ui::AlignSelf>),
-    AlignContent(TypedExpr<ui::AlignContent>),
-    JustifyItems(TypedExpr<ui::JustifyItems>),
-    JustifySelf(TypedExpr<ui::JustifySelf>),
-    JustifyContent(TypedExpr<ui::JustifyContent>),
+    AlignItems(StyleExpr<ui::AlignItems>),
+    AlignSelf(StyleExpr<ui::AlignSelf>),
+    AlignContent(StyleExpr<ui::AlignContent>),
+    JustifyItems(StyleExpr<ui::JustifyItems>),
+    JustifySelf(StyleExpr<ui::JustifySelf>),
+    JustifyContent(StyleExpr<ui::JustifyContent>),
 
     // Allow margin sides to be set individually
     Margin(ExprList),
-    MarginLeft(TypedExpr<ui::Val>),
-    MarginRight(TypedExpr<ui::Val>),
-    MarginTop(TypedExpr<ui::Val>),
-    MarginBottom(TypedExpr<ui::Val>),
+    MarginLeft(StyleExpr<ui::Val>),
+    MarginRight(StyleExpr<ui::Val>),
+    MarginTop(StyleExpr<ui::Val>),
+    MarginBottom(StyleExpr<ui::Val>),
 
     Padding(ExprList),
-    PaddingLeft(TypedExpr<ui::Val>),
-    PaddingRight(TypedExpr<ui::Val>),
-    PaddingTop(TypedExpr<ui::Val>),
-    PaddingBottom(TypedExpr<ui::Val>),
+    PaddingLeft(StyleExpr<ui::Val>),
+    PaddingRight(StyleExpr<ui::Val>),
+    PaddingTop(StyleExpr<ui::Val>),
+    PaddingBottom(StyleExpr<ui::Val>),
 
     Border(ExprList),
-    BorderLeft(TypedExpr<ui::Val>),
-    BorderRight(TypedExpr<ui::Val>),
-    BorderTop(TypedExpr<ui::Val>),
-    BorderBottom(TypedExpr<ui::Val>),
+    BorderLeft(StyleExpr<ui::Val>),
+    BorderRight(StyleExpr<ui::Val>),
+    BorderTop(StyleExpr<ui::Val>),
+    BorderBottom(StyleExpr<ui::Val>),
 
-    FlexDirection(TypedExpr<ui::FlexDirection>),
-    FlexWrap(TypedExpr<ui::FlexWrap>),
+    FlexDirection(StyleExpr<ui::FlexDirection>),
+    FlexWrap(StyleExpr<ui::FlexWrap>),
     Flex(ExprList),
-    FlexGrow(TypedExpr<f32>),
-    FlexShrink(TypedExpr<f32>),
-    FlexBasis(TypedExpr<ui::Val>),
+    FlexGrow(StyleExpr<f32>),
+    FlexShrink(StyleExpr<f32>),
+    FlexBasis(StyleExpr<ui::Val>),
 
-    RowGap(TypedExpr<ui::Val>),
-    ColumnGap(TypedExpr<ui::Val>),
-    Gap(TypedExpr<ui::Val>),
+    RowGap(StyleExpr<ui::Val>),
+    ColumnGap(StyleExpr<ui::Val>),
+    Gap(StyleExpr<ui::Val>),
 
     // TODO:
     GridAutoFlow(bevy::ui::GridAutoFlow),
@@ -84,8 +84,8 @@ pub enum StyleAttr {
     // pub grid_auto_rows: Option<Vec<GridTrack>>,
     // pub grid_auto_columns: Option<Vec<GridTrack>>,
     GridRow(bevy::ui::GridPlacement),
-    GridRowStart(TypedExpr<i16>),
-    GridRowSpan(TypedExpr<u16>),
+    GridRowStart(StyleExpr<i16>),
+    GridRowSpan(StyleExpr<u16>),
     GridRowEnd(i16),
     GridColumn(bevy::ui::GridPlacement),
     GridColumnStart(i16),
@@ -100,7 +100,7 @@ impl StyleAttr {
     pub fn apply(&self, computed: &mut ComputedStyle, server: &AssetServer) {
         match self {
             StyleAttr::BackgroundImage(val) => {
-                if let TypedExpr::Constant(ref asset) = val {
+                if let StyleExpr::Constant(ref asset) = val {
                     // TODO: Get rid of clone here.
                     computed.image = Some(server.load(asset.resolved().clone()));
                 } else {

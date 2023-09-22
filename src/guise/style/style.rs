@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{selectors_map::SelectorsMap, vars_map::VarsMap, ComputedStyle, StyleAttr, TypedExpr};
+use super::{selectors_map::SelectorsMap, vars_map::VarsMap, ComputedStyle, StyleAttr, StyleExpr};
 use bevy::{
     asset::AssetPath,
     prelude::{Asset, AssetServer},
@@ -65,7 +65,7 @@ impl StyleAsset {
     /// Find any relative asset paths and convert them to fully-resolved paths.
     pub fn resolve_asset_paths(&mut self, base: &AssetPath) {
         self.attrs.iter_mut().for_each(|attr| match attr {
-            StyleAttr::BackgroundImage(TypedExpr::Asset(expr)) => expr.resolve_asset_path(base),
+            StyleAttr::BackgroundImage(StyleExpr::Asset(expr)) => expr.resolve_asset_path(base),
             _ => {}
         });
         self.selectors
@@ -440,16 +440,16 @@ impl<'de, 'a> Deserialize<'de> for StyleAsset {
 mod tests {
     use bevy::ui;
 
-    use crate::guise::style::{selector::Selector, ExprList, TypedExpr, UntypedExpr};
+    use crate::guise::style::{selector::Selector, ExprList, StyleExpr, UntypedExpr};
 
     use super::*;
 
     #[test]
     fn test_serialize_misc_props() {
         let map = StyleAsset::from_attrs(&[
-            StyleAttr::ZIndex(TypedExpr::Constant(7)),
-            StyleAttr::FlexGrow(TypedExpr::Constant(2.)),
-            StyleAttr::FlexShrink(TypedExpr::Constant(3.)),
+            StyleAttr::ZIndex(StyleExpr::Constant(7)),
+            StyleAttr::FlexGrow(StyleExpr::Constant(2.)),
+            StyleAttr::FlexShrink(StyleExpr::Constant(3.)),
         ]);
         let ser = serde_json::to_string(&map);
         assert_eq!(
@@ -488,7 +488,7 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Right(TypedExpr::Constant(ui::Val::Px(7.)))
+            StyleAttr::Right(StyleExpr::Constant(ui::Val::Px(7.)))
         );
         // let ser = serde_json::to_string(&des);
         // assert_eq!(ser.unwrap(), r#"{"right":7}"#);
@@ -500,7 +500,7 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Right(TypedExpr::Constant(ui::Val::Px(7.)))
+            StyleAttr::Right(StyleExpr::Constant(ui::Val::Px(7.)))
         );
         // let ser = serde_json::to_string(&des);
         // assert_eq!(ser.unwrap(), r#"{"right":7}"#);
@@ -512,19 +512,19 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Right(TypedExpr::Constant(ui::Val::Auto))
+            StyleAttr::Right(StyleExpr::Constant(ui::Val::Auto))
         );
     }
 
     #[test]
     fn test_serialize_display() {
         let map =
-            StyleAsset::from_attrs(&[StyleAttr::Display(TypedExpr::Constant(ui::Display::Grid))]);
+            StyleAsset::from_attrs(&[StyleAttr::Display(StyleExpr::Constant(ui::Display::Grid))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
 
         let map =
-            StyleAsset::from_attrs(&[StyleAttr::Display(TypedExpr::Constant(ui::Display::Grid))]);
+            StyleAsset::from_attrs(&[StyleAttr::Display(StyleExpr::Constant(ui::Display::Grid))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"display":"grid"}"#);
     }
@@ -535,13 +535,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Display(TypedExpr::Constant(ui::Display::Grid))
+            StyleAttr::Display(StyleExpr::Constant(ui::Display::Grid))
         );
     }
 
     #[test]
     fn test_serialize_position() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::Position(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Position(StyleExpr::Constant(
             ui::PositionType::Relative,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -554,25 +554,25 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Position(TypedExpr::Constant(ui::PositionType::Relative,))
+            StyleAttr::Position(StyleExpr::Constant(ui::PositionType::Relative,))
         );
     }
 
     #[test]
     fn test_serialize_overflow() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::Overflow(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Overflow(StyleExpr::Constant(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"overflow":"clip"}"#);
 
-        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowX(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowX(StyleExpr::Constant(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
         assert_eq!(ser.unwrap(), r#"{"overflow-x":"clip"}"#);
 
-        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowY(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::OverflowY(StyleExpr::Constant(
             ui::OverflowAxis::Clip,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -585,27 +585,27 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Overflow(TypedExpr::Constant(ui::OverflowAxis::Clip,))
+            StyleAttr::Overflow(StyleExpr::Constant(ui::OverflowAxis::Clip,))
         );
 
         let des = serde_json::from_str::<StyleAsset>(r#"{"overflow-x":"clip"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::OverflowX(TypedExpr::Constant(ui::OverflowAxis::Clip,))
+            StyleAttr::OverflowX(StyleExpr::Constant(ui::OverflowAxis::Clip,))
         );
 
         let des = serde_json::from_str::<StyleAsset>(r#"{"overflow-y":"clip"}"#).unwrap();
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::OverflowY(TypedExpr::Constant(ui::OverflowAxis::Clip,))
+            StyleAttr::OverflowY(StyleExpr::Constant(ui::OverflowAxis::Clip,))
         );
     }
 
     #[test]
     fn test_serialize_direction() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::Direction(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::Direction(StyleExpr::Constant(
             ui::Direction::LeftToRight,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -618,13 +618,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::Direction(TypedExpr::Constant(ui::Direction::LeftToRight,))
+            StyleAttr::Direction(StyleExpr::Constant(ui::Direction::LeftToRight,))
         );
     }
 
     #[test]
     fn test_serialize_align_items() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::AlignItems(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::AlignItems(StyleExpr::Constant(
             ui::AlignItems::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -637,13 +637,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::AlignItems(TypedExpr::Constant(ui::AlignItems::Start))
+            StyleAttr::AlignItems(StyleExpr::Constant(ui::AlignItems::Start))
         );
     }
 
     #[test]
     fn test_serialize_align_content() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::AlignContent(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::AlignContent(StyleExpr::Constant(
             ui::AlignContent::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -656,13 +656,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::AlignContent(TypedExpr::Constant(ui::AlignContent::Start))
+            StyleAttr::AlignContent(StyleExpr::Constant(ui::AlignContent::Start))
         );
     }
 
     #[test]
     fn test_serialize_align_self() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::AlignSelf(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::AlignSelf(StyleExpr::Constant(
             ui::AlignSelf::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -675,13 +675,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::AlignSelf(TypedExpr::Constant(ui::AlignSelf::Start))
+            StyleAttr::AlignSelf(StyleExpr::Constant(ui::AlignSelf::Start))
         );
     }
 
     #[test]
     fn test_serialize_justify_items() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyItems(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyItems(StyleExpr::Constant(
             ui::JustifyItems::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -694,13 +694,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::JustifyItems(TypedExpr::Constant(ui::JustifyItems::Start))
+            StyleAttr::JustifyItems(StyleExpr::Constant(ui::JustifyItems::Start))
         );
     }
 
     #[test]
     fn test_serialize_justify_content() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyContent(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifyContent(StyleExpr::Constant(
             ui::JustifyContent::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -713,13 +713,13 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::JustifyContent(TypedExpr::Constant(ui::JustifyContent::Start))
+            StyleAttr::JustifyContent(StyleExpr::Constant(ui::JustifyContent::Start))
         );
     }
 
     #[test]
     fn test_serialize_justify_self() {
-        let map = StyleAsset::from_attrs(&[StyleAttr::JustifySelf(TypedExpr::Constant(
+        let map = StyleAsset::from_attrs(&[StyleAttr::JustifySelf(StyleExpr::Constant(
             ui::JustifySelf::Start,
         ))]);
         let ser = serde_json::to_string(&map);
@@ -732,7 +732,7 @@ mod tests {
         assert_eq!(des.attrs.len(), 1);
         assert_eq!(
             des.attrs[0],
-            StyleAttr::JustifySelf(TypedExpr::Constant(ui::JustifySelf::Start))
+            StyleAttr::JustifySelf(StyleExpr::Constant(ui::JustifySelf::Start))
         );
     }
 

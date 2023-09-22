@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::guise::style::StyleAsset;
 
-use super::{param_val::ParamValue, TemplateAsset};
+use super::{template_expr::TemplateExpr, TemplateAsset};
 
 /// Node that represents an invocation of another template.
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -28,21 +28,43 @@ pub struct Call {
     pub template_handle: Handle<TemplateAsset>,
 
     /// Controller parameters
-    pub params: Option<HashMap<String, ParamValue>>,
+    #[serde(
+        serialize_with = "serialize_params",
+        deserialize_with = "deserialize_params",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
+    pub params: Option<Arc<HashMap<String, TemplateExpr>>>,
 }
 
 fn serialize_inline_style<S: Serializer>(
     st: &Option<Arc<StyleAsset>>,
     s: S,
 ) -> Result<S::Ok, S::Error> {
-    let style = st.as_ref().unwrap().as_ref();
-    style.serialize(s)
+    st.as_ref().unwrap().as_ref().serialize(s)
 }
 
 fn deserialize_inline_style<'de, D: Deserializer<'de>>(
     de: D,
 ) -> Result<Option<Arc<StyleAsset>>, D::Error> {
     if let Ok(style) = StyleAsset::deserialize(de) {
+        Ok(Some(Arc::new(style)))
+    } else {
+        Ok(None)
+    }
+}
+
+fn serialize_params<S: Serializer>(
+    st: &Option<Arc<HashMap<String, TemplateExpr>>>,
+    s: S,
+) -> Result<S::Ok, S::Error> {
+    st.as_ref().unwrap().as_ref().serialize(s)
+}
+
+fn deserialize_params<'de, D: Deserializer<'de>>(
+    de: D,
+) -> Result<Option<Arc<HashMap<String, TemplateExpr>>>, D::Error> {
+    if let Ok(style) = HashMap::<String, TemplateExpr>::deserialize(de) {
         Ok(Some(Arc::new(style)))
     } else {
         Ok(None)

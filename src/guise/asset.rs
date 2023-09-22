@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     path::relative_asset_path,
-    template::{Call, Element, ParamValue, TemplateAsset, TemplateNode, TemplateNodeRef},
+    template::{Call, Element, TemplateAsset, TemplateExpr, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
@@ -72,6 +72,7 @@ impl GuiseTemplatesLoader {
                     .collect(),
             )),
             TemplateNode::Text(_) => node.clone(),
+            TemplateNode::Expression(_) => node.clone(),
             TemplateNode::Call(call) => TemplateNodeRef::new(TemplateNode::Call(Call {
                 inline_style: match &call.inline_style {
                     Some(sa) => {
@@ -87,11 +88,11 @@ impl GuiseTemplatesLoader {
                 template_handle: lc.load(relative_asset_path(base, &call.template)),
                 params: match call.params {
                     Some(ref map) => {
-                        let mut m = HashMap::<String, ParamValue>::with_capacity(map.len());
+                        let mut m = HashMap::<String, TemplateExpr>::with_capacity(map.len());
                         map.iter().for_each(|(key, value)| {
                             m.insert(key.clone(), self.visit_param_value(value, lc, base));
                         });
-                        Some(m)
+                        Some(Arc::new(m))
                     }
                     None => None,
                 },
@@ -101,17 +102,20 @@ impl GuiseTemplatesLoader {
 
     fn visit_param_value<'a>(
         &self,
-        val: &ParamValue,
+        val: &TemplateExpr,
         lc: &'a mut LoadContext,
         base: &AssetPath,
-    ) -> ParamValue {
+    ) -> TemplateExpr {
         match val {
-            ParamValue::None => ParamValue::None,
-            ParamValue::Bool(b) => ParamValue::Bool(*b),
-            ParamValue::Number(n) => ParamValue::Number(*n),
-            ParamValue::String(s) => ParamValue::String(s.clone()),
-            ParamValue::Node(node) => ParamValue::Node(self.visit_template_node(node, lc, base)),
-            ParamValue::List(list) => ParamValue::List(
+            TemplateExpr::None => TemplateExpr::None,
+            TemplateExpr::Bool(b) => TemplateExpr::Bool(*b),
+            TemplateExpr::Number(n) => TemplateExpr::Number(*n),
+            TemplateExpr::Ident(s) => TemplateExpr::Ident(s.clone()),
+            TemplateExpr::String(s) => TemplateExpr::String(s.clone()),
+            TemplateExpr::Node(node) => {
+                TemplateExpr::Node(self.visit_template_node(node, lc, base))
+            }
+            TemplateExpr::List(list) => TemplateExpr::List(
                 list.as_ref()
                     .iter()
                     .map(|p| self.visit_param_value(p, lc, base))
@@ -138,20 +142,16 @@ impl AssetLoader for GuiseTemplatesLoader {
                 serde_json::from_slice(&bytes).expect("unable to decode templates");
             entries.styles.drain().for_each(|(key, mut style)| {
                 let label = format!("styles/{}", key);
-                let base = AssetPath::new(
-                    load_context.path().to_path_buf().clone(),
-                    Some(label.clone()),
-                );
+                let base = AssetPath::from_path(load_context.path().to_path_buf())
+                    .with_label(label.clone());
                 self.visit_stylesheet(&mut style, &base);
                 load_context.add_labeled_asset(label, style);
             });
             entries.templates.drain().for_each(|(key, mut template)| {
                 let label = format!("templates/{}", key);
                 // TODO: Lots of string copying here.
-                let base = AssetPath::new(
-                    load_context.path().to_path_buf().clone(),
-                    Some(label.clone()),
-                );
+                let base = AssetPath::from_path(load_context.path().to_path_buf())
+                    .with_label(label.clone());
                 load_context.labeled_asset_scope(label, |lc| {
                     if let Some(content) = template.content.as_ref() {
                         template.content = Some(self.visit_template_node(content, lc, &base));

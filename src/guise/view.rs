@@ -3,6 +3,7 @@ use bevy::{
     ecs::system::Command,
     prelude::*,
     ui::FocusPolicy,
+    utils::HashMap,
 };
 use bevy_trait_query::One;
 use std::sync::Arc;
@@ -11,14 +12,14 @@ use super::{
     controller::Controller,
     controllers::DefaultController,
     path::relative_asset_path,
-    template::{TemplateAsset, TemplateNode, TemplateNodeRef},
+    template::{EvalContext, TemplateAsset, TemplateExpr, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
 /// Output of a rendered node, which may be a single node or a fragment (multiple nodes).
 /// This gets flattened before attaching to the parent UiNode.
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) enum TemplateOutput {
+pub enum TemplateOutput {
     // Means that nothing was rendered. This can represent either an initial state
     // before the first render, or a conditional render operation.
     Empty,
@@ -109,6 +110,9 @@ pub struct ViewElement {
 
     /// Generated list of entities
     children: Vec<TemplateOutput>,
+
+    // Template properties
+    props: Option<Arc<HashMap<String, TemplateExpr>>>,
     // Other possible props:
     // memoized - whether this node should be re-evaluated when parent changes.
     // template parameters
@@ -198,6 +202,7 @@ pub fn create_views(
                                             &server,
                                             &assets,
                                             &asset_path,
+                                            &Option::None,
                                         );
                                         if view_root.entities != root {
                                             view_root.entities = root;
@@ -303,6 +308,7 @@ fn reconcile(
     server: &AssetServer,
     assets: &Assets<TemplateAsset>,
     asset_path: &AssetPath,
+    props: &Option<Arc<HashMap<String, TemplateExpr>>>,
 ) -> TemplateOutput {
     match template_node.as_ref() {
         TemplateNode::Element(template) => {
@@ -347,6 +353,7 @@ fn reconcile(
                                 &server,
                                 &assets,
                                 &asset_path,
+                                props,
                             );
                             if children[i] != new_child {
                                 children[i] = new_child;
@@ -392,6 +399,7 @@ fn reconcile(
                         &server,
                         &assets,
                         &asset_path,
+                        props,
                     )
                 }
                 let count = children.iter().map(|child| child.count()).sum();
@@ -409,6 +417,7 @@ fn reconcile(
                         controller: template.controller.clone(),
                         children,
                         classes: Vec::new(),
+                        props: props.clone(),
                     },
                     NodeBundle {
                         focus_policy: FocusPolicy::Pass,
@@ -474,11 +483,17 @@ fn reconcile(
                 &server,
                 &assets,
                 &asset_path,
+                &call.params,
             )
         }
 
         TemplateNode::Fragment(_template) => {
             todo!("Render Fragment")
+        }
+
+        TemplateNode::Expression(expr) => {
+            let ctx = EvalContext {};
+            expr.render(&ctx)
         }
     }
 }

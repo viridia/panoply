@@ -25,6 +25,7 @@
       "padding": 6,
       "background-color": "#222",
       "border-color": "#404",
+      "border": 2,
       "vars": {
         "--button-image": "asset(../images/button-blue.png)"
       },
@@ -78,6 +79,9 @@
       "flex-grow": 1
     },
     "sub-panel": {
+      "display": "flex",
+      "flex-direction": "column",
+      "gap": 6,
       "padding": 6,
       "background-color": "#22f"
     }
@@ -185,7 +189,14 @@
         }
       },
       "content": {
-        "type": "element"
+        "type": "element",
+        "styleset": ["#styles/obs-button"],
+        "children": [
+          {
+            "type": "text",
+            "content": "Button"
+          }
+        ]
       }
     },
     "demo-counter": {

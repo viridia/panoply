@@ -65,7 +65,7 @@ pub fn create_mesh_instances(
     for (entity, placements, pl_changed, model_instances) in query.iter_mut() {
         if pl_changed.is_some() {
             if let Some((fname, fragment)) = placements.model.split_once('#') {
-                let handle: Handle<Gltf> = server.load(fname.clone());
+                let handle: Handle<Gltf> = server.load(fname.to_owned());
                 commands
                     .entity(entity)
                     .insert(ModelInstances {

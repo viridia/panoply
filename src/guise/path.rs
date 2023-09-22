@@ -7,10 +7,10 @@ use bevy::asset::AssetPath;
 /// * A path starting with './' or '../', e.g. `./bar#fragment`, in which case it is resolved
 ///   relative to the current directory.
 /// * Just a label, `#fragment`.
-pub fn relative_asset_path<'a>(base: &'a AssetPath<'a>, path: &'a str) -> AssetPath<'a> {
+pub fn relative_asset_path<'a, 'b, 'c>(base: &'a AssetPath<'b>, path: &'a str) -> AssetPath<'c> {
     if let Some(label) = path.strip_prefix('#') {
         // It's a label only
-        AssetPath::new_ref(&base.path, Some(label))
+        base.clone().into_owned().with_label(label.to_owned())
     } else {
         let (rpath, rlabel) = match path.split_once('#') {
             Some((path, label)) => (path, Some(label.to_string())),
@@ -40,7 +40,10 @@ pub fn relative_asset_path<'a>(base: &'a AssetPath<'a>, path: &'a str) -> AssetP
             first = false;
         }
 
-        AssetPath::new(fpath, rlabel)
+        match rlabel {
+            Some(label) => AssetPath::from(fpath).with_label(label),
+            None => AssetPath::from(fpath),
+        }
     }
 }
 

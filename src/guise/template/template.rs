@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use super::call::Call;
 use super::element::Element;
 use super::text::Text;
+use super::TemplateExpr;
 
 pub type TemplateNodeList = Vec<TemplateNodeRef>;
 
@@ -50,6 +51,7 @@ pub enum TemplateNode {
     Fragment(TemplateNodeList),
     Text(Text),
     Call(Call),
+    Expression(TemplateExpr),
     // Cond
     // Each
 }
