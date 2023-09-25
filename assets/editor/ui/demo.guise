@@ -1,0 +1,212 @@
+rubik: [
+  {
+    src: $("../fonts/Rubik/Rubik-VariableFont_wght.ttf")
+  },
+  {
+    src: $("../fonts/Rubik/Rubik-VariableFont_wght.ttf"),
+    font_weight: 400
+  },
+  {
+    src: $("../fonts/Rubik/Rubik-Italic-VariableFont_wght.ttf"),
+    font_style: italic
+  },
+  {
+    src: "asset(../fonts/Rubik/Rubik-Italic-VariableFont_wght.ttf)",
+    font_weight: 400,
+    font_style: italic
+  }
+]
+
+obs_button: {
+  base: Style {
+    padding: 6,
+    background_color: #222,
+    border-color: #404,
+    border: 2,
+
+    vars: {
+      button_image: $("../images/button-blue.png")
+    },
+
+    selectors: {
+      "&.hover": {
+        vars: {
+          "button_image": "asset(../images/button-blue-hover.png)"
+        }
+      },
+      "&.pressed": {
+        vars: {
+          "button_image": "asset(../images/button-blue-pressed.png)"
+        }
+      },
+      "&.disabled": {
+        vars: {
+          "button_image": "asset(../images/button-blue-disabled.png)"
+        }
+      }
+    }
+  },
+
+  background: {
+    display: "grid"
+  },
+
+  background-patch: {
+    background_image: ${button_image},
+    selectors: {
+      ".disabled > * > &": {}
+    }
+  },
+
+  "obs-button-green": {
+    vars: {
+      "button_image": "asset(../images/button-green.png)"
+    }
+  },
+}
+
+obs_splitter: {
+  display: "flex",
+  width: 7,
+  align_items: "center",
+  justify_items: "center",
+  justify_content: "center",
+  background_color: "#202020"
+},
+"obs-splitter-thumb": {
+  width: 3,
+  height: "20%",
+  justify_self: "center",
+  background_color: "#444444"
+},
+main_panel: {
+  flex_grow: 1
+},
+sub_panel: {
+  display: "flex",
+  flex_direction: "column",
+  gap: 6,
+  padding: 6,
+  background_color: "#22f"
+}
+
+main: Template() {
+    content: Element {
+      style: [
+        $("#styles/main-panel"),
+          Style {
+            display: flex,
+            flex_direction: row,
+            position: absolute,
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 10
+          }
+      ],
+      children: [
+        Element {
+          id: "left",
+          style: [
+            $("#styles/sub-panel"),
+            Style {
+              width: 200,
+              background_image: "asset(editor/icons/building.png)",
+              background_color: "#fff"
+            }
+          ],
+          children: [
+            {
+              type: "text",
+              content: "Hello, world!"
+            },
+            {
+              type: "invoke",
+              template: "#templates/demo-button",
+              params: {
+                children: [
+                  {
+                    type: "text",
+                    content: "New Game..."
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          type: "invoke",
+          template: "#templates/splitter",
+          params: {
+            id: "right"
+          }
+        },
+        {
+          type: "element",
+          id: "center",
+          controller: "ViewportInsetController",
+          style: {
+            flex: 1,
+            width: 30
+          }
+        },
+        {
+          type: "invoke",
+          template: "#templates/splitter",
+          params: {
+            id: "right"
+          }
+        },
+        {
+          type: "element",
+          id: "right",
+          styleset: ["#styles/sub-panel"],
+          style: {
+            width: 200
+          }
+        }
+      ]
+    }
+  },
+  splitter: {
+    params: {
+      id: {
+        type: "string?"
+      }
+    },
+    content: {
+      type: "element",
+      id: "${id}",
+      styleset: ["#styles/obs-splitter"],
+      children: [
+        {
+          type: "element",
+          styleset: ["#styles/obs-splitter-thumb"]
+        }
+      ]
+    }
+  },
+  demo_button: {
+    params: {
+      children: {
+        type: "node"
+      }
+    },
+    content: {
+      type: "element",
+      styleset: ["#styles/obs-button"],
+      children: [
+        {
+          type: "expr",
+          value: {}
+        }
+      ]
+    }
+  },
+  demo_counter: {
+    content: {
+      type: "element",
+      controller: "CounterController",
+      children: []
+    }
+  }

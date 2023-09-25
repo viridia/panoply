@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     path::relative_asset_path,
-    template::{Call, Element, TemplateAsset, TemplateExpr, TemplateNode, TemplateNodeRef},
+    template::{Element, Invoke, TemplateAsset, TemplateExpr, TemplateNode, TemplateNodeRef},
     StyleAsset,
 };
 
@@ -73,8 +73,8 @@ impl GuiseTemplatesLoader {
             )),
             TemplateNode::Text(_) => node.clone(),
             TemplateNode::Expression(_) => node.clone(),
-            TemplateNode::Call(call) => TemplateNodeRef::new(TemplateNode::Call(Call {
-                inline_style: match &call.inline_style {
+            TemplateNode::Invoke(invoke) => TemplateNodeRef::new(TemplateNode::Invoke(Invoke {
+                inline_style: match &invoke.inline_style {
                     Some(sa) => {
                         // TODO: Lots of copying here - avoid if no asset refs
                         let mut style = sa.as_ref().clone();
@@ -84,17 +84,19 @@ impl GuiseTemplatesLoader {
 
                     None => None,
                 },
-                template: call.template.clone(),
-                template_handle: lc.load(relative_asset_path(base, &call.template)),
-                params: match call.params {
-                    Some(ref map) => {
-                        let mut m = HashMap::<String, TemplateExpr>::with_capacity(map.len());
-                        map.iter().for_each(|(key, value)| {
-                            m.insert(key.clone(), self.visit_param_value(value, lc, base));
-                        });
-                        Some(Arc::new(m))
-                    }
-                    None => None,
+                template: invoke.template.clone(),
+                template_handle: lc.load(relative_asset_path(base, &invoke.template)),
+                params: {
+                    println!(
+                        "Invoke {} with params {}",
+                        invoke.template,
+                        invoke.params.len()
+                    );
+                    let mut m = HashMap::<String, TemplateExpr>::with_capacity(invoke.params.len());
+                    invoke.params.iter().for_each(|(key, value)| {
+                        m.insert(key.clone(), self.visit_param_value(value, lc, base));
+                    });
+                    Arc::new(m)
                 },
             })),
         }

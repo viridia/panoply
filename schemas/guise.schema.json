@@ -276,10 +276,13 @@
           "$ref": "#/definitions/text-node"
         },
         {
-          "$ref": "#/definitions/call-node"
+          "$ref": "#/definitions/invoke-node"
         },
         {
           "$ref": "#/definitions/fragment-node"
+        },
+        {
+          "$ref": "#/definitions/param-ref-node"
         }
       ]
     },
@@ -353,11 +356,11 @@
       "required": ["type"],
       "additionalProperties": false
     },
-    "call-node": {
+    "invoke-node": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "call"
+          "const": "invoke"
         },
         "template": {
           "type": "string"
@@ -372,6 +375,20 @@
         }
       },
       "required": ["type", "template"],
+      "additionalProperties": false
+    },
+    "param-ref-node": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "param-ref"
+        },
+        "param": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["type", "param"],
       "additionalProperties": false
     },
     "param-expr": {

@@ -3,9 +3,9 @@ mod controller;
 mod controllers;
 mod path;
 mod plugin;
+mod reconciler;
 mod style;
 mod template;
-// mod template_old;
 mod view;
 
 use std::fmt;

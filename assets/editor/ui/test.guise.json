@@ -117,24 +117,27 @@
                 "content": "Hello, world!"
               },
               {
-                "type": "call",
+                "type": "invoke",
                 "template": "#templates/demo-button",
                 "params": {
-                  "children": [
-                    {
-                      "type": "text",
-                      "content": "New Game..."
-                    }
-                  ]
+                  "children": {
+                    "list": [
+                      {
+                        "string": "New Game..."
+                      }
+                    ]
+                  }
                 }
               }
             ]
           },
           {
-            "type": "call",
+            "type": "invoke",
             "template": "#templates/splitter",
             "params": {
-              "id": "right"
+              "id": {
+                "string": "right"
+              }
             }
           },
           {
@@ -147,10 +150,12 @@
             }
           },
           {
-            "type": "call",
+            "type": "invoke",
             "template": "#templates/splitter",
             "params": {
-              "id": "right"
+              "id": {
+                "string": "left"
+              }
             }
           },
           {
@@ -193,8 +198,8 @@
         "styleset": ["#styles/obs-button"],
         "children": [
           {
-            "type": "text",
-            "content": "Button"
+            "type": "expr",
+            "ident": "children"
           }
         ]
       }

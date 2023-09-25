@@ -6,8 +6,8 @@ use bevy::reflect::TypePath;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
-use super::call::Call;
 use super::element::Element;
+use super::invoke::Invoke;
 use super::text::Text;
 use super::TemplateExpr;
 
@@ -50,7 +50,11 @@ pub enum TemplateNode {
     Element(Element),
     Fragment(TemplateNodeList),
     Text(Text),
-    Call(Call),
+
+    // Invocation of another template
+    Invoke(Invoke),
+
+    #[serde(rename = "expr")]
     Expression(TemplateExpr),
     // Cond
     // Each

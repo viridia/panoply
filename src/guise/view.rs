@@ -33,7 +33,7 @@ pub enum TemplateOutput {
 
 impl TemplateOutput {
     /// Returns the number of actual entities in the template output.
-    fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         match self {
             Self::Empty => 0,
             Self::Node(_) => 1,
@@ -42,7 +42,7 @@ impl TemplateOutput {
     }
 
     /// Flattens the list of entities into a vector.
-    fn flatten(&self, out: &mut Vec<Entity>) {
+    pub fn flatten(&self, out: &mut Vec<Entity>) {
         match self {
             Self::Empty => {}
             Self::Node(entity) => out.push(*entity),
@@ -51,7 +51,7 @@ impl TemplateOutput {
     }
 
     /// Despawn all entities held.
-    fn despawn_recursive(&self, commands: &mut Commands) {
+    pub(crate) fn despawn_recursive(&self, commands: &mut Commands) {
         match self {
             Self::Empty => {}
             Self::Node(entity) => commands.entity(*entity).despawn_recursive(),
@@ -75,6 +75,9 @@ pub struct ViewRoot {
 
     /// Generated list of entities
     entities: TemplateOutput,
+
+    /// Template properties
+    props: Arc<HashMap<String, TemplateExpr>>,
 }
 
 impl ViewRoot {
@@ -91,7 +94,7 @@ impl ViewRoot {
 #[derive(Component)]
 pub struct ViewElement {
     /// Template node used to generate this element
-    template: TemplateNodeRef,
+    pub(crate) template: TemplateNodeRef,
 
     /// Element id
     pub id: Option<String>,
@@ -109,10 +112,10 @@ pub struct ViewElement {
     pub classes: Vec<String>,
 
     /// Generated list of entities
-    children: Vec<TemplateOutput>,
+    pub(crate) children: Vec<TemplateOutput>,
 
     // Template properties
-    props: Option<Arc<HashMap<String, TemplateExpr>>>,
+    pub(crate) props: Arc<HashMap<String, TemplateExpr>>,
     // Other possible props:
     // memoized - whether this node should be re-evaluated when parent changes.
     // template parameters
@@ -142,8 +145,8 @@ impl ViewElement {
 }
 
 pub struct InsertController {
-    entity: Entity,
-    controller: String,
+    pub(crate) entity: Entity,
+    pub(crate) controller: String,
 }
 
 /// Custom command to insert a Component by its type name. This is used for Controllers.
@@ -195,14 +198,14 @@ pub fn create_views(
                                     if let Some(ref template_node) = template.content {
                                         let root = reconcile(
                                             &mut commands,
-                                            &mut view_root.entities,
+                                            &view_root.entities,
                                             &template_node,
                                             &mut element_query,
                                             &mut text_query,
                                             &server,
                                             &assets,
                                             &asset_path,
-                                            &Option::None,
+                                            &view_root.props,
                                         );
                                         if view_root.entities != root {
                                             view_root.entities = root;
@@ -308,7 +311,7 @@ fn reconcile(
     server: &AssetServer,
     assets: &Assets<TemplateAsset>,
     asset_path: &AssetPath,
-    props: &Option<Arc<HashMap<String, TemplateExpr>>>,
+    props: &Arc<HashMap<String, TemplateExpr>>,
 ) -> TemplateOutput {
     match template_node.as_ref() {
         TemplateNode::Element(template) => {
@@ -472,8 +475,13 @@ fn reconcile(
             return TemplateOutput::Node(new_entity);
         }
 
-        TemplateNode::Call(call) => {
-            let template = assets.get(&call.template_handle).unwrap();
+        TemplateNode::Invoke(invoke) => {
+            let template = assets.get(&invoke.template_handle).unwrap();
+            info!(
+                "Invoking template: {} with {} params",
+                invoke.template,
+                invoke.params.len()
+            );
             reconcile(
                 commands,
                 view_child,
@@ -483,7 +491,7 @@ fn reconcile(
                 &server,
                 &assets,
                 &asset_path,
-                &call.params,
+                &invoke.params,
             )
         }
 
@@ -491,6 +499,15 @@ fn reconcile(
             todo!("Render Fragment")
         }
 
+        // TemplateNode::ParamRef(name) => {
+        //     if let Some(val) = props.as_ref().get(&name.param) {
+        //         todo!("Render ParamVal");
+        //     } else {
+        //         error!("Unknown param [{}]", name.param);
+        //         info!("Num params {}", props.as_ref().len());
+        //         return TemplateOutput::Empty;
+        //     }
+        // }
         TemplateNode::Expression(expr) => {
             let ctx = EvalContext {};
             expr.render(&ctx)

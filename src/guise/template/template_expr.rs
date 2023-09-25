@@ -6,7 +6,7 @@ use super::TemplateNodeRef;
 
 /// Dynamically-typed expression for parameters that can be passed to a template Call.
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "kebab-case")]
 pub enum TemplateExpr {
     /// No value
     None,
@@ -37,7 +37,7 @@ impl TemplateExpr {
             TemplateExpr::Bool(b) => todo!("Render bool"),
             TemplateExpr::Number(_) => todo!("Render number"),
             TemplateExpr::String(_) => todo!("Render string"),
-            TemplateExpr::Ident(_) => todo!("Render ident"),
+            TemplateExpr::Ident(_) => TemplateOutput::Empty,
             TemplateExpr::Node(_) => todo!("Render node"),
             TemplateExpr::List(_) => todo!("Render list"),
         }
