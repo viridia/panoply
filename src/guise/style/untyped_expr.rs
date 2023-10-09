@@ -12,7 +12,9 @@ use winnow::{
 
 use bevy::ui;
 
-use super::{asset_ref::AssetRef, coerce::Coerce, color::ColorValue};
+use crate::guise::coerce::Coerce;
+
+use super::{asset_ref::AssetRef, color::ColorValue};
 
 /// An expression which represents the possible values of a style attribute.
 #[derive(Debug, Clone, PartialEq)]

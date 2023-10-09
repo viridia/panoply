@@ -1,6 +1,6 @@
 use bevy::{prelude::*, reflect::Reflect, render::camera::Viewport, window::PrimaryWindow};
 
-use crate::guise::{Controller, ViewElement};
+// use crate::guise::{Controller, ViewElement};
 
 use super::PrimaryCamera;
 
@@ -56,40 +56,40 @@ pub fn update_camera_viewport(
 #[reflect(Component)]
 pub struct ViewportInsetController {}
 
-impl Controller for ViewportInsetController {}
+// impl Controller for ViewportInsetController {}
 
 pub fn update_viewport_inset(
     windows: Query<&Window, With<PrimaryWindow>>,
-    query: Query<(&ViewElement, &Node, &GlobalTransform), With<ViewportInsetController>>,
+    // query: Query<(&ViewElement, &Node, &GlobalTransform), With<ViewportInsetController>>,
     mut viewport_inset: ResMut<ViewportInset>,
 ) {
-    let mut inset = ViewportInset::default();
-    match query.get_single() {
-        Ok((_, node, transform)) => {
-            let position = transform.translation();
-            let ui_position = position.truncate();
-            let extents = node.size() / 2.0;
-            let min = ui_position - extents;
-            let max = ui_position + extents;
+    // let mut inset = ViewportInset::default();
+    // match query.get_single() {
+    //     Ok((_, node, transform)) => {
+    //         let position = transform.translation();
+    //         let ui_position = position.truncate();
+    //         let extents = node.size() / 2.0;
+    //         let min = ui_position - extents;
+    //         let max = ui_position + extents;
 
-            let window = windows.single();
-            let ww = window.resolution.physical_width() as f32;
-            let wh = window.resolution.physical_height() as f32;
-            let sf = window.resolution.scale_factor() as f32;
+    //         let window = windows.single();
+    //         let ww = window.resolution.physical_width() as f32;
+    //         let wh = window.resolution.physical_height() as f32;
+    //         let sf = window.resolution.scale_factor() as f32;
 
-            inset.left = min.x;
-            inset.top = min.y;
-            inset.right = ww / sf - max.x;
-            inset.bottom = wh / sf - max.y;
-        }
-        Err(_) => {
-            if query.iter().count() > 1 {
-                error!("Multiple ViewportInsetControllers!");
-            }
-        }
-    }
+    //         inset.left = min.x;
+    //         inset.top = min.y;
+    //         inset.right = ww / sf - max.x;
+    //         inset.bottom = wh / sf - max.y;
+    //     }
+    //     Err(_) => {
+    //         if query.iter().count() > 1 {
+    //             error!("Multiple ViewportInsetControllers!");
+    //         }
+    //     }
+    // }
 
-    if inset != *viewport_inset {
-        *viewport_inset.as_mut() = inset;
-    }
+    // if inset != *viewport_inset {
+    //     *viewport_inset.as_mut() = inset;
+    // }
 }

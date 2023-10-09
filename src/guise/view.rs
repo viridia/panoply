@@ -13,81 +13,30 @@ use super::{
     controllers::DefaultController,
     path::relative_asset_path,
     template::{EvalContext, TemplateAsset, TemplateExpr, TemplateNode, TemplateNodeRef},
+    template_output::TemplateOutput,
     StyleAsset,
 };
 
-/// Output of a rendered node, which may be a single node or a fragment (multiple nodes).
-/// This gets flattened before attaching to the parent UiNode.
-#[derive(Debug, PartialEq, Clone)]
-pub enum TemplateOutput {
-    // Means that nothing was rendered. This can represent either an initial state
-    // before the first render, or a conditional render operation.
-    Empty,
+// /// Component that defines the root of a view hierarchy and a template invocation.
+// #[derive(Component, Default)]
+// pub struct ViewRoot {
+//     pub template: Handle<TemplateAsset>,
 
-    // Template rendered a single node
-    Node(Entity),
+//     /// Generated list of entities
+//     entities: TemplateOutput,
 
-    // Template rendered a fragment or a list of nodes.
-    Fragment(Box<[TemplateOutput]>),
-}
+//     /// Template properties
+//     props: Arc<HashMap<String, TemplateExpr>>,
+// }
 
-impl TemplateOutput {
-    /// Returns the number of actual entities in the template output.
-    pub fn count(&self) -> usize {
-        match self {
-            Self::Empty => 0,
-            Self::Node(_) => 1,
-            Self::Fragment(nodes) => nodes.iter().map(|node| node.count()).sum(),
-        }
-    }
-
-    /// Flattens the list of entities into a vector.
-    pub fn flatten(&self, out: &mut Vec<Entity>) {
-        match self {
-            Self::Empty => {}
-            Self::Node(entity) => out.push(*entity),
-            Self::Fragment(nodes) => nodes.iter().for_each(|node| node.flatten(out)),
-        }
-    }
-
-    /// Despawn all entities held.
-    pub(crate) fn despawn_recursive(&self, commands: &mut Commands) {
-        match self {
-            Self::Empty => {}
-            Self::Node(entity) => commands.entity(*entity).despawn_recursive(),
-            Self::Fragment(nodes) => nodes
-                .iter()
-                .for_each(|node| node.despawn_recursive(commands)),
-        }
-    }
-}
-
-impl Default for TemplateOutput {
-    fn default() -> Self {
-        Self::Empty
-    }
-}
-
-/// Component that defines the root of a view hierarchy and a template invocation.
-#[derive(Component, Default)]
-pub struct ViewRoot {
-    pub template: Handle<TemplateAsset>,
-
-    /// Generated list of entities
-    entities: TemplateOutput,
-
-    /// Template properties
-    props: Arc<HashMap<String, TemplateExpr>>,
-}
-
-impl ViewRoot {
-    pub fn new(template: Handle<TemplateAsset>) -> Self {
-        Self {
-            template,
-            ..default()
-        }
-    }
-}
+// impl ViewRoot {
+//     pub fn new(template: Handle<TemplateAsset>) -> Self {
+//         Self {
+//             template,
+//             ..default()
+//         }
+//     }
+// }
 
 /// Component that defines a ui element, and which can differentially update when the
 /// template asset changes.

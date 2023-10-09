@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::guise::view::TemplateOutput;
+use crate::guise::render_output::RenderOutput;
 
 use super::TemplateNodeRef;
 
@@ -31,13 +31,13 @@ pub enum TemplateExpr {
 }
 
 impl TemplateExpr {
-    pub fn render(&self, _context: &EvalContext) -> TemplateOutput {
+    pub fn render(&self, _context: &EvalContext) -> RenderOutput {
         match self {
-            TemplateExpr::None => TemplateOutput::Empty,
+            TemplateExpr::None => RenderOutput::Empty,
             TemplateExpr::Bool(b) => todo!("Render bool"),
             TemplateExpr::Number(_) => todo!("Render number"),
             TemplateExpr::String(_) => todo!("Render string"),
-            TemplateExpr::Ident(_) => TemplateOutput::Empty,
+            TemplateExpr::Ident(_) => RenderOutput::Empty,
             TemplateExpr::Node(_) => todo!("Render node"),
             TemplateExpr::List(_) => todo!("Render list"),
         }

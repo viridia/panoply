@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use bevy::ui;
 
-use super::{asset_ref::AssetRef, coerce::Coerce, color::ColorValue, untyped_expr::UntypedExpr};
+use crate::guise::coerce::Coerce;
+
+use super::{asset_ref::AssetRef, color::ColorValue, untyped_expr::UntypedExpr};
 
 /// An expression which represents the possible values of a style attribute.
 #[derive(Debug, Clone, PartialEq)]

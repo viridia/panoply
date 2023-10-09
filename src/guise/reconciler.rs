@@ -2,11 +2,9 @@ use std::sync::Arc;
 
 use bevy::{asset::AssetPath, prelude::*, ui::FocusPolicy, utils::HashMap};
 
-use crate::guise::view::InsertController;
-
 use super::{
-    controllers::DefaultController, path::relative_asset_path, template::*, view::TemplateOutput,
-    StyleAsset, ViewElement,
+    path::relative_asset_path, template::*, template_output::TemplateOutput,
+    view_element::ViewElement, ElementStyle, Expr,
 };
 
 pub struct Reconciler<'a, 'w, 's> {
@@ -18,9 +16,35 @@ pub struct Reconciler<'a, 'w, 's> {
 }
 
 impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
+    pub fn visit_expr(
+        &mut self,
+        expr: &Expr,
+        output: &TemplateOutput,
+        base_path: &AssetPath,
+        props: &Arc<HashMap<String, TemplateExpr>>,
+    ) -> TemplateOutput {
+        match expr {
+            Expr::Null => TemplateOutput::Empty,
+            Expr::Bool(false) => TemplateOutput::Empty,
+            Expr::Bool(true) => {
+                todo!()
+            }
+            Expr::Ident(_) => todo!(),
+            Expr::Number(_) => todo!(),
+            Expr::Length(_) => todo!(),
+            Expr::List(_) => todo!(),
+            Expr::Color(_) => todo!(),
+            Expr::Object(obj) => {
+                todo!()
+            }
+            Expr::Asset(_) => todo!(),
+            Expr::Var(_) => todo!(),
+        }
+    }
+
     pub fn visit_node(
         &mut self,
-        node: &TemplateNodeRef,
+        node: &Expr,
         output: &TemplateOutput,
         base_path: &AssetPath,
         props: &Arc<HashMap<String, TemplateExpr>>,
@@ -35,13 +59,13 @@ impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
                                 element.id = template.id.clone();
                             }
 
-                            if !element.styleset_handles.eq(&template.styleset_handles) {
-                                element.styleset_handles = template.styleset_handles.clone();
-                            }
+                            // if !element.styleset_handles.eq(&template.styleset_handles) {
+                            //     element.styleset_handles = template.styleset_handles.clone();
+                            // }
 
-                            if element.inline_style != template.inline_style {
-                                element.inline_style = template.inline_style.clone();
-                            }
+                            // if element.inline_style != template.inline_style {
+                            //     element.inline_style = template.inline_style.clone();
+                            // }
 
                             // Visit and reconcile children
                             let new_count = template.children.len();
@@ -90,7 +114,7 @@ impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
                     self.commands.entity(elt_entity).despawn_recursive();
                 }
 
-                let mut handles: Vec<Handle<StyleAsset>> =
+                let mut handles: Vec<Handle<ElementStyle>> =
                     Vec::with_capacity(template.styleset.len());
                 template.styleset.iter().for_each(|ss| {
                     handles.push(self.server.load(relative_asset_path(base_path, ss)));
@@ -115,8 +139,7 @@ impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
                         ViewElement {
                             template: (*node).clone(),
                             id: template.id.clone(),
-                            styleset_handles: template.styleset_handles.clone(),
-                            inline_style: template.inline_style.clone(),
+                            style: template.styleset_handles.clone(),
                             controller: template.controller.clone(),
                             children,
                             classes: Vec::new(),
@@ -132,15 +155,15 @@ impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
                     .id();
 
                 // See if there's a controller for this ui node.
-                if let Some(ref controller_id) = template.controller {
-                    info!("Creating controller {}", controller_id);
-                    self.commands.add(InsertController {
-                        entity: new_entity,
-                        controller: controller_id.clone(),
-                    });
-                } else {
-                    self.commands.entity(new_entity).insert(DefaultController);
-                }
+                // if let Some(ref controller_id) = template.controller {
+                //     info!("Creating controller {}", controller_id);
+                //     self.commands.add(InsertController {
+                //         entity: new_entity,
+                //         controller: controller_id.clone(),
+                //     });
+                // } else {
+                //     self.commands.entity(new_entity).insert(DefaultController);
+                // }
 
                 return TemplateOutput::Node(new_entity);
             }
@@ -214,7 +237,8 @@ impl<'a, 'w, 's> Reconciler<'a, 'w, 's> {
         }
     }
 
-    pub fn visit_expr(&mut self, expr: &TemplateExpr) -> TemplateExpr {
-        todo!("Implement expression");
+    /// Render a text string node.
+    pub fn render_text(&mut self, text: &str, output: &TemplateOutput) -> TemplateOutput {
+        todo!();
     }
 }

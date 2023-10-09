@@ -3,11 +3,10 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::str::FromStr;
 
-use crate::guise::GuiseError;
+use crate::guise::coerce::Coerce;
 
 use super::{
-    coerce::Coerce, color::ColorValue, expr::StyleExpr, expr_list::ExprList, AssetRef,
-    ComputedStyle, UntypedExpr,
+    color::ColorValue, expr::StyleExpr, expr_list::ExprList, AssetRef, ComputedStyle, UntypedExpr,
 };
 
 /** A single style-sheet property which can be applied to a computed style. */
@@ -436,44 +435,44 @@ impl StyleAttr {
 
     // TODO: Remove all this parsing code and tests once migrated to willow / serde.
 
-    /// Parse a `StyleAttr` from an XML attribute name/value pair.
-    pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
-        Ok(Some(match name {
-            b"grid-auto-flow" => StyleAttr::GridAutoFlow(match value {
-                "row" => GridAutoFlow::Row,
-                "column" => GridAutoFlow::Column,
-                "row-dense" => GridAutoFlow::RowDense,
-                "column-dense" => GridAutoFlow::ColumnDense,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
-            //     // TODO:
-            //     // pub grid_template_rows: Option<Vec<RepeatedGridTrack>>,
-            //     // pub grid_template_columns: Option<Vec<RepeatedGridTrack>>,
-            //     // pub grid_auto_rows: Option<Vec<GridTrack>>,
-            //     // pub grid_auto_columns: Option<Vec<GridTrack>>,
-            b"grid-row" => StyleAttr::GridRow(StyleAttr::parse_grid_placement(value)?),
-            // b"grid-row-start" => StyleAttr::GridRowStart(StyleAttr::parse_i16(value)?),
-            // b"grid-row-span" => StyleAttr::GridRowSpan(StyleAttr::parse_u16(value)?),
-            b"grid-row-end" => StyleAttr::GridRowEnd(StyleAttr::parse_i16(value)?),
-            b"grid-column" => StyleAttr::GridColumn(StyleAttr::parse_grid_placement(value)?),
-            b"grid-column-start" => StyleAttr::GridColumnStart(StyleAttr::parse_i16(value)?),
-            b"grid-column-span" => StyleAttr::GridColumnSpan(StyleAttr::parse_u16(value)?),
-            b"grid-column-end" => StyleAttr::GridColumnEnd(StyleAttr::parse_i16(value)?),
+    // / Parse a `StyleAttr` from an XML attribute name/value pair.
+    // pub fn parse<'a>(name: &'a [u8], value: &str) -> Result<Option<Self>, GuiseError> {
+    //     Ok(Some(match name {
+    //         b"grid-auto-flow" => StyleAttr::GridAutoFlow(match value {
+    //             "row" => GridAutoFlow::Row,
+    //             "column" => GridAutoFlow::Column,
+    //             "row-dense" => GridAutoFlow::RowDense,
+    //             "column-dense" => GridAutoFlow::ColumnDense,
+    //             _ => {
+    //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+    //             }
+    //         }),
+    //         //     // TODO:
+    //         //     // pub grid_template_rows: Option<Vec<RepeatedGridTrack>>,
+    //         //     // pub grid_template_columns: Option<Vec<RepeatedGridTrack>>,
+    //         //     // pub grid_auto_rows: Option<Vec<GridTrack>>,
+    //         //     // pub grid_auto_columns: Option<Vec<GridTrack>>,
+    //         b"grid-row" => StyleAttr::GridRow(StyleAttr::parse_grid_placement(value)?),
+    //         // b"grid-row-start" => StyleAttr::GridRowStart(StyleAttr::parse_i16(value)?),
+    //         // b"grid-row-span" => StyleAttr::GridRowSpan(StyleAttr::parse_u16(value)?),
+    //         b"grid-row-end" => StyleAttr::GridRowEnd(StyleAttr::parse_i16(value)?),
+    //         b"grid-column" => StyleAttr::GridColumn(StyleAttr::parse_grid_placement(value)?),
+    //         b"grid-column-start" => StyleAttr::GridColumnStart(StyleAttr::parse_i16(value)?),
+    //         b"grid-column-span" => StyleAttr::GridColumnSpan(StyleAttr::parse_u16(value)?),
+    //         b"grid-column-end" => StyleAttr::GridColumnEnd(StyleAttr::parse_i16(value)?),
 
-            b"line-break" => StyleAttr::LineBreak(match value {
-                "nowrap" => bevy::text::BreakLineOn::NoWrap,
-                "word" => bevy::text::BreakLineOn::WordBoundary,
-                "char" => bevy::text::BreakLineOn::AnyCharacter,
-                _ => {
-                    return Err(GuiseError::UnknownAttributeValue(value.to_string()));
-                }
-            }),
+    //         b"line-break" => StyleAttr::LineBreak(match value {
+    //             "nowrap" => bevy::text::BreakLineOn::NoWrap,
+    //             "word" => bevy::text::BreakLineOn::WordBoundary,
+    //             "char" => bevy::text::BreakLineOn::AnyCharacter,
+    //             _ => {
+    //                 return Err(GuiseError::UnknownAttributeValue(value.to_string()));
+    //             }
+    //         }),
 
-            _ => return Ok(None),
-        }))
-    }
+    //         _ => return Ok(None),
+    //     }))
+    // }
 
     // pub fn write_xml(&self, elem: &mut BytesStart) {
     //     match self {
@@ -532,132 +531,132 @@ impl StyleAttr {
     //     }
     // }
 
-    /// Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
-    fn parse_grid_placement(str: &str) -> Result<GridPlacement, GuiseError> {
-        lazy_static! {
-            static ref RE_GRID_1: Regex = Regex::new(r"^([\d\.]+)\s*/\s*([\d\.]+)$").unwrap();
-            static ref RE_GRID_2: Regex =
-                Regex::new(r"^([\d\.]+)\s*/\s*span\s*([\d\.]+)$").unwrap();
-        }
+    // / Convert a CSS-style color into a Color. Supports #hex, rgba() and hsla().
+    // fn parse_grid_placement(str: &str) -> Result<GridPlacement, GuiseError> {
+    //     lazy_static! {
+    //         static ref RE_GRID_1: Regex = Regex::new(r"^([\d\.]+)\s*/\s*([\d\.]+)$").unwrap();
+    //         static ref RE_GRID_2: Regex =
+    //             Regex::new(r"^([\d\.]+)\s*/\s*span\s*([\d\.]+)$").unwrap();
+    //     }
 
-        RE_GRID_1
-            .captures(str)
-            .map(|cap| {
-                GridPlacement::default()
-                    .set_start(i16::from_str(&cap[1]).unwrap())
-                    .set_end(i16::from_str(&cap[2]).unwrap())
-            })
-            .or(RE_GRID_2.captures(str).map(|cap| {
-                GridPlacement::default()
-                    .set_start(i16::from_str(&cap[1]).unwrap())
-                    .set_span(u16::from_str(&cap[2]).unwrap())
-            }))
-            .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
-    }
+    //     RE_GRID_1
+    //         .captures(str)
+    //         .map(|cap| {
+    //             GridPlacement::default()
+    //                 .set_start(i16::from_str(&cap[1]).unwrap())
+    //                 .set_end(i16::from_str(&cap[2]).unwrap())
+    //         })
+    //         .or(RE_GRID_2.captures(str).map(|cap| {
+    //             GridPlacement::default()
+    //                 .set_start(i16::from_str(&cap[1]).unwrap())
+    //                 .set_span(u16::from_str(&cap[2]).unwrap())
+    //         }))
+    //         .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
+    // }
 
-    /// Convert a CSS-style length string into a `Val`.
-    pub(crate) fn parse_val(str: &str) -> Result<Val, GuiseError> {
-        if str == "auto" {
-            return Ok(Val::Auto);
-        }
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^([\-\d\.]+)(px|vw|vh|vmin|vmax|%)?$").unwrap();
-        }
-        RE.captures(str)
-            .and_then(|cap| {
-                let dist = f32::from_str(&cap[1]).unwrap();
-                if cap.get(2).is_none() {
-                    // Default to pixels if no unit
-                    return Some(Val::Px(dist));
-                }
-                match &cap[2] {
-                    "px" => Some(Val::Px(dist)),
-                    "%" => Some(Val::Percent(dist)),
-                    "vw" => Some(Val::Vw(dist)),
-                    "vh" => Some(Val::Vh(dist)),
-                    "vmin" => Some(Val::VMin(dist)),
-                    "vmax" => Some(Val::VMax(dist)),
-                    _ => {
-                        panic!("Invalid unit");
-                    }
-                }
-            })
-            .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
-    }
+    // /// Convert a CSS-style length string into a `Val`.
+    // pub(crate) fn parse_val(str: &str) -> Result<Val, GuiseError> {
+    //     if str == "auto" {
+    //         return Ok(Val::Auto);
+    //     }
+    //     lazy_static! {
+    //         static ref RE: Regex = Regex::new(r"^([\-\d\.]+)(px|vw|vh|vmin|vmax|%)?$").unwrap();
+    //     }
+    //     RE.captures(str)
+    //         .and_then(|cap| {
+    //             let dist = f32::from_str(&cap[1]).unwrap();
+    //             if cap.get(2).is_none() {
+    //                 // Default to pixels if no unit
+    //                 return Some(Val::Px(dist));
+    //             }
+    //             match &cap[2] {
+    //                 "px" => Some(Val::Px(dist)),
+    //                 "%" => Some(Val::Percent(dist)),
+    //                 "vw" => Some(Val::Vw(dist)),
+    //                 "vh" => Some(Val::Vh(dist)),
+    //                 "vmin" => Some(Val::VMin(dist)),
+    //                 "vmax" => Some(Val::VMax(dist)),
+    //                 _ => {
+    //                     panic!("Invalid unit");
+    //                 }
+    //             }
+    //         })
+    //         .ok_or(GuiseError::InvalidAttributeValue(str.to_string()))
+    // }
 
-    /// Convert a CSS-style string representing a sequences of "lengths" into a `UiRect`.
-    /// These go in CSS order: (top, right, bottom, left).
-    /// CSS shortcut forms are supported.
-    pub(crate) fn parse_uirect(str: &str) -> Result<UiRect, GuiseError> {
-        let mut rect = UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Auto);
-        let mut sides = str.split_whitespace();
+    // /// Convert a CSS-style string representing a sequences of "lengths" into a `UiRect`.
+    // /// These go in CSS order: (top, right, bottom, left).
+    // /// CSS shortcut forms are supported.
+    // pub(crate) fn parse_uirect(str: &str) -> Result<UiRect, GuiseError> {
+    //     let mut rect = UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Auto);
+    //     let mut sides = str.split_whitespace();
 
-        // Top
-        if let Some(top) = sides.next() {
-            rect.top = StyleAttr::parse_val(top)?;
+    //     // Top
+    //     if let Some(top) = sides.next() {
+    //         rect.top = StyleAttr::parse_val(top)?;
 
-            // Right defaults to top if not specified
-            rect.right = match sides.next() {
-                Some(val) => StyleAttr::parse_val(val)?,
-                None => rect.top,
-            };
+    //         // Right defaults to top if not specified
+    //         rect.right = match sides.next() {
+    //             Some(val) => StyleAttr::parse_val(val)?,
+    //             None => rect.top,
+    //         };
 
-            // Bottom defaults to top if not specified
-            rect.bottom = match sides.next() {
-                Some(val) => StyleAttr::parse_val(val)?,
-                None => rect.top,
-            };
+    //         // Bottom defaults to top if not specified
+    //         rect.bottom = match sides.next() {
+    //             Some(val) => StyleAttr::parse_val(val)?,
+    //             None => rect.top,
+    //         };
 
-            // Left defaults to right if not specified
-            rect.left = match sides.next() {
-                Some(val) => StyleAttr::parse_val(val)?,
-                None => rect.right,
-            };
+    //         // Left defaults to right if not specified
+    //         rect.left = match sides.next() {
+    //             Some(val) => StyleAttr::parse_val(val)?,
+    //             None => rect.right,
+    //         };
 
-            // Should be no more values.
-            if sides.next().is_none() {
-                Ok(rect)
-            } else {
-                Err(GuiseError::InvalidAttributeValue(str.to_string()))
-            }
-        } else {
-            Err(GuiseError::InvalidAttributeValue(str.to_string()))
-        }
-    }
+    //         // Should be no more values.
+    //         if sides.next().is_none() {
+    //             Ok(rect)
+    //         } else {
+    //             Err(GuiseError::InvalidAttributeValue(str.to_string()))
+    //         }
+    //     } else {
+    //         Err(GuiseError::InvalidAttributeValue(str.to_string()))
+    //     }
+    // }
 
-    /// Parse a scalar float.
-    fn parse_f32(str: &str) -> Result<f32, GuiseError> {
-        f32::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
-    }
+    // /// Parse a scalar float.
+    // fn parse_f32(str: &str) -> Result<f32, GuiseError> {
+    //     f32::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
+    // }
 
-    /// Parse a scalar i32.
-    fn parse_i16(str: &str) -> Result<i16, GuiseError> {
-        i16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
-    }
+    // /// Parse a scalar i32.
+    // fn parse_i16(str: &str) -> Result<i16, GuiseError> {
+    //     i16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
+    // }
 
-    /// Parse a scalar i32.
-    fn parse_u16(str: &str) -> Result<u16, GuiseError> {
-        u16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
-    }
+    // /// Parse a scalar i32.
+    // fn parse_u16(str: &str) -> Result<u16, GuiseError> {
+    //     u16::from_str(str).or_else(|_| Err(GuiseError::InvalidAttributeValue(str.to_string())))
+    // }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_parse_val() {
-        assert_eq!(StyleAttr::parse_val("auto").unwrap(), Val::Auto);
-        assert_eq!(StyleAttr::parse_val("1").unwrap(), Val::Px(1.));
-        assert_eq!(StyleAttr::parse_val("1px").unwrap(), Val::Px(1.));
-        assert_eq!(StyleAttr::parse_val("1vw").unwrap(), Val::Vw(1.));
-        assert_eq!(StyleAttr::parse_val("1vh").unwrap(), Val::Vh(1.));
-        assert_eq!(StyleAttr::parse_val("1.1px").unwrap(), Val::Px(1.1));
+    // #[test]
+    // fn test_parse_val() {
+    //     assert_eq!(StyleAttr::parse_val("auto").unwrap(), Val::Auto);
+    //     assert_eq!(StyleAttr::parse_val("1").unwrap(), Val::Px(1.));
+    //     assert_eq!(StyleAttr::parse_val("1px").unwrap(), Val::Px(1.));
+    //     assert_eq!(StyleAttr::parse_val("1vw").unwrap(), Val::Vw(1.));
+    //     assert_eq!(StyleAttr::parse_val("1vh").unwrap(), Val::Vh(1.));
+    //     assert_eq!(StyleAttr::parse_val("1.1px").unwrap(), Val::Px(1.1));
 
-        assert!(StyleAttr::parse_val("1.1bad").is_err());
-        assert!(StyleAttr::parse_val("bad").is_err());
-        assert!(StyleAttr::parse_val("1.1.1bad").is_err());
-    }
+    //     assert!(StyleAttr::parse_val("1.1bad").is_err());
+    //     assert!(StyleAttr::parse_val("bad").is_err());
+    //     assert!(StyleAttr::parse_val("1.1.1bad").is_err());
+    // }
 
     #[test]
     fn test_parse_attrs() {

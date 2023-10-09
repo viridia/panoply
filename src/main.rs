@@ -27,7 +27,7 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     diagnostics::ScreenDiagsPlugin,
-    guise::{Controller, GuisePlugin},
+    guise::GuisePlugin,
     instancing::InstancedModelsPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
@@ -103,7 +103,7 @@ fn main() {
             state: EditorState::World,
         })
         .add_systems(Startup, (setup, load_assets_system))
-        .register_component_as::<dyn Controller, ViewportInsetController>()
+        // .register_component_as::<dyn Controller, ViewportInsetController>()
         .add_systems(
             Update,
             (

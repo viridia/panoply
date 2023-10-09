@@ -4,7 +4,9 @@ use bevy::ui::{self, UiRect};
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 use winnow::{ascii::space1, combinator::separated1, PResult, Parser};
 
-use super::{coerce::Coerce, UntypedExpr};
+use crate::guise::coerce::Coerce;
+
+use super::UntypedExpr;
 
 /// A list of expressions
 #[derive(Debug, Clone, PartialEq)]

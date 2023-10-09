@@ -10,6 +10,7 @@ use serde::{de::Visitor, ser::SerializeStruct, Deserialize, Serialize};
 
 /// A collection of style attributes which can be merged to create a `ComputedStyle`.
 #[derive(Debug, Default, Clone, TypePath, PartialEq, Asset)]
+#[type_path = "panoply::guise::StyleAsset"]
 pub struct StyleAsset {
     /// List of style attributes.
     /// Rather than storing the attributes in a struct full of optional fields, we store a flat

@@ -1,20 +1,27 @@
-main_panel: Style {
-  flex_grow: 1
-},
+use panoply::guise::element_style::ElementStyle;
+use panoply::guise::element::Element;
 
-main: Template() {
-  content: Element {
-    style: [
-      $("#main_panel"),
-      Style {
-        display: flex,
-        flex_direction: row,
-        position: absolute,
-        left: 0,
-        top: 0,
-        right: 0,
-        bottom: 10
-      }
-    ],
+button_style: {
+  background: ElementStyle {
+    position: absolute,
   }
+}
+
+main_style: ElementStyle {
+  flex_grow: 1
+}
+
+Main(): Element {
+  style: [
+//      $("#main_style"),
+    ElementStyle {
+      display: flex,
+      flex_direction: row,
+      position: absolute,
+      left: 0px,
+      top: 0,
+      right: 0,
+      bottom: 10
+    }
+  ],
 }
