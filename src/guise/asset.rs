@@ -19,7 +19,7 @@ use super::{
 };
 
 #[derive(Debug, Asset, TypePath, Clone)]
-pub struct GuiseAsset(Expr);
+pub struct GuiseAsset(pub Expr);
 
 pub struct GuiseAssetLoader {
     registry: TypeRegistryArc,
@@ -283,7 +283,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                 if let Some(rd) = ty.data::<ReflectFromAst>() {
                     let obj = rd.from_ast(members, self.load_context);
                     return match obj {
-                        Ok(obj) => Ok(Expr::Object(obj)),
+                        Ok(obj) => Ok(obj),
                         Err(err) => {
                             return Err(anyhow::Error::new(
                                 pest::error::Error::new_from_span(

@@ -1,48 +1,63 @@
-use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
+use bevy::utils::HashMap;
 
 use super::view_element::ViewElement;
-use super::RenderOutput;
+use super::{Expr, RenderOutput};
+use std::fmt::Debug;
+use std::sync::Arc;
 
-// pub st
-// commands: &'a mut Commands<'w, 's>,
-// query_elements: &'a mut Query<'w, 's, &'a mut ViewElement>,
-// query_text: &'a mut Query<'w, 's, &'a mut Text>,
-// server: &'a AssetServer,
-// assets: &'a Assets<TemplateAsset>,
+pub type RenderProps = Arc<HashMap<String, Expr>>;
 
-#[derive(Resource)]
-pub struct CachedRenderState {
-    system_state: SystemState<Query<'static, 'static, &'static mut ViewElement>>,
+pub struct RenderContext<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2> {
+    pub(crate) commands: &'r0 mut Commands<'w0, 's0>,
+    pub(crate) query_elements: &'r1 mut Query<'w1, 's1, &'static mut ViewElement>,
+    pub(crate) query_text: &'r2 mut Query<'w2, 's2, &'static mut Text>,
 }
 
-// impl CachedRenderState {
-//     pub fn get_view_element(&self, entity: Entity) -> Option<ViewElement> {
-//         return self.system_state.get(entity);
-//     }
+impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
+    RenderContext<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
+{
+    pub fn render(
+        &mut self,
+        prev: &RenderOutput,
+        expr: &Expr,
+        props: &RenderProps,
+    ) -> RenderOutput {
+        match expr {
+            Expr::Null => RenderOutput::Empty,
+            Expr::Bool(false) => RenderOutput::Empty,
+            Expr::Bool(true) => todo!(),
+            Expr::Ident(_) => todo!(),
+            Expr::Number(_) => todo!(),
+            Expr::Length(_) => todo!(),
+            Expr::List(_) => todo!(),
+            Expr::Color(_) => todo!(),
+            Expr::Object(_) => todo!(),
+            Expr::Asset(_) => todo!(),
+            Expr::Var(_) => todo!(),
+            Expr::Style(_) => {
+                panic!("Object is not renderable");
+            }
+            Expr::Template(template) => self.render(prev, &template.expr, props),
+            Expr::Renderable(renderable) => renderable.render(renderable, prev, self, props),
+        }
+    }
 
-//     pub fn get_mut_view_element(&mut self, entity: Entity) -> Option<ViewElement> {}
-// }
+    // pub fn get_view_element(&self, entity: Entity) -> Option<&ViewElement> {
+    //     self.query_elements.get(entity).ok()
+    // }
 
-pub struct RenderContext<'a, 'w, 's> {
-    pub(crate) query_elements: &'a mut Query<'w, 's, &'static mut ViewElement>,
+    // pub fn get_mut_view_element(&mut self, entity: Entity) -> Option<Mut<ViewElement>> {
+    //     self.query_elements.get_mut(entity).ok()
+    // }
 }
 
-impl<'a, 'w, 's> RenderContext<'a, 'w, 's> {
-    pub fn render(&self) -> RenderOutput {
-        println!("Render!");
-        RenderOutput::Empty
-    }
-
-    pub fn get_view_element(&self, entity: Entity) -> Option<&ViewElement> {
-        self.query_elements.get(entity).ok()
-    }
-
-    pub fn get_mut_view_element(&mut self, entity: Entity) -> Option<Mut<ViewElement>> {
-        self.query_elements.get_mut(entity).ok()
-    }
-}
-
-pub trait Renderable {
-    fn render<'a>(&self, output: &RenderOutput, context: &'a mut RenderContext) -> RenderOutput;
+pub trait Renderable: Sync + Send + Debug {
+    fn render<'a>(
+        &self,
+        template: &Arc<dyn Renderable>,
+        output: &RenderOutput,
+        context: &'a mut RenderContext,
+        props: &RenderProps,
+    ) -> RenderOutput;
 }

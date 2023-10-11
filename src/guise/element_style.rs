@@ -1,17 +1,21 @@
+use std::sync::Arc;
+
 use anyhow::anyhow;
 use bevy::{asset::LoadContext, prelude::Color, reflect::Reflect, ui};
 
 use super::{
+    computed::ComputedStyle,
     from_ast::{FromAst, ReflectFromAst},
     typed_expr::TypedExpr,
+    Expr,
 };
 
 #[derive(Debug, Clone)]
 enum ElementStyleAttr {
     // BackgroundImage(TypedExpr<AssetRef>),
-    BackgroundColor(TypedExpr<Color>),
-    BorderColor(TypedExpr<Color>),
-    Color(TypedExpr<Color>),
+    BackgroundColor(TypedExpr<Option<Color>>),
+    BorderColor(TypedExpr<Option<Color>>),
+    Color(TypedExpr<Option<Color>>),
 
     ZIndex(TypedExpr<i32>),
 
@@ -132,24 +136,114 @@ impl ElementStyle {
     //     }
     // }
 
-    // / Number of style attributes in the map.
-    // pub fn len_attrs(&self) -> usize {
-    //     self.attrs.len()
-    // }
+    /// Merge the style properties into a computed `Style` object.
+    pub fn apply_to(&self, computed: &mut ComputedStyle) {
+        self.apply_attrs_to(&self.attrs, computed);
+        // TODO: Check selectors
+    }
 
-    // /// Merge the style properties into a computed `Style` object.
-    // pub fn apply_to(&self, computed: &mut ComputedStyle, server: &AssetServer) {
-    //     for attr in self.attrs.iter() {
-    //         attr.apply(computed, server);
-    //     }
-    // }
+    fn apply_attrs_to(&self, attrs: &Vec<ElementStyleAttr>, computed: &mut ComputedStyle) {
+        for attr in attrs.iter() {
+            match attr {
+                ElementStyleAttr::BackgroundColor(expr) => {
+                    if let Ok(color) = expr.eval() {
+                        computed.background_color = *color;
+                    }
+                }
+                ElementStyleAttr::BorderColor(expr) => {
+                    if let Ok(color) = expr.eval() {
+                        computed.border_color = *color;
+                    }
+                }
+                ElementStyleAttr::Color(expr) => {
+                    if let Ok(color) = expr.eval() {
+                        computed.color = *color;
+                    }
+                }
+                ElementStyleAttr::ZIndex(expr) => {
+                    if let Ok(val) = expr.eval() {
+                        computed.z_index = Some(*val);
+                    }
+                }
+                ElementStyleAttr::Display(expr) => {
+                    if let Ok(disp) = expr.eval() {
+                        computed.style.display = *disp;
+                    }
+                }
+                ElementStyleAttr::Position(expr) => {
+                    if let Ok(pos) = expr.eval() {
+                        computed.style.position_type = *pos;
+                    }
+                }
+                ElementStyleAttr::Left(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.left = *length;
+                    }
+                }
+                ElementStyleAttr::Right(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.right = *length;
+                    }
+                }
+                ElementStyleAttr::Top(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.top = *length;
+                    }
+                }
+                ElementStyleAttr::Bottom(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.bottom = *length;
+                    }
+                }
+                ElementStyleAttr::Width(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.width = *length;
+                    }
+                }
+                ElementStyleAttr::Height(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.height = *length;
+                    }
+                }
+                ElementStyleAttr::MinWidth(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.min_width = *length;
+                    }
+                }
+                ElementStyleAttr::MinHeight(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.min_height = *length;
+                    }
+                }
+                ElementStyleAttr::MaxWidth(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.max_width = *length;
+                    }
+                }
+                ElementStyleAttr::MaxHeight(expr) => {
+                    if let Ok(length) = expr.eval() {
+                        computed.style.max_height = *length;
+                    }
+                }
+                ElementStyleAttr::FlexDirection(expr) => {
+                    if let Ok(dir) = expr.eval() {
+                        computed.style.flex_direction = *dir;
+                    }
+                }
+                ElementStyleAttr::FlexWrap(_) => todo!(),
+                ElementStyleAttr::FlexGrow(_) => todo!(),
+                ElementStyleAttr::FlexShrink(_) => todo!(),
+                ElementStyleAttr::FlexBasis(_) => todo!(),
+            }
+        }
+    }
 }
 
 impl FromAst for ElementStyle {
     fn from_ast<'a>(
         members: bevy::utils::HashMap<String, super::expr::Expr>,
-        load_context: &'a mut LoadContext,
-    ) -> Result<Self, anyhow::Error> {
+        _load_context: &'a mut LoadContext,
+    ) -> Result<Expr, anyhow::Error> {
         type A = ElementStyleAttr;
         let mut attrs = Vec::with_capacity(members.len());
         for (key, value) in members.iter() {
@@ -185,6 +279,6 @@ impl FromAst for ElementStyle {
             }
             // println!("{}: {}", key, value);
         }
-        Ok(Self { attrs })
+        Ok(Expr::Style(Arc::new(Self { attrs })))
     }
 }

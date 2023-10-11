@@ -2,7 +2,7 @@ use std::{fmt, sync::Arc};
 
 use bevy::{asset::AssetPath, prelude::*, ui, utils::HashMap};
 
-use super::coerce::Coerce;
+use super::{coerce::Coerce, ElementStyle, Renderable};
 
 /// Defines the types of parameters that can be passed to a template.
 #[derive(Debug, Clone)]
@@ -52,6 +52,12 @@ pub enum Expr {
     /// A reference to an object
     Object(Arc<dyn Reflect>),
 
+    /// A reference to a renderable UI component
+    Renderable(Arc<dyn Renderable>),
+
+    /// A reference to a style asset
+    Style(Arc<ElementStyle>),
+
     /// A reference to an asset: "$(path)"
     Asset(AssetPath<'static>),
 
@@ -97,7 +103,8 @@ impl fmt::Display for Expr {
                 write!(f, "]")
             }
             Self::Var(name) => write!(f, "${{{}}}", name),
-            Self::Template(_) => todo!(),
+            Self::Template(tmp) => write!(f, "template {}", tmp.expr),
+            _ => todo!(),
         }
     }
 }
@@ -142,6 +149,15 @@ impl Coerce<Color> for Expr {
     fn coerce(&self) -> Option<Color> {
         match self {
             Self::Color(c) => Some(*c),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<Option<Color>> for Expr {
+    fn coerce(&self) -> Option<Option<Color>> {
+        match self {
+            Self::Color(c) => Some(Some(*c)),
             _ => None,
         }
     }

@@ -1,11 +1,15 @@
+use std::sync::Arc;
+
 use anyhow::anyhow;
 
-use bevy::{asset::LoadContext, reflect::Reflect};
+use bevy::{asset::LoadContext, prelude::*, reflect::Reflect, ui::FocusPolicy};
+
+use crate::guise::view_element::ViewElement;
 
 use super::{
     expr::Expr,
     from_ast::{FromAst, ReflectFromAst},
-    RenderContext, RenderOutput, Renderable,
+    RenderContext, RenderOutput, RenderProps, Renderable,
 };
 
 #[derive(Debug, Default, Clone, Reflect)]
@@ -36,7 +40,7 @@ impl FromAst for Element {
     fn from_ast<'a>(
         members: bevy::utils::HashMap<String, super::expr::Expr>,
         _load_context: &'a mut LoadContext,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> Result<Expr, anyhow::Error> {
         let mut style = Vec::<Expr>::new();
         for (key, value) in members.iter() {
             match key.as_str() {
@@ -49,6 +53,9 @@ impl FromAst for Element {
                                 Expr::Ident(_) => todo!(),
                                 Expr::List(_) => todo!(),
                                 Expr::Object(_) => {
+                                    style.push(item.clone());
+                                }
+                                Expr::Style(_) => {
                                     style.push(item.clone());
                                 }
                                 Expr::Asset(_) => todo!(),
@@ -66,17 +73,56 @@ impl FromAst for Element {
                 _ => return Err(anyhow!("Invalid property: '{}'", key)),
             }
         }
-        Ok(Self { style })
+        Ok(Expr::Renderable(Arc::new(Self { style })))
     }
 }
 
 impl Renderable for Element {
-    fn render(&self, output: &RenderOutput, context: &mut RenderContext) -> RenderOutput {
+    fn render(
+        &self,
+        template: &Arc<dyn Renderable>,
+        output: &RenderOutput,
+        context: &mut RenderContext,
+        props: &RenderProps,
+    ) -> RenderOutput {
+        // Get previous output
         if let RenderOutput::Node(elt_entity) = *output {
-            if let Some(mut element) = context.get_mut_view_element(elt_entity) {
-                todo!("Element exists");
+            // Node exists already, check for diff...
+            if let Ok(view_element) = context.query_elements.get(elt_entity) {
+                // Check template pointer equality
+                if std::ptr::eq(view_element.template.as_ref(), template.as_ref()) {
+                    println!("Same template as before...")
+                }
             }
         }
-        todo!()
+
+        let new_entity = context
+            .commands
+            .spawn((
+                ViewElement {
+                    template: template.clone(),
+                    // id: template.id.clone(),
+                    id: None,
+                    style: self.style.clone(),
+                    // styleset_handles: template.styleset_handles.clone(),
+                    // controller: template.controller.clone(),
+                    presenter: None,
+                    children: Vec::new(),
+                    classes: Vec::new(),
+                    props: props.clone(),
+                },
+                NodeBundle {
+                    focus_policy: FocusPolicy::Pass,
+                    visibility: Visibility::Visible,
+                    ..default()
+                },
+            ))
+            // .replace_children(&flat)
+            .id();
+
+        // if let Some(mut element) = context.get_mut_view_element(elt_entity) {
+        //     todo!("Element exists");
+        // }
+        return RenderOutput::Node(new_entity);
     }
 }

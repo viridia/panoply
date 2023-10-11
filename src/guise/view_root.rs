@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bevy::{ecs::system::SystemState, prelude::*, utils::HashMap};
+use bevy::{prelude::*, utils::HashMap};
 
 use super::{view_element::ViewElement, Expr, GuiseAsset, RenderContext, RenderOutput};
 
@@ -30,9 +30,9 @@ pub struct RebuildView;
 
 pub fn render_views(
     mut commands: Commands,
-    mut root_query: Query<(Entity, &mut ViewRoot)>,
-    mut element_query: Query<&mut ViewElement>,
-    // mut text_query: Query<&mut Text>,
+    mut root_query: Query<&mut ViewRoot>,
+    mut element_query: Query<&'static mut ViewElement>,
+    mut text_query: Query<&'static mut Text>,
     server: Res<AssetServer>,
     assets: Res<Assets<GuiseAsset>>,
     mut ev_template: EventReader<AssetEvent<GuiseAsset>>,
@@ -43,45 +43,54 @@ pub fn render_views(
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
                 // info!("Guise asset event: {:?}", ev);
-                if let Some(asset_path) = server.get_path(*id) {
-                    match assets.get(*id) {
-                        Some(asset) => {
-                            for view_root in root_query.iter_mut() {
-                                if view_root.1.template.id().eq(id) {
-                                    // commands.entity(view_root.0).insert(RebuildView);
-                                    let mut context = RenderContext {
-                                        query_elements: &mut element_query,
-                                    };
-                                    // view_root.out = context.render();
-                                    // if let Some(ref out) = context.render() {}
-                                    // println!("create_views: {} {:?}", asset_path, ev);
-                                    // if let Some(ref template_node) = template.content {
-                                    //     let root = reconcile(
-                                    //         &mut commands,
-                                    //         &view_root.entities,
-                                    //         &template_node,
-                                    //         &mut element_query,
-                                    //         &mut text_query,
-                                    //         &server,
-                                    //         &assets,
-                                    //         &asset_path,
-                                    //         &view_root.props,
-                                    //     );
-                                    //     if view_root.entities != root {
-                                    //         view_root.entities = root;
-                                    //     }
-                                    // }
+                match assets.get(*id) {
+                    Some(asset) => {
+                        for mut view_root in root_query.iter_mut() {
+                            if view_root.template.id().eq(id) {
+                                // commands.entity(view_root.0).insert(RebuildView);
+                                let mut context = RenderContext {
+                                    commands: &mut commands,
+                                    query_elements: &mut element_query,
+                                    query_text: &mut text_query,
+                                };
+                                let out =
+                                    context.render(&view_root.out, &asset.0, &view_root.props);
+
+                                // If root changed, despawn old entities and replace with new.
+                                if view_root.out != out {
+                                    view_root.out.despawn_recursive(&mut commands);
+                                    view_root.out = out;
                                 }
+
+                                // println!("create_views: {} {:?}", asset_path, ev);
+                                // if let Some(ref template_node) = template.content {
+                                //     let root = reconcile(
+                                //         &mut commands,
+                                //         &view_root.entities,
+                                //         &template_node,
+                                //         &mut element_query,
+                                //         &mut text_query,
+                                //         &server,
+                                //         &assets,
+                                //         &asset_path,
+                                //         &view_root.props,
+                                //     );
+                                //     if view_root.entities != root {
+                                //         view_root.entities = root;
+                                //     }
+                                // }
                             }
-
-                            // Search for called template
-                            // for mut view_element in root_query.iter_mut() {
-
-                            // }
                         }
 
-                        None => {
-                            let status = server.load_state(*id);
+                        // Search for called template
+                        // for mut view_element in root_query.iter_mut() {
+
+                        // }
+                    }
+
+                    None => {
+                        let status = server.load_state(*id);
+                        if let Some(asset_path) = server.get_path(*id) {
                             warn!(
                                 "Failure to load guise asset: {:?}, status [{:?}]",
                                 asset_path, status

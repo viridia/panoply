@@ -5,9 +5,9 @@ use crate::guise::{
     // controllers::SliderController,
     element::Element,
     element_style::ElementStyle,
-    template::TemplateAsset,
-    view_root::render_views,
+    view_element::update_view_element_styles,
     // StyleAsset,
+    view_root::render_views,
 };
 
 use super::ViewRoot;
@@ -31,10 +31,6 @@ impl Plugin for GuisePlugin {
             //     bevy_mod_picking::input::InputPlugin,
             //     bevy_mod_picking::backends::bevy_ui::BevyUiBackend,
             // ))
-            // .register_asset_loader(GuiseTemplatesLoader)
-            // .init_asset::<StyleAsset>()
-            .init_asset::<TemplateAsset>()
-            // .init_asset::<AssetSerial>()
             .init_asset_loader::<GuiseAssetLoader>()
             .init_asset::<GuiseAsset>()
             // .register_component_as::<dyn Controller, DefaultController>()
@@ -49,6 +45,7 @@ impl Plugin for GuisePlugin {
                 Update,
                 ((
                     render_views,
+                    update_view_element_styles,
                     // create_views,
                     // attach_view_controllers,
                     force_update,

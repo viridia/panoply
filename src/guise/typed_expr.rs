@@ -16,4 +16,11 @@ where
             None => Self::Expr(expr.clone()),
         }
     }
+
+    pub fn eval(&self) -> Result<&T, anyhow::Error> {
+        match self {
+            TypedExpr::Constant(val) => Ok(val),
+            TypedExpr::Expr(_) => todo!(),
+        }
+    }
 }
