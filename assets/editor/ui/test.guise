@@ -25,4 +25,18 @@ Main(): Element {
       bottom: 10
     }
   ],
+  children: [
+    Element {
+      style: [
+        ElementStyle {
+          background_color: #0000ff,
+          position: absolute,
+          width: 30,
+          height: 20,
+          right: 10,
+          top: 10
+        }
+      ]
+    }
+  ]
 }

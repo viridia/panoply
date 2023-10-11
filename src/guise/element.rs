@@ -20,18 +20,14 @@ pub struct Element {
     #[reflect(ignore)]
     pub style: Vec<Expr>,
     // / Styles loaded and dereferenced
-    // #[reflect(ignore)]
-    // pub style_objects: Vec<Arc<ElementStyle>>,
-    // pub rebuild_style: bool,
     // // ID of this node
     // pub id: Option<String>,
 
     // // Attached controller
     // pub controller: Option<String>,
-
-    // // List of child nodes
-    // #[serde(default)]
-    // pub children: TemplateNodeList,
+    /// List of child nodes
+    #[reflect(ignore)]
+    pub children: Vec<Expr>,
     // // special attrs
     // // each / if / match
 }
@@ -42,6 +38,7 @@ impl FromAst for Element {
         _load_context: &'a mut LoadContext,
     ) -> Result<Expr, anyhow::Error> {
         let mut style = Vec::<Expr>::new();
+        let mut children = Vec::<Expr>::new();
         for (key, value) in members.iter() {
             match key.as_str() {
                 "style" => match value {
@@ -52,9 +49,6 @@ impl FromAst for Element {
                                 Expr::Null => todo!(),
                                 Expr::Ident(_) => todo!(),
                                 Expr::List(_) => todo!(),
-                                Expr::Object(_) => {
-                                    style.push(item.clone());
-                                }
                                 Expr::Style(_) => {
                                     style.push(item.clone());
                                 }
@@ -70,10 +64,28 @@ impl FromAst for Element {
                         return Err(anyhow!("Expected list for style: '{}'", key));
                     }
                 },
+                "children" => match value {
+                    Expr::List(items) => {
+                        children.reserve(items.len());
+                        for item in items.iter() {
+                            match item {
+                                Expr::Style(_) => {
+                                    return Err(anyhow!("Invalid child object."));
+                                }
+                                _ => {
+                                    children.push(item.clone());
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        return Err(anyhow!("Expected list for children: '{}'", key));
+                    }
+                },
                 _ => return Err(anyhow!("Invalid property: '{}'", key)),
             }
         }
-        Ok(Expr::Renderable(Arc::new(Self { style })))
+        Ok(Expr::Renderable(Arc::new(Self { style, children })))
     }
 }
 
@@ -96,6 +108,18 @@ impl Renderable for Element {
             }
         }
 
+        // Visit and create children
+        let mut children = vec![RenderOutput::Empty; self.children.len()];
+        let mut flat = Vec::<Entity>::new();
+        if !self.children.is_empty() {
+            for i in 0..self.children.len() {
+                children[i] = context.render(&children[i], &self.children[i], props);
+            }
+            let count = children.iter().map(|child| child.count()).sum();
+            flat.reserve(count);
+            children.iter().for_each(|child| child.flatten(&mut flat));
+        }
+
         let new_entity = context
             .commands
             .spawn((
@@ -107,7 +131,7 @@ impl Renderable for Element {
                     // styleset_handles: template.styleset_handles.clone(),
                     // controller: template.controller.clone(),
                     presenter: None,
-                    children: Vec::new(),
+                    children,
                     classes: Vec::new(),
                     props: props.clone(),
                 },
@@ -117,7 +141,7 @@ impl Renderable for Element {
                     ..default()
                 },
             ))
-            // .replace_children(&flat)
+            .replace_children(&flat)
             .id();
 
         // if let Some(mut element) = context.get_mut_view_element(elt_entity) {

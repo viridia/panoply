@@ -49,9 +49,6 @@ pub enum Expr {
     /// A color value
     Color(Color),
 
-    /// A reference to an object
-    Object(Arc<dyn Reflect>),
-
     /// A reference to a renderable UI component
     Renderable(Arc<dyn Renderable>),
 
@@ -93,7 +90,6 @@ impl fmt::Display for Expr {
             },
             Self::Color(_) => todo!(),
             Self::Asset(_) => todo!(),
-            Self::Object(_) => todo!(),
             Self::List(l) => {
                 write!(f, "[")?;
                 for elt in l.iter() {

@@ -1,9 +1,24 @@
 # TODO
 
 * Guise
-  * Rethinks:
-    * Folder objects
-    * TypedExpr
+  * Render Children
+    * Elements
+    * Text
+    * Numbers
+  * Only recompute styles on change
+  * Hot reload
+  * Differential updates
+  * Multiple styles
+  * Override background to be transparent
+  * Presenters / Classes
+  * Selectors
+  * Vars
+  * Parent Selectors
+  * Background Image
+  * Presenters
+  * Templates calling templates
+  * Eval expressions with params
+  * Styles as assets
   * Controllers
     * Picking
     * Splitters
