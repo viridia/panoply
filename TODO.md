@@ -1,10 +1,6 @@
 # TODO
 
 * Guise
-  * Render Children
-    * Elements
-    * Text
-    * Numbers
   * Only recompute styles on change
   * Hot reload
   * Differential updates

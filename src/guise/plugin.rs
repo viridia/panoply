@@ -46,10 +46,8 @@ impl Plugin for GuisePlugin {
                 ((
                     render_views,
                     update_view_element_styles,
-                    // create_views,
                     // attach_view_controllers,
                     force_update,
-                    // update_view_styles,
                 )
                     .chain(),),
             );

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 
+use super::computed::ComputedStyle;
 use super::view_element::ViewElement;
 use super::{Expr, RenderOutput};
 use std::fmt::Debug;
@@ -77,6 +78,7 @@ impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
 }
 
 pub trait Renderable: Sync + Send + Debug {
+    // TODO: State
     fn render<'a>(
         &self,
         template: &Arc<dyn Renderable>,
@@ -84,4 +86,12 @@ pub trait Renderable: Sync + Send + Debug {
         context: &'a mut RenderContext,
         props: &RenderProps,
     ) -> RenderOutput;
+
+    fn adjust_styles(
+        &self,
+        _output: &RenderOutput,
+        _props: &RenderProps,
+        _style: &mut ComputedStyle,
+    ) {
+    }
 }

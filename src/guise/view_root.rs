@@ -42,7 +42,7 @@ pub fn render_views(
             AssetEvent::Added { id }
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
-                // info!("Guise asset event: {:?}", ev);
+                info!("Guise asset event: {:?}", ev);
                 match assets.get(*id) {
                     Some(asset) => {
                         for mut view_root in root_query.iter_mut() {
@@ -61,31 +61,8 @@ pub fn render_views(
                                     view_root.out.despawn_recursive(&mut commands);
                                     view_root.out = out;
                                 }
-
-                                // println!("create_views: {} {:?}", asset_path, ev);
-                                // if let Some(ref template_node) = template.content {
-                                //     let root = reconcile(
-                                //         &mut commands,
-                                //         &view_root.entities,
-                                //         &template_node,
-                                //         &mut element_query,
-                                //         &mut text_query,
-                                //         &server,
-                                //         &assets,
-                                //         &asset_path,
-                                //         &view_root.props,
-                                //     );
-                                //     if view_root.entities != root {
-                                //         view_root.entities = root;
-                                //     }
-                                // }
                             }
                         }
-
-                        // Search for called template
-                        // for mut view_element in root_query.iter_mut() {
-
-                        // }
                     }
 
                     None => {

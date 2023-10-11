@@ -17,27 +17,6 @@ use super::{
     StyleAsset,
 };
 
-// /// Component that defines the root of a view hierarchy and a template invocation.
-// #[derive(Component, Default)]
-// pub struct ViewRoot {
-//     pub template: Handle<TemplateAsset>,
-
-//     /// Generated list of entities
-//     entities: TemplateOutput,
-
-//     /// Template properties
-//     props: Arc<HashMap<String, TemplateExpr>>,
-// }
-
-// impl ViewRoot {
-//     pub fn new(template: Handle<TemplateAsset>) -> Self {
-//         Self {
-//             template,
-//             ..default()
-//         }
-//     }
-// }
-
 /// Component that defines a ui element, and which can differentially update when the
 /// template asset changes.
 #[derive(Component)]
@@ -77,21 +56,6 @@ pub struct ViewElement {
 #[derive(Component, Default)]
 #[component(storage = "SparseSet")]
 pub struct NeedsRebuild;
-
-impl ViewElement {
-    pub fn element_id<'a>(&'a self) -> &'a str {
-        match self.id {
-            Some(ref id) => &id,
-            None => "#unnamed",
-        }
-    }
-
-    // pub fn apply_selected_styles(&self, computed: &mut ComputedStyle, class_names: &[&str]) {
-    //     // if let Some(ref style_handle) = self.style {
-    //     // style_handle.apply_selected_to(computed, class_names);
-    //     // }
-    // }
-}
 
 pub struct InsertController {
     pub(crate) entity: Entity,
@@ -188,64 +152,6 @@ pub fn create_views(
         }
     }
 }
-
-// fn update_views(
-//     mut commands: Commands,
-//     mut root_query: Query<&mut ViewRoot>,
-//     mut element_query: Query<(Entity, &mut ViewElement, Option<&NeedsRebuild>)>,
-//     mut text_query: Query<&mut Text>,
-//     server: Res<AssetServer>,
-//     assets: Res<Assets<TemplateAsset>>,
-// ) {
-//     for (entity, mut element, rebuild) in element_query.iter_mut() {
-//         if rebuild.is_some() {
-//             // Might need to recompute styles.
-//             commands.entity(entity).remove::<NeedsRebuild>();
-//             if let TemplateNode::Element(ref template) = element.template.0.as_ref().as_ref() {
-//                 let new_count = template.children.len();
-//                 let mut children: Vec<TemplateOutput> =
-//                     vec![TemplateOutput::Empty; template.children.len()];
-//                 let mut children_changed = false;
-
-//                 for i in 0..element.children.len() {
-//                     if i < new_count {
-//                         children[i] = element.children[i].clone()
-//                     } else {
-//                         element.children[i].despawn_recursive(&mut commands);
-//                         children_changed = true;
-//                     }
-//                 }
-
-//                 for i in 0..new_count {
-//                     let new_child = reconcile(
-//                         &mut commands,
-//                         &children[i],
-//                         &template.children[i],
-//                         &element_query,
-//                         &mut text_query,
-//                         &server,
-//                         &assets,
-//                         &asset_path,
-//                     );
-//                     if children[i] != new_child {
-//                         children[i] = new_child;
-//                         children_changed = true;
-//                     }
-//                 }
-
-//                 if children_changed {
-//                     let count = children.iter().map(|child| child.count()).sum();
-//                     let mut flat = Vec::<Entity>::with_capacity(count);
-//                     children.iter().for_each(|child| child.flatten(&mut flat));
-//                     commands.entity(entity).replace_children(&flat);
-//                     if let Ok(mut element) = element_query.get_mut(entity) {
-//                         element.1.children = children;
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
 
 /// Function to update the view hierarchy in response to changes to the templates and params.
 /// This tries to preserve the existing view hierarchy (a bit like React's VDOM), but will destroy
@@ -390,36 +296,6 @@ fn reconcile(
             } else {
                 commands.entity(new_entity).insert(DefaultController);
             }
-
-            return TemplateOutput::Node(new_entity);
-        }
-
-        TemplateNode::Text(template) => {
-            if let TemplateOutput::Node(text_entity) = *view_child {
-                if let Ok(mut old_text) = text_query.get_mut(text_entity) {
-                    old_text.sections.clear();
-                    old_text.sections.push(TextSection {
-                        value: template.content.clone(),
-                        style: TextStyle { ..default() },
-                    });
-                    return TemplateOutput::Node(text_entity);
-                }
-            }
-
-            let new_entity = commands
-                .spawn((TextBundle {
-                    text: Text::from_section(template.content.clone(), TextStyle { ..default() }),
-                    // TextStyle {
-                    //     font_size: 40.0,
-                    //     color: Color::rgb(0.9, 0.9, 0.9),
-                    //     ..Default::default()
-                    // },
-                    // background_color: Color::rgb(0.65, 0.75, 0.65).into(),
-                    // border_color: Color::BLUE.into(),
-                    // focus_policy: FocusPolicy::Pass,
-                    ..default()
-                },))
-                .id();
 
             return TemplateOutput::Node(new_entity);
         }
