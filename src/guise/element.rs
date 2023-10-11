@@ -100,10 +100,49 @@ impl Renderable for Element {
         // Get previous output
         if let RenderOutput::Node(elt_entity) = *output {
             // Node exists already, check for diff...
-            if let Ok(view_element) = context.query_elements.get(elt_entity) {
+            if let Ok(mut view_element) = context.query_elements.get_mut(elt_entity) {
                 // Check template pointer equality
                 if std::ptr::eq(view_element.template.as_ref(), template.as_ref()) {
-                    println!("Same template as before...")
+                    // Update styles
+                    if view_element.style != self.style {
+                        view_element.style = self.style.clone();
+                    }
+
+                    // Visit and render children
+                    let new_count = self.children.len();
+                    let mut children: Vec<RenderOutput> =
+                        vec![RenderOutput::Empty; self.children.len()];
+                    let mut children_changed = false;
+
+                    for i in 0..self.children.len() {
+                        if i < new_count {
+                            children[i] = view_element.children[i].clone()
+                        } else {
+                            view_element.children[i].despawn_recursive(context.commands);
+                            children_changed = true;
+                        }
+                    }
+
+                    for i in 0..new_count {
+                        let new_child = context.render(&children[i], &self.children[i], props);
+                        if children[i] != new_child {
+                            children[i] = new_child;
+                            children_changed = true;
+                        }
+                    }
+
+                    if children_changed {
+                        let count = children.iter().map(|child| child.count()).sum();
+                        let mut flat = Vec::<Entity>::with_capacity(count);
+                        children.iter().for_each(|child| child.flatten(&mut flat));
+                        context.commands.entity(elt_entity).replace_children(&flat);
+                        if let Ok(mut element) = context.query_elements.get_mut(elt_entity) {
+                            element.children = children;
+                        }
+                    }
+
+                    // We patched the old entity, so just return the same entity id.
+                    return RenderOutput::Node(elt_entity);
                 }
             }
         }

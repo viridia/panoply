@@ -37,6 +37,8 @@ Main(): Element {
           top: 10
         }
       ]
-    }
+    },
+    "Count: ",
+    3
   ]
 }

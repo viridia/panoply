@@ -203,6 +203,56 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
             Rule::boolean => Ok(Expr::Bool(expr.as_str() == "true")),
             Rule::identifier => Ok(Expr::Ident(expr.as_str().to_string())),
             Rule::number => Ok(Expr::Number(expr.as_str().parse::<f32>().unwrap())),
+            Rule::string => {
+                let mut pairs = expr.clone().into_inner();
+                let raw_text = pairs.next().unwrap().as_str();
+                let mut unescaped = String::with_capacity(raw_text.len());
+                let mut chars = raw_text.chars().enumerate();
+                while let Some((_idx, c)) = chars.next() {
+                    if c == '\\' {
+                        match chars.next() {
+                            None => {
+                                return Err(anyhow::Error::new(
+                                    pest::error::Error::new_from_span(
+                                        ErrorVariant::<()>::CustomError {
+                                            message: String::from("Invalid escape sequence"),
+                                        },
+                                        expr.as_span(),
+                                    )
+                                    .with_path(self.load_context.path().to_str().unwrap()),
+                                ));
+                            }
+                            Some((_idx, c2)) => unescaped.push(match c2 {
+                                'n' => '\n',
+                                'r' => '\r',
+                                't' => '\t',
+                                '\\' => '\\',
+                                '\'' => '\'',
+                                '"' => '"',
+                                '$' => '$',
+                                '`' => '`',
+                                ' ' => ' ',
+                                // TODO: Unicode
+                                // https://docs.rs/snailquote/latest/src/snailquote/lib.rs.html#231-308
+                                _ => {
+                                    return Err(anyhow::Error::new(
+                                        pest::error::Error::new_from_span(
+                                            ErrorVariant::<()>::CustomError {
+                                                message: String::from("Invalid escape sequence"),
+                                            },
+                                            expr.as_span(),
+                                        )
+                                        .with_path(self.load_context.path().to_str().unwrap()),
+                                    ));
+                                }
+                            }),
+                        }
+                    } else {
+                        unescaped.push(c);
+                    }
+                }
+                Ok(Expr::Text(unescaped))
+            }
             Rule::color => {
                 let hex = &expr.as_str()[1..];
                 match hex.len() {

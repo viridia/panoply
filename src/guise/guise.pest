@@ -39,7 +39,7 @@ object = { object_type ~ "{" ~ object_body? ~ "}" }
 
 array = { "[" ~ (expression ~ ("," ~ expression)* ~ ","?)? ~ "]" }
 
-expression = _{ length | number | boolean | null | color | object | array | identifier }
+expression = _{ length | number | boolean | null | color | object | array | identifier | string }
 
 arg_list = { "(" ~ ")" }
 

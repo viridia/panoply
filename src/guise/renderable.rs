@@ -26,9 +26,10 @@ impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
         match expr {
             Expr::Null => RenderOutput::Empty,
             Expr::Bool(false) => RenderOutput::Empty,
-            Expr::Bool(true) => todo!(),
+            Expr::Bool(true) => self.render_text(prev, "true"),
             Expr::Ident(_) => todo!(),
-            Expr::Number(_) => todo!(),
+            Expr::Text(text) => self.render_text(prev, text),
+            Expr::Number(num) => self.render_text(prev, &num.to_string()),
             Expr::Length(_) => todo!(),
             Expr::List(_) => todo!(),
             Expr::Color(_) => todo!(),
@@ -43,6 +44,36 @@ impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
     }
 
     // Render text
+    pub fn render_text(&mut self, prev: &RenderOutput, str: &str) -> RenderOutput {
+        if let RenderOutput::Node(text_entity) = prev {
+            if let Ok(mut old_text) = self.query_text.get_mut(*text_entity) {
+                old_text.sections.clear();
+                old_text.sections.push(TextSection {
+                    value: str.to_string(),
+                    style: TextStyle { ..default() },
+                });
+                return RenderOutput::Node(*text_entity);
+            }
+        }
+
+        let new_entity = self
+            .commands
+            .spawn((TextBundle {
+                text: Text::from_section(str.clone(), TextStyle { ..default() }),
+                // TextStyle {
+                //     font_size: 40.0,
+                //     color: Color::rgb(0.9, 0.9, 0.9),
+                //     ..Default::default()
+                // },
+                // background_color: Color::rgb(0.65, 0.75, 0.65).into(),
+                // border_color: Color::BLUE.into(),
+                // focus_policy: FocusPolicy::Pass,
+                ..default()
+            },))
+            .id();
+
+        return RenderOutput::Node(new_entity);
+    }
 }
 
 pub trait Renderable: Sync + Send + Debug {

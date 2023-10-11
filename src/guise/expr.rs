@@ -37,6 +37,9 @@ pub enum Expr {
     /// An identifier
     Ident(String),
 
+    /// A text string
+    Text(String),
+
     /// A floating-point number
     Number(f32),
 
@@ -63,6 +66,25 @@ pub enum Expr {
 
     /// A template declaration.
     Template(Box<Template>),
+}
+
+impl PartialEq for Expr {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::Ident(l0), Self::Ident(r0)) => l0 == r0,
+            (Self::Number(l0), Self::Number(r0)) => l0 == r0,
+            (Self::Length(l0), Self::Length(r0)) => l0 == r0,
+            (Self::List(l0), Self::List(r0)) => l0 == r0,
+            (Self::Color(l0), Self::Color(r0)) => l0 == r0,
+            (Self::Renderable(l0), Self::Renderable(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
+            (Self::Style(l0), Self::Style(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
+            (Self::Asset(l0), Self::Asset(r0)) => l0 == r0,
+            (Self::Var(l0), Self::Var(r0)) => l0 == r0,
+            (Self::Template(l0), Self::Template(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
 }
 
 impl Default for Expr {
