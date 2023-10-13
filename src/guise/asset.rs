@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
+    asset::{io::Reader, AssetLoader, AssetPath, LoadContext},
     prelude::*,
     reflect::{TypePath, TypeRegistration, TypeRegistryArc, TypeRegistryInternal},
     utils::{BoxedFuture, HashMap},
@@ -112,7 +112,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     }
                 }
                 Rule::decl => {
-                    self.visit_decl(&mut decl.into_inner(), "", &imports)?;
+                    self.visit_decl(&mut decl.into_inner(), "", &mut imports)?;
                 }
                 Rule::EOI => {}
                 _ => {
@@ -127,7 +127,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         &mut self,
         pairs: &'b mut Pairs<'b, Rule>,
         base: &str,
-        imports: &'b Imports,
+        mut imports: &'b mut Imports,
     ) -> Result<(), anyhow::Error> {
         let id = pairs.next().unwrap();
         let key = self.visit_key(&id);
@@ -153,11 +153,11 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                 }
 
                 for decl in value.into_inner().into_iter() {
-                    self.visit_decl(&mut decl.into_inner(), &label, &imports)?
+                    self.visit_decl(&mut decl.into_inner(), &label, &mut imports)?
                 }
             }
 
-            Rule::object => self.visit_asset(&label, args, &mut value, base, &imports)?,
+            Rule::object => self.visit_asset(&label, args, &mut value, base, &mut imports)?,
 
             _ => panic!("Invalid rule {:?}", value.as_rule()),
         }
@@ -170,7 +170,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         args: Option<Pair<'b, Rule>>,
         pair: &'b mut Pair<'b, Rule>,
         base: &str,
-        imports: &'b Imports,
+        imports: &'b mut Imports,
     ) -> Result<(), anyhow::Error> {
         self.load_context.begin_labeled_asset();
         let has_args = args.is_some();
@@ -183,23 +183,39 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     expr,
                 }))),
             );
+            imports.entries.insert(
+                label.to_string(),
+                ImportEntry::Asset(
+                    self.load_context
+                        .asset_path()
+                        .with_label(label.to_owned().clone()),
+                ),
+            );
         } else {
             self.load_context
                 .add_labeled_asset(label.to_string(), GuiseAsset(expr));
+            imports.entries.insert(
+                label.to_string(),
+                ImportEntry::Asset(
+                    self.load_context
+                        .asset_path()
+                        .with_label(label.to_owned().clone()),
+                ),
+            );
         }
         Ok(())
     }
 
-    fn visit_expr<'b>(
+    fn visit_expr<'b, 'd>(
         &mut self,
         label: &str,
         args: Option<Pair<'b, Rule>>,
         expr: &'b mut Pair<'b, Rule>,
         base: &str,
-        imports: &'b Imports,
+        imports: &'d Imports,
     ) -> Result<Expr, anyhow::Error> {
         match expr.as_rule() {
-            Rule::object => self.visit_object(label, args, expr, base, imports),
+            Rule::object => self.visit_object(args, expr, base, imports),
             Rule::boolean => Ok(Expr::Bool(expr.as_str() == "true")),
             Rule::identifier => Ok(Expr::Ident(expr.as_str().to_string())),
             Rule::number => Ok(Expr::Number(expr.as_str().parse::<f32>().unwrap())),
@@ -311,37 +327,39 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         }
     }
 
-    fn visit_object<'b>(
+    fn visit_object<'b, 'd>(
         &mut self,
-        label: &str,
         args: Option<Pair<'b, Rule>>,
         obj_ast: &'b mut Pair<'b, Rule>,
         base: &str,
-        imports: &'b Imports,
+        imports: &'d Imports,
     ) -> Result<Expr, anyhow::Error> {
         let mut pairs = obj_ast.clone().into_inner();
         let type_name = pairs.next().unwrap(); // qualified name, string, etc.
         let type_name_str = type_name.as_str(); // qualified name, string, etc.
-        let body = pairs.next().unwrap().into_inner();
-        // println!("OBJECT {} -> {}", label, type_name_str);
-        let mut members: HashMap<String, Expr> = HashMap::with_capacity(body.len());
-        for member in body.into_iter() {
-            match member.as_rule() {
-                Rule::key_value => {
-                    let mut member_pairs = member.into_inner();
-                    let id = member_pairs.next().unwrap();
-                    let key = self.visit_key(&id);
-                    let mut value = member_pairs.next().unwrap();
-                    // println!("  MEMBER {}", key);
-                    let expr = self.visit_expr(key, args.clone(), &mut value, base, imports)?;
-                    members.insert(key.to_string(), expr);
-                }
+                                                // println!("OBJECT {} -> {}", label, type_name_str);
+        let members = if pairs.len() > 0 {
+            let body = pairs.next().unwrap().into_inner();
+            let mut members = HashMap::with_capacity(body.len());
+            for member in body.into_iter() {
+                match member.as_rule() {
+                    Rule::key_value => {
+                        let mut member_pairs = member.into_inner();
+                        let id = member_pairs.next().unwrap();
+                        let key = self.visit_key(&id);
+                        let mut value = member_pairs.next().unwrap();
+                        // println!("  MEMBER {}", key);
+                        let expr = self.visit_expr(key, args.clone(), &mut value, base, imports)?;
+                        members.insert(key.to_string(), expr);
+                    }
 
-                _ => panic!("Invalid rule {:?}", member.as_rule()),
+                    _ => panic!("Invalid rule {:?}", member.as_rule()),
+                }
             }
-            // println!("  MEMBER {:?}", member);
-            // let mut member_pairs = member.into_inner();
-        }
+            members
+        } else {
+            HashMap::with_capacity(0)
+        };
 
         match imports.entries.get(type_name_str) {
             Some(ImportEntry::Builtin(ty)) => {
@@ -373,6 +391,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     ));
                 }
             }
+            Some(ImportEntry::Asset(path)) => Ok(Expr::Asset(self.load_context.load(path))),
             None => {
                 return Err(anyhow::Error::new(
                     pest::error::Error::new_from_span(
@@ -384,7 +403,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     .with_path(self.load_context.path().to_str().unwrap()),
                 ));
             }
-        };
+        }
     }
 
     fn visit_key<'b>(&self, pair: &'b Pair<'b, Rule>) -> &'b str {
@@ -398,6 +417,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
 
 enum ImportEntry<'a> {
     Builtin(&'a TypeRegistration),
+    Asset(AssetPath<'static>),
 }
 
 /// Helper class for managing use/import statements

@@ -1,20 +1,17 @@
 # TODO
 
 * Guise
+  * Templates calling templates
   * Hot reload
   * Only recompute styles on change
   * Differential updates
   * Finish style attributes (grid, etc.)
-  * Override background to be transparent
   * Presenters / Classes
   * Selectors
   * Vars
   * Parent Selectors
-  * Background Image
   * Presenters
-  * Templates calling templates
   * Eval expressions with params
-  * Styles as assets
   * Color functions
   * Controllers
     * Picking

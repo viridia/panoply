@@ -12,6 +12,12 @@ main_style: ElementStyle {
   flex_grow: 1
 }
 
+Button(): Element {
+  children: [
+    "Button"
+  ]
+}
+
 Main(): Element {
   style: [
     $("#main_style"),
@@ -42,6 +48,7 @@ Main(): Element {
       ]
     },
     "Count: ",
-    3
+    3,
+    Button {}
   ]
 }

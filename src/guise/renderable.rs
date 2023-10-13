@@ -1,23 +1,25 @@
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 
 use super::computed::ComputedStyle;
 use super::view_element::ViewElement;
-use super::{Expr, RenderOutput};
+use super::{Expr, GuiseAsset, RenderOutput};
 use std::fmt::Debug;
 use std::sync::Arc;
 
 pub type RenderProps = Arc<HashMap<String, Expr>>;
 
-pub struct RenderContext<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2> {
-    pub(crate) commands: &'r0 mut Commands<'w0, 's0>,
-    pub(crate) query_elements: &'r1 mut Query<'w1, 's1, &'static mut ViewElement>,
-    pub(crate) query_text: &'r2 mut Query<'w2, 's2, &'static mut Text>,
+#[derive(SystemParam)]
+pub struct RenderContext<'w, 's> {
+    pub commands: Commands<'w, 's>,
+    pub query_elements: Query<'w, 's, &'static mut ViewElement>,
+    pub query_text: Query<'w, 's, &'static mut Text>,
+    pub server: Res<'w, AssetServer>,
+    pub assets: Res<'w, Assets<GuiseAsset>>,
 }
 
-impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
-    RenderContext<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
-{
+impl<'w, 's> RenderContext<'w, 's> {
     pub fn render(
         &mut self,
         prev: &RenderOutput,
@@ -34,8 +36,11 @@ impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
             Expr::Length(_) => todo!(),
             Expr::List(_) => todo!(),
             Expr::Color(_) => todo!(),
-            Expr::AssetPath(_) => todo!(),
-            Expr::Asset(_) => todo!(),
+            Expr::AssetPath(path) => panic!("Unloaded asset path: {}", path),
+            Expr::Asset(asset) => match self.assets.get(asset) {
+                Some(GuiseAsset(expr)) => self.render(prev, &expr.clone(), props),
+                None => RenderOutput::Empty,
+            },
             Expr::Var(_) => todo!(),
             Expr::Style(_) => {
                 panic!("Object is not renderable");

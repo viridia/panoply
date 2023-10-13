@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bevy::{prelude::*, utils::HashMap};
 
-use super::{view_element::ViewElement, Expr, GuiseAsset, RenderContext, RenderOutput};
+use super::{Expr, GuiseAsset, RenderContext, RenderOutput};
 
 /// Component that defines the root of a view hierarchy and a template invocation.
 #[derive(Component, Default)]
@@ -29,11 +29,8 @@ impl ViewRoot {
 pub struct RebuildView;
 
 pub fn render_views(
-    mut commands: Commands,
     mut root_query: Query<&mut ViewRoot>,
-    mut element_query: Query<&'static mut ViewElement>,
-    mut text_query: Query<&'static mut Text>,
-    server: Res<AssetServer>,
+    mut context: RenderContext,
     assets: Res<Assets<GuiseAsset>>,
     mut ev_template: EventReader<AssetEvent<GuiseAsset>>,
 ) {
@@ -50,17 +47,17 @@ pub fn render_views(
                         for mut view_root in root_query.iter_mut() {
                             if view_root.template.id().eq(id) {
                                 // commands.entity(view_root.0).insert(RebuildView);
-                                let mut context = RenderContext {
-                                    commands: &mut commands,
-                                    query_elements: &mut element_query,
-                                    query_text: &mut text_query,
-                                };
+                                // let mut context = RenderContext {
+                                //     commands: &mut commands,
+                                //     query_elements: &mut rc.element_query,
+                                //     query_text: &mut rc.text_query,
+                                // };
                                 let out =
                                     context.render(&view_root.out, &asset.0, &view_root.props);
 
                                 // If root changed, despawn old entities and replace with new.
                                 if view_root.out != out {
-                                    view_root.out.despawn_recursive(&mut commands);
+                                    view_root.out.despawn_recursive(&mut context.commands);
                                     view_root.out = out;
                                 }
                             }
@@ -68,8 +65,8 @@ pub fn render_views(
                     }
 
                     None => {
-                        let status = server.load_state(*id);
-                        if let Some(asset_path) = server.get_path(*id) {
+                        let status = context.server.load_state(*id);
+                        if let Some(asset_path) = context.server.get_path(*id) {
                             warn!(
                                 "Failure to load guise asset: {:?}, status [{:?}]",
                                 asset_path, status
@@ -80,7 +77,7 @@ pub fn render_views(
             }
 
             AssetEvent::Removed { id } => {
-                if let Some(asset_path) = server.get_path(*id) {
+                if let Some(asset_path) = context.server.get_path(*id) {
                     warn!("Guise asset Removed {:?}", asset_path);
                 }
             }

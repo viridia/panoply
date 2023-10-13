@@ -4,7 +4,7 @@ use anyhow::anyhow;
 
 use bevy::{asset::LoadContext, prelude::*, reflect::Reflect, ui::FocusPolicy};
 
-use crate::guise::{view_element::ViewElement, GuiseAsset};
+use crate::guise::view_element::ViewElement;
 
 use super::{
     expr::Expr,
@@ -120,7 +120,7 @@ impl Renderable for Element {
                         if i < new_count {
                             children[i] = view_element.children[i].clone()
                         } else {
-                            view_element.children[i].despawn_recursive(context.commands);
+                            view_element.children[i].despawn_recursive(&mut context.commands);
                             children_changed = true;
                         }
                     }
