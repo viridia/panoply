@@ -39,9 +39,11 @@ pub fn render_views(
 ) {
     for ev in ev_template.read() {
         match ev {
-            AssetEvent::Added { id }
-            | AssetEvent::LoadedWithDependencies { id }
-            | AssetEvent::Modified { id } => {
+            AssetEvent::Added { id: _id } => {
+                // info!("Guise asset added: {}", id)
+            }
+
+            AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
                 info!("Guise asset event: {:?}", ev);
                 match assets.get(*id) {
                     Some(asset) => {

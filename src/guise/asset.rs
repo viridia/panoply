@@ -11,7 +11,7 @@ use pest::{
     Parser,
 };
 
-use crate::guise::from_ast::ReflectFromAst;
+use crate::guise::{from_ast::ReflectFromAst, path::relative_asset_path};
 
 use super::{
     expr::{Expr, Template},
@@ -292,6 +292,21 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                 }
                 Ok(Expr::List(elts.into_boxed_slice()))
             }
+            Rule::asset => {
+                let pairs = expr
+                    .clone()
+                    .into_inner()
+                    .next()
+                    .unwrap()
+                    .into_inner()
+                    .next()
+                    .unwrap();
+                let asset_path = pairs.as_str();
+                Ok(Expr::AssetPath(relative_asset_path(
+                    self.load_context.asset_path(),
+                    asset_path,
+                )))
+            }
             _ => panic!("Invalid rule {:?}", expr.as_rule()),
         }
     }
@@ -308,7 +323,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         let type_name = pairs.next().unwrap(); // qualified name, string, etc.
         let type_name_str = type_name.as_str(); // qualified name, string, etc.
         let body = pairs.next().unwrap().into_inner();
-        println!("OBJECT {} -> {}", label, type_name_str);
+        // println!("OBJECT {} -> {}", label, type_name_str);
         let mut members: HashMap<String, Expr> = HashMap::with_capacity(body.len());
         for member in body.into_iter() {
             match member.as_rule() {

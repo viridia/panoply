@@ -1,10 +1,10 @@
 # TODO
 
 * Guise
-  * Only recompute styles on change
   * Hot reload
+  * Only recompute styles on change
   * Differential updates
-  * Multiple styles
+  * Finish style attributes (grid, etc.)
   * Override background to be transparent
   * Presenters / Classes
   * Selectors
@@ -15,6 +15,7 @@
   * Templates calling templates
   * Eval expressions with params
   * Styles as assets
+  * Color functions
   * Controllers
     * Picking
     * Splitters

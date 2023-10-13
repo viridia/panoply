@@ -2,7 +2,7 @@ use std::{fmt, sync::Arc};
 
 use bevy::{asset::AssetPath, prelude::*, ui, utils::HashMap};
 
-use super::{coerce::Coerce, ElementStyle, Renderable};
+use super::{coerce::Coerce, ElementStyle, GuiseAsset, Renderable};
 
 /// Defines the types of parameters that can be passed to a template.
 #[derive(Debug, Clone)]
@@ -59,7 +59,10 @@ pub enum Expr {
     Style(Arc<ElementStyle>),
 
     /// A reference to an asset: "$(path)"
-    Asset(AssetPath<'static>),
+    AssetPath(AssetPath<'static>),
+
+    /// A handle to a Guise asset: "$(path)"
+    Asset(Handle<GuiseAsset>),
 
     /// A reference to a named variable "${varname}".
     Var(String),
@@ -79,7 +82,7 @@ impl PartialEq for Expr {
             (Self::Color(l0), Self::Color(r0)) => l0 == r0,
             (Self::Renderable(l0), Self::Renderable(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
             (Self::Style(l0), Self::Style(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
-            (Self::Asset(l0), Self::Asset(r0)) => l0 == r0,
+            (Self::AssetPath(l0), Self::AssetPath(r0)) => l0 == r0,
             (Self::Var(l0), Self::Var(r0)) => l0 == r0,
             (Self::Template(l0), Self::Template(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
@@ -111,7 +114,7 @@ impl fmt::Display for Expr {
                 ui::Val::VMax(v) => write!(f, "{}vmax", v),
             },
             Self::Color(_) => todo!(),
-            Self::Asset(_) => todo!(),
+            Self::AssetPath(_) => todo!(),
             Self::List(l) => {
                 write!(f, "[")?;
                 for elt in l.iter() {
@@ -176,6 +179,7 @@ impl Coerce<Option<Color>> for Expr {
     fn coerce(&self) -> Option<Option<Color>> {
         match self {
             Self::Color(c) => Some(Some(*c)),
+            Self::Ident(c) if c == "transparent" => Some(None),
             _ => None,
         }
     }
@@ -187,6 +191,62 @@ impl Coerce<ui::Val> for Expr {
             Self::Length(v) => Some(*v),
             Self::Number(v) => Some(ui::Val::Px(*v)),
             Self::Ident(v) if v == "auto" => Some(ui::Val::Auto),
+            _ => None,
+        }
+    }
+}
+
+impl Coerce<ui::UiRect> for Expr {
+    fn coerce(&self) -> Option<ui::UiRect> {
+        match self {
+            Self::Length(v) => Some(ui::UiRect::all(*v)),
+            Self::Number(v) => Some(ui::UiRect::all(ui::Val::Px(*v))),
+            Self::Ident(v) if v == "auto" => Some(ui::UiRect::all(ui::Val::Auto)),
+            Self::List(l) => match l.len() {
+                1 => l[0].coerce(),
+                2 => {
+                    // CSS order: vert, horz
+                    let vert: Option<ui::Val> = l[0].coerce();
+                    let horz: Option<ui::Val> = l[1].coerce();
+                    if horz.is_some() && vert.is_some() {
+                        return Some(ui::UiRect::axes(horz.unwrap(), vert.unwrap()));
+                    }
+                    None
+                }
+                3 => {
+                    // CSS order: top, horz, bottom
+                    let y1: Option<ui::Val> = l[0].coerce();
+                    let x1: Option<ui::Val> = l[1].coerce();
+                    let y2: Option<ui::Val> = l[2].coerce();
+                    if x1.is_some() && y1.is_some() && y2.is_some() {
+                        return Some(ui::UiRect::new(
+                            x1.unwrap(),
+                            x1.unwrap(),
+                            y1.unwrap(),
+                            y2.unwrap(),
+                        ));
+                    }
+                    None
+                }
+                4 => {
+                    // CSS order: top, right, bottom, left
+                    let y1: Option<ui::Val> = l[0].coerce();
+                    let x1: Option<ui::Val> = l[1].coerce();
+                    let y2: Option<ui::Val> = l[2].coerce();
+                    let x2: Option<ui::Val> = l[3].coerce();
+                    if x1.is_some() && y1.is_some() && x2.is_some() && y2.is_some() {
+                        return Some(ui::UiRect::new(
+                            x2.unwrap(),
+                            x1.unwrap(),
+                            x1.unwrap(),
+                            y2.unwrap(),
+                        ));
+                    }
+                    None
+                }
+
+                _ => None,
+            },
             _ => None,
         }
     }

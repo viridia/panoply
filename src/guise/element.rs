@@ -4,7 +4,7 @@ use anyhow::anyhow;
 
 use bevy::{asset::LoadContext, prelude::*, reflect::Reflect, ui::FocusPolicy};
 
-use crate::guise::view_element::ViewElement;
+use crate::guise::{view_element::ViewElement, GuiseAsset};
 
 use super::{
     expr::Expr,
@@ -35,7 +35,7 @@ pub struct Element {
 impl FromAst for Element {
     fn from_ast<'a>(
         members: bevy::utils::HashMap<String, super::expr::Expr>,
-        _load_context: &'a mut LoadContext,
+        load_context: &'a mut LoadContext,
     ) -> Result<Expr, anyhow::Error> {
         let mut style = Vec::<Expr>::new();
         let mut children = Vec::<Expr>::new();
@@ -52,7 +52,9 @@ impl FromAst for Element {
                                 Expr::Style(_) => {
                                     style.push(item.clone());
                                 }
-                                Expr::Asset(_) => todo!(),
+                                Expr::AssetPath(path) => {
+                                    style.push(Expr::Asset(load_context.load(path)));
+                                }
                                 Expr::Var(_) => todo!(),
                                 _ => {
                                     return Err(anyhow!("Invalid style object."));

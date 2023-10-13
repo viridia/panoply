@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{asset::LoadState, prelude::*, utils::HashMap};
 
 use super::{
     computed::{ComputedStyle, UpdateComputedStyle},
-    Expr, RenderOutput, Renderable,
+    Expr, GuiseAsset, RenderOutput, Renderable,
 };
 
 /// Component that defines a ui element, and which can differentially update when the
@@ -50,20 +50,37 @@ pub fn update_view_element_styles(
         ),
         Changed<ViewElement>,
     >,
+    assets: Res<Assets<GuiseAsset>>,
+    server: Res<AssetServer>,
 ) {
     for (entity, view, _parent) in query.iter_mut() {
         let mut computed = ComputedStyle::new();
+        let mut ready = true;
         for style_expr in view.style.iter() {
-            match style_expr {
+            ready &= match style_expr {
                 Expr::Style(style) => {
                     style.apply_to(&mut computed);
+                    true
                 }
+                Expr::Asset(handle) => match server.get_load_state(handle) {
+                    Some(LoadState::Loaded) => match assets.get(handle) {
+                        Some(GuiseAsset(Expr::Style(style))) => {
+                            style.apply_to(&mut computed);
+                            true
+                        }
+                        _ => false,
+                    },
+
+                    _ => false,
+                },
                 _ => {
                     panic!("Expression is not a style");
                 }
             }
         }
 
-        commands.add(UpdateComputedStyle { entity, computed });
+        if ready {
+            commands.add(UpdateComputedStyle { entity, computed });
+        }
     }
 }

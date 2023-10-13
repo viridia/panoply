@@ -8,14 +8,14 @@ button_style: {
 }
 
 main_style: ElementStyle {
+  background_color: #ff0000,
   flex_grow: 1
 }
 
 Main(): Element {
   style: [
-//      $("#main_style"),
+    $("#main_style"),
     ElementStyle {
-      background_color: #ff0000,
       display: flex,
       flex_direction: row,
       position: absolute,
@@ -29,7 +29,10 @@ Main(): Element {
     Element {
       style: [
         ElementStyle {
+          background_image: $("editor/icons/building.png"),
           background_color: #0000ff,
+          border_color: #44ff88,
+          border: 2,
           position: absolute,
           width: 30,
           height: 20,

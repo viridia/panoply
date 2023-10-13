@@ -34,6 +34,7 @@ impl<'r0, 'w0, 's0, 'r1, 'w1, 's1, 'r2, 'w2, 's2>
             Expr::Length(_) => todo!(),
             Expr::List(_) => todo!(),
             Expr::Color(_) => todo!(),
+            Expr::AssetPath(_) => todo!(),
             Expr::Asset(_) => todo!(),
             Expr::Var(_) => todo!(),
             Expr::Style(_) => {
