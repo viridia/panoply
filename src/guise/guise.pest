@@ -51,7 +51,10 @@ expression = _{
   | asset
 }
 
-arg_list = { "(" ~ ")" }
+arg_list_type = { "[" ~ arg_type ~ "]" }
+arg_type = { qualified_name | arg_list_type }
+arg_decl = { identifier ~ ":" ~ arg_type }
+arg_list = { "(" ~ (arg_decl ~ ("," ~ arg_decl)* ~ ","?)? ~ ")" }
 
 group = { "{" ~ (decl ~ ("," ~ decl)* ~ ","?)? ~ "}" }
 

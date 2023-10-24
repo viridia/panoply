@@ -45,8 +45,28 @@ impl<'w, 's> RenderContext<'w, 's> {
             Expr::Style(_) => {
                 panic!("Object is not renderable");
             }
-            Expr::Template(template) => self.render(prev, &template.expr, props),
+            Expr::Template(template) => {
+                for (name, param) in template.params.iter() {
+                    let ty = props.get(name);
+                    if ty.is_none() {
+                        println!("Missing param: {}", name);
+                    }
+                }
+                for (name, arg) in props.iter() {
+                    if template.params.get(name).is_none() {
+                        println!("No such param: {}", name);
+                    }
+                }
+                self.render(prev, &template.expr, props)
+            }
             Expr::Renderable(renderable) => renderable.render(renderable, prev, self, props),
+            Expr::Invoke((func, args)) => match func.as_ref() {
+                Expr::Asset(asset) => match self.assets.get(asset) {
+                    Some(GuiseAsset(expr)) => self.render(prev, &expr.clone(), args),
+                    None => RenderOutput::Empty,
+                },
+                _ => todo!(),
+            },
         }
     }
 

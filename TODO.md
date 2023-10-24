@@ -1,7 +1,7 @@
 # TODO
 
 * Guise
-  * Templates calling templates
+  * Template parameter decls
   * Hot reload
   * Only recompute styles on change
   * Differential updates

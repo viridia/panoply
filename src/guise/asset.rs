@@ -1,7 +1,9 @@
+use std::{any::TypeId, sync::Arc};
+
 use bevy::{
     asset::{io::Reader, AssetLoader, AssetPath, LoadContext},
     prelude::*,
-    reflect::{TypePath, TypeRegistration, TypeRegistryArc, TypeRegistryInternal},
+    reflect::{TypePath, TypeRegistryArc, TypeRegistryInternal},
     utils::{BoxedFuture, HashMap},
 };
 use futures_lite::AsyncReadExt;
@@ -11,10 +13,10 @@ use pest::{
     Parser,
 };
 
-use crate::guise::{from_ast::ReflectFromAst, path::relative_asset_path};
+use crate::guise::{expr::TemplateParam, from_ast::ReflectFromAst, path::relative_asset_path};
 
 use super::{
-    expr::{Expr, Template},
+    expr::{Expr, Template, TemplateParams},
     parser::{GuiseParser, Rule},
 };
 
@@ -100,9 +102,10 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     let short_name = qname.rsplit_once("::").ok_or(qname).unwrap().1;
                     let ty = self.registry.get_with_name(qname);
                     if ty.is_some() {
-                        imports
-                            .entries
-                            .insert(short_name.to_string(), ImportEntry::Builtin(&ty.unwrap()));
+                        imports.entries.insert(
+                            short_name.to_string(),
+                            ImportEntry::Native(ty.unwrap().type_id()),
+                        );
                         // println!("USE {} as {}", qname, short_name);
                     } else {
                         error!("Not found {}", qname);
@@ -167,19 +170,35 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
     fn visit_asset<'b>(
         &mut self,
         label: &str,
-        args: Option<Pair<'b, Rule>>,
+        params: Option<Pair<'b, Rule>>,
         pair: &'b mut Pair<'b, Rule>,
         base: &str,
         imports: &'b mut Imports,
     ) -> Result<(), anyhow::Error> {
         self.load_context.begin_labeled_asset();
-        let has_args = args.is_some();
-        let expr = self.visit_expr(label, args, pair, base, imports)?;
-        if has_args {
+        let has_params = params.is_some();
+        let params_map: TemplateParams = match params {
+            Some(param_pairs) => {
+                let params_inner = param_pairs.into_inner();
+                let mut map: TemplateParams = HashMap::with_capacity(params_inner.len());
+                for param in params_inner.into_iter() {
+                    let mut param_inner = param.into_inner();
+                    let param_name = param_inner.next().unwrap().as_str();
+                    let param_type =
+                        self.visit_param_type(&param_inner.next().unwrap(), imports)?;
+                    // println!("Param {:?} {:?}", arg_name, arg_type);
+                    map.insert(param_name.to_string(), TemplateParam::new(param_type));
+                }
+                map
+            }
+            None => HashMap::new(),
+        };
+        let expr = self.visit_expr(label, &params_map, pair, base, imports)?;
+        if has_params {
             self.load_context.add_labeled_asset(
                 label.to_string(),
                 GuiseAsset(Expr::Template(Box::new(Template {
-                    params: HashMap::new(),
+                    params: params_map,
                     expr,
                 }))),
             );
@@ -209,13 +228,13 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
     fn visit_expr<'b, 'd>(
         &mut self,
         label: &str,
-        args: Option<Pair<'b, Rule>>,
+        params: &TemplateParams,
         expr: &'b mut Pair<'b, Rule>,
         base: &str,
         imports: &'d Imports,
     ) -> Result<Expr, anyhow::Error> {
         match expr.as_rule() {
-            Rule::object => self.visit_object(args, expr, base, imports),
+            Rule::object => self.visit_object(params, expr, base, imports),
             Rule::boolean => Ok(Expr::Bool(expr.as_str() == "true")),
             Rule::identifier => Ok(Expr::Ident(expr.as_str().to_string())),
             Rule::number => Ok(Expr::Number(expr.as_str().parse::<f32>().unwrap())),
@@ -304,7 +323,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                 let elements = expr.clone().into_inner();
                 let mut elts: Vec<Expr> = Vec::with_capacity(elements.len());
                 for mut element in elements.into_iter() {
-                    elts.push(self.visit_expr(label, args.clone(), &mut element, base, imports)?);
+                    elts.push(self.visit_expr(label, params, &mut element, base, imports)?);
                 }
                 Ok(Expr::List(elts.into_boxed_slice()))
             }
@@ -329,7 +348,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
 
     fn visit_object<'b, 'd>(
         &mut self,
-        args: Option<Pair<'b, Rule>>,
+        params: &TemplateParams,
         obj_ast: &'b mut Pair<'b, Rule>,
         base: &str,
         imports: &'d Imports,
@@ -349,7 +368,7 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                         let key = self.visit_key(&id);
                         let mut value = member_pairs.next().unwrap();
                         // println!("  MEMBER {}", key);
-                        let expr = self.visit_expr(key, args.clone(), &mut value, base, imports)?;
+                        let expr = self.visit_expr(key, params, &mut value, base, imports)?;
                         members.insert(key.to_string(), expr);
                     }
 
@@ -362,8 +381,8 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         };
 
         match imports.entries.get(type_name_str) {
-            Some(ImportEntry::Builtin(ty)) => {
-                if let Some(rd) = ty.data::<ReflectFromAst>() {
+            Some(ImportEntry::Native(ty)) => {
+                if let Some(rd) = self.registry.get(*ty).unwrap().data::<ReflectFromAst>() {
                     let obj = rd.from_ast(members, self.load_context);
                     return match obj {
                         Ok(obj) => Ok(obj),
@@ -391,7 +410,10 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
                     ));
                 }
             }
-            Some(ImportEntry::Asset(path)) => Ok(Expr::Asset(self.load_context.load(path))),
+            Some(ImportEntry::Asset(path)) => Ok(Expr::Invoke((
+                Box::new(Expr::Asset(self.load_context.load(path))),
+                Arc::new(members),
+            ))),
             None => {
                 return Err(anyhow::Error::new(
                     pest::error::Error::new_from_span(
@@ -406,6 +428,47 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
         }
     }
 
+    fn visit_param_type<'b>(
+        &self,
+        pair: &'b Pair<'b, Rule>,
+        imports: &'b mut Imports,
+    ) -> Result<TypeId, anyhow::Error> {
+        let type_expr = pair.clone().into_inner().next().unwrap();
+        match type_expr.as_rule() {
+            Rule::arg_list_type => {
+                let element_type_id =
+                    self.visit_param_type(&type_expr.into_inner().next().unwrap(), imports)?;
+                let _element_type = self.registry.get(element_type_id).unwrap();
+                Ok(element_type_id)
+                // todo!("List type: {:?}", element_type);
+            }
+            Rule::qualified_name => {
+                let qname = type_expr.as_str();
+                if qname.find("::").is_none() {
+                    if let Some(imp) = imports.entries.get(qname) {
+                        match imp {
+                            ImportEntry::Native(ty) => return Ok(*ty),
+                            ImportEntry::Asset(_) => todo!(),
+                        }
+                    }
+                }
+                match self.registry.get_with_name(qname) {
+                    Some(ty) => Ok(ty.type_id()),
+                    None => Err(anyhow::Error::new(
+                        pest::error::Error::new_from_span(
+                            ErrorVariant::<()>::CustomError {
+                                message: format!("Unknown type name: '{}'", qname),
+                            },
+                            pair.as_span(),
+                        )
+                        .with_path(self.load_context.path().to_str().unwrap()),
+                    )),
+                }
+            }
+            _ => panic!("Invalid rule {:?}", type_expr.as_rule()),
+        }
+    }
+
     fn visit_key<'b>(&self, pair: &'b Pair<'b, Rule>) -> &'b str {
         match pair.as_rule() {
             Rule::identifier => pair.as_str(),
@@ -415,8 +478,11 @@ impl<'a, 'c> AstVisitor<'a, 'c> {
     }
 }
 
-enum ImportEntry<'a> {
-    Builtin(&'a TypeRegistration),
+enum ImportEntry {
+    /// A native Rust type that has been reflected
+    Native(TypeId),
+
+    /// An imported asset reference
     Asset(AssetPath<'static>),
 }
 
@@ -425,7 +491,7 @@ struct Imports<'a> {
     /// Reference to enclosing scope
     next: Option<&'a Imports<'a>>,
 
-    entries: HashMap<String, ImportEntry<'a>>,
+    entries: HashMap<String, ImportEntry>,
 }
 
 impl<'a> Imports<'a> {

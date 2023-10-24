@@ -8,6 +8,7 @@ pub enum TypedExpr<T> {
 
 impl<T> TypedExpr<T>
 where
+    T: Copy,
     Expr: Coerce<T>,
 {
     pub fn from_expr(expr: &Expr) -> Self {
@@ -17,10 +18,13 @@ where
         }
     }
 
-    pub fn eval(&self) -> Result<&T, anyhow::Error> {
+    pub fn eval(&self) -> Result<T, anyhow::Error> {
         match self {
-            TypedExpr::Constant(val) => Ok(val),
-            TypedExpr::Expr(_) => todo!(),
+            TypedExpr::Constant(val) => Ok(*val),
+            TypedExpr::Expr(expr) => match expr.coerce() {
+                Some(val) => Ok(val),
+                None => todo!("Implement evaluation"),
+            },
         }
     }
 }

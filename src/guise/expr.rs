@@ -1,4 +1,4 @@
-use std::{fmt, sync::Arc};
+use std::{any::TypeId, fmt, sync::Arc};
 
 use bevy::{asset::AssetPath, prelude::*, ui, utils::HashMap};
 
@@ -7,21 +7,21 @@ use super::{coerce::Coerce, ElementStyle, GuiseAsset, Renderable};
 /// Defines the types of parameters that can be passed to a template.
 #[derive(Debug, Clone)]
 pub struct Template {
-    pub params: HashMap<String, TemplateParam>,
+    pub params: TemplateParams,
     pub expr: Expr,
 }
+
+pub type TemplateParams = HashMap<String, TemplateParam>;
 
 /// Defines the types of parameters that can be passed to a template.
 #[derive(Debug, Clone)]
 pub struct TemplateParam {
-    pub param_type: String,
+    pub param_type: TypeId,
 }
 
 impl TemplateParam {
-    pub fn new(ty: &str) -> Self {
-        Self {
-            param_type: ty.to_string(),
-        }
+    pub fn new(param_type: TypeId) -> Self {
+        Self { param_type }
     }
 }
 
@@ -69,6 +69,9 @@ pub enum Expr {
 
     /// A template declaration.
     Template(Box<Template>),
+
+    /// Call a template.
+    Invoke((Box<Expr>, Arc<HashMap<String, Expr>>)),
 }
 
 impl PartialEq for Expr {
@@ -85,6 +88,7 @@ impl PartialEq for Expr {
             (Self::AssetPath(l0), Self::AssetPath(r0)) => l0 == r0,
             (Self::Var(l0), Self::Var(r0)) => l0 == r0,
             (Self::Template(l0), Self::Template(r0)) => std::ptr::eq(l0.as_ref(), r0.as_ref()),
+            (Self::Invoke((l0, l1)), Self::Invoke((r0, r1))) => l0 == r0 && l1 == r1,
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }

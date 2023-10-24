@@ -157,250 +157,250 @@ impl ElementStyle {
                 }
                 ElementStyleAttr::BackgroundColor(expr) => {
                     if let Ok(color) = expr.eval() {
-                        computed.background_color = *color;
+                        computed.background_color = color;
                     }
                 }
                 ElementStyleAttr::BorderColor(expr) => {
                     if let Ok(color) = expr.eval() {
-                        computed.border_color = *color;
+                        computed.border_color = color;
                     }
                 }
                 ElementStyleAttr::Color(expr) => {
                     if let Ok(color) = expr.eval() {
-                        computed.color = *color;
+                        computed.color = color;
                     }
                 }
                 ElementStyleAttr::ZIndex(expr) => {
                     if let Ok(val) = expr.eval() {
-                        computed.z_index = Some(*val);
+                        computed.z_index = Some(val);
                     }
                 }
                 ElementStyleAttr::Display(expr) => {
                     if let Ok(disp) = expr.eval() {
-                        computed.style.display = *disp;
+                        computed.style.display = disp;
                     }
                 }
                 ElementStyleAttr::Position(expr) => {
                     if let Ok(pos) = expr.eval() {
-                        computed.style.position_type = *pos;
+                        computed.style.position_type = pos;
                     }
                 }
                 ElementStyleAttr::OverflowX(expr) => {
                     if let Ok(ov) = expr.eval() {
-                        computed.style.overflow.x = *ov;
+                        computed.style.overflow.x = ov;
                     }
                 }
                 ElementStyleAttr::OverflowY(expr) => {
                     if let Ok(ov) = expr.eval() {
-                        computed.style.overflow.y = *ov;
+                        computed.style.overflow.y = ov;
                     }
                 }
                 ElementStyleAttr::Overflow(expr) => {
                     if let Ok(ov) = expr.eval() {
-                        computed.style.overflow.x = *ov;
-                        computed.style.overflow.y = *ov;
+                        computed.style.overflow.x = ov;
+                        computed.style.overflow.y = ov;
                     }
                 }
                 ElementStyleAttr::Direction(expr) => {
                     if let Ok(dir) = expr.eval() {
-                        computed.style.direction = *dir;
+                        computed.style.direction = dir;
                     }
                 }
                 ElementStyleAttr::Left(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.left = *length;
+                        computed.style.left = length;
                     }
                 }
                 ElementStyleAttr::Right(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.right = *length;
+                        computed.style.right = length;
                     }
                 }
                 ElementStyleAttr::Top(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.top = *length;
+                        computed.style.top = length;
                     }
                 }
                 ElementStyleAttr::Bottom(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.bottom = *length;
+                        computed.style.bottom = length;
                     }
                 }
                 ElementStyleAttr::Width(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.width = *length;
+                        computed.style.width = length;
                     }
                 }
                 ElementStyleAttr::Height(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.height = *length;
+                        computed.style.height = length;
                     }
                 }
                 ElementStyleAttr::MinWidth(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.min_width = *length;
+                        computed.style.min_width = length;
                     }
                 }
                 ElementStyleAttr::MinHeight(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.min_height = *length;
+                        computed.style.min_height = length;
                     }
                 }
                 ElementStyleAttr::MaxWidth(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.max_width = *length;
+                        computed.style.max_width = length;
                     }
                 }
                 ElementStyleAttr::MaxHeight(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.max_height = *length;
+                        computed.style.max_height = length;
                     }
                 }
                 ElementStyleAttr::Margin(expr) => {
                     if let Ok(rect) = expr.eval() {
-                        computed.style.margin = *rect;
+                        computed.style.margin = rect;
                     }
                 }
                 ElementStyleAttr::MarginLeft(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.margin.left = *length;
+                        computed.style.margin.left = length;
                     }
                 }
                 ElementStyleAttr::MarginRight(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.margin.right = *length;
+                        computed.style.margin.right = length;
                     }
                 }
                 ElementStyleAttr::MarginTop(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.margin.top = *length;
+                        computed.style.margin.top = length;
                     }
                 }
                 ElementStyleAttr::MarginBottom(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.margin.bottom = *length;
+                        computed.style.margin.bottom = length;
                     }
                 }
                 ElementStyleAttr::Padding(expr) => {
                     if let Ok(rect) = expr.eval() {
-                        computed.style.padding = *rect;
+                        computed.style.padding = rect;
                     }
                 }
                 ElementStyleAttr::PaddingLeft(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.padding.left = *length;
+                        computed.style.padding.left = length;
                     }
                 }
                 ElementStyleAttr::PaddingRight(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.padding.right = *length;
+                        computed.style.padding.right = length;
                     }
                 }
                 ElementStyleAttr::PaddingTop(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.padding.top = *length;
+                        computed.style.padding.top = length;
                     }
                 }
                 ElementStyleAttr::PaddingBottom(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.padding.bottom = *length;
+                        computed.style.padding.bottom = length;
                     }
                 }
                 ElementStyleAttr::Border(expr) => {
                     if let Ok(rect) = expr.eval() {
-                        computed.style.border = *rect;
+                        computed.style.border = rect;
                     }
                 }
                 ElementStyleAttr::BorderLeft(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.border.left = *length;
+                        computed.style.border.left = length;
                     }
                 }
                 ElementStyleAttr::BorderRight(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.border.right = *length;
+                        computed.style.border.right = length;
                     }
                 }
                 ElementStyleAttr::BorderTop(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.border.top = *length;
+                        computed.style.border.top = length;
                     }
                 }
                 ElementStyleAttr::BorderBottom(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.border.bottom = *length;
+                        computed.style.border.bottom = length;
                     }
                 }
                 ElementStyleAttr::FlexDirection(expr) => {
                     if let Ok(dir) = expr.eval() {
-                        computed.style.flex_direction = *dir;
+                        computed.style.flex_direction = dir;
                     }
                 }
                 ElementStyleAttr::FlexWrap(expr) => {
                     if let Ok(wrap) = expr.eval() {
-                        computed.style.flex_wrap = *wrap;
+                        computed.style.flex_wrap = wrap;
                     }
                 }
                 ElementStyleAttr::FlexGrow(expr) => {
                     if let Ok(amt) = expr.eval() {
-                        computed.style.flex_grow = *amt;
+                        computed.style.flex_grow = amt;
                     }
                 }
                 ElementStyleAttr::FlexShrink(expr) => {
                     if let Ok(amt) = expr.eval() {
-                        computed.style.flex_shrink = *amt;
+                        computed.style.flex_shrink = amt;
                     }
                 }
                 ElementStyleAttr::FlexBasis(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.flex_basis = *length;
+                        computed.style.flex_basis = length;
                     }
                 }
                 ElementStyleAttr::ColumnGap(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.column_gap = *length;
+                        computed.style.column_gap = length;
                     }
                 }
                 ElementStyleAttr::RowGap(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.row_gap = *length;
+                        computed.style.row_gap = length;
                     }
                 }
                 ElementStyleAttr::Gap(expr) => {
                     if let Ok(length) = expr.eval() {
-                        computed.style.column_gap = *length;
-                        computed.style.row_gap = *length;
+                        computed.style.column_gap = length;
+                        computed.style.row_gap = length;
                     }
                 }
 
                 ElementStyleAttr::AlignItems(expr) => {
                     if let Ok(align) = expr.eval() {
-                        computed.style.align_items = *align;
+                        computed.style.align_items = align;
                     }
                 }
                 ElementStyleAttr::AlignSelf(expr) => {
                     if let Ok(align) = expr.eval() {
-                        computed.style.align_self = *align;
+                        computed.style.align_self = align;
                     }
                 }
                 ElementStyleAttr::AlignContent(expr) => {
                     if let Ok(align) = expr.eval() {
-                        computed.style.align_content = *align;
+                        computed.style.align_content = align;
                     }
                 }
                 ElementStyleAttr::JustifyItems(expr) => {
                     if let Ok(justify) = expr.eval() {
-                        computed.style.justify_items = *justify;
+                        computed.style.justify_items = justify;
                     }
                 }
                 ElementStyleAttr::JustifySelf(expr) => {
                     if let Ok(justify) = expr.eval() {
-                        computed.style.justify_self = *justify;
+                        computed.style.justify_self = justify;
                     }
                 }
                 ElementStyleAttr::JustifyContent(expr) => {
                     if let Ok(justify) = expr.eval() {
-                        computed.style.justify_content = *justify;
+                        computed.style.justify_content = justify;
                     }
                 }
             }

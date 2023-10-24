@@ -2,19 +2,86 @@ use panoply::guise::element_style::ElementStyle;
 use panoply::guise::element::Element;
 
 button_style: {
+  main: ElementStyle {
+    display: flex,
+    padding: [8px, 12px],
+//    vars: {
+//      bg_color: #444444
+//    }
+  },
+
   background: ElementStyle {
     position: absolute,
+    background_color: #444444,
+    border: 1,
+    border_color: #222,
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
+
+//    selectors: {
+//      "&.hover": {
+//        background_color: #666666,
+//      }
+//    }
   }
 }
 
 main_style: ElementStyle {
-  background_color: #ff0000,
   flex_grow: 1
 }
 
-Button(): Element {
+side_panel_style: ElementStyle {
+  display: flex,
+  flex_direction: column,
+  gap: 6,
+  padding: 6,
+  background_color: #22f
+}
+
+vsplitter_style: {
+  track: ElementStyle {
+    display: flex,
+    width: 7,
+    align_items: center,
+    justify_items: center,
+    justify_content: center,
+    background_color: #202020
+  },
+
+  thumb: ElementStyle {
+    width: 3,
+    height: 20%,
+    justify_self: center,
+    background_color: #444444
+  }
+}
+
+Button(children: [Element], primary: bool): Element {
+  style: [
+    $("#button_style/main"),
+  ],
   children: [
+    Element {
+      style: [
+        $("#button_style/background"),
+      ],
+    },
     "Button"
+  ]
+}
+
+Splitter(): Element {
+  style: [
+    $("#vsplitter_style/track"),
+  ],
+  children: [
+    Element {
+      style: [
+        $("#vsplitter_style/thumb"),
+      ],
+    },
   ]
 }
 
@@ -34,6 +101,37 @@ Main(): Element {
   children: [
     Element {
       style: [
+        $("#side_panel_style"),
+        ElementStyle {
+          width: 200,
+        }
+      ],
+      children: [
+        Button {
+          children: [
+            "Hello"
+          ]
+        },
+        Button {
+          children: [
+            "Goodbye"
+          ]
+        }
+      ]
+    },
+    Splitter {},
+    Element {
+      presenter: "ViewportInsetController",
+      style: [
+        ElementStyle {
+          border_color: #44ff88,
+          border: 2,
+          flex_grow: 1,
+        }
+      ]
+    },
+    Element {
+      style: [
         ElementStyle {
           background_image: $("editor/icons/building.png"),
           background_color: #0000ff,
@@ -43,12 +141,12 @@ Main(): Element {
           width: 30,
           height: 20,
           right: 10,
-          top: 10
+          top: 10,
         }
       ]
     },
+    Splitter {},
     "Count: ",
-    3,
-    Button {}
+    3
   ]
 }
