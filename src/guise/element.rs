@@ -84,6 +84,7 @@ impl FromAst for Element {
                         return Err(anyhow!("Expected list for children: '{}'", key));
                     }
                 },
+                "presenter" => {}
                 _ => return Err(anyhow!("Invalid property: '{}'", key)),
             }
         }
