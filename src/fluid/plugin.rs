@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 
-use super::{view::Sequence, view_root::ViewRootResource, View};
+use super::{
+    view::{Cx, Sequence},
+    view_root::ViewRootResource,
+    View,
+};
 
 pub struct FluidPlugin;
 
@@ -13,12 +17,11 @@ impl Plugin for FluidPlugin {
                 render_views,
                 // ((
                 //     update_view_element_styles,
-                //     // attach_view_controllers,
                 //     force_update,
                 // )
                 //     .chain(),),
             )
-            .insert_resource(ViewRootResource::new(root_presenter));
+            .insert_resource(ViewRootResource::new(root_presenter, 1));
     }
 }
 
@@ -31,13 +34,7 @@ pub fn render_views(world: &mut World) {
         res.build(world);
         println!("Node count: {}", res.count());
     });
-    // let mut root = world.resource_mut::<ViewRootResource>();
-    // root.build(world);
 }
-
-// fn create_test_ui(mut commands: Commands) {
-//     commands.spawn(ViewRoot::new(root_presenter));
-// }
 
 fn force_update(mut transforms: Query<&mut Transform>) {
     for mut transform in transforms.iter_mut() {
@@ -45,6 +42,6 @@ fn force_update(mut transforms: Query<&mut Transform>) {
     }
 }
 
-fn root_presenter() -> impl View {
-    Sequence::new(("Root Presenter: ", "0"))
+fn root_presenter(cx: Cx<u8>) -> impl View {
+    Sequence::new(("Root Presenter: ", format!("{}", cx.props)))
 }

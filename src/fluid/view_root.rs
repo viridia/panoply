@@ -1,24 +1,9 @@
 use bevy::prelude::*;
 
-use super::{view::ElementContext, NodeSpan, View};
-
-/// Component that defines the root of a view hierarchy and a template invocation.
-// #[derive(Component)]
-// pub struct ViewRoot {
-//     handle: Box<dyn AnyViewHandle>,
-// }
-
-// impl ViewRoot {
-//     pub fn new<V: View + 'static>(presenter: fn() -> V) -> Self {
-//         Self {
-//             handle: Box::new(ViewHandle::new(presenter)),
-//         }
-//     }
-
-//     pub fn build(&mut self, cx: &mut World) {
-//         self.handle.test();
-//     }
-// }
+use super::{
+    view::{Cx, ElementContext},
+    NodeSpan, View,
+};
 
 #[derive(Resource)]
 pub struct ViewRootResource {
@@ -27,9 +12,12 @@ pub struct ViewRootResource {
 
 impl ViewRootResource {
     /// Construct a new ViewRootResource from a presenter.
-    pub fn new<V: View + 'static>(presenter: fn() -> V) -> Self {
+    pub fn new<V: View + 'static, Props: Send + Sync + 'static>(
+        presenter: fn(cx: Cx<Props>) -> V,
+        props: Props,
+    ) -> Self {
         Self {
-            handle: Box::new(ViewHandle::new(presenter)),
+            handle: Box::new(ViewHandle::new(presenter, props)),
         }
     }
 
@@ -45,32 +33,38 @@ impl ViewRootResource {
     }
 }
 
-pub struct ViewHandle<V: View> {
-    presenter: fn() -> V,
+pub struct ViewHandle<V: View, Props: Send + Sync> {
+    presenter: fn(cx: Cx<Props>) -> V,
     nodes: NodeSpan,
+    props: Props,
 }
 
-impl<V: View> ViewHandle<V> {
-    pub fn new(presenter: fn() -> V) -> Self {
+impl<V: View, Props: Send + Sync> ViewHandle<V, Props> {
+    pub fn new(presenter: fn(cx: Cx<Props>) -> V, props: Props) -> Self {
         Self {
             presenter,
             nodes: NodeSpan::Empty,
+            props,
         }
     }
 }
 
 pub trait AnyViewHandle: Send + Sync {
     fn count(&self) -> usize;
-    fn build<'w>(&mut self, cx: &mut ElementContext<'w>);
+    fn build<'w>(&mut self, cx: &'w mut ElementContext<'w>);
 }
 
-impl<V: View> AnyViewHandle for ViewHandle<V> {
+impl<V: View, Props: Send + Sync> AnyViewHandle for ViewHandle<V, Props> {
     fn count(&self) -> usize {
         self.nodes.count()
     }
 
-    fn build<'w>(&mut self, cx: &mut ElementContext<'w>) {
-        let v = (self.presenter)();
-        self.nodes = v.build(cx, &self.nodes);
+    fn build<'w>(&mut self, ecx: &'w mut ElementContext<'w>) {
+        let cx = Cx::<Props> {
+            sys: ecx,
+            props: &self.props,
+        };
+        let v = (self.presenter)(cx);
+        self.nodes = v.build(ecx, &self.nodes);
     }
 }

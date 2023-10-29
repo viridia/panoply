@@ -9,13 +9,12 @@ use bevy::{
 use super::node_span::NodeSpan;
 
 pub struct ElementContext<'w> {
-    // pub commands: Commands<'w>,
     pub(crate) world: &'w mut World,
 }
 
-pub struct Cx<'w, 'p, Props> {
+pub struct Cx<'w, 'p, Props = ()> {
     pub props: &'p Props,
-    pub sys: ElementContext<'w>,
+    pub sys: &'p mut ElementContext<'w>,
 }
 
 pub struct ClassList {
