@@ -35,13 +35,11 @@ impl NodeSpan {
     }
 
     /// Despawn all entities held.
-    pub(crate) fn despawn_recursive(&self, commands: &mut Commands) {
+    pub(crate) fn despawn_recursive(&self, world: &mut World) {
         match self {
             Self::Empty => {}
-            Self::Node(entity) => commands.entity(*entity).despawn_recursive(),
-            Self::Fragment(nodes) => nodes
-                .iter()
-                .for_each(|node| node.despawn_recursive(commands)),
+            Self::Node(entity) => world.entity_mut(*entity).despawn_recursive(),
+            Self::Fragment(nodes) => nodes.iter().for_each(|node| node.despawn_recursive(world)),
         }
     }
 }

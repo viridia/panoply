@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{view_root::ViewRootResource, View};
+use super::{view::Sequence, view_root::ViewRootResource, View};
 
 pub struct FluidPlugin;
 
@@ -46,5 +46,5 @@ fn force_update(mut transforms: Query<&mut Transform>) {
 }
 
 fn root_presenter() -> impl View {
-    "Hello"
+    Sequence::new(("Root Presenter: ", "0"))
 }

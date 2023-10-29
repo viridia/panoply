@@ -1,3 +1,5 @@
+use std::mem::swap;
+
 use bevy::{
     prelude::*,
     text::{Text, TextStyle},
@@ -7,7 +9,7 @@ use bevy::{
 use super::node_span::NodeSpan;
 
 pub struct ElementContext<'w> {
-    // pub commands: Commands<'w, 's>,
+    // pub commands: Commands<'w>,
     pub(crate) world: &'w mut World,
 }
 
@@ -21,6 +23,8 @@ pub struct ClassList {
 }
 
 pub trait View: Send + Sync {
+    type State;
+
     /// Returns the number of actual entities created by this view.
     fn count(&self) -> usize;
 
@@ -28,6 +32,8 @@ pub trait View: Send + Sync {
 }
 
 impl View for String {
+    type State = ();
+
     fn count(&self) -> usize {
         1
     }
@@ -45,6 +51,7 @@ impl View for String {
             }
         }
 
+        prev.despawn_recursive(cx.world);
         let new_entity = cx
             .world
             .spawn((TextBundle {
@@ -66,11 +73,13 @@ impl View for String {
 }
 
 impl View for &'static str {
+    type State = ();
+
     fn count(&self) -> usize {
         1
     }
 
-    fn build<'w, 's>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
+    fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
         if let NodeSpan::Node(text_entity) = prev {
             if let Some(mut old_text) = cx.world.entity_mut(*text_entity).get_mut::<Text>() {
                 // TODO: compare text for equality.
@@ -83,6 +92,7 @@ impl View for &'static str {
             }
         }
 
+        prev.despawn_recursive(cx.world);
         let new_entity = cx
             .world
             .spawn((TextBundle {
@@ -103,66 +113,155 @@ impl View for &'static str {
     }
 }
 
-struct Sequence<A: ViewTuple> {
-    // items: Vec<&'a dyn View>,
+pub struct Sequence<A: ViewTuple> {
     items: A,
 }
 
 impl<'a, A: ViewTuple> Sequence<A> {
-    fn new(items: A) -> Self {
+    pub fn new(items: A) -> Self {
         Self { items }
     }
 }
 
 impl<'a, A: ViewTuple> View for Sequence<A> {
+    type State = A::State;
+
     fn count(&self) -> usize {
         1
     }
 
-    fn build<'w, 's>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
-        todo!()
-    }
+    fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
+        let count_spans = self.items.len();
+        let mut child_spans: Vec<NodeSpan> = vec![NodeSpan::Empty; count_spans];
 
-    // fn despawn(&self) {
-    //     todo!()
-    // }
+        // Get a copy of child spans from Component
+        if let NodeSpan::Node(entity) = prev {
+            if let Some(cmp) = cx.world.entity_mut(*entity).get_mut::<SequenceComponent>() {
+                if cmp.children.len() == self.items.len() {
+                    child_spans = cmp.children.clone();
+                }
+            }
+        }
+
+        // Rebuild span array, replacing ones that changed.
+        self.items.build_spans(cx, &mut child_spans);
+        let mut count_children: usize = 0;
+        for node in child_spans.iter() {
+            count_children += node.count()
+        }
+        let mut flat: Vec<Entity> = Vec::with_capacity(count_children);
+        for node in child_spans.iter() {
+            node.flatten(&mut flat);
+        }
+
+        if let NodeSpan::Node(entity) = prev {
+            let mut em = cx.world.entity_mut(*entity);
+            if let Some(mut cmp) = em.get_mut::<SequenceComponent>() {
+                if cmp.children != child_spans {
+                    swap(&mut cmp.children, &mut child_spans);
+                    // TODO: Need to replace child entities
+                    // em.push_children(&flat);
+                }
+                return NodeSpan::Node(*entity);
+            }
+        }
+
+        // Remove previous entity
+        prev.despawn_recursive(cx.world);
+
+        let new_entity = cx
+            .world
+            .spawn((
+                SequenceComponent {
+                    children: child_spans,
+                },
+                NodeBundle {
+                    // focus_policy: FocusPolicy::Pass,
+                    visibility: Visibility::Visible,
+                    ..default()
+                },
+            ))
+            .push_children(&flat)
+            .id();
+
+        NodeSpan::Node(new_entity)
+    }
 }
 
+/// Component for a sequence, tracks the list of children by span.
+#[derive(Component)]
+pub struct SequenceComponent {
+    pub(crate) children: Vec<NodeSpan>,
+}
+
+// ViewTuple
+
 pub trait ViewTuple: Send + Sync {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View>;
+    type State;
+
+    fn len(&self) -> usize;
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]);
 }
 
 impl ViewTuple for () {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View> {
-        Vec::new()
+    type State = ();
+
+    fn len(&self) -> usize {
+        0
     }
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {}
 }
 
 impl<A: View> ViewTuple for A {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View> {
-        Vec::new()
-        // vec![self]
+    type State = A::State;
+
+    fn len(&self) -> usize {
+        1
+    }
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {
+        out[0] = self.build(cx, &out[0])
     }
 }
 
 impl<A: View> ViewTuple for (A,) {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View> {
-        Vec::new()
-        // vec![&self.0]
+    type State = (A::State,);
+
+    fn len(&self) -> usize {
+        1
+    }
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {
+        out[0] = self.0.build(cx, &out[0])
     }
 }
 
 impl<A0: View, A1: View> ViewTuple for (A0, A1) {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View> {
-        Vec::new()
-        // vec![&self.0, &self.1]
+    type State = (A0::State, A1::State);
+
+    fn len(&self) -> usize {
+        2
+    }
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {
+        out[0] = self.0.build(cx, &out[0]);
+        out[1] = self.1.build(cx, &out[1]);
     }
 }
 
 impl<A0: View, A1: View, A2: View> ViewTuple for (A0, A1, A2) {
-    fn to_vec<'a>(&self) -> Vec<&'a dyn View> {
-        // vec![&self.0, &self.1, &self.2]
-        vec![]
+    type State = (A0::State, A1::State, A2::State);
+
+    fn len(&self) -> usize {
+        3
+    }
+
+    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {
+        out[0] = self.0.build(cx, &out[0]);
+        out[1] = self.1.build(cx, &out[1]);
+        out[2] = self.2.build(cx, &out[1]);
     }
 }
 
