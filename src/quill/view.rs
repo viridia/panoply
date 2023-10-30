@@ -30,18 +30,21 @@ pub struct ClassList {
 pub trait View: Send + Sync {
     type State;
 
-    /// Returns the number of actual entities created by this view.
-    fn count(&self) -> usize;
-
     fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan;
 }
 
-impl View for String {
+/// View which renders nothing
+impl View for () {
     type State = ();
 
-    fn count(&self) -> usize {
-        1
+    fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
+        NodeSpan::Empty
     }
+}
+
+/// View which renders a String
+impl View for String {
+    type State = ();
 
     fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
         if let NodeSpan::Node(text_entity) = prev {
@@ -77,12 +80,9 @@ impl View for String {
     }
 }
 
+/// View which renders a string slice.
 impl View for &'static str {
     type State = ();
-
-    fn count(&self) -> usize {
-        1
-    }
 
     fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
         if let NodeSpan::Node(text_entity) = prev {
@@ -130,10 +130,6 @@ impl<'a, A: ViewTuple> Sequence<A> {
 
 impl<'a, A: ViewTuple> View for Sequence<A> {
     type State = A::State;
-
-    fn count(&self) -> usize {
-        1
-    }
 
     fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
         let count_spans = self.items.len();
@@ -199,6 +195,32 @@ pub struct SequenceComponent {
     pub(crate) children: Vec<NodeSpan>,
 }
 
+// If
+
+pub struct If<Pos: View, Neg: View> {
+    test: bool,
+    pos: Pos,
+    neg: Neg,
+}
+
+impl<Pos: View, Neg: View> If<Pos, Neg> {
+    pub fn new(test: bool, pos: Pos, neg: Neg) -> Self {
+        Self { test, pos, neg }
+    }
+}
+
+impl<Pos: View, Neg: View> View for If<Pos, Neg> {
+    type State = (Pos::State, Neg::State);
+
+    fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
+        if self.test {
+            self.pos.build(cx, prev)
+        } else {
+            self.neg.build(cx, prev)
+        }
+    }
+}
+
 // ViewTuple
 
 pub trait ViewTuple: Send + Sync {
@@ -207,16 +229,6 @@ pub trait ViewTuple: Send + Sync {
     fn len(&self) -> usize;
 
     fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]);
-}
-
-impl ViewTuple for () {
-    type State = ();
-
-    fn len(&self) -> usize {
-        0
-    }
-
-    fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {}
 }
 
 impl<A: View> ViewTuple for A {
@@ -266,28 +278,6 @@ impl<A0: View, A1: View, A2: View> ViewTuple for (A0, A1, A2) {
     fn build_spans<'w>(&self, cx: &mut ElementContext<'w>, out: &mut [NodeSpan]) {
         out[0] = self.0.build(cx, &out[0]);
         out[1] = self.1.build(cx, &out[1]);
-        out[2] = self.2.build(cx, &out[1]);
+        out[2] = self.2.build(cx, &out[2]);
     }
-}
-
-pub fn sequence_from<'a>(_args: impl ViewTuple) -> impl View + 'a {
-    "Hello"
-    // ViewSequence::<'a>::new(&["Hello"])
-}
-
-pub fn args_test() {
-    let _a = sequence_from(());
-    // let _b = sequence_from(("Hello",));
-    let _b = sequence_from(("Hello",));
-    let _c = sequence_from(("Hello", "World"));
-    // let _d = sequence_from((sequence_from(())));
-    let _s = Sequence::new((
-        format!("Hello"),
-        "Goodbye",
-        Sequence::new((format!("Hello"), "Goodbye")),
-    ));
-}
-
-pub fn aspect_chooser() -> impl View {
-    Sequence::new(format!("Hello"))
 }

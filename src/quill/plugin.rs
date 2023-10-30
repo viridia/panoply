@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    view::{Cx, Sequence},
+    view::{Cx, If, Sequence},
     view_root::ViewRootResource,
     View, ViewRoot,
 };
@@ -45,7 +45,11 @@ fn force_update(mut transforms: Query<&mut Transform>) {
 
 fn root_presenter(cx: Cx<u8>) -> impl View {
     let counter = cx.use_resource::<Counter>();
-    Sequence::new(("Root Presenter: ", format!("{}", counter.count)))
+    Sequence::new((
+        "Root Presenter: ",
+        format!("{}", counter.count),
+        If::new(counter.count & 1 == 0, " [even]", " [odd]"),
+    ))
 }
 
 #[derive(Resource, Default)]
