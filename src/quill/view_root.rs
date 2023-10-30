@@ -6,11 +6,13 @@ use super::{
 };
 
 #[derive(Resource)]
-pub struct ViewRootResource {
+pub struct ViewRootResource(pub ViewRoot);
+
+pub struct ViewRoot {
     pub handle: Box<dyn AnyViewHandle>,
 }
 
-impl ViewRootResource {
+impl ViewRoot {
     /// Construct a new ViewRootResource from a presenter.
     pub fn new<V: View + 'static, Props: Send + Sync + 'static>(
         presenter: fn(cx: Cx<Props>) -> V,

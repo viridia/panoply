@@ -1,5 +1,9 @@
 # TODO
 
+* Quill
+  * Use smallvec
+  * Don't re-render unless changed.
+  * Memoization of use_resource.
 * Guise
   * Template parameter decls
   * Hot reload

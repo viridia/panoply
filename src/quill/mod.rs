@@ -6,3 +6,4 @@ mod view_root;
 pub use node_span::NodeSpan;
 pub use plugin::QuillPlugin;
 pub use view::View;
+pub use view_root::ViewRoot;

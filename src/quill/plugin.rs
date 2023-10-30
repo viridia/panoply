@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{
     view::{Cx, Sequence},
     view_root::ViewRootResource,
-    View,
+    View, ViewRoot,
 };
 
 pub struct QuillPlugin;
@@ -22,7 +22,7 @@ impl Plugin for QuillPlugin {
                 //     .chain(),),
             )
             .init_resource::<Counter>()
-            .insert_resource(ViewRootResource::new(root_presenter, 1));
+            .insert_resource(ViewRootResource(ViewRoot::new(root_presenter, 1)));
     }
 }
 
@@ -32,8 +32,8 @@ pub fn render_views(world: &mut World) {
     //     root.build(world);
     // }
     world.resource_scope(|world, mut res: Mut<ViewRootResource>| {
-        res.build(world);
-        println!("Node count: {}", res.count());
+        res.0.build(world);
+        println!("Node count: {}", res.0.count());
     });
 }
 
