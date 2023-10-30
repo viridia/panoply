@@ -17,6 +17,12 @@ pub struct Cx<'w, 'p, Props = ()> {
     pub sys: &'p mut ElementContext<'w>,
 }
 
+impl<'w, 'p, Props> Cx<'w, 'p, Props> {
+    pub fn use_resource<T: Resource>(&self) -> &T {
+        self.sys.world.resource::<T>()
+    }
+}
+
 pub struct ClassList {
     classes: HashSet<String>,
 }

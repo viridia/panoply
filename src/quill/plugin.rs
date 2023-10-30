@@ -6,21 +6,22 @@ use super::{
     View,
 };
 
-pub struct FluidPlugin;
+pub struct QuillPlugin;
 
-impl Plugin for FluidPlugin {
+impl Plugin for QuillPlugin {
     fn build(&self, app: &mut App) {
         app
             // .add_systems(Startup, create_test_ui)
             .add_systems(
                 Update,
-                render_views,
+                (update_counter, render_views),
                 // ((
                 //     update_view_element_styles,
                 //     force_update,
                 // )
                 //     .chain(),),
             )
+            .init_resource::<Counter>()
             .insert_resource(ViewRootResource::new(root_presenter, 1));
     }
 }
@@ -43,5 +44,15 @@ fn force_update(mut transforms: Query<&mut Transform>) {
 }
 
 fn root_presenter(cx: Cx<u8>) -> impl View {
-    Sequence::new(("Root Presenter: ", format!("{}", cx.props)))
+    let counter = cx.use_resource::<Counter>();
+    Sequence::new(("Root Presenter: ", format!("{}", counter.count)))
+}
+
+#[derive(Resource, Default)]
+pub struct Counter {
+    pub count: u32,
+}
+
+fn update_counter(mut counter: ResMut<Counter>) {
+    counter.count += 1;
 }

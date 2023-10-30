@@ -4,5 +4,5 @@ mod view;
 mod view_root;
 
 pub use node_span::NodeSpan;
-pub use plugin::FluidPlugin;
+pub use plugin::QuillPlugin;
 pub use view::View;

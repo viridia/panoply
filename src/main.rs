@@ -16,9 +16,9 @@ extern crate directories;
 
 mod diagnostics;
 mod editor;
-mod fluid;
 mod guise;
 mod instancing;
+mod quill;
 mod random;
 mod settings;
 mod terrain;
@@ -28,9 +28,8 @@ use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
     diagnostics::ScreenDiagsPlugin,
-    fluid::FluidPlugin,
-    guise::GuisePlugin,
     instancing::InstancedModelsPlugin,
+    quill::QuillPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
@@ -123,7 +122,7 @@ fn main() {
             TerrainPlugin,
             InstancedModelsPlugin,
             // GuisePlugin,
-            FluidPlugin, // WorldInspectorPlugin::new(),
+            QuillPlugin, // WorldInspectorPlugin::new(),
         ))
         .run();
 
