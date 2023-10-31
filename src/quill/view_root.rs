@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    view::{Cx, ElementContext},
+    view::{Cx, ElementContext, TrackedResources},
     NodeSpan, View,
 };
 
@@ -44,6 +44,7 @@ pub struct ViewState<V: View, Props: Send + Sync> {
     nodes: NodeSpan,
     props: Props,
     needs_rebuild: bool,
+    entity: Option<Entity>,
 }
 
 impl<V: View, Props: Send + Sync> ViewState<V, Props> {
@@ -53,6 +54,8 @@ impl<V: View, Props: Send + Sync> ViewState<V, Props> {
             nodes: NodeSpan::Empty,
             props,
             needs_rebuild: true,
+            // TODO generate an id based on something
+            entity: None,
         }
     }
 }
@@ -68,11 +71,42 @@ impl<V: View, Props: Send + Sync> AnyViewHandle for ViewState<V, Props> {
     }
 
     fn build<'w>(&mut self, ecx: &'w mut ElementContext<'w>) {
+        // initialize entity
+        let entity = match self.entity {
+            Some(id) => id,
+            None => {
+                let entity = ecx.world.spawn(TrackedResources::default()).id();
+                self.entity = Some(entity);
+                entity
+            }
+        };
+
+        let Some(tracked_resources) = ecx.world.get::<TrackedResources>(entity) else {
+            println!("TrackedResources not found for ViewState");
+            return;
+        };
+        // Check if any resource used by this ViewState has changed
+        self.needs_rebuild = self.needs_rebuild
+            || tracked_resources
+                .data
+                .iter()
+                .any(|x| x.is_changed(ecx.world));
+
         if self.needs_rebuild {
+            println!("rebuild");
+
+            // reset the tracked resources
+            ecx.world
+                .get_mut::<TrackedResources>(entity)
+                .unwrap()
+                .data
+                .clear();
+
             self.needs_rebuild = false;
             let cx = Cx::<Props> {
                 sys: ecx,
                 props: &self.props,
+                entity,
             };
             let v = (self.presenter)(cx);
             self.nodes = v.build(ecx, &self.nodes);
