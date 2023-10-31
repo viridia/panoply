@@ -10,21 +10,19 @@ pub struct QuillPlugin;
 
 impl Plugin for QuillPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(TrackedResources {
-            data: HashMap::new(),
-        })
-        // .add_systems(Startup, create_test_ui)
-        .add_systems(
-            Update,
-            (update_counter, render_views),
-            // ((
-            //     update_view_element_styles,
-            //     force_update,
-            // )
-            //     .chain(),),
-        )
-        .init_resource::<Counter>()
-        .insert_resource(ViewRootResource(ViewRoot::new(root_presenter, 1)));
+        app
+            // .add_systems(Startup, create_test_ui)
+            .add_systems(
+                Update,
+                (update_counter, render_views),
+                // ((
+                //     update_view_element_styles,
+                //     force_update,
+                // )
+                //     .chain(),),
+            )
+            .init_resource::<Counter>()
+            .insert_resource(ViewRootResource(ViewRoot::new(root_presenter, 1)));
     }
 }
 

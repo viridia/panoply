@@ -38,25 +38,25 @@ where
 
 /// Tracks resources used by each ViewState
 /// the key is the ViewState id
-#[derive(Resource)]
+#[derive(Component, Default)]
 pub struct TrackedResources {
-    pub data: HashMap<usize, Vec<Box<dyn AnyResource>>>,
+    pub data: Vec<Box<dyn AnyResource>>,
 }
 
 pub struct Cx<'w, 'p, Props = ()> {
     pub props: &'p Props,
     pub sys: &'p mut ElementContext<'w>,
-    pub id: usize,
+    pub entity: Entity,
 }
 
 impl<'w, 'p, Props> Cx<'w, 'p, Props> {
     pub fn use_resource<T: Resource>(&mut self) -> &T {
-        let mut tracked_res = self.sys.world.resource_mut::<TrackedResources>();
-        tracked_res
-            .data
-            .entry(self.id)
-            .or_default()
-            .push(Box::new(AnyRes::<T>::new()));
+        let mut tracked = self
+            .sys
+            .world
+            .get_mut::<TrackedResources>(self.entity)
+            .expect("TrackedResources not found for this entity");
+        tracked.data.push(Box::new(AnyRes::<T>::new()));
         self.sys.world.resource::<T>()
     }
 }
