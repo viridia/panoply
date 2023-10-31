@@ -59,6 +59,16 @@ impl<'w, 'p, Props> Cx<'w, 'p, Props> {
         tracked.data.push(Box::new(AnyRes::<T>::new()));
         self.sys.world.resource::<T>()
     }
+
+    pub fn use_resource_mut<T: Resource>(&mut self) -> Mut<T> {
+        let mut tracked = self
+            .sys
+            .world
+            .get_mut::<TrackedResources>(self.entity)
+            .expect("TrackedResources not found for this entity");
+        tracked.data.push(Box::new(AnyRes::<T>::new()));
+        self.sys.world.resource_mut::<T>()
+    }
 }
 
 pub struct ClassList {

@@ -44,7 +44,9 @@ fn force_update(mut transforms: Query<&mut Transform>) {
 }
 
 fn root_presenter(mut cx: Cx<u8>) -> impl View {
-    let counter = cx.use_resource::<Counter>();
+    let mut counter = cx.use_resource_mut::<Counter>();
+    counter.foo += 1;
+    println!("{}", counter.foo);
     Sequence::new((
         "Root Presenter: ",
         format!("{}", counter.count),
@@ -55,6 +57,7 @@ fn root_presenter(mut cx: Cx<u8>) -> impl View {
 #[derive(Resource, Default)]
 pub struct Counter {
     pub count: u32,
+    pub foo: usize,
 }
 
 fn update_counter(mut counter: ResMut<Counter>, key: Res<Input<KeyCode>>) {
