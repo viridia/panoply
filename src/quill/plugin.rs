@@ -1,7 +1,7 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
 use super::{
-    view::{Cx, If, Sequence},
+    view::{Cx, If, Sequence, TrackedResources},
     view_root::ViewRootResource,
     View, ViewRoot,
 };
@@ -10,19 +10,21 @@ pub struct QuillPlugin;
 
 impl Plugin for QuillPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // .add_systems(Startup, create_test_ui)
-            .add_systems(
-                Update,
-                (update_counter, render_views),
-                // ((
-                //     update_view_element_styles,
-                //     force_update,
-                // )
-                //     .chain(),),
-            )
-            .init_resource::<Counter>()
-            .insert_resource(ViewRootResource(ViewRoot::new(root_presenter, 1)));
+        app.insert_resource(TrackedResources {
+            data: HashMap::new(),
+        })
+        // .add_systems(Startup, create_test_ui)
+        .add_systems(
+            Update,
+            (update_counter, render_views),
+            // ((
+            //     update_view_element_styles,
+            //     force_update,
+            // )
+            //     .chain(),),
+        )
+        .init_resource::<Counter>()
+        .insert_resource(ViewRootResource(ViewRoot::new(root_presenter, 1)));
     }
 }
 
@@ -43,7 +45,7 @@ fn force_update(mut transforms: Query<&mut Transform>) {
     }
 }
 
-fn root_presenter(cx: Cx<u8>) -> impl View {
+fn root_presenter(mut cx: Cx<u8>) -> impl View {
     let counter = cx.use_resource::<Counter>();
     Sequence::new((
         "Root Presenter: ",
@@ -57,6 +59,8 @@ pub struct Counter {
     pub count: u32,
 }
 
-fn update_counter(mut counter: ResMut<Counter>) {
-    counter.count += 1;
+fn update_counter(mut counter: ResMut<Counter>, key: Res<Input<KeyCode>>) {
+    if key.pressed(KeyCode::Space) {
+        counter.count += 1;
+    }
 }

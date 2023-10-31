@@ -1,9 +1,9 @@
-use std::mem::swap;
+use std::{marker::PhantomData, mem::swap};
 
 use bevy::{
     prelude::*,
     text::{Text, TextStyle},
-    utils::HashSet,
+    utils::{HashMap, HashSet},
 };
 
 use super::node_span::NodeSpan;
@@ -12,13 +12,51 @@ pub struct ElementContext<'w> {
     pub(crate) world: &'w mut World,
 }
 
+pub trait AnyResource: Send + Sync {
+    fn is_changed(&self, world: &World) -> bool;
+}
+
+#[derive(PartialEq, Eq)]
+pub struct AnyRes<T> {
+    pub pdata: PhantomData<T>,
+}
+
+impl<T> AnyRes<T> {
+    fn new() -> Self {
+        Self { pdata: PhantomData }
+    }
+}
+
+impl<T> AnyResource for AnyRes<T>
+where
+    T: Resource,
+{
+    fn is_changed(&self, world: &World) -> bool {
+        world.is_resource_changed::<T>()
+    }
+}
+
+/// Tracks resources used by each ViewState
+/// the key is the ViewState id
+#[derive(Resource)]
+pub struct TrackedResources {
+    pub data: HashMap<usize, Vec<Box<dyn AnyResource>>>,
+}
+
 pub struct Cx<'w, 'p, Props = ()> {
     pub props: &'p Props,
     pub sys: &'p mut ElementContext<'w>,
+    pub id: usize,
 }
 
 impl<'w, 'p, Props> Cx<'w, 'p, Props> {
-    pub fn use_resource<T: Resource>(&self) -> &T {
+    pub fn use_resource<T: Resource>(&mut self) -> &T {
+        let mut tracked_res = self.sys.world.resource_mut::<TrackedResources>();
+        tracked_res
+            .data
+            .entry(self.id)
+            .or_default()
+            .push(Box::new(AnyRes::<T>::new()));
         self.sys.world.resource::<T>()
     }
 }
@@ -132,6 +170,7 @@ impl<'a, A: ViewTuple> View for Sequence<A> {
     type State = A::State;
 
     fn build<'w>(&self, cx: &mut ElementContext<'w>, prev: &NodeSpan) -> NodeSpan {
+        println!("build sequence");
         let count_spans = self.items.len();
         let mut child_spans: Vec<NodeSpan> = vec![NodeSpan::Empty; count_spans];
 
