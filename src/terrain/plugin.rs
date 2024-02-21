@@ -69,29 +69,24 @@ pub fn config_textures_modes(
     mut ev_image: EventReader<AssetEvent<Image>>,
 ) {
     for ev in ev_image.read() {
-        match ev {
-            AssetEvent::Added { id } => {
-                if let Some(asset_path) = server.get_path(*id) {
-                    let path = asset_path.path();
-                    if path.parent().expect("path").to_str().expect("path") == "textures" {
-                        if let Some(image) = assets.get_mut(*id) {
-                            image.sampler_descriptor =
-                                ImageSampler::Descriptor(SamplerDescriptor {
-                                    label: Some("Terrain textures"),
-                                    address_mode_u: AddressMode::Repeat,
-                                    address_mode_v: AddressMode::ClampToEdge,
-                                    address_mode_w: AddressMode::ClampToEdge,
-                                    mag_filter: FilterMode::Linear,
-                                    min_filter: FilterMode::Linear,
-                                    mipmap_filter: FilterMode::Linear,
-                                    ..default()
-                                });
-                        }
+        if let AssetEvent::Added { id } = ev {
+            if let Some(asset_path) = server.get_path(*id) {
+                let path = asset_path.path();
+                if path.parent().expect("path").to_str().expect("path") == "textures" {
+                    if let Some(image) = assets.get_mut(*id) {
+                        image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
+                            label: Some("Terrain textures"),
+                            address_mode_u: AddressMode::Repeat,
+                            address_mode_v: AddressMode::ClampToEdge,
+                            address_mode_w: AddressMode::ClampToEdge,
+                            mag_filter: FilterMode::Linear,
+                            min_filter: FilterMode::Linear,
+                            mipmap_filter: FilterMode::Linear,
+                            ..default()
+                        });
                     }
                 }
             }
-
-            _ => {}
         }
     }
 }

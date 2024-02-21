@@ -14,7 +14,7 @@ where
         }
     }
 
-    pub fn from_slice(&mut self, data: &[T]) {
+    pub fn copy_from_slice(&mut self, data: &[T]) {
         assert!(data.len() == self.size * self.size);
         self.elts.copy_from_slice(data);
     }

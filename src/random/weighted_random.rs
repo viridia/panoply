@@ -12,11 +12,11 @@ impl<T: Choice> WeightedRandom<T> {
         for entry in choices.iter() {
             let p = entry.probability();
             if i <= p {
-                return Some(&entry);
+                return Some(entry);
             }
             i -= p;
         }
-        return None;
+        None
     }
 
     pub fn new(choices: Vec<T>) -> WeightedRandom<T> {
@@ -29,11 +29,11 @@ impl<T: Choice> WeightedRandom<T> {
         for entry in self.choices.iter() {
             let p = entry.probability();
             if i <= p {
-                return Some(&entry);
+                return Some(entry);
             }
             i -= p;
         }
-        return None;
+        None
     }
 }
 

@@ -41,7 +41,7 @@ pub fn gen_ground_meshes(
 
     for (entity, parcel) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
-        if !realm.is_ok() {
+        if realm.is_err() {
             return;
         }
 
@@ -182,7 +182,7 @@ fn compute_ground_mesh(
 
 pub fn compute_interpolated_mesh(
     // `ihm` stands for 'Interpolated height map.'
-    mut ihm: &mut SquareArray<f32>,
+    ihm: &mut SquareArray<f32>,
     shape_refs: [ShapeRef; ADJACENT_COUNT],
     shapes_table: &TerrainContoursTable,
 ) {
@@ -201,7 +201,7 @@ pub fn compute_interpolated_mesh(
             if shape.has_terrain {
                 accumulate(
                     &shape.height,
-                    &mut ihm,
+                    ihm,
                     &mut weights,
                     1 + x * PARCEL_MESH_RESOLUTION,
                     1 + z * PARCEL_MESH_RESOLUTION,
@@ -244,7 +244,7 @@ fn accumulate(
     z_offset: i32,
     rotation: i32,
 ) {
-    let src_rot = RotatingSquareArray::new(src.size(), rotation, &src.elts());
+    let src_rot = RotatingSquareArray::new(src.size(), rotation, src.elts());
     let x0 = x_offset.max(0);
     let x1 = (x_offset + PARCEL_MESH_RESOLUTION + 1).min(dst.size() as i32);
     let z0 = z_offset.max(0);
@@ -283,5 +283,5 @@ fn interpolate_square(square: &RotatingSquareArray<i8>, x: f32, z: f32) -> f32 {
     let fy = cz - z0;
     let h0 = h00 * (1. - fx) + h10 * fx;
     let h1 = h01 * (1. - fx) + h11 * fx;
-    return h0 * (1. - fy) + h1 * fy;
+    h0 * (1. - fy) + h1 * fy
 }

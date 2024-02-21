@@ -134,6 +134,6 @@ fn realm_name_from_handle(server: &Res<AssetServer>, handle: &AssetId<RealmData>
     let path = asset_path.path();
     let filename = path.file_name().expect("Asset has no file name!");
     let filename_str = filename.to_str().unwrap();
-    let dot = filename_str.find(".").unwrap_or(filename_str.len());
-    return filename_str[0..dot].to_string();
+    let dot = filename_str.find('.').unwrap_or(filename_str.len());
+    filename_str[0..dot].to_string()
 }

@@ -98,6 +98,6 @@ impl<'a> RotatingSquareArray<'a, i8> {
         let fy = yc - y0;
         let h0 = h00 * (1. - fx) + h10 * fx;
         let h1 = h01 * (1. - fx) + h11 * fx;
-        return h0 * (1. - fy) + h1 * fy;
+        h0 * (1. - fy) + h1 * fy
     }
 }

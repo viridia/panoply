@@ -36,6 +36,7 @@ pub struct FloraPlacementResult {
 pub const HEIGHT_SCALE: f32 = 0.5;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
+#[allow(clippy::too_many_arguments)]
 pub fn gen_flora(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel), With<ParcelFloraChanged>>,
@@ -50,7 +51,7 @@ pub fn gen_flora(
 
     for (entity, parcel) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
-        if !realm.is_ok() {
+        if realm.is_err() {
             return;
         }
 
@@ -74,10 +75,7 @@ pub fn gen_flora(
 
         let shape_ref = parcel.contours[4];
         let biome_indices = parcel.biomes;
-        let coords = IVec2::new(
-            parcel.coords.x as i32 * PARCEL_SIZE,
-            parcel.coords.y as i32 * PARCEL_SIZE,
-        );
+        let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: InstanceMap::new(),
@@ -181,13 +179,13 @@ fn compute_flora_placement(
     let flora = RotatingSquareArray::new(
         PARCEL_SIZE as usize,
         shape_ref.rotation as i32,
-        &center.flora.elts(),
+        center.flora.elts(),
     );
 
     let heights = RotatingSquareArray::new(
         center.height.size(),
         shape_ref.rotation as i32,
-        &center.height.elts(),
+        center.height.elts(),
     );
 
     for x in 0..PARCEL_SIZE {
@@ -205,7 +203,7 @@ fn compute_flora_placement(
             let gz = origin.y + z;
 
             let feature = flora.get(x, z);
-            if feature == FloraType::None.into() {
+            if feature == FloraType::None {
                 continue;
             }
 

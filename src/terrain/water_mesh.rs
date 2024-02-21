@@ -38,7 +38,7 @@ pub fn gen_water_meshes(
 
     for (entity, parcel) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
-        if !realm.is_ok() {
+        if realm.is_err() {
             return;
         }
 
@@ -100,11 +100,9 @@ pub fn insert_water_meshes(
                             commands.entity(ent).insert(bundle);
                         }
                     }
-                } else {
-                    if let Some(ent) = parcel.water_entity {
-                        commands.entity(ent).despawn_recursive();
-                        parcel.water_entity = None;
-                    }
+                } else if let Some(ent) = parcel.water_entity {
+                    commands.entity(ent).despawn_recursive();
+                    parcel.water_entity = None;
                 }
                 commands.entity(entity).remove::<ComputeWaterMeshTask>();
             }
@@ -147,7 +145,7 @@ fn compute_water_mesh(
                 let index = position.len() as u32;
                 position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
                 normal.push(n.to_array());
-                depth_motion.push([depth as f32 * -HEIGHT_SCALE, 0., 0.]);
+                depth_motion.push([depth * -HEIGHT_SCALE, 0., 0.]);
                 index
             }
         };

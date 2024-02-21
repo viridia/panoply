@@ -144,14 +144,14 @@ impl AssetLoader for TerrainContoursTableLoader {
                 for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
                     height[i] = shape.height[i] as i8;
                 }
-                sh.height.from_slice(height.as_slice());
+                sh.height.copy_from_slice(height.as_slice());
                 let mut flora = Vec::<FloraType>::with_capacity(shape.flora.len());
                 flora.resize(shape.flora.len(), FloraType::None);
                 for i in 0..shape.flora.len() {
                     flora[i] = FloraType::from_u8(shape.flora[i]);
                 }
                 flora.resize(shape.flora.len(), FloraType::None);
-                sh.flora.from_slice(flora.as_slice());
+                sh.flora.copy_from_slice(flora.as_slice());
                 res.shapes.push(sh);
                 if res.by_id.len() <= shape.id {
                     res.by_id.resize(shape.id + 1, 0);

@@ -16,9 +16,7 @@ extern crate directories;
 
 mod diagnostics;
 mod editor;
-mod guise;
 mod instancing;
-mod quill;
 mod random;
 mod settings;
 mod terrain;
@@ -29,7 +27,6 @@ use view::{PrimaryCamera, Viewpoint};
 use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
-    quill::QuillPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
@@ -71,7 +68,6 @@ fn main() {
         settings = s
     }
 
-    use bevy_trait_query::RegisterExt;
     App::new()
         .add_plugins((
             DefaultPlugins
@@ -122,7 +118,7 @@ fn main() {
             TerrainPlugin,
             InstancedModelsPlugin,
             // GuisePlugin,
-            QuillPlugin, // WorldInspectorPlugin::new(),
+            // QuillPlugin, // WorldInspectorPlugin::new(),
         ))
         .run();
 
@@ -257,7 +253,6 @@ fn setup(
             },
             camera_2d: Camera2d {
                 clear_color: ClearColorConfig::None,
-                ..default()
             },
             ..default()
         },
