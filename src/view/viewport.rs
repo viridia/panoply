@@ -25,7 +25,7 @@ pub fn update_camera_viewport(
     let window = windows.single();
     let ww = window.resolution.physical_width() as f32;
     let wh = window.resolution.physical_height() as f32;
-    let sf = window.resolution.scale_factor() as f32;
+    let sf = window.resolution.scale_factor();
     let left = viewport_inset.left * sf;
     let right = viewport_inset.right * sf;
     let top = viewport_inset.top * sf;
@@ -59,9 +59,9 @@ pub struct ViewportInsetController {}
 // impl Controller for ViewportInsetController {}
 
 pub fn update_viewport_inset(
-    windows: Query<&Window, With<PrimaryWindow>>,
+    _windows: Query<&Window, With<PrimaryWindow>>,
     // query: Query<(&ViewElement, &Node, &GlobalTransform), With<ViewportInsetController>>,
-    mut viewport_inset: ResMut<ViewportInset>,
+    mut _viewport_inset: ResMut<ViewportInset>,
 ) {
     // let mut inset = ViewportInset::default();
     // match query.get_single() {

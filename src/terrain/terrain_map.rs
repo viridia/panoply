@@ -5,6 +5,7 @@ use bevy::{
     prelude::*,
     reflect::TypePath,
     render::{
+        render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
@@ -12,6 +13,7 @@ use bevy::{
 };
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::world::Realm;
 
@@ -118,11 +120,21 @@ pub struct TerrainMap {
 #[component(storage = "SparseSet")]
 pub struct TerrainMapChanged;
 
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum TerrainMapLoaderError {
+    #[error("Could load terrain map: {0}")]
+    Io(#[from] std::io::Error),
+    // #[error("Could not extract image: {0}")]
+    // Image(#[from] image::ImageError),
+}
+
 #[derive(Default)]
 pub struct TerrainMapLoader;
 
 impl AssetLoader for TerrainMapLoader {
     type Asset = TerrainMapAsset;
+    type Error = TerrainMapLoaderError;
     type Settings = ();
 
     fn load<'a>(
@@ -130,7 +142,7 @@ impl AssetLoader for TerrainMapLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -193,7 +205,7 @@ pub fn insert_terrain_maps(
             TerrainMap {
                 handle: server.load(&terrain_path.to_string()),
                 biome_texture: Image::default(),
-                ground_material: create_material(&mut materials, &mut images, &server),
+                ground_material: create_ground_material(&mut materials, &mut images, &server),
                 needs_rebuild_biomes: false,
             },
             TerrainMapChanged,
@@ -220,7 +232,7 @@ pub fn update_terrain_maps(
                         TerrainMap {
                             handle: server.get_id_handle(*id).unwrap(),
                             biome_texture: Image::default(),
-                            ground_material: create_material(
+                            ground_material: create_ground_material(
                                 &mut materials,
                                 &mut images,
                                 &asset_server,
@@ -251,6 +263,8 @@ pub fn update_terrain_maps(
                     }
                 }
             }
+
+            AssetEvent::Unused { id: _ } => {}
         }
     }
 }
@@ -302,8 +316,9 @@ pub fn update_ground_material(
                                 TextureDimension::D2,
                                 &texture_data,
                                 TextureFormat::R8Uint,
+                                RenderAssetUsages::default(),
                             );
-                            res.sampler_descriptor = ImageSampler::nearest();
+                            res.sampler = ImageSampler::nearest();
                             m.biomes = images.add(res);
                         }
 
@@ -318,7 +333,7 @@ pub fn update_ground_material(
     }
 }
 
-fn create_material(
+fn create_ground_material(
     materials: &mut Assets<GroundMaterial>,
     images: &mut Assets<Image>,
     asset_server: &AssetServer,
@@ -332,8 +347,9 @@ fn create_material(
         TextureDimension::D2,
         &[0u8],
         TextureFormat::R8Uint,
+        RenderAssetUsages::default(),
     );
-    res.sampler_descriptor = ImageSampler::nearest();
+    res.sampler = ImageSampler::nearest();
     let biomes = images.add(res);
 
     materials.add(GroundMaterial {

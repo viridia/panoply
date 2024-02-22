@@ -5,6 +5,7 @@ use bevy::reflect::TypePath;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub type RealmLayer = usize;
 
@@ -33,11 +34,21 @@ pub struct Realm {
     pub lighting: RealmLighting,
 }
 
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum RealmsLoaderError {
+    #[error("Could load realm: {0}")]
+    Io(#[from] std::io::Error),
+    // #[error("Could not extract image: {0}")]
+    // Image(#[from] image::ImageError),
+}
+
 #[derive(Default)]
 pub struct RealmsLoader;
 
 impl AssetLoader for RealmsLoader {
     type Asset = RealmData;
+    type Error = RealmsLoaderError;
     type Settings = ();
 
     fn load<'a>(
@@ -45,7 +56,7 @@ impl AssetLoader for RealmsLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -125,6 +136,8 @@ pub fn sync_realms(
                     }
                 }
             }
+
+            AssetEvent::Unused { id: _ } => {}
         }
     }
 }

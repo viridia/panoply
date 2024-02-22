@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 use bevy::{
-    core_pipeline::clear_color::ClearColorConfig,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
+        render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
@@ -82,7 +82,7 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(AssetPlugin::default().watch_for_changes()),
+                .set(AssetPlugin::default()),
             ScreenDiagsPlugin,
         ))
         .insert_resource(settings)
@@ -99,7 +99,7 @@ fn main() {
         .insert_resource(ToolState {
             state: EditorState::World,
         })
-        .add_systems(Startup, (setup, load_assets_system))
+        .add_systems(Startup, setup)
         // .register_component_as::<dyn Controller, ViewportInsetController>()
         .add_systems(
             Update,
@@ -164,13 +164,12 @@ fn setup(
     });
 
     let shapes = [
-        meshes.add(shape::Cube::default().into()),
-        meshes.add(shape::Box::default().into()),
-        meshes.add(shape::Capsule::default().into()),
-        meshes.add(shape::Torus::default().into()),
-        meshes.add(shape::Cylinder::default().into()),
-        meshes.add(shape::Icosphere::default().try_into().unwrap()),
-        meshes.add(shape::UVSphere::default().into()),
+        meshes.add(Cuboid::default()),
+        meshes.add(Capsule3d::default()),
+        meshes.add(Torus::default()),
+        meshes.add(Cylinder::default()),
+        meshes.add(Sphere::default().mesh().ico(5).unwrap()),
+        meshes.add(Sphere::default().mesh().uv(32, 18)),
     ];
 
     let num_shapes = shapes.len();
@@ -181,9 +180,9 @@ fn setup(
                 mesh: shape,
                 material: debug_material.clone(),
                 transform: Transform::from_xyz(
-                    -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
-                    2.0,
                     0.0,
+                    2.0,
+                    -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
                 )
                 .with_rotation(Quat::from_rotation_x(-PI / 4.)),
                 ..default()
@@ -204,7 +203,7 @@ fn setup(
     });
 
     commands.insert_resource(AmbientLight {
-        brightness: 0.8,
+        brightness: 0.8 * 1000.,
         color: Color::Rgba {
             red: 0.5,
             green: 0.7,
@@ -222,7 +221,7 @@ fn setup(
                 blue: 1.,
                 alpha: 1.,
             },
-            illuminance: 12000.,
+            illuminance: 4000.,
             ..default()
         },
         transform: Transform {
@@ -249,14 +248,12 @@ fn setup(
             camera: Camera {
                 // HUD goes on top of 3D
                 order: 1,
-                ..default()
-            },
-            camera_2d: Camera2d {
                 clear_color: ClearColorConfig::None,
+                ..default()
             },
             ..default()
         },
-        UiCameraConfig { show_ui: true },
+        // UiCameraConfig { show_ui: true },
     ));
 
     // Primary Camera
@@ -266,10 +263,6 @@ fn setup(
             camera: Camera {
                 // Renders the 3d view first,
                 order: 0,
-                ..default()
-            },
-            camera_3d: Camera3d {
-                // don't clear on the second camera because the first camera already cleared the window
                 clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
             },
@@ -277,7 +270,7 @@ fn setup(
             ..default()
         },
         PrimaryCamera,
-        UiCameraConfig { show_ui: false },
+        // UiCameraConfig { show_ui: false },
     ));
 
     // TODO: Move to 'hud' module
@@ -314,8 +307,9 @@ fn uv_debug_texture() -> Image {
         TextureDimension::D2,
         &texture_data,
         TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
     );
-    res.sampler_descriptor = ImageSampler::nearest();
+    res.sampler = ImageSampler::nearest();
     res
 }
 

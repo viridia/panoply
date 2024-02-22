@@ -64,7 +64,7 @@ pub fn spawn_parcels(
     // ONLY if terrain maps haven't changed?
 
     // Reset the visibility bits for all parcels.
-    query.for_each_mut(|mut parcel| {
+    query.iter_mut().for_each(|mut parcel| {
         parcel.visible = false;
     });
 

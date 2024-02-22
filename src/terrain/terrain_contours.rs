@@ -1,6 +1,7 @@
 use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
+use thiserror::Error;
 
 use std::sync::{Arc, Mutex};
 
@@ -109,11 +110,21 @@ impl TerrainContoursTable {
 #[derive(TypePath, Asset)]
 pub struct TerrainContoursTableAsset(pub Arc<Mutex<TerrainContoursTable>>);
 
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum TerrainContoursLoaderError {
+    #[error("Could load terrain contours: {0}")]
+    Io(#[from] std::io::Error),
+    // #[error("Could not extract image: {0}")]
+    // Image(#[from] image::ImageError),
+}
+
 #[derive(Default)]
 pub struct TerrainContoursTableLoader;
 
 impl AssetLoader for TerrainContoursTableLoader {
     type Asset = TerrainContoursTableAsset;
+    type Error = TerrainContoursLoaderError;
     type Settings = ();
 
     fn load<'a>(
@@ -121,7 +132,7 @@ impl AssetLoader for TerrainContoursTableLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -141,6 +152,7 @@ impl AssetLoader for TerrainContoursTableLoader {
                     has_water: shape.has_water,
                 };
                 let mut height: Vec<i8> = vec![0; HEIGHT_STRIDE * HEIGHT_STRIDE];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
                     height[i] = shape.height[i] as i8;
                 }

@@ -14,7 +14,7 @@ use super::{
 use bevy::{
     asset::LoadState,
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
@@ -115,7 +115,10 @@ fn compute_ground_mesh(
     let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
     compute_smoothed_mesh(&mut shm, &ihm);
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut indices: Vec<u32> = Vec::with_capacity((PARCEL_MESH_RESOLUTION.pow(2)) as usize);
@@ -175,7 +178,7 @@ fn compute_ground_mesh(
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
-    mesh.set_indices(Some(Indices::U32(indices)));
+    mesh.insert_indices(Indices::U32(indices));
     mesh.compute_aabb();
     Some(GroundMeshResult { mesh })
 }

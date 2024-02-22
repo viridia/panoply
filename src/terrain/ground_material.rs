@@ -35,6 +35,7 @@ impl Material for GroundMaterial {
     fn fragment_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()
     }
+
     fn vertex_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()
     }

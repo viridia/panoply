@@ -1,32 +1,35 @@
 #define FRAGMENT_WAVES 1
 #define VERTEX_WAVES 1
 
-#import bevy_pbr::mesh_view_bindings    globals
-#import bevy_pbr::mesh_view_bindings    view
-#import bevy_pbr::pbr_functions         as fns
-#import bevy_pbr::mesh_functions        as mfns
-#import bevy_pbr::mesh_bindings         mesh
-#import bevy_core_pipeline::tonemapping tone_mapping
+#import bevy_core_pipeline::tonemapping::tone_mapping
+#import bevy_pbr::{
+    mesh_bindings::mesh,
+    mesh_functions as mfns,
+    mesh_view_bindings::globals,
+    mesh_view_bindings::view,
+    pbr_types::{PbrInput, pbr_input_new},
+    pbr_functions as fns,
+}
 
-@group(1) @binding(1)
+@group(2) @binding(1)
 var<uniform> water_color: vec4<f32>;
 
-@group(1) @binding(2)
+@group(2) @binding(2)
 var<uniform> sky_color: array<vec4<f32>, 2>;
 
-@group(1) @binding(3)
+@group(2) @binding(3)
 var waves: texture_2d<f32>;
-@group(1) @binding(4)
+@group(2) @binding(4)
 var waves_sampler: sampler;
 
-@group(1) @binding(5)
+@group(2) @binding(5)
 var sky: texture_2d<f32>;
-@group(1) @binding(6)
+@group(2) @binding(6)
 var sky_sampler: sampler;
 
-@group(1) @binding(7)
+@group(2) @binding(7)
 var foam: texture_2d<f32>;
-@group(1) @binding(8)
+@group(2) @binding(8)
 var foam_sampler: sampler;
 
 struct Vertex {
@@ -56,12 +59,12 @@ fn add_wave(
     position: vec2<f32>,
     out: ptr<function, WaveAccum>,
 ) {
-    let phase = freq * globals.time;
+    // let phase = freq * globals.time;
     let wavelength = length(direction);
     let l = 1. / (wavelength * wavelength);
-    let angle = (phase / wavelength + dot(direction, position) * l) * PI * 2.;
-    (*out).amplitude += cos(angle) * strength;
-    (*out).tangent += direction * l * sin(angle) * strength * PI * 2.;
+    // let angle = (phase / wavelength + dot(direction, position) * l) * PI * 2.;
+    // (*out).amplitude += cos(angle) * strength;
+    // (*out).tangent += direction * l * sin(angle) * strength * PI * 2.;
 }
 
 @vertex
@@ -163,7 +166,7 @@ fn fragment(
 
     color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
 
-    var pbr_input: fns::PbrInput = fns::pbr_input_new();
+    var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = color;
     pbr_input.material.perceptual_roughness = 0.1;
     pbr_input.material.metallic = 0.;
@@ -179,13 +182,16 @@ fn fragment(
     pbr_input.N = fns::apply_normal_mapping(
         pbr_input.material.flags,
         normal,
+        false, // double_sided,
+        is_front,
+        // uv,
         view.mip_bias,
     );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
-    var out_color = fns::pbr(pbr_input);
+    var out_color = fns::apply_pbr_lighting(pbr_input);
     pbr_input.material.perceptual_roughness = 0.6;
-    var out_color_2 = fns::pbr(pbr_input);
+    var out_color_2 = fns::apply_pbr_lighting(pbr_input);
     out_color = mix(out_color, out_color_2, 0.4);
 
     out_color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);

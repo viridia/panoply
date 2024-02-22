@@ -4,29 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.75"
-# bevy = { version = "0.11.2", features = ["dynamic_linking", "filesystem_watcher"] }
-bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["dynamic_linking", "filesystem_watcher"], branch = "main" }
-# bevy = { git = "https://github.com/cart/bevy", features = ["filesystem_watcher"], branch = "fix-hot-labels"}
+bevy = { version = "0.13.0", features = ["dynamic_linking", "file_watcher"] }
+# bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["dynamic_linking"], branch = "main" }
 bevy-inspector-egui = "0.19.0"
-# bevy-trait-query = "0.3.0"
-bevy-trait-query = { git = "https://github.com/hymm/bevy-trait-query", branch = "bevy_asset_v2" }
 bevy_mod_picking = { git = "https://github.com/aevyrie/bevy_mod_picking.git",  branch = "main" }
-cargo-wgsl = "0.0.14"
 directories = "5.0.1"
-futures-lite = "1.13.0"
-lazy_static = "1.4.0"
+futures-lite = "2.2.0"
 lru = "0.11.0"
-pest = "2.7.3"
-pest_derive = "2.7.3"
-regex = "1.9.3"
 rmp-serde = "1.1.2"
 serde = "1.0.171"
 serde_bytes = "0.11.12"
 serde_derive = "1.0.171"
 serde_json = "1.0.103"
 serde_repr = "0.1.16"
-winnow = "0.5.15"
+thiserror = "1.0.57"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

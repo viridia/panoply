@@ -1,38 +1,41 @@
-#import bevy_pbr::mesh_view_bindings    view
-#import bevy_pbr::pbr_functions         as fns
-#import bevy_pbr::mesh_functions        as mfns
-#import bevy_pbr::mesh_bindings         mesh
-#import bevy_core_pipeline::tonemapping tone_mapping
+#import bevy_core_pipeline::tonemapping::tone_mapping
+#import bevy_pbr::{
+    mesh_view_bindings::view,
+    mesh_functions as mfns,
+    mesh_bindings::mesh,
+    pbr_types::{PbrInput, pbr_input_new},
+    pbr_functions as fns,
+}
 
-@group(1) @binding(1)
+@group(2) @binding(1)
 var noise: texture_2d<f32>;
-@group(1) @binding(2)
+@group(2) @binding(2)
 var noise_sampler: sampler;
 
-@group(1) @binding(3)
+@group(2) @binding(3)
 var grass: texture_2d<f32>;
-@group(1) @binding(4)
+@group(2) @binding(4)
 var grass_sampler: sampler;
 
-@group(1) @binding(5)
+@group(2) @binding(5)
 var dirt: texture_2d<f32>;
-@group(1) @binding(6)
+@group(2) @binding(6)
 var dirt_sampler: sampler;
 
-@group(1) @binding(7)
+@group(2) @binding(7)
 var moss: texture_2d<f32>;
-@group(1) @binding(8)
+@group(2) @binding(8)
 var moss_sampler: sampler;
 
-@group(1) @binding(9)
+@group(2) @binding(9)
 var biomes: texture_2d<u32>;
 // @group(1) @binding(10)
 // var biomes_sampler: sampler;
 
-@group(1) @binding(11)
+@group(2) @binding(11)
 var<uniform> water_color: vec4<f32>;
 
-@group(1) @binding(12)
+@group(2) @binding(12)
 var<uniform> realm_offset: vec2<f32>;
 
 const NUM_GROUND_TYPES = 9u;
@@ -268,7 +271,7 @@ fn fragment(
 	// If underwater, then mix in dark blue
 	diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.7));
 
-    var pbr_input: fns::PbrInput = fns::pbr_input_new();
+    var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = diffuse_color;
     pbr_input.material.perceptual_roughness = roughness;
     pbr_input.frag_coord = mesh.position;
@@ -284,9 +287,11 @@ fn fragment(
     pbr_input.N = fns::apply_normal_mapping(
         pbr_input.material.flags,
         mesh.world_normal,
+        false, // double_sided,
+        is_front,
         view.mip_bias,
     );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
-    return tone_mapping(fns::pbr(pbr_input), view.color_grading);
+    return tone_mapping(fns::apply_pbr_lighting(pbr_input), view.color_grading);
 }

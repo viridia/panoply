@@ -4,7 +4,7 @@ use bevy::{
     asset::LoadState,
     pbr::NotShadowCaster,
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
     tasks::{AsyncComputeTaskPool, Task},
     utils::HashMap,
 };
@@ -128,7 +128,10 @@ fn compute_water_mesh(
     let mut shm = SquareArray::<f32>::new(PARCEL_MESH_STRIDE as usize, 0.);
     compute_smoothed_mesh(&mut shm, &ihm);
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_WATER_VERTEX_COUNT);
     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut depth_motion: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
@@ -175,7 +178,7 @@ fn compute_water_mesh(
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_attribute(ATTRIBUTE_DEPTH_MOTION, depth_motion);
-    mesh.set_indices(Some(Indices::U32(indices)));
+    mesh.insert_indices(Indices::U32(indices));
     mesh.compute_aabb();
     Some(mesh)
 }

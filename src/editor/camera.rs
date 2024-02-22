@@ -14,7 +14,7 @@ fn movement(flag: bool) -> f32 {
 }
 
 pub fn camera_controller(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut scroll_events: EventReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
@@ -25,10 +25,10 @@ pub fn camera_controller(
     let strafe =
         keyboard_input.pressed(KeyCode::ShiftLeft) || keyboard_input.pressed(KeyCode::ShiftRight);
     let fast = if strafe { 3. } else { 1. };
-    let left = keyboard_input.pressed(KeyCode::Left);
-    let right = keyboard_input.pressed(KeyCode::Right);
-    let up = keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W);
-    let down = keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S);
+    let left = keyboard_input.pressed(KeyCode::ArrowLeft);
+    let right = keyboard_input.pressed(KeyCode::ArrowRight);
+    let up = keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW);
+    let down = keyboard_input.pressed(KeyCode::ArrowDown) || keyboard_input.pressed(KeyCode::KeyS);
 
     use bevy::input::mouse::MouseScrollUnit;
     for ev in scroll_events.read() {

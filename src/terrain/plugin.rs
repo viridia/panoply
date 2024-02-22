@@ -1,9 +1,6 @@
 use bevy::{
     prelude::*,
-    render::{
-        render_resource::{AddressMode, FilterMode, SamplerDescriptor},
-        texture::ImageSampler,
-    },
+    render::texture::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor},
 };
 
 use super::{
@@ -74,14 +71,14 @@ pub fn config_textures_modes(
                 let path = asset_path.path();
                 if path.parent().expect("path").to_str().expect("path") == "textures" {
                     if let Some(image) = assets.get_mut(*id) {
-                        image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
-                            label: Some("Terrain textures"),
-                            address_mode_u: AddressMode::Repeat,
-                            address_mode_v: AddressMode::ClampToEdge,
-                            address_mode_w: AddressMode::ClampToEdge,
-                            mag_filter: FilterMode::Linear,
-                            min_filter: FilterMode::Linear,
-                            mipmap_filter: FilterMode::Linear,
+                        image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                            label: Some("Terrain textures".to_string()),
+                            address_mode_u: ImageAddressMode::Repeat,
+                            address_mode_v: ImageAddressMode::ClampToEdge,
+                            address_mode_w: ImageAddressMode::ClampToEdge,
+                            mag_filter: ImageFilterMode::Linear,
+                            min_filter: ImageFilterMode::Linear,
+                            mipmap_filter: ImageFilterMode::Linear,
                             ..default()
                         });
                     }

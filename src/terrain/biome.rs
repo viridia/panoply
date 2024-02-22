@@ -1,6 +1,7 @@
 use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
+use thiserror::Error;
 
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
@@ -58,16 +59,26 @@ pub struct BiomesAsset(pub Arc<Mutex<BiomesTable>>);
 #[derive(Default)]
 pub struct BiomesLoader;
 
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum BiomesLoaderError {
+    #[error("Could load biome: {0}")]
+    Io(#[from] std::io::Error),
+    // #[error("Could not extract image: {0}")]
+    // Image(#[from] image::ImageError),
+}
+
 impl AssetLoader for BiomesLoader {
     type Asset = BiomesAsset;
     type Settings = ();
+    type Error = BiomesLoaderError;
 
     fn load<'a>(
         &'a self,
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;

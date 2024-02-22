@@ -5,6 +5,7 @@ use bevy::reflect::TypePath;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Represents a map location or nav point that can be teleported to.
 #[derive(Default, Serialize, Deserialize)]
@@ -32,11 +33,21 @@ pub struct WorldLocation {
 #[derive(TypePath, Asset)]
 pub struct WorldLocationsAsset(pub Vec<WorldLocation>);
 
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum WorldLocationsLoaderError {
+    #[error("Could load locations: {0}")]
+    Io(#[from] std::io::Error),
+    // #[error("Could not extract image: {0}")]
+    // Image(#[from] image::ImageError),
+}
+
 #[derive(Default)]
 pub struct WorldLocationsLoader;
 
 impl AssetLoader for WorldLocationsLoader {
     type Asset = WorldLocationsAsset;
+    type Error = WorldLocationsLoaderError;
     type Settings = ();
 
     fn load<'a>(
@@ -44,7 +55,7 @@ impl AssetLoader for WorldLocationsLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
