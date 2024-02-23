@@ -3,6 +3,7 @@
     mesh_view_bindings::view,
     mesh_functions as mfns,
     mesh_bindings::mesh,
+    mesh_types::MESH_FLAGS_SHADOW_RECEIVER_BIT,
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
 }
@@ -159,41 +160,41 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
         vec4<f32>(vertex.position, 1.0)
     );
 
-	let parcel_coords = floor(wposition.xz / 16.0) - realm_offset;
-	let parcel_coords_i = vec2<i32>(i32(parcel_coords.x), i32(parcel_coords.y));
-	let biome_selection = vec4<u32>(
-		textureLoad(biomes, parcel_coords_i, 0).r,
-		textureLoad(biomes, (parcel_coords_i + vec2(0, 1)), 0).r,
-		textureLoad(biomes, (parcel_coords_i + vec2(1, 0)), 0).r,
-		textureLoad(biomes, (parcel_coords_i + vec2(1, 1)), 0).r
-	);
+    let parcel_coords = floor(wposition.xz / 16.0) - realm_offset;
+    let parcel_coords_i = vec2<i32>(i32(parcel_coords.x), i32(parcel_coords.y));
+    let biome_selection = vec4<u32>(
+        textureLoad(biomes, parcel_coords_i, 0).r,
+        textureLoad(biomes, (parcel_coords_i + vec2(0, 1)), 0).r,
+        textureLoad(biomes, (parcel_coords_i + vec2(1, 0)), 0).r,
+        textureLoad(biomes, (parcel_coords_i + vec2(1, 1)), 0).r
+    );
 
     let parcel_uv = fract(wposition.xz / 16.);
-	let biome_interpolation = vec4<f32>(
-		(1. - parcel_uv.x) * (1. - parcel_uv.y),
-		(1. - parcel_uv.x) * parcel_uv.y,
-		parcel_uv.x * (1. - parcel_uv.y),
-		parcel_uv.x * parcel_uv.y
-	);
+    let biome_interpolation = vec4<f32>(
+        (1. - parcel_uv.x) * (1. - parcel_uv.y),
+        (1. - parcel_uv.x) * parcel_uv.y,
+        parcel_uv.x * (1. - parcel_uv.y),
+        parcel_uv.x * parcel_uv.y
+    );
 
-	// Compute weights for each ground cover type.
-	var first_layer = true;
+    // Compute weights for each ground cover type.
+    var first_layer = true;
     var biome_weight = array<f32, NUM_GROUND_TYPES>();
-	for (var i = 0u; i < NUM_GROUND_TYPES; i++) {
+    for (var i = 0u; i < NUM_GROUND_TYPES; i++) {
         var eq = vec4<f32>();
         eq.x = select(0., 1., i == biome_selection.x);
         eq.y = select(0., 1., i == biome_selection.y);
         eq.z = select(0., 1., i == biome_selection.z);
         eq.w = select(0., 1., i == biome_selection.w);
-		// let eq = vec4(equal(vec4<u32>(i), biome_selection));
-		var weight = dot(eq, biome_interpolation);
-		// The first non-zero layer covers the entire parcel.
-		if (dot(eq, eq) > 0. && first_layer) {
-			weight = 1.;
-			first_layer = false;
-		}
-		biome_weight[i] = weight;
-	}
+        // let eq = vec4(equal(vec4<u32>(i), biome_selection));
+        var weight = dot(eq, biome_interpolation);
+        // The first non-zero layer covers the entire parcel.
+        if (dot(eq, eq) > 0. && first_layer) {
+            weight = 1.;
+            first_layer = false;
+        }
+        biome_weight[i] = weight;
+    }
 
     out.world_position = wposition;
     out.position = mfns::mesh_position_local_to_clip(
@@ -221,7 +222,7 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let uv = vec2<f32>(mesh.world_position.xz);
 
-	let slope = 1.0 - pow(mesh.slope, 2.);
+    let slope = 1.0 - pow(mesh.slope, 2.);
 
     var sfc: SurfaceAccum;
     sfc.color = vec4<f32>(0., 0., 0., 1.);
@@ -231,45 +232,45 @@ fn fragment(
 
     let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * dirt_biome.tx_scale));
 
-	// vec3 underColor = dirtColor.xyz;
-	let under_roughness = 0.9 - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
-	// let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
+    // vec3 underColor = dirtColor.xyz;
+    let under_roughness = 0.9 - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
+    // let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
 
-	let slope_mix = slope + sfc.terrain_noise * 0.5;
-	sfc.under_mix = max(sfc.under_mix, smoothstep(0.35, 0.55, slope_mix));
-	sfc.under_darken = max(sfc.under_darken, smoothstep(0.1, 0.6, slope_mix));
+    let slope_mix = slope + sfc.terrain_noise * 0.5;
+    sfc.under_mix = max(sfc.under_mix, smoothstep(0.35, 0.55, slope_mix));
+    sfc.under_darken = max(sfc.under_darken, smoothstep(0.1, 0.6, slope_mix));
 
-	// No top coats underwater
-	sfc.under_mix = min(1., max(sfc.under_mix, -mesh.world_position.y * 3.));
+    // No top coats underwater
+    sfc.under_mix = min(1., max(sfc.under_mix, -mesh.world_position.y * 3.));
     var under_color = dirt_color.xyz;
 
     // Dirt surface
     let bw_dirt = mesh.biome_weight_0.y;
-	if bw_dirt > 0. {
+    if bw_dirt > 0. {
         blend_biome(&sfc, dirt_biome, bw_dirt, dirt_color.rgb);
-	}
+    }
 
     // Grass surface
     let grass_color = textureSample(grass, grass_sampler, fract(uv * UV_ROT * grass_biome.tx_scale));
     let bw_grass = mesh.biome_weight_0.z;
-	if bw_grass > 0. {
+    if bw_grass > 0. {
         blend_biome(&sfc, grass_biome, bw_grass, grass_color.rgb);
-	}
+    }
 
     // Moss surface
     let moss_color = textureSample(moss, moss_sampler, fract(uv * UV_ROT * moss_biome.tx_scale));
     let bw_moss = mesh.biome_weight_0.w;
-	if bw_moss > 0. {
+    if bw_moss > 0. {
         blend_biome(&sfc, moss_biome, bw_moss, moss_color.rgb);
-	}
+    }
 
-	// Mix top layer and under layer.
-	let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), sfc.under_mix);
-	var diffuse_color = vec4<f32>(combined.xyz, 1.0);
-	let roughness = combined.w;
+    // Mix top layer and under layer.
+    let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), sfc.under_mix);
+    var diffuse_color = vec4<f32>(combined.xyz, 1.0);
+    let roughness = combined.w;
 
-	// If underwater, then mix in dark blue
-	diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.7));
+    // If underwater, then mix in dark blue
+    diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.7));
 
     var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = diffuse_color;
@@ -281,6 +282,7 @@ fn fragment(
         false,
         is_front,
     );
+    pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
 
     pbr_input.is_orthographic = false;
 

@@ -39,4 +39,8 @@ impl Material for GroundMaterial {
     fn vertex_shader() -> ShaderRef {
         "terrain/shaders/ground.wgsl".into()
     }
+
+    // fn prepass_vertex_shader() -> ShaderRef {
+    //     "terrain/shaders/ground.wgsl".into()
+    // }
 }

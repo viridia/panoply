@@ -7,6 +7,7 @@
     mesh_functions as mfns,
     mesh_view_bindings::globals,
     mesh_view_bindings::view,
+    mesh_types::MESH_FLAGS_SHADOW_RECEIVER_BIT,
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
 }
@@ -177,6 +178,7 @@ fn fragment(
         false,
         is_front,
     );
+    pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
 
     pbr_input.is_orthographic = false;
     pbr_input.N = fns::apply_normal_mapping(
