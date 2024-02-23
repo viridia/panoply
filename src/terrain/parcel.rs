@@ -10,7 +10,7 @@ pub const ADJACENT_COUNT: usize = 9;
 pub const CENTER_SHAPE: usize = 4;
 
 // A reference to a terrain shape
-#[derive(Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Default, Copy, Clone, PartialEq, Eq, Debug)]
 pub struct ShapeRef {
     pub shape: u16,
     pub rotation: u8,

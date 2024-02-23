@@ -90,7 +90,7 @@ pub fn create_mesh_instances(
                 if let Some(gltf) = asset {
                     if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
                         let scene = assets_scene.get_mut(scene_handle).unwrap();
-                        // println!("Scene found: [{}]", placements.model);
+                        // println!("Model found: [{}]", placements.model);
 
                         let mut _extras_query = scene.world.query::<(&Name, &GltfExtras)>();
                         // let mut entity_components: HashMap<Entity, Vec<Box<dyn Reflect>>> =
@@ -106,7 +106,8 @@ pub fn create_mesh_instances(
                         // TODO: Cache mesh handle
                         // TODO: Instance mesh.
                         for (mesh, material) in query.iter(&scene.world) {
-                            if placements.placement_list.len() < 3 {
+                            // Limit number of models for debugging.
+                            if placements.placement_list.len() < 5 {
                                 for placement in placements.placement_list.iter() {
                                     children.push(
                                         commands

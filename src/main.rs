@@ -221,7 +221,7 @@ fn setup(
                 blue: 1.,
                 alpha: 1.,
             },
-            illuminance: 4000.,
+            illuminance: 3000.,
             ..default()
         },
         transform: Transform {
