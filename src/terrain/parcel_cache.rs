@@ -117,10 +117,18 @@ pub fn spawn_parcels(
                                     visible: true,
                                     contours,
                                     biomes,
+                                    ground_entity: None,
                                     water_entity: None,
                                     flora_entity: None,
                                 },
-                                SpatialBundle { ..default() },
+                                SpatialBundle {
+                                    transform: Transform::from_xyz(
+                                        x as f32 * PARCEL_SIZE_F,
+                                        0.,
+                                        z as f32 * PARCEL_SIZE_F,
+                                    ),
+                                    ..default()
+                                },
                                 ParcelContourChanged,
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,

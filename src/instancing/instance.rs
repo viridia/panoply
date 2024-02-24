@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     utils::HashMap,
 };
+use serde::{Deserialize, Serialize};
 
 /// Data for placing an individual model instance.
 pub struct ModelPlacement {
@@ -19,6 +20,8 @@ type ModelId = String;
 pub type InstanceMap = HashMap<ModelId, Vec<ModelPlacement>>;
 
 /// A model id and a list of instance placements. Typically this is built from the InstanceMap.
+/// This will be attached to an entity which will have additional components to hold the instanced
+/// meshes.
 #[derive(Component)]
 pub struct ModelPlacements {
     pub model: ModelId,
@@ -32,19 +35,28 @@ pub struct ModelPlacementChanged;
 
 #[derive(Component)]
 pub struct ModelInstances {
+    /// Handle to the GLTF scene file.
     pub handle: Handle<Gltf>,
-    pub asset_path: String,
+    /// Asset label of the model within the GLTF scene file.
+    pub asset_label: String,
     pub needs_rebuild: bool,
 }
 
 #[derive(Bundle, Clone, Default)]
-pub struct ModelInstanceBundle<M: Material> {
+struct ModelInstanceBundle<M: Material> {
     pub mesh: Handle<GltfMesh>,
     pub material: Handle<M>,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
     pub computed_visibility: InheritedVisibility,
+}
+
+/// Options contained in the [`GltfExtras`] field.
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+struct MeshOptions {
+    pub billboard: Option<bool>,
+    pub outline: Option<f32>,
 }
 
 pub fn create_mesh_instances(
@@ -55,22 +67,20 @@ pub fn create_mesh_instances(
         Option<&ModelPlacementChanged>,
         Option<&mut ModelInstances>,
     )>,
-    // assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
     assets_gltf: Res<Assets<Gltf>>,
     mut assets_scene: ResMut<Assets<Scene>>,
-    // assets_mesh: ResMut<Assets<Mesh>>,
-    // assets_gltf_meshes: Res<Assets<GltfMesh>>,
 ) {
     for (entity, placements, pl_changed, model_instances) in query.iter_mut() {
         if pl_changed.is_some() {
+            // Create an entity for each loaded model referenced by the ModelInstances.
             if let Some((fname, fragment)) = placements.model.split_once('#') {
                 let handle: Handle<Gltf> = server.load(fname.to_owned());
                 commands
                     .entity(entity)
                     .insert(ModelInstances {
                         handle,
-                        asset_path: String::from(fragment),
+                        asset_label: String::from(fragment),
                         needs_rebuild: true,
                     })
                     .remove::<ModelPlacementChanged>();
@@ -88,16 +98,20 @@ pub fn create_mesh_instances(
                 let mut children = Vec::<Entity>::new();
                 let asset = assets_gltf.get(&m_instances.handle);
                 if let Some(gltf) = asset {
-                    if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_path) {
+                    // Lookup the GLTF Scene (which is the object we want to display) by name.
+                    if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_label) {
                         let scene = assets_scene.get_mut(scene_handle).unwrap();
                         // println!("Model found: [{}]", placements.model);
 
-                        let mut _extras_query = scene.world.query::<(&Name, &GltfExtras)>();
+                        let mut mesh_options = MeshOptions::default();
+                        let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
                         // let mut entity_components: HashMap<Entity, Vec<Box<dyn Reflect>>> =
                         //     HashMap::new();
-                        // for (name, extras) in extras_query.iter(&scene.world) {
-                        //     println!("Name: {}, extras: {:?}", name, extras);
-                        // }
+                        for (name, extras) in extras_query.iter(&scene.world) {
+                            mesh_options =
+                                serde_json::from_str::<MeshOptions>(&extras.value).unwrap();
+                            println!("Name: {}, extras: {:?}", name, mesh_options);
+                        }
 
                         let mut query = scene
                             .world
@@ -107,7 +121,7 @@ pub fn create_mesh_instances(
                         // TODO: Instance mesh.
                         for (mesh, material) in query.iter(&scene.world) {
                             // Limit number of models for debugging.
-                            if placements.placement_list.len() < 5 {
+                            if placements.placement_list.len() < usize::MAX {
                                 for placement in placements.placement_list.iter() {
                                     children.push(
                                         commands

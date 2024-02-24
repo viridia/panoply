@@ -31,8 +31,17 @@ pub struct Parcel {
     pub coords: IVec2,
     pub visible: bool,
     pub contours: [ShapeRef; ADJACENT_COUNT],
+
+    /// Biome ids assigned to each corner.
     pub biomes: [u8; 4],
+
+    /// Entity that represents the ground mesh of this parcel.
+    pub ground_entity: Option<Entity>,
+
+    /// Entity that represents the water mesh of this parcel.
     pub water_entity: Option<Entity>,
+
+    /// Entity that contains the flora instances for this parcel.
     pub flora_entity: Option<Entity>,
 }
 

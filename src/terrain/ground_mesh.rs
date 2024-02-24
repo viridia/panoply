@@ -9,7 +9,7 @@ use super::{
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
     PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
-    PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_SIZE,
 };
 use bevy::{
     asset::LoadState,
@@ -71,25 +71,29 @@ pub fn insert_ground_meshes(
     realms_query: Query<(&Realm, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    // Reset the visibility bits for all parcels.
-    for (entity, parcel, mut task) in query.iter_mut() {
+    for (entity, mut parcel, mut task) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
         if realm.is_ok() {
             let (_, terrain_map) = realm.unwrap();
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(ground_result) = task_result {
-                    // Add our new PbrBundle of components to our tagged entity
-                    commands.entity(entity).insert(MaterialMeshBundle {
+                    let ground_mesh = MaterialMeshBundle {
                         mesh: meshes.add(ground_result.mesh),
                         material: terrain_map.ground_material.clone(),
-                        transform: Transform::from_xyz(
-                            parcel.coords.x as f32 * PARCEL_SIZE_F,
-                            0.,
-                            parcel.coords.y as f32 * PARCEL_SIZE_F,
-                        ),
                         visibility: Visibility::Visible,
                         ..default()
-                    });
+                    };
+                    match parcel.ground_entity {
+                        Some(ground_entity) => {
+                            // Replace mesh
+                            commands.entity(ground_entity).insert(ground_mesh);
+                        }
+                        None => {
+                            // Insert new mesh entity
+                            parcel.ground_entity =
+                                Some(commands.spawn(ground_mesh).set_parent(entity).id());
+                        }
+                    }
                 }
                 commands.entity(entity).remove::<ComputeGroundMeshTask>();
             }

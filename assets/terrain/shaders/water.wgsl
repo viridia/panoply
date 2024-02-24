@@ -1,5 +1,7 @@
 #define FRAGMENT_WAVES 1
 #define VERTEX_WAVES 1
+#define FOAM 1
+#define SKY 1
 
 #import bevy_core_pipeline::tonemapping::tone_mapping
 #import bevy_pbr::{
@@ -60,6 +62,8 @@ fn add_wave(
     position: vec2<f32>,
     out: ptr<function, WaveAccum>,
 ) {
+    // TODO: globals.time is not working for vertex shaders:
+    // https://github.com/bevyengine/bevy/issues/10652
     // let phase = freq * globals.time;
     let wavelength = length(direction);
     let l = 1. / (wavelength * wavelength);
@@ -153,12 +157,17 @@ fn fragment(
     let angle = dot(view_vector, mesh.world_normal);
     let opacity = 0.2 + 1.6 * pow(1.0 - angle, 2.);
 
+#ifdef SKY
     let sky_color = mix(
         sky_color[0],
         sky_color[1],
         textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
+#else
+    let sky_color = sky_color[0];
+#endif
     var color = mix(vec4(water_color.rgb, 1.0), sky_color * 0.5, opacity * 0.5 - 0.1);
 
+#ifdef FOAM
     let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
     let n2 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(-0.01, 0.03))).g;
     let n3 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.03, -0.02))).g;
@@ -166,10 +175,10 @@ fn fragment(
     foam_level = smoothstep(.3, .9, foam_level);
 
     color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
+#endif
 
     var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = color;
-    pbr_input.material.perceptual_roughness = 0.1;
     pbr_input.material.metallic = 0.;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
@@ -191,6 +200,8 @@ fn fragment(
     );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
+    // We do the lighting calculation twice to simulate rough reflections.
+    pbr_input.material.perceptual_roughness = 0.1;
     var out_color = fns::apply_pbr_lighting(pbr_input);
     pbr_input.material.perceptual_roughness = 0.6;
     var out_color_2 = fns::apply_pbr_lighting(pbr_input);

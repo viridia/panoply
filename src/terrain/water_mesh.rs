@@ -72,7 +72,6 @@ pub fn insert_water_meshes(
     mut meshes: ResMut<Assets<Mesh>>,
     material: Res<WaterMaterialResource>,
 ) {
-    // Reset the visibility bits for all parcels.
     for (entity, mut parcel, mut task) in query.iter_mut() {
         let realm = realms_query.get(parcel.realm);
         if realm.is_ok() {
@@ -80,24 +79,26 @@ pub fn insert_water_meshes(
             // let (_, terrain_map) = realm.unwrap();
             if let Some(mesh_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(mesh) = mesh_result {
-                    let bundle = MaterialMeshBundle {
-                        mesh: meshes.add(mesh),
-                        material: material.handle.clone(),
-                        transform: Transform::from_xyz(0., 0., 0.),
-                        visibility: Visibility::Visible,
-                        ..default()
-                    };
-
                     // Add or replace water
                     match parcel.water_entity {
                         None => {
-                            let child = commands.spawn((bundle, NotShadowCaster)).id();
-                            commands.entity(entity).add_child(child);
-                            parcel.water_entity = Some(child);
+                            parcel.water_entity = Some(
+                                commands
+                                    .spawn((
+                                        MaterialMeshBundle {
+                                            mesh: meshes.add(mesh),
+                                            material: material.handle.clone(),
+                                            ..default()
+                                        },
+                                        NotShadowCaster,
+                                    ))
+                                    .set_parent(entity)
+                                    .id(),
+                            );
                         }
 
                         Some(ent) => {
-                            commands.entity(ent).insert(bundle);
+                            commands.entity(ent).insert(meshes.add(mesh));
                         }
                     }
                 } else if let Some(ent) = parcel.water_entity {

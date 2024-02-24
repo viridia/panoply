@@ -251,16 +251,16 @@ fn fragment(
     }
 
     // Grass surface
-    let grass_color = textureSample(grass, grass_sampler, fract(uv * UV_ROT * grass_biome.tx_scale));
     let bw_grass = mesh.biome_weight_0.z;
     if bw_grass > 0. {
+        let grass_color = textureSample(grass, grass_sampler, fract(uv * UV_ROT * grass_biome.tx_scale));
         blend_biome(&sfc, grass_biome, bw_grass, grass_color.rgb);
     }
 
     // Moss surface
-    let moss_color = textureSample(moss, moss_sampler, fract(uv * UV_ROT * moss_biome.tx_scale));
     let bw_moss = mesh.biome_weight_0.w;
     if bw_moss > 0. {
+        let moss_color = textureSample(moss, moss_sampler, fract(uv * UV_ROT * moss_biome.tx_scale));
         blend_biome(&sfc, moss_biome, bw_moss, moss_color.rgb);
     }
 

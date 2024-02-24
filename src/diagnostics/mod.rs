@@ -49,7 +49,7 @@ fn update(
 pub fn extract_fps(diagnostics: &Res<DiagnosticsStore>) -> Option<f64> {
     diagnostics
         .get(&FrameTimeDiagnosticsPlugin::FPS)
-        .and_then(|fps| fps.average())
+        .and_then(|fps| fps.smoothed())
 }
 
 fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
