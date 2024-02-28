@@ -1,6 +1,6 @@
 use bevy::{
     asset::LoadState,
-    gltf::{Gltf, GltfExtras, GltfMesh},
+    gltf::{Gltf, GltfExtras},
     prelude::*,
     utils::HashMap,
 };
@@ -17,9 +17,11 @@ pub struct ModelPlacement {
 type ModelId = String;
 
 /// Map of model resource names to instances, used in building the instance components.
+/// Each terrain parcel or scenery precinct will have one of these, which specifies how many
+/// instances of each model are placed in the world, and where they are located.
 pub type InstanceMap = HashMap<ModelId, Vec<ModelPlacement>>;
 
-/// A model id and a list of instance placements. Typically this is built from the InstanceMap.
+/// A model id and a list of model instance placements. Typically this is built from the InstanceMap.
 /// This will be attached to an entity which will have additional components to hold the instanced
 /// meshes.
 #[derive(Component)]
@@ -42,15 +44,15 @@ pub struct ModelInstances {
     pub needs_rebuild: bool,
 }
 
-#[derive(Bundle, Clone, Default)]
-struct ModelInstanceBundle<M: Material> {
-    pub mesh: Handle<GltfMesh>,
-    pub material: Handle<M>,
-    pub transform: Transform,
-    pub global_transform: GlobalTransform,
-    pub visibility: Visibility,
-    pub computed_visibility: InheritedVisibility,
-}
+// #[derive(Bundle, Clone, Default)]
+// struct ModelInstanceBundle<M: Material> {
+//     pub mesh: Handle<GltfMesh>,
+//     pub material: Handle<M>,
+//     pub transform: Transform,
+//     pub global_transform: GlobalTransform,
+//     pub visibility: Visibility,
+//     pub computed_visibility: InheritedVisibility,
+// }
 
 /// Options contained in the [`GltfExtras`] field.
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -102,6 +104,18 @@ pub fn create_mesh_instances(
                     if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_label) {
                         let scene = assets_scene.get_mut(scene_handle).unwrap();
                         // println!("Model found: [{}]", placements.model);
+
+                        // for placement in placements.placement_list.iter() {
+                        //     children.push(
+                        //         commands
+                        //             .spawn(SceneBundle {
+                        //                 scene: scene_handle.clone(),
+                        //                 transform: placement.transform,
+                        //                 ..Default::default()
+                        //             })
+                        //             .id(),
+                        //     );
+                        // }
 
                         let mut mesh_options = MeshOptions::default();
                         let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
