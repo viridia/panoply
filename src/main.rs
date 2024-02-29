@@ -18,6 +18,7 @@ mod diagnostics;
 mod editor;
 mod instancing;
 mod random;
+mod scenery;
 mod settings;
 mod terrain;
 mod view;
@@ -27,6 +28,7 @@ use view::{PrimaryCamera, Viewpoint};
 use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
+    scenery::SceneryPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
@@ -116,6 +118,7 @@ fn main() {
         .add_plugins((
             WorldPlugin,
             TerrainPlugin,
+            SceneryPlugin,
             InstancedModelsPlugin,
             // GuisePlugin,
             // QuillPlugin, // WorldInspectorPlugin::new(),

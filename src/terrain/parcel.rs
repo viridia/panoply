@@ -56,9 +56,3 @@ pub struct ParcelWaterChanged;
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct ParcelFloraChanged;
-
-#[derive(Bundle)]
-pub struct ParcelBundle {
-    pub parcel: Parcel,
-    pub mesh: PbrBundle,
-}

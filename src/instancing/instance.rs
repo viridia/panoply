@@ -1,9 +1,4 @@
-use bevy::{
-    asset::LoadState,
-    gltf::{Gltf, GltfExtras},
-    prelude::*,
-    utils::HashMap,
-};
+use bevy::{asset::LoadState, gltf::Gltf, prelude::*, utils::HashMap};
 use serde::{Deserialize, Serialize};
 
 /// Data for placing an individual model instance.
@@ -117,15 +112,15 @@ pub fn create_mesh_instances(
                         //     );
                         // }
 
-                        let mut mesh_options = MeshOptions::default();
-                        let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
+                        // let mut mesh_options = MeshOptions::default();
+                        // let mut extras_query = scene.world.query::<(&Name, &GltfExtras)>();
                         // let mut entity_components: HashMap<Entity, Vec<Box<dyn Reflect>>> =
                         //     HashMap::new();
-                        for (name, extras) in extras_query.iter(&scene.world) {
-                            mesh_options =
-                                serde_json::from_str::<MeshOptions>(&extras.value).unwrap();
-                            println!("Name: {}, extras: {:?}", name, mesh_options);
-                        }
+                        // for (name, extras) in extras_query.iter(&scene.world) {
+                        // mesh_options =
+                        //     serde_json::from_str::<MeshOptions>(&extras.value).unwrap();
+                        // println!("Name: {}, extras: {:?}", name, mesh_options);
+                        // }
 
                         let mut query = scene
                             .world

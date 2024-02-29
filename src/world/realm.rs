@@ -91,6 +91,9 @@ pub fn sync_realms(
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
+                let realm = assets.get(*id).unwrap();
+                let realm_name = realm_name_from_handle(&server, id);
+
                 // Assign first unused id.
                 let mut layer: RealmLayer = 1;
                 loop {
@@ -106,14 +109,22 @@ pub fn sync_realms(
                     }
                 }
 
-                let realm = assets.get(*id).unwrap();
-                let realm_name = realm_name_from_handle(&server, id);
-                println!("Realm created: [{}].", realm_name);
-                commands.spawn(Realm {
-                    layer,
-                    name: realm_name,
-                    lighting: realm.lighting,
-                });
+                let mut exists = false;
+                for (_, mut comp) in query.iter_mut() {
+                    if comp.name == realm_name {
+                        comp.lighting = realm.lighting;
+                        exists = true;
+                    }
+                }
+
+                if !exists {
+                    println!("Realm created: [{}].", realm_name);
+                    commands.spawn(Realm {
+                        layer,
+                        name: realm_name,
+                        lighting: realm.lighting,
+                    });
+                }
             }
 
             AssetEvent::Modified { id } => {

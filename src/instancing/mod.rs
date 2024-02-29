@@ -1,7 +1,7 @@
 use bevy::{gltf::GltfMesh, prelude::*};
 
 mod instance;
-// mod model_loader;
+mod model_loader;
 mod plugin;
 
 pub use instance::*;
