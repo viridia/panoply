@@ -2,10 +2,10 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
+use bevy::utils::thiserror::Error;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 /// Represents a map location or nav point that can be teleported to.
 #[derive(Default, Serialize, Deserialize)]
@@ -36,10 +36,8 @@ pub struct WorldLocationsAsset(pub Vec<WorldLocation>);
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum WorldLocationsLoaderError {
-    #[error("Could load locations: {0}")]
+    #[error("Could not load locations: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 #[derive(Default)]

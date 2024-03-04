@@ -1,0 +1,1 @@
+{"nodes":[{"id":1,"x":-184,"y":-108,"operator":"gen_noise","params":{"scale_x":13,"scale_y":13,"offset_z":0,"num_octaves":3,"roughness":0.18,"turbulence":0}}],"connections":[]}

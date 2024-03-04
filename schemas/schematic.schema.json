@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viridia.org/faery/schematic.schema.json",
+  "title": "Schematic",
+  "description": "Schematic Schema",
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": ["Floor"]
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "aspects": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+          "$ref": "./aspect.schema.json"
+        }
+      }
+    },
+    "alias": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type"]
+}

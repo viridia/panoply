@@ -1,7 +1,7 @@
+use bevy::utils::thiserror::Error;
 use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
-use thiserror::Error;
 
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
@@ -62,10 +62,8 @@ pub struct BiomesLoader;
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum BiomesLoaderError {
-    #[error("Could load biome: {0}")]
+    #[error("Could not load biome: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 impl AssetLoader for BiomesLoader {

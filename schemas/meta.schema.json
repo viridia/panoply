@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viridia.org/faery/meta.schema.json",
+  "title": "Metadata",
+  "description": "Schema for game data ",
+  "type": "object",
+  "patternProperties": {
+    "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
+      "oneOf": [
+        // {
+        //   "$ref": "./actor.schema.json"
+        // },
+        // {
+        //   "$ref": "./behavior.schema.json"
+        // },
+        // {
+        //   "$ref": "./book.schema.json"
+        // },
+        // {
+        //   "$ref": "./cutscene.schema.json"
+        // },
+        // {
+        //   "$ref": "./dialogueset.schema.json"
+        // },
+        // {
+        //   "$ref": "./effect.schema.json"
+        // },
+        // {
+        //   "$ref": "./fixture.schema.json"
+        // },
+        {
+          "$ref": "./schematic.schema.json"
+        }
+        // {
+        //   "$ref": "./item.schema.json"
+        // },
+        // {
+        //   "$ref": "./itemtable.schema.json"
+        // },
+        // {
+        //   "$ref": "./particles.schema.json"
+        // },
+        // {
+        //   "$ref": "./quest.schema.json"
+        // },
+        // {
+        //   "$ref": "./remarkset.schema.json"
+        // },
+        // {
+        //   "$ref": "./terrainfx.schema.json"
+        // },
+        // {
+        //   "$ref": "./wall.schema.json"
+        // }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

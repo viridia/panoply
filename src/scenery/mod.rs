@@ -1,8 +1,15 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
-use self::precinct_asset::{PrecinctAsset, PrecinctAssetLoader};
+use self::{
+    floor_aspect::{FloorNav, FloorSurface},
+    precinct::read_precinct_data,
+    precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
+};
 
+pub mod floor_aspect;
+mod floor_mesh;
+mod floor_region;
 mod msgpack_extension;
 mod precinct;
 mod precinct_asset;
@@ -18,26 +25,15 @@ impl Plugin for SceneryPlugin {
         app.insert_resource(PrecinctCache::new())
             .register_asset_loader(PrecinctAssetLoader)
             .init_asset::<PrecinctAsset>()
+            .register_type::<FloorSurface>()
+            .register_type::<FloorNav>()
+            .register_type::<Vec<String>>()
+            .register_type::<HashMap<String, String>>()
             // .add_plugins((
             //     MaterialPlugin::<GroundMaterial>::default(),
             //     MaterialPlugin::<WaterMaterial>::default(),
             // ))
             // .add_systems(Startup, create_water_material)
-            .add_systems(
-                Update,
-                (
-                    spawn_precincts,
-                    // gen_ground_meshes,
-                    // gen_water_meshes,
-                    // gen_flora,
-                    // insert_ground_meshes,
-                    // insert_water_meshes,
-                    // insert_flora,
-                    // insert_terrain_maps,
-                    // update_terrain_maps,
-                    // update_ground_material,
-                    // config_textures_modes,
-                ),
-            );
+            .add_systems(Update, (spawn_precincts, read_precinct_data));
     }
 }

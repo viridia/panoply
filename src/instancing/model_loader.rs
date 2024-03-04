@@ -2,9 +2,9 @@ use bevy::{
     asset::{io::Reader, Asset, AssetLoader, LoadContext},
     gltf::{Gltf, GltfError, GltfLoader, GltfLoaderSettings},
     reflect::TypePath,
+    utils::thiserror::Error,
     utils::BoxedFuture,
 };
-use thiserror::Error;
 
 /// A `ModelRef` is a reference to a GLTF model. The reference contains a handle to the
 /// GLTF scene object, as well as a reference to the GLTF asset itself. The latter is kept
@@ -19,10 +19,8 @@ pub struct ModelLoader {
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum ModelLoaderError {
-    #[error("Could load locations: {0}")]
+    #[error("Could not load locations: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 /// A loader which is able to load individual scenes, by name, from within a GLTF file, and
@@ -55,7 +53,7 @@ impl AssetLoader for ModelLoader {
             match result {
                 Ok(gltf) => {
                     // info!("Loaded GLTF model: {:?}", gltf);
-                    for scene_handle in gltf.scenes.iter() {
+                    for _scene_handle in gltf.scenes.iter() {
                         // let scene = load_context.get_asset(&scene_handle).unwrap();
                         // info!("Scene: {:?}", scene_handle.name);
                     }

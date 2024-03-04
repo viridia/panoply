@@ -1,14 +1,17 @@
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
+    utils::thiserror::Error,
     utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use serde::{de::Visitor, ser::SerializeTuple, Deserialize, Serialize};
 use std::fmt;
-use thiserror::Error;
 
-use super::msgpack_extension::{Box2d, Vector3};
+use super::{
+    floor_region::FloorRegionSer,
+    msgpack_extension::{Box2d, Vector3},
+};
 
 extern crate rmp_serde as rmps;
 
@@ -17,34 +20,34 @@ extern crate rmp_serde as rmps;
 pub struct PrecinctAsset {
     /// Table of wall archetypes used by this precinct.
     #[serde(rename = "wallTypes", default)]
-    wall_types: Vec<String>,
+    pub(crate) wall_types: Vec<String>,
 
     /// Table of floor archetypes used by this precinct.
     #[serde(rename = "floorTypes", default)]
-    floor_types: Vec<String>,
+    pub(crate) floor_types: Vec<String>,
 
     /// Table of fixture archetypes used by this precinct.
     #[serde(rename = "fixtureTypes", default)]
-    fixture_types: Vec<String>,
+    pub(crate) fixture_types: Vec<String>,
 
     /// Table of terrain effect archetypes used by this precinct.
     #[serde(rename = "terrainFxTypes", default)]
-    terrain_fx_types: Vec<String>,
+    pub(crate) terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.
     #[serde(default)]
-    tiers: Vec<TierSer>,
+    pub(crate) tiers: Vec<TierSer>,
 
     /// Packed terrain effect table
     // terrain_fx?: number[];
     // actors: Option<Vec<IActorInstanceData>>,
     /// Table of wall instances.
     #[serde(default)]
-    nwalls: Vec<CompressedInstance>,
+    pub(crate) nwalls: Vec<CompressedInstance>,
 
     /// Table of fixture instances.
     #[serde(default)]
-    nfixtures: Vec<CompressedInstance>,
+    pub(crate) nfixtures: Vec<CompressedInstance>,
     // layers?: Record<string, ILayerData>,
 }
 
@@ -149,15 +152,12 @@ pub struct CompressedInstanceProps {
 /** Serialized schema for a tier */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TierSer {
-    level: i32,
-    pfloors: Option<Vec<FloorRegionSer>>,
-    cutaways: Option<Vec<Box2d>>,
-}
+    pub(crate) level: i32,
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FloorRegionSer {
-    r#type: usize,
-    poly: Vec<(f32, f32)>,
+    #[serde(default)]
+    pub(crate) pfloors: Vec<FloorRegionSer>,
+
+    pub(crate) cutaways: Option<Vec<Box2d>>,
 }
 
 #[derive(Default)]
@@ -166,10 +166,10 @@ pub struct PrecinctAssetLoader;
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum PrecinctAssetLoaderError {
-    #[error("Could load precinct: {0}")]
+    #[error("Could not load precinct: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
+    #[error("Could not decode precinct: {0}")]
+    Decode(#[from] rmps::decode::Error),
 }
 
 impl AssetLoader for PrecinctAssetLoader {
@@ -186,12 +186,13 @@ impl AssetLoader for PrecinctAssetLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            let mut scenery: SceneryData =
-                rmps::from_slice(&bytes).expect("unable to decode precinct");
-            let mut precinct = scenery.precinct;
-
-            // println!("precinct: {:?}", serde_json::to_string(&scenery.precinct));
-            Ok(precinct)
+            let mut scenery: SceneryData = rmps::from_slice(&bytes)?;
+            for scm in scenery.precinct.floor_types.iter_mut() {
+                *scm = scm.replace("archetypes/", "schematics/");
+                *scm = scm.replace("/floor-tiles", "/floors.json");
+                *scm = scm.replace(':', "#");
+            }
+            Ok(scenery.precinct)
         })
     }
 

@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    precinct::{Precinct, PrecinctAssetChanged, PrecinctKey},
+    precinct::{Precinct, PrecinctKey},
     PRECINCT_SIZE_F,
 };
 
@@ -71,6 +71,7 @@ pub fn spawn_precincts(
             // Set precincts within the query rect as visible; also load missing precincts.
             for z in rect.bounds.min.y..rect.bounds.max.y {
                 for x in rect.bounds.min.x..rect.bounds.max.x {
+                    // TODO: Check if the precinct is within the realm's bounds.
                     // if (x < realm.xOffset
                     //     || z < realm.yOffset
                     //     || x >= realm.xOffset + realm.xSize
@@ -90,15 +91,6 @@ pub fn spawn_precincts(
                         Some(entity) => {
                             // println!("Precinct Cache Hit {} {} {}.", realm.unwrap().name, x, z);
                             if let Ok(mut precinct) = query.get_mut(*entity) {
-                                // if precinct.contours != contours || precinct.biomes != biomes {
-                                //     // precinct.contours = contours;
-                                //     // precinct.biomes = biomes;
-                                //     commands.entity(*entity).insert((
-                                //         PrecinctSceneryChanged,
-                                //         // PrecinctWaterChanged,
-                                //         // PrecinctFloraChanged,
-                                //     ));
-                                // }
                                 precinct.visible = true;
                             }
                         }
@@ -118,6 +110,7 @@ pub fn spawn_precincts(
                                     coords: IVec2::new(x, z),
                                     visible: true,
                                     asset,
+                                    tiers: Vec::new(),
                                     // contours,
                                     // biomes,
                                     // ground_entity: None,
@@ -132,9 +125,7 @@ pub fn spawn_precincts(
                                     ),
                                     ..default()
                                 },
-                                PrecinctAssetChanged,
-                                // PrecinctWaterChanged,
-                                // PrecinctFloraChanged,
+                                // PrecinctAssetChanged,
                             ));
                             precinct_cache.precincts.put(key, entity.id());
                         }

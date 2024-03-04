@@ -9,11 +9,11 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
+    utils::thiserror::Error,
     utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use crate::world::Realm;
 
@@ -123,10 +123,8 @@ pub struct TerrainMapChanged;
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum TerrainMapLoaderError {
-    #[error("Could load terrain map: {0}")]
+    #[error("Could not load terrain map: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 #[derive(Default)]

@@ -1,0 +1,206 @@
+{
+  "BlackoutFloor": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/blackout.png",
+        "color": "#000000"
+      },
+      "FloorNav": { "blocked": true }
+    }
+  },
+  "MossyPaversBordered": {
+    "type": "Floor",
+    "alias": ["MossyPaversFlat"],
+    "aspects": {
+      "FloorSurface": { "texture": "textures/mossy-pavers-bordered.png" }
+    }
+  },
+  "GrassyStone": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/grassy-stone.png" } }
+  },
+  "DirtyStone": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/dirty-stone.png" } }
+  },
+  "RoughStone": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/rough-stone.png", "raise": 0.02 }
+    }
+  },
+  "SlideyStone": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/slidey-stone.png",
+        "roughness": 0.3,
+        "raise": -0.08
+      }
+    }
+  },
+  "WoodPlanksLight": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/wood-pine-planks.png" }
+    }
+  },
+  "Cavefloor": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "material": "caveFloor",
+        "color_slots": ["colorHigh", "colorBase"],
+        "colors": { "colorHigh": "#322b30", "colorBase": "#21222a" },
+        "sides": false
+      }
+    }
+  },
+  "IceCavefloor": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "material": "caveFloor",
+        "color_slots": ["colorHigh", "colorBase"],
+        "colors": { "colorHigh": "#82adb3", "colorBase": "#3fa2a4" },
+        "sides": false
+      }
+    }
+  },
+  "WoodWalnut": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/wood-walnut.png" } }
+  },
+  "WoodWalnutPlanks": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/wood-walnut-planks.png" }
+    }
+  },
+  "Slate": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/slate-grid.png" } }
+  },
+  "Tiles": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/tiles-grid.png" } }
+  },
+  "WoodDarkWalnut": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/wood-dark-walnut.png" }
+    }
+  },
+  "WoodDarkWalnutPlanks": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/wood-dark-walnut-planks.png" }
+    }
+  },
+  "CarpetBrown": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/carpet-brown.png", "raise": 0.02 }
+    }
+  },
+  "CarpetSquareRed": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-square-red.png",
+        "raise": 0.02
+      }
+    }
+  },
+  "CarpetSquareGreen": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-square-green.png",
+        "raise": 0.02
+      }
+    }
+  },
+  "CarpetSquareGold": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-square-gold.png",
+        "raise": 0.02
+      }
+    }
+  },
+  "CarpetSquareBlack": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-square-black.png",
+        "raise": 0.02
+      }
+    }
+  },
+  "DiamondParquet": {
+    "type": "Floor",
+    "aspects": { "FloorSurface": { "texture": "textures/diamond-parquet.png" } }
+  },
+  "Red": {
+    "type": "Floor",
+    "alias": ["TilledX", "TilledY", "GraveX", "GraveY"],
+    "aspects": { "FloorSurface": { "color": "#ff0000" } }
+  },
+  "DarkGreenCobbles": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/dark-green-cobbles.png" }
+    }
+  },
+  "PaversMarbleBurst": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/pavers-marble-burst.png" }
+    }
+  },
+  "SandstonePaversDiagonal": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": { "texture": "textures/sandstone-diagonal-pavers.png" }
+    }
+  },
+  "BeigeMarble": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/beige-marble.png",
+        "roughness": 0.35
+      }
+    }
+  },
+  "BrownMarble": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/brown-marble.png",
+        "roughness": 0.35
+      }
+    }
+  },
+  "CarpetPatternBurgundy": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-pattern-burgundy.png",
+        "raise": 0.02
+      }
+    }
+  },
+  "CarpetPatternPeach": {
+    "type": "Floor",
+    "aspects": {
+      "FloorSurface": {
+        "texture": "textures/carpet-pattern-peach.png",
+        "raise": 0.02
+      }
+    }
+  }
+}

@@ -1,7 +1,6 @@
 use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
-use thiserror::Error;
 
 use std::sync::{Arc, Mutex};
 
@@ -11,6 +10,7 @@ use bevy::{
     math::IRect,
     prelude::*,
     reflect::TypePath,
+    utils::thiserror::Error,
     utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
@@ -113,10 +113,8 @@ pub struct TerrainContoursTableAsset(pub Arc<Mutex<TerrainContoursTable>>);
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum TerrainContoursLoaderError {
-    #[error("Could load terrain contours: {0}")]
+    #[error("Could not load terrain contours: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 #[derive(Default)]

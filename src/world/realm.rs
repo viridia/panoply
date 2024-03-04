@@ -2,10 +2,10 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
+use bevy::utils::thiserror::Error;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 pub type RealmLayer = usize;
 
@@ -37,10 +37,8 @@ pub struct Realm {
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum RealmsLoaderError {
-    #[error("Could load realm: {0}")]
+    #[error("Could not load realm: {0}")]
     Io(#[from] std::io::Error),
-    // #[error("Could not extract image: {0}")]
-    // Image(#[from] image::ImageError),
 }
 
 #[derive(Default)]

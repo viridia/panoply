@@ -1,6 +1,10 @@
 {
-  "rust-analyzer.linkedProjects": [
-    "./Cargo.toml"
-  ],
-  "rust-analyzer.showUnlinkedFileNotification": false
+  "rust-analyzer.linkedProjects": ["./Cargo.toml"],
+  "rust-analyzer.showUnlinkedFileNotification": false,
+  "json.schemas": [
+    {
+      "fileMatch": ["/assets/schematics/*.json", "/assets/regional/*/*.json"],
+      "url": "./schemas/meta.schema.json"
+    }
+  ]
 }

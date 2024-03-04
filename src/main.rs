@@ -19,6 +19,7 @@ mod editor;
 mod instancing;
 mod random;
 mod scenery;
+mod schematic;
 mod settings;
 mod terrain;
 mod view;
@@ -29,6 +30,7 @@ use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
     scenery::SceneryPlugin,
+    schematic::SchematicPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
@@ -116,6 +118,7 @@ fn main() {
         )
         .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins((
+            SchematicPlugin,
             WorldPlugin,
             TerrainPlugin,
             SceneryPlugin,

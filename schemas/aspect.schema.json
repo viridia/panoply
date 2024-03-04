@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viridia.org/faery/aspects.schema.json",
+  "title": "Aspects",
+  "description": "Aspect Schema",
+  "type": "object",
+  "properties": {
+    "FloorSurface": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FloorSurface"
+        },
+        "texture": {
+          "type": "string"
+        },
+        "material": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "./types.schema.json#/definitions/Color"
+        },
+        "color_slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "colors": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z][a-z]*$": {
+              "$ref": "./types.schema.json#/definitions/Color"
+            }
+          }
+        },
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sides": {
+          "type": "boolean"
+        },
+        "raise": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "FloorNav": {
+      "properties": {
+        "type": {
+          "const": "FloorNav"
+        },
+        "blocked": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
