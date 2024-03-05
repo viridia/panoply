@@ -1,4 +1,4 @@
-#import "shaderlib/permute.wgsl" mod289_v3f, permute_v4f, taylorInvSqrt
+#import "shaders/permute.wgsl" mod289_v3f, permute_v4f, taylorInvSqrt
 
 //  MIT License. © Ian McEwan
 fn snoise_grad(v: vec3<f32>, gradient: ptr<function, vec3<f32>>) -> f32 {
