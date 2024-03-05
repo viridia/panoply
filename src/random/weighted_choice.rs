@@ -1,11 +1,13 @@
 use super::Choice;
 
-pub struct WeightedRandom<T: Choice> {
+/// A weighted choice is a collection of choices, each with a probability of being selected.
+/// The input is a floating point number between 0 and 1.
+pub struct WeightedChoice<T: Choice> {
     choices: Vec<T>,
     total: f32,
 }
 
-impl<T: Choice> WeightedRandom<T> {
+impl<T: Choice> WeightedChoice<T> {
     pub fn choice(choices: &[T], selection: f32) -> Option<&T> {
         let total = choices.iter().fold(0., |acc, p| acc + p.probability());
         let mut i = selection * total;
@@ -19,7 +21,7 @@ impl<T: Choice> WeightedRandom<T> {
         None
     }
 
-    pub fn new(choices: Vec<T>) -> WeightedRandom<T> {
+    pub fn new(choices: Vec<T>) -> WeightedChoice<T> {
         let total = choices.iter().fold(0., |acc, p| acc + p.probability());
         Self { choices, total }
     }
@@ -55,7 +57,7 @@ mod tests {
             }
         }
 
-        let wr = WeightedRandom::<StringSelection>::new(vec![
+        let wr = WeightedChoice::<StringSelection>::new(vec![
             StringSelection {
                 value: "one".into(),
                 probability: 3.,

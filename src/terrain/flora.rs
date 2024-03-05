@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     instancing::{InstanceMap, ModelPlacement, ModelPlacementChanged, ModelPlacements},
-    random::{noise3, WeightedRandom},
+    random::{noise3, WeightedChoice},
     world::Realm,
 };
 
@@ -226,9 +226,9 @@ fn compute_flora_placement(
             let feature_selection = noise3(gx, gz, 3);
             let feature_model = match feature {
                 FloraType::None => unreachable!(),
-                FloraType::RandomTree => WeightedRandom::choice(&biome.trees, feature_selection),
-                FloraType::RandomShrub => WeightedRandom::choice(&biome.shrubs, feature_selection),
-                FloraType::RandomHerb => WeightedRandom::choice(&biome.herbs, feature_selection),
+                FloraType::RandomTree => WeightedChoice::choice(&biome.trees, feature_selection),
+                FloraType::RandomShrub => WeightedChoice::choice(&biome.shrubs, feature_selection),
+                FloraType::RandomHerb => WeightedChoice::choice(&biome.herbs, feature_selection),
             };
 
             let tx = x as f32 + 0.2 + noise3(gx, gz, 4) * 0.6;
