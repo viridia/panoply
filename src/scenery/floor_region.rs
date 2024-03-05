@@ -51,21 +51,6 @@ pub struct RebuildFloorMesh;
 #[component(storage = "SparseSet")]
 pub struct RebuildFloorMaterials;
 
-// #[derive(Component, Debug, Clone, Default)]
-// pub struct FloorRegionMesh {
-//     /// Material
-//     pub material: Handle<StandardMaterial>,
-
-//     /// Generated mesh
-//     pub mesh: Handle<Mesh>,
-
-//     /// Fill entity
-//     pub fill: Option<Entity>,
-
-//     /// Outline entity
-//     pub outline: Option<Entity>,
-// }
-
 fn serialize_poly<S>(poly: &Vec<Vec2>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
