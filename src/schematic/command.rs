@@ -10,12 +10,15 @@ use bevy::{
 };
 
 /// Custom command that updates an entity's components guided by a schematic.
-pub struct UpdateAspects<C: Component> {
+pub struct UpdateAspects<B: Bundle> {
+    /// Schematic to attach to entity
     pub(crate) schematic: Handle<Schematic>,
-    pub(crate) finish: C,
+
+    /// Components to insert after applying schematic, used to trigger post-processing.
+    pub(crate) finish: B,
 }
 
-impl<C: Component> EntityCommand for UpdateAspects<C> {
+impl<B: Bundle> EntityCommand for UpdateAspects<B> {
     fn apply(self, id: Entity, world: &mut World) {
         let schematic_assets = world.get_resource::<Assets<Schematic>>().unwrap();
         let mut schematics: SmallVec<[Arc<SchematicData>; 8]> = SmallVec::new();
