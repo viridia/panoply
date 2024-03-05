@@ -1,5 +1,9 @@
-use crate::schematic::{Aspect, DetachAspect, ReflectAspect, SimpleDetachAspect};
+use crate::{
+    scenery::floor_noise::FloorNoiseMaterial,
+    schematic::{Aspect, DetachAspect, ReflectAspect, SimpleDetachAspect},
+};
 use bevy::{
+    pbr::ExtendedMaterial,
     prelude::*,
     render::texture::{
         ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
@@ -14,13 +18,18 @@ pub struct StdFloorSurface {
     /// Texture to use for this floor
     texture: Option<String>,
 
+    /// Surface color if no texture is used.
     color: Option<String>,
-
-    #[reflect(ignore)]
-    pub(crate) material: Handle<StandardMaterial>,
 
     /// Surface roughness
     roughness: Option<f32>,
+
+    /// Whether the surface should be unlit
+    unlit: Option<bool>,
+
+    /// Cached material handle
+    #[reflect(ignore)]
+    pub(crate) material: Handle<StandardMaterial>,
     // water_current_x: Option<f32>,
     // water_current_y: Option<f32>,
 }
@@ -44,6 +53,7 @@ impl Aspect for StdFloorSurface {
             load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
                 let mut material = StandardMaterial {
                     perceptual_roughness: self.roughness.unwrap_or(1.0),
+                    unlit: self.unlit.unwrap_or(false),
                     ..default()
                 };
                 if let Some(color) = &self.color {
@@ -88,15 +98,16 @@ static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<StdFloorSurface> =
 #[reflect(Aspect, Default)]
 pub struct NoiseFloorSurface {
     /// Noise base color
-    color_base: Option<String>,
+    base: String,
 
     /// Noice accent color
-    color_accent: Option<String>,
+    accent: String,
+
+    /// Surface roughness
+    roughness: Option<f32>,
 
     #[reflect(ignore)]
-    pub(crate) material_handle: Handle<StandardMaterial>,
-
-    roughness: Option<f32>,
+    pub(crate) material: Handle<ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>>,
 }
 
 impl Aspect for NoiseFloorSurface {
@@ -113,18 +124,25 @@ impl Aspect for NoiseFloorSurface {
     }
 
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        println!("Loading material: {}.StdFloorSurface.Material", label);
-        self.material_handle =
-            load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
-                let mut material = StandardMaterial {
+        println!("Loading material: {}.NoiseFloorSurface.Material", label);
+        self.material = load_context.labeled_asset_scope(
+            format!("{}.NoiseFloorSurface.Material", label),
+            |_lc| {
+                println!("Loading material: {}.NoiseFloorSurface.Material", label);
+                let std = StandardMaterial {
                     perceptual_roughness: self.roughness.unwrap_or(1.0),
                     ..default()
                 };
-                // if let Some(color) = &self.color {
-                //     material.base_color = Color::hex(color).unwrap();
-                // }
-                material
-            });
+                let material = FloorNoiseMaterial {
+                    base: Color::hex(&self.base).unwrap(),
+                    accent: Color::hex(&self.accent).unwrap(),
+                };
+                ExtendedMaterial {
+                    base: std,
+                    extension: material,
+                }
+            },
+        );
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -136,15 +154,15 @@ impl Aspect for NoiseFloorSurface {
 static NOISE_FLOOR_SURFACE_REMOVER: SimpleDetachAspect<NoiseFloorSurface> =
     SimpleDetachAspect::<NoiseFloorSurface>::new();
 
-/// Floor surface aspect
-#[derive(Component, Debug, Reflect, Clone, Default)]
+/// Floor geometry aspect
+#[derive(Component, Debug, Reflect, Clone, Copy, Default)]
 #[reflect(Aspect, Default)]
 pub struct FloorGeometry {
     /// How far up the floor should be raised or lowered.
-    raise: f32,
+    pub(crate) raise: Option<f32>,
 
     /// Whether to render the sides of this floor.
-    sides: Option<bool>,
+    pub(crate) sides: Option<bool>,
 }
 
 impl Aspect for FloorGeometry {
@@ -161,7 +179,7 @@ impl Aspect for FloorGeometry {
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        entity.insert(self.clone());
+        entity.insert(*self);
         &FLOOR_GEOMETRY_REMOVER
     }
 }

@@ -11,11 +11,11 @@
         "texture": {
           "type": "string"
         },
-        "material": {
-          "type": "string"
-        },
         "color": {
           "$ref": "./types.schema.json#/definitions/Color"
+        },
+        "unlit": {
+          "type": "boolean"
         },
         "roughness": {
           "type": "number",
@@ -28,10 +28,10 @@
     "NoiseFloorSurface": {
       "type": "object",
       "properties": {
-        "color_base": {
+        "base": {
           "$ref": "./types.schema.json#/definitions/Color"
         },
-        "color_accent": {
+        "accent": {
           "$ref": "./types.schema.json#/definitions/Color"
         },
         "roughness": {

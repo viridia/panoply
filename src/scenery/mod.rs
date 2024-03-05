@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{pbr::ExtendedMaterial, prelude::*, utils::HashMap};
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
@@ -6,12 +6,14 @@ use self::{
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
+    floor_noise::FloorNoiseMaterial,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
 };
 
 pub mod floor_aspect;
 mod floor_mesh;
+mod floor_noise;
 mod floor_region;
 mod msgpack_extension;
 mod precinct;
@@ -38,6 +40,9 @@ impl Plugin for SceneryPlugin {
             .register_type::<FloorNav>()
             .register_type::<Vec<String>>()
             .register_type::<HashMap<String, String>>()
+            .add_plugins(MaterialPlugin::<
+                ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,
+            >::default())
             .add_systems(
                 Update,
                 (

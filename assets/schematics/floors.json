@@ -2,7 +2,7 @@
   "BlackoutFloor": {
     "type": "Floor",
     "aspects": {
-      "StdFloorSurface": { "color": "#000000" },
+      "StdFloorSurface": { "color": "#000000", "unlit": true },
       "FloorNav": { "blocked": true }
     }
   },
@@ -34,7 +34,7 @@
     "type": "Floor",
     "aspects": {
       "StdFloorSurface": {
-        "texture": "textures/slidey-stone.png",
+        "texture": "textures/rough-stone-warm.png",
         "roughness": 0.3
       },
       "FloorGeometry": { "raise": -0.08 }
@@ -50,8 +50,8 @@
     "type": "Floor",
     "aspects": {
       "NoiseFloorSurface": {
-        "color_base": "#21222a",
-        "color_accent": "#322b30"
+        "base": "#21222a",
+        "accent": "#322b30"
       },
       "FloorGeometry": { "sides": false }
     }
@@ -60,8 +60,8 @@
     "type": "Floor",
     "aspects": {
       "NoiseFloorSurface": {
-        "color_base": "#3fa2a4",
-        "color_accent": "#82adb3"
+        "base": "#3fa2a4",
+        "accent": "#82adb3"
       },
       "FloorGeometry": { "sides": false }
     }
@@ -161,7 +161,7 @@
   "PaversMarbleBurst": {
     "type": "Floor",
     "aspects": {
-      "StdFloorSurface": { "texture": "textures/pavers-marble-burst.png" }
+      "StdFloorSurface": { "texture": "textures/pavers-burst.png" }
     }
   },
   "SandstonePaversDiagonal": {

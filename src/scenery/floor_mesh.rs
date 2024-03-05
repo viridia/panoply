@@ -1,5 +1,5 @@
 use super::{
-    floor_aspect::StdFloorSurface,
+    floor_aspect::{FloorGeometry, NoiseFloorSurface, StdFloorSurface},
     floor_region::{FloorRegion, RebuildFloorAspects},
 };
 use crate::{
@@ -58,18 +58,15 @@ pub fn update_floor_aspects(
         if st == LoadState::Loaded {
             commands
                 .entity(entity)
-                .insert((
-                    RebuildFloorMesh,
-                    MaterialMeshBundle {
-                        material: material.clone(),
-                        visibility: Visibility::Hidden,
-                        ..default()
-                    },
-                ))
+                .insert((MaterialMeshBundle {
+                    material: material.clone(),
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },))
                 .remove::<RebuildFloorAspects>()
                 .add(UpdateAspects {
                     schematic: floor_region.schematic.clone(),
-                    finish: RebuildFloorMaterials,
+                    finish: (RebuildFloorMaterials, RebuildFloorMesh),
                 });
         }
     }
@@ -78,20 +75,24 @@ pub fn update_floor_aspects(
 /// Spawns a task for each parcel to compute the water mesh geometry.
 pub fn gen_floor_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &FloorRegion), With<RebuildFloorMesh>>,
+    mut query: Query<(Entity, &FloorRegion, Option<&FloorGeometry>), With<RebuildFloorMesh>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
-    for (entity, floor_region) in query.iter_mut() {
+    for (entity, floor_region, floor_geometry) in query.iter_mut() {
         let level = floor_region.level;
         let poly = floor_region.poly.clone();
+        let geometry = match floor_geometry {
+            Some(g) => *g,
+            None => FloorGeometry::default(),
+        };
         let task = pool.spawn(async move {
             compute_floor_mesh(FloorMeshParams {
                 level,
                 poly,
                 has_texture: true,
-                sides: true,
-                raise: 0.,
+                sides: geometry.sides.unwrap_or(true),
+                raise: geometry.raise.unwrap_or(0.),
             })
         });
 
@@ -118,27 +119,40 @@ pub(crate) fn insert_floor_meshes(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn rebuild_floor_materials(
     mut commands: Commands,
-    mut query: Query<(Entity, Option<&StdFloorSurface>), With<RebuildFloorMaterials>>,
+    mut query: Query<
+        (Entity, Option<&StdFloorSurface>, Option<&NoiseFloorSurface>),
+        With<RebuildFloorMaterials>,
+    >,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (entity, surf) in query.iter_mut() {
+    for (entity, surf, nsurf) in query.iter_mut() {
         if let Some(surf) = surf {
-            let material = surf.material.clone();
+            // println!("Attaching material: {:?}", surf.material.path());
             commands
                 .entity(entity)
+                .insert((surf.material.clone(), Visibility::Visible))
+                .remove::<RebuildFloorMaterials>();
+        } else if let Some(nsurf) = nsurf {
+            let material = nsurf.material.clone();
+            commands
+                .entity(entity)
+                .remove::<Handle<StandardMaterial>>()
                 .insert((material, Visibility::Visible))
                 .remove::<RebuildFloorMaterials>();
         } else {
-            let material = materials.add(StandardMaterial {
-                base_color: Color::rgb(0.0, 0.5, 0.5),
-                // unlit: true,
-                ..Default::default()
-            });
             commands
                 .entity(entity)
-                .insert((material, Visibility::Visible))
+                .insert((
+                    materials.add(StandardMaterial {
+                        base_color: Color::rgb(1.0, 0.0, 0.0),
+                        unlit: true,
+                        ..Default::default()
+                    }),
+                    Visibility::Visible,
+                ))
                 .remove::<RebuildFloorMaterials>();
         }
     }
