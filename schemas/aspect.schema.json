@@ -28,13 +28,18 @@
     "NoiseFloorSurface": {
       "type": "object",
       "properties": {
-        "base": {
+        "color": {
           "$ref": "./types.schema.json#/definitions/Color"
         },
-        "accent": {
+        "color_alt": {
           "$ref": "./types.schema.json#/definitions/Color"
         },
         "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "roughness_alt": {
           "type": "number",
           "minimum": 0,
           "maximum": 1

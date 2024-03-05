@@ -1,4 +1,4 @@
-#import "shaders/permute.wgsl" mod289_v2f, permute_v3f
+#import "shaders/lib/permute.wgsl" mod289_v2f, permute_v3f
 
 //  MIT License. © Ian McEwan, Stefan Gustavson, Munrocket
 fn snoise_2d(v: vec2<f32>) -> f32 {

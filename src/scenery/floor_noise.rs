@@ -7,10 +7,20 @@ use bevy::{
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct FloorNoiseMaterial {
     #[uniform(100)]
-    pub base: Color,
+    pub color: Color,
 
     #[uniform(101)]
-    pub accent: Color,
+    pub color_alt: Color,
+
+    #[uniform(102)]
+    pub roughness: f32,
+
+    #[uniform(103)]
+    pub roughness_alt: f32,
+
+    #[texture(104)]
+    #[sampler(105)]
+    pub noise: Handle<Image>,
 }
 
 impl MaterialExtension for FloorNoiseMaterial {

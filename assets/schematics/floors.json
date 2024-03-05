@@ -50,8 +50,10 @@
     "type": "Floor",
     "aspects": {
       "NoiseFloorSurface": {
-        "base": "#21222a",
-        "accent": "#322b30"
+        "color": "#21222a",
+        "color_alt": "#322b30",
+        "roughness": 0.8,
+        "roughness_alt": 0.6
       },
       "FloorGeometry": { "sides": false }
     }
@@ -60,8 +62,10 @@
     "type": "Floor",
     "aspects": {
       "NoiseFloorSurface": {
-        "base": "#3fa2a4",
-        "accent": "#82adb3"
+        "color": "#3fa2a4",
+        "color_alt": "#82adb3",
+        "roughness": 0.7,
+        "roughness_alt": 0.3
       },
       "FloorGeometry": { "sides": false }
     }

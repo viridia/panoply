@@ -98,13 +98,16 @@ static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<StdFloorSurface> =
 #[reflect(Aspect, Default)]
 pub struct NoiseFloorSurface {
     /// Noise base color
-    base: String,
+    color: String,
 
-    /// Noice accent color
-    accent: String,
+    /// Accent color
+    color_alt: String,
 
     /// Surface roughness
     roughness: Option<f32>,
+
+    /// Surface roughness
+    roughness_alt: Option<f32>,
 
     #[reflect(ignore)]
     pub(crate) material: Handle<ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>>,
@@ -127,15 +130,18 @@ impl Aspect for NoiseFloorSurface {
         println!("Loading material: {}.NoiseFloorSurface.Material", label);
         self.material = load_context.labeled_asset_scope(
             format!("{}.NoiseFloorSurface.Material", label),
-            |_lc| {
+            |lc| {
                 println!("Loading material: {}.NoiseFloorSurface.Material", label);
                 let std = StandardMaterial {
                     perceptual_roughness: self.roughness.unwrap_or(1.0),
                     ..default()
                 };
                 let material = FloorNoiseMaterial {
-                    base: Color::hex(&self.base).unwrap(),
-                    accent: Color::hex(&self.accent).unwrap(),
+                    color: Color::hex(&self.color).unwrap(),
+                    color_alt: Color::hex(&self.color_alt).unwrap(),
+                    roughness: self.roughness.unwrap_or(1.0),
+                    roughness_alt: self.roughness_alt.unwrap_or(self.roughness.unwrap_or(1.0)),
+                    noise: lc.load("terrain/textures/noise.png"),
                 };
                 ExtendedMaterial {
                     base: std,
