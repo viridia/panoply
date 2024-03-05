@@ -3,10 +3,11 @@ use serde::Serialize;
 use std::sync::Arc;
 
 mod aspect;
+mod command;
 mod loader;
 
-pub use aspect::Aspect;
-pub use aspect::ReflectAspect;
+pub use aspect::*;
+pub use command::UpdateAspects;
 
 // TODO: Use type ids instead.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,6 +50,12 @@ pub struct Schematic {
 
     /// Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
     catalog: Handle<SchematicCatalog>,
+}
+
+impl Schematic {
+    pub fn name(&self) -> &str {
+        &self.key
+    }
 }
 
 impl Serialize for SchematicData {

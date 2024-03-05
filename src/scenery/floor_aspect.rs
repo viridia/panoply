@@ -1,8 +1,12 @@
-use std::any::Any;
-
-use bevy::{ecs::component::ComponentId, prelude::*, utils::HashMap};
-
-use crate::schematic::{Aspect, ReflectAspect};
+use crate::schematic::{Aspect, DetachAspect, ReflectAspect, SimpleDetachAspect};
+use bevy::{
+    prelude::*,
+    render::texture::{
+        ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
+        ImageSamplerDescriptor,
+    },
+    utils::HashMap,
+};
 
 /// Floor surface aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -22,7 +26,7 @@ pub struct FloorSurface {
     material: Option<String>,
 
     #[reflect(ignore)]
-    material_handle: Option<Handle<StandardMaterial>>,
+    pub(crate) material_handle: Handle<StandardMaterial>,
 
     roughness: Option<f32>,
     raise: f32,
@@ -42,14 +46,55 @@ impl Aspect for FloorSurface {
         meta_type == crate::schematic::InstanceType::Floor
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
+    fn id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
     }
 
-    fn component_id(&self, world: &mut World) -> ComponentId {
-        world.init_component::<Self>()
+    fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
+        println!("Loading material: {}.FloorSurface.Material", label);
+        self.material_handle =
+            load_context.labeled_asset_scope(format!("{}.FloorSurface.Material", label), |lc| {
+                let mut material = StandardMaterial {
+                    perceptual_roughness: self.roughness.unwrap_or(1.0),
+                    ..default()
+                };
+                if let Some(color) = &self.color {
+                    material.base_color = Color::hex(color).unwrap();
+                } else if let Some(texture) = &self.texture {
+                    self.texture_handle = Some(lc.load_with_settings(
+                        texture,
+                        |settings: &mut ImageLoaderSettings| {
+                            settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                                label: Some("Floor Region".to_string()),
+                                address_mode_u: ImageAddressMode::Repeat,
+                                address_mode_v: ImageAddressMode::Repeat,
+                                address_mode_w: ImageAddressMode::Repeat,
+                                mag_filter: ImageFilterMode::Linear,
+                                min_filter: ImageFilterMode::Linear,
+                                mipmap_filter: ImageFilterMode::Linear,
+                                ..default()
+                            });
+                        },
+                    ));
+                    material.base_color_texture = self.texture_handle.clone();
+                }
+                // material.base_color_texture_transform = TextureTransform {
+                //     offset: Vec2::new(0.0, 0.0),
+                //     scale: Vec2::new(1.0, 1.0),
+                //     rotation: 0.0,
+                // };
+                material
+            });
+    }
+
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        entity.insert(self.clone());
+        &FLOOR_SURFACE_REMOVER
     }
 }
+
+static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<FloorSurface> =
+    SimpleDetachAspect::<FloorSurface>::new();
 
 /// Floor navigation aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -67,11 +112,14 @@ impl Aspect for FloorNav {
         meta_type == crate::schematic::InstanceType::Floor
     }
 
-    fn as_any(&self) -> &dyn Any {
-        self
+    fn id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
     }
 
-    fn component_id(&self, world: &mut World) -> ComponentId {
-        world.init_component::<Self>()
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        entity.insert(self.clone());
+        &FLOOR_NAV_REMOVER
     }
 }
+
+static FLOOR_NAV_REMOVER: SimpleDetachAspect<FloorNav> = SimpleDetachAspect::<FloorNav>::new();

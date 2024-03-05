@@ -3,6 +3,9 @@ use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
     floor_aspect::{FloorNav, FloorSurface},
+    floor_mesh::{
+        gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
+    },
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
 };
@@ -18,6 +21,10 @@ mod precinct_cache;
 pub const PRECINCT_SIZE: i32 = 64;
 pub const PRECINCT_SIZE_F: f32 = PRECINCT_SIZE as f32;
 
+pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
+pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
+pub const TIER_OFFSET: f32 = 0.02 - 2.; // Tiers are slightly higher than the terrain.
+
 pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
@@ -29,11 +36,20 @@ impl Plugin for SceneryPlugin {
             .register_type::<FloorNav>()
             .register_type::<Vec<String>>()
             .register_type::<HashMap<String, String>>()
-            // .add_plugins((
-            //     MaterialPlugin::<GroundMaterial>::default(),
-            //     MaterialPlugin::<WaterMaterial>::default(),
-            // ))
-            // .add_systems(Startup, create_water_material)
-            .add_systems(Update, (spawn_precincts, read_precinct_data));
+            .add_systems(
+                Update,
+                (
+                    spawn_precincts,
+                    (
+                        read_precinct_data,
+                        update_floor_aspects,
+                        apply_deferred,
+                        gen_floor_meshes,
+                    )
+                        .chain(),
+                    insert_floor_meshes,
+                    rebuild_floor_materials,
+                ),
+            );
     }
 }

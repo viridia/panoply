@@ -1,7 +1,4 @@
-use bevy::{
-    asset::Handle, ecs::entity::Entity, math::Vec2, pbr::StandardMaterial, prelude::*,
-    render::mesh::Mesh,
-};
+use bevy::{asset::Handle, math::Vec2, prelude::*};
 use serde::{
     de::{SeqAccess, Visitor},
     ser::SerializeSeq,
@@ -12,6 +9,9 @@ use crate::schematic::Schematic;
 
 #[derive(Component, Debug, Clone, Default)]
 pub struct FloorRegion {
+    /// Floor level
+    pub level: i32,
+
     /// Schematic reference
     pub schematic: Handle<Schematic>,
 
@@ -39,32 +39,32 @@ impl PartialEq for FloorRegionSer {
     }
 }
 
-#[derive(Component, Debug, Clone, Default)]
-pub struct FloorRegionMesh {
-    /// Floor level
-    pub level: i32,
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildFloorAspects;
 
-    /// Index into archetypes table
-    pub surface_index: usize,
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildFloorMesh;
 
-    /// Archetype of surface properties
-    // pub surface: Handle<FloorArchetype>,
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildFloorMaterials;
 
-    /// List of 2d polygonal vertices.
-    pub poly: Vec<Vec2>,
+// #[derive(Component, Debug, Clone, Default)]
+// pub struct FloorRegionMesh {
+//     /// Material
+//     pub material: Handle<StandardMaterial>,
 
-    /// Material
-    pub material: Handle<StandardMaterial>,
+//     /// Generated mesh
+//     pub mesh: Handle<Mesh>,
 
-    /// Generated mesh
-    pub mesh: Handle<Mesh>,
+//     /// Fill entity
+//     pub fill: Option<Entity>,
 
-    /// Fill entity
-    pub fill: Option<Entity>,
-
-    /// Outline entity
-    pub outline: Option<Entity>,
-}
+//     /// Outline entity
+//     pub outline: Option<Entity>,
+// }
 
 fn serialize_poly<S>(poly: &Vec<Vec2>, serializer: S) -> Result<S::Ok, S::Error>
 where

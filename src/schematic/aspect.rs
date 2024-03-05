@@ -1,7 +1,39 @@
-use bevy::{ecs::component::ComponentId, prelude::*};
-use std::any::Any;
+use bevy::{asset::LoadContext, prelude::*, utils::HashMap};
+use std::any::TypeId;
 
 use super::InstanceType;
+
+/// Object which can remove an aspect from an entity.
+pub trait DetachAspect: Send + Sync {
+    /// Get the [`TypeId`] for this aspect.
+    fn type_id(&self) -> TypeId;
+
+    /// Remove the aspect from the entity.
+    fn detach_aspect(&self, entity: &mut EntityWorldMut);
+}
+
+/// An `DetachAspect` that removes a specific component from an entity.
+pub struct SimpleDetachAspect<T: Component> {
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<T: Component> SimpleDetachAspect<T> {
+    pub const fn new() -> Self {
+        SimpleDetachAspect {
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<T: Component> DetachAspect for SimpleDetachAspect<T> {
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<T>()
+    }
+
+    fn detach_aspect(&self, entity: &mut EntityWorldMut) {
+        entity.remove::<T>();
+    }
+}
 
 /// An Aspect is like an ECS component for a prototype.
 #[reflect_trait]
@@ -15,11 +47,15 @@ where
     /// Whether this aspect can be attached to an instance of the given type.
     fn can_attach(&self, meta_type: InstanceType) -> bool;
 
-    /// Returns this aspect as an 'any'.
-    fn as_any(&self) -> &dyn Any;
+    /// Get the [`TypeId`] for this aspect.
+    fn id(&self) -> TypeId;
 
-    /// Get the ECS component id of this aspect.
-    fn component_id(&self, world: &mut World) -> ComponentId;
+    /// Load any dependencies required by this aspect.
+    #[allow(unused_variables)]
+    fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {}
+
+    /// Attach or apply this aspect to the given entity.
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect;
 
     //   /** Configuration parameters for this aspect. */
     //   config?: IPropertyDescriptors<Config>;
@@ -55,3 +91,6 @@ where
     //   /** If defined, this actor is conditional - only appears in specific quest stages. */
     //   present?: (self: SelfType, props: Props) => boolean;
 }
+
+#[derive(Component)]
+pub struct OwnedAspects(pub(crate) HashMap<TypeId, &'static dyn DetachAspect>);

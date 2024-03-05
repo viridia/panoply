@@ -1,37 +1,10 @@
 # TODO
 
-* Quill
-  * Use smallvec
-  * Don't re-render unless changed.
-  * Memoization of use_resource.
-* Guise
-  * Template parameter decls
-  * Hot reload
-  * Only recompute styles on change
-  * Differential updates
-  * Finish style attributes (grid, etc.)
-  * Presenters / Classes
-  * Selectors
-  * Vars
-  * Parent Selectors
-  * Presenters
-  * Eval expressions with params
-  * Color functions
-  * Controllers
-    * Picking
-    * Splitters
-  * Styles
-    * Image Section prop
-    * Selectors - eval
-    * Vars - use
-    * Inherited props
-    * Styles passed into to call
-    * Finish unit tests
-    * JSON array as UiRect
-  * Guise Bundle type
-  * Template params
-  * Conditional logic
-  * Text styles
+- Floors
+  - Split aspects
+  - Outline material
+  - Outline geometry
+
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.
@@ -39,112 +12,112 @@
 
 # Project hierarchy
 
-* actors
-  * Action
-  * Actor
-  * ActorTemplate
-  * ActorArchetype
-  * ActorAffix
-  * goals
-    * components
-      * Activate
-      * ApplySkill
-      * Attack
-      * Contingent
-      * Deactivate
-      * Dialogue
-      * Equip
-      * FaceToward
-      * LookAt
-      * Park
-      * Pose
-      * Pursue
-      * Random
-      * Ranked
-      * Remark
-      * SceneryInteraction
-      * Sequence
-      * TargetEnemy
-      * ThreatChange
-      * Travel
-      * Unequip
-      * Wait
-      * Wander
-    * GoalRoot
-    * PrioritizedGoalList
-  * parking
-  * SkinnedModel
-  * ThreatMap
-* assets
-  * archetypes
-    * Archetype
-* audio
-  * AudioFx
-  * AudioFxTemplate
-  * AudioFxSystem
-* books
-* dialogue
-  * CutScene
-  * DialogueSet
-  * RemarkSet
-* items
-  * Inventory
-  * InventoryItem
-  * InventoryItemArchetype
-* nav
-  * NavigationMesh
-  * NavigationMeshBuilder
-  * NavController
-  * NavTract
-  * NavRouteRequest
-  * NavRouteTask
-* overlays
-  * DebugPhysicsOverlay
-  * TargetingCircle
-  * PathVisualizer
-  * TranslucentLines
-  * TranslucentSprites
-  * TranslucentPoints
-  * TranslucentMesh
-* quests
-  * StageId
-  * Quest
-  * QuestMgr
-* particles
-  * MissileSystem
-  * ParticleEffect
-  * ParticleEmitter
-  * ParticleAspect
-* physics
-* scenery
-  * Fixture
-  * FixtureArchetype
-  * FixtureModels
-  * FixtureObstacles
-  * FixturePhysics
-  * Floor
-  * FloorArchetype
-  * FloorModels
-  * FloorObstacles
-  * FloorPhysics
-  * PrecinctCache
-  * Precinct
-  * Tier
-* skills
-* terrain
-  * [x] ParcelCache
-  * [x] Parcel
-  * [x] TerrainShape
-  * TerrainFx
-* view
-  * Viewpoint
-  * Portals
-  * Cutaways
-  * Nameplates
-* world
-  * Biome
-  * Realm
-  * World
+- actors
+  - Action
+  - Actor
+  - ActorTemplate
+  - ActorArchetype
+  - ActorAffix
+  - goals
+    - components
+      - Activate
+      - ApplySkill
+      - Attack
+      - Contingent
+      - Deactivate
+      - Dialogue
+      - Equip
+      - FaceToward
+      - LookAt
+      - Park
+      - Pose
+      - Pursue
+      - Random
+      - Ranked
+      - Remark
+      - SceneryInteraction
+      - Sequence
+      - TargetEnemy
+      - ThreatChange
+      - Travel
+      - Unequip
+      - Wait
+      - Wander
+    - GoalRoot
+    - PrioritizedGoalList
+  - parking
+  - SkinnedModel
+  - ThreatMap
+- assets
+  - archetypes
+    - Archetype
+- audio
+  - AudioFx
+  - AudioFxTemplate
+  - AudioFxSystem
+- books
+- dialogue
+  - CutScene
+  - DialogueSet
+  - RemarkSet
+- items
+  - Inventory
+  - InventoryItem
+  - InventoryItemArchetype
+- nav
+  - NavigationMesh
+  - NavigationMeshBuilder
+  - NavController
+  - NavTract
+  - NavRouteRequest
+  - NavRouteTask
+- overlays
+  - DebugPhysicsOverlay
+  - TargetingCircle
+  - PathVisualizer
+  - TranslucentLines
+  - TranslucentSprites
+  - TranslucentPoints
+  - TranslucentMesh
+- quests
+  - StageId
+  - Quest
+  - QuestMgr
+- particles
+  - MissileSystem
+  - ParticleEffect
+  - ParticleEmitter
+  - ParticleAspect
+- physics
+- scenery
+  - Fixture
+  - FixtureArchetype
+  - FixtureModels
+  - FixtureObstacles
+  - FixturePhysics
+  - Floor
+  - FloorArchetype
+  - FloorModels
+  - FloorObstacles
+  - FloorPhysics
+  - PrecinctCache
+  - Precinct
+  - Tier
+- skills
+- terrain
+  - [x] ParcelCache
+  - [x] Parcel
+  - [x] TerrainShape
+  - TerrainFx
+- view
+  - Viewpoint
+  - Portals
+  - Cutaways
+  - Nameplates
+- world
+  - Biome
+  - Realm
+  - World
 
 # Convert PNG to premultiplied alpha:
 
@@ -153,19 +126,19 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
 
 # Overlays
 
-* Show
-* For
-* Overlay
-* TranslucentShape
-* TranslucentLines
-* TranslucentPoints
-* TranslucentSprites
+- Show
+- For
+- Overlay
+- TranslucentShape
+- TranslucentLines
+- TranslucentPoints
+- TranslucentSprites
 
 Overlay structure:
 
 Node
-  old reflex?
-  Children
+old reflex?
+Children
 
 We need local memoization
 

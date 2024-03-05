@@ -1,7 +1,7 @@
 use crate::schematic::Schematic;
 
 use super::{
-    floor_region::{FloorRegion, FloorRegionMesh},
+    floor_region::{FloorRegion, RebuildFloorAspects},
     precinct_asset::PrecinctAsset,
 };
 use bevy::prelude::*;
@@ -38,13 +38,6 @@ pub struct PrecinctTier {
     // private cutawayRectsAtom = createAtom();
 }
 
-impl PrecinctTier {
-    pub fn add_floor_region(&mut self, commands: &mut Commands, floor: FloorRegionMesh) {
-        let _ = commands.spawn(floor).id();
-        // self.floor_regions.push(floor);
-    }
-}
-
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct PrecinctAssetChanged;
@@ -53,18 +46,13 @@ pub struct PrecinctAssetChanged;
 #[component(storage = "SparseSet")]
 pub struct PrecinctTiersChanged;
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct FloorRegionChanged;
-
 /** React when precinct assets change and update the scenery. */
 pub fn read_precinct_data(
     mut commands: Commands,
     mut query_precincts: Query<(Entity, &mut Precinct)>,
+    mut query_floor_regions: Query<(Entity, &mut FloorRegion)>,
     mut ev_asset: EventReader<AssetEvent<PrecinctAsset>>,
     assets: ResMut<Assets<PrecinctAsset>>,
-    // mut materials: ResMut<Assets<GroundMaterial>>,
-    // mut images: ResMut<Assets<Image>>,
     asset_server: Res<AssetServer>,
 ) {
     for ev in ev_asset.read() {
@@ -82,7 +70,7 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
-                    // TODO: Sync tiers
+                    // TODO: Sync cutaway rects
                     // TODO: Sync nav mesh, physics, light sources, particles, etc.
                     // TODO: Sync actors
 
@@ -107,25 +95,64 @@ pub fn read_precinct_data(
                         };
                         i += 1;
 
-                        t.floor_regions.iter().for_each(|e| {
-                            commands.entity(*e).remove_parent();
-                            commands.entity(*e).despawn_recursive();
-                        });
-                        t.floor_regions.clear();
+                        let mut j = 0;
                         for floor in tier.pfloors.iter() {
                             let schematic: Handle<Schematic> =
                                 floor_schematics[floor.surface_index - 1].clone();
-                            let floor_entity = commands
-                                .spawn((
-                                    FloorRegion {
-                                        schematic,
-                                        poly: floor.poly.clone(),
-                                    },
-                                    FloorRegionChanged,
-                                ))
-                                .set_parent(precinct_entity)
-                                .id();
-                            t.floor_regions.push(floor_entity);
+                            if j < t.floor_regions.len() {
+                                let floor_entity = t.floor_regions[j];
+                                if let Ok((floor_entity, mut floor_region)) =
+                                    query_floor_regions.get_mut(floor_entity)
+                                {
+                                    // Patch floor entity.
+                                    let mut changed = false;
+                                    if floor_region.schematic != schematic {
+                                        floor_region.schematic = schematic.clone();
+                                        changed = true;
+                                    }
+                                    if floor_region.poly != floor.poly {
+                                        floor_region.poly = floor.poly.clone();
+                                        changed = true;
+                                    }
+
+                                    if changed {
+                                        commands.entity(floor_entity).insert(RebuildFloorAspects);
+                                    }
+                                } else {
+                                    // Overwrite floor entity components.
+                                    commands.entity(floor_entity).insert((
+                                        FloorRegion {
+                                            level: tier.level,
+                                            schematic,
+                                            poly: floor.poly.clone(),
+                                        },
+                                        RebuildFloorAspects,
+                                    ));
+                                }
+                            } else {
+                                // Insert new floor entity.
+                                let floor_entity = commands
+                                    .spawn((
+                                        FloorRegion {
+                                            level: tier.level,
+                                            schematic,
+                                            poly: floor.poly.clone(),
+                                        },
+                                        RebuildFloorAspects,
+                                    ))
+                                    .set_parent(precinct_entity)
+                                    .id();
+                                t.floor_regions.push(floor_entity);
+                            }
+                            j += 1;
+                        }
+
+                        // Remove any extra floor regions that no longer exist.
+                        while t.floor_regions.len() > j {
+                            println!("Removing floor region.");
+                            let e = t.floor_regions.pop().unwrap();
+                            commands.entity(e).remove_parent();
+                            commands.entity(e).despawn_recursive();
                         }
                     }
 

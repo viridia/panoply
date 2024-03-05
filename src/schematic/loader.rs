@@ -17,8 +17,8 @@ use super::aspect::Aspect;
 use super::{InstanceType, Schematic, SchematicCatalog, SchematicData};
 
 struct AspectDeserializer<'a> {
-    pub type_registration: &'a TypeRegistration,
-    pub type_registry: &'a TypeRegistry,
+    type_registration: &'a TypeRegistration,
+    type_registry: &'a TypeRegistry,
 }
 
 impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
@@ -44,11 +44,13 @@ impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
     }
 }
 
-struct AspectMapVisitor<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct AspectMapVisitor<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
+    schematic_name: &'a str,
 }
 
-impl<'de, 'a> Visitor<'de> for AspectMapVisitor<'a> {
+impl<'de, 'a, 'b> Visitor<'de> for AspectMapVisitor<'a, 'b> {
     type Value = Vec<Box<dyn Aspect>>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -65,21 +67,24 @@ impl<'de, 'a> Visitor<'de> for AspectMapVisitor<'a> {
                 .type_registry
                 .get_with_short_type_path(&key)
                 .ok_or_else(|| de::Error::custom(format!("Unknown aspect type: {}", key)))?;
-            let aspect = map.next_value_seed(AspectDeserializer {
+            let mut aspect = map.next_value_seed(AspectDeserializer {
                 type_registration,
                 type_registry: self.type_registry,
             })?;
+            aspect.load_dependencies(self.schematic_name, self.load_context);
             result.push(aspect);
         }
         Ok(result)
     }
 }
 
-struct AspectListDeserializer<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct AspectListDeserializer<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
+    schematic_name: &'a str,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for AspectListDeserializer<'a> {
+impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
     type Value = Vec<Box<dyn Aspect>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -88,6 +93,8 @@ impl<'a, 'de> DeserializeSeed<'de> for AspectListDeserializer<'a> {
     {
         deserializer.deserialize_map(AspectMapVisitor {
             type_registry: self.type_registry,
+            load_context: self.load_context,
+            schematic_name: self.schematic_name,
         })
     }
 }
@@ -102,11 +109,13 @@ enum Field {
     Extends,
 }
 
-struct SchematicVisitor<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct SchematicVisitor<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
+    schematic_name: &'a str,
 }
 
-impl<'de, 'a> Visitor<'de> for SchematicVisitor<'a> {
+impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
     type Value = SchematicData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -134,8 +143,8 @@ impl<'de, 'a> Visitor<'de> for SchematicVisitor<'a> {
                     //     return Err(de::Error::duplicate_field("secs"));
                     // }
                     // secs = Some(map.next_value()?);
-                    let meta_type: String = map.next_value()?;
-                    println!("meta_type: {}", meta_type);
+                    let _meta_type: String = map.next_value()?;
+                    // println!("meta_type: {}", meta_type);
                 }
                 Field::DisplayName => {
                     if result.display_name.is_some() {
@@ -155,6 +164,8 @@ impl<'de, 'a> Visitor<'de> for SchematicVisitor<'a> {
                     }
                     result.aspects = map.next_value_seed(AspectListDeserializer {
                         type_registry: self.type_registry,
+                        load_context: self.load_context,
+                        schematic_name: self.schematic_name,
                     })?;
                 }
                 Field::Extends => todo!(),
@@ -164,11 +175,13 @@ impl<'de, 'a> Visitor<'de> for SchematicVisitor<'a> {
     }
 }
 
-struct SchematicDeserializer<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct SchematicDeserializer<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
+    schematic_name: &'a str,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for SchematicDeserializer<'a> {
+impl<'de, 'a, 'b> DeserializeSeed<'de> for SchematicDeserializer<'a, 'b> {
     type Value = SchematicData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -177,15 +190,18 @@ impl<'a, 'de> DeserializeSeed<'de> for SchematicDeserializer<'a> {
     {
         deserializer.deserialize_map(SchematicVisitor {
             type_registry: self.type_registry,
+            load_context: self.load_context,
+            schematic_name: self.schematic_name,
         })
     }
 }
 
-struct CatalogVisitor<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct CatalogVisitor<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
 }
 
-impl<'a, 'de> Visitor<'de> for CatalogVisitor<'a> {
+impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
     type Value = SchematicCatalog;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> std::fmt::Result {
@@ -198,9 +214,11 @@ impl<'a, 'de> Visitor<'de> for CatalogVisitor<'a> {
     {
         let mut entries: HashMap<String, Arc<SchematicData>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
-        while let Some(key) = map.next_key()? {
+        while let Some(key) = map.next_key::<String>()? {
             let schematic = map.next_value_seed(SchematicDeserializer {
                 type_registry: self.type_registry,
+                load_context: self.load_context,
+                schematic_name: &key,
             })?;
             entries.insert(key, Arc::new(schematic));
         }
@@ -209,11 +227,12 @@ impl<'a, 'de> Visitor<'de> for CatalogVisitor<'a> {
     }
 }
 
-struct CatalogDeserializer<'a> {
-    pub type_registry: &'a TypeRegistry,
+struct CatalogDeserializer<'a, 'b> {
+    type_registry: &'a TypeRegistry,
+    load_context: &'a mut LoadContext<'b>,
 }
 
-impl<'de, 'a> DeserializeSeed<'de> for CatalogDeserializer<'a> {
+impl<'de, 'a, 'b> DeserializeSeed<'de> for CatalogDeserializer<'a, 'b> {
     type Value = SchematicCatalog;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -222,6 +241,7 @@ impl<'de, 'a> DeserializeSeed<'de> for CatalogDeserializer<'a> {
     {
         deserializer.deserialize_map(CatalogVisitor {
             type_registry: self.type_registry,
+            load_context: self.load_context,
         })
     }
 }
@@ -266,12 +286,13 @@ impl AssetLoader for SchematicLoader {
             let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
             let schematic_deserializer = CatalogDeserializer {
                 type_registry: &self.type_registry.read(),
+                load_context,
             };
-            let catalog: SchematicCatalog =
+            let mut catalog: SchematicCatalog =
                 schematic_deserializer.deserialize(&mut deserializer)?;
 
             let catalog_handle = load_context.load(load_context.asset_path().clone());
-            for (key, schematic) in catalog.entries.iter() {
+            for (key, schematic) in catalog.entries.iter_mut() {
                 load_context.add_labeled_asset(
                     key.clone(),
                     Schematic {
