@@ -12,12 +12,7 @@
       "type": "string"
     },
     "aspects": {
-      "type": "object",
-      "patternProperties": {
-        "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
-          "$ref": "./aspect.schema.json"
-        }
-      }
+      "$ref": "./aspect.schema.json"
     },
     "alias": {
       "type": "array",

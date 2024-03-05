@@ -1,9 +1,17 @@
 # TODO
 
 - Floors
-  - Split aspects
   - Outline material
   - Outline geometry
+  - Surface texture rotation
+  - Surface changes when scene loads?
+  - Hex color parsing / Srgba
+  - Editor-only surfaces (for things like water / hints)
+- Bugs:
+  - Could not decode precinct
+  - Generation error
+  - Failed to load asset
+  - Materials get loaded multiple times?
 
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system

@@ -5,12 +5,9 @@
   "description": "Aspect Schema",
   "type": "object",
   "properties": {
-    "FloorSurface": {
+    "StdFloorSurface": {
       "type": "object",
       "properties": {
-        "type": {
-          "const": "FloorSurface"
-        },
         "texture": {
           "type": "string"
         },
@@ -20,25 +17,34 @@
         "color": {
           "$ref": "./types.schema.json#/definitions/Color"
         },
-        "color_slots": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "NoiseFloorSurface": {
+      "type": "object",
+      "properties": {
+        "color_base": {
+          "$ref": "./types.schema.json#/definitions/Color"
         },
-        "colors": {
-          "type": "object",
-          "patternProperties": {
-            "^[A-Z][a-z]*$": {
-              "$ref": "./types.schema.json#/definitions/Color"
-            }
-          }
+        "color_accent": {
+          "$ref": "./types.schema.json#/definitions/Color"
         },
         "roughness": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
-        },
+        }
+      },
+      "additionalProperties": false
+    },
+    "FloorGeometry": {
+      "type": "object",
+      "properties": {
         "sides": {
           "type": "boolean"
         },
@@ -52,14 +58,12 @@
     },
     "FloorNav": {
       "properties": {
-        "type": {
-          "const": "FloorNav"
-        },
         "blocked": {
           "type": "boolean"
         }
       },
       "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }

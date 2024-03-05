@@ -2,7 +2,7 @@ use bevy::{prelude::*, utils::HashMap};
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
-    floor_aspect::{FloorNav, FloorSurface},
+    floor_aspect::{FloorGeometry, FloorNav, NoiseFloorSurface, StdFloorSurface},
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
@@ -32,7 +32,9 @@ impl Plugin for SceneryPlugin {
         app.insert_resource(PrecinctCache::new())
             .register_asset_loader(PrecinctAssetLoader)
             .init_asset::<PrecinctAsset>()
-            .register_type::<FloorSurface>()
+            .register_type::<StdFloorSurface>()
+            .register_type::<NoiseFloorSurface>()
+            .register_type::<FloorGeometry>()
             .register_type::<FloorNav>()
             .register_type::<Vec<String>>()
             .register_type::<HashMap<String, String>>()

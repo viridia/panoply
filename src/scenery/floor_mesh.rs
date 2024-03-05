@@ -1,5 +1,5 @@
 use super::{
-    floor_aspect::FloorSurface,
+    floor_aspect::StdFloorSurface,
     floor_region::{FloorRegion, RebuildFloorAspects},
 };
 use crate::{
@@ -120,12 +120,12 @@ pub(crate) fn insert_floor_meshes(
 
 pub(crate) fn rebuild_floor_materials(
     mut commands: Commands,
-    mut query: Query<(Entity, Option<&FloorSurface>), With<RebuildFloorMaterials>>,
+    mut query: Query<(Entity, Option<&StdFloorSurface>), With<RebuildFloorMaterials>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (entity, surf) in query.iter_mut() {
         if let Some(surf) = surf {
-            let material = surf.material_handle.clone();
+            let material = surf.material.clone();
             commands
                 .entity(entity)
                 .insert((material, Visibility::Visible))

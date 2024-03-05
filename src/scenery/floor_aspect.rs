@@ -5,41 +5,29 @@ use bevy::{
         ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
         ImageSamplerDescriptor,
     },
-    utils::HashMap,
 };
 
 /// Floor surface aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
-pub struct FloorSurface {
+pub struct StdFloorSurface {
     /// Texture to use for this floor
     texture: Option<String>,
 
-    #[reflect(ignore)]
-    texture_handle: Option<Handle<Image>>,
-
     color: Option<String>,
-    // color: Option<Srgba>,
-    // colors: Record<string, string>,
-    colors: HashMap<String, String>,
-    color_slots: Vec<String>,
-    material: Option<String>,
 
     #[reflect(ignore)]
-    pub(crate) material_handle: Handle<StandardMaterial>,
+    pub(crate) material: Handle<StandardMaterial>,
 
+    /// Surface roughness
     roughness: Option<f32>,
-    raise: f32,
-
-    /// Whether to render the sides of this floor.
-    sides: Option<bool>,
     // water_current_x: Option<f32>,
     // water_current_y: Option<f32>,
 }
 
-impl Aspect for FloorSurface {
+impl Aspect for StdFloorSurface {
     fn name(&self) -> &str {
-        "FloorSurface"
+        "StdFloorSurface"
     }
 
     fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
@@ -51,9 +39,9 @@ impl Aspect for FloorSurface {
     }
 
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        println!("Loading material: {}.FloorSurface.Material", label);
-        self.material_handle =
-            load_context.labeled_asset_scope(format!("{}.FloorSurface.Material", label), |lc| {
+        println!("Loading material: {}.StdFloorSurface.Material", label);
+        self.material =
+            load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
                 let mut material = StandardMaterial {
                     perceptual_roughness: self.roughness.unwrap_or(1.0),
                     ..default()
@@ -61,7 +49,7 @@ impl Aspect for FloorSurface {
                 if let Some(color) = &self.color {
                     material.base_color = Color::hex(color).unwrap();
                 } else if let Some(texture) = &self.texture {
-                    self.texture_handle = Some(lc.load_with_settings(
+                    material.base_color_texture = Some(lc.load_with_settings(
                         texture,
                         |settings: &mut ImageLoaderSettings| {
                             settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
@@ -76,7 +64,6 @@ impl Aspect for FloorSurface {
                             });
                         },
                     ));
-                    material.base_color_texture = self.texture_handle.clone();
                 }
                 // material.base_color_texture_transform = TextureTransform {
                 //     offset: Vec2::new(0.0, 0.0),
@@ -93,8 +80,94 @@ impl Aspect for FloorSurface {
     }
 }
 
-static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<FloorSurface> =
-    SimpleDetachAspect::<FloorSurface>::new();
+static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<StdFloorSurface> =
+    SimpleDetachAspect::<StdFloorSurface>::new();
+
+/// Floor surface aspect
+#[derive(Component, Debug, Reflect, Clone, Default)]
+#[reflect(Aspect, Default)]
+pub struct NoiseFloorSurface {
+    /// Noise base color
+    color_base: Option<String>,
+
+    /// Noice accent color
+    color_accent: Option<String>,
+
+    #[reflect(ignore)]
+    pub(crate) material_handle: Handle<StandardMaterial>,
+
+    roughness: Option<f32>,
+}
+
+impl Aspect for NoiseFloorSurface {
+    fn name(&self) -> &str {
+        "NoiseFloorSurface"
+    }
+
+    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+        meta_type == crate::schematic::InstanceType::Floor
+    }
+
+    fn id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
+    }
+
+    fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
+        println!("Loading material: {}.StdFloorSurface.Material", label);
+        self.material_handle =
+            load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
+                let mut material = StandardMaterial {
+                    perceptual_roughness: self.roughness.unwrap_or(1.0),
+                    ..default()
+                };
+                // if let Some(color) = &self.color {
+                //     material.base_color = Color::hex(color).unwrap();
+                // }
+                material
+            });
+    }
+
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        entity.insert(self.clone());
+        &NOISE_FLOOR_SURFACE_REMOVER
+    }
+}
+
+static NOISE_FLOOR_SURFACE_REMOVER: SimpleDetachAspect<NoiseFloorSurface> =
+    SimpleDetachAspect::<NoiseFloorSurface>::new();
+
+/// Floor surface aspect
+#[derive(Component, Debug, Reflect, Clone, Default)]
+#[reflect(Aspect, Default)]
+pub struct FloorGeometry {
+    /// How far up the floor should be raised or lowered.
+    raise: f32,
+
+    /// Whether to render the sides of this floor.
+    sides: Option<bool>,
+}
+
+impl Aspect for FloorGeometry {
+    fn name(&self) -> &str {
+        "FloorGeometry"
+    }
+
+    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+        meta_type == crate::schematic::InstanceType::Floor
+    }
+
+    fn id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
+    }
+
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        entity.insert(self.clone());
+        &FLOOR_GEOMETRY_REMOVER
+    }
+}
+
+static FLOOR_GEOMETRY_REMOVER: SimpleDetachAspect<FloorGeometry> =
+    SimpleDetachAspect::<FloorGeometry>::new();
 
 /// Floor navigation aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
