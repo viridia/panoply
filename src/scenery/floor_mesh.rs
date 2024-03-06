@@ -1,6 +1,7 @@
 use super::{
     floor_aspect::{FloorGeometry, NoiseFloorSurface, StdFloorSurface},
     floor_region::{FloorRegion, RebuildFloorAspects},
+    FloorOutline,
 };
 use crate::{
     scenery::{
@@ -22,6 +23,7 @@ use futures_lite::future;
 
 pub struct FloorMeshResult {
     mesh: Mesh,
+    outline: Option<Mesh>,
 }
 
 #[derive(Debug)]
@@ -81,7 +83,10 @@ pub fn gen_floor_meshes(
 
     for (entity, floor_region, floor_geometry) in query.iter_mut() {
         let level = floor_region.level;
-        let poly = floor_region.poly.clone();
+        let mut poly = floor_region.poly.clone();
+        if poly.last() == poly.first() {
+            poly.pop();
+        }
         let geometry = match floor_geometry {
             Some(g) => *g,
             None => FloorGeometry::default(),
@@ -108,13 +113,28 @@ pub(crate) fn insert_floor_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut ComputeFloorMeshTask)>,
     mut meshes: ResMut<Assets<Mesh>>,
+    outline_material: ResMut<FloorOutline>,
 ) {
     for (entity, mut task) in query.iter_mut() {
         if let Some(Some(task_result)) = future::block_on(future::poll_once(&mut task.0)) {
+            let mesh = meshes.add(task_result.mesh);
             commands
                 .entity(entity)
-                .insert(meshes.add(task_result.mesh))
-                .remove::<ComputeFloorMeshTask>();
+                .insert(mesh.clone())
+                .remove::<ComputeFloorMeshTask>()
+                .despawn_descendants();
+            if let Some(outline_mesh) = task_result.outline {
+                let outline_mesh = meshes.add(outline_mesh);
+                let outline = commands
+                    .spawn(MaterialMeshBundle {
+                        material: outline_material.0.clone(),
+                        mesh: outline_mesh,
+                        visibility: Visibility::Visible,
+                        ..default()
+                    })
+                    .id();
+                commands.entity(entity).add_child(outline);
+            }
         }
     }
 }
@@ -159,9 +179,6 @@ pub(crate) fn rebuild_floor_materials(
 }
 
 fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
-    let y_min = params.level as f32 - FLOOR_THICKNESS + TIER_OFFSET;
-    let y_max = params.level as f32 + params.raise + TIER_OFFSET;
-    let count = params.poly.len();
     let vertices: Vec<f64> = params
         .poly
         .iter()
@@ -170,7 +187,23 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
     let Ok(triangles) = earcutr::earcut(&vertices, &[], 2) else {
         return None;
     };
+    if triangles.len() < 2 {
+        return None;
+    }
 
+    let mesh = compute_floor_geometry(&params, &triangles);
+    let outline = if params.sides {
+        Some(compute_outline_geometry(&params, &triangles))
+    } else {
+        None
+    };
+    Some(FloorMeshResult { mesh, outline })
+}
+
+fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh {
+    let y_min = params.level as f32 - FLOOR_THICKNESS + TIER_OFFSET;
+    let y_max = params.level as f32 + params.raise + TIER_OFFSET;
+    let count = params.poly.len();
     let top_vertex_count = count;
     let vertex_count = top_vertex_count * 2;
 
@@ -207,14 +240,11 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
         indices.push((i + count) as u32);
     }
 
-    // const bottomIndices = triangles.map(i => i + count);
-    // const indices = [...topIndices, ...bottomIndices];
-
     // Sides
     if params.sides {
         let mut last: Vec2 = *params.poly.last().unwrap();
         let mut next_index = position.len() as u32;
-        for v in params.poly {
+        for v in params.poly.iter() {
             position.push([last.x, y_max, last.y]);
             position.push([last.x, y_min, last.y]);
             position.push([v.x, y_max, v.y]);
@@ -238,7 +268,7 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
                 tex_coords.push([v.x + normal2.x, v.y + normal2.y]);
             }
 
-            last = v;
+            last = *v;
         }
     }
 
@@ -251,122 +281,116 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
     mesh.insert_indices(Indices::U32(indices));
     mesh.compute_aabb();
-    Some(FloorMeshResult { mesh })
+    mesh
 }
 
-// fn build_floor_outline_geometry(params: &FloorMeshParams) {
-//     if !params.sides {
-//       return;
-//     }
+fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh {
+    let y_min = params.level as f32 - FLOOR_THICKNESS + TIER_OFFSET;
+    let y_max = params.level as f32 + params.raise + TIER_OFFSET;
+    let count = params.poly.len();
 
-//     let count = params.poly.length;
-//     const triangles = earcut(polygon.flat());
+    let vertex_count = count * 3;
 
-//     const position: number[] = [];
-//     const normal: number[] = [];
+    let mut position: Vec<[f32; 3]> = Vec::with_capacity(vertex_count);
+    let mut normal: Vec<[f32; 3]> = Vec::with_capacity(vertex_count);
+    let mut indices: Vec<u32> = Vec::with_capacity(triangles.len() * 3);
 
-//     // Bottom surface
-//     for (const [x, z] of polygon) {
-//       position.push(x, this.height - FLOOR_THICKNESS, z);
-//       normal.push(0, -1, 0);
-//     }
-//     const indices = [...triangles];
+    // Bottom surface
+    for pt in params.poly.iter() {
+        position.push([pt.x, y_min, pt.y]);
+        normal.push([0., -1., 0.]);
+    }
+    for i in triangles.iter() {
+        indices.push(*i as u32);
+    }
 
-//     // Sides
-//     let lastVtx2 = polygon.at(-2)!;
-//     let lastVtx = polygon.at(-1)!;
-//     const baseIndex = position.length / 3;
-//     let polygonIndex = baseIndex;
+    // Sides and corners
+    let last_vtx2 = params.poly[count - 2];
+    let mut last_vtx = params.poly[count - 1];
+    let base_index = position.len() as u32;
+    let mut polygon_index = base_index;
 
-//     vDir2.set(lastVtx[0] - lastVtx2[0], lastVtx[1] - lastVtx2[1]).normalize();
-//     for (let i = 0; i < count; i++) {
-//       const vtx = polygon[i];
-//       const [lx, lz] = lastVtx;
-//       const [x, z] = vtx;
+    let mut v_dir2 = (last_vtx - last_vtx2).normalize();
+    for (i, vtx) in params.poly.iter().enumerate() {
+        let Vec2 { x: lx, y: lz } = last_vtx;
+        let v_dir = (*vtx - last_vtx).normalize();
 
-//       vDir.set(x - lx, z - lz).normalize();
+        position.push([lx, y_max, lz]);
+        position.push([lx, y_min, lz]);
 
-//       position.push(lx, this.height + raise, lz);
-//       position.push(lx, this.height - FLOOR_THICKNESS, lz);
+        let dot = (v_dir + v_dir2).normalize().dot(v_dir);
+        let area = v_dir2.x * v_dir.y - v_dir.x * v_dir2.y;
+        if dot < 0.8 && area > 0. {
+            // Acute angle requires beveling
+            position.push([lx, y_max, lz]);
+            position.push([lx, y_min, lz]);
 
-//       const dot = vDir3.addVectors(vDir, vDir2).normalize().dot(vDir);
-//       const area = vDir2.x * vDir.y - vDir.x * vDir2.y;
-//       if (dot < 0.8 && area > 0) {
-//         // Acute angle requires beveling
-//         position.push(lx, this.height, lz);
-//         position.push(lx, this.height - FLOOR_THICKNESS, lz);
+            let normal2 = Vec2::new(v_dir2.y, -v_dir2.x).normalize() + v_dir2 * 0.2;
+            // normal2.addScaledVector(vDir2, 0.2);
+            normal.push([normal2.x, 0., normal2.y]);
+            normal.push([normal2.x, 0., normal2.y]);
 
-//         normal2.set(vDir2.y, -vDir2.x).normalize();
-//         normal2.addScaledVector(vDir2, 0.2);
-//         normal.push(normal2.x, 0, normal2.y);
-//         normal.push(normal2.x, 0, normal2.y);
+            let normal2 = Vec2::new(v_dir.y, -v_dir.x).normalize() + v_dir * -0.2;
+            // normal2.addScaledVector(vDir, -0.2);
+            normal.push([normal2.x, 0., normal2.y]);
+            normal.push([normal2.x, 0., normal2.y]);
 
-//         normal2.set(vDir.y, -vDir.x).normalize();
-//         normal2.addScaledVector(vDir, -0.2);
-//         normal.push(normal2.x, 0, normal2.y);
-//         normal.push(normal2.x, 0, normal2.y);
+            let next_index: u32 = if i < count - 1 {
+                polygon_index + 4
+            } else {
+                base_index
+            };
+            indices.extend([polygon_index, polygon_index + 2, polygon_index + 1]);
+            indices.extend([polygon_index + 1, polygon_index + 2, polygon_index + 3]);
 
-//         const nextIndex = i < count - 1 ? polygonIndex + 4 : baseIndex;
-//         indices.push(polygonIndex, polygonIndex + 2, polygonIndex + 1);
-//         indices.push(polygonIndex + 1, polygonIndex + 2, polygonIndex + 3);
+            indices.extend([polygon_index + 2, next_index, polygon_index + 3]);
+            indices.extend([polygon_index + 3, next_index, next_index + 1]);
 
-//         indices.push(polygonIndex + 2, nextIndex, polygonIndex + 3);
-//         indices.push(polygonIndex + 3, nextIndex, nextIndex + 1);
+            // Bevel between side and bottom.
+            let bi: u32 = if i > 0 { i - 1 } else { count - 1 } as u32;
+            indices.extend([polygon_index + 1, polygon_index + 3, bi]);
+            indices.extend([next_index + 1, i as u32, bi]);
+            indices.extend([polygon_index + 3, next_index + 1, bi]);
 
-//         // Bevel between side and bottom.
-//         const bi = i > 0 ? i - 1 : count - 1;
-//         indices.push(polygonIndex + 1, polygonIndex + 3, bi);
-//         indices.push(nextIndex + 1, i, bi);
-//         indices.push(polygonIndex + 3, nextIndex + 1, bi);
+            polygon_index = next_index;
+        } else {
+            let v_cross = Vec2::new(v_dir.y + v_dir2.y, -(v_dir.x + v_dir2.x)).normalize();
 
-//         polygonIndex = nextIndex;
-//       } else {
-//         vCross.set(vDir.y + vDir2.y, -(vDir.x + vDir2.x)).normalize();
+            // Shallow angle gets mitered.
+            let normal2 = v_cross / dot;
+            normal.push([normal2.x, 0., normal2.y]);
+            normal.push([normal2.x, 0., normal2.y]);
 
-//         // Shallow angle gets mitered.
-//         normal2.copy(vCross).multiplyScalar(1 / dot);
-//         normal.push(normal2.x, 0, normal2.y);
-//         normal.push(normal2.x, 0, normal2.y);
+            // Side quad
+            let next_index: u32 = if i < count - 1 {
+                polygon_index + 2
+            } else {
+                base_index
+            };
+            indices.extend([polygon_index, next_index, polygon_index + 1]);
+            indices.extend([polygon_index + 1, next_index, next_index + 1]);
 
-//         // Side quad
-//         const nextIndex = i < count - 1 ? polygonIndex + 2 : baseIndex;
-//         indices.push(polygonIndex, nextIndex, polygonIndex + 1);
-//         indices.push(polygonIndex + 1, nextIndex, nextIndex + 1);
+            // Bevel between side and bottom.
+            let bi = if i > 0 { i - 1 } else { count - 1 } as u32;
+            indices.extend([next_index + 1, i as u32, bi]);
+            indices.extend([polygon_index + 1, next_index + 1, bi]);
 
-//         // Bevel between side and bottom.
-//         const bi = i > 0 ? i - 1 : count - 1;
-//         indices.push(nextIndex + 1, i, bi);
-//         indices.push(polygonIndex + 1, nextIndex + 1, bi);
+            polygon_index = next_index;
+        }
 
-//         polygonIndex = nextIndex;
-//       }
+        last_vtx = *vtx;
+        v_dir2 = v_dir;
+    }
 
-//       lastVtx2 = lastVtx;
-//       lastVtx = vtx;
-//       vDir2.copy(vDir);
-//     }
+    println!("Poly: {}, #indices: {}", params.poly.len(), indices.len());
 
-//     const geometry = new BufferGeometry();
-//     this.pool.add(geometry);
-
-//     const positionBuffer = new Float32BufferAttribute(position, 3);
-//     positionBuffer.needsUpdate = true;
-//     geometry.setAttribute('position', positionBuffer);
-
-//     const normalBuffer = new Float32BufferAttribute(normal, 3);
-//     normalBuffer.needsUpdate = true;
-//     geometry.setAttribute('normal', normalBuffer);
-
-//     geometry.setIndex(indices);
-//     geometry.computeBoundingBox();
-//     geometry.computeBoundingSphere();
-
-//     const mesh = new Mesh(geometry, outlineMaterial);
-//     mesh.matrixAutoUpdate = false;
-//     mesh.name = `FloorRegionOutline-${this.height}`;
-//     mesh.receiveShadow = false;
-//     mesh.castShadow = false;
-//     mesh.updateMatrix();
-//     this.group.add(mesh);
-//     return mesh;
-//   }
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::RENDER_WORLD,
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh.compute_aabb();
+    mesh
+}

@@ -17,6 +17,7 @@ extern crate directories;
 mod diagnostics;
 mod editor;
 mod instancing;
+mod materials;
 mod random;
 mod scenery;
 mod schematic;
@@ -29,6 +30,7 @@ use view::{PrimaryCamera, Viewpoint};
 use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
+    materials::MaterialsPlugin,
     scenery::SceneryPlugin,
     schematic::SchematicPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
@@ -119,6 +121,7 @@ fn main() {
         .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins((
             SchematicPlugin,
+            MaterialsPlugin,
             WorldPlugin,
             TerrainPlugin,
             SceneryPlugin,

@@ -1,5 +1,7 @@
-use bevy::{pbr::ExtendedMaterial, prelude::*, utils::HashMap};
+use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
 use precinct_cache::{spawn_precincts, PrecinctCache};
+
+use crate::materials::OutlineMaterial;
 
 use self::{
     floor_aspect::{FloorGeometry, FloorNav, NoiseFloorSurface, StdFloorSurface},
@@ -27,6 +29,9 @@ pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
 pub const TIER_OFFSET: f32 = 0.02 - 2.; // Tiers are slightly higher than the terrain.
 
+#[derive(Resource, Default)]
+pub struct FloorOutline(pub Handle<ExtendedMaterial<StandardMaterial, OutlineMaterial>>);
+
 pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
@@ -34,6 +39,7 @@ impl Plugin for SceneryPlugin {
         app.insert_resource(PrecinctCache::new())
             .register_asset_loader(PrecinctAssetLoader)
             .init_asset::<PrecinctAsset>()
+            .init_resource::<FloorOutline>()
             .register_type::<StdFloorSurface>()
             .register_type::<NoiseFloorSurface>()
             .register_type::<FloorGeometry>()
@@ -43,6 +49,7 @@ impl Plugin for SceneryPlugin {
             .add_plugins(MaterialPlugin::<
                 ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,
             >::default())
+            .add_systems(Startup, init_outline)
             .add_systems(
                 Update,
                 (
@@ -59,4 +66,19 @@ impl Plugin for SceneryPlugin {
                 ),
             );
     }
+}
+
+fn init_outline(
+    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, OutlineMaterial>>>,
+    mut floor_outline: ResMut<FloorOutline>,
+) {
+    floor_outline.0 = materials.add(ExtendedMaterial {
+        base: StandardMaterial {
+            base_color: Color::BLACK,
+            unlit: true,
+            cull_mode: Some(Face::Front),
+            ..Default::default()
+        },
+        extension: OutlineMaterial { width: 0.015 },
+    });
 }
