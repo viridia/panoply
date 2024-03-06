@@ -382,8 +382,6 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
         v_dir2 = v_dir;
     }
 
-    println!("Poly: {}, #indices: {}", params.poly.len(), indices.len());
-
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::RENDER_WORLD,

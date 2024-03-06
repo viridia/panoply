@@ -22,6 +22,9 @@ pub fn update_camera_viewport(
     windows: Query<&Window, With<PrimaryWindow>>,
     mut camera_query: Query<(&mut Camera, &mut Projection), With<PrimaryCamera>>,
 ) {
+    if windows.iter().count() != 1 {
+        return;
+    }
     let window = windows.single();
     let ww = window.resolution.physical_width() as f32;
     let wh = window.resolution.physical_height() as f32;

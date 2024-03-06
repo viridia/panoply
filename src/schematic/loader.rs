@@ -282,6 +282,7 @@ impl AssetLoader for SchematicLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
+            println!("Loading schematics: {:#?}", load_context.asset_path());
 
             let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
             let schematic_deserializer = CatalogDeserializer {

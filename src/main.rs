@@ -106,7 +106,6 @@ fn main() {
             state: EditorState::World,
         })
         .add_systems(Startup, setup)
-        // .register_component_as::<dyn Controller, ViewportInsetController>()
         .add_systems(
             Update,
             (
@@ -126,8 +125,7 @@ fn main() {
             TerrainPlugin,
             SceneryPlugin,
             InstancedModelsPlugin,
-            // GuisePlugin,
-            // QuillPlugin, // WorldInspectorPlugin::new(),
+            // WorldInspectorPlugin::new(),
         ))
         .run();
 

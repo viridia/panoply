@@ -48,7 +48,7 @@ impl Aspect for StdFloorSurface {
     }
 
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        println!("Loading material: {}.StdFloorSurface.Material", label);
+        // println!("Loading material: {}.StdFloorSurface.Material", label);
         self.material =
             load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
                 let mut material = StandardMaterial {
@@ -127,11 +127,11 @@ impl Aspect for NoiseFloorSurface {
     }
 
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        println!("Loading material: {}.NoiseFloorSurface.Material", label);
+        // println!("Loading material: {}.NoiseFloorSurface.Material", label);
         self.material = load_context.labeled_asset_scope(
             format!("{}.NoiseFloorSurface.Material", label),
             |lc| {
-                println!("Loading material: {}.NoiseFloorSurface.Material", label);
+                // println!("Loading material: {}.NoiseFloorSurface.Material", label);
                 let std = StandardMaterial {
                     perceptual_roughness: self.roughness.unwrap_or(1.0),
                     ..default()
