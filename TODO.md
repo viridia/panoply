@@ -1,16 +1,13 @@
 # TODO
 
 - Floors
-  - Outline shader
-  - Outline geometry
-  - Noise shader
   - Surface texture rotation
-  - Surface changes when scene loads?
   - Hex color parsing / Srgba
   - Editor-only surfaces (for things like water / hints)
 - Bugs:
+  - Surface changes when scene loads?
   - Could not decode precinct
-  - Generation error
+  - Generation error [REPORTED]
   - Failed to load asset
   - Materials get loaded multiple times?
 - Models

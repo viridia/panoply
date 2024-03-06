@@ -1,4 +1,5 @@
 use crate::{
+    reflect_types::HexColor,
     scenery::floor_noise::FloorNoiseMaterial,
     schematic::{Aspect, DetachAspect, ReflectAspect, SimpleDetachAspect},
 };
@@ -19,7 +20,7 @@ pub struct StdFloorSurface {
     texture: Option<String>,
 
     /// Surface color if no texture is used.
-    color: Option<String>,
+    color: Option<HexColor>,
 
     /// Surface roughness
     roughness: Option<f32>,
@@ -57,7 +58,7 @@ impl Aspect for StdFloorSurface {
                     ..default()
                 };
                 if let Some(color) = &self.color {
-                    material.base_color = Color::hex(color).unwrap();
+                    material.base_color = **color;
                 } else if let Some(texture) = &self.texture {
                     material.base_color_texture = Some(lc.load_with_settings(
                         texture,
@@ -98,10 +99,10 @@ static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<StdFloorSurface> =
 #[reflect(Aspect, Default)]
 pub struct NoiseFloorSurface {
     /// Noise base color
-    color: String,
+    color: HexColor,
 
     /// Accent color
-    color_alt: String,
+    color_alt: HexColor,
 
     /// Surface roughness
     roughness: Option<f32>,
@@ -137,8 +138,8 @@ impl Aspect for NoiseFloorSurface {
                     ..default()
                 };
                 let material = FloorNoiseMaterial {
-                    color: Color::hex(&self.color).unwrap(),
-                    color_alt: Color::hex(&self.color_alt).unwrap(),
+                    color: *self.color,
+                    color_alt: *self.color_alt,
                     roughness: self.roughness.unwrap_or(1.0),
                     roughness_alt: self.roughness_alt.unwrap_or(self.roughness.unwrap_or(1.0)),
                     noise: lc.load("terrain/textures/noise.png"),

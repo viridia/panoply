@@ -19,6 +19,7 @@ mod editor;
 mod instancing;
 mod materials;
 mod random;
+mod reflect_types;
 mod scenery;
 mod schematic;
 mod settings;
@@ -31,6 +32,7 @@ use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
     materials::MaterialsPlugin,
+    reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
     schematic::SchematicPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
@@ -119,6 +121,7 @@ fn main() {
         )
         .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins((
+            ReflectTypesPlugin,
             SchematicPlugin,
             MaterialsPlugin,
             WorldPlugin,

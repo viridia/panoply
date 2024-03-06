@@ -5,9 +5,9 @@
       "type": "cargo",
       "command": "run",
       "args": [],
-      "env": {
-        "RUST_BACKTRACE": "1"
-      },
+      // "env": {
+      //   "RUST_BACKTRACE": "1"
+      // },
       "problemMatcher": ["$rustc"],
       "label": "rust: cargo run",
       "group": {
