@@ -1,9 +1,5 @@
 # TODO
 
-- Floors
-  - Surface texture rotation
-  - Hex color parsing / Srgba
-  - Editor-only surfaces (for things like water / hints)
 - Bugs:
   - Surface changes when scene loads?
   - Could not decode precinct
@@ -17,6 +13,12 @@
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.
 * Finish water motion.
+
+Future:
+
+- Floor surface rotation
+- Unit tests for HexColor.
+- Editor-only floor surfaces (for things like water currents / hints)
 
 # Project hierarchy
 
