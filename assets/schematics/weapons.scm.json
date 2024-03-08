@@ -1,0 +1,110 @@
+{
+  "Axe": {
+    "type": "Item",
+    "display_name": "Axe",
+    "aspects": {}
+  },
+  "Bow": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Broadsword": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Shortsword": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Sabre": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Cutlass": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Dagger": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Mace": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "WarHammer": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "KitchenKnife": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "StirringSpoon": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "StaffPlain": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "StaffOrbed": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "WandOrbRed": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "PotMetalSword": {
+    "type": "Item",
+    "display_name": "Pot-metal Sword",
+    "aspects": {}
+  },
+  "RustyIronSword": {
+    "type": "Item",
+    "display_name": "Rusty Iron Sword",
+    "aspects": {}
+  },
+  "BattleAxe": {
+    "type": "Item",
+    "display_name": "Battle Axe",
+    "aspects": {},
+    "extends": "Axe"
+  },
+  "SmithingHammer": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "SmithingTongs": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "PickAxe": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Rake": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Hoe": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "Broom": {
+    "type": "Item",
+    "aspects": {}
+  },
+  "VorpalBlade": {
+    "type": "Item",
+    "display_name": "Vorpal Blade",
+    "aspects": {}
+  },
+  "FlameWand": {
+    "type": "Item",
+    "display_name": "Flame Wand",
+    "aspects": {},
+    "extends": "WandOrbRed"
+  }
+}

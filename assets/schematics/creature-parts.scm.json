@@ -1,0 +1,17 @@
+{
+  "KreekinVenomSac": {
+    "type": "Item",
+    "display_name": "Kreekin Venom Sac",
+    "aspects": {}
+  },
+  "RuinedWolfPelt": {
+    "type": "Item",
+    "display_name": "Ruined Wolf Pelt",
+    "aspects": {}
+  },
+  "AnimalTooth": {
+    "type": "Item",
+    "display_name": "Animal Tooth",
+    "aspects": {}
+  }
+}

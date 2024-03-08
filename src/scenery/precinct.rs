@@ -70,6 +70,12 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
+                    let _wall_schematics: Vec<Handle<Schematic>> = precinct_asset
+                        .wall_types
+                        .iter()
+                        .map(|s| asset_server.load(s))
+                        .collect();
+
                     // TODO: Sync cutaway rects
                     // TODO: Sync nav mesh, physics, light sources, particles, etc.
                     // TODO: Sync actors

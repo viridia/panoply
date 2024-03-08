@@ -68,6 +68,106 @@
         }
       },
       "additionalProperties": false
+    },
+    "SceneryModels": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "./types.schema.json#/definitions/SceneryComponent"
+          }
+        }
+      },
+      "required": ["models"],
+      "additionalProperties": false
+    },
+    "SceneryColliders": {
+      "type": "object",
+      "properties": {
+        "colliders": {
+          "type": "array",
+          "items": {
+            "$ref": "./types.schema.json#/definitions/ColliderDesc"
+          }
+        }
+      },
+      "required": ["colliders"],
+      "additionalProperties": false
+    },
+    "SceneryMarks": {
+      "type": "object",
+      "properties": {
+        "marks": {
+          "patternProperties": {
+            "^[a-zA-Z0-9_]+$": {
+              "type": "array",
+              "items": {
+                "$ref": "./types.schema.json#/definitions/Vec3"
+              }
+            }
+          }
+        }
+      },
+      "required": ["marks"],
+      "additionalProperties": false
+    },
+    "WallSize": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["x", "y"],
+      "additionalProperties": false
+    },
+    "TerrainEffect": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["earth", "soil", "path", "cobbles", "road", "stone"]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["earth", "soil", "path", "cobbles", "road", "stone"]
+              }
+            }
+          ]
+        },
+        "effect_strength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "elevation": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "continuous_x": {
+          "type": "boolean"
+        },
+        "continuous_y": {
+          "type": "boolean"
+        }
+      },
+      "required": ["effect"],
+      "additionalProperties": false
+    },
+    "TerrainHole": {
+      "type": "object",
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

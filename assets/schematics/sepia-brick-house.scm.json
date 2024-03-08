@@ -1,0 +1,185 @@
+{
+  "SepiaBrickWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.15,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallCorner"
+          },
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallCornerBlocks"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.15,
+              1,
+              0.3
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.15,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallGable": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallGable"
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallSquat": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallSquat"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallSquatCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallSquatCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ],
+            "size": [
+              0.3,
+              0.5,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.4,
+              0.5,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallWide"
+          }
+        ]
+      }
+    }
+  },
+  "SepiaBrickWallWindow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/sepia-brick-house:SepiaBrickWallWindow"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.15,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

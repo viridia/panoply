@@ -146,6 +146,10 @@ pub fn spawn_precincts(
                 if precinct.visible {
                     break;
                 } else {
+                    println!(
+                        "Despawning precinct {:#?} {} {}.",
+                        precinct.realm, precinct.coords.x, precinct.coords.y
+                    );
                     commands.entity(*entity).despawn_recursive();
                 }
             }

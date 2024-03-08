@@ -9,7 +9,8 @@ extern crate rmp_serde as rmps;
 #[serde(rename = "_ExtStruct")]
 struct ExtStruct((i8, serde_bytes::ByteBuf));
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Reflect)]
+#[reflect(Serialize, Deserialize)]
 pub struct Vector3 {
     x: f32,
     y: f32,
@@ -64,7 +65,8 @@ impl<'de> Deserialize<'de> for Vector3 {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Reflect)]
+#[reflect(Serialize, Deserialize)]
 pub struct Box2d {
     min: Vec2,
     max: Vec2,

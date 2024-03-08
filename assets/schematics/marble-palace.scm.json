@@ -1,0 +1,1435 @@
+{
+  "MarbleWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallWindows": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallWindows"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.25
+            ],
+            "size": [
+              0.3,
+              1,
+              0.25
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarblePillarSquare": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarSquare"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallPillaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarSquare"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarSquare"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallHalf"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.4,
+              1,
+              0.3
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ],
+            "size": [
+              0.3,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallTee": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarSquare"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWall"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.4,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarSquare"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ],
+            "size": [
+              0.3,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallDoorArch": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallDoorArch"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarblePillarRound": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarRound"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleBalconyRailing": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleBalconyRailing"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.3,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleBalconyRailingCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleBalconyRailingCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.1,
+              0,
+              -0.3
+            ],
+            "size": [
+              0.4,
+              0.4,
+              0.1
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.3,
+              0,
+              0.1
+            ],
+            "size": [
+              0.1,
+              0.4,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleCube": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleCube"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleCubeTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleCubeTall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box"
+          }
+        ]
+      }
+    }
+  },
+  "TiledRoof": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:TiledRoof"
+          }
+        ]
+      }
+    }
+  },
+  "MarbleGable": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleGable",
+            "offset": [
+              0,
+              0,
+              1.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.3,
+              0.5,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWall": {
+    "type": "Wall",
+    "alias": [
+      "MarbleWallUpper"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallUpper"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperPillar": {
+    "type": "Wall",
+    "alias": [
+      "MarblePillarUpper"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarUpper"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWallPilaster": {
+    "type": "Wall",
+    "alias": [
+      "MarbleWallPilasterUpper"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallUpper"
+          },
+          {
+            "model": "scenery/marble-palace:MarblePillarUpper"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleGableTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleGableTall",
+            "offset": [
+              0,
+              0,
+              1.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.3,
+              0.5,
+              1
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              1,
+              0.5
+            ],
+            "size": [
+              0.3,
+              0.5,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWallTee": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarUpper"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallUpper"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.4,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarUpper"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperHalf"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.4,
+              1,
+              0.3
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.1
+            ],
+            "size": [
+              0.3,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWallEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarblePillarUpper"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.1
+            ],
+            "size": [
+              0.3,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleRobedStatue": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:RobedStatue",
+            "offset": [
+              0,
+              0,
+              -0.15
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ],
+            "size": [
+              0.5,
+              0.8,
+              0.25
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleUpperWallWindow": {
+    "type": "Wall",
+    "alias": [
+      "MarbleWallUpper"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperWindow"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SlateRoof": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:SlateRoof"
+          }
+        ]
+      }
+    }
+  },
+  "SlateRoofConcave": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:SlateRoofConcave"
+          }
+        ]
+      }
+    }
+  },
+  "SlateRoofConvex": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:SlateRoofConvex"
+          }
+        ]
+      }
+    }
+  },
+  "CanvasRoofGold": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:CanvasRoofGold"
+          }
+        ]
+      }
+    }
+  },
+  "CanvasRoofBlue": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:CanvasRoofBlue"
+          }
+        ]
+      }
+    }
+  },
+  "TiledRoofConcave": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:TiledRoofConcave"
+          }
+        ]
+      }
+    }
+  },
+  "TiledRoofConvex": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:TiledRoofConvex"
+          }
+        ]
+      }
+    }
+  },
+  "TiledRoofWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/slate-roof:TiledRoofWide"
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallWindowSquare": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallWindowSquare"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallDoor": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallDoor"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleStairs": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleStairs"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MarbleStairsRailLeft": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleStairs"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleStairRailing",
+            "offset": [
+              0,
+              0,
+              -0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.4
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.1
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0.8,
+              -0.4
+            ],
+            "size": [
+              0.1,
+              0.5,
+              0.5
+            ],
+            "facing": 1
+          }
+        ]
+      }
+    }
+  },
+  "MarbleStairsRailRight": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleStairs"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleStairRailing",
+            "offset": [
+              0,
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.4
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.1
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0.8,
+              0.4
+            ],
+            "size": [
+              0.1,
+              0.5,
+              0.5
+            ],
+            "facing": 1
+          }
+        ]
+      }
+    }
+  },
+  "MarbleStairsRailLeftEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleStairs"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleStairRailingEnd",
+            "offset": [
+              0,
+              0,
+              -0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.4
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.1
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0.8,
+              -0.4
+            ],
+            "size": [
+              0.1,
+              0.5,
+              0.5
+            ],
+            "facing": 1
+          }
+        ]
+      }
+    }
+  },
+  "MarbleStairsRailRightEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleStairs"
+          },
+          {
+            "model": "scenery/marble-palace:MarbleStairRailingEnd",
+            "offset": [
+              0,
+              0,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.4
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.1
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0.8,
+              0.4
+            ],
+            "size": [
+              0.1,
+              0.5,
+              0.5
+            ],
+            "facing": 1
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallUpperDoor": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallUpperDoor"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MarbleWallDoubleDoors": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/marble-palace:MarbleWallDoubleDoors"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.35,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

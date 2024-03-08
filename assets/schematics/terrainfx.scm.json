@@ -1,0 +1,325 @@
+{
+  "Road": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Road",
+      "TerrainFx.Earth"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "road",
+        "effect_strength": 1,
+        "elevation": -0.14,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Road.Med": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Earth.Med"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "road",
+        "effect_strength": 0.75,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Road.Light": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Earth.Light"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "road",
+        "effect_strength": 0.5,
+        "elevation": -0.05,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Road.ExtraLight": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Earth.ExtraLight"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "road",
+        "effect_strength": 0.25,
+        "elevation": -0.025,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Road.Dirt": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Earth.Path"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": [
+          "road",
+          "path"
+        ],
+        "effect_strength": 1,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Road.Flat": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Road",
+      "TerrainFx.Earth"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "road",
+        "effect_strength": 1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Soil": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Soil"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "soil",
+        "effect_strength": 1,
+        "elevation": 0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Dirt": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Path"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "path",
+        "effect_strength": 1,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Dirt.Med": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Path.Med"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "path",
+        "effect_strength": 0.75,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Dirt.Light": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Path.Light"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "path",
+        "effect_strength": 0.5,
+        "elevation": -0.08,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Dirt.ExtraLight": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Path.ExtraLight"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "path",
+        "effect_strength": 0.4,
+        "elevation": -0.07,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Cobbles"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "cobbles",
+        "effect_strength": 1,
+        "elevation": -0.2,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles.Med": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Cobbles.Med"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "cobbles",
+        "effect_strength": 0.75,
+        "elevation": -0.2,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles.Light": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Cobbles.Light"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "cobbles",
+        "effect_strength": 0.5,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles.ExtraLight": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Cobbles.ExtraLight"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "cobbles",
+        "effect_strength": 0.25,
+        "elevation": -0.05,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles.Dirt": {
+    "type": "TerrainFx",
+    "aspects": {
+      "TerrainEffect": {
+        "effect": [
+          "cobbles",
+          "path"
+        ],
+        "effect_strength": 1,
+        "elevation": -0.1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Cobbles.Flat": {
+    "type": "TerrainFx",
+    "aspects": {
+      "TerrainEffect": {
+        "effect": [
+          "cobbles",
+          "path"
+        ],
+        "effect_strength": 1,
+        "continuous_x": true,
+        "continuous_y": true
+      }
+    }
+  },
+  "Grave.X": {
+    "type": "TerrainFx",
+    "alias": [
+      "GraveX"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "soil",
+        "effect_strength": 0.5,
+        "elevation": 0.4,
+        "continuous_x": true
+      }
+    }
+  },
+  "Grave.Z": {
+    "type": "TerrainFx",
+    "alias": [
+      "GraveY"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "soil",
+        "effect_strength": 0.5,
+        "elevation": 0.4,
+        "continuous_y": true
+      }
+    }
+  },
+  "Tilled.X": {
+    "type": "TerrainFx",
+    "alias": [
+      "TilledX"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "soil",
+        "effect_strength": 0.9,
+        "elevation": 0.3,
+        "continuous_x": true
+      }
+    }
+  },
+  "Tilled.Z": {
+    "type": "TerrainFx",
+    "alias": [
+      "TilledY"
+    ],
+    "aspects": {
+      "TerrainEffect": {
+        "effect": "soil",
+        "effect_strength": 0.9,
+        "elevation": 0.3,
+        "continuous_y": true
+      }
+    }
+  },
+  "Hole": {
+    "type": "TerrainFx",
+    "alias": [
+      "TerrainFx.Hole"
+    ],
+    "aspects": {
+      "TerrainHole": {}
+    }
+  }
+}

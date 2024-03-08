@@ -1,0 +1,22 @@
+{
+  "Drachma": {
+    "type": "Item",
+    "display_name": "Drachma",
+    "aspects": {}
+  },
+  "BattleScar": {
+    "type": "Item",
+    "display_name": "Battle Scar",
+    "aspects": {}
+  },
+  "Linen": {
+    "type": "Item",
+    "display_name": "Linen Cloth",
+    "aspects": {}
+  },
+  "ClothStrips": {
+    "type": "Item",
+    "display_name": "Cloth Strips",
+    "aspects": {}
+  }
+}

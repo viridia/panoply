@@ -6,9 +6,9 @@
   "type": "object",
   "properties": {
     "type": {
-      "enum": ["Floor"]
+      "enum": ["Floor", "Wall", "TerrainFx", "Fixture", "Actor", "Item"]
     },
-    "displayName": {
+    "display_name": {
       "type": "string"
     },
     "aspects": {

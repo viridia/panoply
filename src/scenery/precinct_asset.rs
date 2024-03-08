@@ -51,12 +51,6 @@ pub struct PrecinctAsset {
     // layers?: Record<string, ILayerData>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct SceneryData {
-    #[serde(alias = "structure")]
-    precinct: PrecinctAsset,
-}
-
 #[derive(Debug)]
 pub struct CompressedInstance {
     /// Archetype Id
@@ -186,17 +180,12 @@ impl AssetLoader for PrecinctAssetLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            let mut scenery: SceneryData = rmps::from_slice(&bytes)?;
-            for scm in scenery.precinct.floor_types.iter_mut() {
-                *scm = scm.replace("archetypes/", "schematics/");
-                *scm = scm.replace("/floor-tiles", "/floors.json");
-                *scm = scm.replace(':', "#");
-            }
-            Ok(scenery.precinct)
+            let precinct: PrecinctAsset = rmps::from_slice(&bytes)?;
+            Ok(precinct)
         })
     }
 
     fn extensions(&self) -> &[&str] {
-        &["contours"]
+        &["msgpack"]
     }
 }

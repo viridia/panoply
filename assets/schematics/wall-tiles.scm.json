@@ -1,0 +1,7932 @@
+{
+  "MissingWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/symbols:Question"
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutHalf"
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutFull": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutFull"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutHalfWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutHalfWide"
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutFullWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutFullWide"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.6,
+              1,
+              0.6
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickArch": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickArch"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.35
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickDoorwayHeavy": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorwayHeavy"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallTop"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.6
+            ],
+            "size": [
+              0.35,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.55
+            ],
+            "size": [
+              0.35,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.7,
+              0
+            ],
+            "size": [
+              0.35,
+              0.15,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickDoorwayHeavyWide": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallTop"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallTop",
+            "offset": [
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickPillar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickPillarBroken": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarBroken"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              0.6,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall",
+            "y_rotation": 0
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallBroken": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallBroken"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              0.75,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallBroken2": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallBroken2"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.25,
+              1,
+              0.25
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.2,
+              1,
+              0.3
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallPilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallTee": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.2,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.15,
+              0,
+              0
+            ],
+            "size": [
+              0.35,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.2,
+              1,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallCross": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.35,
+              1,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneAltar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneAltar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.65,
+              0.25,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneBlockFallen": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneBlockFallen"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              0.25,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStonePillar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStonePillar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallBlock": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallBlock"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallCurved": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallCurved"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "cylinder",
+            "offset": [
+              0.15,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.35,
+              1,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickAlcove": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickAlcove"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickCube": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickCube"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneCistern": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneCistern"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.8,
+              0.25,
+              0.55
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWall"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallCrossBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallCrossBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallDiagonalBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallDiagonalBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallSinisterBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallSinisterBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallInteriorCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallCorner"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirtCorner",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.15,
+              0,
+              0.2
+            ],
+            "size": [
+              0.3,
+              0.35,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallConcaveCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallConcaveCorner"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirtConcaveCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.15,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallCornerFlared": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallCornerFlared"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallSkirt": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallSkirtCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallSkirtCorner"
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallWindow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallWindow"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallWindowLarge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallWindowLarge"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShingles": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoof",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesGable": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoof",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGable",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGable",
+            "offset": [
+              0,
+              0,
+              -0.11
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesGableTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoof",
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableTall",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableTall",
+            "offset": [
+              0,
+              0,
+              -0.11
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.45,
+              0,
+              0.55
+            ],
+            "size": [
+              1,
+              0.55,
+              0.3
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.2,
+              1.15,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesGableTallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofHalf",
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableTallHalf",
+            "offset": [
+              0,
+              0,
+              -0.51
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableTallHalf",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              0.3
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0.25,
+              1.05,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.35,
+              0.75
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesPeak": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "offset": [
+              0.5,
+              -0.27,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "y_rotation": 180,
+            "offset": [
+              -0.5,
+              -0.27,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageGableSquare": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageGableSquare"
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofRidge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofRidge",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofRidgeEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofRidgeEnd",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Boulder1": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Boulder1"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ellipsoid",
+            "offset": [
+              0,
+              -0.3,
+              0.1
+            ],
+            "size": [
+              0.95,
+              0.75,
+              0.95
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Boulder2": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Boulder2"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ellipsoid",
+            "offset": [
+              0,
+              -0.1,
+              0
+            ],
+            "size": [
+              0.8,
+              0.55,
+              0.8
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Boulder3": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Boulder3"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ellipsoid",
+            "offset": [
+              0,
+              -0.05,
+              0
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StoneMenhir": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Menhir"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StoneSpire": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Spire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CaveEntrance": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 3
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:CaveEntrance",
+            "offset": [
+              0,
+              0,
+              0.9
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.25,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallPillar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallPillar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallPillar"
+          },
+          {
+            "model": "scenery/cottage:HedgeWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallPilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallPillar"
+          },
+          {
+            "model": "scenery/cottage:HedgeWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.45
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallTee": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallPillar"
+          },
+          {
+            "model": "scenery/cottage:HedgeWall"
+          },
+          {
+            "model": "scenery/cottage:HedgeWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HedgeWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HedgeWallPillar"
+          },
+          {
+            "model": "scenery/cottage:HedgeWallHalf"
+          },
+          {
+            "model": "scenery/cottage:HedgeWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStoneWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStoneWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.25,
+              0.45,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStonePillar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStonePillar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.4,
+              0.45,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWallEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStonePillar"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWallHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.45,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWallPilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStonePillar"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.45,
+              0.45
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWallTee": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStonePillar"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWall"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.45,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FieldStoneWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FieldStonePillar"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWallHalf"
+          },
+          {
+            "model": "scenery/cottage:FieldStoneWallHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.45,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Hearth": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:Hearth"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.5,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Chimney": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:Chimney"
+          },
+          {
+            "model": "scenery/cottage:Chimney",
+            "offset": [
+              0,
+              2,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.3,
+              2,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenCounterWide": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenCounterWide",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.25,
+              0.43,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenTrough": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:Trough",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.25,
+              0.3,
+              0.9
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.42,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceDouble": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceDouble"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.42,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceSingle": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceSingle"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.42,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFencePost": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFencePost"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFenceRailsHigh": {
+    "type": "Wall",
+    "alias": [
+      "WoodenFanceRailsHigh"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFanceRailsHigh"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.4,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFenceRailsLow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFenceRailsLow"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.35,
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFenceRailsHighHalf": {
+    "type": "Wall",
+    "alias": [
+      "WoodenFanceRailsHighHalf"
+    ],
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFanceRailsHighHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.05,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFenceRailsLowHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFenceRailsLowHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.05,
+              0.35,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallInterior": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallInterior"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallInteriorExtended": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallInteriorExtended"
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesSteep": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofSteep",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableSteep",
+            "offset": [
+              0,
+              0,
+              -0.51
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageGableSteep",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              0.25,
+              -0.05,
+              -0.5
+            ],
+            "size": [
+              0.5,
+              0.65,
+              0.75
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "HeadstoneSmall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:HeadstoneSmall",
+            "y_rotation_variance": 30.4,
+            "z_rotation_variance": 10.4,
+            "offset": [
+              -0.3,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.3,
+              0,
+              0
+            ],
+            "size": [
+              0.05,
+              0.35,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "HeadstoneMedium": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:HeadstoneMed",
+            "x_rotation_variance": 16.1,
+            "offset": [
+              -0.3,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.35,
+              0,
+              0
+            ],
+            "size": [
+              0.05,
+              0.45,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Forge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:Forge"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.3
+            ],
+            "size": [
+              0.75,
+              0.25,
+              0.65
+            ]
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              0,
+              0.5,
+              0.8
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "SmallStonePillar": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:SmallStonePillar"
+          }
+        ]
+      }
+    }
+  },
+  "IronFence": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/iron-fence:IronFence"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.8,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StickWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWall",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StickWallCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWall",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:StickWall",
+            "y_rotation": 90,
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.5,
+              1,
+              0.1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StickWallWindow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWallWindow",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              0.35,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Palisade": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:Palisade",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TreePoplarGreen": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "trees/temperate:poplar-green",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TreePoplarGreen2": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "trees/temperate:poplar-green2",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              1,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TreePoplarOrange": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "trees/temperate:poplar-orange",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TreePoplarYellow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "trees/temperate:poplar-yellow",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BushSpiky1": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "bushes:spiky1",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              0.6,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BushSpiky2": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "bushes:spiky2",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              0.55,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BushFluffy": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "bushes:fluffy",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale_variance": 0.2
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.25,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CropFogroot": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "crops:fogroot",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.1,
+              0
+            ],
+            "scale": 0.7,
+            "scale_variance": 0.3
+          }
+        ]
+      }
+    }
+  },
+  "CropPalecress": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "crops:palecress",
+            "y_rotation_variance": 360,
+            "scale": 0.5,
+            "scale_variance": 0.2
+          }
+        ]
+      }
+    }
+  },
+  "CropMoonblush": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "crops:moonblush",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale": 0.8,
+            "scale_variance": 0.2
+          }
+        ]
+      }
+    }
+  },
+  "CropShadowfoil": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "crops:shadowfoil",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale": 0.8,
+            "scale_variance": 0.2
+          }
+        ]
+      }
+    }
+  },
+  "CropMillsprout": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "crops:millsprout",
+            "y_rotation_variance": 360,
+            "offset": [
+              0,
+              -0.2,
+              0
+            ],
+            "scale": 0.8,
+            "scale_variance": 0.2
+          }
+        ]
+      }
+    }
+  },
+  "ThatchRoof": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/thatch:ThatchRoof",
+            "offset": [
+              0,
+              0.3,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "PalisadeCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:Palisade",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:Palisade",
+            "y_rotation": 90,
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.5,
+              1,
+              0.1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceCornerHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceCornerHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.42,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              0.5,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickEntrancePortal2": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.75,
+              0.5
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.9
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "IronFencePilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/iron-fence:IronFence"
+          },
+          {
+            "model": "scenery/stonework:TallStonePillar"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              0.95,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.8,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "IronFenceCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/iron-fence:IronFenceHalf"
+          },
+          {
+            "model": "scenery/stonework:TallStonePillar"
+          },
+          {
+            "model": "scenery/iron-fence:IronFenceHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              0.95,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.3
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              0.8,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ThatchRoofGable": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/thatch:ThatchRoof",
+            "offset": [
+              0,
+              0.3,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:StickWallGable",
+            "y_rotation": 270,
+            "offset": [
+              1,
+              0,
+              0.5
+            ]
+          },
+          {
+            "model": "scenery/palisade:StickWallGable",
+            "y_rotation": 270,
+            "offset": [
+              0.95,
+              0,
+              -0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StickBridgeSegment": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWallSquare",
+            "offset": [
+              0.4,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:StickWallSquare",
+            "offset": [
+              -0.4,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:RoughPlanks",
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutWedge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutWedge"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutWedgeWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutWedgeWide"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.75,
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallRamp": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallBlockRamp"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              1,
+              0
+            ],
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "TopiaryHedgeStraight": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/topiary:TopiaryHedgeStraight"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.55,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TopiaryHedgeCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/topiary:TopiaryHedgeCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ],
+            "size": [
+              0.35,
+              0.55,
+              0.45
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.1,
+              0,
+              0
+            ],
+            "size": [
+              0.45,
+              0.55,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "TopiaryHedgeCube": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/topiary:TopiaryHedgeCube"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.6,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StickTrussSegment": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWallSquare",
+            "offset": [
+              0.4,
+              -0.1,
+              0
+            ]
+          },
+          {
+            "model": "scenery/palisade:StickWallSquare",
+            "offset": [
+              -0.4,
+              -0.1,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "StickTrussRail": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWallSquare",
+            "offset": [
+              0.4,
+              -0.1,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.4,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              0.5,
+              0.5
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickBridgeSupport": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillar",
+            "offset": [
+              0.15,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickArchedSupport",
+            "offset": [
+              0.2,
+              0.3,
+              0.5
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickArchedSupport",
+            "y_rotation": 180,
+            "offset": [
+              0.2,
+              0.3,
+              -0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallSquat": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquat",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallSquatPilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarSquat",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquat",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.45,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallSquatEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarSquat",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquatHalf",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.45,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CliffHintFullWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "hint",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutFullTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutFullTall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CordonPost": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:CordonPost"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CordonPostSingle": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:CordonPost"
+          },
+          {
+            "model": "scenery/carpentry:CordonRopes"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.05,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BasementWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:BasementWall"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSkirt"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpper": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWall"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSupport",
+            "offset": [
+              0,
+              -2,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpperWindowLarge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallWindowLarge"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSupport",
+            "offset": [
+              0,
+              -2,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpperDexterBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallDiagonalBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSupport",
+            "offset": [
+              0,
+              -2,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpperSinisterBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallSinisterBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSupport",
+            "offset": [
+              0,
+              -2,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpperCrossBrace": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallCrossBrace"
+          },
+          {
+            "model": "scenery/cottage:CottageWallSupport",
+            "offset": [
+              0,
+              -2,
+              0.4
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesPeakRidge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "offset": [
+              0.5,
+              -0.27,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "y_rotation": 180,
+            "offset": [
+              -0.5,
+              -0.27,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageRoofRidge",
+            "offset": [
+              0,
+              0.3,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesPeakRidgeEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "offset": [
+              0.5,
+              -0.27,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageRoofQuarter",
+            "y_rotation": 180,
+            "offset": [
+              -0.5,
+              -0.27,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageRoofRidgeEnd",
+            "offset": [
+              0,
+              0.3,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesWide2": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofWide2",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesWide3": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofWide3",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesConvex": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofConvex",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesConcave": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofConcave",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofHalf",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              0.3
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0.25,
+              1.05,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.35,
+              0.75
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallUpperConcaveCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallConcaveCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.15,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallWindow": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWallWindow"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneConvexCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWallCornerConvex"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.3,
+              0,
+              0.3
+            ],
+            "size": [
+              0.2,
+              1,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageStoneGableSquare": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageStoneGable"
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesStoneGable": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoof",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGable",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGable",
+            "offset": [
+              0,
+              0,
+              -0.11
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.25,
+              0.1,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesStoneGableTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoof",
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGableTall",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGableTall",
+            "offset": [
+              0,
+              0,
+              -0.11
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.45,
+              0,
+              0.55
+            ],
+            "size": [
+              1,
+              0.55,
+              0.3
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              -0.2,
+              1.15,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              1.25
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "CottageRoofShinglesStonGableTallHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageRoofHalf",
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGableTallHalf",
+            "offset": [
+              0,
+              0,
+              -0.51
+            ]
+          },
+          {
+            "model": "scenery/cottage:CottageStoneGableTallHalf",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.55,
+              0.3
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0.25,
+              1.05,
+              0.5
+            ],
+            "size": [
+              0.5,
+              0.35,
+              0.75
+            ],
+            "facing": 3
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceSingleRvs": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceSingle",
+            "offset": [
+              0,
+              0,
+              -0.1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.42,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "StoneWell": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:StoneWell"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.73,
+              0.37,
+              0.95
+            ]
+          },
+          {
+            "shape": "cylinder",
+            "size": [
+              1,
+              0.05,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BrickOven": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:BrickOvern"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.5,
+              1,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "VerticalBraceDoubleRvs": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:VerticalBraceDouble",
+            "offset": [
+              0.7,
+              0.1,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.26,
+              0,
+              0.42
+            ],
+            "size": [
+              0.05,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ChimneyHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:Chimney"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.3,
+              2,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFencePicket": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFencePost"
+          },
+          {
+            "model": "scenery/carpentry:WoodenFencePicket"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.05,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenFenceLattice": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenFencePost"
+          },
+          {
+            "model": "scenery/carpentry:WoodenFenceLattice"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.05,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FencePostWhite": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:FencePostWhite"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FencePicketWhite": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:FencePostWhite"
+          },
+          {
+            "model": "scenery/carpentry:FencePicketWhite"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.05,
+              0.45,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.05,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "PlanterBoxSquare": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:PlanterBoxSquare"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallCross": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall"
+          },
+          {
+            "model": "scenery/cottage:FittedStoneWall",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.25,
+              0,
+              0
+            ],
+            "size": [
+              0.15,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallShort": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquat",
+            "offset": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallShortEnd": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarSquat"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquatHalf"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.05,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallShortCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarSquat"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquatHalf"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquatHalf",
+            "y_rotation": 90
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.15
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              0.4,
+              0.3
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.15,
+              0,
+              0.05
+            ],
+            "size": [
+              0.35,
+              0.4,
+              0.2
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallShortPilaster": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarSquat"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSquat"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.2,
+              0.4,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.05,
+              0,
+              0
+            ],
+            "size": [
+              0.3,
+              0.4,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallInteriorExtR": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallInteriorExtR"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CottageWallInteriorExtL": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallInteriorExtL"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallWindowWide": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWallWindowWide"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallTeeLeft": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall"
+          },
+          {
+            "model": "scenery/cottage:FittedStoneWallCornerTee"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallTeeRight": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall"
+          },
+          {
+            "model": "scenery/cottage:FittedStoneWallCornerTee",
+            "offset": [
+              -0.6,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ModularCounter": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:ModularCounter"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.25,
+              0.43,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ModularCounterCorner": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:ModularCounterCorner"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "rbox",
+            "offset": [
+              -0.15,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.35,
+              0.4,
+              0.35
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWallInteriorCornerRight": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWallQuarter",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          },
+          {
+            "model": "scenery/cottage:FittedStoneWallCornerConvex",
+            "offset": [
+              -0.6,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.25
+            ],
+            "size": [
+              0.5,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "WoodenSignPostDirection": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:SignPostDirection"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.05,
+              0,
+              -0.05
+            ],
+            "size": [
+              0.05,
+              0.85,
+              0.05
+            ],
+            "pickable": true
+          },
+          {
+            "shape": "box",
+            "type": "marker",
+            "offset": [
+              0.05,
+              1.3,
+              -0.05
+            ],
+            "size": [
+              0.4,
+              0.2,
+              0.05
+            ],
+            "pickable": true
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallSwitch": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall"
+          },
+          {
+            "model": "scenery/walls-dungeon:WallSwitch2",
+            "offset": [
+              -0.2,
+              1.3,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.25,
+              1.05,
+              0
+            ],
+            "size": [
+              0.15,
+              0.2,
+              0.15
+            ],
+            "pickable": true
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.7,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "MossyBrickWallSwitchLarge": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall",
+            "y_rotation": 0
+          },
+          {
+            "model": "scenery/walls-dungeon:WallSwitch",
+            "offset": [
+              -0.2,
+              1.3,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.25,
+              1.05,
+              0
+            ],
+            "size": [
+              0.15,
+              0.2,
+              0.15
+            ],
+            "pickable": true
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.7,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "MossyBrickDoorway": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorway"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.2,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0.35
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.4
+            ],
+            "origin": [
+              -0.1,
+              0,
+              -0.35
+            ],
+            "pickable": true,
+            "animation": "Door2"
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.8,
+              0,
+              0.2
+            ],
+            [
+              0.8,
+              0,
+              0.2
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "MossyBrickDoorwayAuto": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorway"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.2,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0.35
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.4
+            ],
+            "origin": [
+              -0.1,
+              0,
+              -0.35
+            ],
+            "pickable": true,
+            "animation": "Door2"
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickEntrancePortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallTop"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallTop",
+            "offset": [
+              0,
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.75,
+              0.5
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.9
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneDoorway": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneDoorway"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.2,
+              0.9,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0
+            ],
+            "size": [
+              0.2,
+              0.1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0.35
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.35
+            ],
+            "origin": [
+              -0.1,
+              0,
+              -0.35
+            ],
+            "pickable": true,
+            "animation": "Door"
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.8,
+              0,
+              0.2
+            ],
+            [
+              0.8,
+              0,
+              0.2
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "MossyStoneSarcophagus": {
+    "type": "Wall",
+    "display_name": "Sarcophagus",
+    "aspects": {
+      "WallSize": {
+        "x": 2,
+        "y": 1
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneSarcophagus",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.85,
+              0.4,
+              0.4
+            ],
+            "pickable": true
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0.5,
+              0,
+              0.4
+            ],
+            "size": [
+              0.85,
+              0.4,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneStairs": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneStairs"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "pickable": true,
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneStairsTall": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneStairs"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyStoneStairs",
+            "offset": [
+              0,
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.5,
+              1,
+              1
+            ],
+            "pickable": true,
+            "walkable": true
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "top": [
+            [
+              0,
+              2,
+              2
+            ]
+          ],
+          "bottom": [
+            [
+              0,
+              0,
+              -1
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "MossyStoneStairsDown": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneStairsDown"
+          }
+        ]
+      }
+    }
+  },
+  "MossyStoneStairsThin": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneStairsThin"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "pickable": true,
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "RoughStoneSarcophagus": {
+    "type": "Wall",
+    "display_name": "Sarcophagus",
+    "aspects": {
+      "WallSize": {
+        "x": 2,
+        "y": 1
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:RoughStoneSarcophagus",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.85,
+              0.4,
+              0.4
+            ],
+            "pickable": true
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0.5,
+              0,
+              0.4
+            ],
+            "size": [
+              0.85,
+              0.4,
+              0.4
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickButton": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyStoneButton"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              -0.1,
+              0.55,
+              0
+            ],
+            "size": [
+              0.15,
+              0.4,
+              0.3
+            ],
+            "pickable": true
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.7,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "CottageWallDoorway": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallDoorway"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.45,
+              0,
+              0.25
+            ],
+            "size": [
+              0.05,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.45,
+              0,
+              0.25
+            ],
+            "size": [
+              0.05,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.9,
+              0.25
+            ],
+            "size": [
+              0.4,
+              0.05,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              -0.4,
+              0,
+              0
+            ],
+            "size": [
+              0.35,
+              0.9,
+              0.05
+            ],
+            "origin": [
+              0.4,
+              0,
+              0.3
+            ],
+            "pickable": true,
+            "animation": "WoodenDoor"
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0.45,
+              0,
+              0.15
+            ],
+            "size": [
+              0.05,
+              1,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.2,
+              0,
+              -0.6
+            ],
+            [
+              -0.2,
+              0,
+              1
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "HeavyWoodenGate": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 2,
+        "y": 1
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:HeavyGate"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0.4,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.92,
+              0.1
+            ],
+            "origin": [
+              -0.4,
+              0,
+              0
+            ],
+            "pickable": true,
+            "animation": "HeavyGateLeft"
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              -0.4,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.92,
+              0.1
+            ],
+            "origin": [
+              1.4,
+              0,
+              0
+            ],
+            "pickable": true,
+            "animation": "HeavyGateRight"
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              -0.45,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              1.3,
+              0,
+              -0.2
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              0.5,
+              0,
+              0.9
+            ],
+            [
+              0.5,
+              0,
+              -0.9
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "StonePortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 3,
+        "y": 3
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:Portal",
+            "offset": [
+              1,
+              0,
+              1
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              1,
+              0,
+              1
+            ],
+            "size": [
+              0.5,
+              0.4,
+              0.5
+            ],
+            "walkable": true
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              2,
+              0,
+              1
+            ],
+            "size": [
+              0.7,
+              0.4,
+              0.5
+            ],
+            "facing": 3,
+            "walkable": true
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              0,
+              1
+            ],
+            "size": [
+              0.6,
+              0.4,
+              0.5
+            ],
+            "facing": 1,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "offset": [
+              1,
+              0,
+              2
+            ],
+            "size": [
+              0.5,
+              1.2,
+              0.5
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              1,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              1.2,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Ladder": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:Ladder",
+            "offset": [
+              -0.3,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "ladder",
+            "offset": [
+              -0.3,
+              0,
+              0
+            ],
+            "size": [
+              0.1,
+              1,
+              0.25
+            ],
+            "pickable": true
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "top": [
+            [
+              -0.5,
+              2,
+              0
+            ]
+          ],
+          "bottom": [
+            [
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "WoodenStairsOpen": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 2,
+        "y": 1
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenStairsOpen",
+            "y_rotation": 180
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "offset": [
+              0.5,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              1,
+              1
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0.5,
+              0,
+              -0.45
+            ],
+            "size": [
+              1,
+              1.2,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.5,
+              0,
+              0.45
+            ],
+            "size": [
+              1,
+              1.2,
+              0.05
+            ]
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "bottom": [
+            [
+              -1,
+              0,
+              0
+            ]
+          ],
+          "top": [
+            [
+              1.8,
+              2,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "IronFenceGate": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/iron-fence:IronFenceGate",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.45
+            ],
+            "origin": [
+              0,
+              0,
+              -0.5
+            ],
+            "pickable": true,
+            "animation": "IronFenceGateRight"
+          },
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.05,
+              0.8,
+              0.45
+            ],
+            "origin": [
+              0,
+              0,
+              1.5
+            ],
+            "pickable": true,
+            "animation": "IronFenceGateLeft"
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              -0.4,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.5,
+              0.8,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              -0.45,
+              0,
+              1.4
+            ],
+            "size": [
+              0.5,
+              0.8,
+              0.05
+            ]
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              0.8,
+              0,
+              0.5
+            ],
+            [
+              -0.8,
+              0,
+              0.5
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "StickWallDoor": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/palisade:StickWallDoor",
+            "offset": [
+              0.5,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0.5
+            ],
+            "size": [
+              0.1,
+              1,
+              0.5
+            ],
+            "origin": [
+              0.5,
+              0,
+              -0.5
+            ],
+            "pickable": true,
+            "animation": "StickWallDoorSwing"
+          }
+        ]
+      },
+      "SceneryMarks": {
+        "marks": {
+          "use": [
+            [
+              -0.4,
+              0,
+              0.2
+            ],
+            [
+              1.4,
+              0,
+              0.2
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "WoodenStairsOpenHalf": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/carpentry:WoodenStairsOpenHalf",
+            "y_rotation": 180
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "ramp",
+            "size": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "facing": 1,
+            "pickable": true,
+            "walkable": true
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0,
+              0,
+              -0.45
+            ],
+            "size": [
+              0.5,
+              1,
+              0.05
+            ]
+          },
+          {
+            "shape": "box",
+            "type": "hint",
+            "offset": [
+              0,
+              0,
+              0.45
+            ],
+            "size": [
+              0.5,
+              1,
+              0.05
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickExitPortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.5
+            ],
+            "size": [
+              0.35,
+              0.85,
+              0.2
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.75,
+              0.5
+            ],
+            "size": [
+              0.35,
+              0.1,
+              0.9
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CaveBlockEntrancePortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:CavePortal",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.6
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.15,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.45
+            ],
+            "size": [
+              0.85,
+              0.05,
+              1.1
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "CaveBlockExitPortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/stonework:CavePortal",
+            "y_rotation": 0,
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.5,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.65
+            ],
+            "size": [
+              0.55,
+              0.85,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.7,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.25,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.55
+            ],
+            "size": [
+              0.9,
+              0.05,
+              1.2
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "CaveEntranceMossy": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cave-portal:CavePortal",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.6
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.15,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.45
+            ],
+            "size": [
+              0.85,
+              0.05,
+              1.1
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "CaveExitMossy": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cave-portal:CavePortalClipped",
+            "y_rotation": 0,
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.5,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.65
+            ],
+            "size": [
+              0.55,
+              0.85,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.7,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.25,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.55
+            ],
+            "size": [
+              0.9,
+              0.05,
+              1.2
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "SpearTrap": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:SpearTrap"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.8,
+              0.15
+            ],
+            "animation": "Spears"
+          }
+        ]
+      }
+    }
+  },
+  "BrickWallDoorway": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:CottageWallDoorway",
+            "offset": [
+              0,
+              0,
+              -0.3
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.45,
+              0,
+              0
+            ],
+            "size": [
+              0.05,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0.45,
+              0,
+              0
+            ],
+            "size": [
+              0.05,
+              1,
+              0.15
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.9,
+              0
+            ],
+            "size": [
+              0.4,
+              0.05,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CaveBlockInsidePortal": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cave-portal:CavePortalClipped",
+            "y_rotation": 180,
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.5,
+              1,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.65
+            ],
+            "size": [
+              0.55,
+              0.85,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.7,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.25,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.55
+            ],
+            "size": [
+              0.9,
+              0.05,
+              1.2
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "MineEntranceOutside": {
+    "type": "Wall",
+    "aspects": {
+      "WallSize": {
+        "x": 1,
+        "y": 2
+      },
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:MineEntrance",
+            "offset": [
+              0,
+              0,
+              0.5
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              -0.65
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              0,
+              1.6
+            ],
+            "size": [
+              0.55,
+              0.9,
+              0.4
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              1.8,
+              0.45
+            ],
+            "size": [
+              0.55,
+              0.15,
+              1.35
+            ]
+          },
+          {
+            "shape": "box",
+            "offset": [
+              0,
+              -0.1,
+              0.45
+            ],
+            "size": [
+              0.85,
+              0.05,
+              1.1
+            ],
+            "walkable": true
+          }
+        ]
+      }
+    }
+  },
+  "PressurePlate": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:PressurePlate"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "sensor",
+            "size": [
+              0.51,
+              0.1,
+              0.51
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "BlackoutThin": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/blackout:BlackoutThin"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.5,
+              1,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickWallSloped": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallSloped",
+            "y_rotation": 180
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.2,
+              1,
+              0.5
+            ]
+          },
+          {
+            "shape": "ramp",
+            "offset": [
+              0,
+              2,
+              0
+            ],
+            "size": [
+              0.2,
+              0.5,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickPillarTall": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarTall"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1.5,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "MossyBrickPillarTallStep": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:MossyBrickPillarTall"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf"
+          },
+          {
+            "model": "scenery/walls-dungeon:MossyBrickWallHalf",
+            "y_rotation": 180,
+            "offset": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "size": [
+              0.3,
+              1.5,
+              0.3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "SpearTrapControlled": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/walls-dungeon:SpearTrap"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "type": "door",
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              0.5,
+              0.8,
+              0.03
+            ],
+            "animation": "Spears"
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWall34": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall34"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.1,
+              0,
+              0.25
+            ],
+            "size": [
+              0.45,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "FittedStoneWall34A": {
+    "type": "Wall",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/cottage:FittedStoneWall34",
+            "offset": [
+              0,
+              0,
+              -0.6
+            ]
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "box",
+            "offset": [
+              -0.12,
+              0,
+              -0.25
+            ],
+            "size": [
+              0.4,
+              1,
+              0.15
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

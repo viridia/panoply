@@ -1,0 +1,12 @@
+{
+  "FTP1": {
+    "type": "Item",
+    "display_name": "Fundamentals of Thaumaturgical Practice, Vol. 1",
+    "aspects": {}
+  },
+  "FTP2": {
+    "type": "Item",
+    "display_name": "Fundamentals of Thaumaturgical Practice, Vol. 2",
+    "aspects": {}
+  }
+}

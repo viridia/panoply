@@ -1,0 +1,122 @@
+{
+  "Test.Particles.3": {
+    "type": "Fixture",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/camping:Campfire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              0.27,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Campfire": {
+    "type": "Fixture",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/camping:Campfire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              0.27,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Test.Particles.1": {
+    "type": "Fixture",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/camping:Campfire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              0.27,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Test.Particles.2": {
+    "type": "Fixture",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/camping:Campfire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              0.27,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Test.Particles.4": {
+    "type": "Fixture",
+    "aspects": {
+      "SceneryModels": {
+        "models": [
+          {
+            "model": "scenery/camping:Campfire"
+          }
+        ]
+      },
+      "SceneryColliders": {
+        "colliders": [
+          {
+            "shape": "cylinder",
+            "size": [
+              0.4,
+              0.27,
+              0.5
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

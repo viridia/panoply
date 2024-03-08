@@ -9,8 +9,13 @@ use self::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
     floor_noise::FloorNoiseMaterial,
+    msgpack_extension::Vector3,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
+    scenery_aspect::{ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
+    scenery_colliders::{ColliderDesc, ColliderShape, ColliderType},
+    terrain_fx_aspect::{TerrainEffect, TerrainHole},
+    wall_aspect::WallSize,
 };
 
 pub mod floor_aspect;
@@ -21,6 +26,10 @@ mod msgpack_extension;
 mod precinct;
 mod precinct_asset;
 mod precinct_cache;
+mod scenery_aspect;
+mod scenery_colliders;
+mod terrain_fx_aspect;
+mod wall_aspect;
 
 pub const PRECINCT_SIZE: i32 = 64;
 pub const PRECINCT_SIZE_F: f32 = PRECINCT_SIZE as f32;
@@ -44,7 +53,21 @@ impl Plugin for SceneryPlugin {
             .register_type::<NoiseFloorSurface>()
             .register_type::<FloorGeometry>()
             .register_type::<FloorNav>()
+            .register_type::<SceneryModels>()
+            .register_type::<SceneryColliders>()
+            .register_type::<SceneryMarks>()
+            .register_type::<WallSize>()
+            .register_type::<TerrainEffect>()
+            .register_type::<TerrainHole>()
+            .register_type::<ModelComponent>()
+            .register_type::<Vec<ModelComponent>>()
+            .register_type::<ColliderDesc>()
+            .register_type::<ColliderShape>()
+            .register_type::<ColliderType>()
+            .register_type::<Vec<ColliderDesc>>()
             .register_type::<Vec<String>>()
+            .register_type::<HashMap<String, Vec<Vec3>>>()
+            .register_type::<Vector3>()
             .register_type::<HashMap<String, String>>()
             .add_plugins(MaterialPlugin::<
                 ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,

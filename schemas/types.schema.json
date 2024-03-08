@@ -111,6 +111,90 @@
       "items": {
         "$ref": "#/definitions/sideEffect"
       }
+    },
+    "SceneryComponent": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "x_rotation": {
+          "type": "number"
+        },
+        "y_rotation": {
+          "type": "number"
+        },
+        "z_rotation": {
+          "type": "number"
+        },
+        "x_rotation_variance": {
+          "type": "number"
+        },
+        "y_rotation_variance": {
+          "type": "number"
+        },
+        "z_rotation_variance": {
+          "type": "number"
+        },
+        "scale": {
+          "type": "number"
+        },
+        "scale_variance": {
+          "type": "number"
+        }
+      },
+      "required": ["model"],
+      "additionalProperties": false
+    },
+    "ColliderDesc": {
+      "type": "object",
+      "properties": {
+        "shape": {
+          "enum": ["box", "rbox", "sphere", "ellipsoid", "ramp", "cylinder"]
+        },
+        "type": {
+          "enum": [
+            "solid",
+            "door",
+            "ladder",
+            "sensor",
+            "hint",
+            "portal",
+            "marker"
+          ]
+        },
+        "size": {
+          "$ref": "#/definitions/Vec3"
+        },
+        "offset": {
+          "$ref": "#/definitions/Vec3"
+        },
+        "facing": {
+          "type": "number"
+        },
+        "pickable": {
+          "type": "boolean"
+        },
+        "animation": {
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/definitions/Vec3"
+        },
+        "walkable": {
+          "type": "boolean"
+        }
+      },
+      "required": ["shape"],
+      "additionalProperties": false
     }
   }
 }
