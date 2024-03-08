@@ -98,7 +98,7 @@ pub fn spawn_precincts(
                         None => {
                             println!("Creating precinct {} {} {}.", realm.name, x, z);
                             let asset_path = format!(
-                                "scenery/{}/{}-{}.msgpack",
+                                "scenery/precincts/{}/{}-{}.msgpack",
                                 "playground",
                                 precinct_coord(x),
                                 precinct_coord(z)

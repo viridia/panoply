@@ -31,13 +31,15 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
 //     .map(src => src.transform(modelOpt).dest({ root: dstRoot }))
 // );
 
-// // Scenery files.
-// target(
-//   'scenery',
-//   directory(srcRoot, 'scenery')
-//     .match('*.glb')
-//     .map(src => src.transform(modelOpt).dest({ root: dstRoot }))
-// );
+// Scenery files.
+target(
+  "scenery",
+  directory({ root: `${srcRoot}/scenery` })
+    .match("*.glb")
+    .map((src) =>
+      src.transform(modelOpt).dest({ root: `${dstRoot}/scenery/models` })
+    )
+);
 
 // // Sound effects files.
 // target(

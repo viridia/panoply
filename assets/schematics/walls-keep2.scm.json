@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-2:TaperedPillarBottom",
             "y_rotation": 0
           }
         ]
@@ -30,7 +30,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarTop",
+            "model": "scenery/models/walls-keep-2:TaperedPillarTop",
             "y_rotation": 0
           }
         ]
@@ -55,7 +55,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottom"
           }
         ]
       },
@@ -79,7 +79,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallTop"
+            "model": "scenery/models/walls-keep-2:TaperedWallTop"
           }
         ]
       },
@@ -103,11 +103,11 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-2:TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottom"
           }
         ]
       },
@@ -131,14 +131,14 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-2:TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfBottom"
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfBottom"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfBottom",
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfBottom",
             "y_rotation": 90
           }
         ]
@@ -163,10 +163,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-2:TaperedPillarTop"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallTop"
+            "model": "scenery/models/walls-keep-2:TaperedWallTop"
           }
         ]
       },
@@ -190,13 +190,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-2:TaperedPillarTop"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfTop"
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfTop"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfTop",
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfTop",
             "y_rotation": 90
           }
         ]
@@ -221,7 +221,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallTopNarrowArch"
+            "model": "scenery/models/walls-keep-2:TaperedWallTopNarrowArch"
           }
         ]
       },
@@ -245,7 +245,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomWindow"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomWindow"
           }
         ]
       },
@@ -269,7 +269,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:BattlementMajor"
+            "model": "scenery/models/walls-keep-2:BattlementMajor"
           }
         ]
       },
@@ -293,7 +293,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:BattlementMinor"
+            "model": "scenery/models/walls-keep-2:BattlementMinor"
           }
         ]
       },
@@ -317,7 +317,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:BattlementMajorCorner"
+            "model": "scenery/models/walls-keep-2:BattlementMajorCorner"
           }
         ]
       },
@@ -341,13 +341,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-2:TaperedPillarTop"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfTop"
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfTop"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallTop",
+            "model": "scenery/models/walls-keep-2:TaperedWallTop",
             "y_rotation": 90
           }
         ]
@@ -372,14 +372,14 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-2:TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallHalfBottom"
+            "model": "scenery/models/walls-keep-2:TaperedWallHalfBottom"
           },
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottom",
+            "model": "scenery/models/walls-keep-2:TaperedWallBottom",
             "y_rotation": 90
           }
         ]
@@ -404,7 +404,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:Stairs",
+            "model": "scenery/models/walls-keep-2:Stairs",
             "y_rotation": 0
           }
         ]
@@ -437,7 +437,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomDoor"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomDoor"
           }
         ]
       },
@@ -529,7 +529,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomDoorWide"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomDoorWide"
           }
         ]
       },
@@ -642,7 +642,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomPortalWide"
           }
         ]
       },
@@ -697,10 +697,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomPortalWide"
           },
           {
-            "model": "scenery/blackout:BlackoutThin",
+            "model": "scenery/models/blackout:BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -708,7 +708,7 @@
             ]
           },
           {
-            "model": "scenery/blackout:BlackoutThin",
+            "model": "scenery/models/blackout:BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -716,7 +716,7 @@
             ]
           },
           {
-            "model": "scenery/blackout:BlackoutThin",
+            "model": "scenery/models/blackout:BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -776,10 +776,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottom"
           },
           {
-            "model": "scenery/walls-keep-2:StoneSwitch",
+            "model": "scenery/models/walls-keep-2:StoneSwitch",
             "offset": [
               0.15,
               1.15,
@@ -822,7 +822,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/walls-keep-2:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-2:TaperedWallBottomPortalWide"
           }
         ]
       },

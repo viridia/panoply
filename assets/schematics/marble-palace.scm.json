@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWall"
+            "model": "scenery/models/marble-palace:MarbleWall"
           }
         ]
       },
@@ -29,7 +29,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallWindows"
+            "model": "scenery/models/marble-palace:MarbleWallWindows"
           }
         ]
       },
@@ -53,7 +53,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallHalf"
+            "model": "scenery/models/marble-palace:MarbleWallHalf"
           }
         ]
       },
@@ -82,7 +82,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarSquare"
+            "model": "scenery/models/marble-palace:MarblePillarSquare"
           }
         ]
       },
@@ -106,10 +106,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarSquare"
+            "model": "scenery/models/marble-palace:MarblePillarSquare"
           },
           {
-            "model": "scenery/marble-palace:MarbleWall"
+            "model": "scenery/models/marble-palace:MarbleWall"
           }
         ]
       },
@@ -141,13 +141,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarSquare"
+            "model": "scenery/models/marble-palace:MarblePillarSquare"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallHalf"
+            "model": "scenery/models/marble-palace:MarbleWallHalf"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallHalf",
+            "model": "scenery/models/marble-palace:MarbleWallHalf",
             "y_rotation": 90
           }
         ]
@@ -198,13 +198,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarSquare"
+            "model": "scenery/models/marble-palace:MarblePillarSquare"
           },
           {
-            "model": "scenery/marble-palace:MarbleWall"
+            "model": "scenery/models/marble-palace:MarbleWall"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallHalf",
+            "model": "scenery/models/marble-palace:MarbleWallHalf",
             "y_rotation": 90
           }
         ]
@@ -250,10 +250,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarSquare"
+            "model": "scenery/models/marble-palace:MarblePillarSquare"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallHalf"
+            "model": "scenery/models/marble-palace:MarbleWallHalf"
           }
         ]
       },
@@ -290,7 +290,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallDoorArch"
+            "model": "scenery/models/marble-palace:MarbleWallDoorArch"
           }
         ]
       },
@@ -345,7 +345,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarRound"
+            "model": "scenery/models/marble-palace:MarblePillarRound"
           }
         ]
       },
@@ -369,7 +369,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleBalconyRailing"
+            "model": "scenery/models/marble-palace:MarbleBalconyRailing"
           }
         ]
       },
@@ -398,7 +398,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleBalconyRailingCorner"
+            "model": "scenery/models/marble-palace:MarbleBalconyRailingCorner"
           }
         ]
       },
@@ -440,7 +440,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleCube"
+            "model": "scenery/models/marble-palace:MarbleCube"
           }
         ]
       },
@@ -464,7 +464,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleCubeTall"
+            "model": "scenery/models/marble-palace:MarbleCubeTall"
           }
         ]
       },
@@ -483,7 +483,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:TiledRoof"
+            "model": "scenery/models/marble-palace:TiledRoof"
           }
         ]
       }
@@ -495,7 +495,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleGable",
+            "model": "scenery/models/marble-palace:MarbleGable",
             "offset": [
               0,
               0,
@@ -532,7 +532,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallUpper"
+            "model": "scenery/models/marble-palace:MarbleWallUpper"
           }
         ]
       },
@@ -559,7 +559,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarUpper"
+            "model": "scenery/models/marble-palace:MarblePillarUpper"
           }
         ]
       },
@@ -586,10 +586,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallUpper"
+            "model": "scenery/models/marble-palace:MarbleWallUpper"
           },
           {
-            "model": "scenery/marble-palace:MarblePillarUpper"
+            "model": "scenery/models/marble-palace:MarblePillarUpper"
           }
         ]
       },
@@ -621,7 +621,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleGableTall",
+            "model": "scenery/models/marble-palace:MarbleGableTall",
             "offset": [
               0,
               0,
@@ -668,13 +668,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarUpper"
+            "model": "scenery/models/marble-palace:MarblePillarUpper"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallUpper"
+            "model": "scenery/models/marble-palace:MarbleWallUpper"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallUpperHalf",
+            "model": "scenery/models/marble-palace:MarbleWallUpperHalf",
             "y_rotation": 90
           }
         ]
@@ -720,13 +720,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarUpper"
+            "model": "scenery/models/marble-palace:MarblePillarUpper"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallUpperHalf"
+            "model": "scenery/models/marble-palace:MarbleWallUpperHalf"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallUpperHalf",
+            "model": "scenery/models/marble-palace:MarbleWallUpperHalf",
             "y_rotation": 90
           }
         ]
@@ -777,10 +777,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarblePillarUpper"
+            "model": "scenery/models/marble-palace:MarblePillarUpper"
           },
           {
-            "model": "scenery/marble-palace:MarbleWallUpperHalf"
+            "model": "scenery/models/marble-palace:MarbleWallUpperHalf"
           }
         ]
       },
@@ -817,7 +817,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:RobedStatue",
+            "model": "scenery/models/marble-palace:RobedStatue",
             "offset": [
               0,
               0,
@@ -854,7 +854,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallUpperWindow"
+            "model": "scenery/models/marble-palace:MarbleWallUpperWindow"
           }
         ]
       },
@@ -878,7 +878,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:SlateRoof"
+            "model": "scenery/models/slate-roof:SlateRoof"
           }
         ]
       }
@@ -890,7 +890,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:SlateRoofConcave"
+            "model": "scenery/models/slate-roof:SlateRoofConcave"
           }
         ]
       }
@@ -902,7 +902,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:SlateRoofConvex"
+            "model": "scenery/models/slate-roof:SlateRoofConvex"
           }
         ]
       }
@@ -914,7 +914,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/palisade:CanvasRoofGold"
+            "model": "scenery/models/palisade:CanvasRoofGold"
           }
         ]
       }
@@ -926,7 +926,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/palisade:CanvasRoofBlue"
+            "model": "scenery/models/palisade:CanvasRoofBlue"
           }
         ]
       }
@@ -938,7 +938,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:TiledRoofConcave"
+            "model": "scenery/models/slate-roof:TiledRoofConcave"
           }
         ]
       }
@@ -950,7 +950,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:TiledRoofConvex"
+            "model": "scenery/models/slate-roof:TiledRoofConvex"
           }
         ]
       }
@@ -962,7 +962,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/slate-roof:TiledRoofWide"
+            "model": "scenery/models/slate-roof:TiledRoofWide"
           }
         ]
       }
@@ -974,7 +974,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallWindowSquare"
+            "model": "scenery/models/marble-palace:MarbleWallWindowSquare"
           }
         ]
       },
@@ -998,7 +998,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallDoor"
+            "model": "scenery/models/marble-palace:MarbleWallDoor"
           }
         ]
       },
@@ -1053,7 +1053,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleStairs"
+            "model": "scenery/models/marble-palace:MarbleStairs"
           }
         ]
       },
@@ -1080,10 +1080,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleStairs"
+            "model": "scenery/models/marble-palace:MarbleStairs"
           },
           {
-            "model": "scenery/marble-palace:MarbleStairRailing",
+            "model": "scenery/models/marble-palace:MarbleStairRailing",
             "offset": [
               0,
               0,
@@ -1142,10 +1142,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleStairs"
+            "model": "scenery/models/marble-palace:MarbleStairs"
           },
           {
-            "model": "scenery/marble-palace:MarbleStairRailing",
+            "model": "scenery/models/marble-palace:MarbleStairRailing",
             "offset": [
               0,
               0,
@@ -1204,10 +1204,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleStairs"
+            "model": "scenery/models/marble-palace:MarbleStairs"
           },
           {
-            "model": "scenery/marble-palace:MarbleStairRailingEnd",
+            "model": "scenery/models/marble-palace:MarbleStairRailingEnd",
             "offset": [
               0,
               0,
@@ -1266,10 +1266,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleStairs"
+            "model": "scenery/models/marble-palace:MarbleStairs"
           },
           {
-            "model": "scenery/marble-palace:MarbleStairRailingEnd",
+            "model": "scenery/models/marble-palace:MarbleStairRailingEnd",
             "offset": [
               0,
               0,
@@ -1328,7 +1328,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallUpperDoor"
+            "model": "scenery/models/marble-palace:MarbleWallUpperDoor"
           }
         ]
       },
@@ -1383,7 +1383,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/marble-palace:MarbleWallDoubleDoors"
+            "model": "scenery/models/marble-palace:MarbleWallDoubleDoors"
           }
         ]
       },

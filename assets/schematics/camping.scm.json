@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/camping:Campfire"
+            "model": "scenery/models/camping:Campfire"
           }
         ]
       },
@@ -29,7 +29,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/camping:Campfire"
+            "model": "scenery/models/camping:Campfire"
           }
         ]
       },
@@ -53,7 +53,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/camping:Campfire"
+            "model": "scenery/models/camping:Campfire"
           }
         ]
       },
@@ -77,7 +77,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/camping:Campfire"
+            "model": "scenery/models/camping:Campfire"
           }
         ]
       },
@@ -101,7 +101,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/camping:Campfire"
+            "model": "scenery/models/camping:Campfire"
           }
         ]
       },

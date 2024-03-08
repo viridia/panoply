@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWall"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWall"
           }
         ]
       },
@@ -29,10 +29,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallCorner"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallCorner"
           },
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallCornerBlocks"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallCornerBlocks"
           }
         ]
       },
@@ -74,7 +74,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallGable"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallGable"
           }
         ]
       }
@@ -86,7 +86,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallSquat"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallSquat"
           }
         ]
       },
@@ -110,7 +110,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallSquatCorner"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallSquatCorner"
           }
         ]
       },
@@ -152,7 +152,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallWide"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallWide"
           }
         ]
       }
@@ -164,7 +164,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/sepia-brick-house:SepiaBrickWallWindow"
+            "model": "scenery/models/sepia-brick-house:SepiaBrickWallWindow"
           }
         ]
       },
