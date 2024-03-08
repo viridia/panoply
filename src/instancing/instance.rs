@@ -2,6 +2,7 @@ use bevy::{asset::LoadState, gltf::Gltf, prelude::*, utils::HashMap};
 use serde::{Deserialize, Serialize};
 
 /// Data for placing an individual model instance.
+#[derive(Debug)]
 pub struct ModelPlacement {
     pub transform: Transform,
     pub visible: bool,

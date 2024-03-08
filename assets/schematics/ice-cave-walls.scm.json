@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/ice-cave.glb#IceWall1"
+            "asset": "scenery/models/ice-cave.glb#IceWall1"
           }
         ]
       },
@@ -34,7 +34,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/ice-cave.glb#IceWall2"
+            "asset": "scenery/models/ice-cave.glb#IceWall2"
           }
         ]
       },
@@ -63,7 +63,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/ice-cave.glb#IceWall3"
+            "asset": "scenery/models/ice-cave.glb#IceWall3"
           }
         ]
       },
@@ -92,7 +92,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave.glb#CaveCornerConcave1"
+            "asset": "scenery/models/cave.glb#CaveCornerConcave1"
           }
         ]
       },
@@ -134,7 +134,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/ice-cave.glb#IceWallConcaveCorner"
+            "asset": "scenery/models/ice-cave.glb#IceWallConcaveCorner"
           }
         ]
       },
@@ -176,7 +176,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/ice-cave.glb#IceWallConvexCorner"
+            "asset": "scenery/models/ice-cave.glb#IceWallConvexCorner"
           }
         ]
       },

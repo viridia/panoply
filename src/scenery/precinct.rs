@@ -1,8 +1,9 @@
-use crate::schematic::Schematic;
+use crate::{instancing::InstanceMap, schematic::Schematic};
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
     precinct_asset::PrecinctAsset,
+    scenery_element::{SceneryElement, SceneryElementRebuildAspects},
 };
 use bevy::prelude::*;
 
@@ -20,6 +21,138 @@ pub struct Precinct {
     pub visible: bool,
     pub asset: Handle<PrecinctAsset>,
     pub tiers: Vec<PrecinctTier>,
+    pub scenery_instances: InstanceMap,
+}
+
+impl Precinct {
+    pub fn rebuild_tiers(
+        &mut self,
+        commands: &mut Commands,
+        entity: Entity,
+        asset: &PrecinctAsset,
+        floor_schematics: &[Handle<Schematic>],
+        query_floor_regions: &mut Query<(Entity, &mut FloorRegion)>,
+    ) {
+        // Sync tiers
+        let mut i = 0;
+        for tier in asset.tiers.iter() {
+            // Remove old tiers that are no longer in the asset.
+            while i < self.tiers.len() && self.tiers[i].level < tier.level {
+                self.tiers.remove(i);
+            }
+
+            // Create or mutate a new tier
+            let t = if i < self.tiers.len() {
+                &mut self.tiers[i]
+            } else {
+                let new_tier = PrecinctTier {
+                    level: tier.level,
+                    floor_regions: Vec::new(),
+                };
+                self.tiers.insert(i, new_tier);
+                &mut self.tiers[i]
+            };
+            i += 1;
+
+            let mut j = 0;
+            for floor in tier.pfloors.iter() {
+                let schematic: Handle<Schematic> =
+                    floor_schematics[floor.surface_index - 1].clone();
+                if j < t.floor_regions.len() {
+                    let floor_entity = t.floor_regions[j];
+                    if let Ok((floor_entity, mut floor_region)) =
+                        query_floor_regions.get_mut(floor_entity)
+                    {
+                        // Patch floor entity.
+                        let mut changed = false;
+                        if floor_region.schematic != schematic {
+                            floor_region.schematic = schematic.clone();
+                            changed = true;
+                        }
+                        if floor_region.poly != floor.poly {
+                            floor_region.poly = floor.poly.clone();
+                            changed = true;
+                        }
+
+                        if changed {
+                            commands.entity(floor_entity).insert(RebuildFloorAspects);
+                        }
+                    } else {
+                        // Overwrite floor entity components.
+                        commands.entity(floor_entity).insert((
+                            FloorRegion {
+                                level: tier.level,
+                                schematic,
+                                poly: floor.poly.clone(),
+                            },
+                            RebuildFloorAspects,
+                        ));
+                    }
+                } else {
+                    // Insert new floor entity.
+                    let floor_entity = commands
+                        .spawn((
+                            FloorRegion {
+                                level: tier.level,
+                                schematic,
+                                poly: floor.poly.clone(),
+                            },
+                            RebuildFloorAspects,
+                        ))
+                        .set_parent(entity)
+                        .id();
+                    t.floor_regions.push(floor_entity);
+                }
+                j += 1;
+            }
+
+            // Remove any extra floor regions that no longer exist.
+            while t.floor_regions.len() > j {
+                println!("Removing floor region.");
+                let e = t.floor_regions.pop().unwrap();
+                commands.entity(e).remove_parent();
+                commands.entity(e).despawn_recursive();
+            }
+        }
+
+        // Remove any extra tiers that no longer exist.
+        while i < self.tiers.len() {
+            self.tiers.remove(i);
+        }
+    }
+
+    pub fn rebuild_walls(
+        &mut self,
+        commands: &mut Commands,
+        entity: Entity,
+        asset: &PrecinctAsset,
+        wall_schematics: &[Handle<Schematic>],
+    ) {
+        // What do we want to do here?
+        // We cannot place the model yet, because transforms are not loaded.
+        // We need to spawn an entity per secenery element I think.
+        for wall in asset.nwalls.iter() {
+            let mut transform =
+                Transform::from_xyz(wall.position.x, wall.position.y, wall.position.z);
+            transform.rotate(Quat::from_rotation_y(
+                wall.facing * std::f32::consts::PI / 2.0,
+            ));
+            commands
+                .spawn((
+                    SceneryElement {
+                        schematic: wall_schematics[wall.id].clone(),
+                        facing: wall.facing,
+                        position: wall.position,
+                    },
+                    SpatialBundle {
+                        transform,
+                        ..default()
+                    },
+                    SceneryElementRebuildAspects,
+                ))
+                .set_parent(entity);
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -46,6 +179,10 @@ pub struct PrecinctAssetChanged;
 #[component(storage = "SparseSet")]
 pub struct PrecinctTiersChanged;
 
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct PrecinctRebuildScenery;
+
 /** React when precinct assets change and update the scenery. */
 pub fn read_precinct_data(
     mut commands: Commands,
@@ -70,7 +207,7 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
-                    let _wall_schematics: Vec<Handle<Schematic>> = precinct_asset
+                    let wall_schematics: Vec<Handle<Schematic>> = precinct_asset
                         .wall_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -79,93 +216,20 @@ pub fn read_precinct_data(
                     // TODO: Sync cutaway rects
                     // TODO: Sync nav mesh, physics, light sources, particles, etc.
                     // TODO: Sync actors
+                    precinct.rebuild_tiers(
+                        &mut commands,
+                        precinct_entity,
+                        precinct_asset,
+                        &floor_schematics,
+                        &mut query_floor_regions,
+                    );
 
-                    // Sync tiers
-                    let mut i = 0;
-                    for tier in precinct_asset.tiers.iter() {
-                        // Remove old tiers that are no longer in the asset.
-                        while i < precinct.tiers.len() && precinct.tiers[i].level < tier.level {
-                            precinct.tiers.remove(i);
-                        }
-
-                        // Create or mutate a new tier
-                        let t = if i < precinct.tiers.len() {
-                            &mut precinct.tiers[i]
-                        } else {
-                            let new_tier = PrecinctTier {
-                                level: tier.level,
-                                floor_regions: Vec::new(),
-                            };
-                            precinct.tiers.insert(i, new_tier);
-                            &mut precinct.tiers[i]
-                        };
-                        i += 1;
-
-                        let mut j = 0;
-                        for floor in tier.pfloors.iter() {
-                            let schematic: Handle<Schematic> =
-                                floor_schematics[floor.surface_index - 1].clone();
-                            if j < t.floor_regions.len() {
-                                let floor_entity = t.floor_regions[j];
-                                if let Ok((floor_entity, mut floor_region)) =
-                                    query_floor_regions.get_mut(floor_entity)
-                                {
-                                    // Patch floor entity.
-                                    let mut changed = false;
-                                    if floor_region.schematic != schematic {
-                                        floor_region.schematic = schematic.clone();
-                                        changed = true;
-                                    }
-                                    if floor_region.poly != floor.poly {
-                                        floor_region.poly = floor.poly.clone();
-                                        changed = true;
-                                    }
-
-                                    if changed {
-                                        commands.entity(floor_entity).insert(RebuildFloorAspects);
-                                    }
-                                } else {
-                                    // Overwrite floor entity components.
-                                    commands.entity(floor_entity).insert((
-                                        FloorRegion {
-                                            level: tier.level,
-                                            schematic,
-                                            poly: floor.poly.clone(),
-                                        },
-                                        RebuildFloorAspects,
-                                    ));
-                                }
-                            } else {
-                                // Insert new floor entity.
-                                let floor_entity = commands
-                                    .spawn((
-                                        FloorRegion {
-                                            level: tier.level,
-                                            schematic,
-                                            poly: floor.poly.clone(),
-                                        },
-                                        RebuildFloorAspects,
-                                    ))
-                                    .set_parent(precinct_entity)
-                                    .id();
-                                t.floor_regions.push(floor_entity);
-                            }
-                            j += 1;
-                        }
-
-                        // Remove any extra floor regions that no longer exist.
-                        while t.floor_regions.len() > j {
-                            println!("Removing floor region.");
-                            let e = t.floor_regions.pop().unwrap();
-                            commands.entity(e).remove_parent();
-                            commands.entity(e).despawn_recursive();
-                        }
-                    }
-
-                    // Remove any extra tiers that no longer exist.
-                    while i < precinct.tiers.len() {
-                        precinct.tiers.remove(i);
-                    }
+                    precinct.rebuild_walls(
+                        &mut commands,
+                        precinct_entity,
+                        precinct_asset,
+                        &wall_schematics,
+                    );
 
                     commands
                         .entity(precinct_entity)

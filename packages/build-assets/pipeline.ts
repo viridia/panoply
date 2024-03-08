@@ -12,7 +12,22 @@ io.setLogger(new Logger(Logger.Verbosity.ERROR));
 // .glb model optimization pass.
 const modelOpt = async (src: Buffer): Promise<Buffer> => {
   const gltf = await io.readBinary(src);
-  await gltf.transform(resample(), dedup(), draco());
+  await gltf.transform(
+    (doc) => {
+      // Split the default scene into separate named scenes
+      let scene = doc.getRoot().getDefaultScene();
+      if (scene) {
+        doc.getRoot().setDefaultScene(null);
+        for (let child of scene.listChildren()) {
+          doc.createScene(child.getName()).addChild(child);
+        }
+      }
+      return doc;
+    },
+    resample(),
+    dedup(),
+    draco()
+  );
   return Buffer.from(await io.writeBinary(gltf));
 };
 

@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWall"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWall"
           }
         ]
       },
@@ -29,10 +29,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallCorner"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallCorner"
           },
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallCornerBlocks"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallCornerBlocks"
           }
         ]
       },
@@ -74,7 +74,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallGable"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallGable"
           }
         ]
       }
@@ -86,7 +86,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallSquat"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallSquat"
           }
         ]
       },
@@ -110,7 +110,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallSquatCorner"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallSquatCorner"
           }
         ]
       },
@@ -152,7 +152,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallWide"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallWide"
           }
         ]
       }
@@ -164,7 +164,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/sepia-brick-house.glb#SepiaBrickWallWindow"
+            "asset": "scenery/models/sepia-brick-house.glb#SepiaBrickWallWindow"
           }
         ]
       },

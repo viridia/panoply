@@ -10,7 +10,7 @@ use super::scenery_colliders::ColliderDesc;
 #[reflect(Default, Serialize, Deserialize)]
 pub struct ModelComponent {
     /// ID of the model to display.
-    pub model: String,
+    pub asset: String,
 
     /// Model rotation in x-axis.
     pub x_rotation: Option<f32>,
@@ -44,7 +44,7 @@ pub struct ModelComponent {
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct SceneryModels {
-    models: Vec<ModelComponent>,
+    pub models: Vec<ModelComponent>,
     //     public animations?: IAnimationSpec[];
 }
 

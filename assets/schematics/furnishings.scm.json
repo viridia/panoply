@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SmallWoodenTable"
+            "asset": "scenery/models/carpentry.glb#SmallWoodenTable"
           }
         ]
       },
@@ -41,7 +41,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#TallWoodenTable"
+            "asset": "scenery/models/carpentry.glb#TallWoodenTable"
           }
         ]
       },
@@ -65,7 +65,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#NarrowWoodenTable"
+            "asset": "scenery/models/carpentry.glb#NarrowWoodenTable"
           }
         ]
       },
@@ -89,7 +89,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#LargeWalnutTable"
+            "asset": "scenery/models/carpentry.glb#LargeWalnutTable"
           }
         ]
       },
@@ -130,7 +130,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#TallShelves"
+            "asset": "scenery/models/carpentry.glb#TallShelves"
           }
         ]
       },
@@ -224,7 +224,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Cask"
+            "asset": "scenery/models/carpentry.glb#Cask"
           }
         ]
       },
@@ -248,7 +248,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Keg"
+            "asset": "scenery/models/carpentry.glb#Keg"
           }
         ]
       },
@@ -272,7 +272,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Crate"
+            "asset": "scenery/models/carpentry.glb#Crate"
           }
         ]
       },
@@ -296,7 +296,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SmallWoodenBench"
+            "asset": "scenery/models/carpentry.glb#SmallWoodenBench"
           }
         ]
       },
@@ -344,7 +344,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#LargeWalnutBench",
+            "asset": "scenery/models/carpentry.glb#LargeWalnutBench",
             "y_rotation": 90
           }
         ]
@@ -398,7 +398,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SmallWoodenChair"
+            "asset": "scenery/models/carpentry.glb#SmallWoodenChair"
           }
         ]
       },
@@ -445,7 +445,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FormalChair"
+            "asset": "scenery/models/carpentry.glb#FormalChair"
           }
         ]
       },
@@ -492,7 +492,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#WoodenCounter"
+            "asset": "scenery/models/carpentry.glb#WoodenCounter"
           }
         ]
       },
@@ -517,7 +517,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#HangingBannerRed"
+            "asset": "scenery/models/decorations.glb#HangingBannerRed"
           }
         ]
       },
@@ -541,7 +541,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#CandleHolder"
+            "asset": "scenery/models/decorations.glb#CandleHolder"
           }
         ]
       },
@@ -565,7 +565,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#CandleStand"
+            "asset": "scenery/models/decorations.glb#CandleStand"
           }
         ]
       },
@@ -589,7 +589,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Chalice"
+            "asset": "scenery/models/decorations.glb#Chalice"
           }
         ]
       },
@@ -613,7 +613,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClayPot"
+            "asset": "scenery/models/decorations.glb#ClayPot"
           }
         ]
       },
@@ -637,7 +637,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingPortrait"
+            "asset": "scenery/models/decorations.glb#PaintingPortrait"
           }
         ]
       },
@@ -666,7 +666,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingPortrait",
+            "asset": "scenery/models/decorations.glb#PaintingPortrait",
             "offset": [
               0,
               0,
@@ -683,7 +683,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingSeascape",
+            "asset": "scenery/models/decorations.glb#PaintingSeascape",
             "offset": [
               0,
               0,
@@ -700,7 +700,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingFruit",
+            "asset": "scenery/models/decorations.glb#PaintingFruit",
             "offset": [
               0,
               0,
@@ -734,7 +734,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#LargePot"
+            "asset": "scenery/models/decorations.glb#LargePot"
           }
         ]
       },
@@ -758,7 +758,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#RoundBasket"
+            "asset": "scenery/models/decorations.glb#RoundBasket"
           }
         ]
       },
@@ -782,7 +782,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#TallJar"
+            "asset": "scenery/models/decorations.glb#TallJar"
           }
         ]
       },
@@ -806,7 +806,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Ewer"
+            "asset": "scenery/models/decorations.glb#Ewer"
           }
         ]
       },
@@ -830,7 +830,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#GreenPitcher"
+            "asset": "scenery/models/decorations.glb#GreenPitcher"
           }
         ]
       },
@@ -855,7 +855,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#WhitePitcher"
+            "asset": "scenery/models/decorations.glb#WhitePitcher"
           }
         ]
       }
@@ -867,7 +867,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#BucketWooden"
+            "asset": "scenery/models/carpentry.glb#BucketWooden"
           }
         ]
       },
@@ -892,7 +892,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Crate",
+            "asset": "scenery/models/carpentry.glb#Crate",
             "offset": [
               0,
               0,
@@ -900,7 +900,7 @@
             ]
           },
           {
-            "model": "scenery/models/carpentry.glb#Crate",
+            "asset": "scenery/models/carpentry.glb#Crate",
             "y_rotation": 25,
             "offset": [
               0.05,
@@ -909,7 +909,7 @@
             ]
           },
           {
-            "model": "scenery/models/carpentry.glb#Crate",
+            "asset": "scenery/models/carpentry.glb#Crate",
             "y_rotation": 35,
             "offset": [
               0,
@@ -939,7 +939,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#BedSingleWooden",
+            "asset": "scenery/models/carpentry.glb#BedSingleWooden",
             "y_rotation": 90
           }
         ]
@@ -988,7 +988,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/thatch.glb#HayBale"
+            "asset": "scenery/models/thatch.glb#HayBale"
           }
         ]
       },
@@ -1012,7 +1012,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/thatch.glb#ArcheryTarget"
+            "asset": "scenery/models/thatch.glb#ArcheryTarget"
           }
         ]
       },
@@ -1036,7 +1036,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry-dark.glb#ShieldCross",
+            "asset": "scenery/models/carpentry-dark.glb#ShieldCross",
             "offset": [
               0,
               1,
@@ -1065,7 +1065,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry-dark.glb#ShieldStar",
+            "asset": "scenery/models/carpentry-dark.glb#ShieldStar",
             "offset": [
               0,
               1,
@@ -1094,7 +1094,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#CandleSconce",
+            "asset": "scenery/models/decorations.glb#CandleSconce",
             "offset": [
               0,
               1.2,
@@ -1111,7 +1111,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PewterMug"
+            "asset": "scenery/models/decorations.glb#PewterMug"
           }
         ]
       },
@@ -1135,7 +1135,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PewterMug2"
+            "asset": "scenery/models/decorations.glb#PewterMug2"
           }
         ]
       },
@@ -1159,7 +1159,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#CookPot"
+            "asset": "scenery/models/decorations.glb#CookPot"
           }
         ]
       },
@@ -1195,7 +1195,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Trencher",
+            "asset": "scenery/models/carpentry.glb#Trencher",
             "offset": [
               0,
               0.01,
@@ -1225,7 +1225,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#WineBottle"
+            "asset": "scenery/models/decorations.glb#WineBottle"
           }
         ]
       },
@@ -1249,7 +1249,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#WallShelf"
+            "asset": "scenery/models/carpentry.glb#WallShelf"
           }
         ]
       },
@@ -1278,7 +1278,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#WoodenCart"
+            "asset": "scenery/models/carpentry.glb#WoodenCart"
           }
         ]
       },
@@ -1307,7 +1307,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CrateLarge"
+            "asset": "scenery/models/carpentry.glb#CrateLarge"
           }
         ]
       },
@@ -1331,7 +1331,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CrateLong"
+            "asset": "scenery/models/carpentry.glb#CrateLong"
           }
         ]
       },
@@ -1355,7 +1355,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/thatch.glb#HayPile"
+            "asset": "scenery/models/thatch.glb#HayPile"
           }
         ]
       },
@@ -1379,7 +1379,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework.glb#Font"
+            "asset": "scenery/models/stonework.glb#Font"
           }
         ]
       },
@@ -1403,7 +1403,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FancyDiningTable"
+            "asset": "scenery/models/carpentry.glb#FancyDiningTable"
           }
         ]
       },
@@ -1428,7 +1428,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FancyDiningChair"
+            "asset": "scenery/models/carpentry.glb#FancyDiningChair"
           }
         ]
       },
@@ -1475,7 +1475,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#GrandfatherClock"
+            "asset": "scenery/models/carpentry.glb#GrandfatherClock"
           }
         ]
       },
@@ -1500,7 +1500,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FancyDoubleBed"
+            "asset": "scenery/models/carpentry.glb#FancyDoubleBed"
           }
         ]
       },
@@ -1552,7 +1552,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FancyLoveSeat"
+            "asset": "scenery/models/carpentry.glb#FancyLoveSeat"
           }
         ]
       },
@@ -1594,7 +1594,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Anvil"
+            "asset": "scenery/models/carpentry.glb#Anvil"
           }
         ]
       },
@@ -1634,7 +1634,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#GrindingWheel"
+            "asset": "scenery/models/carpentry.glb#GrindingWheel"
           }
         ]
       },
@@ -1669,7 +1669,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SmallStool"
+            "asset": "scenery/models/carpentry.glb#SmallStool"
           }
         ]
       },
@@ -1705,7 +1705,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#WritingDesk"
+            "asset": "scenery/models/carpentry.glb#WritingDesk"
           }
         ]
       },
@@ -1734,7 +1734,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CuttingBoard",
+            "asset": "scenery/models/carpentry.glb#CuttingBoard",
             "offset": [
               0,
               0.01,
@@ -1763,7 +1763,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CuttingBoardVeggies",
+            "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies",
             "offset": [
               0,
               0.01,
@@ -1792,7 +1792,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Shrine"
+            "asset": "scenery/models/carpentry.glb#Shrine"
           }
         ]
       },
@@ -1816,7 +1816,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework.glb#IconPelarsis"
+            "asset": "scenery/models/stonework.glb#IconPelarsis"
           }
         ]
       },
@@ -1840,7 +1840,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Sack"
+            "asset": "scenery/models/decorations.glb#Sack"
           }
         ]
       },
@@ -1864,7 +1864,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Sack",
+            "asset": "scenery/models/decorations.glb#Sack",
             "z_rotation": 70,
             "offset": [
               0,
@@ -1899,7 +1899,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Carrot"
+            "asset": "scenery/models/decorations.glb#Carrot"
           }
         ]
       },
@@ -1923,7 +1923,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#FestivalTableGold"
+            "asset": "scenery/models/carpentry.glb#FestivalTableGold"
           }
         ]
       },
@@ -1964,7 +1964,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CuttingBoardVeggies2",
+            "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies2",
             "offset": [
               0,
               0.01,
@@ -1993,7 +1993,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CuttingBoardBread",
+            "asset": "scenery/models/carpentry.glb#CuttingBoardBread",
             "offset": [
               0,
               0.01,
@@ -2022,7 +2022,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SmallRoundTable"
+            "asset": "scenery/models/carpentry.glb#SmallRoundTable"
           }
         ]
       },
@@ -2046,7 +2046,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#WheelBarrow"
+            "asset": "scenery/models/carpentry.glb#WheelBarrow"
           }
         ]
       },
@@ -2075,7 +2075,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Plough1"
+            "asset": "scenery/models/carpentry.glb#Plough1"
           }
         ]
       },
@@ -2104,7 +2104,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CaskLarge"
+            "asset": "scenery/models/carpentry.glb#CaskLarge"
           }
         ]
       },
@@ -2128,7 +2128,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#CaskLargeWaterTub"
+            "asset": "scenery/models/carpentry.glb#CaskLargeWaterTub"
           }
         ]
       },
@@ -2152,7 +2152,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Windmill"
+            "asset": "scenery/models/carpentry.glb#Windmill"
           }
         ]
       },
@@ -2176,7 +2176,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework.glb#StoneWorkTable"
+            "asset": "scenery/models/stonework.glb#StoneWorkTable"
           }
         ]
       },
@@ -2217,7 +2217,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Bone"
+            "asset": "scenery/models/decorations.glb#Bone"
           }
         ]
       },
@@ -2241,7 +2241,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#SheepSkull"
+            "asset": "scenery/models/decorations.glb#SheepSkull"
           }
         ]
       },
@@ -2266,7 +2266,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Loom"
+            "asset": "scenery/models/decorations.glb#Loom"
           }
         ]
       },
@@ -2291,7 +2291,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltRed"
+            "asset": "scenery/models/decorations.glb#ClothBoltRed"
           }
         ]
       },
@@ -2315,7 +2315,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltBlue"
+            "asset": "scenery/models/decorations.glb#ClothBoltBlue"
           }
         ]
       },
@@ -2339,7 +2339,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltLinen"
+            "asset": "scenery/models/decorations.glb#ClothBoltLinen"
           }
         ]
       },
@@ -2363,7 +2363,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltGold"
+            "asset": "scenery/models/decorations.glb#ClothBoltGold"
           }
         ]
       },
@@ -2387,7 +2387,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltYellow"
+            "asset": "scenery/models/decorations.glb#ClothBoltYellow"
           }
         ]
       },
@@ -2411,7 +2411,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#ClothBoltForestGreen"
+            "asset": "scenery/models/decorations.glb#ClothBoltForestGreen"
           }
         ]
       },
@@ -2435,7 +2435,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingPortraitMaleKing",
+            "asset": "scenery/models/decorations.glb#PaintingPortraitMaleKing",
             "offset": [
               0,
               0,
@@ -2579,7 +2579,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#NoticeBoard",
+            "asset": "scenery/models/carpentry.glb#NoticeBoard",
             "offset": [
               -0.1,
               0,
@@ -2617,7 +2617,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1.glb#StonePlacard",
+            "asset": "scenery/models/walls-keep-1.glb#StonePlacard",
             "offset": [
               -0.1,
               1.2,
@@ -2653,7 +2653,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#ChestLarge"
+            "asset": "scenery/models/carpentry.glb#ChestLarge"
           }
         ]
       },
@@ -2679,7 +2679,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#ChestSmall"
+            "asset": "scenery/models/carpentry.glb#ChestSmall"
           }
         ]
       },
@@ -2704,7 +2704,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#ChestSmaller"
+            "asset": "scenery/models/carpentry.glb#ChestSmaller"
           }
         ]
       },
@@ -2730,7 +2730,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Dresser"
+            "asset": "scenery/models/carpentry.glb#Dresser"
           }
         ]
       },
@@ -2755,7 +2755,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SignPost",
+            "asset": "scenery/models/carpentry.glb#SignPost",
             "offset": [
               -0.4,
               0,
@@ -2790,7 +2790,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#SignPostDirection"
+            "asset": "scenery/models/carpentry.glb#SignPostDirection"
           }
         ]
       }
@@ -2803,7 +2803,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#BookshelfTall"
+            "asset": "scenery/models/carpentry.glb#BookshelfTall"
           }
         ]
       },
@@ -2829,7 +2829,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry.glb#Wardrobe"
+            "asset": "scenery/models/carpentry.glb#Wardrobe"
           }
         ]
       },
@@ -2908,7 +2908,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#SuitOfPlate"
+            "asset": "scenery/models/decorations.glb#SuitOfPlate"
           }
         ]
       },
@@ -2933,7 +2933,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatOpenBrown",
+            "asset": "scenery/models/decorations.glb#BookFlatOpenBrown",
             "offset": [
               0,
               0.01,
@@ -2963,7 +2963,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedBrown",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
             "offset": [
               0,
               0.01,
@@ -2993,7 +2993,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedGray",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
             "offset": [
               0,
               0.01,
@@ -3023,7 +3023,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedSienna",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
             "offset": [
               0,
               0.01,
@@ -3053,7 +3053,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedBrown",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
             "z_rotation": 90,
             "offset": [
               0.01,
@@ -3084,7 +3084,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedGray",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
             "z_rotation": 90,
             "offset": [
               0.01,
@@ -3115,7 +3115,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#BookFlatClosedSienna",
+            "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
             "z_rotation": 90,
             "offset": [
               0.01,
@@ -3146,7 +3146,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#SpellEmitter",
+            "asset": "scenery/models/decorations.glb#SpellEmitter",
             "z_rotation": 90,
             "offset": [
               0.1,
@@ -3212,7 +3212,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#SpellEmitter",
+            "asset": "scenery/models/decorations.glb#SpellEmitter",
             "z_rotation": 90,
             "offset": [
               0.1,
@@ -3260,7 +3260,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingPortrait"
+            "asset": "scenery/models/decorations.glb#PaintingPortrait"
           }
         ]
       },
@@ -3289,7 +3289,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#PaintingCastle",
+            "asset": "scenery/models/decorations.glb#PaintingCastle",
             "offset": [
               0,
               0,
@@ -3306,7 +3306,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#FlowerPot"
+            "asset": "scenery/models/decorations.glb#FlowerPot"
           }
         ]
       },
@@ -3330,10 +3330,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#FlowerPot"
+            "asset": "scenery/models/decorations.glb#FlowerPot"
           },
           {
-            "model": "crops.glb#sunstalk"
+            "asset": "crops.glb#sunstalk"
           }
         ]
       },
@@ -3357,10 +3357,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#FlowerPot"
+            "asset": "scenery/models/decorations.glb#FlowerPot"
           },
           {
-            "model": "crops.glb#heartblush"
+            "asset": "crops.glb#heartblush"
           }
         ]
       },
@@ -3384,7 +3384,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/decorations.glb#Alembic"
+            "asset": "scenery/models/decorations.glb#Alembic"
           }
         ]
       },

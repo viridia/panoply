@@ -14,6 +14,7 @@ use self::{
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{ColliderDesc, ColliderShape, ColliderType},
+    scenery_element::{spawn_se_model_instances, spawn_se_models, update_se_aspects},
     terrain_fx_aspect::{TerrainEffect, TerrainHole},
     wall_aspect::WallSize,
 };
@@ -28,6 +29,7 @@ mod precinct_asset;
 mod precinct_cache;
 mod scenery_aspect;
 mod scenery_colliders;
+mod scenery_element;
 mod terrain_fx_aspect;
 mod wall_aspect;
 
@@ -77,15 +79,17 @@ impl Plugin for SceneryPlugin {
                 Update,
                 (
                     spawn_precincts,
-                    (
-                        read_precinct_data,
-                        update_floor_aspects,
-                        apply_deferred,
-                        gen_floor_meshes,
-                    )
-                        .chain(),
+                    read_precinct_data,
+                    // Floor processing
+                    update_floor_aspects.after(read_precinct_data),
+                    gen_floor_meshes.after(update_floor_aspects),
+                    // Wall and fixture processing
+                    update_se_aspects.after(read_precinct_data),
+                    spawn_se_models.after(update_se_aspects),
+                    // These poll resource handles so won't run in the same frame anyway
                     insert_floor_meshes,
                     rebuild_floor_materials,
+                    spawn_se_model_instances,
                 ),
             );
     }

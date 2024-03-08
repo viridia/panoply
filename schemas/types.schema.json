@@ -115,7 +115,7 @@
     "SceneryComponent": {
       "type": "object",
       "properties": {
-        "model": {
+        "asset": {
           "type": "string",
           "pattern": "^[A-Za-z_][A-Za-z0-9_\\.\\-/]*\\.glb#[A-Za-z_][A-Za-z0-9_\\.\\-]*$"
         },
@@ -152,7 +152,7 @@
           "type": "number"
         }
       },
-      "required": ["model"],
+      "required": ["asset"],
       "additionalProperties": false
     },
     "ColliderDesc": {
