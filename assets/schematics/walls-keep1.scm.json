@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
             "y_rotation": 0
           }
         ]
@@ -30,7 +30,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarTop",
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarTop",
             "y_rotation": 0
           }
         ]
@@ -55,7 +55,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
           }
         ]
       },
@@ -79,7 +79,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallTop"
           }
         ]
       },
@@ -103,11 +103,11 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
           }
         ]
       },
@@ -131,14 +131,14 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfBottom"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom",
             "y_rotation": 90
           }
         ]
@@ -163,10 +163,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallTop"
           }
         ]
       },
@@ -190,13 +190,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfTop",
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop",
             "y_rotation": 90
           }
         ]
@@ -221,7 +221,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallTopNarrowArch"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallTopNarrowArch"
           }
         ]
       },
@@ -245,7 +245,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomWindow"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomWindow"
           }
         ]
       },
@@ -269,7 +269,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:RailingPostLight",
+            "model": "scenery/models/walls-keep-1.glb#RailingPostLight",
             "y_rotation": 0,
             "offset": [
               0.5,
@@ -304,7 +304,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:RailingPostLight",
+            "model": "scenery/models/walls-keep-1.glb#RailingPostLight",
             "y_rotation": 0,
             "offset": [
               0.5,
@@ -313,7 +313,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-keep-1:RailingSectionLight",
+            "model": "scenery/models/walls-keep-1.glb#RailingSectionLight",
             "offset": [
               0,
               0,
@@ -360,7 +360,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:BattlementMajor"
+            "model": "scenery/models/walls-keep-1.glb#BattlementMajor"
           }
         ]
       },
@@ -384,7 +384,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:BattlementMinor"
+            "model": "scenery/models/walls-keep-1.glb#BattlementMinor"
           }
         ]
       },
@@ -408,7 +408,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:BattlementMajorCorner"
+            "model": "scenery/models/walls-keep-1.glb#BattlementMajorCorner"
           }
         ]
       },
@@ -432,13 +432,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfTop"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallTop",
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallTop",
             "y_rotation": 90
           }
         ]
@@ -463,14 +463,14 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedPillarBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
             "y_rotation": 0
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallHalfBottom"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
           },
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottom",
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottom",
             "y_rotation": 90
           }
         ]
@@ -495,11 +495,11 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:WoodenStairs",
+            "model": "scenery/models/walls-keep-1.glb#WoodenStairs",
             "y_rotation": 0
           },
           {
-            "model": "scenery/models/walls-keep-1:WoodenBannister",
+            "model": "scenery/models/walls-keep-1.glb#WoodenBannister",
             "offset": [
               -0.1,
               0,
@@ -507,7 +507,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-keep-1:WoodenBannister",
+            "model": "scenery/models/walls-keep-1.glb#WoodenBannister",
             "offset": [
               -0.1,
               0,
@@ -588,7 +588,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:Stairs",
+            "model": "scenery/models/walls-keep-1.glb#Stairs",
             "y_rotation": 0
           }
         ]
@@ -621,7 +621,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomDoor"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoor"
           }
         ]
       },
@@ -713,7 +713,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomDoorWide"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoorWide"
           }
         ]
       },
@@ -826,7 +826,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
           }
         ]
       },
@@ -881,10 +881,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
           },
           {
-            "model": "scenery/models/blackout:BlackoutThin",
+            "model": "scenery/models/blackout.glb#BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -892,7 +892,7 @@
             ]
           },
           {
-            "model": "scenery/models/blackout:BlackoutThin",
+            "model": "scenery/models/blackout.glb#BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -900,7 +900,7 @@
             ]
           },
           {
-            "model": "scenery/models/blackout:BlackoutThin",
+            "model": "scenery/models/blackout.glb#BlackoutThin",
             "offset": [
               0.55,
               0,
@@ -960,7 +960,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:MetalDoorFrame"
+            "model": "scenery/models/walls-keep-1.glb#MetalDoorFrame"
           }
         ]
       },
@@ -1052,10 +1052,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottom"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
           },
           {
-            "model": "scenery/models/walls-keep-1:StoneSwitch",
+            "model": "scenery/models/walls-keep-1.glb#StoneSwitch",
             "offset": [
               0.15,
               1.15,
@@ -1098,7 +1098,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-keep-1:TaperedWallBottomPortalWide"
+            "model": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
           }
         ]
       },

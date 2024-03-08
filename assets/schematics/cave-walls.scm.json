@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave:CaveWallStraight1"
+            "model": "scenery/models/cave.glb#CaveWallStraight1"
           }
         ]
       },
@@ -34,7 +34,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave:CaveWallStraight2"
+            "model": "scenery/models/cave.glb#CaveWallStraight2"
           }
         ]
       },
@@ -63,7 +63,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave:CaveCornerConcave1"
+            "model": "scenery/models/cave.glb#CaveCornerConcave1"
           }
         ]
       },
@@ -105,7 +105,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave:CaveCornerConcave2"
+            "model": "scenery/models/cave.glb#CaveCornerConcave2"
           }
         ]
       },
@@ -147,7 +147,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave:CaveCornerConvex"
+            "model": "scenery/models/cave.glb#CaveCornerConvex"
           }
         ]
       },

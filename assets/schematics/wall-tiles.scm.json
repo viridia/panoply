@@ -5,7 +5,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/symbols:Question"
+            "model": "scenery/models/symbols.glb#Question"
           }
         ]
       }
@@ -17,7 +17,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutHalf"
+            "model": "scenery/models/blackout.glb#BlackoutHalf"
           }
         ]
       }
@@ -29,7 +29,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutFull"
+            "model": "scenery/models/blackout.glb#BlackoutFull"
           }
         ]
       },
@@ -53,7 +53,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutHalfWide"
+            "model": "scenery/models/blackout.glb#BlackoutHalfWide"
           }
         ]
       }
@@ -65,7 +65,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutFullWide"
+            "model": "scenery/models/blackout.glb#BlackoutFullWide"
           }
         ]
       },
@@ -89,7 +89,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickArch"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickArch"
           }
         ]
       },
@@ -118,10 +118,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorwayHeavy"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavy"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallTop"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallTop"
           }
         ]
       },
@@ -180,7 +180,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
             "offset": [
               0,
               0,
@@ -188,10 +188,10 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallTop"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallTop"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallTop",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallTop",
             "offset": [
               0,
               0,
@@ -208,7 +208,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           }
         ]
       },
@@ -232,7 +232,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarBroken"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarBroken"
           }
         ]
       },
@@ -256,7 +256,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall",
             "y_rotation": 0
           }
         ]
@@ -281,7 +281,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallBroken"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallBroken"
           }
         ]
       },
@@ -305,7 +305,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallBroken2"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallBroken2"
           }
         ]
       },
@@ -329,7 +329,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf",
             "y_rotation": 90
           }
         ]
@@ -359,10 +359,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf"
           }
         ]
       },
@@ -399,10 +399,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall"
           }
         ]
       },
@@ -434,13 +434,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf",
             "y_rotation": 90
           }
         ]
@@ -486,13 +486,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf",
             "y_rotation": 90
           }
         ]
@@ -543,13 +543,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall",
             "y_rotation": 90
           }
         ]
@@ -590,7 +590,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneAltar"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneAltar"
           }
         ]
       },
@@ -614,7 +614,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneBlockFallen"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneBlockFallen"
           }
         ]
       },
@@ -638,7 +638,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStonePillar"
+            "model": "scenery/models/walls-dungeon.glb#MossyStonePillar"
           }
         ]
       },
@@ -662,7 +662,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneWall"
           }
         ]
       },
@@ -686,7 +686,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallBlock"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallBlock"
           }
         ]
       },
@@ -706,7 +706,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallCurved"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallCurved"
           }
         ]
       },
@@ -761,7 +761,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickAlcove"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickAlcove"
           }
         ]
       },
@@ -785,7 +785,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickCube"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickCube"
           }
         ]
       },
@@ -810,7 +810,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneCistern"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneCistern"
           }
         ]
       },
@@ -834,10 +834,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWall"
+            "model": "scenery/models/cottage.glb#CottageWall"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -866,10 +866,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallCrossBrace"
+            "model": "scenery/models/cottage.glb#CottageWallCrossBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -898,10 +898,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallDiagonalBrace"
+            "model": "scenery/models/cottage.glb#CottageWallDiagonalBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -930,10 +930,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallSinisterBrace"
+            "model": "scenery/models/cottage.glb#CottageWallSinisterBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -962,7 +962,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallCorner"
+            "model": "scenery/models/cottage.glb#CottageWallCorner"
           }
         ]
       },
@@ -991,10 +991,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallCorner"
+            "model": "scenery/models/cottage.glb#CottageWallCorner"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirtCorner",
+            "model": "scenery/models/cottage.glb#CottageWallSkirtCorner",
             "y_rotation": 90
           }
         ]
@@ -1037,10 +1037,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallConcaveCorner"
+            "model": "scenery/models/cottage.glb#CottageWallConcaveCorner"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirtConcaveCorner"
+            "model": "scenery/models/cottage.glb#CottageWallSkirtConcaveCorner"
           }
         ]
       },
@@ -1095,7 +1095,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallCornerFlared"
+            "model": "scenery/models/cottage.glb#CottageWallCornerFlared"
           }
         ]
       },
@@ -1124,7 +1124,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       }
@@ -1136,7 +1136,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallSkirtCorner"
+            "model": "scenery/models/cottage.glb#CottageWallSkirtCorner"
           }
         ]
       }
@@ -1148,7 +1148,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallWindow"
+            "model": "scenery/models/cottage.glb#CottageWallWindow"
           }
         ]
       },
@@ -1177,10 +1177,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallWindowLarge"
+            "model": "scenery/models/cottage.glb#CottageWallWindowLarge"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -1209,7 +1209,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoof",
+            "model": "scenery/models/cottage.glb#CottageRoof",
             "offset": [
               0,
               0,
@@ -1244,7 +1244,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoof",
+            "model": "scenery/models/cottage.glb#CottageRoof",
             "offset": [
               0,
               0,
@@ -1252,7 +1252,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGable",
+            "model": "scenery/models/cottage.glb#CottageGable",
             "offset": [
               0,
               0,
@@ -1260,7 +1260,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGable",
+            "model": "scenery/models/cottage.glb#CottageGable",
             "offset": [
               0,
               0,
@@ -1295,7 +1295,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoof",
+            "model": "scenery/models/cottage.glb#CottageRoof",
             "offset": [
               0,
               1,
@@ -1303,7 +1303,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableTall",
+            "model": "scenery/models/cottage.glb#CottageGableTall",
             "offset": [
               0,
               0,
@@ -1311,7 +1311,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableTall",
+            "model": "scenery/models/cottage.glb#CottageGableTall",
             "offset": [
               0,
               0,
@@ -1359,7 +1359,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofHalf",
+            "model": "scenery/models/cottage.glb#CottageRoofHalf",
             "offset": [
               0,
               1,
@@ -1367,7 +1367,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableTallHalf",
+            "model": "scenery/models/cottage.glb#CottageGableTallHalf",
             "offset": [
               0,
               0,
@@ -1375,7 +1375,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableTallHalf",
+            "model": "scenery/models/cottage.glb#CottageGableTallHalf",
             "offset": [
               0,
               0,
@@ -1423,7 +1423,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "offset": [
               0.5,
               -0.27,
@@ -1431,7 +1431,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "y_rotation": 180,
             "offset": [
               -0.5,
@@ -1449,7 +1449,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageGableSquare"
+            "model": "scenery/models/cottage.glb#CottageGableSquare"
           }
         ]
       }
@@ -1461,7 +1461,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofRidge",
+            "model": "scenery/models/cottage.glb#CottageRoofRidge",
             "offset": [
               0,
               0,
@@ -1478,7 +1478,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofRidgeEnd",
+            "model": "scenery/models/cottage.glb#CottageRoofRidgeEnd",
             "offset": [
               0,
               0,
@@ -1495,7 +1495,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Boulder1"
+            "model": "scenery/models/stonework.glb#Boulder1"
           }
         ]
       },
@@ -1524,7 +1524,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Boulder2"
+            "model": "scenery/models/stonework.glb#Boulder2"
           }
         ]
       },
@@ -1553,7 +1553,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Boulder3"
+            "model": "scenery/models/stonework.glb#Boulder3"
           }
         ]
       },
@@ -1582,7 +1582,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Menhir"
+            "model": "scenery/models/stonework.glb#Menhir"
           }
         ]
       },
@@ -1606,7 +1606,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Spire"
+            "model": "scenery/models/stonework.glb#Spire"
           }
         ]
       },
@@ -1634,7 +1634,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:CaveEntrance",
+            "model": "scenery/models/stonework.glb#CaveEntrance",
             "offset": [
               0,
               0,
@@ -1651,7 +1651,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWall"
+            "model": "scenery/models/cottage.glb#HedgeWall"
           }
         ]
       },
@@ -1675,7 +1675,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallHalf"
+            "model": "scenery/models/cottage.glb#HedgeWallHalf"
           }
         ]
       },
@@ -1704,7 +1704,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallPillar"
+            "model": "scenery/models/cottage.glb#HedgeWallPillar"
           }
         ]
       },
@@ -1728,10 +1728,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallPillar"
+            "model": "scenery/models/cottage.glb#HedgeWallPillar"
           },
           {
-            "model": "scenery/models/cottage:HedgeWallHalf"
+            "model": "scenery/models/cottage.glb#HedgeWallHalf"
           }
         ]
       },
@@ -1755,10 +1755,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallPillar"
+            "model": "scenery/models/cottage.glb#HedgeWallPillar"
           },
           {
-            "model": "scenery/models/cottage:HedgeWall"
+            "model": "scenery/models/cottage.glb#HedgeWall"
           }
         ]
       },
@@ -1782,13 +1782,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallPillar"
+            "model": "scenery/models/cottage.glb#HedgeWallPillar"
           },
           {
-            "model": "scenery/models/cottage:HedgeWall"
+            "model": "scenery/models/cottage.glb#HedgeWall"
           },
           {
-            "model": "scenery/models/cottage:HedgeWallHalf",
+            "model": "scenery/models/cottage.glb#HedgeWallHalf",
             "y_rotation": 90
           }
         ]
@@ -1813,13 +1813,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HedgeWallPillar"
+            "model": "scenery/models/cottage.glb#HedgeWallPillar"
           },
           {
-            "model": "scenery/models/cottage:HedgeWallHalf"
+            "model": "scenery/models/cottage.glb#HedgeWallHalf"
           },
           {
-            "model": "scenery/models/cottage:HedgeWallHalf",
+            "model": "scenery/models/cottage.glb#HedgeWallHalf",
             "y_rotation": 90
           }
         ]
@@ -1844,7 +1844,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStoneWall"
+            "model": "scenery/models/cottage.glb#FieldStoneWall"
           }
         ]
       },
@@ -1868,7 +1868,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStoneWallHalf"
+            "model": "scenery/models/cottage.glb#FieldStoneWallHalf"
           }
         ]
       },
@@ -1897,7 +1897,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStonePillar"
+            "model": "scenery/models/cottage.glb#FieldStonePillar"
           }
         ]
       },
@@ -1921,10 +1921,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStonePillar"
+            "model": "scenery/models/cottage.glb#FieldStonePillar"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWallHalf"
+            "model": "scenery/models/cottage.glb#FieldStoneWallHalf"
           }
         ]
       },
@@ -1948,10 +1948,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStonePillar"
+            "model": "scenery/models/cottage.glb#FieldStonePillar"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWall"
+            "model": "scenery/models/cottage.glb#FieldStoneWall"
           }
         ]
       },
@@ -1975,13 +1975,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStonePillar"
+            "model": "scenery/models/cottage.glb#FieldStonePillar"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWall"
+            "model": "scenery/models/cottage.glb#FieldStoneWall"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWallHalf",
+            "model": "scenery/models/cottage.glb#FieldStoneWallHalf",
             "y_rotation": 90
           }
         ]
@@ -2006,13 +2006,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FieldStonePillar"
+            "model": "scenery/models/cottage.glb#FieldStonePillar"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWallHalf"
+            "model": "scenery/models/cottage.glb#FieldStoneWallHalf"
           },
           {
-            "model": "scenery/models/cottage:FieldStoneWallHalf",
+            "model": "scenery/models/cottage.glb#FieldStoneWallHalf",
             "y_rotation": 90
           }
         ]
@@ -2037,7 +2037,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:Hearth"
+            "model": "scenery/models/cottage.glb#Hearth"
           }
         ]
       },
@@ -2066,10 +2066,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:Chimney"
+            "model": "scenery/models/cottage.glb#Chimney"
           },
           {
-            "model": "scenery/models/cottage:Chimney",
+            "model": "scenery/models/cottage.glb#Chimney",
             "offset": [
               0,
               2,
@@ -2107,7 +2107,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenCounterWide",
+            "model": "scenery/models/carpentry.glb#WoodenCounterWide",
             "offset": [
               0,
               0,
@@ -2145,7 +2145,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:Trough",
+            "model": "scenery/models/carpentry.glb#Trough",
             "offset": [
               0,
               0,
@@ -2179,7 +2179,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceCorner"
+            "model": "scenery/models/carpentry.glb#VerticalBraceCorner"
           }
         ]
       },
@@ -2208,7 +2208,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceDouble"
+            "model": "scenery/models/carpentry.glb#VerticalBraceDouble"
           }
         ]
       },
@@ -2237,7 +2237,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceSingle"
+            "model": "scenery/models/carpentry.glb#VerticalBraceSingle"
           }
         ]
       },
@@ -2266,7 +2266,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFencePost"
+            "model": "scenery/models/carpentry.glb#WoodenFencePost"
           }
         ]
       },
@@ -2293,7 +2293,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFanceRailsHigh"
+            "model": "scenery/models/carpentry.glb#WoodenFanceRailsHigh"
           }
         ]
       },
@@ -2317,7 +2317,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFenceRailsLow"
+            "model": "scenery/models/carpentry.glb#WoodenFenceRailsLow"
           }
         ]
       },
@@ -2344,7 +2344,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFanceRailsHighHalf"
+            "model": "scenery/models/carpentry.glb#WoodenFanceRailsHighHalf"
           }
         ]
       },
@@ -2373,7 +2373,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFenceRailsLowHalf"
+            "model": "scenery/models/carpentry.glb#WoodenFenceRailsLowHalf"
           }
         ]
       },
@@ -2402,7 +2402,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallInterior"
+            "model": "scenery/models/cottage.glb#CottageWallInterior"
           }
         ]
       },
@@ -2431,7 +2431,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallInteriorExtended"
+            "model": "scenery/models/cottage.glb#CottageWallInteriorExtended"
           }
         ]
       }
@@ -2443,7 +2443,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofSteep",
+            "model": "scenery/models/cottage.glb#CottageRoofSteep",
             "offset": [
               0,
               0,
@@ -2451,7 +2451,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableSteep",
+            "model": "scenery/models/cottage.glb#CottageGableSteep",
             "offset": [
               0,
               0,
@@ -2459,7 +2459,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageGableSteep",
+            "model": "scenery/models/cottage.glb#CottageGableSteep",
             "offset": [
               0,
               0,
@@ -2494,7 +2494,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:HeadstoneSmall",
+            "model": "scenery/models/stonework.glb#HeadstoneSmall",
             "y_rotation_variance": 30.4,
             "z_rotation_variance": 10.4,
             "offset": [
@@ -2530,7 +2530,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:HeadstoneMed",
+            "model": "scenery/models/stonework.glb#HeadstoneMed",
             "x_rotation_variance": 16.1,
             "offset": [
               -0.3,
@@ -2565,7 +2565,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:Forge"
+            "model": "scenery/models/cottage.glb#Forge"
           }
         ]
       },
@@ -2605,7 +2605,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:SmallStonePillar"
+            "model": "scenery/models/stonework.glb#SmallStonePillar"
           }
         ]
       }
@@ -2617,7 +2617,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/iron-fence:IronFence"
+            "model": "scenery/models/iron-fence.glb#IronFence"
           }
         ]
       },
@@ -2641,7 +2641,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWall",
+            "model": "scenery/models/palisade.glb#StickWall",
             "offset": [
               0.5,
               0,
@@ -2675,7 +2675,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWall",
+            "model": "scenery/models/palisade.glb#StickWall",
             "offset": [
               0.5,
               0,
@@ -2683,7 +2683,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:StickWall",
+            "model": "scenery/models/palisade.glb#StickWall",
             "y_rotation": 90,
             "offset": [
               0,
@@ -2731,7 +2731,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWallWindow",
+            "model": "scenery/models/palisade.glb#StickWallWindow",
             "offset": [
               0.5,
               0,
@@ -2765,7 +2765,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:Palisade",
+            "model": "scenery/models/palisade.glb#Palisade",
             "offset": [
               0.5,
               0,
@@ -2799,7 +2799,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "trees/temperate:poplar-green",
+            "model": "trees/temperate.glb#poplar-green",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2830,7 +2830,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "trees/temperate:poplar-green2",
+            "model": "trees/temperate.glb#poplar-green2",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2861,7 +2861,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "trees/temperate:poplar-orange",
+            "model": "trees/temperate.glb#poplar-orange",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2892,7 +2892,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "trees/temperate:poplar-yellow",
+            "model": "trees/temperate.glb#poplar-yellow",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2923,7 +2923,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "bushes:spiky1",
+            "model": "bushes.glb#spiky1",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2954,7 +2954,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "bushes:spiky2",
+            "model": "bushes.glb#spiky2",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2985,7 +2985,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "bushes:fluffy",
+            "model": "bushes.glb#fluffy",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3016,7 +3016,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "crops:fogroot",
+            "model": "crops.glb#fogroot",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3036,7 +3036,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "crops:palecress",
+            "model": "crops.glb#palecress",
             "y_rotation_variance": 360,
             "scale": 0.5,
             "scale_variance": 0.2
@@ -3051,7 +3051,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "crops:moonblush",
+            "model": "crops.glb#moonblush",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3071,7 +3071,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "crops:shadowfoil",
+            "model": "crops.glb#shadowfoil",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3091,7 +3091,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "crops:millsprout",
+            "model": "crops.glb#millsprout",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3111,7 +3111,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/thatch:ThatchRoof",
+            "model": "scenery/models/thatch.glb#ThatchRoof",
             "offset": [
               0,
               0.3,
@@ -3128,7 +3128,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:Palisade",
+            "model": "scenery/models/palisade.glb#Palisade",
             "offset": [
               0.5,
               0,
@@ -3136,7 +3136,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:Palisade",
+            "model": "scenery/models/palisade.glb#Palisade",
             "y_rotation": 90,
             "offset": [
               0,
@@ -3184,7 +3184,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceCornerHalf"
+            "model": "scenery/models/carpentry.glb#VerticalBraceCornerHalf"
           }
         ]
       },
@@ -3217,7 +3217,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
             "offset": [
               0,
               0,
@@ -3277,10 +3277,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/iron-fence:IronFence"
+            "model": "scenery/models/iron-fence.glb#IronFence"
           },
           {
-            "model": "scenery/models/stonework:TallStonePillar"
+            "model": "scenery/models/stonework.glb#TallStonePillar"
           }
         ]
       },
@@ -3312,13 +3312,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/iron-fence:IronFenceHalf"
+            "model": "scenery/models/iron-fence.glb#IronFenceHalf"
           },
           {
-            "model": "scenery/models/stonework:TallStonePillar"
+            "model": "scenery/models/stonework.glb#TallStonePillar"
           },
           {
-            "model": "scenery/models/iron-fence:IronFenceHalf",
+            "model": "scenery/models/iron-fence.glb#IronFenceHalf",
             "y_rotation": 90
           }
         ]
@@ -3369,7 +3369,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/thatch:ThatchRoof",
+            "model": "scenery/models/thatch.glb#ThatchRoof",
             "offset": [
               0,
               0.3,
@@ -3377,7 +3377,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:StickWallGable",
+            "model": "scenery/models/palisade.glb#StickWallGable",
             "y_rotation": 270,
             "offset": [
               1,
@@ -3386,7 +3386,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:StickWallGable",
+            "model": "scenery/models/palisade.glb#StickWallGable",
             "y_rotation": 270,
             "offset": [
               0.95,
@@ -3404,7 +3404,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWallSquare",
+            "model": "scenery/models/palisade.glb#StickWallSquare",
             "offset": [
               0.4,
               0,
@@ -3412,7 +3412,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:StickWallSquare",
+            "model": "scenery/models/palisade.glb#StickWallSquare",
             "offset": [
               -0.4,
               0,
@@ -3420,7 +3420,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:RoughPlanks",
+            "model": "scenery/models/palisade.glb#RoughPlanks",
             "offset": [
               0,
               1,
@@ -3455,7 +3455,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutWedge"
+            "model": "scenery/models/blackout.glb#BlackoutWedge"
           }
         ]
       },
@@ -3479,7 +3479,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutWedgeWide"
+            "model": "scenery/models/blackout.glb#BlackoutWedgeWide"
           }
         ]
       },
@@ -3503,7 +3503,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallBlockRamp"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallBlockRamp"
           }
         ]
       },
@@ -3541,7 +3541,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/topiary:TopiaryHedgeStraight"
+            "model": "scenery/models/topiary.glb#TopiaryHedgeStraight"
           }
         ]
       },
@@ -3565,7 +3565,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/topiary:TopiaryHedgeCorner"
+            "model": "scenery/models/topiary.glb#TopiaryHedgeCorner"
           }
         ]
       },
@@ -3607,7 +3607,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/topiary:TopiaryHedgeCube"
+            "model": "scenery/models/topiary.glb#TopiaryHedgeCube"
           }
         ]
       },
@@ -3631,7 +3631,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWallSquare",
+            "model": "scenery/models/palisade.glb#StickWallSquare",
             "offset": [
               0.4,
               -0.1,
@@ -3639,7 +3639,7 @@
             ]
           },
           {
-            "model": "scenery/models/palisade:StickWallSquare",
+            "model": "scenery/models/palisade.glb#StickWallSquare",
             "offset": [
               -0.4,
               -0.1,
@@ -3674,7 +3674,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWallSquare",
+            "model": "scenery/models/palisade.glb#StickWallSquare",
             "offset": [
               0.4,
               -0.1,
@@ -3709,7 +3709,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillar",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillar",
             "offset": [
               0.15,
               0,
@@ -3717,7 +3717,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickArchedSupport",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickArchedSupport",
             "offset": [
               0.2,
               0.3,
@@ -3725,7 +3725,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickArchedSupport",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickArchedSupport",
             "y_rotation": 180,
             "offset": [
               0.2,
@@ -3755,7 +3755,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquat",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
             "offset": [
               0.5,
               0,
@@ -3789,7 +3789,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarSquat",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat",
             "offset": [
               0.5,
               0,
@@ -3797,7 +3797,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquat",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
             "offset": [
               0.5,
               0,
@@ -3844,7 +3844,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarSquat",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat",
             "offset": [
               0.5,
               0,
@@ -3852,7 +3852,7 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquatHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquatHalf",
             "offset": [
               0.5,
               0,
@@ -3917,7 +3917,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutFullTall"
+            "model": "scenery/models/blackout.glb#BlackoutFullTall"
           }
         ]
       },
@@ -3941,7 +3941,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:CordonPost"
+            "model": "scenery/models/carpentry.glb#CordonPost"
           }
         ]
       },
@@ -3965,10 +3965,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:CordonPost"
+            "model": "scenery/models/carpentry.glb#CordonPost"
           },
           {
-            "model": "scenery/models/carpentry:CordonRopes"
+            "model": "scenery/models/carpentry.glb#CordonRopes"
           }
         ]
       },
@@ -4005,10 +4005,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:BasementWall"
+            "model": "scenery/models/cottage.glb#BasementWall"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSkirt"
+            "model": "scenery/models/cottage.glb#CottageWallSkirt"
           }
         ]
       },
@@ -4037,10 +4037,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWall"
+            "model": "scenery/models/cottage.glb#CottageWall"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSupport",
+            "model": "scenery/models/cottage.glb#CottageWallSupport",
             "offset": [
               0,
               -2,
@@ -4074,10 +4074,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallWindowLarge"
+            "model": "scenery/models/cottage.glb#CottageWallWindowLarge"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSupport",
+            "model": "scenery/models/cottage.glb#CottageWallSupport",
             "offset": [
               0,
               -2,
@@ -4111,10 +4111,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallDiagonalBrace"
+            "model": "scenery/models/cottage.glb#CottageWallDiagonalBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSupport",
+            "model": "scenery/models/cottage.glb#CottageWallSupport",
             "offset": [
               0,
               -2,
@@ -4148,10 +4148,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallSinisterBrace"
+            "model": "scenery/models/cottage.glb#CottageWallSinisterBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSupport",
+            "model": "scenery/models/cottage.glb#CottageWallSupport",
             "offset": [
               0,
               -2,
@@ -4185,10 +4185,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallCrossBrace"
+            "model": "scenery/models/cottage.glb#CottageWallCrossBrace"
           },
           {
-            "model": "scenery/models/cottage:CottageWallSupport",
+            "model": "scenery/models/cottage.glb#CottageWallSupport",
             "offset": [
               0,
               -2,
@@ -4222,7 +4222,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "offset": [
               0.5,
               -0.27,
@@ -4230,7 +4230,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "y_rotation": 180,
             "offset": [
               -0.5,
@@ -4239,7 +4239,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageRoofRidge",
+            "model": "scenery/models/cottage.glb#CottageRoofRidge",
             "offset": [
               0,
               0.3,
@@ -4256,7 +4256,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "offset": [
               0.5,
               -0.27,
@@ -4264,7 +4264,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageRoofQuarter",
+            "model": "scenery/models/cottage.glb#CottageRoofQuarter",
             "y_rotation": 180,
             "offset": [
               -0.5,
@@ -4273,7 +4273,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageRoofRidgeEnd",
+            "model": "scenery/models/cottage.glb#CottageRoofRidgeEnd",
             "offset": [
               0,
               0.3,
@@ -4290,7 +4290,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofWide2",
+            "model": "scenery/models/cottage.glb#CottageRoofWide2",
             "offset": [
               0,
               0,
@@ -4325,7 +4325,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofWide3",
+            "model": "scenery/models/cottage.glb#CottageRoofWide3",
             "offset": [
               0,
               0,
@@ -4360,7 +4360,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofConvex",
+            "model": "scenery/models/cottage.glb#CottageRoofConvex",
             "offset": [
               0,
               0,
@@ -4395,7 +4395,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofConcave",
+            "model": "scenery/models/cottage.glb#CottageRoofConcave",
             "offset": [
               0,
               0,
@@ -4430,7 +4430,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofHalf",
+            "model": "scenery/models/cottage.glb#CottageRoofHalf",
             "offset": [
               0,
               0,
@@ -4478,7 +4478,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallConcaveCorner"
+            "model": "scenery/models/cottage.glb#CottageWallConcaveCorner"
           }
         ]
       },
@@ -4533,7 +4533,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall"
+            "model": "scenery/models/cottage.glb#FittedStoneWall"
           }
         ]
       },
@@ -4562,7 +4562,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWallWindow"
+            "model": "scenery/models/cottage.glb#FittedStoneWallWindow"
           }
         ]
       },
@@ -4591,7 +4591,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWallCornerConvex"
+            "model": "scenery/models/cottage.glb#FittedStoneWallCornerConvex"
           }
         ]
       },
@@ -4620,7 +4620,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageStoneGable"
+            "model": "scenery/models/cottage.glb#CottageStoneGable"
           }
         ]
       }
@@ -4632,7 +4632,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoof",
+            "model": "scenery/models/cottage.glb#CottageRoof",
             "offset": [
               0,
               0,
@@ -4640,7 +4640,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGable",
+            "model": "scenery/models/cottage.glb#CottageStoneGable",
             "offset": [
               0,
               0,
@@ -4648,7 +4648,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGable",
+            "model": "scenery/models/cottage.glb#CottageStoneGable",
             "offset": [
               0,
               0,
@@ -4683,7 +4683,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoof",
+            "model": "scenery/models/cottage.glb#CottageRoof",
             "offset": [
               0,
               1,
@@ -4691,7 +4691,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGableTall",
+            "model": "scenery/models/cottage.glb#CottageStoneGableTall",
             "offset": [
               0,
               0,
@@ -4699,7 +4699,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGableTall",
+            "model": "scenery/models/cottage.glb#CottageStoneGableTall",
             "offset": [
               0,
               0,
@@ -4747,7 +4747,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageRoofHalf",
+            "model": "scenery/models/cottage.glb#CottageRoofHalf",
             "offset": [
               0,
               1,
@@ -4755,7 +4755,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGableTallHalf",
+            "model": "scenery/models/cottage.glb#CottageStoneGableTallHalf",
             "offset": [
               0,
               0,
@@ -4763,7 +4763,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:CottageStoneGableTallHalf",
+            "model": "scenery/models/cottage.glb#CottageStoneGableTallHalf",
             "offset": [
               0,
               0,
@@ -4811,7 +4811,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceSingle",
+            "model": "scenery/models/carpentry.glb#VerticalBraceSingle",
             "offset": [
               0,
               0,
@@ -4845,7 +4845,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:StoneWell"
+            "model": "scenery/models/cottage.glb#StoneWell"
           }
         ]
       },
@@ -4877,7 +4877,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:BrickOvern"
+            "model": "scenery/models/cottage.glb#BrickOvern"
           }
         ]
       },
@@ -4906,7 +4906,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:VerticalBraceDouble",
+            "model": "scenery/models/carpentry.glb#VerticalBraceDouble",
             "offset": [
               0.7,
               0.1,
@@ -4940,7 +4940,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:Chimney"
+            "model": "scenery/models/cottage.glb#Chimney"
           }
         ]
       },
@@ -4969,10 +4969,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFencePost"
+            "model": "scenery/models/carpentry.glb#WoodenFencePost"
           },
           {
-            "model": "scenery/models/carpentry:WoodenFencePicket"
+            "model": "scenery/models/carpentry.glb#WoodenFencePicket"
           }
         ]
       },
@@ -5009,10 +5009,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenFencePost"
+            "model": "scenery/models/carpentry.glb#WoodenFencePost"
           },
           {
-            "model": "scenery/models/carpentry:WoodenFenceLattice"
+            "model": "scenery/models/carpentry.glb#WoodenFenceLattice"
           }
         ]
       },
@@ -5049,7 +5049,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:FencePostWhite"
+            "model": "scenery/models/carpentry.glb#FencePostWhite"
           }
         ]
       },
@@ -5073,10 +5073,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:FencePostWhite"
+            "model": "scenery/models/carpentry.glb#FencePostWhite"
           },
           {
-            "model": "scenery/models/carpentry:FencePicketWhite"
+            "model": "scenery/models/carpentry.glb#FencePicketWhite"
           }
         ]
       },
@@ -5113,7 +5113,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:PlanterBoxSquare"
+            "model": "scenery/models/carpentry.glb#PlanterBoxSquare"
           }
         ]
       },
@@ -5137,10 +5137,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall"
+            "model": "scenery/models/cottage.glb#FittedStoneWall"
           },
           {
-            "model": "scenery/models/cottage:FittedStoneWall",
+            "model": "scenery/models/cottage.glb#FittedStoneWall",
             "y_rotation": 90
           }
         ]
@@ -5183,7 +5183,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquat",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
             "offset": [
               0,
               0,
@@ -5217,10 +5217,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarSquat"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquatHalf"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquatHalf"
           }
         ]
       },
@@ -5262,13 +5262,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarSquat"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquatHalf"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquatHalf"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquatHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquatHalf",
             "y_rotation": 90
           }
         ]
@@ -5324,10 +5324,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarSquat"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSquat"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat"
           }
         ]
       },
@@ -5369,7 +5369,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallInteriorExtR"
+            "model": "scenery/models/cottage.glb#CottageWallInteriorExtR"
           }
         ]
       },
@@ -5398,7 +5398,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallInteriorExtL"
+            "model": "scenery/models/cottage.glb#CottageWallInteriorExtL"
           }
         ]
       },
@@ -5427,7 +5427,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWallWindowWide"
+            "model": "scenery/models/cottage.glb#FittedStoneWallWindowWide"
           }
         ]
       },
@@ -5456,10 +5456,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall"
+            "model": "scenery/models/cottage.glb#FittedStoneWall"
           },
           {
-            "model": "scenery/models/cottage:FittedStoneWallCornerTee"
+            "model": "scenery/models/cottage.glb#FittedStoneWallCornerTee"
           }
         ]
       },
@@ -5488,10 +5488,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall"
+            "model": "scenery/models/cottage.glb#FittedStoneWall"
           },
           {
-            "model": "scenery/models/cottage:FittedStoneWallCornerTee",
+            "model": "scenery/models/cottage.glb#FittedStoneWallCornerTee",
             "offset": [
               -0.6,
               0,
@@ -5525,7 +5525,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:ModularCounter"
+            "model": "scenery/models/carpentry.glb#ModularCounter"
           }
         ]
       },
@@ -5549,7 +5549,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:ModularCounterCorner"
+            "model": "scenery/models/carpentry.glb#ModularCounterCorner"
           }
         ]
       },
@@ -5578,7 +5578,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWallQuarter",
+            "model": "scenery/models/cottage.glb#FittedStoneWallQuarter",
             "offset": [
               0.5,
               0,
@@ -5586,7 +5586,7 @@
             ]
           },
           {
-            "model": "scenery/models/cottage:FittedStoneWallCornerConvex",
+            "model": "scenery/models/cottage.glb#FittedStoneWallCornerConvex",
             "offset": [
               -0.6,
               0,
@@ -5620,7 +5620,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:SignPostDirection"
+            "model": "scenery/models/carpentry.glb#SignPostDirection"
           }
         ]
       },
@@ -5665,10 +5665,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall"
           },
           {
-            "model": "scenery/models/walls-dungeon:WallSwitch2",
+            "model": "scenery/models/walls-dungeon.glb#WallSwitch2",
             "offset": [
               -0.2,
               1.3,
@@ -5722,11 +5722,11 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall",
             "y_rotation": 0
           },
           {
-            "model": "scenery/models/walls-dungeon:WallSwitch",
+            "model": "scenery/models/walls-dungeon.glb#WallSwitch",
             "offset": [
               -0.2,
               1.3,
@@ -5780,7 +5780,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorway"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorway"
           }
         ]
       },
@@ -5872,7 +5872,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorway"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorway"
           }
         ]
       },
@@ -5952,7 +5952,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
             "offset": [
               0,
               0,
@@ -5960,10 +5960,10 @@
             ]
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallTop"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallTop"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallTop",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallTop",
             "offset": [
               0,
               0,
@@ -6023,7 +6023,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneDoorway"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneDoorway"
           }
         ]
       },
@@ -6120,7 +6120,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneSarcophagus",
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneSarcophagus",
             "offset": [
               0.5,
               0,
@@ -6169,7 +6169,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneStairs"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneStairs"
           }
         ]
       },
@@ -6199,10 +6199,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneStairs"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneStairs"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneStairs",
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneStairs",
             "offset": [
               0,
               1,
@@ -6256,7 +6256,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneStairsDown"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneStairsDown"
           }
         ]
       }
@@ -6268,7 +6268,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneStairsThin"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneStairsThin"
           }
         ]
       },
@@ -6299,7 +6299,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:RoughStoneSarcophagus",
+            "model": "scenery/models/walls-dungeon.glb#RoughStoneSarcophagus",
             "offset": [
               0.5,
               0,
@@ -6348,10 +6348,10 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyStoneButton"
+            "model": "scenery/models/walls-dungeon.glb#MossyStoneButton"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWall"
           }
         ]
       },
@@ -6400,7 +6400,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallDoorway"
+            "model": "scenery/models/cottage.glb#CottageWallDoorway"
           }
         ]
       },
@@ -6510,7 +6510,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:HeavyGate"
+            "model": "scenery/models/cottage.glb#HeavyGate"
           }
         ]
       },
@@ -6616,7 +6616,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:Portal",
+            "model": "scenery/models/stonework.glb#Portal",
             "offset": [
               1,
               0,
@@ -6707,7 +6707,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:Ladder",
+            "model": "scenery/models/carpentry.glb#Ladder",
             "offset": [
               -0.3,
               0,
@@ -6765,7 +6765,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenStairsOpen",
+            "model": "scenery/models/carpentry.glb#WoodenStairsOpen",
             "y_rotation": 180
           }
         ]
@@ -6847,7 +6847,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/iron-fence:IronFenceGate",
+            "model": "scenery/models/iron-fence.glb#IronFenceGate",
             "offset": [
               0,
               0,
@@ -6954,7 +6954,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/palisade:StickWallDoor",
+            "model": "scenery/models/palisade.glb#StickWallDoor",
             "offset": [
               0.5,
               0,
@@ -7012,7 +7012,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/carpentry:WoodenStairsOpenHalf",
+            "model": "scenery/models/carpentry.glb#WoodenStairsOpenHalf",
             "y_rotation": 180
           }
         ]
@@ -7072,7 +7072,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickDoorwayHeavyWide",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
             "offset": [
               0,
               0,
@@ -7136,7 +7136,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:CavePortal",
+            "model": "scenery/models/stonework.glb#CavePortal",
             "offset": [
               0,
               0,
@@ -7214,7 +7214,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/stonework:CavePortal",
+            "model": "scenery/models/stonework.glb#CavePortal",
             "y_rotation": 0,
             "offset": [
               0,
@@ -7293,7 +7293,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave-portal:CavePortal",
+            "model": "scenery/models/cave-portal.glb#CavePortal",
             "offset": [
               0,
               0,
@@ -7371,7 +7371,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave-portal:CavePortalClipped",
+            "model": "scenery/models/cave-portal.glb#CavePortalClipped",
             "y_rotation": 0,
             "offset": [
               0,
@@ -7446,7 +7446,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:SpearTrap"
+            "model": "scenery/models/walls-dungeon.glb#SpearTrap"
           }
         ]
       },
@@ -7477,7 +7477,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:CottageWallDoorway",
+            "model": "scenery/models/cottage.glb#CottageWallDoorway",
             "offset": [
               0,
               0,
@@ -7541,7 +7541,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cave-portal:CavePortalClipped",
+            "model": "scenery/models/cave-portal.glb#CavePortalClipped",
             "y_rotation": 180,
             "offset": [
               0,
@@ -7620,7 +7620,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:MineEntrance",
+            "model": "scenery/models/cottage.glb#MineEntrance",
             "offset": [
               0,
               0,
@@ -7694,7 +7694,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:PressurePlate"
+            "model": "scenery/models/walls-dungeon.glb#PressurePlate"
           }
         ]
       },
@@ -7719,7 +7719,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/blackout:BlackoutThin"
+            "model": "scenery/models/blackout.glb#BlackoutThin"
           }
         ]
       },
@@ -7743,7 +7743,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallSloped",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallSloped",
             "y_rotation": 180
           }
         ]
@@ -7781,7 +7781,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarTall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarTall"
           }
         ]
       },
@@ -7805,13 +7805,13 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickPillarTall"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickPillarTall"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf"
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf"
           },
           {
-            "model": "scenery/models/walls-dungeon:MossyBrickWallHalf",
+            "model": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf",
             "y_rotation": 180,
             "offset": [
               0,
@@ -7841,7 +7841,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/walls-dungeon:SpearTrap"
+            "model": "scenery/models/walls-dungeon.glb#SpearTrap"
           }
         ]
       },
@@ -7872,7 +7872,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall34"
+            "model": "scenery/models/cottage.glb#FittedStoneWall34"
           }
         ]
       },
@@ -7901,7 +7901,7 @@
       "SceneryModels": {
         "models": [
           {
-            "model": "scenery/models/cottage:FittedStoneWall34",
+            "model": "scenery/models/cottage.glb#FittedStoneWall34",
             "offset": [
               0,
               0,
