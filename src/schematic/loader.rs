@@ -215,12 +215,23 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
         let mut entries: HashMap<String, Arc<SchematicData>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
-            let schematic = map.next_value_seed(SchematicDeserializer {
+            let mut lc = self.load_context.begin_labeled_asset();
+            let sdata = map.next_value_seed(SchematicDeserializer {
                 type_registry: self.type_registry,
-                load_context: self.load_context,
+                load_context: &mut lc,
                 schematic_name: &key,
             })?;
-            entries.insert(key, Arc::new(schematic));
+            let aliases = sdata.alias.clone();
+            let schematic = Arc::new(sdata);
+            let handle = lc.finish(Schematic(schematic.clone()), None);
+            self.load_context
+                .add_loaded_labeled_asset(key.clone(), handle);
+            for alias in &aliases {
+                self.load_context
+                    .add_labeled_asset(alias.clone(), Schematic(schematic.clone()));
+            }
+
+            entries.insert(key, schematic);
         }
 
         Ok(SchematicCatalog { entries })
@@ -282,37 +293,13 @@ impl AssetLoader for SchematicLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            // println!("Loading schematics: {:#?}", load_context.asset_path());
-
             let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
             let schematic_deserializer = CatalogDeserializer {
                 type_registry: &self.type_registry.read(),
                 load_context,
             };
-            let mut catalog: SchematicCatalog =
+            let catalog: SchematicCatalog =
                 schematic_deserializer.deserialize(&mut deserializer)?;
-
-            let catalog_handle = load_context.load(load_context.asset_path().clone());
-            for (key, schematic) in catalog.entries.iter_mut() {
-                load_context.add_labeled_asset(
-                    key.clone(),
-                    Schematic {
-                        key: key.clone(),
-                        inner: schematic.clone(),
-                        catalog: catalog_handle.clone(),
-                    },
-                );
-                for alias in &schematic.alias {
-                    load_context.add_labeled_asset(
-                        alias.clone(),
-                        Schematic {
-                            key: key.clone(),
-                            inner: schematic.clone(),
-                            catalog: catalog_handle.clone(),
-                        },
-                    );
-                }
-            }
             Ok(catalog)
         })
     }

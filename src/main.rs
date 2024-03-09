@@ -213,7 +213,7 @@ fn setup(
     });
 
     commands.insert_resource(AmbientLight {
-        brightness: 0.8 * 1000.,
+        brightness: 0.5 * 1000.,
         color: Color::Rgba {
             red: 0.5,
             green: 0.7,

@@ -41,22 +41,23 @@ pub struct SchematicData {
 }
 
 #[derive(TypePath, Asset)]
-pub struct Schematic {
-    /// Lookup key for this schematic within its catalog.
-    key: String,
+pub struct Schematic(Arc<SchematicData>);
 
-    /// Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
-    inner: Arc<SchematicData>,
+// {
+//     /// Lookup key for this schematic within its catalog.
+//     key: String,
 
-    /// Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
-    catalog: Handle<SchematicCatalog>,
-}
+//     /// Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
+//     inner: Arc<SchematicData>,
+//     // Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
+//     // catalog: Handle<SchematicCatalog>,
+// }
 
-impl Schematic {
-    pub fn name(&self) -> &str {
-        &self.key
-    }
-}
+// impl Schematic {
+//     pub fn name(&self) -> &str {
+//         &self.key
+//     }
+// }
 
 impl Serialize for SchematicData {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>

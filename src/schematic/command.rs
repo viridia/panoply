@@ -27,8 +27,8 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             let Some(schematic) = schematic_assets.get(shandle) else {
                 break;
             };
-            schematics.push(schematic.inner.clone());
-            if let Some(ref next) = schematic.inner.extends {
+            schematics.push(schematic.0.clone());
+            if let Some(ref next) = schematic.0.extends {
                 shandle = &next;
             } else {
                 break;

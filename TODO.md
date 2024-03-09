@@ -5,11 +5,16 @@
   - Generation error [REPORTED]
   - Materials get loaded multiple times?
   - CottageWallSkirtCorner turned wrong way.
-- Facing and rotations: make consistent?
+- Facing and rotations: make consistent? I don't even know what they are now.
+  Probably should be degrees.
 - Models
   - [x] replace model_loader
 - Wall Physics
+  - implement
   - Use enum for collider type? Really depends on whether it's editable.
+- Finish terrain shader
+  - paths
+  - biomes
 
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
