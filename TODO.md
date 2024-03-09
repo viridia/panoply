@@ -43,59 +43,59 @@ Future:
 # Aspects to define
 
 - InventoryItem
-  - inventory::Item - appearance, weight, stack size, price
-  - inventory::Container - carrying capacity
-  - inventory::Equippable - equip slot
-  - inventory::Weapon - damage type, range
-  - inventory::Document - link to text content, page style
-  - inventory::QuestItem - quest id, stage
+  - [ ] inventory::Item - appearance, weight, stack size, price
+  - [ ] inventory::Container - carrying capacity
+  - [ ] inventory::Equippable - equip slot
+  - [ ] inventory::Weapon - damage type, range
+  - [ ] inventory::Document - link to text content, page style
+  - [ ] inventory::QuestItem - quest id, stage
 - Floor
-  - floor::StdSurface - texture asset
-  - floor::NoiseSurface - procedural texture
-  - floor::Geometry - floor mesh options
-  - floor::Nav - pathfinding effects
+  - [x] floor::StdSurface - texture asset
+  - [x] floor::NoiseSurface - procedural texture
+  - [x] floor::Geometry - floor mesh options
+  - [x] floor::Nav - pathfinding effects
 - SceneryElement
-  - scenery::Models - list of glb models to display
-  - scenery::Colliders - physics colliders
-  - scenery::Marks - interaction marks
-  - scenery::Container - open / close / lock behaviors
-  - scenery::Door - open / close / lock
-  - scenery::Stairs - allows click-to-climb
-  - scenery::Ladder - allows click-to-climb
-  - scenery::Sign - click to read
-  - scenery::PortalAperture - portal dimensions
-  - scenery::PortalTarget - portal target location
-  - scenery::WallSize - grid alignment options
-  - mechanics::ToggleButton - click to interact
-  - mechanics::PushButton - click to interact
-  - mechanics::PressurePlate - senses being walked on
-  - mechanics::ControlledOpenable - change state via remote signal
-  - mechanics::AutoDoor
-  - location::Circle - detects when player is within circle
-  - location::Rect - detects when player is within rect
-  - location::Waymark - used for NPC scripted events
+  - [x] scenery::Models - list of glb models to display
+  - [x] scenery::Colliders - physics colliders
+  - [x] scenery::Marks - interaction marks
+  - [ ] scenery::Container - open / close / lock behaviors
+  - [ ] scenery::Door - open / close / lock
+  - [ ] scenery::Stairs - allows click-to-climb
+  - [ ] scenery::Ladder - allows click-to-climb
+  - [ ] scenery::Sign - click to read
+  - [ ] scenery::PortalAperture - portal dimensions
+  - [ ] scenery::PortalTarget - portal target location
+  - [ ] scenery::LightSource
+  - [ ] scenery::SoundSource
+  - [ ] scenery::WallSize - grid alignment options
+  - [ ] mechanics::ToggleButton - click to interact
+  - [ ] mechanics::PushButton - click to interact
+  - [ ] mechanics::PressurePlate - senses being walked on
+  - [ ] mechanics::ControlledOpenable - change state via remote signal
+  - [ ] mechanics::AutoDoor
+  - [ ] trigger::Circle - detects when player is within circle
+  - [ ] trigger::Rect - detects when player is within rect
+  - [ ] scenery::Waymark - used for NPC scripted events
 - Sfx
-  - sfx::LightSource
-  - sfx::SoundSource
-  - sfx::Music
-  - sfx::WaterFx
-  - sfx::Particles
+  - [ ] sfx::Music
+  - [ ] sfx::WaterFx
+  - [ ] sfx::Particles
 - Encounter
 - Book
 - Actors
-  - actor::Model
-  - actor::ColorSlots
-  - actor::Colors
-  - actor::FeatureSlots
-  - actor::Features
-  - actor::EquippedSlots
-  - actor::Equipped
-  - actor::Skills
-  - actor::Physics
-  - actor::Gender
-  - actor::Ally
-  - actor::Portrait
-  - actor::Goals\* (can be multiple)
+  - [ ] actor::Model
+  - [ ] actor::ColorSlots
+  - [ ] actor::Colors
+  - [ ] actor::FeatureSlots
+  - [ ] actor::Features
+  - [ ] actor::EquippedSlots
+  - [ ] actor::Equipped
+  - [ ] actor::Skills
+  - [ ] actor::Physics
+  - [ ] actor::Gender
+  - [ ] actor::Ally
+  - [ ] actor::Portrait
+  - [ ] actor::GoalsXXX\* (can be multiple)
 
 # Project hierarchy
 
