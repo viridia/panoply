@@ -67,67 +67,59 @@ pub fn spawn_precincts(
 
     // Function to add precincts to the cache based on a view rect.
     let mut fetch_precincts = |rect: &QueryRect| {
-        let realm = realm_query.get(rect.realm);
-        if let Ok(realm) = realm {
-            // Set precincts within the query rect as visible; also load missing precincts.
-            for z in rect.bounds.min.y..rect.bounds.max.y {
-                for x in rect.bounds.min.x..rect.bounds.max.x {
-                    // TODO: Check if the precinct is within the realm's bounds.
-                    // if (x < realm.xOffset
-                    //     || z < realm.yOffset
-                    //     || x >= realm.xOffset + realm.xSize
-                    //     || z >= realm.yOffset + realm.ySize
-                    //     || !realm.hasStructure(x, z))
-                    // {
-                    //     return Promise.resolve(null);
-                    // }
-
-                    let key = PrecinctKey {
-                        realm: rect.realm,
-                        x,
-                        z,
-                    };
-                    let entity = precinct_cache.precincts.get(&key);
-                    match entity {
-                        Some(entity) => {
-                            // println!("Precinct Cache Hit {} {} {}.", realm.unwrap().name, x, z);
-                            if let Ok(mut precinct) = query.get_mut(*entity) {
-                                precinct.visible = true;
-                            }
+        let Ok(realm) = realm_query.get(rect.realm) else {
+            return;
+        };
+        // Only query scenery within the precinct bounds of the realm.
+        let intersect = realm.precinct_bounds.intersect(rect.bounds);
+        // Set precincts within the query rect as visible; also load missing precincts.
+        for z in intersect.min.y..intersect.max.y {
+            for x in intersect.min.x..intersect.max.x {
+                let key = PrecinctKey {
+                    realm: rect.realm,
+                    x,
+                    z,
+                };
+                let entity = precinct_cache.precincts.get(&key);
+                match entity {
+                    Some(entity) => {
+                        // println!("Precinct Cache Hit {} {} {}.", realm.unwrap().name, x, z);
+                        if let Ok(mut precinct) = query.get_mut(*entity) {
+                            precinct.visible = true;
                         }
+                    }
 
-                        None => {
-                            println!("Creating precinct {} {} {}.", realm.name, x, z);
-                            let asset_path = format!(
-                                "scenery/precincts/{}/{}-{}.msgpack",
-                                "playground",
-                                precinct_coord(x),
-                                precinct_coord(z)
-                            );
-                            let asset = server.load(asset_path);
-                            let entity = commands.spawn((
-                                Precinct {
-                                    realm: rect.realm,
-                                    coords: IVec2::new(x, z),
-                                    visible: true,
-                                    asset,
-                                    tiers: Vec::new(),
-                                    scenery_instances: InstanceMap::new(),
-                                },
-                                SpatialBundle {
-                                    transform: Transform::from_xyz(
-                                        x as f32 * PRECINCT_SIZE_F,
-                                        0.,
-                                        z as f32 * PRECINCT_SIZE_F,
-                                    ),
-                                    ..default()
-                                },
-                                // PrecinctAssetChanged,
-                            ));
-                            precinct_cache.precincts.put(key, entity.id());
-                        }
-                    };
-                }
+                    None => {
+                        println!("Creating precinct {} {} {}.", realm.name, x, z);
+                        let asset_path = format!(
+                            "scenery/precincts/{}/{}-{}.msgpack",
+                            "playground",
+                            precinct_coord(x),
+                            precinct_coord(z)
+                        );
+                        let asset = server.load(asset_path);
+                        let entity = commands.spawn((
+                            Precinct {
+                                realm: rect.realm,
+                                coords: IVec2::new(x, z),
+                                visible: true,
+                                asset,
+                                tiers: Vec::new(),
+                                scenery_instances: InstanceMap::new(),
+                            },
+                            SpatialBundle {
+                                transform: Transform::from_xyz(
+                                    x as f32 * PRECINCT_SIZE_F,
+                                    0.,
+                                    z as f32 * PRECINCT_SIZE_F,
+                                ),
+                                ..default()
+                            },
+                            // PrecinctAssetChanged,
+                        ));
+                        precinct_cache.precincts.put(key, entity.id());
+                    }
+                };
             }
         }
     };

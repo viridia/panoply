@@ -15,12 +15,13 @@ use bevy::{
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 
-use crate::world::Realm;
+use crate::{scenery::PRECINCT_SIZE, world::Realm};
 
 use super::{
     biome::{BiomesAsset, BiomesHandle},
     ground_material::GroundMaterial,
     parcel::{ShapeRef, ADJACENT_COUNT},
+    PARCEL_SIZE,
 };
 
 #[derive(Default, Serialize, Deserialize, TypePath, Asset)]
@@ -212,6 +213,7 @@ pub fn insert_terrain_maps(
 }
 
 /** React when terrain map assets change and update the realm entities. */
+#[allow(clippy::too_many_arguments)]
 pub fn update_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
@@ -219,14 +221,21 @@ pub fn update_terrain_maps(
     mut ev_asset: EventReader<AssetEvent<TerrainMapAsset>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
     mut images: ResMut<Assets<Image>>,
+    tm_assets: Res<Assets<TerrainMapAsset>>,
     asset_server: Res<AssetServer>,
 ) {
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
                 let realm_name = asset_name_from_handle(&server, id);
-                if let Some(realm) = query.iter().find(|r| r.1.name == realm_name) {
-                    commands.entity(realm.0).insert((
+                if let Some((re, mut realm, _terrain)) =
+                    query.iter_mut().find(|r| r.1.name == realm_name)
+                {
+                    let tm = tm_assets.get(*id).unwrap();
+                    if realm.parcel_bounds != tm.bounds {
+                        realm.update_bounds(tm.bounds, convert_parcel_to_precinct(&tm.bounds))
+                    }
+                    commands.entity(re).insert((
                         TerrainMap {
                             handle: server.get_id_handle(*id).unwrap(),
                             biome_texture: Image::default(),
@@ -245,8 +254,14 @@ pub fn update_terrain_maps(
 
             AssetEvent::Modified { id } => {
                 let realm_name = asset_name_from_handle(&server, id);
-                if let Some((entity, _, _)) = query.iter().find(|(_, r, _)| r.name == realm_name) {
+                if let Some((entity, mut realm, _)) =
+                    query.iter_mut().find(|(_, r, _)| r.name == realm_name)
+                {
                     println!("Terrain map modified: [{}].", realm_name);
+                    let tm = tm_assets.get(*id).unwrap();
+                    if realm.parcel_bounds != tm.bounds {
+                        realm.update_bounds(tm.bounds, convert_parcel_to_precinct(&tm.bounds))
+                    }
                     commands.entity(entity).insert(TerrainMapChanged);
                 }
             }
@@ -359,4 +374,19 @@ fn create_ground_material(
         realm_offset: Vec2::new(0., 0.),
         biomes,
     })
+}
+
+const PARCELS_PER_PRECINCT: i32 = PRECINCT_SIZE / PARCEL_SIZE;
+
+fn convert_parcel_to_precinct(parcel_bounds: &IRect) -> IRect {
+    IRect {
+        min: IVec2::new(
+            parcel_bounds.min.x / PARCELS_PER_PRECINCT,
+            parcel_bounds.min.y / PARCELS_PER_PRECINCT,
+        ),
+        max: IVec2::new(
+            (parcel_bounds.max.x + PARCELS_PER_PRECINCT - 1) / PARCELS_PER_PRECINCT,
+            (parcel_bounds.max.y + PARCELS_PER_PRECINCT - 1) / PARCELS_PER_PRECINCT,
+        ),
+    }
 }

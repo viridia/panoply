@@ -24,14 +24,27 @@ pub struct RealmData {
 
 #[derive(Component, Default, Asset, TypePath)]
 pub struct Realm {
-    /** Realm index, also used as layer index for rendering. */
+    /// Realm index, also used as layer index for rendering.
     pub layer: RealmLayer,
 
-    /** Resource name of this realm. */
+    /// Resource name of this realm.
     pub name: String,
 
-    /** Type of lighting for this realm. */
+    /// Type of lighting for this realm.
     pub lighting: RealmLighting,
+
+    /// Boundary of the map, in parcels, relative to the world origin - sync'd from TerrainMap.
+    pub parcel_bounds: IRect,
+
+    /// Boundary of the map, in precincts, relative to the world origin - sync'd from TerrainMap.
+    pub precinct_bounds: IRect,
+}
+
+impl Realm {
+    pub fn update_bounds(&mut self, parcel_bounds: IRect, precinct_bounds: IRect) {
+        self.parcel_bounds = parcel_bounds;
+        self.precinct_bounds = precinct_bounds;
+    }
 }
 
 #[non_exhaustive]
@@ -121,6 +134,8 @@ pub fn sync_realms(
                         layer,
                         name: realm_name,
                         lighting: realm.lighting,
+                        parcel_bounds: IRect::default(),
+                        precinct_bounds: IRect::default(),
                     });
                 }
             }
