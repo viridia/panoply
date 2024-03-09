@@ -232,7 +232,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/walls-dungeon.glb#MossyBrickPillarBroken"
+            "asset": "scenery/models/walls-dungeon.glb#MossyBrickPillar.Broken"
           }
         ]
       },
@@ -281,7 +281,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallBroken"
+            "asset": "scenery/models/walls-dungeon.glb#MossyBrickWall.Broken"
           }
         ]
       },
@@ -305,7 +305,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallBroken2"
+            "asset": "scenery/models/walls-dungeon.glb#MossyBrickWall.Broken2"
           }
         ]
       },
@@ -1495,7 +1495,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/stonework.glb#Boulder1"
+            "asset": "scenery/models/stonework.glb#Boulder.1"
           }
         ]
       },
@@ -1524,7 +1524,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/stonework.glb#Boulder2"
+            "asset": "scenery/models/stonework.glb#Boulder.2"
           }
         ]
       },
@@ -1553,7 +1553,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "scenery/models/stonework.glb#Boulder3"
+            "asset": "scenery/models/stonework.glb#Boulder.3"
           }
         ]
       },

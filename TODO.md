@@ -3,7 +3,6 @@
 - Bugs:
   - Surface changes when scene loads?
   - Generation error [REPORTED]
-  - Failed to load asset
   - Materials get loaded multiple times?
   - CottageWallSkirtCorner turned wrong way.
 - Facing and rotations: make consistent?
@@ -11,32 +10,6 @@
   - [x] replace model_loader
 - Wall Physics
   - Use enum for collider type? Really depends on whether it's editable.
-- Aspects:
-  - InventoryItem
-    - Weapon
-    - Container
-  - SceneryElement
-    - Door
-    - Stairs
-    - Ladder
-    - Sign
-    - Portal
-    - ToggleButton
-    - PushButton
-    - PressurePlate
-    - ControlledOpenable
-    - AutoDoor
-    - SoundSource
-    - LightSource
-    - Encounter
-    - Circle
-    - Rect
-    - Waymark
-  - Container
-  - Music
-  - WaterFx
-  - Book
-  - Particles
 
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
@@ -48,6 +21,76 @@ Future:
 - Floor surface texture rotation
 - Unit tests for HexColor.
 - Editor-only floor surfaces (for things like water currents / hints)
+
+# Bevy Issues
+
+- [Invalid Generation Error](https://github.com/bevyengine/bevy/issues/12345)
+- [Reflection type aliases](https://github.com/bevyengine/bevy/issues/12387)
+- [Upstream bevy_mod_picking](https://github.com/bevyengine/bevy/issues/12365)
+- [Multi-pass materials](https://github.com/bevyengine/bevy/issues/12208)
+- [Error in PBR shader code](https://github.com/bevyengine/bevy/issues/12326)
+- [Support archive assets](https://github.com/bevyengine/bevy/issues/12279)
+- [Allow missing assets](https://github.com/bevyengine/bevy/issues/12210)
+- [Gltf material substitutions](https://github.com/bevyengine/bevy/issues/12209)
+- [Support hemisphere light](https://github.com/bevyengine/bevy/issues/12027)
+- [Tool to create env maps](https://github.com/bevyengine/bevy/issues/12233)
+
+# Aspects to define
+
+- InventoryItem
+  - inventory::Item - appearance, weight, stack size, price
+  - inventory::Container - carrying capacity
+  - inventory::Equippable - equip slot
+  - inventory::Weapon - damage type, range
+  - inventory::Document - link to text content, page style
+  - inventory::QuestItem - quest id, stage
+- Floor
+  - floor::StdSurface - texture asset
+  - floor::NoiseSurface - procedural texture
+  - floor::Geometry - floor mesh options
+  - floor::Nav - pathfinding effects
+- SceneryElement
+  - scenery::Models - list of glb models to display
+  - scenery::Colliders - physics colliders
+  - scenery::Marks - interaction marks
+  - scenery::Container - open / close / lock behaviors
+  - scenery::Door - open / close / lock
+  - scenery::Stairs - allows click-to-climb
+  - scenery::Ladder - allows click-to-climb
+  - scenery::Sign - click to read
+  - scenery::PortalAperture - portal dimensions
+  - scenery::PortalTarget - portal target location
+  - scenery::WallSize - grid alignment options
+  - mechanics::ToggleButton - click to interact
+  - mechanics::PushButton - click to interact
+  - mechanics::PressurePlate - senses being walked on
+  - mechanics::ControlledOpenable - change state via remote signal
+  - mechanics::AutoDoor
+  - location::Circle - detects when player is within circle
+  - location::Rect - detects when player is within rect
+  - location::Waymark - used for NPC scripted events
+- Sfx
+  - sfx::LightSource
+  - sfx::SoundSource
+  - sfx::Music
+  - sfx::WaterFx
+  - sfx::Particles
+- Encounter
+- Book
+- Actors
+  - actor::Model
+  - actor::ColorSlots
+  - actor::Colors
+  - actor::FeatureSlots
+  - actor::Features
+  - actor::EquippedSlots
+  - actor::Equipped
+  - actor::Skills
+  - actor::Physics
+  - actor::Gender
+  - actor::Ally
+  - actor::Portrait
+  - actor::Goals\* (can be multiple)
 
 # Project hierarchy
 
