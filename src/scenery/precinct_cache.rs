@@ -38,7 +38,6 @@ pub fn spawn_precincts(
     mut precinct_cache: ResMut<PrecinctCache>,
     mut query: Query<&mut Precinct>,
     realm_query: Query<&Realm>,
-    // terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     server: Res<AssetServer>,
 ) {
     if viewpoint.realm.is_none() {
@@ -83,7 +82,6 @@ pub fn spawn_precincts(
                 let entity = precinct_cache.precincts.get(&key);
                 match entity {
                     Some(entity) => {
-                        // println!("Precinct Cache Hit {} {} {}.", realm.unwrap().name, x, z);
                         if let Ok(mut precinct) = query.get_mut(*entity) {
                             precinct.visible = true;
                         }
@@ -115,7 +113,6 @@ pub fn spawn_precincts(
                                 ),
                                 ..default()
                             },
-                            // PrecinctAssetChanged,
                         ));
                         precinct_cache.precincts.put(key, entity.id());
                     }
