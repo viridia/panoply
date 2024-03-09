@@ -2,12 +2,41 @@
 
 - Bugs:
   - Surface changes when scene loads?
-  - Could not decode precinct
   - Generation error [REPORTED]
   - Failed to load asset
   - Materials get loaded multiple times?
+  - CottageWallSkirtCorner turned wrong way.
+- Facing and rotations: make consistent?
 - Models
-  - replace model_loader
+  - [x] replace model_loader
+- Wall Physics
+  - Use enum for collider type? Really depends on whether it's editable.
+- Aspects:
+  - InventoryItem
+    - Weapon
+    - Container
+  - SceneryElement
+    - Door
+    - Stairs
+    - Ladder
+    - Sign
+    - Portal
+    - ToggleButton
+    - PushButton
+    - PressurePlate
+    - ControlledOpenable
+    - AutoDoor
+    - SoundSource
+    - LightSource
+    - Encounter
+    - Circle
+    - Rect
+    - Waymark
+  - Container
+  - Music
+  - WaterFx
+  - Book
+  - Particles
 
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
@@ -16,7 +45,7 @@
 
 Future:
 
-- Floor surface rotation
+- Floor surface texture rotation
 - Unit tests for HexColor.
 - Editor-only floor surfaces (for things like water currents / hints)
 

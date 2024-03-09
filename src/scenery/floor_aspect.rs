@@ -40,7 +40,7 @@ impl Aspect for StdFloorSurface {
         "StdFloorSurface"
     }
 
-    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
         meta_type == crate::schematic::InstanceType::Floor
     }
 
@@ -119,7 +119,7 @@ impl Aspect for NoiseFloorSurface {
         "NoiseFloorSurface"
     }
 
-    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
         meta_type == crate::schematic::InstanceType::Floor
     }
 
@@ -177,7 +177,7 @@ impl Aspect for FloorGeometry {
         "FloorGeometry"
     }
 
-    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
         meta_type == crate::schematic::InstanceType::Floor
     }
 
@@ -206,7 +206,7 @@ impl Aspect for FloorNav {
         "FloorNav"
     }
 
-    fn can_attach(&self, meta_type: crate::schematic::InstanceType) -> bool {
+    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
         meta_type == crate::schematic::InstanceType::Floor
     }
 

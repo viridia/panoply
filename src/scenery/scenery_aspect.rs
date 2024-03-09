@@ -53,7 +53,7 @@ impl Aspect for SceneryModels {
         "SceneryModels"
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
+    fn can_apply(&self, meta_type: InstanceType) -> bool {
         meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
     }
 
@@ -81,7 +81,7 @@ impl Aspect for SceneryColliders {
         "SceneryColliders"
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
+    fn can_apply(&self, meta_type: InstanceType) -> bool {
         meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
     }
 
@@ -109,7 +109,7 @@ impl Aspect for SceneryMarks {
         "SceneryMarks"
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
+    fn can_apply(&self, meta_type: InstanceType) -> bool {
         meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
     }
 

@@ -2,6 +2,7 @@
 import { directory, target, DirectoryTask, source } from "overrun";
 import { NodeIO, Document, Logger } from "@gltf-transform/core";
 import { resample, dedup, draco } from "@gltf-transform/functions";
+import { KHRMaterialsUnlit, Unlit } from "@gltf-transform/extensions";
 import path from "path";
 
 const srcRoot = path.resolve(__dirname, "../../artwork");
@@ -15,11 +16,21 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
   await gltf.transform(
     (doc) => {
       // Split the default scene into separate named scenes
+      let unlit: Unlit | undefined = undefined;
       let scene = doc.getRoot().getDefaultScene();
       if (scene) {
         doc.getRoot().setDefaultScene(null);
         for (let child of scene.listChildren()) {
           doc.createScene(child.getName()).addChild(child);
+        }
+      }
+      for (let mat of doc.getRoot().listMaterials()) {
+        if (mat.getExtras().black || mat.getExtras().unlit) {
+          if (!unlit) {
+            let ext = doc.createExtension(KHRMaterialsUnlit);
+            unlit = ext.createUnlit();
+          }
+          mat.setExtension("KHR_materials_unlit", unlit);
         }
       }
       return doc;

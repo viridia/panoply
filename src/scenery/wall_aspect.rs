@@ -19,7 +19,7 @@ impl Aspect for WallSize {
         "WallSize"
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
+    fn can_apply(&self, meta_type: InstanceType) -> bool {
         meta_type == InstanceType::Wall
     }
 

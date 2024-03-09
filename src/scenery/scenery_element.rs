@@ -83,7 +83,6 @@ pub fn spawn_se_model_instances(
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(&mesh.label) {
-                    println!("Scene found: [{}]", mesh.label);
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
                     commands.entity(entity).insert(SceneBundle {
@@ -92,9 +91,8 @@ pub fn spawn_se_model_instances(
                         ..Default::default()
                     });
                 } else {
-                    println!("Scenes: [{:?}]", gltf.named_scenes.keys());
-                    println!("Meshes: [{:?}]", gltf.named_nodes.keys());
                     error!("Model not found: [{}]", mesh.label);
+                    info!("Available scenes: [{:?}]", gltf.named_scenes.keys());
                     commands.entity(entity).despawn();
                     // panic!();
                 }
@@ -104,17 +102,6 @@ pub fn spawn_se_model_instances(
 }
 
 fn component_transform(transform: &mut Transform, placement: &ModelComponent) {
-    // let {
-    //   xRotation = 0,
-    //   yRotation = 0,
-    //   zRotation = 0,
-    //   xRotationVariance = 0,
-    //   yRotationVariance = 0,
-    //   zRotationVariance = 0,
-    //   offset,
-    //   scale = 1,
-    //   scaleVariance = 0,
-    // } = component;
     // const nx = Math.round(position.x * 16);
     // const ny = Math.round(position.z * 16);
     // if (xRotationVariance) {

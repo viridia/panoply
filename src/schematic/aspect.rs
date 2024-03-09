@@ -44,11 +44,11 @@ where
     /// Type name of this aspect
     fn name(&self) -> &str;
 
-    /// Whether this aspect can be attached to an instance of the given type.
-    fn can_attach(&self, meta_type: InstanceType) -> bool;
-
     /// Get the [`TypeId`] for this aspect.
     fn id(&self) -> TypeId;
+
+    /// Whether this aspect can be attached to an instance of the given type.
+    fn can_apply(&self, meta_type: InstanceType) -> bool;
 
     /// Load any dependencies required by this aspect.
     #[allow(unused_variables)]
