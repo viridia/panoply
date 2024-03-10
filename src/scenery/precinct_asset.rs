@@ -19,19 +19,12 @@ extern crate rmp_serde as rmps;
 #[derive(TypePath, Asset, Serialize, Deserialize, Debug)]
 pub struct PrecinctAsset {
     /// Table of wall archetypes used by this precinct.
-    #[serde(rename = "wallTypes", default)]
-    pub(crate) wall_types: Vec<String>,
+    pub(crate) scenery_types: Vec<String>,
 
     /// Table of floor archetypes used by this precinct.
-    #[serde(rename = "floorTypes", default)]
     pub(crate) floor_types: Vec<String>,
 
-    /// Table of fixture archetypes used by this precinct.
-    #[serde(rename = "fixtureTypes", default)]
-    pub(crate) fixture_types: Vec<String>,
-
     /// Table of terrain effect archetypes used by this precinct.
-    #[serde(rename = "terrainFxTypes", default)]
     pub(crate) terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.
@@ -41,13 +34,10 @@ pub struct PrecinctAsset {
     /// Packed terrain effect table
     // terrain_fx?: number[];
     // actors: Option<Vec<IActorInstanceData>>,
-    /// Table of wall instances.
-    #[serde(default)]
-    pub(crate) nwalls: Vec<CompressedInstance>,
 
-    /// Table of fixture instances.
+    /// Table of scenery instances.
     #[serde(default)]
-    pub(crate) nfixtures: Vec<CompressedInstance>,
+    pub(crate) scenery: Vec<CompressedInstance>,
     // layers?: Record<string, ILayerData>,
 }
 

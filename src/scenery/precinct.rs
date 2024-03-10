@@ -56,8 +56,7 @@ impl Precinct {
 
             let mut j = 0;
             for floor in tier.pfloors.iter() {
-                let schematic: Handle<Schematic> =
-                    floor_schematics[floor.surface_index - 1].clone();
+                let schematic: Handle<Schematic> = floor_schematics[floor.surface_index].clone();
                 if j < t.floor_regions.len() {
                     let floor_entity = t.floor_regions[j];
                     if let Ok((floor_entity, mut floor_region)) =
@@ -131,18 +130,16 @@ impl Precinct {
         // What do we want to do here?
         // We cannot place the model yet, because transforms are not loaded.
         // We need to spawn an entity per secenery element I think.
-        for wall in asset.nwalls.iter() {
-            let mut transform =
-                Transform::from_xyz(wall.position.x, wall.position.y, wall.position.z);
-            transform.rotate(Quat::from_rotation_y(
-                wall.facing * std::f32::consts::PI / 2.0,
-            ));
+        for elt in asset.scenery.iter() {
+            let mut transform = Transform::from_xyz(elt.position.x, elt.position.y, elt.position.z);
+            let facing = elt.facing * std::f32::consts::PI / 180.;
+            transform.rotate(Quat::from_rotation_y(facing));
             commands
                 .spawn((
                     SceneryElement {
-                        schematic: wall_schematics[wall.id].clone(),
-                        facing: wall.facing,
-                        position: wall.position,
+                        schematic: wall_schematics[elt.id].clone(),
+                        facing,
+                        position: elt.position,
                     },
                     SpatialBundle {
                         transform,
@@ -207,8 +204,8 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
-                    let wall_schematics: Vec<Handle<Schematic>> = precinct_asset
-                        .wall_types
+                    let scenery_schematics: Vec<Handle<Schematic>> = precinct_asset
+                        .scenery_types
                         .iter()
                         .map(|s| asset_server.load(s))
                         .collect();
@@ -228,7 +225,7 @@ pub fn read_precinct_data(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
-                        &wall_schematics,
+                        &scenery_schematics,
                     );
 
                     commands
