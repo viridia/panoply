@@ -1221,6 +1221,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -1231,8 +1232,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -1272,6 +1272,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -1282,8 +1283,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -1336,6 +1336,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.2,
@@ -1346,8 +1347,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -1400,6 +1400,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               0.25,
@@ -1410,8 +1411,7 @@
               0.5,
               0.35,
               0.75
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -2471,6 +2471,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               0.25,
@@ -2481,8 +2482,7 @@
               0.5,
               0.65,
               0.75
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -3518,6 +3518,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               0,
@@ -3528,8 +3529,7 @@
               0.5,
               0.5,
               0.5
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4302,6 +4302,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -4312,8 +4313,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4337,6 +4337,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -4347,8 +4348,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4372,6 +4372,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -4382,8 +4383,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4407,6 +4407,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -4417,8 +4418,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4455,6 +4455,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               0.25,
@@ -4465,8 +4466,7 @@
               0.5,
               0.35,
               0.75
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4660,6 +4660,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.25,
@@ -4670,8 +4671,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4724,6 +4724,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               -0.2,
@@ -4734,8 +4735,7 @@
               0.5,
               0.55,
               1.25
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -4788,6 +4788,7 @@
             ]
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               0.25,
@@ -4798,8 +4799,7 @@
               0.5,
               0.35,
               0.75
-            ],
-            "facing": 3
+            ]
           }
         ]
       }
@@ -6642,6 +6642,7 @@
             "walkable": true
           },
           {
+            "facing": 3,
             "shape": "ramp",
             "offset": [
               2,
@@ -6653,10 +6654,10 @@
               0.4,
               0.5
             ],
-            "facing": 3,
             "walkable": true
           },
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0,
@@ -6668,7 +6669,6 @@
               0.4,
               0.5
             ],
-            "facing": 1,
             "walkable": true
           },
           {
@@ -6773,6 +6773,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0.5,
@@ -6784,7 +6785,6 @@
               1,
               1
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },
@@ -7020,13 +7020,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },

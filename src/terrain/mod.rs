@@ -9,6 +9,7 @@ mod plugin;
 mod rotator;
 mod square;
 mod terrain_contours;
+mod terrain_fx;
 mod terrain_map;
 mod water_material;
 mod water_mesh;
@@ -26,6 +27,15 @@ pub const PARCEL_MESH_STRIDE: i32 = PARCEL_MESH_RESOLUTION + 1;
 pub const PARCEL_MESH_VERTEX_COUNT: usize = (PARCEL_MESH_STRIDE * PARCEL_MESH_STRIDE) as usize;
 pub const PARCEL_MESH_SCALE: f32 = PARCEL_SIZE as f32 / PARCEL_MESH_RESOLUTION as f32;
 
+pub const PARCEL_TERRAIN_FX_SIZE: i32 = PARCEL_SIZE + 2;
+pub const PARCEL_TERRAIN_FX_STRIDE: usize = PARCEL_TERRAIN_FX_SIZE as usize;
+pub const PARCEL_TERRAIN_FX_AREA: usize =
+    (PARCEL_TERRAIN_FX_SIZE * PARCEL_TERRAIN_FX_SIZE) as usize;
+
 pub use ground_mesh::*;
+pub use parcel::Parcel;
+pub use parcel::RebuildParcelGroundMesh;
+pub use parcel::RebuildParcelTerrainFx;
 pub use parcel_cache::*;
 pub use plugin::*;
+pub use terrain_fx::*;

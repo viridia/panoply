@@ -32,9 +32,9 @@ pub struct PrecinctAsset {
     pub(crate) tiers: Vec<TierSer>,
 
     /// Packed terrain effect table
-    // terrain_fx?: number[];
-    // actors: Option<Vec<IActorInstanceData>>,
+    pub(crate) terrain_fx: Option<Vec<i16>>,
 
+    // actors: Option<Vec<IActorInstanceData>>,
     /// Table of scenery instances.
     #[serde(default)]
     pub(crate) scenery: Vec<CompressedInstance>,

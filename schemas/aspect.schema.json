@@ -134,13 +134,13 @@
           "oneOf": [
             {
               "type": "string",
-              "enum": ["earth", "soil", "path", "cobbles", "road", "stone"]
+              "enum": ["soil", "path", "cobbles", "road", "stone"]
             },
             {
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["earth", "soil", "path", "cobbles", "road", "stone"]
+                "enum": ["soil", "path", "cobbles", "road", "stone"]
               }
             }
           ]

@@ -3,18 +3,22 @@ use std::sync::{Arc, Mutex};
 use crate::world::Realm;
 
 use super::{
-    parcel::{Parcel, ParcelContourChanged, ShapeRef, ADJACENT_COUNT, CENTER_SHAPE},
+    parcel::{Parcel, RebuildParcelGroundMesh, ShapeRef, ADJACENT_COUNT, CENTER_SHAPE},
     rotator::RotatingSquareArray,
     square::SquareArray,
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
-    PARCEL_SIZE,
+    TerrainFxVertexAttr, PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_STRIDE,
+    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA,
 };
 use bevy::{
     asset::LoadState,
     prelude::*,
-    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
+    render::{
+        mesh::{Indices, MeshVertexAttribute},
+        render_asset::RenderAssetUsages,
+        render_resource::{PrimitiveTopology, VertexFormat},
+    },
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
@@ -28,10 +32,13 @@ pub struct ComputeGroundMeshTask(Task<Option<GroundMeshResult>>);
 
 pub const HEIGHT_SCALE: f32 = 0.5;
 
+pub const ATTRIBUTE_TERRAIN_FX: MeshVertexAttribute =
+    MeshVertexAttribute::new("terrain_fx", 0x1000, VertexFormat::Uint8x4);
+
 /// Spawns a task for each parcel to compute the ground mesh geometry.
 pub fn gen_ground_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Parcel), With<ParcelContourChanged>>,
+    mut query: Query<(Entity, &mut Parcel), With<RebuildParcelGroundMesh>>,
     realms_query: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
@@ -56,11 +63,13 @@ pub fn gen_ground_meshes(
             .clone();
 
         let shape_refs = parcel.contours;
-        let task = pool.spawn(async move { compute_ground_mesh(shape_refs, &contours) });
+        let terrain_fx = parcel.terrain_fx;
+        let task =
+            pool.spawn(async move { compute_ground_mesh(shape_refs, terrain_fx, &contours) });
         commands
             .entity(entity)
             .insert(ComputeGroundMeshTask(task))
-            .remove::<ParcelContourChanged>();
+            .remove::<RebuildParcelGroundMesh>();
     }
 }
 
@@ -103,6 +112,7 @@ pub fn insert_ground_meshes(
 
 fn compute_ground_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
+    _terrain_fx: [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA],
     shapes: &Arc<Mutex<TerrainContoursTable>>,
 ) -> Option<GroundMeshResult> {
     let shapes_table = shapes.lock().unwrap();

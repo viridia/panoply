@@ -412,6 +412,7 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0.5,
@@ -423,7 +424,6 @@
               1,
               1
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           }

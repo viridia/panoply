@@ -1060,13 +1060,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           }
@@ -1095,13 +1095,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },
@@ -1119,6 +1119,7 @@
             ]
           },
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0,
@@ -1129,8 +1130,7 @@
               0.1,
               0.5,
               0.5
-            ],
-            "facing": 1
+            ]
           }
         ]
       }
@@ -1157,13 +1157,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },
@@ -1181,6 +1181,7 @@
             ]
           },
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0,
@@ -1191,8 +1192,7 @@
               0.1,
               0.5,
               0.5
-            ],
-            "facing": 1
+            ]
           }
         ]
       }
@@ -1219,13 +1219,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },
@@ -1243,6 +1243,7 @@
             ]
           },
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0,
@@ -1253,8 +1254,7 @@
               0.1,
               0.5,
               0.5
-            ],
-            "facing": 1
+            ]
           }
         ]
       }
@@ -1281,13 +1281,13 @@
       "SceneryColliders": {
         "colliders": [
           {
+            "facing": 1,
             "shape": "ramp",
             "size": [
               0.5,
               0.5,
               0.5
             ],
-            "facing": 1,
             "pickable": true,
             "walkable": true
           },
@@ -1305,6 +1305,7 @@
             ]
           },
           {
+            "facing": 1,
             "shape": "ramp",
             "offset": [
               0,
@@ -1315,8 +1316,7 @@
               0.1,
               0.5,
               0.5
-            ],
-            "facing": 1
+            ]
           }
         ]
       }

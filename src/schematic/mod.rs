@@ -34,30 +34,14 @@ pub struct SchematicData {
     alias: Vec<String>,
 
     /// List of aspects that this schematic has.
-    aspects: Vec<Box<dyn aspect::Aspect>>,
+    pub aspects: Vec<Box<dyn aspect::Aspect>>,
 
     /// Inherited prototype for this schematic.
     extends: Option<Handle<Schematic>>,
 }
 
 #[derive(TypePath, Asset)]
-pub struct Schematic(Arc<SchematicData>);
-
-// {
-//     /// Lookup key for this schematic within its catalog.
-//     key: String,
-
-//     /// Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
-//     inner: Arc<SchematicData>,
-//     // Catalog this was loaded from. This keeps the catalog alive while the schematic is in use.
-//     // catalog: Handle<SchematicCatalog>,
-// }
-
-// impl Schematic {
-//     pub fn name(&self) -> &str {
-//         &self.key
-//     }
-// }
+pub struct Schematic(pub Arc<SchematicData>);
 
 impl Serialize for SchematicData {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>

@@ -18,7 +18,7 @@ use super::{
     },
     water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
     water_mesh::{gen_water_meshes, insert_water_meshes},
-    ParcelCache,
+    ParcelCache, TerrainTypes,
 };
 
 pub struct TerrainPlugin;
@@ -29,6 +29,7 @@ impl Plugin for TerrainPlugin {
             .register_asset_loader(TerrainContoursTableLoader)
             .register_asset_loader(TerrainMapLoader)
             .register_asset_loader(BiomesLoader)
+            .register_type::<TerrainTypes>()
             .init_asset::<TerrainContoursTableAsset>()
             .init_asset::<TerrainMapAsset>()
             .init_asset::<BiomesAsset>()

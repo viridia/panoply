@@ -7,11 +7,11 @@ use crate::{
 
 use super::{
     parcel::{
-        Parcel, ParcelContourChanged, ParcelFloraChanged, ParcelKey, ParcelWaterChanged, ShapeRef,
-        ADJACENT_COUNT,
+        Parcel, ParcelFloraChanged, ParcelKey, ParcelWaterChanged, RebuildParcelGroundMesh,
+        RebuildParcelTerrainFx, ShapeRef, ADJACENT_COUNT,
     },
     terrain_map::{TerrainMap, TerrainMapAsset},
-    PARCEL_SIZE_F,
+    TerrainFxVertexAttr, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
 };
 
 #[derive(Resource)]
@@ -28,8 +28,49 @@ impl ParcelCache {
         }
     }
 
-    pub fn _size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.parcels.len()
+    }
+
+    /// Query all parcels within a given rectangle.
+    pub fn query(&self, realm: Entity, rect: IRect) -> ParcelRectIterator {
+        ParcelRectIterator {
+            cache: self,
+            realm,
+            rect,
+            x: rect.min.x,
+            z: rect.min.y,
+        }
+    }
+}
+
+pub struct ParcelRectIterator<'a> {
+    cache: &'a ParcelCache,
+    realm: Entity,
+    rect: IRect,
+    x: i32,
+    z: i32,
+}
+
+impl<'a> Iterator for ParcelRectIterator<'a> {
+    type Item = Entity;
+    fn next(&mut self) -> Option<Entity> {
+        while self.z < self.rect.max.y {
+            while self.x < self.rect.max.x {
+                let key = ParcelKey {
+                    realm: self.realm,
+                    x: self.x,
+                    z: self.z,
+                };
+                self.x += 1;
+                if let Some(entity) = self.cache.parcels.peek(&key) {
+                    return Some(*entity);
+                }
+            }
+            self.x = self.rect.min.x;
+            self.z += 1;
+        }
+        None
     }
 }
 
@@ -94,14 +135,16 @@ pub fn spawn_parcels(
                     let entity = parcel_cache.parcels.get(&key);
                     match entity {
                         Some(entity) => {
+                            // Update existing parcel
                             if let Ok(mut parcel) = query.get_mut(*entity) {
                                 if parcel.contours != contours || parcel.biomes != biomes {
                                     parcel.contours = contours;
                                     parcel.biomes = biomes;
                                     commands.entity(*entity).insert((
-                                        ParcelContourChanged,
+                                        RebuildParcelGroundMesh,
                                         ParcelWaterChanged,
                                         ParcelFloraChanged,
+                                        RebuildParcelTerrainFx,
                                     ));
                                 }
                                 parcel.visible = true;
@@ -110,6 +153,7 @@ pub fn spawn_parcels(
 
                         None => {
                             // println!("Creating parcel {} {}.", x, z);
+                            // Insert new parcel
                             let entity = commands.spawn((
                                 Parcel {
                                     realm: rect.realm,
@@ -120,6 +164,8 @@ pub fn spawn_parcels(
                                     ground_entity: None,
                                     water_entity: None,
                                     flora_entity: None,
+                                    terrain_fx: [TerrainFxVertexAttr::default();
+                                        PARCEL_TERRAIN_FX_AREA],
                                 },
                                 SpatialBundle {
                                     transform: Transform::from_xyz(
@@ -129,9 +175,10 @@ pub fn spawn_parcels(
                                     ),
                                     ..default()
                                 },
-                                ParcelContourChanged,
+                                RebuildParcelGroundMesh,
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,
+                                RebuildParcelTerrainFx,
                             ));
                             parcel_cache.parcels.put(key, entity.id());
                         }

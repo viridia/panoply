@@ -8,6 +8,7 @@ bevy = { version = "0.13.0", features = ["dynamic_linking", "file_watcher"] }
 # bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["dynamic_linking"], branch = "main" }
 bevy-inspector-egui = "0.19.0"
 bevy_mod_picking = { git = "https://github.com/aevyrie/bevy_mod_picking.git", branch = "main" }
+bitflags = "2.4.2"
 directories = "5.0.1"
 earcutr = "0.4.3"
 futures-lite = "2.2.0"

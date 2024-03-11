@@ -7,7 +7,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "road",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 1,
         "elevation": -0.14,
         "continuous_x": true,
@@ -22,7 +24,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "road",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.75,
         "elevation": -0.1,
         "continuous_x": true,
@@ -37,7 +41,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "road",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.5,
         "elevation": -0.05,
         "continuous_x": true,
@@ -52,7 +58,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "road",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.25,
         "elevation": -0.025,
         "continuous_x": true,
@@ -69,7 +77,7 @@
       "TerrainEffect": {
         "effect": [
           "road",
-          "path"
+          "road"
         ],
         "effect_strength": 1,
         "elevation": -0.1,
@@ -86,7 +94,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "road",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 1,
         "continuous_x": true,
         "continuous_y": true
@@ -100,7 +110,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "soil",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 1,
         "elevation": 0.1,
         "continuous_x": true,
@@ -115,7 +127,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "path",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 1,
         "elevation": -0.1,
         "continuous_x": true,
@@ -130,7 +144,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "path",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.75,
         "elevation": -0.1,
         "continuous_x": true,
@@ -145,7 +161,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "path",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.5,
         "elevation": -0.08,
         "continuous_x": true,
@@ -160,7 +178,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "path",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.4,
         "elevation": -0.07,
         "continuous_x": true,
@@ -175,7 +195,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "cobbles",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 1,
         "elevation": -0.2,
         "continuous_x": true,
@@ -190,7 +212,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "cobbles",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.75,
         "elevation": -0.2,
         "continuous_x": true,
@@ -205,7 +229,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "cobbles",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.5,
         "elevation": -0.1,
         "continuous_x": true,
@@ -220,7 +246,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "cobbles",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.25,
         "elevation": -0.05,
         "continuous_x": true,
@@ -233,8 +261,8 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "cobbles",
-          "path"
+          "road",
+          "road"
         ],
         "effect_strength": 1,
         "elevation": -0.1,
@@ -248,8 +276,8 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "cobbles",
-          "path"
+          "road",
+          "road"
         ],
         "effect_strength": 1,
         "continuous_x": true,
@@ -264,7 +292,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "soil",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.5,
         "elevation": 0.4,
         "continuous_x": true
@@ -278,7 +308,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "soil",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.5,
         "elevation": 0.4,
         "continuous_y": true
@@ -292,7 +324,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "soil",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.9,
         "elevation": 0.3,
         "continuous_x": true
@@ -306,7 +340,9 @@
     ],
     "aspects": {
       "TerrainEffect": {
-        "effect": "soil",
+        "effect": [
+          "road"
+        ],
         "effect_strength": 0.9,
         "elevation": 0.3,
         "continuous_y": true

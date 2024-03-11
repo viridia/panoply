@@ -3,7 +3,9 @@ use crate::{instancing::InstanceMap, schematic::Schematic};
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
     precinct_asset::PrecinctAsset,
+    rle::rle_decode,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
+    terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
 };
 use bevy::prelude::*;
 
@@ -14,6 +16,10 @@ pub struct PrecinctKey {
     pub z: i32,
 }
 
+/// A precinct is a 64x64 meter area of the world. Precincts store scenery elements and other
+/// authored content such as terrain effects. Unlike parcels, precincts are not cloned across the
+/// world, and are unique to a realm. Precincts deberately have a different grid size than parcels
+/// as a way of reducing the amount of visual repetition in the map.
 #[derive(Component, Debug)]
 pub struct Precinct {
     pub realm: Entity,
@@ -125,7 +131,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        wall_schematics: &[Handle<Schematic>],
+        scenery_schematics: &[Handle<Schematic>],
     ) {
         // What do we want to do here?
         // We cannot place the model yet, because transforms are not loaded.
@@ -137,7 +143,7 @@ impl Precinct {
             commands
                 .spawn((
                     SceneryElement {
-                        schematic: wall_schematics[elt.id].clone(),
+                        schematic: scenery_schematics[elt.id].clone(),
                         facing,
                         position: elt.position,
                     },
@@ -148,6 +154,23 @@ impl Precinct {
                     SceneryElementRebuildAspects,
                 ))
                 .set_parent(entity);
+        }
+    }
+
+    pub fn rebuild_terrain_fx(
+        &mut self,
+        commands: &mut Commands,
+        entity: Entity,
+        asset: &PrecinctAsset,
+        fx_schematics: Vec<Handle<Schematic>>,
+    ) {
+        if let Some(ref encoded) = asset.terrain_fx {
+            let mut fx = TerrainFxMap::new();
+            rle_decode(encoded, &mut fx.map).unwrap();
+            fx.schematics = fx_schematics;
+            commands
+                .entity(entity)
+                .insert((fx, RebuildTerrainFxVertexAttrs));
         }
     }
 }
@@ -197,6 +220,10 @@ pub fn read_precinct_data(
                 if let Some((precinct_entity, mut precinct)) =
                     query_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
                 {
+                    // TODO: Sync cutaway rects
+                    // TODO: Sync nav mesh, physics, light sources, particles, etc.
+                    // TODO: Sync actors
+
                     let precinct_asset = assets.get(*id).unwrap();
                     let floor_schematics: Vec<Handle<Schematic>> = precinct_asset
                         .floor_types
@@ -204,15 +231,6 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
-                    let scenery_schematics: Vec<Handle<Schematic>> = precinct_asset
-                        .scenery_types
-                        .iter()
-                        .map(|s| asset_server.load(s))
-                        .collect();
-
-                    // TODO: Sync cutaway rects
-                    // TODO: Sync nav mesh, physics, light sources, particles, etc.
-                    // TODO: Sync actors
                     precinct.rebuild_tiers(
                         &mut commands,
                         precinct_entity,
@@ -221,11 +239,30 @@ pub fn read_precinct_data(
                         &mut query_floor_regions,
                     );
 
+                    let scenery_schematics: Vec<Handle<Schematic>> = precinct_asset
+                        .scenery_types
+                        .iter()
+                        .map(|s| asset_server.load(s))
+                        .collect();
+
                     precinct.rebuild_walls(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
                         &scenery_schematics,
+                    );
+
+                    let fx_schematics: Vec<Handle<Schematic>> = precinct_asset
+                        .terrain_fx_types
+                        .iter()
+                        .map(|s| asset_server.load(s))
+                        .collect();
+
+                    precinct.rebuild_terrain_fx(
+                        &mut commands,
+                        precinct_entity,
+                        precinct_asset,
+                        fx_schematics,
                     );
 
                     commands

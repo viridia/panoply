@@ -86,13 +86,12 @@ impl Aspect for StdFloorSurface {
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: SimpleDetachAspect<StdFloorSurface> =
+            SimpleDetachAspect::<StdFloorSurface>::new();
         entity.insert(self.clone());
-        &FLOOR_SURFACE_REMOVER
+        &DETACH
     }
 }
-
-static FLOOR_SURFACE_REMOVER: SimpleDetachAspect<StdFloorSurface> =
-    SimpleDetachAspect::<StdFloorSurface>::new();
 
 /// Floor surface aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -153,13 +152,12 @@ impl Aspect for NoiseFloorSurface {
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: SimpleDetachAspect<NoiseFloorSurface> =
+            SimpleDetachAspect::<NoiseFloorSurface>::new();
         entity.insert(self.clone());
-        &NOISE_FLOOR_SURFACE_REMOVER
+        &DETACH
     }
 }
-
-static NOISE_FLOOR_SURFACE_REMOVER: SimpleDetachAspect<NoiseFloorSurface> =
-    SimpleDetachAspect::<NoiseFloorSurface>::new();
 
 /// Floor geometry aspect
 #[derive(Component, Debug, Reflect, Clone, Copy, Default)]
@@ -186,13 +184,13 @@ impl Aspect for FloorGeometry {
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: SimpleDetachAspect<FloorGeometry> =
+            SimpleDetachAspect::<FloorGeometry>::new();
+
         entity.insert(*self);
-        &FLOOR_GEOMETRY_REMOVER
+        &DETACH
     }
 }
-
-static FLOOR_GEOMETRY_REMOVER: SimpleDetachAspect<FloorGeometry> =
-    SimpleDetachAspect::<FloorGeometry>::new();
 
 /// Floor navigation aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -215,9 +213,8 @@ impl Aspect for FloorNav {
     }
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: SimpleDetachAspect<FloorNav> = SimpleDetachAspect::<FloorNav>::new();
         entity.insert(self.clone());
-        &FLOOR_NAV_REMOVER
+        &DETACH
     }
 }
-
-static FLOOR_NAV_REMOVER: SimpleDetachAspect<FloorNav> = SimpleDetachAspect::<FloorNav>::new();

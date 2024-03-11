@@ -25,8 +25,12 @@ impl PrecinctCache {
         }
     }
 
-    pub fn _size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.precincts.len()
+    }
+
+    pub fn get(&mut self, key: &PrecinctKey) -> Option<Entity> {
+        self.precincts.get(key).cloned()
     }
 }
 

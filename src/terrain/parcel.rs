@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+
+use super::{TerrainFxVertexAttr, PARCEL_TERRAIN_FX_AREA};
 #[derive(Eq, PartialEq, Hash)]
 pub struct ParcelKey {
     pub realm: Entity,
@@ -43,11 +45,22 @@ pub struct Parcel {
 
     /// Entity that contains the flora instances for this parcel.
     pub flora_entity: Option<Entity>,
+
+    /// Terrain effects for this parcel.
+    pub terrain_fx: [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA],
 }
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct ParcelContourChanged;
+pub struct RebuildParcelTerrainFx;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildParcelGroundMesh;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildParcelPhysics;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]

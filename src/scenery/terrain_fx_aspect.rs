@@ -1,39 +1,20 @@
-use crate::schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect};
+use crate::{
+    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
+    terrain::TerrainTypes,
+};
 use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
 use std::any::TypeId;
-
-#[derive(Debug, Reflect, Clone, Default, PartialEq, Serialize, Deserialize)]
-#[reflect(Default, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum TerrainEffectType {
-    #[default]
-    Earth,
-    Soil,
-    Path,
-    Cobbles,
-    Road,
-    Stone,
-}
-
-#[derive(Debug, Reflect, Clone, PartialEq, Serialize, Deserialize)]
-#[reflect(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum TerrainEffectSet {
-    SingleEffect(TerrainEffectType),
-    MultipleEffects(Vec<TerrainEffectType>),
-}
 
 /// Description of a terrain effect. Terrain effects are a property of precincts, but are
 /// applied to terrain parcels.
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct TerrainEffect {
-    effect: Option<TerrainEffectSet>,
-    effect_strength: Option<f32>,
-    elevation: Option<f32>,
-    continuous_x: Option<bool>,
-    continuous_y: Option<bool>,
+    pub effect: TerrainTypes,
+    pub effect_strength: Option<f32>,
+    pub elevation: Option<f32>,
+    pub continuous_x: Option<bool>,
+    pub continuous_y: Option<bool>,
 }
 
 impl Aspect for TerrainEffect {

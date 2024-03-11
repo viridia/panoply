@@ -16,6 +16,7 @@ use self::{
     scenery_colliders::{ColliderDesc, ColliderShape, ColliderType},
     scenery_element::{spawn_se_model_instances, spawn_se_models, update_se_aspects},
     terrain_fx_aspect::{TerrainEffect, TerrainHole},
+    terrain_fx_map::{rebuild_parcel_terrain_fx, rebuild_terrain_fx_vertex_attrs},
     wall_aspect::WallSize,
 };
 
@@ -27,10 +28,12 @@ mod msgpack_extension;
 mod precinct;
 mod precinct_asset;
 mod precinct_cache;
+mod rle;
 mod scenery_aspect;
 mod scenery_colliders;
 mod scenery_element;
 mod terrain_fx_aspect;
+mod terrain_fx_map;
 mod wall_aspect;
 
 pub const PRECINCT_SIZE: i32 = 64;
@@ -86,6 +89,9 @@ impl Plugin for SceneryPlugin {
                     // Wall and fixture processing
                     update_se_aspects.after(read_precinct_data),
                     spawn_se_models.after(update_se_aspects),
+                    // TerrainFx processing
+                    rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
+                    rebuild_parcel_terrain_fx.after(rebuild_terrain_fx_vertex_attrs),
                     // These poll resource handles so won't run in the same frame anyway
                     insert_floor_meshes,
                     rebuild_floor_materials,
