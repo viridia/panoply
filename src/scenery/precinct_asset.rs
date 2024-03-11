@@ -25,6 +25,7 @@ pub struct PrecinctAsset {
     pub(crate) floor_types: Vec<String>,
 
     /// Table of terrain effect archetypes used by this precinct.
+    #[serde(default)]
     pub(crate) terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.
