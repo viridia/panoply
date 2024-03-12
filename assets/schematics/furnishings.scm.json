@@ -556,6 +556,15 @@
             ]
           }
         ]
+      },
+      "LightSource": {
+        "offset": [
+          0,
+          0.6,
+          0
+        ],
+        "radius": 2,
+        "color": "#fff4bd"
       }
     }
   },
@@ -580,6 +589,15 @@
             ]
           }
         ]
+      },
+      "LightSource": {
+        "offset": [
+          0,
+          1.5,
+          0
+        ],
+        "radius": 2,
+        "color": "#fff4bd"
       }
     }
   },
@@ -1102,6 +1120,15 @@
             ]
           }
         ]
+      },
+      "LightSource": {
+        "offset": [
+          0,
+          1,
+          0.3
+        ],
+        "radius": 2,
+        "color": "#fff4bd"
       }
     }
   },

@@ -1,4 +1,7 @@
-use crate::schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect};
+use crate::{
+    reflect_types::HexColor,
+    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
+};
 use bevy::{prelude::*, utils::HashMap};
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
@@ -119,6 +122,46 @@ impl Aspect for SceneryMarks {
 
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: SimpleDetachAspect<SceneryMarks> = SimpleDetachAspect::<SceneryMarks>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+}
+
+/// Location markers for a given scenery element, used to drive NPC behavior
+#[derive(Component, Debug, Reflect, Clone, Default)]
+#[reflect(Aspect, Default)]
+pub struct LightSource {
+    /// Position of the effect relative to the fixture or wall.
+    offset: Option<Vec3>,
+
+    /// Radius of point light (max distance).
+    radius: Option<f32>,
+
+    /// Color of the light.
+    color: Option<HexColor>,
+
+    /// Intensity of the light.
+    intensity: Option<f32>,
+
+    /// If present, effect is only enabled when this instance property is true.
+    enabled: Option<bool>,
+}
+
+impl Aspect for LightSource {
+    fn name(&self) -> &str {
+        "LightSource"
+    }
+
+    fn can_apply(&self, meta_type: InstanceType) -> bool {
+        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    }
+
+    fn id(&self) -> TypeId {
+        std::any::TypeId::of::<Self>()
+    }
+
+    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: SimpleDetachAspect<LightSource> = SimpleDetachAspect::<LightSource>::new();
         entity.insert(self.clone());
         &DETACH
     }

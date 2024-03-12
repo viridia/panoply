@@ -169,6 +169,27 @@
       "type": "object",
       "additionalProperties": false
     },
+    "LightSource": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "$ref": "./types.schema.json#/definitions/Vec3"
+        },
+        "color": {
+          "$ref": "./types.schema.json#/definitions/Color"
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "distance": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["offset"],
+      "additionalProperties": false
+    },
     "Portal": {
       "type": "object",
       "properties": {

@@ -12,7 +12,7 @@ use self::{
     msgpack_extension::Vector3,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
-    scenery_aspect::{ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
+    scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{ColliderDesc, ColliderShape, ColliderType},
     scenery_element::{spawn_se_model_instances, spawn_se_models, update_se_aspects},
     terrain_fx_aspect::{TerrainEffect, TerrainHole},
@@ -61,6 +61,7 @@ impl Plugin for SceneryPlugin {
             .register_type::<SceneryModels>()
             .register_type::<SceneryColliders>()
             .register_type::<SceneryMarks>()
+            .register_type::<LightSource>()
             .register_type::<WallSize>()
             .register_type::<TerrainEffect>()
             .register_type::<TerrainHole>()

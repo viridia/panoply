@@ -13,7 +13,7 @@ pub enum PortalSide {
     Back,
 }
 
-/// 3D models for a given scenery element.
+/// Defines geometry for a portal.
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct Portal {
@@ -51,7 +51,7 @@ impl Aspect for Portal {
     }
 }
 
-/// Physics colliders for a given scenery element.
+/// Defines the remote location of a portal.
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct PortalTarget {
