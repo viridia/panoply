@@ -3268,6 +3268,19 @@
             ]
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          2
+        ],
+        "offset": [
+          0.3,
+          0.8,
+          0.5
+        ]
       }
     }
   },
@@ -6014,6 +6027,19 @@
             ]
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          2.1
+        ],
+        "offset": [
+          0.3,
+          0.8,
+          0.5
+        ]
       }
     }
   },
@@ -6698,6 +6724,19 @@
             ]
           }
         ]
+      },
+      "Portal": {
+        "side": "both",
+        "size": [
+          0,
+          1.8,
+          1.2
+        ],
+        "offset": [
+          1,
+          1.6,
+          1
+        ]
       }
     }
   },
@@ -7123,6 +7162,19 @@
             ]
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          2
+        ],
+        "offset": [
+          0.3,
+          0.8,
+          0.5
+        ]
       }
     }
   },
@@ -7201,6 +7253,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          6.75,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.25
       }
     }
   },
@@ -7280,6 +7346,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          0,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.2
       }
     }
   },
@@ -7358,6 +7438,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          0,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.25
       }
     }
   },
@@ -7437,6 +7531,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "back",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          -0.2,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.3
       }
     }
   },
@@ -7607,6 +7715,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          0,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.2
       }
     }
   },
@@ -7685,6 +7807,20 @@
             "walkable": true
           }
         ]
+      },
+      "Portal": {
+        "side": "front",
+        "size": [
+          0,
+          1.6,
+          1.8
+        ],
+        "offset": [
+          0,
+          0.8,
+          0.5
+        ],
+        "displacement": 0.25
       }
     }
   },

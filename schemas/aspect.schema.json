@@ -168,6 +168,36 @@
     "TerrainHole": {
       "type": "object",
       "additionalProperties": false
+    },
+    "Portal": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "$ref": "./types.schema.json#/definitions/Vec3"
+        },
+        "offset": {
+          "$ref": "./types.schema.json#/definitions/Vec3"
+        },
+        "side": {
+          "enum": ["front", "back", "both"]
+        },
+        "displacement": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["size", "offset"],
+      "additionalProperties": false
+    },
+    "PortalTarget": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "./types.schema.json#/definitions/Location"
+        }
+      },
+      "required": ["size", "offset"],
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

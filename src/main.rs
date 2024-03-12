@@ -18,6 +18,7 @@ mod diagnostics;
 mod editor;
 mod instancing;
 mod materials;
+mod portals;
 mod random;
 mod reflect_types;
 mod scenery;
@@ -32,6 +33,7 @@ use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
     materials::MaterialsPlugin,
+    portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
     schematic::SchematicPlugin,
@@ -128,6 +130,7 @@ fn main() {
             TerrainPlugin,
             SceneryPlugin,
             InstancedModelsPlugin,
+            PortalPlugin,
             // WorldInspectorPlugin::new(),
         ))
         .run();

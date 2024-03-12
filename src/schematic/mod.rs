@@ -55,7 +55,7 @@ impl Serialize for SchematicData {
 /// An asset that stores multiple metadata items.
 #[derive(TypePath, Asset)]
 pub struct SchematicCatalog {
-    entries: HashMap<String, Arc<SchematicData>>,
+    entries: HashMap<String, Handle<Schematic>>,
 }
 
 pub struct SchematicPlugin;

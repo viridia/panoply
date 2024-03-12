@@ -212,7 +212,7 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
     where
         A: de::MapAccess<'de>,
     {
-        let mut entries: HashMap<String, Arc<SchematicData>> =
+        let mut entries: HashMap<String, Handle<Schematic>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             let mut lc = self.load_context.begin_labeled_asset();
@@ -224,14 +224,15 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
             let aliases = sdata.alias.clone();
             let schematic = Arc::new(sdata);
             let handle = lc.finish(Schematic(schematic.clone()), None);
-            self.load_context
+            let handle = self
+                .load_context
                 .add_loaded_labeled_asset(key.clone(), handle);
             for alias in &aliases {
                 self.load_context
                     .add_labeled_asset(alias.clone(), Schematic(schematic.clone()));
             }
 
-            entries.insert(key, schematic);
+            entries.insert(key, handle);
         }
 
         Ok(SchematicCatalog { entries })
