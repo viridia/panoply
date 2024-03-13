@@ -18,6 +18,7 @@ mod diagnostics;
 mod editor;
 mod instancing;
 mod materials;
+mod msgpack;
 mod portals;
 mod random;
 mod reflect_types;
@@ -33,6 +34,7 @@ use crate::{
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
     materials::MaterialsPlugin,
+    msgpack::MsgpackExtPlugin,
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
@@ -123,6 +125,7 @@ fn main() {
         )
         .add_systems(Update, bevy::window::close_on_esc)
         .add_plugins((
+            MsgpackExtPlugin,
             ReflectTypesPlugin,
             SchematicPlugin,
             MaterialsPlugin,

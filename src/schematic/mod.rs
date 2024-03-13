@@ -3,10 +3,12 @@ use serde::Serialize;
 use std::sync::Arc;
 
 mod aspect;
+mod aspect_list;
 mod command;
 mod loader;
 
 pub use aspect::*;
+pub(crate) use aspect_list::AspectListDeserializer;
 pub use command::UpdateAspects;
 
 // TODO: Use type ids instead.

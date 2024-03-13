@@ -1,4 +1,10 @@
-use bevy::{asset::LoadContext, prelude::*, utils::HashMap};
+use bevy::{
+    asset::LoadContext,
+    prelude::*,
+    reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry},
+    utils::HashMap,
+};
+use serde::{de::DeserializeSeed, Deserializer};
 use std::any::TypeId;
 
 use super::InstanceType;
@@ -94,3 +100,41 @@ where
 
 #[derive(Component)]
 pub struct OwnedAspects(pub(crate) HashMap<TypeId, &'static dyn DetachAspect>);
+
+pub(crate) struct AspectDeserializer<'a> {
+    pub(crate) type_registration: &'a TypeRegistration,
+    pub(crate) type_registry: &'a TypeRegistry,
+}
+
+impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
+    type Value = Box<dyn Aspect>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let reflect_deserializer =
+            TypedReflectDeserializer::new(self.type_registration, self.type_registry);
+        let deserialized_value: Box<dyn Reflect> =
+            match reflect_deserializer.deserialize(deserializer) {
+                Ok(value) => value,
+                Err(err) => {
+                    error!(
+                        "Error deserializing aspect: {} {:?}",
+                        self.type_registration.type_info().type_path(),
+                        err
+                    );
+                    return Err(err);
+                }
+            };
+        let rd = self.type_registration.data::<ReflectDefault>().unwrap();
+        let mut value = rd.default();
+        value.apply(&*deserialized_value);
+        let reflect_aspect = self
+            .type_registry
+            .get_type_data::<ReflectAspect>(self.type_registration.type_id())
+            .unwrap();
+        let aspect = reflect_aspect.get_boxed(value).unwrap();
+        Ok(aspect)
+    }
+}

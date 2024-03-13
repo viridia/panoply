@@ -1,4 +1,7 @@
-use crate::schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect};
+use crate::{
+    msgpack::Vector3,
+    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
+};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
@@ -56,7 +59,7 @@ impl Aspect for Portal {
 #[reflect(Aspect, Default)]
 pub struct PortalTarget {
     realm: String,
-    location: Vec3,
+    pos: Vector3,
 }
 
 impl Aspect for PortalTarget {

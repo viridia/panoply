@@ -1,4 +1,4 @@
-//! Msgpack extension for three.js types
+//! Msgpack extension types
 use bevy::prelude::*;
 use serde::{de::Visitor, ser::SerializeTuple, Deserialize, Serialize};
 use std::fmt;
@@ -9,8 +9,8 @@ extern crate rmp_serde as rmps;
 #[serde(rename = "_ExtStruct")]
 struct ExtStruct((i8, serde_bytes::ByteBuf));
 
-#[derive(Debug, Clone, Copy, Reflect)]
-#[reflect(Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Reflect, Default)]
+#[reflect(Serialize, Deserialize, Default)]
 pub struct Vector3 {
     x: f32,
     y: f32,
@@ -52,6 +52,22 @@ impl<'de> Visitor<'de> for Vector3Visitor {
         let ext = ExtStruct::deserialize(deserializer)?;
         let (x, y, z) =
             rmps::from_slice::<(f32, f32, f32)>(ext.0 .1.into_vec().as_slice()).unwrap();
+        Ok(Vector3 { x, y, z })
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        let x: f32 = seq.next_element()?.unwrap();
+        let y: f32 = seq.next_element()?.unwrap();
+        let z: f32 = seq.next_element()?.unwrap();
+        if seq.next_element::<f32>()?.is_some() {
+            return Err(serde::de::Error::invalid_length(
+                4,
+                &"a tuple of 3 elements",
+            ));
+        }
         Ok(Vector3 { x, y, z })
     }
 }
@@ -115,5 +131,15 @@ impl<'de> Deserialize<'de> for Box2d {
         D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_newtype_struct("Box2", Box2dVisitor)
+    }
+}
+
+pub struct MsgpackExtPlugin;
+
+impl Plugin for MsgpackExtPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<Vector3>()
+            .register_type::<Option<Vector3>>()
+            .register_type::<Box2d>();
     }
 }

@@ -5,8 +5,6 @@
   - Generation error [REPORTED]
   - Materials get loaded multiple times?
   - CottageWallSkirtCorner turned wrong way.
-- Facing and rotations: make consistent? I don't even know what they are now.
-  Probably should be degrees.
 - Models
   - [x] replace model_loader
 - Wall Physics
@@ -15,6 +13,9 @@
 - Finish terrain shader
   - paths
   - biomes
+- Portals
+  - off-screen render
+  - need portal target aspect
 
 * cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
@@ -42,13 +43,6 @@ Future:
 
 # Aspects to define
 
-- InventoryItem
-  - [ ] inventory::Item - appearance, weight, stack size, price
-  - [ ] inventory::Container - carrying capacity
-  - [ ] inventory::Equippable - equip slot
-  - [ ] inventory::Weapon - damage type, range
-  - [ ] inventory::Document - link to text content, page style
-  - [ ] inventory::QuestItem - quest id, stage
 - Floor
   - [x] floor::StdSurface - texture asset
   - [x] floor::NoiseSurface - procedural texture
@@ -65,23 +59,22 @@ Future:
   - [ ] scenery::Sign - click to read
   - [ ] scenery::PortalAperture - portal dimensions
   - [ ] scenery::PortalTarget - portal target location
-  - [ ] scenery::LightSource
-  - [ ] scenery::SoundSource
+  - [ ] scenery::LightSource - point light source location
+  - [ ] scenery::SoundSource - ambient sound emitter
   - [ ] scenery::WallSize - grid alignment options
-  - [ ] mechanics::ToggleButton - click to interact
   - [ ] mechanics::PushButton - click to interact
+  - [ ] mechanics::ToggleButton - click to interact
   - [ ] mechanics::PressurePlate - senses being walked on
   - [ ] mechanics::ControlledOpenable - change state via remote signal
   - [ ] mechanics::AutoDoor
   - [ ] trigger::Circle - detects when player is within circle
   - [ ] trigger::Rect - detects when player is within rect
+  - [ ] trigger::Encounter - increases chance of enemy spawn based on proximity
   - [ ] scenery::Waymark - used for NPC scripted events
 - Sfx
   - [ ] sfx::Music
   - [ ] sfx::WaterFx
   - [ ] sfx::Particles
-- Encounter
-- Book
 - Actors
   - [ ] actor::Model
   - [ ] actor::ColorSlots
@@ -96,6 +89,14 @@ Future:
   - [ ] actor::Ally
   - [ ] actor::Portrait
   - [ ] actor::GoalsXXX\* (can be multiple)
+- InventoryItem
+  - [ ] inventory::Item - appearance, weight, stack size, price
+  - [ ] inventory::Container - carrying capacity
+  - [ ] inventory::Equippable - equip slot
+  - [ ] inventory::Weapon - damage type, range
+  - [ ] inventory::Document - link to text content, page style
+  - [ ] inventory::QuestItem - quest id, stage
+- Book
 
 # Project hierarchy
 

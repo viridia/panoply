@@ -9,7 +9,6 @@ use self::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
     floor_noise::FloorNoiseMaterial,
-    msgpack_extension::Vector3,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
@@ -24,7 +23,6 @@ pub mod floor_aspect;
 mod floor_mesh;
 mod floor_noise;
 mod floor_region;
-mod msgpack_extension;
 mod precinct;
 mod precinct_asset;
 mod precinct_cache;
@@ -51,7 +49,7 @@ pub struct SceneryPlugin;
 impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PrecinctCache::new())
-            .register_asset_loader(PrecinctAssetLoader)
+            .init_asset_loader::<PrecinctAssetLoader>()
             .init_asset::<PrecinctAsset>()
             .init_resource::<FloorOutline>()
             .register_type::<StdFloorSurface>()
@@ -72,8 +70,8 @@ impl Plugin for SceneryPlugin {
             .register_type::<ColliderType>()
             .register_type::<Vec<ColliderDesc>>()
             .register_type::<Vec<String>>()
+            .register_type::<Option<Vec3>>()
             .register_type::<HashMap<String, Vec<Vec3>>>()
-            .register_type::<Vector3>()
             .register_type::<HashMap<String, String>>()
             .add_plugins(MaterialPlugin::<
                 ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,

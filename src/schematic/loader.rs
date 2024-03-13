@@ -1,7 +1,7 @@
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
-    reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry, TypeRegistryArc},
+    reflect::{TypeRegistry, TypeRegistryArc},
     utils::{hashbrown::HashMap, thiserror::Error, BoxedFuture},
 };
 use futures_lite::AsyncReadExt;
@@ -11,93 +11,8 @@ use serde::{
 };
 use std::{fmt, sync::Arc};
 
-use crate::schematic::aspect::ReflectAspect;
-
-use super::aspect::Aspect;
+use super::aspect_list::AspectListDeserializer;
 use super::{InstanceType, Schematic, SchematicCatalog, SchematicData};
-
-struct AspectDeserializer<'a> {
-    type_registration: &'a TypeRegistration,
-    type_registry: &'a TypeRegistry,
-}
-
-impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
-    type Value = Box<dyn Aspect>;
-
-    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let reflect_deserializer =
-            TypedReflectDeserializer::new(self.type_registration, self.type_registry);
-        let deserialized_value: Box<dyn Reflect> =
-            reflect_deserializer.deserialize(deserializer).unwrap();
-        let rd = self.type_registration.data::<ReflectDefault>().unwrap();
-        let mut value = rd.default();
-        value.apply(&*deserialized_value);
-        let reflect_aspect = self
-            .type_registry
-            .get_type_data::<ReflectAspect>(self.type_registration.type_id())
-            .unwrap();
-        let aspect = reflect_aspect.get_boxed(value).unwrap();
-        Ok(aspect)
-    }
-}
-
-struct AspectMapVisitor<'a, 'b> {
-    type_registry: &'a TypeRegistry,
-    load_context: &'a mut LoadContext<'b>,
-    schematic_name: &'a str,
-}
-
-impl<'de, 'a, 'b> Visitor<'de> for AspectMapVisitor<'a, 'b> {
-    type Value = Vec<Box<dyn Aspect>>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("an aspect map")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::MapAccess<'de>,
-    {
-        let mut result: Vec<Box<dyn Aspect>> = Vec::with_capacity(map.size_hint().unwrap_or(0));
-        while let Some(key) = map.next_key::<String>()? {
-            let type_registration = self
-                .type_registry
-                .get_with_short_type_path(&key)
-                .ok_or_else(|| de::Error::custom(format!("Unknown aspect type: {}", key)))?;
-            let mut aspect = map.next_value_seed(AspectDeserializer {
-                type_registration,
-                type_registry: self.type_registry,
-            })?;
-            aspect.load_dependencies(self.schematic_name, self.load_context);
-            result.push(aspect);
-        }
-        Ok(result)
-    }
-}
-
-struct AspectListDeserializer<'a, 'b> {
-    type_registry: &'a TypeRegistry,
-    load_context: &'a mut LoadContext<'b>,
-    schematic_name: &'a str,
-}
-
-impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
-    type Value = Vec<Box<dyn Aspect>>;
-
-    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_map(AspectMapVisitor {
-            type_registry: self.type_registry,
-            load_context: self.load_context,
-            schematic_name: self.schematic_name,
-        })
-    }
-}
 
 #[derive(Deserialize)]
 #[serde(field_identifier, rename_all = "snake_case")]
@@ -165,7 +80,7 @@ impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
                     result.aspects = map.next_value_seed(AspectListDeserializer {
                         type_registry: self.type_registry,
                         load_context: self.load_context,
-                        schematic_name: self.schematic_name,
+                        parent_label: self.schematic_name,
                     })?;
                 }
                 Field::Extends => todo!(),
