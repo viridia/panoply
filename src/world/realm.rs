@@ -2,12 +2,11 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
+use bevy::render::view::RenderLayers;
 use bevy::utils::thiserror::Error;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
-
-pub type RealmLayer = usize;
 
 #[derive(Default, Serialize, Deserialize, Clone, Copy)]
 pub enum RealmLighting {
@@ -25,7 +24,7 @@ pub struct RealmData {
 #[derive(Component, Default, Asset, TypePath)]
 pub struct Realm {
     /// Realm index, also used as layer index for rendering.
-    pub layer: RealmLayer,
+    pub layer: RenderLayers,
 
     /// Resource name of this realm.
     pub name: String,
@@ -106,11 +105,11 @@ pub fn sync_realms(
                 let realm_name = realm_name_from_handle(&server, id);
 
                 // Assign first unused id.
-                let mut layer: RealmLayer = 1;
+                let mut layer: u8 = 1;
                 loop {
                     let mut collision = false;
                     for (_, realm) in query.iter() {
-                        if realm.layer == layer {
+                        if realm.layer.intersects(&RenderLayers::layer(layer)) {
                             layer += 1;
                             collision = true;
                         }
@@ -131,7 +130,7 @@ pub fn sync_realms(
                 if !exists {
                     println!("Realm created: [{}].", realm_name);
                     commands.spawn(Realm {
-                        layer,
+                        layer: RenderLayers::layer(layer),
                         name: realm_name,
                         lighting: realm.lighting,
                         parcel_bounds: IRect::default(),

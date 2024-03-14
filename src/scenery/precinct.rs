@@ -7,7 +7,7 @@ use super::{
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, render::view::RenderLayers};
 
 #[derive(Eq, PartialEq, Hash)]
 pub struct PrecinctKey {
@@ -23,6 +23,7 @@ pub struct PrecinctKey {
 #[derive(Component, Debug)]
 pub struct Precinct {
     pub realm: Entity,
+    pub render_layer: RenderLayers,
     pub coords: IVec2,
     pub visible: bool,
     pub asset: Handle<PrecinctAsset>,
@@ -102,6 +103,7 @@ impl Precinct {
                                 schematic,
                                 poly: floor.poly.clone(),
                             },
+                            self.render_layer,
                             RebuildFloorAspects,
                         ))
                         .set_parent(entity)
@@ -147,10 +149,12 @@ impl Precinct {
                         facing,
                         position: elt.position,
                     },
+                    elt.aspects.clone(),
                     SpatialBundle {
                         transform,
                         ..default()
                     },
+                    self.render_layer,
                     SceneryElementRebuildAspects,
                 ))
                 .set_parent(entity);

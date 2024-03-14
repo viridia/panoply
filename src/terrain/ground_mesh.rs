@@ -47,10 +47,9 @@ pub fn gen_ground_meshes(
     let pool = AsyncComputeTaskPool::get();
 
     for (entity, parcel) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
-        if realm.is_err() {
+        let Ok((realm, _map)) = realms_query.get(parcel.realm) else {
             return;
-        }
+        };
 
         if server.load_state(&ts_handle.0) != LoadState::Loaded {
             return;
@@ -69,6 +68,7 @@ pub fn gen_ground_meshes(
         commands
             .entity(entity)
             .insert(ComputeGroundMeshTask(task))
+            .insert(realm.layer)
             .remove::<RebuildParcelGroundMesh>();
     }
 }
@@ -81,9 +81,7 @@ pub fn insert_ground_meshes(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
-        if realm.is_ok() {
-            let (_, terrain_map) = realm.unwrap();
+        if let Ok((realm, terrain_map)) = realms_query.get(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(ground_result) = task_result {
                     let ground_mesh = MaterialMeshBundle {
@@ -99,8 +97,12 @@ pub fn insert_ground_meshes(
                         }
                         None => {
                             // Insert new mesh entity
-                            parcel.ground_entity =
-                                Some(commands.spawn(ground_mesh).set_parent(entity).id());
+                            parcel.ground_entity = Some(
+                                commands
+                                    .spawn((ground_mesh, realm.layer))
+                                    .set_parent(entity)
+                                    .id(),
+                            );
                         }
                     }
                 }

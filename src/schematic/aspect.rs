@@ -4,8 +4,11 @@ use bevy::{
     reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry},
     utils::HashMap,
 };
-use serde::{de::DeserializeSeed, Deserializer};
-use std::any::TypeId;
+use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
+use std::{
+    any::TypeId,
+    fmt::{self, Debug},
+};
 
 use super::InstanceType;
 
@@ -62,6 +65,9 @@ where
 
     /// Attach or apply this aspect to the given entity.
     fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect;
+
+    /// Clone this aspect as a boxed trait object.
+    fn clone_boxed(&self) -> Box<dyn Aspect>;
 
     //   /** Configuration parameters for this aspect. */
     //   config?: IPropertyDescriptors<Config>;
@@ -136,5 +142,48 @@ impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
             .unwrap();
         let aspect = reflect_aspect.get_boxed(value).unwrap();
         Ok(aspect)
+    }
+}
+
+/// A list of aspects associated with a specific instance, rather than a schematic.
+#[derive(Component, Default)]
+pub struct InstanceAspects(pub Vec<Box<dyn Aspect>>);
+
+impl InstanceAspects {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Debug for InstanceAspects {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for aspect in self.0.iter() {
+            write!(f, "{:?}", aspect.as_reflect().type_id())?;
+        }
+        Ok(())
+    }
+}
+
+impl Serialize for InstanceAspects {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        let map = serializer.serialize_map(Some(self.0.len()))?;
+        for _aspect in self.0.iter() {
+            todo!();
+            // map.serialize_entry(aspect.into_reflect().type_id(), aspect)?;
+        }
+        map.end()
+    }
+}
+
+impl Clone for InstanceAspects {
+    fn clone(&self) -> Self {
+        let mut aspects = Vec::with_capacity(self.0.len());
+        for aspect in self.0.iter() {
+            aspects.push(aspect.clone_boxed());
+        }
+        InstanceAspects(aspects)
     }
 }

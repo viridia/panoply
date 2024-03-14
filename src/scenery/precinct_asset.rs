@@ -7,14 +7,14 @@ use bevy::{
 use futures_lite::AsyncReadExt;
 use serde::{
     de::{DeserializeSeed, Visitor},
-    ser::{SerializeMap, SerializeTuple},
+    ser::SerializeTuple,
     Deserialize, Serialize,
 };
 use std::fmt::{self, Debug};
 
 use crate::{
     msgpack::{Box2d, Vector3},
-    schematic::{Aspect, AspectListDeserializer},
+    schematic::{AspectListDeserializer, InstanceAspects},
 };
 
 use super::floor_region::FloorRegionSer;
@@ -75,38 +75,6 @@ pub struct CompressedInstance {
 
     /// List of aspects for this instance.
     pub aspects: InstanceAspects,
-}
-
-#[derive(Default)]
-pub struct InstanceAspects(pub Vec<Box<dyn Aspect>>);
-
-impl InstanceAspects {
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-}
-
-impl Debug for InstanceAspects {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for aspect in self.0.iter() {
-            write!(f, "{:?}", aspect.as_reflect().type_id())?;
-        }
-        Ok(())
-    }
-}
-
-impl Serialize for InstanceAspects {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::ser::Serializer,
-    {
-        let map = serializer.serialize_map(Some(self.0.len()))?;
-        for _aspect in self.0.iter() {
-            todo!();
-            // map.serialize_entry(aspect.into_reflect().type_id(), aspect)?;
-        }
-        map.end()
-    }
 }
 
 impl Serialize for CompressedInstance {

@@ -70,6 +70,10 @@ impl Aspect for SceneryModels {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Physics colliders for a given scenery element.
@@ -98,6 +102,10 @@ impl Aspect for SceneryColliders {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Location markers for a given scenery element, used to drive NPC behavior
@@ -124,6 +132,10 @@ impl Aspect for SceneryMarks {
         static DETACH: SimpleDetachAspect<SceneryMarks> = SimpleDetachAspect::<SceneryMarks>::new();
         entity.insert(self.clone());
         &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
     }
 }
 
@@ -164,5 +176,9 @@ impl Aspect for LightSource {
         static DETACH: SimpleDetachAspect<LightSource> = SimpleDetachAspect::<LightSource>::new();
         entity.insert(self.clone());
         &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
     }
 }

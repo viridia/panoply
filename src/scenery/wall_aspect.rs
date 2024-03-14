@@ -32,4 +32,8 @@ impl Aspect for WallSize {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }

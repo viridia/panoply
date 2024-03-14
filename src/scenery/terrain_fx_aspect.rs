@@ -36,6 +36,10 @@ impl Aspect for TerrainEffect {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Indicates a hole in the terrain.
@@ -60,5 +64,9 @@ impl Aspect for TerrainHole {
         static DETACH: SimpleDetachAspect<TerrainHole> = SimpleDetachAspect::<TerrainHole>::new();
         entity.insert(self.clone());
         &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
     }
 }

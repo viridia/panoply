@@ -54,10 +54,7 @@ impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
                     if result.meta_type != InstanceType::None {
                         return Err(de::Error::duplicate_field("type"));
                     }
-                    // if secs.is_some() {
-                    //     return Err(de::Error::duplicate_field("secs"));
-                    // }
-                    // secs = Some(map.next_value()?);
+                    // TODO: Implement type deserialization.
                     let _meta_type: String = map.next_value()?;
                     // println!("meta_type: {}", meta_type);
                 }

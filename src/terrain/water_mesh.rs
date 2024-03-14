@@ -73,10 +73,7 @@ pub fn insert_water_meshes(
     material: Res<WaterMaterialResource>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
-        if realm.is_ok() {
-            // Get layer bit from here. Or better from parcel.
-            // let (_, terrain_map) = realm.unwrap();
+        if let Ok((realm, _terrain)) = realms_query.get(parcel.realm) {
             if let Some(mesh_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(mesh) = mesh_result {
                     // Add or replace water
@@ -91,6 +88,7 @@ pub fn insert_water_meshes(
                                             ..default()
                                         },
                                         NotShadowCaster,
+                                        realm.layer,
                                     ))
                                     .set_parent(entity)
                                     .id(),

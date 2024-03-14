@@ -47,20 +47,6 @@ pub(crate) struct AspectListDeserializer<'a, 'b> {
     pub(crate) parent_label: &'a str,
 }
 
-// impl<'a, 'b> AspectListDeserializer<'a, 'b> {
-//     pub(crate) fn new(
-//         type_registry: &'a TypeRegistry,
-//         load_context: &'a mut LoadContext,
-//         schematic_name: &'a str,
-//     ) -> Self {
-//         AspectListDeserializer {
-//             type_registry,
-//             load_context,
-//             parent_label: schematic_name,
-//         }
-//     }
-// }
-
 impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
     type Value = Vec<Box<dyn Aspect>>;
 

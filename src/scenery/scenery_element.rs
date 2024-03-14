@@ -1,4 +1,4 @@
-use bevy::{asset::LoadState, gltf::Gltf, prelude::*};
+use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers};
 
 use crate::schematic::{Schematic, UpdateAspects};
 
@@ -85,11 +85,14 @@ pub fn spawn_se_model_instances(
                 if let Some(scene_handle) = gltf.named_scenes.get(&mesh.label) {
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
-                    commands.entity(entity).insert(SceneBundle {
-                        scene: scene_handle.clone(),
-                        transform,
-                        ..Default::default()
-                    });
+                    commands.entity(entity).insert((
+                        SceneBundle {
+                            scene: scene_handle.clone(),
+                            transform,
+                            ..Default::default()
+                        },
+                        RenderLayers::layer(8),
+                    ));
                 } else {
                     error!("Model not found: [{}]", mesh.label);
                     info!("Available scenes: [{:?}]", gltf.named_scenes.keys());

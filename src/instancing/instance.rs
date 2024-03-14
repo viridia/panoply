@@ -1,4 +1,4 @@
-use bevy::{asset::LoadState, gltf::Gltf, prelude::*, utils::HashMap};
+use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers, utils::HashMap};
 use serde::{Deserialize, Serialize};
 
 /// Data for placing an individual model instance.
@@ -24,6 +24,7 @@ pub type InstanceMap = HashMap<ModelId, Vec<ModelPlacement>>;
 pub struct ModelPlacements {
     pub model: ModelId,
     pub placement_list: Vec<ModelPlacement>,
+    pub layer: RenderLayers,
 }
 
 /// Marker component to let us know that the placement list has changed.
@@ -128,29 +129,25 @@ pub fn create_mesh_instances(
                             .query::<(&Handle<Mesh>, &Handle<StandardMaterial>)>();
                         // TODO: Replace material handle
                         // TODO: Cache mesh handle
-                        // TODO: Instance mesh.
                         for (mesh, material) in query.iter(&scene.world) {
                             // Limit number of models for debugging.
                             if placements.placement_list.len() < usize::MAX {
                                 for placement in placements.placement_list.iter() {
                                     children.push(
                                         commands
-                                            .spawn(PbrBundle {
-                                                mesh: mesh.clone(),
-                                                material: material.clone(),
-                                                transform: placement.transform,
-                                                ..Default::default()
-                                            })
+                                            .spawn((
+                                                PbrBundle {
+                                                    mesh: mesh.clone(),
+                                                    material: material.clone(),
+                                                    transform: placement.transform,
+                                                    ..Default::default()
+                                                },
+                                                placements.layer,
+                                            ))
                                             .id(),
                                     );
                                 }
                             }
-                            // if let Some(m) = assets_mesh.get(&mesh) {
-                            //     println!(
-                            //         "Name: {}, entity {:?}, parent: {:?}",
-                            //         name, entity, parent
-                            //     );
-                            // }
                         }
                     } else {
                         println!("Scene not found: [{}]", placements.model);

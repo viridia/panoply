@@ -107,8 +107,7 @@ pub fn insert_flora(
     realms_query: Query<(&Realm, &TerrainMap)>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
-        if realm.is_ok() {
+        if let Ok((realm, _terrain)) = realms_query.get(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 // Remove existing flora
                 if let Some(flora_entity) = parcel.flora_entity {
@@ -123,7 +122,7 @@ pub fn insert_flora(
                         Some(entity) => entity,
                         None => {
                             let child = commands
-                                .spawn((SpatialBundle { ..default() }, ParcelFlora))
+                                .spawn((SpatialBundle { ..default() }, ParcelFlora, realm.layer))
                                 .id();
                             commands.entity(entity).add_child(child);
                             parcel.flora_entity = Some(child);
@@ -142,6 +141,7 @@ pub fn insert_flora(
                                     ModelPlacements {
                                         model: model.clone(),
                                         placement_list: value,
+                                        layer: realm.layer,
                                     },
                                     ModelPlacementChanged,
                                 ))

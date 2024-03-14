@@ -108,6 +108,7 @@ pub fn spawn_precincts(
                                 asset,
                                 tiers: Vec::new(),
                                 scenery_instances: InstanceMap::new(),
+                                render_layer: realm.layer,
                             },
                             SpatialBundle {
                                 transform: Transform::from_xyz(

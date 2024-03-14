@@ -1,6 +1,9 @@
-use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy::{input::mouse::MouseWheel, prelude::*, render::view::RenderLayers};
 
-use crate::view::{PrimaryCamera, Viewpoint};
+use crate::{
+    view::{PrimaryCamera, Viewpoint},
+    world::Realm,
+};
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
@@ -18,9 +21,10 @@ pub fn camera_controller(
     mut scroll_events: EventReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
-    mut query: Query<&mut Transform, With<PrimaryCamera>>,
+    mut query: Query<(&mut Transform, &mut RenderLayers), With<PrimaryCamera>>,
+    query_realms: Query<&Realm>,
 ) {
-    let mut transform = query.single_mut();
+    let (mut transform, mut layers) = query.single_mut();
 
     let strafe =
         keyboard_input.pressed(KeyCode::ShiftLeft) || keyboard_input.pressed(KeyCode::ShiftRight);
@@ -53,5 +57,21 @@ pub fn camera_controller(
             * time.delta_seconds(),
     );
 
+    // Update the camera transform
     viewpoint.get_camera_transform(&mut transform);
+
+    // Update the camera render layers
+    match viewpoint.realm {
+        Some(realm) => {
+            if let Ok(_realm) = query_realms.get(realm) {
+                // *layers = realm.layer;
+                *layers = RenderLayers::all(); // For now, until we get GLTF scene layers sorted
+            } else {
+                *layers = RenderLayers::none();
+            }
+        }
+        None => {
+            *layers = RenderLayers::none();
+        }
+    }
 }

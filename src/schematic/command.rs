@@ -1,6 +1,6 @@
 use std::{any::TypeId, sync::Arc};
 
-use super::{Schematic, SchematicData};
+use super::{Aspect, InstanceAspects, Schematic, SchematicData};
 use crate::schematic::aspect;
 use aspect::{DetachAspect, OwnedAspects};
 use bevy::{
@@ -46,6 +46,24 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             // Keep track of aspects as we add them.
             let mut next_owned: HashMap<TypeId, &'static dyn DetachAspect> =
                 HashMap::with_capacity(0);
+
+            // First process aspects on the instance
+            let mut aspects_copy: Vec<Box<dyn Aspect>> = Vec::new();
+            if let Some(mut instance_aspects) = entity.get_mut::<InstanceAspects>() {
+                std::mem::swap(&mut instance_aspects.0, &mut aspects_copy);
+            }
+
+            for aspect in aspects_copy.iter() {
+                let aspect_type = aspect.id();
+                if !next_owned.contains_key(&aspect_type) {
+                    next_owned.insert(aspect_type, aspect.apply(&mut entity));
+                    to_remove.remove(&aspect_type);
+                }
+            }
+
+            if let Some(mut instance_aspects) = entity.get_mut::<InstanceAspects>() {
+                std::mem::swap(&mut instance_aspects.0, &mut aspects_copy);
+            }
 
             // Loop through inheritance chain
             for schematic in schematics.iter() {

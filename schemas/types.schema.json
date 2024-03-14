@@ -192,6 +192,9 @@
         },
         "walkable": {
           "type": "boolean"
+        },
+        "margin": {
+          "type": "number"
         }
       },
       "required": ["shape"],

@@ -91,6 +91,10 @@ impl Aspect for StdFloorSurface {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Floor surface aspect
@@ -157,6 +161,10 @@ impl Aspect for NoiseFloorSurface {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Floor geometry aspect
@@ -190,6 +198,10 @@ impl Aspect for FloorGeometry {
         entity.insert(*self);
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(*self)
+    }
 }
 
 /// Floor navigation aspect
@@ -216,5 +228,9 @@ impl Aspect for FloorNav {
         static DETACH: SimpleDetachAspect<FloorNav> = SimpleDetachAspect::<FloorNav>::new();
         entity.insert(self.clone());
         &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
     }
 }

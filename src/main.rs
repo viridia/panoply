@@ -6,6 +6,7 @@ use bevy::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
+        view::RenderLayers,
     },
 };
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -207,16 +208,16 @@ fn setup(
         ));
     }
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 5000.0,
-            range: 20.,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(8.0, 16.0, 8.0),
-        ..default()
-    });
+    // commands.spawn(PointLightBundle {
+    //     point_light: PointLight {
+    //         intensity: 5000.0,
+    //         range: 20.,
+    //         shadows_enabled: true,
+    //         ..default()
+    //     },
+    //     transform: Transform::from_xyz(8.0, 16.0, 8.0),
+    //     ..default()
+    // });
 
     commands.insert_resource(AmbientLight {
         brightness: 0.5 * 1000.,
@@ -228,34 +229,38 @@ fn setup(
         },
     });
 
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            shadows_enabled: true,
-            color: Color::Rgba {
-                red: 1.,
-                green: 1.,
-                blue: 1.,
-                alpha: 1.,
+    commands.spawn((
+        DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                shadows_enabled: true,
+                color: Color::Rgba {
+                    red: 1.,
+                    green: 1.,
+                    blue: 1.,
+                    alpha: 1.,
+                },
+                illuminance: 3000.,
+                ..default()
             },
-            illuminance: 3000.,
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_x(-PI / 3.),
+                ..default()
+            },
+            // The default cascade config is designed to handle large scenes.
+            // As this example has a much smaller world, we can tighten the shadow
+            // bounds for better visual quality.
+            cascade_shadow_config: CascadeShadowConfigBuilder {
+                first_cascade_far_bound: 4.0,
+                maximum_distance: 40.0,
+                ..default()
+            }
+            .into(),
             ..default()
         },
-        transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 3.),
-            ..default()
-        },
-        // The default cascade config is designed to handle large scenes.
-        // As this example has a much smaller world, we can tighten the shadow
-        // bounds for better visual quality.
-        cascade_shadow_config: CascadeShadowConfigBuilder {
-            first_cascade_far_bound: 4.0,
-            maximum_distance: 40.0,
-            ..default()
-        }
-        .into(),
-        ..default()
-    });
+        // TODO: Give each realm its own light? Or outdoor realms only?
+        RenderLayers::all(),
+    ));
 
     // TODO: Move to 'view' module
     // Ui Camera
@@ -285,8 +290,9 @@ fn setup(
             // tonemapping: Tonemapping::AcesFitted,
             ..default()
         },
+        // RenderLayers::none(),
+        RenderLayers::all(), // For now, until we get GLTF scene layers sorted
         PrimaryCamera,
-        // UiCameraConfig { show_ui: false },
     ));
 
     // TODO: Move to 'hud' module

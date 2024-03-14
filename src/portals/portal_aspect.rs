@@ -52,6 +52,10 @@ impl Aspect for Portal {
         entity.insert(self.clone());
         &DETACH
     }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
 }
 
 /// Defines the remote location of a portal.
@@ -79,5 +83,9 @@ impl Aspect for PortalTarget {
         static DETACH: SimpleDetachAspect<PortalTarget> = SimpleDetachAspect::<PortalTarget>::new();
         entity.insert(self.clone());
         &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
     }
 }
