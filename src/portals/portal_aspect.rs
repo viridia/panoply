@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 
-#[derive(Debug, Reflect, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Reflect, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 #[reflect(Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PortalSide {
@@ -20,8 +20,13 @@ pub enum PortalSide {
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct Portal {
-    /// Size of the portal aperture. The aperture is a box.
-    pub size: Vec3,
+    /// Half-size of the portal aperture.
+    pub size: Vec2,
+
+    /// Portal rotation.
+    pub x_rotation: Option<f32>,
+    pub y_rotation: Option<f32>,
+    pub z_rotation: Option<f32>,
 
     /// Offset of the portal aperture from the center of the entity.
     pub offset: Vec3,
@@ -62,8 +67,8 @@ impl Aspect for Portal {
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct PortalTarget {
-    realm: String,
-    pos: Vector3,
+    pub(crate) realm: String,
+    pub(crate) pos: Vector3,
 }
 
 impl Aspect for PortalTarget {

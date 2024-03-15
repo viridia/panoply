@@ -194,7 +194,7 @@
       "type": "object",
       "properties": {
         "size": {
-          "$ref": "./types.schema.json#/definitions/Vec3"
+          "$ref": "./types.schema.json#/definitions/Vec2"
         },
         "offset": {
           "$ref": "./types.schema.json#/definitions/Vec3"
