@@ -3,6 +3,13 @@
 An `Exemplar` is a blueprint or template for creating an entity. The concept is not new,
 and is called by various names such as "schematic" in other frameworks.
 
+The name `Exemplar` comes from _Sim City 4_ (and other Maxis "Sim" games). It was introduced
+to me by the late Paul Pedriana, the lead engineer on the project. In particular, it reflects a
+design philosophy in which game levels are not loaded as monolithic "scenes", but rather are
+composed at runtime out of many individual parts, where each part is authored independently.
+In _Sim City 4_, each type of building was defined by an exemplar; so was each editing tool
+(for example, there was an exemplar for the "flatten terrain" sculpting mode).
+
 Like ECS entities, exemplars have (almost) no properties by themselves. Instead, exemplars
 contain a list of _apsects_, which are component-like objects.
 
@@ -65,6 +72,13 @@ custom command. This command will merge the aspects from the instance, the schem
 any extension schematics, eliminating duplicate aspects. If the entity already had aspects
 attached, then the command will do a "diff" of the old and new state, adding and removing
 aspects as needed, while preserving the state of aspects that didn't change.
+
+## Editing workflow
+
+In most cases, the editor will not edit instances directly, but rather it will edit the assets
+used to spawn those instances; the game engine will then update the instances (using asset
+change detection) to reflect the new state. This avoids most of the problems of converting
+runtime instance data back into a form which is serializable.
 
 ## Aspect example
 
