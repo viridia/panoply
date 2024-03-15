@@ -1,7 +1,7 @@
 use bevy::{
     prelude::*,
     render::{
-        camera::{self, RenderTarget},
+        camera::RenderTarget,
         primitives::{Frustum, Sphere},
         render_resource::{
             Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -36,31 +36,14 @@ pub(crate) struct ActivePortal {
     // public readonly portalCamera: PerspectiveCamera;
     // public isOnscreen = false;
 
-    // /** Location of source end. */
-    // public sourceRealm: Realm | null = null;
-
-    // /** Depth of the nearest point of the portal. */
-    // public nearDepth = Infinity;
-
     // /** Size of the hole. */
     // private apertureSize = new Vector3();
     // private aperturePlane = new Plane();
-
-    // /** Direction the hole is facing */
-    // private apertureFacing = new Vector4();
-    // private apertureSide: Side = FrontSide;
-
-    // /** Difference between near and far end. Used to calculate relative camera position. */
-    // private differential = new Vector3();
-    // private displacement = 0;
 
     // /** Rectangular bounds of portal on screen. */
     // private mainScreenRect = new Box2();
     // private portalScreenRect = new Box2();
 
-    // /** Same as screenRect, but in a form acceptable to scissor/viewport calls. */
-    // private portalViewport = new Vector4();
-    // private portalSize = new Vector2();
     // private portalBufferSize = new Vector2();
 
     // // Used in calculations
@@ -224,7 +207,7 @@ pub(crate) fn spawn_portals(
                 image: image_handle,
             });
         } else if let Some(active) = active {
-            // TODO: Despawn portal
+            // TODO: Despawn portal if scene element despawned
             commands.entity(active.portal_entity).despawn();
             commands.entity(active.camera).despawn();
             commands.entity(entity).remove::<ActivePortal>();
@@ -233,8 +216,6 @@ pub(crate) fn spawn_portals(
 }
 
 pub(crate) fn update_portals(
-    // mut commands: Commands,
-    // windows: Query<&Window, With<PrimaryWindow>>,
     query_primary_camera: Query<(&Camera, &Transform, &GlobalTransform), With<PrimaryCamera>>,
     mut query_portal_camera: Query<&mut Transform, (With<PortalCamera>, Without<PrimaryCamera>)>,
     mut active_portal_query: Query<(&GlobalTransform, &Portal, &PortalTarget, &ActivePortal)>,
@@ -245,9 +226,9 @@ pub(crate) fn update_portals(
     else {
         return;
     };
-    let primary_global_transform = primary_global.compute_transform();
+    let _primary_global_transform = primary_global.compute_transform();
 
-    for (portal_xform, portal, portal_target, active_portal) in active_portal_query.iter_mut() {
+    for (_portal_xform, portal, portal_target, active_portal) in active_portal_query.iter_mut() {
         let Ok(mut portal_camera_xform) = query_portal_camera.get_mut(active_portal.camera) else {
             println!("No portal camera found");
             continue;
@@ -279,7 +260,7 @@ pub(crate) fn update_portals(
             gizmos.arrow(center, center - normal, Color::AQUAMARINE);
         }
 
-        let material = materials.get_mut(&active_portal.material).unwrap();
+        let _material = materials.get_mut(&active_portal.material).unwrap();
         // material.base_color_texture = Some(active_portal.image.clone());
 
         let viewport_size = primary_camera.logical_viewport_size().unwrap();
@@ -304,10 +285,20 @@ pub(crate) fn update_portals(
             }
         }
 
-        rect.min.x -= viewport_size.x * 0.5;
-        rect.max.x -= viewport_size.x * 0.5;
-        rect.min.y = viewport_size.y * 0.5 - rect.min.y;
-        rect.max.y = viewport_size.y * 0.5 - rect.max.y;
-        gizmos.rect_2d(rect.center(), 0., rect.size(), Color::RED);
+        let viewport_rect = primary_camera.logical_viewport_rect().unwrap();
+        rect = rect.intersect(viewport_rect);
+        if !rect.is_empty() {
+            let screen_rect = Rect {
+                min: Vec2::new(
+                    rect.min.x - viewport_size.x * 0.5,
+                    viewport_size.y * 0.5 - rect.min.y,
+                ),
+                max: Vec2::new(
+                    rect.max.x - viewport_size.x * 0.5,
+                    viewport_size.y * 0.5 - rect.max.y,
+                ),
+            };
+            gizmos.rect_2d(screen_rect.center(), 0., screen_rect.size(), Color::RED);
+        }
     }
 }
