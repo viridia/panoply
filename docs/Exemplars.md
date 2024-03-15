@@ -100,11 +100,6 @@ impl Aspect for PortalTarget {
         "PortalTarget"
     }
 
-    /// Unique id for this aspect type, used to track the set of additions and removals.
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     /// Predicate function which defines what kind of instances the aspect can be attached to.
     /// This is used in the interactive aspect chooser UI when editing an instance or exemplar.
     fn can_attach(&self, meta_type: InstanceType) -> bool {

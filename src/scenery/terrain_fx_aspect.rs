@@ -1,7 +1,6 @@
 use crate::terrain::TerrainTypes;
 use bevy::prelude::*;
 use panoply_exemplar::*;
-use std::any::TypeId;
 
 use super::TERRAIN_FX_TYPE;
 
@@ -24,10 +23,6 @@ impl Aspect for TerrainEffect {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == TERRAIN_FX_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -53,10 +48,6 @@ impl Aspect for TerrainHole {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == TERRAIN_FX_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {

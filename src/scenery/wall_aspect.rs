@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use bevy::prelude::*;
 use panoply_exemplar::*;
 
@@ -23,10 +21,6 @@ impl Aspect for WallSize {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {

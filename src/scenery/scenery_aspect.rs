@@ -2,7 +2,6 @@ use crate::reflect_types::HexColor;
 use bevy::{prelude::*, utils::HashMap};
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
-use std::any::TypeId;
 
 use super::{scenery_colliders::ColliderDesc, FIXTURE_TYPE, WALL_TYPE};
 
@@ -58,10 +57,6 @@ impl Aspect for SceneryModels {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<SceneryModels> = RemoveComponent::<SceneryModels>::new();
         entity.insert(self.clone());
@@ -87,10 +82,6 @@ impl Aspect for SceneryColliders {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -119,10 +110,6 @@ impl Aspect for SceneryMarks {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -163,10 +150,6 @@ impl Aspect for LightSource {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {

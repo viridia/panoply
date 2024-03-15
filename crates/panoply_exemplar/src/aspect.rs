@@ -12,39 +12,6 @@ use std::{
 
 use crate::InstanceType;
 
-/// Object which can remove an aspect from an entity.
-pub trait DetachAspect: Send + Sync {
-    /// Get the [`TypeId`] for this aspect.
-    fn type_id(&self) -> TypeId;
-
-    /// Remove the aspect from the entity.
-    fn detach_aspect(&self, entity: &mut EntityWorldMut);
-}
-
-/// An `DetachAspect` that removes a specific component from an entity.
-pub struct RemoveComponent<T: Component> {
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: Component> RemoveComponent<T> {
-    /// Create a new `RemoveComponent` for the given component type.
-    pub const fn new() -> Self {
-        RemoveComponent {
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T: Component> DetachAspect for RemoveComponent<T> {
-    fn type_id(&self) -> TypeId {
-        TypeId::of::<T>()
-    }
-
-    fn detach_aspect(&self, entity: &mut EntityWorldMut) {
-        entity.remove::<T>();
-    }
-}
-
 /// An Aspect is like an ECS component for a prototype.
 #[reflect_trait]
 pub trait Aspect: Reflect
@@ -55,7 +22,9 @@ where
     fn name(&self) -> &str;
 
     /// Get the [`TypeId`] for this aspect.
-    fn id(&self) -> TypeId;
+    fn id(&self) -> TypeId {
+        std::any::TypeId::of::<Self>()
+    }
 
     /// Whether this aspect can be applied/attached to an instance of the given type.
     fn can_attach(&self, meta_type: InstanceType) -> bool;
@@ -102,6 +71,39 @@ where
 /// Tracks the aspects currently attached to this entity.
 #[derive(Component)]
 pub struct OwnedAspects(pub(crate) HashMap<TypeId, &'static dyn DetachAspect>);
+
+/// Object which can remove an aspect from an entity.
+pub trait DetachAspect: Send + Sync {
+    /// Get the [`TypeId`] for this aspect.
+    fn type_id(&self) -> TypeId;
+
+    /// Remove the aspect from the entity.
+    fn detach_aspect(&self, entity: &mut EntityWorldMut);
+}
+
+/// An `DetachAspect` that removes a specific component from an entity.
+pub struct RemoveComponent<T: Component> {
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<T: Component> RemoveComponent<T> {
+    /// Create a new `RemoveComponent` for the given component type.
+    pub const fn new() -> Self {
+        RemoveComponent {
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<T: Component> DetachAspect for RemoveComponent<T> {
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<T>()
+    }
+
+    fn detach_aspect(&self, entity: &mut EntityWorldMut) {
+        entity.remove::<T>();
+    }
+}
 
 pub(crate) struct AspectDeserializer<'a> {
     pub(crate) type_registration: &'a TypeRegistration,

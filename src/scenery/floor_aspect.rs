@@ -43,10 +43,6 @@ impl Aspect for StdFloorSurface {
         meta_type == FLOOR_TYPE
     }
 
-    fn id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
         // println!("Loading material: {}.StdFloorSurface.Material", label);
         self.material =
@@ -124,10 +120,6 @@ impl Aspect for NoiseFloorSurface {
         meta_type == FLOOR_TYPE
     }
 
-    fn id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
         // println!("Loading material: {}.NoiseFloorSurface.Material", label);
         self.material = load_context.labeled_asset_scope(
@@ -185,10 +177,6 @@ impl Aspect for FloorGeometry {
         meta_type == FLOOR_TYPE
     }
 
-    fn id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<FloorGeometry> = RemoveComponent::<FloorGeometry>::new();
 
@@ -215,10 +203,6 @@ impl Aspect for FloorNav {
 
     fn can_attach(&self, meta_type: panoply_exemplar::InstanceType) -> bool {
         meta_type == FLOOR_TYPE
-    }
-
-    fn id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {

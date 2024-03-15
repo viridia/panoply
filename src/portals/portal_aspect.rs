@@ -5,7 +5,6 @@ use crate::{
 use bevy::prelude::*;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
-use std::any::TypeId;
 
 #[derive(Debug, Reflect, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 #[reflect(Default, Serialize, Deserialize)]
@@ -49,10 +48,6 @@ impl Aspect for Portal {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<Portal> = RemoveComponent::<Portal>::new();
         entity.insert(self.clone());
@@ -79,10 +74,6 @@ impl Aspect for PortalTarget {
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
