@@ -1,7 +1,9 @@
 use std::any::TypeId;
 
-use crate::schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect};
 use bevy::prelude::*;
+use panoply_exemplar::*;
+
+use super::WALL_TYPE;
 
 /// Wall Size aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -19,16 +21,16 @@ impl Aspect for WallSize {
         "WallSize"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<WallSize> = SimpleDetachAspect::<WallSize>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<WallSize> = RemoveComponent::<WallSize>::new();
         entity.insert(self.clone());
         &DETACH
     }

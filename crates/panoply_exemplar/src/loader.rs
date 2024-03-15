@@ -11,8 +11,10 @@ use serde::{
 };
 use std::{fmt, sync::Arc};
 
+use crate::exemplar::ExemplarData;
+
 use super::aspect_list::AspectListDeserializer;
-use super::{InstanceType, Schematic, SchematicCatalog, SchematicData};
+use super::{Exemplar, ExemplarCatalog, InstanceType};
 
 #[derive(Deserialize)]
 #[serde(field_identifier, rename_all = "snake_case")]
@@ -24,25 +26,25 @@ enum Field {
     Extends,
 }
 
-struct SchematicVisitor<'a, 'b> {
+struct ExemplarVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
-    schematic_name: &'a str,
+    exemplar_name: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
-    type Value = SchematicData;
+impl<'de, 'a, 'b> Visitor<'de> for ExemplarVisitor<'a, 'b> {
+    type Value = ExemplarData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a schematic")
+        formatter.write_str("an exemplar")
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
     where
         A: serde::de::MapAccess<'de>,
     {
-        let mut result = SchematicData {
-            meta_type: InstanceType::None,
+        let mut result = ExemplarData {
+            meta_type: InstanceType::NONE,
             display_name: None,
             alias: Vec::new(),
             aspects: Vec::new(),
@@ -51,7 +53,7 @@ impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
         while let Some(key) = map.next_key()? {
             match key {
                 Field::Type => {
-                    if result.meta_type != InstanceType::None {
+                    if result.meta_type != InstanceType::NONE {
                         return Err(de::Error::duplicate_field("type"));
                     }
                     // TODO: Implement type deserialization.
@@ -77,7 +79,7 @@ impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
                     result.aspects = map.next_value_seed(AspectListDeserializer {
                         type_registry: self.type_registry,
                         load_context: self.load_context,
-                        parent_label: self.schematic_name,
+                        label_prefix: self.exemplar_name,
                     })?;
                 }
                 Field::Extends => todo!(),
@@ -87,23 +89,23 @@ impl<'de, 'a, 'b> Visitor<'de> for SchematicVisitor<'a, 'b> {
     }
 }
 
-struct SchematicDeserializer<'a, 'b> {
+struct ExemplarDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
-    schematic_name: &'a str,
+    exemplar_name: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for SchematicDeserializer<'a, 'b> {
-    type Value = SchematicData;
+impl<'de, 'a, 'b> DeserializeSeed<'de> for ExemplarDeserializer<'a, 'b> {
+    type Value = ExemplarData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_map(SchematicVisitor {
+        deserializer.deserialize_map(ExemplarVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
-            schematic_name: self.schematic_name,
+            exemplar_name: self.exemplar_name,
         })
     }
 }
@@ -114,7 +116,7 @@ struct CatalogVisitor<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
-    type Value = SchematicCatalog;
+    type Value = ExemplarCatalog;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("schematic catalog")
@@ -124,30 +126,30 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
     where
         A: de::MapAccess<'de>,
     {
-        let mut entries: HashMap<String, Handle<Schematic>> =
+        let mut entries: HashMap<String, Handle<Exemplar>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             let mut lc = self.load_context.begin_labeled_asset();
-            let sdata = map.next_value_seed(SchematicDeserializer {
+            let sdata = map.next_value_seed(ExemplarDeserializer {
                 type_registry: self.type_registry,
                 load_context: &mut lc,
-                schematic_name: &key,
+                exemplar_name: &key,
             })?;
             let aliases = sdata.alias.clone();
             let schematic = Arc::new(sdata);
-            let handle = lc.finish(Schematic(schematic.clone()), None);
+            let handle = lc.finish(Exemplar(schematic.clone()), None);
             let handle = self
                 .load_context
                 .add_loaded_labeled_asset(key.clone(), handle);
             for alias in &aliases {
                 self.load_context
-                    .add_labeled_asset(alias.clone(), Schematic(schematic.clone()));
+                    .add_labeled_asset(alias.clone(), Exemplar(schematic.clone()));
             }
 
             entries.insert(key, handle);
         }
 
-        Ok(SchematicCatalog { entries })
+        Ok(ExemplarCatalog { entries })
     }
 }
 
@@ -157,7 +159,7 @@ struct CatalogDeserializer<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> DeserializeSeed<'de> for CatalogDeserializer<'a, 'b> {
-    type Value = SchematicCatalog;
+    type Value = ExemplarCatalog;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -170,31 +172,31 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for CatalogDeserializer<'a, 'b> {
     }
 }
 
-/// AssetLoader for Schematics.
-pub struct SchematicLoader {
+/// AssetLoader for Exemplars.
+pub struct ExemplarLoader {
     type_registry: TypeRegistryArc,
 }
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum SchematicLoaderError {
-    #[error("Could not load schematic: {0}")]
+pub enum ExemplarLoaderError {
+    #[error("Could not load exemplar: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Could not decode schematic: {0}")]
+    #[error("Could not decode exemplar: {0}")]
     Decode(#[from] serde_json::Error),
 }
 
-impl FromWorld for SchematicLoader {
+impl FromWorld for ExemplarLoader {
     fn from_world(world: &mut World) -> Self {
-        SchematicLoader {
+        ExemplarLoader {
             type_registry: world.resource::<AppTypeRegistry>().0.clone(),
         }
     }
 }
 
-impl AssetLoader for SchematicLoader {
-    type Asset = SchematicCatalog;
-    type Error = SchematicLoaderError;
+impl AssetLoader for ExemplarLoader {
+    type Asset = ExemplarCatalog;
+    type Error = ExemplarLoaderError;
     type Settings = ();
 
     fn load<'a>(
@@ -211,8 +213,7 @@ impl AssetLoader for SchematicLoader {
                 type_registry: &self.type_registry.read(),
                 load_context,
             };
-            let catalog: SchematicCatalog =
-                schematic_deserializer.deserialize(&mut deserializer)?;
+            let catalog: ExemplarCatalog = schematic_deserializer.deserialize(&mut deserializer)?;
             Ok(catalog)
         })
     }

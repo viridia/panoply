@@ -5,12 +5,15 @@ use serde::{
 };
 use std::fmt;
 
+/// A list of aspects.
+pub type AspectList = Vec<Box<dyn Aspect>>;
+
 use super::{aspect::Aspect, AspectDeserializer};
 
 struct AspectListVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
-    parent_label: &'a str,
+    label_prefix: &'a str,
 }
 
 impl<'de, 'a, 'b> Visitor<'de> for AspectListVisitor<'a, 'b> {
@@ -34,17 +37,23 @@ impl<'de, 'a, 'b> Visitor<'de> for AspectListVisitor<'a, 'b> {
                 type_registration,
                 type_registry: self.type_registry,
             })?;
-            aspect.load_dependencies(self.parent_label, self.load_context);
+            aspect.load_dependencies(self.label_prefix, self.load_context);
             result.push(aspect);
         }
         Ok(result)
     }
 }
 
-pub(crate) struct AspectListDeserializer<'a, 'b> {
-    pub(crate) type_registry: &'a TypeRegistry,
-    pub(crate) load_context: &'a mut LoadContext<'b>,
-    pub(crate) parent_label: &'a str,
+/// A deserializer for a vector of boxed aspects.
+pub struct AspectListDeserializer<'a, 'b> {
+    /// Reference to the type registry.
+    pub type_registry: &'a TypeRegistry,
+
+    /// Reference to the asset loader context.
+    pub load_context: &'a mut LoadContext<'b>,
+
+    /// Prefix for created materials
+    pub label_prefix: &'a str,
 }
 
 impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
@@ -57,7 +66,7 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
         deserializer.deserialize_map(AspectListVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
-            parent_label: self.parent_label,
+            label_prefix: self.label_prefix,
         })
     }
 }

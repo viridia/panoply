@@ -1,7 +1,7 @@
 use std::{any::TypeId, sync::Arc};
 
-use super::{Aspect, InstanceAspects, Schematic, SchematicData};
-use crate::schematic::aspect;
+use super::{Aspect, Exemplar, InstanceAspects};
+use crate::aspect;
 use aspect::{DetachAspect, OwnedAspects};
 use bevy::{
     ecs::system::EntityCommand,
@@ -9,26 +9,26 @@ use bevy::{
     utils::{hashbrown::HashMap, smallvec::SmallVec},
 };
 
-/// Custom command that updates an entity's components guided by a schematic.
+/// Custom command that updates an entity's components guided by a exemplar.
 pub struct UpdateAspects<B: Bundle> {
-    /// Schematic to attach to entity
-    pub(crate) schematic: Handle<Schematic>,
+    /// Exemplar to attach to entity
+    pub exemplar: Handle<Exemplar>,
 
-    /// Components to insert after applying schematic, used to trigger post-processing.
-    pub(crate) finish: B,
+    /// Components to insert after applying exemplar, used to trigger post-processing.
+    pub finish: B,
 }
 
 impl<B: Bundle> EntityCommand for UpdateAspects<B> {
     fn apply(self, id: Entity, world: &mut World) {
-        let schematic_assets = world.get_resource::<Assets<Schematic>>().unwrap();
-        let mut schematics: SmallVec<[Arc<SchematicData>; 8]> = SmallVec::new();
-        let mut shandle = &self.schematic;
+        let exemplar_assets = world.get_resource::<Assets<Exemplar>>().unwrap();
+        let mut exemplars: SmallVec<[Arc<crate::exemplar::ExemplarData>; 8]> = SmallVec::new();
+        let mut shandle = &self.exemplar;
         loop {
-            let Some(schematic) = schematic_assets.get(shandle) else {
+            let Some(exemplar) = exemplar_assets.get(shandle) else {
                 break;
             };
-            schematics.push(schematic.0.clone());
-            if let Some(ref next) = schematic.0.extends {
+            exemplars.push(exemplar.0.clone());
+            if let Some(ref next) = exemplar.0.extends {
                 shandle = &next;
             } else {
                 break;
@@ -56,7 +56,7 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             for aspect in aspects_copy.iter() {
                 let aspect_type = aspect.id();
                 if !next_owned.contains_key(&aspect_type) {
-                    next_owned.insert(aspect_type, aspect.apply(&mut entity));
+                    next_owned.insert(aspect_type, aspect.attach(&mut entity));
                     to_remove.remove(&aspect_type);
                 }
             }
@@ -66,12 +66,12 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             }
 
             // Loop through inheritance chain
-            for schematic in schematics.iter() {
-                for aspect in schematic.aspects.iter() {
+            for exemplar in exemplars.iter() {
+                for aspect in exemplar.aspects.iter() {
                     // Only add aspect if no other aspect of the same type has been added.
                     let aspect_type = aspect.id();
                     if !next_owned.contains_key(&aspect_type) {
-                        next_owned.insert(aspect_type, aspect.apply(&mut entity));
+                        next_owned.insert(aspect_type, aspect.attach(&mut entity));
                         to_remove.remove(&aspect_type);
                     }
                 }

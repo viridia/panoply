@@ -5,6 +5,7 @@ use bevy::{
     utils::{thiserror::Error, BoxedFuture},
 };
 use futures_lite::AsyncReadExt;
+use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
 use serde::{
     de::{DeserializeSeed, Visitor},
     ser::SerializeTuple,
@@ -12,10 +13,7 @@ use serde::{
 };
 use std::fmt::{self, Debug};
 
-use crate::{
-    msgpack::{Box2d, Vector3},
-    schematic::{AspectListDeserializer, InstanceAspects},
-};
+use crate::msgpack::{Box2d, Vector3};
 
 use super::floor_region::FloorRegionSer;
 
@@ -143,7 +141,7 @@ impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
         match seq.next_element_seed(AspectListDeserializer {
             type_registry: self.type_registry,
             load_context: self.load_context,
-            parent_label: self.parent_label,
+            label_prefix: self.parent_label,
         }) {
             Ok(Some(aspects)) => result.aspects = InstanceAspects(aspects),
             _ => return Ok(result),

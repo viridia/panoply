@@ -3,12 +3,9 @@ use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
     FloorOutline,
 };
-use crate::{
-    scenery::{
-        floor_region::{RebuildFloorMaterials, RebuildFloorMesh},
-        FLOOR_THICKNESS, TIER_OFFSET,
-    },
-    schematic::UpdateAspects,
+use crate::scenery::{
+    floor_region::{RebuildFloorMaterials, RebuildFloorMesh},
+    FLOOR_THICKNESS, TIER_OFFSET,
 };
 use bevy::{
     asset::LoadState,
@@ -20,6 +17,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
+use panoply_exemplar::UpdateAspects;
 
 pub struct FloorMeshResult {
     mesh: Mesh,
@@ -67,7 +65,7 @@ pub fn update_floor_aspects(
                 },))
                 .remove::<RebuildFloorAspects>()
                 .add(UpdateAspects {
-                    schematic: floor_region.schematic.clone(),
+                    exemplar: floor_region.schematic.clone(),
                     finish: (RebuildFloorMaterials, RebuildFloorMesh),
                 });
         }

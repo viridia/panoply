@@ -3,6 +3,9 @@ name = "panoply"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = ["crates/*"]
+
 [dependencies]
 bevy = { version = "0.13.0", features = ["dynamic_linking", "file_watcher"] }
 # bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["dynamic_linking"], branch = "main" }
@@ -20,6 +23,7 @@ serde_derive = "1.0.171"
 serde_json = "1.0.103"
 serde_repr = "0.1.16"
 thiserror = "1.0.57"
+panoply_exemplar = { path = "crates/panoply_exemplar" }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

@@ -1,9 +1,9 @@
-use crate::{
-    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
-    terrain::TerrainTypes,
-};
+use crate::terrain::TerrainTypes;
 use bevy::prelude::*;
+use panoply_exemplar::*;
 use std::any::TypeId;
+
+use super::TERRAIN_FX_TYPE;
 
 /// Description of a terrain effect. Terrain effects are a property of precincts, but are
 /// applied to terrain parcels.
@@ -22,17 +22,16 @@ impl Aspect for TerrainEffect {
         "TerrainEffect"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::TerrainFx
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == TERRAIN_FX_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<TerrainEffect> =
-            SimpleDetachAspect::<TerrainEffect>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<TerrainEffect> = RemoveComponent::<TerrainEffect>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -52,16 +51,16 @@ impl Aspect for TerrainHole {
         "TerrainHole"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::TerrainFx
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == TERRAIN_FX_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<TerrainHole> = SimpleDetachAspect::<TerrainHole>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<TerrainHole> = RemoveComponent::<TerrainHole>::new();
         entity.insert(self.clone());
         &DETACH
     }

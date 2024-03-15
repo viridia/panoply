@@ -1,8 +1,4 @@
-use crate::{
-    reflect_types::HexColor,
-    scenery::floor_noise::FloorNoiseMaterial,
-    schematic::{Aspect, DetachAspect, ReflectAspect, SimpleDetachAspect},
-};
+use crate::{reflect_types::HexColor, scenery::floor_noise::FloorNoiseMaterial};
 use bevy::{
     pbr::ExtendedMaterial,
     prelude::*,
@@ -11,6 +7,9 @@ use bevy::{
         ImageSamplerDescriptor,
     },
 };
+use panoply_exemplar::*;
+
+use super::FLOOR_TYPE;
 
 /// Floor surface aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
@@ -40,8 +39,8 @@ impl Aspect for StdFloorSurface {
         "StdFloorSurface"
     }
 
-    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
-        meta_type == crate::schematic::InstanceType::Floor
+    fn can_attach(&self, meta_type: panoply_exemplar::InstanceType) -> bool {
+        meta_type == FLOOR_TYPE
     }
 
     fn id(&self) -> std::any::TypeId {
@@ -85,9 +84,8 @@ impl Aspect for StdFloorSurface {
             });
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<StdFloorSurface> =
-            SimpleDetachAspect::<StdFloorSurface>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<StdFloorSurface> = RemoveComponent::<StdFloorSurface>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -122,8 +120,8 @@ impl Aspect for NoiseFloorSurface {
         "NoiseFloorSurface"
     }
 
-    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
-        meta_type == crate::schematic::InstanceType::Floor
+    fn can_attach(&self, meta_type: panoply_exemplar::InstanceType) -> bool {
+        meta_type == FLOOR_TYPE
     }
 
     fn id(&self) -> std::any::TypeId {
@@ -155,9 +153,9 @@ impl Aspect for NoiseFloorSurface {
         );
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<NoiseFloorSurface> =
-            SimpleDetachAspect::<NoiseFloorSurface>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<NoiseFloorSurface> =
+            RemoveComponent::<NoiseFloorSurface>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -183,17 +181,16 @@ impl Aspect for FloorGeometry {
         "FloorGeometry"
     }
 
-    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
-        meta_type == crate::schematic::InstanceType::Floor
+    fn can_attach(&self, meta_type: panoply_exemplar::InstanceType) -> bool {
+        meta_type == FLOOR_TYPE
     }
 
     fn id(&self) -> std::any::TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<FloorGeometry> =
-            SimpleDetachAspect::<FloorGeometry>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<FloorGeometry> = RemoveComponent::<FloorGeometry>::new();
 
         entity.insert(*self);
         &DETACH
@@ -216,16 +213,16 @@ impl Aspect for FloorNav {
         "FloorNav"
     }
 
-    fn can_apply(&self, meta_type: crate::schematic::InstanceType) -> bool {
-        meta_type == crate::schematic::InstanceType::Floor
+    fn can_attach(&self, meta_type: panoply_exemplar::InstanceType) -> bool {
+        meta_type == FLOOR_TYPE
     }
 
     fn id(&self) -> std::any::TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<FloorNav> = SimpleDetachAspect::<FloorNav>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<FloorNav> = RemoveComponent::<FloorNav>::new();
         entity.insert(self.clone());
         &DETACH
     }

@@ -1,12 +1,10 @@
-use crate::{
-    reflect_types::HexColor,
-    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
-};
+use crate::reflect_types::HexColor;
 use bevy::{prelude::*, utils::HashMap};
+use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 
-use super::scenery_colliders::ColliderDesc;
+use super::{scenery_colliders::ColliderDesc, FIXTURE_TYPE, WALL_TYPE};
 
 /** Used in archetypes to define the set of models displayed by that entity. */
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
@@ -56,17 +54,16 @@ impl Aspect for SceneryModels {
         "SceneryModels"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<SceneryModels> =
-            SimpleDetachAspect::<SceneryModels>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<SceneryModels> = RemoveComponent::<SceneryModels>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -88,17 +85,17 @@ impl Aspect for SceneryColliders {
         "SceneryColliders"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<SceneryColliders> =
-            SimpleDetachAspect::<SceneryColliders>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<SceneryColliders> =
+            RemoveComponent::<SceneryColliders>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -120,16 +117,16 @@ impl Aspect for SceneryMarks {
         "SceneryMarks"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<SceneryMarks> = SimpleDetachAspect::<SceneryMarks>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<SceneryMarks> = RemoveComponent::<SceneryMarks>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -164,16 +161,16 @@ impl Aspect for LightSource {
         "LightSource"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<LightSource> = SimpleDetachAspect::<LightSource>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<LightSource> = RemoveComponent::<LightSource>::new();
         entity.insert(self.clone());
         &DETACH
     }

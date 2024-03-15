@@ -1,4 +1,5 @@
-use crate::{instancing::InstanceMap, schematic::Schematic};
+use crate::instancing::InstanceMap;
+use panoply_exemplar::*;
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
@@ -37,7 +38,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        floor_schematics: &[Handle<Schematic>],
+        floor_schematics: &[Handle<Exemplar>],
         query_floor_regions: &mut Query<(Entity, &mut FloorRegion)>,
     ) {
         // Sync tiers
@@ -63,7 +64,7 @@ impl Precinct {
 
             let mut j = 0;
             for floor in tier.pfloors.iter() {
-                let schematic: Handle<Schematic> = floor_schematics[floor.surface_index].clone();
+                let schematic: Handle<Exemplar> = floor_schematics[floor.surface_index].clone();
                 if j < t.floor_regions.len() {
                     let floor_entity = t.floor_regions[j];
                     if let Ok((floor_entity, mut floor_region)) =
@@ -133,7 +134,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        scenery_schematics: &[Handle<Schematic>],
+        scenery_schematics: &[Handle<Exemplar>],
     ) {
         // What do we want to do here?
         // We cannot place the model yet, because transforms are not loaded.
@@ -166,7 +167,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        fx_schematics: Vec<Handle<Schematic>>,
+        fx_schematics: Vec<Handle<Exemplar>>,
     ) {
         if let Some(ref encoded) = asset.terrain_fx {
             let mut fx = TerrainFxMap::new();
@@ -229,7 +230,7 @@ pub fn read_precinct_data(
                     // TODO: Sync actors
 
                     let precinct_asset = assets.get(*id).unwrap();
-                    let floor_schematics: Vec<Handle<Schematic>> = precinct_asset
+                    let floor_schematics: Vec<Handle<Exemplar>> = precinct_asset
                         .floor_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -243,7 +244,7 @@ pub fn read_precinct_data(
                         &mut query_floor_regions,
                     );
 
-                    let scenery_schematics: Vec<Handle<Schematic>> = precinct_asset
+                    let scenery_schematics: Vec<Handle<Exemplar>> = precinct_asset
                         .scenery_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -256,7 +257,7 @@ pub fn read_precinct_data(
                         &scenery_schematics,
                     );
 
-                    let fx_schematics: Vec<Handle<Schematic>> = precinct_asset
+                    let fx_schematics: Vec<Handle<Exemplar>> = precinct_asset
                         .terrain_fx_types
                         .iter()
                         .map(|s| asset_server.load(s))

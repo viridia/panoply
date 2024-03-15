@@ -1,12 +1,12 @@
 use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers};
 
-use crate::schematic::{Schematic, UpdateAspects};
+use panoply_exemplar::*;
 
 use super::scenery_aspect::{ModelComponent, SceneryModels};
 
 #[derive(Debug, Component, Default)]
 pub struct SceneryElement {
-    pub schematic: Handle<Schematic>,
+    pub schematic: Handle<Exemplar>,
     pub facing: f32,
     pub position: Vec3,
 }
@@ -37,7 +37,7 @@ pub fn update_se_aspects(
             commands
                 .entity(entity)
                 .add(UpdateAspects {
-                    schematic: scenery_element.schematic.clone(),
+                    exemplar: scenery_element.schematic.clone(),
                     finish: SceneryElementRebuildModels,
                 })
                 .remove::<SceneryElementRebuildAspects>();

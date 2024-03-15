@@ -1,4 +1,5 @@
 use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
+use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use crate::materials::OutlineMaterial;
@@ -40,6 +41,11 @@ pub const PRECINCT_SIZE_F: f32 = PRECINCT_SIZE as f32;
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
 pub const TIER_OFFSET: f32 = 0.02 - 2.; // Tiers are slightly higher than the terrain.
+
+pub const WALL_TYPE: InstanceType = InstanceType::from_str("Wall");
+pub const FIXTURE_TYPE: InstanceType = InstanceType::from_str("Fixt");
+pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Flor");
+pub const TERRAIN_FX_TYPE: InstanceType = InstanceType::from_str("TrFx");
 
 #[derive(Resource, Default)]
 pub struct FloorOutline(pub Handle<ExtendedMaterial<StandardMaterial, OutlineMaterial>>);

@@ -108,13 +108,13 @@ impl Aspect for PortalTarget {
     /// Predicate function which defines what kind of instances the aspect can be attached to.
     /// This is used in the interactive aspect chooser UI when editing an instance or exemplar.
     fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     /// Attach an aspect to an instance. This must return a "detach" object, which is responsible
     /// for "undoing" the attach operation when the aspect is removed.
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<PortalTarget> = SimpleDetachAspect::<PortalTarget>::new();
+        static DETACH: RemoveComponent<PortalTarget> = RemoveComponent::<PortalTarget>::new();
         entity.insert(self.clone());
         &DETACH
     }

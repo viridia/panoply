@@ -9,6 +9,7 @@ use bevy::{
         view::RenderLayers,
     },
 };
+use panoply_exemplar::ExemplarPlugin;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
 use world::Realm;
@@ -24,7 +25,6 @@ mod portals;
 mod random;
 mod reflect_types;
 mod scenery;
-mod schematic;
 mod settings;
 mod terrain;
 mod view;
@@ -39,7 +39,6 @@ use crate::{
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
-    schematic::SchematicPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
     view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
@@ -128,7 +127,7 @@ fn main() {
         .add_plugins((
             MsgpackExtPlugin,
             ReflectTypesPlugin,
-            SchematicPlugin,
+            ExemplarPlugin,
             MaterialsPlugin,
             WorldPlugin,
             TerrainPlugin,

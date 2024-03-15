@@ -1,11 +1,10 @@
 use bevy::{asset::Handle, math::Vec2, prelude::*};
+use panoply_exemplar::Exemplar;
 use serde::{
     de::{SeqAccess, Visitor},
     ser::SerializeSeq,
     Deserialize, Serialize,
 };
-
-use crate::schematic::Schematic;
 
 #[derive(Component, Debug, Clone, Default)]
 pub struct FloorRegion {
@@ -13,7 +12,7 @@ pub struct FloorRegion {
     pub level: i32,
 
     /// Schematic reference
-    pub schematic: Handle<Schematic>,
+    pub schematic: Handle<Exemplar>,
 
     /// Polygonal outline of floor
     pub poly: Vec<Vec2>,

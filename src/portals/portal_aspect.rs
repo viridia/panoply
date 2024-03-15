@@ -1,8 +1,9 @@
 use crate::{
     msgpack::Vector3,
-    schematic::{Aspect, DetachAspect, InstanceType, ReflectAspect, SimpleDetachAspect},
+    scenery::{FIXTURE_TYPE, WALL_TYPE},
 };
 use bevy::prelude::*;
+use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 
@@ -44,16 +45,16 @@ impl Aspect for Portal {
         "Portal"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<Portal> = SimpleDetachAspect::<Portal>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<Portal> = RemoveComponent::<Portal>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -76,16 +77,16 @@ impl Aspect for PortalTarget {
         "PortalTarget"
     }
 
-    fn can_apply(&self, meta_type: InstanceType) -> bool {
-        meta_type == InstanceType::Wall || meta_type == InstanceType::Fixture
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
     }
 
     fn id(&self) -> TypeId {
         std::any::TypeId::of::<Self>()
     }
 
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: SimpleDetachAspect<PortalTarget> = SimpleDetachAspect::<PortalTarget>::new();
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<PortalTarget> = RemoveComponent::<PortalTarget>::new();
         entity.insert(self.clone());
         &DETACH
     }

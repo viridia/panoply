@@ -4307,12 +4307,24 @@ dependencies = [
  "earcutr",
  "futures-lite 2.2.0",
  "lru",
+ "panoply_exemplar",
  "rmp-serde",
  "serde",
  "serde_bytes",
  "serde_derive",
  "serde_json",
  "serde_repr",
+ "thiserror",
+]
+
+[[package]]
+name = "panoply_exemplar"
+version = "0.1.0"
+dependencies = [
+ "bevy 0.13.0",
+ "futures-lite 2.2.0",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

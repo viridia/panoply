@@ -10,7 +10,7 @@ use std::{
     fmt::{self, Debug},
 };
 
-use super::InstanceType;
+use crate::InstanceType;
 
 /// Object which can remove an aspect from an entity.
 pub trait DetachAspect: Send + Sync {
@@ -22,19 +22,20 @@ pub trait DetachAspect: Send + Sync {
 }
 
 /// An `DetachAspect` that removes a specific component from an entity.
-pub struct SimpleDetachAspect<T: Component> {
+pub struct RemoveComponent<T: Component> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: Component> SimpleDetachAspect<T> {
+impl<T: Component> RemoveComponent<T> {
+    /// Create a new `RemoveComponent` for the given component type.
     pub const fn new() -> Self {
-        SimpleDetachAspect {
+        RemoveComponent {
             _marker: std::marker::PhantomData,
         }
     }
 }
 
-impl<T: Component> DetachAspect for SimpleDetachAspect<T> {
+impl<T: Component> DetachAspect for RemoveComponent<T> {
     fn type_id(&self) -> TypeId {
         TypeId::of::<T>()
     }
@@ -56,24 +57,18 @@ where
     /// Get the [`TypeId`] for this aspect.
     fn id(&self) -> TypeId;
 
-    /// Whether this aspect can be attached to an instance of the given type.
-    fn can_apply(&self, meta_type: InstanceType) -> bool;
+    /// Whether this aspect can be applied/attached to an instance of the given type.
+    fn can_attach(&self, meta_type: InstanceType) -> bool;
 
     /// Load any dependencies required by this aspect.
     #[allow(unused_variables)]
     fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {}
 
     /// Attach or apply this aspect to the given entity.
-    fn apply(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect;
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect;
 
     /// Clone this aspect as a boxed trait object.
     fn clone_boxed(&self) -> Box<dyn Aspect>;
-
-    //   /** Configuration parameters for this aspect. */
-    //   config?: IPropertyDescriptors<Config>;
-
-    //   /** Properties which are added to instances that attach this behavior. */
-    //   properties?: IPropertyDescriptors<Props>;
 
     //   /** Formulas to be bound to the specified properties */
     //   formulas?: IFormulaGenerators<SelfType, Props, Config>;
@@ -104,6 +99,7 @@ where
     //   present?: (self: SelfType, props: Props) => boolean;
 }
 
+/// Tracks the aspects currently attached to this entity.
 #[derive(Component)]
 pub struct OwnedAspects(pub(crate) HashMap<TypeId, &'static dyn DetachAspect>);
 
@@ -145,11 +141,15 @@ impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
     }
 }
 
-/// A list of aspects associated with a specific instance, rather than a schematic.
+/// A list of aspects associated with a specific instance, rather than an exemplar.
 #[derive(Component, Default)]
 pub struct InstanceAspects(pub Vec<Box<dyn Aspect>>);
 
 impl InstanceAspects {
+    /// True if there are no aspects owned by this entity. Note that "owned" is different from
+    /// "attached": The former represents aspects that have not been instantiated as ECS components
+    /// but which are deserialized along with the entity. "Attached" aspects are ones that have
+    /// been instantiated as ECS components, and can either be owned or copied from the exemplar.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

@@ -1,12 +1,10 @@
 use bevy::{asset::LoadState, prelude::*};
 
-use crate::{
-    schematic::Schematic,
-    terrain::{
-        Parcel, ParcelCache, RebuildParcelGroundMesh, RebuildParcelTerrainFx, TerrainFxVertexAttr,
-        TerrainOptions, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
-    },
+use crate::terrain::{
+    Parcel, ParcelCache, RebuildParcelGroundMesh, RebuildParcelTerrainFx, TerrainFxVertexAttr,
+    TerrainOptions, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
 };
+use panoply_exemplar::*;
 
 use super::{
     precinct::{Precinct, PrecinctKey},
@@ -24,7 +22,7 @@ pub const TERRAIN_FX_MAP_SIZE: usize = (PRECINCT_SIZE + 2) as usize;
 /// and loading.
 #[derive(Component)]
 pub struct TerrainFxMap {
-    pub(crate) schematics: Vec<Handle<Schematic>>,
+    pub(crate) schematics: Vec<Handle<Exemplar>>,
     pub(crate) map: [u16; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
     pub(crate) map_vertex_attr: [TerrainFxVertexAttr; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
 }
@@ -48,7 +46,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
     mut commands: Commands,
     mut query: Query<(Entity, &Precinct, &mut TerrainFxMap), With<RebuildTerrainFxVertexAttrs>>,
     parcel_cache: Res<ParcelCache>,
-    schematic_assets: Res<Assets<Schematic>>,
+    schematic_assets: Res<Assets<Exemplar>>,
     server: Res<AssetServer>,
 ) {
     for (entity, precinct, mut terrain_fx) in query.iter_mut() {
