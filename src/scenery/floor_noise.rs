@@ -27,8 +27,4 @@ impl MaterialExtension for FloorNoiseMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/floor_noise.wgsl".into()
     }
-
-    fn prepass_fragment_shader() -> ShaderRef {
-        "shaders/floor_noise.wgsl".into()
-    }
 }
