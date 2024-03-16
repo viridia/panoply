@@ -73,6 +73,11 @@ any extension schematics, eliminating duplicate aspects. If the entity already h
 attached, then the command will do a "diff" of the old and new state, adding and removing
 aspects as needed, while preserving the state of aspects that didn't change.
 
+This `diffing` is facilitated by the `OwnedAspects` component, which is a bookkeeping component
+on the entity that stores the `Detach` trait object for each aspect that has been attached to the
+entity. `OwnedAspect` is a newtype struct which contains a `HashMap<TypeId, &'static dyn Detach>`.
+This allows any aspect to be removed from the entity simply by knowing it's type id.
+
 ## Editing workflow
 
 In most cases, the editor will not edit instances directly, but rather it will edit the assets
