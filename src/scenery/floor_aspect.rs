@@ -53,7 +53,7 @@ impl Aspect for StdFloorSurface {
                     ..default()
                 };
                 if let Some(color) = &self.color {
-                    material.base_color = **color;
+                    material.base_color = color.0.into();
                 } else if let Some(texture) = &self.texture {
                     material.base_color_texture = Some(lc.load_with_settings(
                         texture,
@@ -131,8 +131,8 @@ impl Aspect for NoiseFloorSurface {
                     ..default()
                 };
                 let material = FloorNoiseMaterial {
-                    color: *self.color,
-                    color_alt: *self.color_alt,
+                    color: self.color.into(),
+                    color_alt: self.color_alt.into(),
                     roughness: self.roughness.unwrap_or(1.0),
                     roughness_alt: self.roughness_alt.unwrap_or(self.roughness.unwrap_or(1.0)),
                     noise: lc.load("terrain/textures/noise.png"),

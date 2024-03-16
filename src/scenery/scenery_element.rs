@@ -82,7 +82,7 @@ pub fn spawn_se_model_instances(
         if result == LoadState::Loaded {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
-                if let Some(scene_handle) = gltf.named_scenes.get(&mesh.label) {
+                if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
                     commands.entity(entity).insert((

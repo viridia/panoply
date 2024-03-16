@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     reflect::TypePath,
     render::{
-        mesh::{MeshVertexAttribute, MeshVertexBufferLayout},
+        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
         render_resource::{
             AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
             VertexFormat,
@@ -18,10 +18,10 @@ pub const ATTRIBUTE_DEPTH_MOTION: MeshVertexAttribute =
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct WaterMaterial {
     #[uniform(1)]
-    pub water_color: Color,
+    pub water_color: LinearRgba,
 
     #[uniform(2)]
-    pub sky_color: [Color; 2],
+    pub sky_color: [LinearRgba; 2],
 
     #[texture(3)]
     #[sampler(4)]
@@ -52,10 +52,10 @@ impl Material for WaterMaterial {
     fn specialize(
         _pipeline: &MaterialPipeline<Self>,
         descriptor: &mut RenderPipelineDescriptor,
-        layout: &MeshVertexBufferLayout,
+        layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
-        let vertex_layout = layout.get_layout(&[
+        let vertex_layout = layout.0.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
             Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),
             ATTRIBUTE_DEPTH_MOTION.at_shader_location(2),
@@ -76,8 +76,11 @@ pub fn create_water_material(
     asset_server: Res<AssetServer>,
 ) {
     resource.handle = materials.add(WaterMaterial {
-        water_color: Color::rgb(0.0, 0.3, 0.0),
-        sky_color: [Color::rgb(0.5, 0.6, 0.8), Color::rgb(0.8, 0.9, 1.0)],
+        water_color: Srgba::rgb(0.0, 0.3, 0.0).into(),
+        sky_color: [
+            Srgba::rgb(0.5, 0.6, 0.8).into(),
+            Srgba::rgb(0.8, 0.9, 1.0).into(),
+        ],
         waves: asset_server.load("terrain/textures/water-waves-2.png"),
         sky: asset_server.load("terrain/textures/water-clouds.png"),
         foam: asset_server.load("terrain/textures/noise.png"),

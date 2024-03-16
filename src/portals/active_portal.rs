@@ -1,4 +1,5 @@
 use bevy::{
+    color::palettes,
     prelude::*,
     render::{
         camera::RenderTarget,
@@ -160,7 +161,7 @@ pub(crate) fn spawn_portals(
             let image_handle = images.add(image);
 
             let material = materials.add(StandardMaterial {
-                base_color: Color::rgb(1.0, 0.0, 1.0),
+                base_color: Srgba::rgb(1.0, 0.0, 1.0).into(),
                 // base_color_texture: Some(image_handle.clone()),
                 unlit: true,
                 double_sided: true,
@@ -246,7 +247,7 @@ pub(crate) fn update_portals(
             center,
             active_portal.transform.rotation,
             portal.size,
-            Color::GREEN,
+            palettes::basic::GREEN,
         );
 
         let normal = active_portal
@@ -254,10 +255,10 @@ pub(crate) fn update_portals(
             .rotation
             .mul_vec3(Vec3::new(0., 0., 1.));
         if portal.side != PortalSide::Back {
-            gizmos.arrow(center, center + normal, Color::GOLD);
+            gizmos.arrow(center, center + normal, palettes::css::GOLD);
         }
         if portal.side != PortalSide::Front {
-            gizmos.arrow(center, center - normal, Color::AQUAMARINE);
+            gizmos.arrow(center, center - normal, palettes::css::AQUAMARINE);
         }
 
         let _material = materials.get_mut(&active_portal.material).unwrap();
@@ -278,7 +279,7 @@ pub(crate) fn update_portals(
                 let pos = active_portal
                     .transform
                     .transform_point(Vec3::new(*x, *y, 0.));
-                gizmos.arrow(pos, pos + normal, Color::GOLD);
+                gizmos.arrow(pos, pos + normal, palettes::css::GOLD);
                 if let Some(pos) = primary_camera.world_to_viewport(primary_global, pos) {
                     rect = rect.union_point(pos);
                 }
@@ -298,7 +299,12 @@ pub(crate) fn update_portals(
                     viewport_size.y * 0.5 - rect.max.y,
                 ),
             };
-            gizmos.rect_2d(screen_rect.center(), 0., screen_rect.size(), Color::RED);
+            gizmos.rect_2d(
+                screen_rect.center(),
+                0.,
+                screen_rect.size(),
+                palettes::css::RED,
+            );
         }
     }
 }

@@ -4,8 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.13.0", features = ["dynamic_linking", "file_watcher"] }
+bevy = { version = "0.14.0-dev", features = [
+  "dynamic_linking",
+  "file_watcher",
+] }
 serde = "1.0.171"
 serde_json = "1.0.103"
 futures-lite = "2.2.0"
 thiserror = "1.0.57"
+smallvec = "1.13.1"

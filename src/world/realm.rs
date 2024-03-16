@@ -3,10 +3,10 @@ use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::view::RenderLayers;
-use bevy::utils::thiserror::Error;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Default, Serialize, Deserialize, Clone, Copy)]
 pub enum RealmLighting {

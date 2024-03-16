@@ -3,11 +3,8 @@ use std::{any::TypeId, sync::Arc};
 use super::{Aspect, Exemplar, InstanceAspects};
 use crate::aspect;
 use aspect::{DetachAspect, OwnedAspects};
-use bevy::{
-    ecs::system::EntityCommand,
-    prelude::*,
-    utils::{hashbrown::HashMap, smallvec::SmallVec},
-};
+use bevy::{ecs::system::EntityCommand, prelude::*, utils::hashbrown::HashMap};
+pub use smallvec::SmallVec;
 
 /// Custom command that updates an entity's components guided by a exemplar.
 pub struct UpdateAspects<B: Bundle> {

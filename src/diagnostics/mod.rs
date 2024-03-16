@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use bevy::{
+    color::palettes,
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
@@ -8,7 +9,7 @@ use bevy::{
 pub struct ScreenDiagsPlugin;
 
 const FONT_SIZE: f32 = 16.0;
-const FONT_COLOR: Color = Color::RED;
+const FONT_COLOR: Srgba = palettes::basic::RED;
 
 const STRING_FORMAT: &str = "FPS: ";
 const STRING_INITIAL: &str = "FPS: ...";
@@ -63,7 +64,7 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
                     style: TextStyle {
                         font,
                         font_size: FONT_SIZE,
-                        color: FONT_COLOR,
+                        color: FONT_COLOR.into(),
                     },
                 }],
                 ..Default::default()

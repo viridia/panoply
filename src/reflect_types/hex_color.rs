@@ -6,20 +6,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, PartialEq, Clone, Copy, Reflect)]
 #[reflect(PartialEq, Serialize, Deserialize)]
-pub struct HexColor(pub Color);
+pub struct HexColor(pub Srgba);
 
 impl Serialize for HexColor {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let [r, g, b, a] = self.0.as_rgba_u8();
-        let hex = if a == 255 {
-            format!("#{:02X}{:02X}{:02X}", r, g, b)
-        } else {
-            format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
-        };
-        serializer.serialize_str(&hex)
+        serializer.serialize_str(&self.0.to_hex())
     }
 }
 
@@ -29,15 +23,21 @@ impl<'de> Deserialize<'de> for HexColor {
         D: serde::Deserializer<'de>,
     {
         let hex = String::deserialize(deserializer)?;
-        let color = Color::hex(hex).unwrap();
+        let color = Srgba::hex(hex).unwrap();
         Ok(HexColor(color))
     }
 }
 
 impl Deref for HexColor {
-    type Target = Color;
+    type Target = Srgba;
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl From<HexColor> for LinearRgba {
+    fn from(color: HexColor) -> Self {
+        color.0.into()
     }
 }

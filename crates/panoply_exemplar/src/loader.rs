@@ -2,7 +2,7 @@ use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
-    utils::{hashbrown::HashMap, thiserror::Error, BoxedFuture},
+    utils::{hashbrown::HashMap, BoxedFuture},
 };
 use futures_lite::AsyncReadExt;
 use serde::{
@@ -10,6 +10,7 @@ use serde::{
     Deserialize, Deserializer,
 };
 use std::{fmt, sync::Arc};
+use thiserror::Error;
 
 use crate::exemplar::ExemplarData;
 

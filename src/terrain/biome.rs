@@ -1,7 +1,7 @@
-use bevy::utils::thiserror::Error;
 use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
+use thiserror::Error;
 
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},

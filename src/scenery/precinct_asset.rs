@@ -2,7 +2,7 @@ use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
-    utils::{thiserror::Error, BoxedFuture},
+    utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
@@ -12,6 +12,7 @@ use serde::{
     Deserialize, Serialize,
 };
 use std::fmt::{self, Debug};
+use thiserror::Error;
 
 use crate::msgpack::{Box2d, Vector3};
 

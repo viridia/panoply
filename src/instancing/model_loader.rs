@@ -2,9 +2,10 @@ use bevy::{
     asset::{io::Reader, Asset, AssetLoader, LoadContext},
     gltf::{Gltf, GltfError, GltfLoader, GltfLoaderSettings},
     reflect::TypePath,
-    utils::thiserror::Error,
+    render::render_asset::RenderAssetUsages,
     utils::BoxedFuture,
 };
+use thiserror::Error;
 
 /// A `ModelRef` is a reference to a GLTF model. The reference contains a handle to the
 /// GLTF scene object, as well as a reference to the GLTF asset itself. The latter is kept
@@ -44,7 +45,8 @@ impl AssetLoader for ModelLoader {
                     &GltfLoaderSettings {
                         load_cameras: false,
                         load_lights: false,
-                        load_meshes: true,
+                        load_meshes: RenderAssetUsages::RENDER_WORLD,
+                        load_materials: RenderAssetUsages::RENDER_WORLD,
                         include_source: false,
                     },
                     load_context,

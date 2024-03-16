@@ -9,11 +9,11 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
-    utils::thiserror::Error,
     utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::{scenery::PRECINCT_SIZE, world::Realm};
 
@@ -370,7 +370,7 @@ fn create_ground_material(
         grass: asset_server.load("terrain/textures/grass.png"),
         dirt: asset_server.load("terrain/textures/dirt.png"),
         moss: asset_server.load("terrain/textures/moss.png"),
-        water_color: Color::rgb(0.0, 0.1, 0.3),
+        water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
         realm_offset: Vec2::new(0., 0.),
         biomes,
     })

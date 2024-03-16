@@ -165,7 +165,7 @@ pub(crate) fn rebuild_floor_materials(
                 .entity(entity)
                 .insert((
                     materials.add(StandardMaterial {
-                        base_color: Color::rgb(1.0, 0.0, 0.0),
+                        base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
                         unlit: true,
                         ..Default::default()
                     }),

@@ -98,7 +98,9 @@ pub fn create_mesh_instances(
                 let asset = assets_gltf.get(&m_instances.handle);
                 if let Some(gltf) = asset {
                     // Lookup the GLTF Scene (which is the object we want to display) by name.
-                    if let Some(scene_handle) = gltf.named_scenes.get(&m_instances.asset_label) {
+                    if let Some(scene_handle) =
+                        gltf.named_scenes.get(m_instances.asset_label.as_str())
+                    {
                         let scene = assets_scene.get_mut(scene_handle).unwrap();
                         // println!("Model found: [{}]", placements.model);
 

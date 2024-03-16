@@ -25,7 +25,7 @@ pub struct GroundMaterial {
     pub biomes: Handle<Image>,
 
     #[uniform(11)]
-    pub water_color: Color,
+    pub water_color: LinearRgba,
 
     #[uniform(12)]
     pub realm_offset: Vec2,

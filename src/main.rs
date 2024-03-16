@@ -220,24 +220,26 @@ fn setup(
 
     commands.insert_resource(AmbientLight {
         brightness: 0.5 * 1000.,
-        color: Color::Rgba {
+        color: Srgba {
             red: 0.5,
             green: 0.7,
             blue: 1.,
             alpha: 1.,
-        },
+        }
+        .into(),
     });
 
     commands.spawn((
         DirectionalLightBundle {
             directional_light: DirectionalLight {
                 shadows_enabled: true,
-                color: Color::Rgba {
+                color: Srgba {
                     red: 1.,
                     green: 1.,
                     blue: 1.,
                     alpha: 1.,
-                },
+                }
+                .into(),
                 illuminance: 3000.,
                 ..default()
             },

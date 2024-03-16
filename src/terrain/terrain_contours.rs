@@ -10,10 +10,10 @@ use bevy::{
     math::IRect,
     prelude::*,
     reflect::TypePath,
-    utils::thiserror::Error,
     utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 const HEIGHT_STRIDE: usize = (PARCEL_SIZE + 1) as usize;
 const FLORA_STRIDE: usize = PARCEL_SIZE as usize;

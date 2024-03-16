@@ -2,10 +2,10 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use bevy::utils::thiserror::Error;
 use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Represents a map location or nav point that can be teleported to.
 #[derive(Default, Serialize, Deserialize)]
