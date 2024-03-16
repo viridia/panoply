@@ -2808,7 +2808,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "trees/temperate.glb#poplar-green",
+            "asset": "terrain/models/temperate.glb#poplar-green",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2839,7 +2839,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "trees/temperate.glb#poplar-green2",
+            "asset": "terrain/models/temperate.glb#poplar-green2",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2870,7 +2870,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "trees/temperate.glb#poplar-orange",
+            "asset": "terrain/models/temperate.glb#poplar-orange",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2901,7 +2901,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "trees/temperate.glb#poplar-yellow",
+            "asset": "terrain/models/temperate.glb#poplar-yellow",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2932,7 +2932,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "bushes.glb#spiky1",
+            "asset": "terrain/models/bushes.glb#spiky1",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2963,7 +2963,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "bushes.glb#spiky2",
+            "asset": "terrain/models/bushes.glb#spiky2",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -2994,7 +2994,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "bushes.glb#fluffy",
+            "asset": "terrain/models/bushes.glb#fluffy",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3025,7 +3025,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "crops.glb#fogroot",
+            "asset": "terrain/models/crops.glb#fogroot",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3045,7 +3045,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "crops.glb#palecress",
+            "asset": "terrain/models/crops.glb#palecress",
             "y_rotation_variance": 360,
             "scale": 0.5,
             "scale_variance": 0.2
@@ -3060,7 +3060,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "crops.glb#moonblush",
+            "asset": "terrain/models/crops.glb#moonblush",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3080,7 +3080,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "crops.glb#shadowfoil",
+            "asset": "terrain/models/crops.glb#shadowfoil",
             "y_rotation_variance": 360,
             "offset": [
               0,
@@ -3100,7 +3100,7 @@
       "SceneryModels": {
         "models": [
           {
-            "asset": "crops.glb#millsprout",
+            "asset": "terrain/models/crops.glb#millsprout",
             "y_rotation_variance": 360,
             "offset": [
               0,

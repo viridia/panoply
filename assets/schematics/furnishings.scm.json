@@ -3360,7 +3360,7 @@
             "asset": "scenery/models/decorations.glb#FlowerPot"
           },
           {
-            "asset": "crops.glb#sunstalk"
+            "asset": "terrain/models/crops.glb#sunstalk"
           }
         ]
       },
@@ -3387,7 +3387,7 @@
             "asset": "scenery/models/decorations.glb#FlowerPot"
           },
           {
-            "asset": "crops.glb#heartblush"
+            "asset": "terrain/models/crops.glb#heartblush"
           }
         ]
       },
