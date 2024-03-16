@@ -35,7 +35,6 @@ pub(crate) struct ActivePortal {
     /// The image buffer
     image: Handle<Image>,
     // public readonly portalCamera: PerspectiveCamera;
-    // public isOnscreen = false;
 
     // /** Size of the hole. */
     // private apertureSize = new Vector3();
@@ -54,8 +53,6 @@ pub(crate) struct ActivePortal {
     // private cameraFacing = new Vector3();
     // private sourceScene?: Scene;
     // private clippingPlane = new Plane();
-
-    // private needsUpdate = false;
 }
 
 #[derive(Component)]
@@ -161,8 +158,8 @@ pub(crate) fn spawn_portals(
             let image_handle = images.add(image);
 
             let material = materials.add(StandardMaterial {
-                base_color: Srgba::rgb(1.0, 0.0, 1.0).into(),
-                // base_color_texture: Some(image_handle.clone()),
+                // base_color: Srgba::rgb(1.0, 0.0, 1.0).into(),
+                base_color_texture: Some(image_handle.clone()),
                 unlit: true,
                 double_sided: true,
                 cull_mode: None,
@@ -216,10 +213,17 @@ pub(crate) fn spawn_portals(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn update_portals(
     query_primary_camera: Query<(&Camera, &Transform, &GlobalTransform), With<PrimaryCamera>>,
-    mut query_portal_camera: Query<&mut Transform, (With<PortalCamera>, Without<PrimaryCamera>)>,
-    mut active_portal_query: Query<(&GlobalTransform, &Portal, &PortalTarget, &ActivePortal)>,
+    query_portals: Query<
+        (&Portal, &PortalTarget, &ActivePortal, &GlobalTransform),
+        Without<PortalCamera>,
+    >,
+    mut query_portal_camera: Query<
+        (&mut Transform, &mut GlobalTransform),
+        (With<PortalCamera>, Without<PrimaryCamera>),
+    >,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut gizmos: Gizmos,
 ) {
@@ -227,18 +231,27 @@ pub(crate) fn update_portals(
     else {
         return;
     };
-    let _primary_global_transform = primary_global.compute_transform();
 
-    for (_portal_xform, portal, portal_target, active_portal) in active_portal_query.iter_mut() {
-        let Ok(mut portal_camera_xform) = query_portal_camera.get_mut(active_portal.camera) else {
+    println!(
+        "#portals: {} #portal cameras: {}",
+        query_portals.iter().count(),
+        query_portal_camera.iter().count()
+    );
+    for (portal, portal_target, active_portal, portal_xform) in query_portals.iter() {
+        let Ok((mut portal_camera_xform, mut portal_camera_global_xform)) =
+            query_portal_camera.get_mut(active_portal.camera)
+        else {
             println!("No portal camera found");
             continue;
         };
-        let source_position = portal_camera_xform.translation;
+        let source_position = portal_xform.compute_transform().translation;
         let target_position = Vec3::from(portal_target.pos);
         let differential = target_position - source_position;
         portal_camera_xform.translation = primary_transform.translation + differential;
         portal_camera_xform.rotation = primary_transform.rotation;
+        // Update global transform now, because this system runs in PostUpdate after the
+        // primary camera global transform has been calculated, thereby avoiding 1-frame delay.
+        *portal_camera_global_xform = GlobalTransform::from(*portal_camera_xform);
 
         let center = active_portal
             .transform

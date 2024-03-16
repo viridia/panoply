@@ -1,6 +1,5 @@
 use bevy::{
     app::{App, Plugin, Update},
-    ecs::schedule::IntoSystemConfigs,
     prelude::*,
 };
 
@@ -20,7 +19,8 @@ impl Plugin for PortalPlugin {
             .register_type::<PortalTarget>()
             .register_type::<PortalSide>()
             .add_systems(Startup, update_config)
-            .add_systems(Update, (spawn_portals, update_portals.after(spawn_portals)));
+            .add_systems(Update, spawn_portals)
+            .add_systems(PostUpdate, update_portals);
     }
 }
 
