@@ -232,11 +232,6 @@ pub(crate) fn update_portals(
         return;
     };
 
-    println!(
-        "#portals: {} #portal cameras: {}",
-        query_portals.iter().count(),
-        query_portal_camera.iter().count()
-    );
     for (portal, portal_target, active_portal, portal_xform) in query_portals.iter() {
         let Ok((mut portal_camera_xform, mut portal_camera_global_xform)) =
             query_portal_camera.get_mut(active_portal.camera)

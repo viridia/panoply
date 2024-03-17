@@ -42,13 +42,13 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
   return Buffer.from(await io.writeBinary(gltf));
 };
 
-// // Character model files.
-// target(
-//   'characters',
-//   directory(srcRoot, 'characters')
-//     .match('*.glb')
-//     .map(src => src.transform(modelOpt).dest({ root: dstRoot }))
-// );
+// Character model files.
+target(
+  "characters",
+  directory(srcRoot, "characters")
+    .match("*.glb")
+    .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
+);
 
 // target(
 //   'props',
