@@ -29,7 +29,7 @@
         //   "$ref": "./fixture.schema.json"
         // },
         {
-          "$ref": "./schematic.schema.json"
+          "$ref": "./exemplar.schema.json"
         }
         // {
         //   "$ref": "./item.schema.json"

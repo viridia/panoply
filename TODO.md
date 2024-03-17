@@ -5,7 +5,6 @@
   - Generation error [REPORTED]
   - Materials get loaded multiple times?
   - CottageWallSkirtCorner turned wrong way.
-- Rename schematics to exemplars?
 - Models
   - [x] replace model_loader
 - Wall Physics

@@ -167,12 +167,12 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        fx_schematics: Vec<Handle<Exemplar>>,
+        fx_exemplars: Vec<Handle<Exemplar>>,
     ) {
         if let Some(ref encoded) = asset.terrain_fx {
             let mut fx = TerrainFxMap::new();
             rle_decode(encoded, &mut fx.map).unwrap();
-            fx.schematics = fx_schematics;
+            fx.exemplars = fx_exemplars;
             commands
                 .entity(entity)
                 .insert((fx, RebuildTerrainFxVertexAttrs));

@@ -3,7 +3,7 @@
   "rust-analyzer.showUnlinkedFileNotification": false,
   "json.schemas": [
     {
-      "fileMatch": ["/assets/schematics/*.json", "/assets/regional/*/*.json"],
+      "fileMatch": ["/assets/exemplars/*.json", "/assets/regional/*/*.json"],
       "url": "./schemas/meta.schema.json"
     }
   ]

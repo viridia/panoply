@@ -1,6 +1,6 @@
 {
   "Road": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Road",
       "TerrainFx.Earth"
@@ -18,7 +18,7 @@
     }
   },
   "Road.Med": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Earth.Med"
     ],
@@ -35,7 +35,7 @@
     }
   },
   "Road.Light": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Earth.Light"
     ],
@@ -52,7 +52,7 @@
     }
   },
   "Road.ExtraLight": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Earth.ExtraLight"
     ],
@@ -69,7 +69,7 @@
     }
   },
   "Road.Dirt": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Earth.Path"
     ],
@@ -87,7 +87,7 @@
     }
   },
   "Road.Flat": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Road",
       "TerrainFx.Earth"
@@ -104,7 +104,7 @@
     }
   },
   "Soil": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Soil"
     ],
@@ -121,7 +121,7 @@
     }
   },
   "Dirt": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Path"
     ],
@@ -138,7 +138,7 @@
     }
   },
   "Dirt.Med": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Path.Med"
     ],
@@ -155,7 +155,7 @@
     }
   },
   "Dirt.Light": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Path.Light"
     ],
@@ -172,7 +172,7 @@
     }
   },
   "Dirt.ExtraLight": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Path.ExtraLight"
     ],
@@ -189,7 +189,7 @@
     }
   },
   "Cobbles": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Cobbles"
     ],
@@ -206,7 +206,7 @@
     }
   },
   "Cobbles.Med": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Cobbles.Med"
     ],
@@ -223,7 +223,7 @@
     }
   },
   "Cobbles.Light": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Cobbles.Light"
     ],
@@ -240,7 +240,7 @@
     }
   },
   "Cobbles.ExtraLight": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Cobbles.ExtraLight"
     ],
@@ -257,7 +257,7 @@
     }
   },
   "Cobbles.Dirt": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "aspects": {
       "TerrainEffect": {
         "effect": [
@@ -272,7 +272,7 @@
     }
   },
   "Cobbles.Flat": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "aspects": {
       "TerrainEffect": {
         "effect": [
@@ -286,7 +286,7 @@
     }
   },
   "Grave.X": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "GraveX"
     ],
@@ -302,7 +302,7 @@
     }
   },
   "Grave.Z": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "GraveY"
     ],
@@ -318,7 +318,7 @@
     }
   },
   "Tilled.X": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TilledX"
     ],
@@ -334,7 +334,7 @@
     }
   },
   "Tilled.Z": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TilledY"
     ],
@@ -350,7 +350,7 @@
     }
   },
   "Hole": {
-    "type": "TerrainFx",
+    "type": "TrFx",
     "alias": [
       "TerrainFx.Hole"
     ],

@@ -1,529 +1,529 @@
 {
   "Proto.NPC": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "",
     "aspects": {}
   },
   "Proto.HumanoidMale": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.NPC"
   },
   "Proto.HumanoidFemale": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.NPC"
   },
   "Proto.CanineDomestic": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.NPC"
   },
   "Proto.Dabori": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.NPC"
   },
   "Proto.Reshari": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.NPC"
   },
   "Proto.Monster": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "",
     "aspects": {}
   },
   "Proto.HumanMaleTunic": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleRobe": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleApron": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleJerkinHooded": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.CityGuardMale": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleTunicHeavy": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleCoatHeavy": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleLongCoat": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanFemaleTunic": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDress": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleLightArmor": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleFancyGown": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDressHeavy": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanoidFemale"
   },
   "Spooksy": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Spooksy",
     "aspects": {},
     "extends": "Proto.CanineDomestic"
   },
   "Proto.DaboriArmored": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Dabori"
   },
   "Farmer1": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Clyde Hardy",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "TestChar2": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Guardsman",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Marcus": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Marcus",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Stephan": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Stephan",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Blue": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Marcus",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Philo.Aynesworth": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Philo Aynesworth",
     "aspects": {},
     "extends": "Proto.HumanMaleRobe"
   },
   "Shopkeeper": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Shopkeeper",
     "aspects": {},
     "extends": "Proto.HumanMaleApron"
   },
   "PoulRyba": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Poul Ryba",
     "aspects": {},
     "extends": "Proto.HumanMaleApron"
   },
   "AdokkaBalar": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Adokka Balar",
     "aspects": {},
     "extends": "Proto.HumanMaleApron"
   },
   "CrimsonWatchAssassin": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Crimson Watch Assassin",
     "aspects": {},
     "extends": "Proto.HumanMaleJerkinHooded"
   },
   "Proto.BanditMaleHooded": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanMaleJerkinHooded"
   },
   "Guard": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Guard",
     "aspects": {},
     "extends": "Proto.CityGuardMale"
   },
   "Guard.DemoVillage": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Guard",
     "aspects": {},
     "extends": "Proto.CityGuardMale"
   },
   "Guard.DemoVillage2": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Guard",
     "aspects": {},
     "extends": "Proto.CityGuardMale"
   },
   "SergeantStone": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Sergeant Stone",
     "aspects": {},
     "extends": "Proto.HumanMaleCoatHeavy"
   },
   "Proto.CrimsonWatchRecruit": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Crimson Watch Recruit",
     "aspects": {},
     "extends": "Proto.HumanMaleLongCoat"
   },
   "CrimsonWatchRecruit1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.CrimsonWatchRecruit"
   },
   "CrimsonWatchRecruit2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.CrimsonWatchRecruit"
   },
   "Abigail": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Abigail",
     "aspects": {},
     "extends": "Proto.HumanFemaleTunic"
   },
   "Eleanor": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Eleanor",
     "aspects": {},
     "extends": "Proto.HumanFemaleTunic"
   },
   "Ivy": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Ivy Fischer",
     "aspects": {},
     "extends": "Proto.HumanFemaleDress"
   },
   "SigridRyba": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Sigrid Ryba",
     "aspects": {},
     "extends": "Proto.HumanFemaleDress"
   },
   "Elspeth": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Elspeth",
     "aspects": {},
     "extends": "Proto.HumanFemaleDress"
   },
   "CrimsonWatchSkirmisher": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanFemaleLightArmor"
   },
   "Proto.BanditFemaleLightArmor": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.HumanFemaleLightArmor"
   },
   "PhoebeKallan": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Alcaldesa Phoebe",
     "aspects": {},
     "extends": "Proto.HumanFemaleFancyGown"
   },
   "AdokkaSerela": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Adokka Serela",
     "aspects": {},
     "extends": "Proto.HumanFemaleDressHeavy"
   },
   "Shekku": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Shekku",
     "aspects": {},
     "extends": "Proto.Reshari"
   },
   "Proto.Canine": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Monster"
   },
   "Proto.Ursine": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Monster"
   },
   "Proto.Wasp": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Monster"
   },
   "Proto.Kreekin": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Monster"
   },
   "Proto.Skeleton": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Skeleton",
     "aspects": {},
     "extends": "Proto.Monster"
   },
   "Bandit1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit4": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditMaleHooded"
   },
   "SentinelRosseau": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Sentinel Rosseau",
     "aspects": {},
     "extends": "CrimsonWatchSkirmisher"
   },
   "Bandit20": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit21": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit22": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit23": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Proto.FeralDog": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Feral Dog",
     "aspects": {},
     "extends": "Proto.Canine"
   },
   "FeralDog1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.FeralDog"
   },
   "FeralDog2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.FeralDog"
   },
   "FeralDog3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.FeralDog"
   },
   "FeralDog4": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.FeralDog"
   },
   "FeralDogAlpha": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Feral Dog",
     "aspects": {},
     "extends": "Proto.FeralDog"
   },
   "SmallBlackBear": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Small Black Bear",
     "aspects": {},
     "extends": "Proto.Ursine"
   },
   "BlackBear": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Black Bear",
     "aspects": {},
     "extends": "Proto.Ursine"
   },
   "KreekinGreen": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen4": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "Proto.KreekinScout": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Kreekin Scout",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinScout1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.KreekinScout"
   },
   "KreekinScout2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.KreekinScout"
   },
   "KreekinScout3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.KreekinScout"
   },
   "KreekinGray": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinGray2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinGray3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "KreekinWhite": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.Kreekin"
   },
   "Skeletal.Warrior": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Skeletal Warrior",
     "aspects": {},
     "extends": "Proto.Skeleton"
   },
   "Skeletal.Soldier": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Skeletal Soldier",
     "aspects": {},
     "extends": "Proto.Skeleton"
   },
   "Cordelia": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Cordelia Weber",
     "aspects": {},
     "extends": "Proto.HumanFemaleDress"
   },
   "Cordelia.Imprisoned": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Cordelia"
   },
   "Arlo": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Arlo Weber",
     "aspects": {},
     "extends": "Proto.HumanMaleLongCoat"
   },
   "Arlo.Imprisoned": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Arlo Weber",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Proto.ConvictMale": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Convict Laborer",
     "aspects": {},
     "extends": "Proto.HumanMaleTunic"
   },
   "Proto.ConvictFemale": {
-    "type": "Actor",
+    "type": "Actr",
     "display_name": "Convict Laborer",
     "aspects": {},
     "extends": "Cordelia"
   },
   "ConvictFemale1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictFemale"
   },
   "ConvictFemale2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictFemale"
   },
   "ConvictFemale3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictFemale"
   },
   "ConvictMale1": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictMale"
   },
   "ConvictMale2": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictMale"
   },
   "ConvictMale3": {
-    "type": "Actor",
+    "type": "Actr",
     "aspects": {},
     "extends": "Proto.ConvictMale"
   }

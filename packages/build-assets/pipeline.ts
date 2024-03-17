@@ -150,24 +150,10 @@ flora("flora-bushes", "flora/bushes", "terrain/models/bushes.glb");
 //   source(srcRoot, 'textures/envmap/checkers.png').dest(dstRoot, 'textures/checkers.png')
 // );
 
-// // Textures index file.
-// target(
-//   'textures-index',
-//   directory(srcRoot, 'textures').pipe(catalogIndex('*.png')).dest(dstRoot, 'textures/index.json')
-// );
-
 // // Maps
 // target(
 //   'textures-map',
 //   directory(`${srcRoot}/images`, 'maps')
 //     .match('*.png')
-//     .map(src => src.dest({ root: dstRoot }))
-// );
-
-// // Fonts
-// target(
-//   'fonts',
-//   directory(srcRoot, 'fonts')
-//     .match('*.ttf')
 //     .map(src => src.dest({ root: dstRoot }))
 // );

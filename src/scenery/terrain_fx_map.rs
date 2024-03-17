@@ -22,7 +22,7 @@ pub const TERRAIN_FX_MAP_SIZE: usize = (PRECINCT_SIZE + 2) as usize;
 /// and loading.
 #[derive(Component)]
 pub struct TerrainFxMap {
-    pub(crate) schematics: Vec<Handle<Exemplar>>,
+    pub(crate) exemplars: Vec<Handle<Exemplar>>,
     pub(crate) map: [u16; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
     pub(crate) map_vertex_attr: [TerrainFxVertexAttr; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
 }
@@ -30,7 +30,7 @@ pub struct TerrainFxMap {
 impl TerrainFxMap {
     pub fn new() -> Self {
         Self {
-            schematics: Vec::new(),
+            exemplars: Vec::new(),
             map: [0; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
             map_vertex_attr: [TerrainFxVertexAttr::default();
                 TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
@@ -51,7 +51,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
 ) {
     for (entity, precinct, mut terrain_fx) in query.iter_mut() {
         let all_loaded = terrain_fx
-            .schematics
+            .exemplars
             .iter()
             .all(|s| server.load_state(s) == LoadState::Loaded);
         if !all_loaded {
@@ -59,7 +59,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
         }
 
         let fx_table: Vec<TerrainFxVertexAttr> = terrain_fx
-            .schematics
+            .exemplars
             .iter()
             .map(|s| {
                 // Note that we're accessing the schematic directly in this case instead
