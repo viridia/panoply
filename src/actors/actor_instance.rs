@@ -1,6 +1,7 @@
+use bevy::asset::Handle;
 use bevy::math::Vec3;
 use bevy::{asset::LoadContext, reflect::TypeRegistry};
-use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
+use panoply_exemplar::{AspectListDeserializer, Exemplar, InstanceAspects};
 use serde::{de, Deserialize};
 use serde::{
     de::{DeserializeSeed, Visitor},
@@ -9,10 +10,10 @@ use serde::{
 use std::fmt::{self, Debug};
 
 /// Serialized instance of an actor.
-#[derive(Serialize, Debug, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct ActorInstance {
     /// Exemplar id for this actor
-    pub(crate) exemplar: String,
+    pub(crate) exemplar: Handle<Exemplar>,
 
     /// Only for globally-defined actors.
     pub(crate) realm: Option<String>,
@@ -33,6 +34,24 @@ pub struct ActorInstance {
     // readonly groupId?: string;
     // readonly transient?: boolean;
     // readonly ally?: string;
+}
+
+impl Serialize for ActorInstance {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // use serde::ser::SerializeSeq;
+        todo!("Implement ActorInstance serialization")
+
+        // let mut seq = serializer.serialize_seq(Some(5))?;
+        // seq.serialize_element(&self.exemplar)?;
+        // seq.serialize_element(&self.realm)?;
+        // seq.serialize_element(&self.position)?;
+        // seq.serialize_element(&self.facing)?;
+        // seq.serialize_element(&self.iid)?;
+        // seq.end()
+    }
 }
 
 #[derive(Deserialize)]
@@ -67,10 +86,11 @@ impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceVisitor<'a, 'b> {
         while let Some(key) = map.next_key()? {
             match key {
                 Field::Exemplar => {
-                    if !result.exemplar.is_empty() {
-                        return Err(de::Error::duplicate_field("exemplar"));
-                    }
-                    result.exemplar = map.next_value()?;
+                    let exemplar: String = map.next_value()?;
+                    // if !result.exemplar.is_empty() {
+                    //     return Err(de::Error::duplicate_field("exemplar"));
+                    // }
+                    result.exemplar = self.load_context.load(exemplar);
                 }
                 Field::Realm => {
                     if result.realm.is_some() {

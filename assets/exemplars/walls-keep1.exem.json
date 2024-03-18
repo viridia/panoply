@@ -2,877 +2,783 @@
   "Keep1PillarBottom": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
-            "y_rotation": 0
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
+          "y_rotation": 0
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1PillarTop": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop",
-            "y_rotation": 0
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop",
+          "y_rotation": 0
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallBottom": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallTop": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1PillarBottomPilaster": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
-            "y_rotation": 0
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
+          "y_rotation": 0
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1PillarBottomCorner": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
-            "y_rotation": 0
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
+          "y_rotation": 0
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom",
+          "y_rotation": 90
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallTopPilaster": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallTopCorner": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop",
+          "y_rotation": 90
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallTopArch": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallTopNarrowArch"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallTopNarrowArch"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallBottomWindow": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomWindow"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomWindow"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "RailingPostLight": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
-            "y_rotation": 0,
-            "offset": [
-              0.5,
-              0,
-              0.5
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.5,
-              0,
-              0.5
-            ],
-            "size": [
-              0.1,
-              0.5,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
+          "y_rotation": 0,
+          "offset": [
+            0.5,
+            0,
+            0.5
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.5,
+            0,
+            0.5
+          ],
+          "size": [
+            0.1,
+            0.5,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "RailingSectionLight": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
-            "y_rotation": 0,
-            "offset": [
-              0.5,
-              0,
-              0.5
-            ]
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#RailingSectionLight",
-            "offset": [
-              0,
-              0,
-              0.5
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.5,
-              0,
-              0.5
-            ],
-            "size": [
-              0.1,
-              0.5,
-              0.1
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.5
-            ],
-            "size": [
-              0.5,
-              0.4,
-              0.05
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
+          "y_rotation": 0,
+          "offset": [
+            0.5,
+            0,
+            0.5
+          ]
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#RailingSectionLight",
+          "offset": [
+            0,
+            0,
+            0.5
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.5,
+            0,
+            0.5
+          ],
+          "size": [
+            0.1,
+            0.5,
+            0.1
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.5
+          ],
+          "size": [
+            0.5,
+            0.4,
+            0.05
+          ]
+        }
+      ]
     }
   },
   "Keep1BattlementPillar": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#BattlementMajor"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#BattlementMajor"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1Battlement": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#BattlementMinor"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#BattlementMinor"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1BattlementCorner": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#BattlementMajorCorner"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#BattlementMajorCorner"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WallTopTee": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarTop"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfTop"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallTop",
+          "y_rotation": 90
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1PillarBottomTee": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
-            "y_rotation": 0
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedPillarBottom",
+          "y_rotation": 0
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallHalfBottom"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom",
+          "y_rotation": 90
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "Keep1WoodenStairs": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#WoodenStairs",
-            "y_rotation": 0
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
-            "offset": [
-              -0.1,
-              0,
-              0.45
-            ]
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
-            "offset": [
-              -0.1,
-              0,
-              -0.45
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "facing": 1,
-            "shape": "ramp",
-            "offset": [
-              0.5,
-              0,
-              0
-            ],
-            "size": [
-              0.5,
-              1,
-              1
-            ],
-            "pickable": true,
-            "walkable": true
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.5,
-              0,
-              0.45
-            ],
-            "size": [
-              1,
-              1.4,
-              0.05
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.45,
-              0,
-              -0.45
-            ],
-            "size": [
-              1,
-              1.4,
-              0.05
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "bottom": [
-            [
-              -1,
-              0,
-              0
-            ]
-          ],
-          "top": [
-            [
-              1.8,
-              2,
-              0
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#WoodenStairs",
+          "y_rotation": 0
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
+          "offset": [
+            -0.1,
+            0,
+            0.45
+          ]
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
+          "offset": [
+            -0.1,
+            0,
+            -0.45
           ]
         }
+      ],
+      "SceneryColliders": [
+        {
+          "facing": 1,
+          "shape": "ramp",
+          "offset": [
+            0.5,
+            0,
+            0
+          ],
+          "size": [
+            0.5,
+            1,
+            1
+          ],
+          "pickable": true,
+          "walkable": true
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.5,
+            0,
+            0.45
+          ],
+          "size": [
+            1,
+            1.4,
+            0.05
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.45,
+            0,
+            -0.45
+          ],
+          "size": [
+            1,
+            1.4,
+            0.05
+          ]
+        }
+      ],
+      "SceneryMarks": {
+        "bottom": [
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "top": [
+          [
+            1.8,
+            2,
+            0
+          ]
+        ]
       }
     }
   },
   "Keep1Stairs": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#Stairs",
-            "y_rotation": 0
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "facing": 1,
-            "shape": "ramp",
-            "offset": [
-              0.5,
-              0,
-              0
-            ],
-            "size": [
-              0.5,
-              1,
-              1
-            ],
-            "pickable": true,
-            "walkable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#Stairs",
+          "y_rotation": 0
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "facing": 1,
+          "shape": "ramp",
+          "offset": [
+            0.5,
+            0,
+            0
+          ],
+          "size": [
+            0.5,
+            1,
+            1
+          ],
+          "pickable": true,
+          "walkable": true
+        }
+      ]
     }
   },
   "Keep1WallBottomDoor": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoor"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              0.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.45
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.05
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.45
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.05
-            ]
-          },
-          {
-            "shape": "box",
-            "type": "door",
-            "offset": [
-              0,
-              0,
-              0.35
-            ],
-            "size": [
-              0.05,
-              0.8,
-              0.4
-            ],
-            "origin": [
-              -0.1,
-              0,
-              -0.35
-            ],
-            "pickable": true,
-            "animation": "DoorSingle"
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              -0.85,
-              0,
-              0.2
-            ],
-            [
-              0.85,
-              0,
-              0.2
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoor"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            0.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.45
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.05
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.45
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.05
+          ]
+        },
+        {
+          "shape": "box",
+          "type": "door",
+          "offset": [
+            0,
+            0,
+            0.35
+          ],
+          "size": [
+            0.05,
+            0.8,
+            0.4
+          ],
+          "origin": [
+            -0.1,
+            0,
+            -0.35
+          ],
+          "pickable": true,
+          "animation": "DoorSingle"
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            -0.85,
+            0,
+            0.2
+          ],
+          [
+            0.85,
+            0,
+            0.2
+          ]
+        ]
       }
     }
   },
   "Keep1WallBottomDoubleDoor": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoorWide"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              1.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          },
-          {
-            "shape": "box",
-            "type": "door",
-            "offset": [
-              0,
-              0,
-              0.4
-            ],
-            "size": [
-              0.05,
-              0.75,
-              0.4
-            ],
-            "origin": [
-              0,
-              0,
-              -0.5
-            ],
-            "pickable": true,
-            "animation": "DoorRight"
-          },
-          {
-            "shape": "box",
-            "type": "door",
-            "offset": [
-              0,
-              0,
-              0.25
-            ],
-            "size": [
-              0.05,
-              0.75,
-              0.4
-            ],
-            "origin": [
-              0,
-              0,
-              1.5
-            ],
-            "pickable": true,
-            "animation": "DoorLeft"
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0.85,
-              0,
-              0.05
-            ],
-            [
-              -0.9,
-              0,
-              0.05
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomDoorWide"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            1.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        },
+        {
+          "shape": "box",
+          "type": "door",
+          "offset": [
+            0,
+            0,
+            0.4
+          ],
+          "size": [
+            0.05,
+            0.75,
+            0.4
+          ],
+          "origin": [
+            0,
+            0,
+            -0.5
+          ],
+          "pickable": true,
+          "animation": "DoorRight"
+        },
+        {
+          "shape": "box",
+          "type": "door",
+          "offset": [
+            0,
+            0,
+            0.25
+          ],
+          "size": [
+            0.05,
+            0.75,
+            0.4
+          ],
+          "origin": [
+            0,
+            0,
+            1.5
+          ],
+          "pickable": true,
+          "animation": "DoorLeft"
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0.85,
+            0,
+            0.05
+          ],
+          [
+            -0.9,
+            0,
+            0.05
+          ]
+        ]
       }
     }
   },
   "Keep1WallBottomPortal": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              1.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            1.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        }
+      ],
       "Portal": {
         "size": [
           1.8,
@@ -889,80 +795,76 @@
   "Keep1WallBottomPortalInside": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
-          },
-          {
-            "asset": "scenery/models/blackout.glb#BlackoutThin",
-            "offset": [
-              0.55,
-              0,
-              0
-            ]
-          },
-          {
-            "asset": "scenery/models/blackout.glb#BlackoutThin",
-            "offset": [
-              0.55,
-              0,
-              1
-            ]
-          },
-          {
-            "asset": "scenery/models/blackout.glb#BlackoutThin",
-            "offset": [
-              0.55,
-              0,
-              -1
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              1.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
+        },
+        {
+          "asset": "scenery/models/blackout.glb#BlackoutThin",
+          "offset": [
+            0.55,
+            0,
+            0
+          ]
+        },
+        {
+          "asset": "scenery/models/blackout.glb#BlackoutThin",
+          "offset": [
+            0.55,
+            0,
+            1
+          ]
+        },
+        {
+          "asset": "scenery/models/blackout.glb#BlackoutThin",
+          "offset": [
+            0.55,
+            0,
+            -1
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            1.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        }
+      ],
       "Portal": {
         "size": [
           1.8,
@@ -979,194 +881,180 @@
   "Keep1MetalDoor": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#MetalDoorFrame"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              0.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.45
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.05
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.45
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.05
-            ]
-          },
-          {
-            "shape": "box",
-            "type": "door",
-            "offset": [
-              0,
-              0,
-              -0.35
-            ],
-            "size": [
-              0.05,
-              0.8,
-              0.4
-            ],
-            "origin": [
-              -0.1,
-              0,
-              -0.35
-            ],
-            "pickable": true,
-            "animation": "MetalDoor"
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              -0.85,
-              0,
-              0.2
-            ],
-            [
-              0.85,
-              0,
-              0.2
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#MetalDoorFrame"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            0.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.45
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.05
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.45
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.05
+          ]
+        },
+        {
+          "shape": "box",
+          "type": "door",
+          "offset": [
+            0,
+            0,
+            -0.35
+          ],
+          "size": [
+            0.05,
+            0.8,
+            0.4
+          ],
+          "origin": [
+            -0.1,
+            0,
+            -0.35
+          ],
+          "pickable": true,
+          "animation": "MetalDoor"
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            -0.85,
+            0,
+            0.2
+          ],
+          [
+            0.85,
+            0,
+            0.2
+          ]
+        ]
       }
     }
   },
   "Keep1WallBottomSwitch": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
-          },
-          {
-            "asset": "scenery/models/walls-keep-1.glb#StoneSwitch",
-            "offset": [
-              0.15,
-              1.15,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              1,
-              0.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              -0.25,
-              1.05,
-              0
-            ],
-            "size": [
-              0.15,
-              0.2,
-              0.15
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottom"
+        },
+        {
+          "asset": "scenery/models/walls-keep-1.glb#StoneSwitch",
+          "offset": [
+            0.15,
+            1.15,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            1,
+            0.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            -0.25,
+            1.05,
+            0
+          ],
+          "size": [
+            0.15,
+            0.2,
+            0.15
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "Keep1WallBottomDoorway": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.8,
-              0
-            ],
-            "size": [
-              0.2,
-              0.1,
-              1.5
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              1.15
-            ],
-            "size": [
-              0.2,
-              1,
-              0.35
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#TaperedWallBottomPortalWide"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.8,
+            0
+          ],
+          "size": [
+            0.2,
+            0.1,
+            1.5
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            1.15
+          ],
+          "size": [
+            0.2,
+            1,
+            0.35
+          ]
+        }
+      ],
       "Portal": {
         "size": [
           1,

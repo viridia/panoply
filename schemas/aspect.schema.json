@@ -70,46 +70,27 @@
       "additionalProperties": false
     },
     "SceneryModels": {
-      "type": "object",
-      "properties": {
-        "models": {
-          "type": "array",
-          "items": {
-            "$ref": "./types.schema.json#/definitions/SceneryComponent"
-          }
-        }
-      },
-      "required": ["models"],
-      "additionalProperties": false
+      "type": "array",
+      "items": {
+        "$ref": "./types.schema.json#/definitions/SceneryComponent"
+      }
     },
     "SceneryColliders": {
-      "type": "object",
-      "properties": {
-        "colliders": {
-          "type": "array",
-          "items": {
-            "$ref": "./types.schema.json#/definitions/ColliderDesc"
-          }
-        }
-      },
-      "required": ["colliders"],
-      "additionalProperties": false
+      "type": "array",
+      "items": {
+        "$ref": "./types.schema.json#/definitions/ColliderDesc"
+      }
     },
     "SceneryMarks": {
       "type": "object",
-      "properties": {
-        "marks": {
-          "patternProperties": {
-            "^[a-zA-Z0-9_]+$": {
-              "type": "array",
-              "items": {
-                "$ref": "./types.schema.json#/definitions/Vec3"
-              }
-            }
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "array",
+          "items": {
+            "$ref": "./types.schema.json#/definitions/Vec3"
           }
         }
       },
-      "required": ["marks"],
       "additionalProperties": false
     },
     "WallSize": {
@@ -234,14 +215,7 @@
       "additionalProperties": false
     },
     "Skin": {
-      "type": "object",
-      "properties": {
-        "skin": {
-          "type": "string"
-        }
-      },
-      "required": ["skin"],
-      "additionalProperties": false
+      "type": "string"
     },
     "ColorSlots": {
       "type": "array",

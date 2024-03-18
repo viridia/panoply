@@ -2,561 +2,489 @@
   "WoodenTableSmall": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SmallWoodenTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.35,
-              0.42,
-              0.45
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0,
-              0.85,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SmallWoodenTable"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.35,
+            0.42,
+            0.45
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0,
+            0.85,
+            0
+          ]
+        ]
       }
     }
   },
   "WoodenTableTall": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#TallWoodenTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.4,
-              0.43,
-              0.4
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#TallWoodenTable"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.4,
+            0.43,
+            0.4
+          ]
+        }
+      ]
     }
   },
   "WoodenTableNarrow": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#NarrowWoodenTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              0.47,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#NarrowWoodenTable"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            0.47,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "WoodenTableLargeWalnut": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#LargeWalnutTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              1,
-              0.42,
-              0.45
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              -0.6,
-              0.85,
-              0
-            ],
-            [
-              0.6,
-              0.85,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#LargeWalnutTable"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            1,
+            0.42,
+            0.45
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            -0.6,
+            0.85,
+            0
+          ],
+          [
+            0.6,
+            0.85,
+            0
+          ]
+        ]
       }
     }
   },
   "WoodenShelvesTall": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#TallShelves"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.42
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.03
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.42
-            ],
-            "size": [
-              0.2,
-              0.9,
-              0.03
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0
-            ],
-            "size": [
-              0.2,
-              0.2,
-              0.4
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0.9,
-              0
-            ],
-            "size": [
-              0.2,
-              0.03,
-              0.4
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.3,
-              0
-            ],
-            "size": [
-              0.2,
-              0.03,
-              0.4
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.75,
-              0
-            ],
-            "size": [
-              0.2,
-              0.03,
-              0.4
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#TallShelves"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.42
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.03
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.42
+          ],
+          "size": [
+            0.2,
+            0.9,
+            0.03
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "size": [
+            0.2,
+            0.2,
+            0.4
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0.9,
+            0
+          ],
+          "size": [
+            0.2,
+            0.03,
+            0.4
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.3,
+            0
+          ],
+          "size": [
+            0.2,
+            0.03,
+            0.4
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.75,
+            0
+          ],
+          "size": [
+            0.2,
+            0.03,
+            0.4
+          ]
+        }
+      ]
     }
   },
   "Cask": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Cask"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.38,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Cask"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.38,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "Keg": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Keg"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.25,
-              0.3,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Keg"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.25,
+            0.3,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "WoodenCrate": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Crate"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.25,
-              0.25,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Crate"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.25,
+            0.25,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "WoodenBenchSmall": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SmallWoodenBench"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.2,
-              0.5
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0.2,
-              0.4,
-              0
-            ]
-          ],
-          "enter": [
-            [
-              0.25,
-              0,
-              0.75
-            ],
-            [
-              0.25,
-              0,
-              -0.75
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SmallWoodenBench"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.2,
+            0.5
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0.2,
+            0.4,
+            0
+          ]
+        ],
+        "enter": [
+          [
+            0.25,
+            0,
+            0.75
+          ],
+          [
+            0.25,
+            0,
+            -0.75
+          ]
+        ]
       }
     }
   },
   "WoodenBenchLargeWalnut": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#LargeWalnutBench",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.15,
-              0.25,
-              0.85
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0.25,
-              0.5,
-              0.6
-            ],
-            [
-              0.25,
-              0.5,
-              -0.6
-            ]
-          ],
-          "enter": [
-            [
-              0.25,
-              0,
-              1.1
-            ],
-            [
-              0.25,
-              0,
-              -1.1
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#LargeWalnutBench",
+          "y_rotation": 90
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.15,
+            0.25,
+            0.85
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0.25,
+            0.5,
+            0.6
+          ],
+          [
+            0.25,
+            0.5,
+            -0.6
+          ]
+        ],
+        "enter": [
+          [
+            0.25,
+            0,
+            1.1
+          ],
+          [
+            0.25,
+            0,
+            -1.1
+          ]
+        ]
       }
     }
   },
   "WoodenChairSmall": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SmallWoodenChair"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "rbox",
-            "size": [
-              0.25,
-              0.25,
-              0.2
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0.25,
-              0.52,
-              0
-            ]
-          ],
-          "enter": [
-            [
-              0.25,
-              0,
-              -0.55
-            ],
-            [
-              0.25,
-              0,
-              0.55
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SmallWoodenChair"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "rbox",
+          "size": [
+            0.25,
+            0.25,
+            0.2
           ]
         }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0.25,
+            0.52,
+            0
+          ]
+        ],
+        "enter": [
+          [
+            0.25,
+            0,
+            -0.55
+          ],
+          [
+            0.25,
+            0,
+            0.55
+          ]
+        ]
       }
     }
   },
   "WoodenChairFormal": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FormalChair"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "rbox",
-            "size": [
-              0.25,
-              0.35,
-              0.25
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0.3,
-              0.5,
-              0
-            ]
-          ],
-          "enter": [
-            [
-              0.25,
-              0,
-              -0.6
-            ],
-            [
-              0.25,
-              0,
-              0.6
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FormalChair"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "rbox",
+          "size": [
+            0.25,
+            0.35,
+            0.25
           ]
         }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0.3,
+            0.5,
+            0
+          ]
+        ],
+        "enter": [
+          [
+            0.25,
+            0,
+            -0.6
+          ],
+          [
+            0.25,
+            0,
+            0.6
+          ]
+        ]
       }
     }
   },
   "WoodenCounter": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#WoodenCounter"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.43,
-              0.5
-            ],
-            "margin": 0.2
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#WoodenCounter"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.43,
+            0.5
+          ],
+          "margin": 0.2
+        }
+      ]
     }
   },
   "RedBanner": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#HangingBannerRed"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              1.88,
-              0
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#HangingBannerRed"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            1.88,
+            0
+          ]
+        }
+      ]
     }
   },
   "CandleHolder": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#CandleHolder"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.35,
-              0.05
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#CandleHolder"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.35,
+            0.05
+          ]
+        }
+      ],
       "LightSource": {
         "offset": [
           0,
@@ -571,25 +499,21 @@
   "CandleStand": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#CandleStand"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.15,
-              0.8,
-              0.15
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#CandleStand"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.15,
+            0.8,
+            0.15
+          ]
+        }
+      ],
       "LightSource": {
         "offset": [
           0,
@@ -604,523 +528,449 @@
   "Chalice": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Chalice"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Chalice"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "ClayPot": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClayPot"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.15,
-              0.25,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClayPot"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.15,
+            0.25,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "LargePainting": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingPortrait"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.4,
-              0.5,
-              0.05
-            ],
-            "origin": [
-              0,
-              0.8,
-              0
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingPortrait"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.4,
+            0.5,
+            0.05
+          ],
+          "origin": [
+            0,
+            0.8,
+            0
+          ]
+        }
+      ]
     }
   },
   "PaintingPortrait": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingPortrait",
-            "offset": [
-              0,
-              0,
-              -0.13
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingPortrait",
+          "offset": [
+            0,
+            0,
+            -0.13
+          ]
+        }
+      ]
     }
   },
   "PaintingSeascape": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingSeascape",
-            "offset": [
-              0,
-              0,
-              -0.12
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingSeascape",
+          "offset": [
+            0,
+            0,
+            -0.12
+          ]
+        }
+      ]
     }
   },
   "PaintingFruit": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingFruit",
-            "offset": [
-              0,
-              0,
-              -0.13
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0.9,
-              0
-            ],
-            "size": [
-              0.35,
-              0.45,
-              0
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingFruit",
+          "offset": [
+            0,
+            0,
+            -0.13
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0.9,
+            0
+          ],
+          "size": [
+            0.35,
+            0.45,
+            0
+          ]
+        }
+      ]
     }
   },
   "LargePot": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#LargePot"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.4,
-              0.4,
-              0.4
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#LargePot"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.4,
+            0.4,
+            0.4
+          ]
+        }
+      ]
     }
   },
   "RoundBasket": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#RoundBasket"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.32,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#RoundBasket"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.32,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "TallJar": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#TallJar"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.15,
-              0.5,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#TallJar"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.15,
+            0.5,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "Ewer": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Ewer"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.15,
-              0.25,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Ewer"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.15,
+            0.25,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "GreenPitcher": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#GreenPitcher"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.13,
-              0.2,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#GreenPitcher"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.13,
+            0.2,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "WhitePitcher": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#WhitePitcher"
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#WhitePitcher"
+        }
+      ]
     }
   },
   "WoodenBucket": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#BucketWooden"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.2,
-              0.15,
-              0.2
-            ],
-            "margin": 0.2
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#BucketWooden"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.2,
+            0.15,
+            0.2
+          ],
+          "margin": 0.2
+        }
+      ]
     }
   },
   "WoodenCrates": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Crate",
-            "offset": [
-              0,
-              0,
-              -0.45
-            ]
-          },
-          {
-            "asset": "scenery/models/carpentry.glb#Crate",
-            "y_rotation": 25,
-            "offset": [
-              0.05,
-              0,
-              0.2
-            ]
-          },
-          {
-            "asset": "scenery/models/carpentry.glb#Crate",
-            "y_rotation": 35,
-            "offset": [
-              0,
-              0.5,
-              -0.1
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.35,
-              0.5,
-              0.55
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Crate",
+          "offset": [
+            0,
+            0,
+            -0.45
+          ]
+        },
+        {
+          "asset": "scenery/models/carpentry.glb#Crate",
+          "y_rotation": 25,
+          "offset": [
+            0.05,
+            0,
+            0.2
+          ]
+        },
+        {
+          "asset": "scenery/models/carpentry.glb#Crate",
+          "y_rotation": 35,
+          "offset": [
+            0,
+            0.5,
+            -0.1
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.35,
+            0.5,
+            0.55
+          ]
+        }
+      ]
     }
   },
   "BedSingle": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#BedSingleWooden",
-            "y_rotation": 90
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.8,
-              0.25,
-              0.3
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sleep": [
-            [
-              0,
-              0.5,
-              0
-            ]
-          ],
-          "enter": [
-            [
-              0,
-              0,
-              0.61
-            ],
-            [
-              0,
-              0,
-              -0.61
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#BedSingleWooden",
+          "y_rotation": 90
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.8,
+            0.25,
+            0.3
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "sleep": [
+          [
+            0,
+            0.5,
+            0
+          ]
+        ],
+        "enter": [
+          [
+            0,
+            0,
+            0.61
+          ],
+          [
+            0,
+            0,
+            -0.61
+          ]
+        ]
       }
     }
   },
   "HayBale": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/thatch.glb#HayBale"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              0.25,
-              0.45
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/thatch.glb#HayBale"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            0.25,
+            0.45
+          ]
+        }
+      ]
     }
   },
   "ArcheryTarget": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/thatch.glb#ArcheryTarget"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.65,
-              0.35
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/thatch.glb#ArcheryTarget"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.65,
+            0.35
+          ]
+        }
+      ]
     }
   },
   "ShieldCrossHanging": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry-dark.glb#ShieldCross",
-            "offset": [
-              0,
-              1,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.05,
-              1,
-              0.35
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry-dark.glb#ShieldCross",
+          "offset": [
+            0,
+            1,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.05,
+            1,
+            0.35
+          ]
+        }
+      ]
     }
   },
   "ShieldStarHanging": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry-dark.glb#ShieldStar",
-            "offset": [
-              0,
-              1,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.05,
-              1,
-              0.35
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry-dark.glb#ShieldStar",
+          "offset": [
+            0,
+            1,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.05,
+            1,
+            0.35
+          ]
+        }
+      ]
     }
   },
   "CandleSconce": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#CandleSconce",
-            "offset": [
-              0,
-              1.2,
-              -0.1
-            ]
-          }
-        ]
-      },
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#CandleSconce",
+          "offset": [
+            0,
+            1.2,
+            -0.1
+          ]
+        }
+      ],
       "LightSource": {
         "offset": [
           0,
@@ -1135,1504 +985,1282 @@
   "PewterMug": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PewterMug"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.15,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PewterMug"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.15,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "PewterMugLarge": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PewterMug2"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PewterMug2"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "CookPot": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#CookPot"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.2,
-              0.1
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0,
-              0.65,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#CookPot"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.2,
+            0.1
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0,
+            0.65,
+            0
+          ]
+        ]
       }
     }
   },
   "Trencher": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Trencher",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "type": "marker",
-            "size": [
-              0.15,
-              0.03,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Trencher",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "type": "marker",
+          "size": [
+            0.15,
+            0.03,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "WineBottle": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#WineBottle"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#WineBottle"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "WallShelf": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#WallShelf"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.1,
-              1.17,
-              0
-            ],
-            "size": [
-              0.25,
-              0.05,
-              0.75
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#WallShelf"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.1,
+            1.17,
+            0
+          ],
+          "size": [
+            0.25,
+            0.05,
+            0.75
+          ]
+        }
+      ]
     }
   },
   "WoodenCart": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#WoodenCart"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.1
-            ],
-            "size": [
-              0.75,
-              0.43,
-              1.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#WoodenCart"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.1
+          ],
+          "size": [
+            0.75,
+            0.43,
+            1.1
+          ]
+        }
+      ]
     }
   },
   "WoodenCrateLarge": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CrateLarge"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.4,
-              0.4,
-              0.4
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CrateLarge"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.4,
+            0.4,
+            0.4
+          ]
+        }
+      ]
     }
   },
   "WoodenCrateLong": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CrateLong"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.25,
-              0.25,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CrateLong"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.25,
+            0.25,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "HayPile": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/thatch.glb#HayPile"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.75,
-              0.05,
-              0.45
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/thatch.glb#HayPile"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.75,
+            0.05,
+            0.45
+          ]
+        }
+      ]
     }
   },
   "Font": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/stonework.glb#Font"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.35,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/stonework.glb#Font"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.35,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "WoodenTableDiningFancy": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FancyDiningTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.4,
-              0.42,
-              0.5
-            ],
-            "margin": 0.2
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FancyDiningTable"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.4,
+            0.42,
+            0.5
+          ],
+          "margin": 0.2
+        }
+      ]
     }
   },
   "WoodenChairFancyDining": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FancyDiningChair"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "rbox",
-            "size": [
-              0.2,
-              0.35,
-              0.2
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0.25,
-              0.5,
-              0
-            ]
-          ],
-          "enter": [
-            [
-              0.25,
-              0,
-              -0.55
-            ],
-            [
-              0.25,
-              0,
-              0.55
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FancyDiningChair"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "rbox",
+          "size": [
+            0.2,
+            0.35,
+            0.2
           ]
         }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0.25,
+            0.5,
+            0
+          ]
+        ],
+        "enter": [
+          [
+            0.25,
+            0,
+            -0.55
+          ],
+          [
+            0.25,
+            0,
+            0.55
+          ]
+        ]
       }
     }
   },
   "GrandfatherClock": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#GrandfatherClock"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.25,
-              0.88,
-              0.25
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#GrandfatherClock"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.25,
+            0.88,
+            0.25
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "FancyDoubleBed": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FancyDoubleBed"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              1,
-              0.42,
-              0.8
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sleep": [
-            [
-              0,
-              0.5,
-              0.4
-            ],
-            [
-              0,
-              0.5,
-              -0.4
-            ]
-          ],
-          "enter": [
-            [
-              0,
-              0,
-              -1.2
-            ],
-            [
-              0,
-              0,
-              1.2
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FancyDoubleBed"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            1,
+            0.42,
+            0.8
           ]
         }
+      ],
+      "SceneryMarks": {
+        "sleep": [
+          [
+            0,
+            0.5,
+            0.4
+          ],
+          [
+            0,
+            0.5,
+            -0.4
+          ]
+        ],
+        "enter": [
+          [
+            0,
+            0,
+            -1.2
+          ],
+          [
+            0,
+            0,
+            1.2
+          ]
+        ]
       }
     }
   },
   "FancyLoveSeat": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FancyLoveSeat"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "rbox",
-            "size": [
-              0.2,
-              0.35,
-              0.6
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "sit": [
-            [
-              0,
-              0.5,
-              0
-            ]
-          ],
-          "enter.front": [
-            [
-              0.5,
-              0,
-              0
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FancyLoveSeat"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "rbox",
+          "size": [
+            0.2,
+            0.35,
+            0.6
           ]
         }
+      ],
+      "SceneryMarks": {
+        "sit": [
+          [
+            0,
+            0.5,
+            0
+          ]
+        ],
+        "enter.front": [
+          [
+            0.5,
+            0,
+            0
+          ]
+        ]
       }
     }
   },
   "Anvil": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Anvil"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.35,
-              0.5
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0.65,
-              0.5,
-              0
-            ],
-            [
-              -0.65,
-              0.5,
-              0
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Anvil"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.35,
+            0.5
           ]
         }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0.65,
+            0.5,
+            0
+          ],
+          [
+            -0.65,
+            0.5,
+            0
+          ]
+        ]
       }
     }
   },
   "GrindingWheel": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#GrindingWheel"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.35,
-              0.5
-            ]
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0,
-              0.5,
-              0
-            ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#GrindingWheel"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.35,
+            0.5
           ]
         }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0,
+            0.5,
+            0
+          ]
+        ]
       }
     }
   },
   "SmallStool": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SmallStool"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.3,
-              0.5
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              0,
-              0.6,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SmallStool"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.3,
+            0.5
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            0,
+            0.6,
+            0
+          ]
+        ]
       }
     }
   },
   "WritingDesk": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#WritingDesk"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0.6,
-              0
-            ],
-            "size": [
-              0.25,
-              0.18,
-              0.55
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#WritingDesk"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0.6,
+            0
+          ],
+          "size": [
+            0.25,
+            0.18,
+            0.55
+          ]
+        }
+      ]
     }
   },
   "CuttingBoard": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CuttingBoard",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CuttingBoard",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "CuttingBoard.Veggies": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "Shrine": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Shrine"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.15,
-              0.45,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Shrine"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.15,
+            0.45,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "Icon.Pelarsis": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/stonework.glb#IconPelarsis"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/stonework.glb#IconPelarsis"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "Sack": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Sack"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Sack"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "SackLeaning": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Sack",
-            "z_rotation": 70,
-            "offset": [
-              0,
-              0.25,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              -0.05,
-              0,
-              0
-            ],
-            "size": [
-              0.1,
-              0.26,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Sack",
+          "z_rotation": 70,
+          "offset": [
+            0,
+            0.25,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            -0.05,
+            0,
+            0
+          ],
+          "size": [
+            0.1,
+            0.26,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "Carrot": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Carrot"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Carrot"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "FestivalTableGold": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#FestivalTableGold"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              1.05,
-              0.42,
-              0.45
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              -0.6,
-              0.85,
-              0
-            ],
-            [
-              0.6,
-              0.85,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#FestivalTableGold"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            1.05,
+            0.42,
+            0.45
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            -0.6,
+            0.85,
+            0
+          ],
+          [
+            0.6,
+            0.85,
+            0
+          ]
+        ]
       }
     }
   },
   "CuttingBoard.Veggies2": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies2",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies2",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "CuttingBoard.Bread": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CuttingBoardBread",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CuttingBoardBread",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "TableSmallRound": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SmallRoundTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.35,
-              0.43,
-              0.4
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SmallRoundTable"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.35,
+            0.43,
+            0.4
+          ]
+        }
+      ]
     }
   },
   "Wheelbarrow": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#WheelBarrow"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.1
-            ],
-            "size": [
-              0.45,
-              0.33,
-              0.6
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#WheelBarrow"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.1
+          ],
+          "size": [
+            0.45,
+            0.33,
+            0.6
+          ]
+        }
+      ]
     }
   },
   "WheeledPlough": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Plough1"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              -0.1
-            ],
-            "size": [
-              0.4,
-              0.33,
-              0.95
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Plough1"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            -0.1
+          ],
+          "size": [
+            0.4,
+            0.33,
+            0.95
+          ]
+        }
+      ]
     }
   },
   "CaskLarge": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CaskLarge"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.38,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CaskLarge"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.38,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "CaskLargeWater": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#CaskLargeWaterTub"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.38,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#CaskLargeWaterTub"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.38,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "Windmill": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Windmill"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.3,
-              0.38,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Windmill"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.3,
+            0.38,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "StoneWorkTable": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/stonework.glb#StoneWorkTable"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              1.05,
-              0.44,
-              0.5
-            ],
-            "margin": 0.2
-          }
-        ]
-      },
-      "SceneryMarks": {
-        "marks": {
-          "use": [
-            [
-              -0.6,
-              0.85,
-              0
-            ],
-            [
-              0.6,
-              0.85,
-              0
-            ]
-          ]
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/stonework.glb#StoneWorkTable"
         }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            1.05,
+            0.44,
+            0.5
+          ],
+          "margin": 0.2
+        }
+      ],
+      "SceneryMarks": {
+        "use": [
+          [
+            -0.6,
+            0.85,
+            0
+          ],
+          [
+            0.6,
+            0.85,
+            0
+          ]
+        ]
       }
     }
   },
   "Bone": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Bone"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.1,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Bone"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.1,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "BoneSheepSkull": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#SheepSkull"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "type": "marker",
-            "size": [
-              0.25,
-              0.1,
-              0.25
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#SheepSkull"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "type": "marker",
+          "size": [
+            0.25,
+            0.1,
+            0.25
+          ]
+        }
+      ]
     }
   },
   "Loom": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Loom"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.55,
-              0.47,
-              1
-            ],
-            "margin": 0.2
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Loom"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.55,
+            0.47,
+            1
+          ],
+          "margin": 0.2
+        }
+      ]
     }
   },
   "ClothBoltRed": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltRed"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltRed"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "ClothBoltBlue": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltBlue"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltBlue"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "ClothBoltLinen": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltLinen"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltLinen"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "ClothBoltGold": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltGold"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltGold"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "ClothBoltYellow": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltYellow"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltYellow"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "ClothBoltForestGreen": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#ClothBoltForestGreen"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.5,
-              0.06,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#ClothBoltForestGreen"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.5,
+            0.06,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "PaintingKingMale": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingPortraitMaleKing",
-            "offset": [
-              0,
-              0,
-              -0.13
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingPortraitMaleKing",
+          "offset": [
+            0,
+            0,
+            -0.13
+          ]
+        }
+      ]
     }
   },
   "LocationMarker": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.15,
-              0.1,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.15,
+            0.1,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "SpawnPoint": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.3,
-              0.15,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.3,
+            0.15,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "CircularRegion": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.25,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.25,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "Waymark": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.25,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.25,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "WaterCurrent": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.2,
-              0.5,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.2,
+            0.5,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "RectangularRegion": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.15,
-              0.1,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.15,
+            0.1,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "WaypointsList": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.25,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.25,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "NoticeBoard": {
     "type": "Fixt",
     "display_name": "Notice Board",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#NoticeBoard",
-            "offset": [
-              -0.1,
-              0,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              -0.15,
-              0.85,
-              0
-            ],
-            "size": [
-              0.05,
-              0.45,
-              0.5
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#NoticeBoard",
+          "offset": [
+            -0.1,
+            0,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            -0.15,
+            0.85,
+            0
+          ],
+          "size": [
+            0.05,
+            0.45,
+            0.5
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "StonePlaque": {
@@ -2641,793 +2269,689 @@
       "StonePlacard"
     ],
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/walls-keep-1.glb#StonePlacard",
-            "offset": [
-              -0.1,
-              1.2,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.1,
-              0
-            ],
-            "size": [
-              0.05,
-              0.2,
-              0.25
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/walls-keep-1.glb#StonePlacard",
+          "offset": [
+            -0.1,
+            1.2,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.1,
+            0
+          ],
+          "size": [
+            0.05,
+            0.2,
+            0.25
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "ChestLarge": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#ChestLarge"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              0.25,
-              0.4
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#ChestLarge"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            0.25,
+            0.4
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "ChestSmall": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#ChestSmall"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.3,
-              0.25,
-              0.3
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#ChestSmall"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.3,
+            0.25,
+            0.3
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "ChestSmaller": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#ChestSmaller"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.15,
-              0.15,
-              0.2
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#ChestSmaller"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.15,
+            0.15,
+            0.2
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "WoodenDresser": {
     "type": "Fixt",
     "display_name": "Dresser",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Dresser"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.55,
-              0.4
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Dresser"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.55,
+            0.4
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "WoodenSignPost": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SignPost",
-            "offset": [
-              -0.4,
-              0,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              -0.3,
-              0,
-              -0.05
-            ],
-            "size": [
-              0.1,
-              0.9,
-              0.1
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SignPost",
+          "offset": [
+            -0.4,
+            0,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            -0.3,
+            0,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.9,
+            0.1
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "WoodenSignPostDirection": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#SignPostDirection"
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#SignPostDirection"
+        }
+      ]
     }
   },
   "BookshelfTall": {
     "type": "Fixt",
     "display_name": "Book Shelf",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#BookshelfTall"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.77,
-              0.4
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#BookshelfTall"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.77,
+            0.4
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "WoodenWardrobe": {
     "type": "Fixt",
     "display_name": "Wardrobe",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/carpentry.glb#Wardrobe"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.8,
-              0.4
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/carpentry.glb#Wardrobe"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.8,
+            0.4
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "MusicRectangularRegion": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.15,
-              0.1,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.15,
+            0.1,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "MusicCircularRegion": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.25,
-              0.2,
-              0.1
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.25,
+            0.2,
+            0.1
+          ]
+        }
+      ]
     }
   },
   "RiverCurrent": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.2,
-              0.5,
-              0.2
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.2,
+            0.5,
+            0.2
+          ]
+        }
+      ]
     }
   },
   "SuitOfPlate": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#SuitOfPlate"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.25,
-              0.88,
-              0.25
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#SuitOfPlate"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.25,
+            0.88,
+            0.25
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookFlatOpenBrown": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatOpenBrown",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.25
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatOpenBrown",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.25
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookFlatClosedBrown": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.2,
-              0.04,
-              0.15
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.2,
+            0.04,
+            0.15
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookFlatClosedGray": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.22,
-              0.04,
-              0.2
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.22,
+            0.04,
+            0.2
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookFlatClosedSienna": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
-            "offset": [
-              0,
-              0.01,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.17,
-              0.04,
-              0.15
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
+          "offset": [
+            0,
+            0.01,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.17,
+            0.04,
+            0.15
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookStandingBrown": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
-            "z_rotation": 90,
-            "offset": [
-              0.01,
-              0.22,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.05,
-              0.22,
-              0.15
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
+          "z_rotation": 90,
+          "offset": [
+            0.01,
+            0.22,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.05,
+            0.22,
+            0.15
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookStandingGray": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
-            "z_rotation": 90,
-            "offset": [
-              0.01,
-              0.24,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.07,
-              0.24,
-              0.2
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
+          "z_rotation": 90,
+          "offset": [
+            0.01,
+            0.24,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.07,
+            0.24,
+            0.2
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "BookStandingSienna": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
-            "z_rotation": 90,
-            "offset": [
-              0.01,
-              0.21,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.05,
-              0.19,
-              0.15
-            ],
-            "pickable": true
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
+          "z_rotation": 90,
+          "offset": [
+            0.01,
+            0.21,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.05,
+            0.19,
+            0.15
+          ],
+          "pickable": true
+        }
+      ]
     }
   },
   "FireballEmitter": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#SpellEmitter",
-            "z_rotation": 90,
-            "offset": [
-              0.1,
-              1,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.25,
-              0
-            ],
-            "size": [
-              0.1,
-              0.05,
-              0.3
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0.7,
-              0
-            ],
-            "size": [
-              0.1,
-              0.05,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#SpellEmitter",
+          "z_rotation": 90,
+          "offset": [
+            0.1,
+            1,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.25,
+            0
+          ],
+          "size": [
+            0.1,
+            0.05,
+            0.3
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0.7,
+            0
+          ],
+          "size": [
+            0.1,
+            0.05,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "TriggerGroup": {
     "type": "Fixt",
     "aspects": {
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "type": "marker",
-            "size": [
-              0.35,
-              0.25,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "type": "marker",
+          "size": [
+            0.35,
+            0.25,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "FireballEmitterRapid": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#SpellEmitter",
-            "z_rotation": 90,
-            "offset": [
-              0.1,
-              1,
-              0
-            ]
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              1.25,
-              0
-            ],
-            "size": [
-              0.1,
-              0.05,
-              0.3
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0.7,
-              0
-            ],
-            "size": [
-              0.1,
-              0.05,
-              0.3
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#SpellEmitter",
+          "z_rotation": 90,
+          "offset": [
+            0.1,
+            1,
+            0
+          ]
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            1.25,
+            0
+          ],
+          "size": [
+            0.1,
+            0.05,
+            0.3
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0.7,
+            0
+          ],
+          "size": [
+            0.1,
+            0.05,
+            0.3
+          ]
+        }
+      ]
     }
   },
   "PaintingPortraitMatron": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingPortrait"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "size": [
-              0.4,
-              0.5,
-              0.05
-            ],
-            "origin": [
-              0,
-              0.8,
-              0
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingPortrait"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "size": [
+            0.4,
+            0.5,
+            0.05
+          ],
+          "origin": [
+            0,
+            0.8,
+            0
+          ]
+        }
+      ]
     }
   },
   "PaintingCastle": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#PaintingCastle",
-            "offset": [
-              0,
-              0,
-              -0.13
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#PaintingCastle",
+          "offset": [
+            0,
+            0,
+            -0.13
+          ]
+        }
+      ]
     }
   },
   "FlowerPot": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#FlowerPot"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.15,
-              0.13,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#FlowerPot"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.15,
+            0.13,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "FlowerPotSunStalk": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#FlowerPot"
-          },
-          {
-            "asset": "terrain/models/crops.glb#sunstalk"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.15,
-              0.13,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#FlowerPot"
+        },
+        {
+          "asset": "terrain/models/crops.glb#sunstalk"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.15,
+            0.13,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "FlowerPotHeartBlush": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#FlowerPot"
-          },
-          {
-            "asset": "terrain/models/crops.glb#heartblush"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.15,
-              0.13,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#FlowerPot"
+        },
+        {
+          "asset": "terrain/models/crops.glb#heartblush"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.15,
+            0.13,
+            0.15
+          ]
+        }
+      ]
     }
   },
   "Alembic": {
     "type": "Fixt",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/decorations.glb#Alembic"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "size": [
-              0.2,
-              0.15,
-              0.2
-            ],
-            "margin": 0.2
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/decorations.glb#Alembic"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "size": [
+            0.2,
+            0.15,
+            0.2
+          ],
+          "margin": 0.2
+        }
+      ]
     }
   }
 }

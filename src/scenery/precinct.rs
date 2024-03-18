@@ -178,6 +178,17 @@ impl Precinct {
                 .insert((fx, RebuildTerrainFxVertexAttrs));
         }
     }
+
+    pub fn rebuild_actors(
+        &mut self,
+        _commands: &mut Commands,
+        _entity: Entity,
+        asset: &PrecinctAsset,
+    ) {
+        for _ai in asset.actors.iter() {
+            // let _exemplar = asset_server.load::<Exemplar>(ai.exemplar.clone());
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -269,6 +280,8 @@ pub fn read_precinct_data(
                         precinct_asset,
                         fx_schematics,
                     );
+
+                    precinct.rebuild_actors(&mut commands, precinct_entity, precinct_asset);
 
                     commands
                         .entity(precinct_entity)

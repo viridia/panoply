@@ -2,172 +2,152 @@
   "CaveWallStraight1": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveWallStraight1"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveWallStraight1"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "CaveWallStraight2": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveWallStraight2"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveWallStraight2"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "CaveWallCornerConcave1": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveCornerConcave1"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.35
-            ],
-            "size": [
-              0.5,
-              1,
-              0.15
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveCornerConcave1"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.35
+          ],
+          "size": [
+            0.5,
+            1,
+            0.15
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "CaveWallCornerConcave2": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveCornerConcave2"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.35
-            ],
-            "size": [
-              0.5,
-              1,
-              0.15
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveCornerConcave2"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.35
+          ],
+          "size": [
+            0.5,
+            1,
+            0.15
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "CaveWallCornerConvex": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveCornerConvex"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "offset": [
-              0.45,
-              0,
-              0.45
-            ],
-            "size": [
-              0.25,
-              1,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveCornerConvex"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "offset": [
+            0.45,
+            0,
+            0.45
+          ],
+          "size": [
+            0.25,
+            1,
+            0.15
+          ]
+        }
+      ]
     }
   }
 }

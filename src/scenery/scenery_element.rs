@@ -53,7 +53,7 @@ pub fn spawn_se_models(
 ) {
     for (entity, models) in query.iter_mut() {
         commands.entity(entity).clear_children();
-        for model in models.models.iter() {
+        for model in models.0.iter() {
             if let Some((fname, fragment)) = model.asset.split_once('#') {
                 let handle: Handle<Gltf> = server.load(fname.to_owned());
                 commands

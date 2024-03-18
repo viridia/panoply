@@ -30,7 +30,7 @@
         "HatTricorn"
       ]
     },
-    "extends": "Proto.NPC"
+    "extends": "#Proto.NPC"
   },
   "Proto.HumanoidFemale": {
     "type": "Actr",
@@ -56,7 +56,7 @@
         "JewelryPendant"
       ]
     },
-    "extends": "Proto.NPC"
+    "extends": "#Proto.NPC"
   },
   "Proto.CanineDomestic": {
     "type": "Actr",
@@ -64,13 +64,17 @@
       "Armature": {
         "armature": "characters/canine:Armature"
       },
-      "Skin": {
-        "skin": "characters/canine:Canine"
-      },
-      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Skin": "characters/canine:Canine",
+      "ColorSlots": [
+        "Fur",
+        "Teeth",
+        "Nose",
+        "Eye",
+        "Eye2"
+      ],
       "Colors": {}
     },
-    "extends": "Proto.NPC"
+    "extends": "#Proto.NPC"
   },
   "Proto.Dabori": {
     "type": "Actr",
@@ -79,9 +83,7 @@
         "armature": "characters/dabori:Armature",
         "animations": "characters/dabori:Armature"
       },
-      "Skin": {
-        "skin": "characters/dabori:Dabori"
-      },
+      "Skin": "characters/dabori:Dabori",
       "ColorSlots": [
         "Fur",
         "Boots",
@@ -101,7 +103,7 @@
         "HairMohawk"
       ]
     },
-    "extends": "Proto.NPC"
+    "extends": "#Proto.NPC"
   },
   "Proto.Reshari": {
     "type": "Actr",
@@ -109,9 +111,7 @@
       "Armature": {
         "armature": "characters/reshari:Armature"
       },
-      "Skin": {
-        "skin": "characters/reshari:Reshari"
-      },
+      "Skin": "characters/reshari:Reshari",
       "ColorSlots": [
         "Fur",
         "Teeth",
@@ -126,7 +126,7 @@
       ],
       "Colors": {}
     },
-    "extends": "Proto.NPC"
+    "extends": "#Proto.NPC"
   },
   "Proto.Monster": {
     "type": "Actr",
@@ -138,9 +138,7 @@
   "Proto.HumanMaleTunic": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithTunic"
-      },
+      "Skin": "characters/humanoid-male:WithTunic",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -157,14 +155,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleRobe": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithRobe"
-      },
+      "Skin": "characters/humanoid-male:WithRobe",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -180,14 +176,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleApron": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithApron"
-      },
+      "Skin": "characters/humanoid-male:WithApron",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -205,14 +199,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleJerkinHooded": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithJerkinHooded"
-      },
+      "Skin": "characters/humanoid-male:WithJerkinHooded",
       "ColorSlots": [
         "Face",
         "Hood",
@@ -227,14 +219,12 @@
       ],
       "FeatureSlots": []
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.CityGuardMale": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:CityGuard"
-      },
+      "Skin": "characters/humanoid-male:CityGuard",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -253,14 +243,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleTunicHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithTunicHeavy"
-      },
+      "Skin": "characters/humanoid-male:WithTunicHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -277,14 +265,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleCoatHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithCoatHeavy"
-      },
+      "Skin": "characters/humanoid-male:WithCoatHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -302,14 +288,12 @@
         "HatFurTrim"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanMaleLongCoat": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithLongCoat"
-      },
+      "Skin": "characters/humanoid-male:WithLongCoat",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -342,14 +326,12 @@
         "HatTricorn"
       ]
     },
-    "extends": "Proto.HumanoidMale"
+    "extends": "#Proto.HumanoidMale"
   },
   "Proto.HumanFemaleTunic": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-female:WithTunic"
-      },
+      "Skin": "characters/humanoid-female:WithTunic",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -366,14 +348,12 @@
         "Jewelry"
       ]
     },
-    "extends": "Proto.HumanoidFemale"
+    "extends": "#Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDress": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-female:WithDress"
-      },
+      "Skin": "characters/humanoid-female:WithDress",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -391,14 +371,12 @@
         "Jewelry"
       ]
     },
-    "extends": "Proto.HumanoidFemale"
+    "extends": "#Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleLightArmor": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-female:WithLightArmor"
-      },
+      "Skin": "characters/humanoid-female:WithLightArmor",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -416,14 +394,12 @@
         "Jewelry"
       ]
     },
-    "extends": "Proto.HumanoidFemale"
+    "extends": "#Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleFancyGown": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-female:WithFancyGown"
-      },
+      "Skin": "characters/humanoid-female:WithFancyGown",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -442,14 +418,12 @@
         "Jewelry"
       ]
     },
-    "extends": "Proto.HumanoidFemale"
+    "extends": "#Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDressHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-female:WithDressHeavy"
-      },
+      "Skin": "characters/humanoid-female:WithDressHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -468,7 +442,7 @@
         "Jewelry"
       ]
     },
-    "extends": "Proto.HumanoidFemale"
+    "extends": "#Proto.HumanoidFemale"
   },
   "Spooksy": {
     "type": "Actr",
@@ -479,17 +453,21 @@
         "Nose": "#462b1c"
       }
     },
-    "extends": "Proto.CanineDomestic"
+    "extends": "#Proto.CanineDomestic"
   },
   "Proto.DaboriArmored": {
     "type": "Actr",
     "aspects": {
-      "Skin": {
-        "skin": "characters/dabori:DaboriArmored"
-      },
-      "ColorSlots": ["Fur", "Armor", "Hair", "Eyeball", "Iris"]
+      "Skin": "characters/dabori:DaboriArmored",
+      "ColorSlots": [
+        "Fur",
+        "Armor",
+        "Hair",
+        "Eyeball",
+        "Iris"
+      ]
     },
-    "extends": "Proto.Dabori"
+    "extends": "#Proto.Dabori"
   },
   "Farmer1": {
     "type": "Actr",
@@ -511,7 +489,7 @@
         "HairMediumCut": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "TestChar2": {
     "type": "Actr",
@@ -529,7 +507,7 @@
         "HairMediumCut": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Marcus": {
     "type": "Actr",
@@ -552,7 +530,7 @@
         "FacialHairBeard": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Stephan": {
     "type": "Actr",
@@ -574,7 +552,7 @@
         "HairCrewCut": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Blue": {
     "type": "Actr",
@@ -591,7 +569,7 @@
         "Gauntlets": "#383a2e"
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Philo.Aynesworth": {
     "type": "Actr",
@@ -609,7 +587,7 @@
         "HairMediumCut": true
       }
     },
-    "extends": "Proto.HumanMaleRobe"
+    "extends": "#Proto.HumanMaleRobe"
   },
   "Shopkeeper": {
     "type": "Actr",
@@ -633,7 +611,7 @@
         "FacialHairMuttonChops": true
       }
     },
-    "extends": "Proto.HumanMaleApron"
+    "extends": "#Proto.HumanMaleApron"
   },
   "PoulRyba": {
     "type": "Actr",
@@ -657,7 +635,7 @@
         "HairCrewCut": true
       }
     },
-    "extends": "Proto.HumanMaleApron"
+    "extends": "#Proto.HumanMaleApron"
   },
   "AdokkaBalar": {
     "type": "Actr",
@@ -679,7 +657,7 @@
         "FacialHairMuttonChops": true
       }
     },
-    "extends": "Proto.HumanMaleApron"
+    "extends": "#Proto.HumanMaleApron"
   },
   "CrimsonWatchAssassin": {
     "type": "Actr",
@@ -698,12 +676,12 @@
         "Belt": "#890202"
       }
     },
-    "extends": "Proto.HumanMaleJerkinHooded"
+    "extends": "#Proto.HumanMaleJerkinHooded"
   },
   "Proto.BanditMaleHooded": {
     "type": "Actr",
     "aspects": {},
-    "extends": "Proto.HumanMaleJerkinHooded"
+    "extends": "#Proto.HumanMaleJerkinHooded"
   },
   "Guard": {
     "type": "Actr",
@@ -719,7 +697,7 @@
         "Boots": "#6c452d"
       }
     },
-    "extends": "Proto.CityGuardMale"
+    "extends": "#Proto.CityGuardMale"
   },
   "Guard.DemoVillage": {
     "type": "Actr",
@@ -737,7 +715,7 @@
         "Belt": "#2d2b6d"
       }
     },
-    "extends": "Proto.CityGuardMale"
+    "extends": "#Proto.CityGuardMale"
   },
   "Guard.DemoVillage2": {
     "type": "Actr",
@@ -756,15 +734,13 @@
         "Gauntlets": "#a97b55"
       }
     },
-    "extends": "Proto.CityGuardMale"
+    "extends": "#Proto.CityGuardMale"
   },
   "SergeantStone": {
     "type": "Actr",
     "display_name": "Sergeant Stone",
     "aspects": {
-      "Skin": {
-        "skin": "characters/humanoid-male:WithCoatHeavy"
-      },
+      "Skin": "characters/humanoid-male:WithCoatHeavy",
       "Colors": {
         "Hair": "#918981",
         "FacialHair": "#91806b",
@@ -784,7 +760,7 @@
         "HatTricorn": true
       }
     },
-    "extends": "Proto.HumanMaleCoatHeavy"
+    "extends": "#Proto.HumanMaleCoatHeavy"
   },
   "Proto.CrimsonWatchRecruit": {
     "type": "Actr",
@@ -807,7 +783,7 @@
         "HatCap": true
       }
     },
-    "extends": "Proto.HumanMaleLongCoat"
+    "extends": "#Proto.HumanMaleLongCoat"
   },
   "CrimsonWatchRecruit1": {
     "type": "Actr",
@@ -829,7 +805,7 @@
         "HatCap": true
       }
     },
-    "extends": "Proto.CrimsonWatchRecruit"
+    "extends": "#Proto.CrimsonWatchRecruit"
   },
   "CrimsonWatchRecruit2": {
     "type": "Actr",
@@ -854,7 +830,7 @@
         "HairThinning": true
       }
     },
-    "extends": "Proto.CrimsonWatchRecruit"
+    "extends": "#Proto.CrimsonWatchRecruit"
   },
   "Abigail": {
     "type": "Actr",
@@ -876,7 +852,7 @@
         "HairPonyTail": true
       }
     },
-    "extends": "Proto.HumanFemaleTunic"
+    "extends": "#Proto.HumanFemaleTunic"
   },
   "Eleanor": {
     "type": "Actr",
@@ -898,7 +874,7 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.HumanFemaleTunic"
+    "extends": "#Proto.HumanFemaleTunic"
   },
   "Ivy": {
     "type": "Actr",
@@ -917,7 +893,7 @@
         "HairLong": true
       }
     },
-    "extends": "Proto.HumanFemaleDress"
+    "extends": "#Proto.HumanFemaleDress"
   },
   "SigridRyba": {
     "type": "Actr",
@@ -938,7 +914,7 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.HumanFemaleDress"
+    "extends": "#Proto.HumanFemaleDress"
   },
   "Elspeth": {
     "type": "Actr",
@@ -960,7 +936,7 @@
         "HairVeryLong": true
       }
     },
-    "extends": "Proto.HumanFemaleDress"
+    "extends": "#Proto.HumanFemaleDress"
   },
   "CrimsonWatchSkirmisher": {
     "type": "Actr",
@@ -983,12 +959,12 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.HumanFemaleLightArmor"
+    "extends": "#Proto.HumanFemaleLightArmor"
   },
   "Proto.BanditFemaleLightArmor": {
     "type": "Actr",
     "aspects": {},
-    "extends": "Proto.HumanFemaleLightArmor"
+    "extends": "#Proto.HumanFemaleLightArmor"
   },
   "PhoebeKallan": {
     "type": "Actr",
@@ -1016,7 +992,7 @@
         "JewelryPendant": true
       }
     },
-    "extends": "Proto.HumanFemaleFancyGown"
+    "extends": "#Proto.HumanFemaleFancyGown"
   },
   "AdokkaSerela": {
     "type": "Actr",
@@ -1040,7 +1016,7 @@
         "HatKercheif": true
       }
     },
-    "extends": "Proto.HumanFemaleDressHeavy"
+    "extends": "#Proto.HumanFemaleDressHeavy"
   },
   "Shekku": {
     "type": "Actr",
@@ -1052,7 +1028,7 @@
         "Greaves": "#4d542b"
       }
     },
-    "extends": "Proto.Reshari"
+    "extends": "#Proto.Reshari"
   },
   "Proto.Canine": {
     "type": "Actr",
@@ -1060,13 +1036,17 @@
       "Armature": {
         "armature": "characters/canine:Armature"
       },
-      "Skin": {
-        "skin": "characters/canine:Canine"
-      },
-      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Skin": "characters/canine:Canine",
+      "ColorSlots": [
+        "Fur",
+        "Teeth",
+        "Nose",
+        "Eye",
+        "Eye2"
+      ],
       "Colors": {}
     },
-    "extends": "Proto.Monster"
+    "extends": "#Proto.Monster"
   },
   "Proto.Ursine": {
     "type": "Actr",
@@ -1074,13 +1054,17 @@
       "Armature": {
         "armature": "characters/ursine:Armature"
       },
-      "Skin": {
-        "skin": "characters/ursine:Ursine"
-      },
-      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Skin": "characters/ursine:Ursine",
+      "ColorSlots": [
+        "Fur",
+        "Teeth",
+        "Nose",
+        "Eye",
+        "Eye2"
+      ],
       "Colors": {}
     },
-    "extends": "Proto.Monster"
+    "extends": "#Proto.Monster"
   },
   "Proto.Wasp": {
     "type": "Actr",
@@ -1088,9 +1072,7 @@
       "Armature": {
         "armature": "characters/wasp:Armature"
       },
-      "Skin": {
-        "skin": "characters/wasp:Wasp"
-      },
+      "Skin": "characters/wasp:Wasp",
       "ColorSlots": [
         "Chitin1",
         "Chitin2",
@@ -1102,7 +1084,7 @@
       ],
       "Colors": {}
     },
-    "extends": "Proto.Monster"
+    "extends": "#Proto.Monster"
   },
   "Proto.Kreekin": {
     "type": "Actr",
@@ -1110,15 +1092,17 @@
       "Armature": {
         "armature": "characters/kreekin:Armature"
       },
-      "Skin": {
-        "skin": "characters/kreekin:Kreekin"
-      },
-      "ColorSlots": ["Chitin", "Claws", "Eye"],
+      "Skin": "characters/kreekin:Kreekin",
+      "ColorSlots": [
+        "Chitin",
+        "Claws",
+        "Eye"
+      ],
       "Colors": {
         "Chitin": "#cdf037"
       }
     },
-    "extends": "Proto.Monster"
+    "extends": "#Proto.Monster"
   },
   "Proto.Skeleton": {
     "type": "Actr",
@@ -1128,13 +1112,15 @@
         "armature": "characters/skeleton:HumanoidArmature",
         "animations": "characters/humanoid-armature:HumanoidArmature"
       },
-      "Skin": {
-        "skin": "characters/skeleton:Skeleton"
-      },
-      "ColorSlots": ["Bone"],
-      "FeatureSlots": ["SkeletonBoots"]
+      "Skin": "characters/skeleton:Skeleton",
+      "ColorSlots": [
+        "Bone"
+      ],
+      "FeatureSlots": [
+        "SkeletonBoots"
+      ]
     },
-    "extends": "Proto.Monster"
+    "extends": "#Proto.Monster"
   },
   "Bandit1": {
     "type": "Actr",
@@ -1152,7 +1138,7 @@
         "Belt": "#402626"
       }
     },
-    "extends": "Proto.BanditMaleHooded"
+    "extends": "#Proto.BanditMaleHooded"
   },
   "Bandit2": {
     "type": "Actr",
@@ -1170,7 +1156,7 @@
         "Belt": "#202c0e"
       }
     },
-    "extends": "Proto.BanditMaleHooded"
+    "extends": "#Proto.BanditMaleHooded"
   },
   "Bandit3": {
     "type": "Actr",
@@ -1188,7 +1174,7 @@
         "Belt": "#1e3618"
       }
     },
-    "extends": "Proto.BanditMaleHooded"
+    "extends": "#Proto.BanditMaleHooded"
   },
   "Bandit4": {
     "type": "Actr",
@@ -1206,13 +1192,13 @@
         "Belt": "#453f3f"
       }
     },
-    "extends": "Proto.BanditMaleHooded"
+    "extends": "#Proto.BanditMaleHooded"
   },
   "SentinelRosseau": {
     "type": "Actr",
     "display_name": "Sentinel Rosseau",
     "aspects": {},
-    "extends": "CrimsonWatchSkirmisher"
+    "extends": "#CrimsonWatchSkirmisher"
   },
   "Bandit20": {
     "type": "Actr",
@@ -1235,7 +1221,7 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.BanditFemaleLightArmor"
+    "extends": "#Proto.BanditFemaleLightArmor"
   },
   "Bandit21": {
     "type": "Actr",
@@ -1258,7 +1244,7 @@
         "HairPonyTail": true
       }
     },
-    "extends": "Proto.BanditFemaleLightArmor"
+    "extends": "#Proto.BanditFemaleLightArmor"
   },
   "Bandit22": {
     "type": "Actr",
@@ -1281,7 +1267,7 @@
         "HairPonyTail": true
       }
     },
-    "extends": "Proto.BanditFemaleLightArmor"
+    "extends": "#Proto.BanditFemaleLightArmor"
   },
   "Bandit23": {
     "type": "Actr",
@@ -1304,13 +1290,13 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.BanditFemaleLightArmor"
+    "extends": "#Proto.BanditFemaleLightArmor"
   },
   "Proto.FeralDog": {
     "type": "Actr",
     "display_name": "Feral Dog",
     "aspects": {},
-    "extends": "Proto.Canine"
+    "extends": "#Proto.Canine"
   },
   "FeralDog1": {
     "type": "Actr",
@@ -1319,7 +1305,7 @@
         "Fur": "#9f825c"
       }
     },
-    "extends": "Proto.FeralDog"
+    "extends": "#Proto.FeralDog"
   },
   "FeralDog2": {
     "type": "Actr",
@@ -1328,7 +1314,7 @@
         "Fur": "#745935"
       }
     },
-    "extends": "Proto.FeralDog"
+    "extends": "#Proto.FeralDog"
   },
   "FeralDog3": {
     "type": "Actr",
@@ -1337,7 +1323,7 @@
         "Fur": "#c19761"
       }
     },
-    "extends": "Proto.FeralDog"
+    "extends": "#Proto.FeralDog"
   },
   "FeralDog4": {
     "type": "Actr",
@@ -1348,7 +1334,7 @@
         "Nose": "#4a3f37"
       }
     },
-    "extends": "Proto.FeralDog"
+    "extends": "#Proto.FeralDog"
   },
   "FeralDogAlpha": {
     "type": "Actr",
@@ -1360,7 +1346,7 @@
         "Nose": "#4a3f37"
       }
     },
-    "extends": "Proto.FeralDog"
+    "extends": "#Proto.FeralDog"
   },
   "SmallBlackBear": {
     "type": "Actr",
@@ -1370,7 +1356,7 @@
         "Fur": "#3f3425"
       }
     },
-    "extends": "Proto.Ursine"
+    "extends": "#Proto.Ursine"
   },
   "BlackBear": {
     "type": "Actr",
@@ -1380,7 +1366,7 @@
         "Fur": "#3b3123"
       }
     },
-    "extends": "Proto.Ursine"
+    "extends": "#Proto.Ursine"
   },
   "KreekinGreen": {
     "type": "Actr",
@@ -1389,7 +1375,7 @@
         "Chitin": "#cdf037"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinGreen2": {
     "type": "Actr",
@@ -1398,7 +1384,7 @@
         "Chitin": "#91a535"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinGreen3": {
     "type": "Actr",
@@ -1407,7 +1393,7 @@
         "Chitin": "#a0c95a"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinGreen4": {
     "type": "Actr",
@@ -1417,7 +1403,7 @@
         "Eye": "#c0046f"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "Proto.KreekinScout": {
     "type": "Actr",
@@ -1427,7 +1413,7 @@
         "Chitin": "#91a535"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinScout1": {
     "type": "Actr",
@@ -1436,7 +1422,7 @@
         "Chitin": "#91a535"
       }
     },
-    "extends": "Proto.KreekinScout"
+    "extends": "#Proto.KreekinScout"
   },
   "KreekinScout2": {
     "type": "Actr",
@@ -1445,7 +1431,7 @@
         "Chitin": "#a0c95a"
       }
     },
-    "extends": "Proto.KreekinScout"
+    "extends": "#Proto.KreekinScout"
   },
   "KreekinScout3": {
     "type": "Actr",
@@ -1455,7 +1441,7 @@
         "Eye": "#c0046f"
       }
     },
-    "extends": "Proto.KreekinScout"
+    "extends": "#Proto.KreekinScout"
   },
   "KreekinGray": {
     "type": "Actr",
@@ -1465,7 +1451,7 @@
         "Eye": "#eea241"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinGray2": {
     "type": "Actr",
@@ -1476,7 +1462,7 @@
         "Claws": "#7e7946"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinGray3": {
     "type": "Actr",
@@ -1487,7 +1473,7 @@
         "Claws": "#7e7946"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "KreekinWhite": {
     "type": "Actr",
@@ -1498,7 +1484,7 @@
         "Claws": "#779a8e"
       }
     },
-    "extends": "Proto.Kreekin"
+    "extends": "#Proto.Kreekin"
   },
   "Skeletal.Warrior": {
     "type": "Actr",
@@ -1511,7 +1497,7 @@
         "SkeletonBoots": true
       }
     },
-    "extends": "Proto.Skeleton"
+    "extends": "#Proto.Skeleton"
   },
   "Skeletal.Soldier": {
     "type": "Actr",
@@ -1522,7 +1508,7 @@
         "SkeletonBoots": true
       }
     },
-    "extends": "Proto.Skeleton"
+    "extends": "#Proto.Skeleton"
   },
   "Cordelia": {
     "type": "Actr",
@@ -1543,7 +1529,7 @@
         "HairPonyTail": true
       }
     },
-    "extends": "Proto.HumanFemaleDress"
+    "extends": "#Proto.HumanFemaleDress"
   },
   "Cordelia.Imprisoned": {
     "type": "Actr",
@@ -1560,7 +1546,7 @@
         "Gloves": "#c89167"
       }
     },
-    "extends": "Cordelia"
+    "extends": "#Cordelia"
   },
   "Arlo": {
     "type": "Actr",
@@ -1582,7 +1568,7 @@
         "FacialHairMuttonChops": true
       }
     },
-    "extends": "Proto.HumanMaleLongCoat"
+    "extends": "#Proto.HumanMaleLongCoat"
   },
   "Arlo.Imprisoned": {
     "type": "Actr",
@@ -1605,7 +1591,7 @@
         "FacialHairMuttonChops": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Proto.ConvictMale": {
     "type": "Actr",
@@ -1628,7 +1614,7 @@
         "FacialHairMuttonChops": true
       }
     },
-    "extends": "Proto.HumanMaleTunic"
+    "extends": "#Proto.HumanMaleTunic"
   },
   "Proto.ConvictFemale": {
     "type": "Actr",
@@ -1646,7 +1632,7 @@
         "Gloves": "#c89167"
       }
     },
-    "extends": "Cordelia"
+    "extends": "#Cordelia"
   },
   "ConvictFemale1": {
     "type": "Actr",
@@ -1666,7 +1652,7 @@
         "HairShortLocks": true
       }
     },
-    "extends": "Proto.ConvictFemale"
+    "extends": "#Proto.ConvictFemale"
   },
   "ConvictFemale2": {
     "type": "Actr",
@@ -1686,7 +1672,7 @@
         "HairBeveled": true
       }
     },
-    "extends": "Proto.ConvictFemale"
+    "extends": "#Proto.ConvictFemale"
   },
   "ConvictFemale3": {
     "type": "Actr",
@@ -1706,7 +1692,7 @@
         "HairLong": true
       }
     },
-    "extends": "Proto.ConvictFemale"
+    "extends": "#Proto.ConvictFemale"
   },
   "ConvictMale1": {
     "type": "Actr",
@@ -1728,7 +1714,7 @@
         "FacialHairBeard": true
       }
     },
-    "extends": "Proto.ConvictMale"
+    "extends": "#Proto.ConvictMale"
   },
   "ConvictMale2": {
     "type": "Actr",
@@ -1749,7 +1735,7 @@
         "HairMediumCut": true
       }
     },
-    "extends": "Proto.ConvictMale"
+    "extends": "#Proto.ConvictMale"
   },
   "ConvictMale3": {
     "type": "Actr",
@@ -1771,6 +1757,6 @@
         "HairThinning": true
       }
     },
-    "extends": "Proto.ConvictMale"
+    "extends": "#Proto.ConvictMale"
   }
 }

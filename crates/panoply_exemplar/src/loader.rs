@@ -83,7 +83,18 @@ impl<'de, 'a, 'b> Visitor<'de> for ExemplarVisitor<'a, 'b> {
                         label_prefix: self.exemplar_name,
                     })?;
                 }
-                Field::Extends => todo!(),
+                Field::Extends => {
+                    if result.extends.is_some() {
+                        return Err(de::Error::duplicate_field("extends"));
+                    }
+                    let extends = map.next_value::<String>()?;
+                    let extends_path = self
+                        .load_context
+                        .asset_path()
+                        .resolve_embed(&extends)
+                        .unwrap();
+                    result.extends = Some(self.load_context.load::<Exemplar>(extends_path));
+                }
             }
         }
         Ok(result)

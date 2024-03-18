@@ -2,201 +2,177 @@
   "IceCaveWall1": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/ice-cave.glb#IceWall1"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/ice-cave.glb#IceWall1"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "IceCaveWall2": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/ice-cave.glb#IceWall2"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/ice-cave.glb#IceWall2"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "IceCaveWall3": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/ice-cave.glb#IceWall3"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/ice-cave.glb#IceWall3"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "IceCaveWallCornerConcave1": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/cave.glb#CaveCornerConcave1"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.35
-            ],
-            "size": [
-              0.5,
-              1,
-              0.15
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/cave.glb#CaveCornerConcave1"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.35
+          ],
+          "size": [
+            0.5,
+            1,
+            0.15
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "IceCaveCornerConcave": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/ice-cave.glb#IceWallConcaveCorner"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "box",
-            "offset": [
-              0,
-              0,
-              0.35
-            ],
-            "size": [
-              0.5,
-              1,
-              0.15
-            ]
-          },
-          {
-            "shape": "box",
-            "offset": [
-              0.35,
-              0,
-              0
-            ],
-            "size": [
-              0.15,
-              1,
-              0.5
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/ice-cave.glb#IceWallConcaveCorner"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "box",
+          "offset": [
+            0,
+            0,
+            0.35
+          ],
+          "size": [
+            0.5,
+            1,
+            0.15
+          ]
+        },
+        {
+          "shape": "box",
+          "offset": [
+            0.35,
+            0,
+            0
+          ],
+          "size": [
+            0.15,
+            1,
+            0.5
+          ]
+        }
+      ]
     }
   },
   "IceCaveCornerConvex": {
     "type": "Wall",
     "aspects": {
-      "SceneryModels": {
-        "models": [
-          {
-            "asset": "scenery/models/ice-cave.glb#IceWallConvexCorner"
-          }
-        ]
-      },
-      "SceneryColliders": {
-        "colliders": [
-          {
-            "shape": "cylinder",
-            "offset": [
-              0.45,
-              0,
-              0.45
-            ],
-            "size": [
-              0.25,
-              1,
-              0.15
-            ]
-          }
-        ]
-      }
+      "SceneryModels": [
+        {
+          "asset": "scenery/models/ice-cave.glb#IceWallConvexCorner"
+        }
+      ],
+      "SceneryColliders": [
+        {
+          "shape": "cylinder",
+          "offset": [
+            0.45,
+            0,
+            0.45
+          ],
+          "size": [
+            0.25,
+            1,
+            0.15
+          ]
+        }
+      ]
     }
   }
 }

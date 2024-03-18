@@ -41,12 +41,10 @@ pub struct ModelComponent {
 }
 
 /// 3D models for a given scenery element.
-#[derive(Component, Debug, Reflect, Clone, Default)]
-#[reflect(Aspect, Default)]
-pub struct SceneryModels {
-    pub models: Vec<ModelComponent>,
-    //     public animations?: IAnimationSpec[];
-}
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct SceneryModels(pub Vec<ModelComponent>);
+//     public animations?: IAnimationSpec[];
 
 impl Aspect for SceneryModels {
     fn name(&self) -> &str {
@@ -69,11 +67,9 @@ impl Aspect for SceneryModels {
 }
 
 /// Physics colliders for a given scenery element.
-#[derive(Component, Debug, Reflect, Clone, Default)]
-#[reflect(Aspect, Default)]
-pub struct SceneryColliders {
-    colliders: Vec<ColliderDesc>,
-}
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct SceneryColliders(pub Vec<ColliderDesc>);
 
 impl Aspect for SceneryColliders {
     fn name(&self) -> &str {
@@ -97,11 +93,9 @@ impl Aspect for SceneryColliders {
 }
 
 /// Location markers for a given scenery element, used to drive NPC behavior
-#[derive(Component, Debug, Reflect, Clone, Default)]
-#[reflect(Aspect, Default)]
-pub struct SceneryMarks {
-    marks: HashMap<String, Vec<Vec3>>,
-}
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct SceneryMarks(pub HashMap<String, Vec<Vec3>>);
 
 impl Aspect for SceneryMarks {
     fn name(&self) -> &str {

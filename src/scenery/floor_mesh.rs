@@ -148,19 +148,22 @@ pub(crate) fn rebuild_floor_materials(
 ) {
     for (entity, surf, nsurf) in query.iter_mut() {
         if let Some(surf) = surf {
+            // Standard material surface.
             // println!("Attaching material: {:?}", surf.material.path());
             commands
                 .entity(entity)
                 .insert((surf.material.clone(), Visibility::Visible))
                 .remove::<RebuildFloorMaterials>();
-        } else if let Some(nsurf) = nsurf {
-            let material = nsurf.material.clone();
+        } else if let Some(proc_surface) = nsurf {
+            // Procedural textured surface.
+            let material = proc_surface.material.clone();
             commands
                 .entity(entity)
                 .remove::<Handle<StandardMaterial>>()
                 .insert((material, Visibility::Visible))
                 .remove::<RebuildFloorMaterials>();
         } else {
+            // Debug surface.
             commands
                 .entity(entity)
                 .insert((
