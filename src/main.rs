@@ -16,6 +16,7 @@ use world::Realm;
 
 extern crate directories;
 
+mod actors;
 mod diagnostics;
 mod editor;
 mod instancing;
@@ -32,6 +33,7 @@ mod world;
 use view::{PrimaryCamera, Viewpoint};
 
 use crate::{
+    actors::ActorsPlugin,
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
     materials::MaterialsPlugin,
@@ -132,6 +134,7 @@ fn main() {
             WorldPlugin,
             TerrainPlugin,
             SceneryPlugin,
+            ActorsPlugin,
             InstancedModelsPlugin,
             PortalPlugin,
             // WorldInspectorPlugin::new(),

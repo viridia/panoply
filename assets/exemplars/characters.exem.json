@@ -1,173 +1,703 @@
 {
   "Proto.NPC": {
     "type": "Actr",
-    "display_name": "",
-    "aspects": {}
+    "aspects": {
+      "Colors": {},
+      "Features": {}
+    }
   },
   "Proto.HumanoidMale": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/humanoid-male:HumanoidArmature",
+        "animations": "characters/humanoid-armature:HumanoidArmature"
+      },
+      "FeatureSlots": [
+        "FacialHairBeard",
+        "FacialHairGoatee",
+        "FacialHairMustache",
+        "FacialHairMuttonChops",
+        "HairCrewCut",
+        "HairMediumCut",
+        "HairMediumCutLock",
+        "HairLong",
+        "HairThinning",
+        "HatCap",
+        "HatCossack",
+        "HatTallCap",
+        "HatTallPeaked",
+        "HatTricorn"
+      ]
+    },
     "extends": "Proto.NPC"
   },
   "Proto.HumanoidFemale": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/humanoid-female:HumanoidArmature",
+        "animations": "characters/humanoid-armature:HumanoidArmature"
+      },
+      "FeatureSlots": [
+        "HairCoiffed",
+        "HairPonyTail",
+        "HairShortLocks",
+        "HairLong",
+        "HairVeryLong",
+        "HairBeveled",
+        "HatBrimmed",
+        "HatBroadBrimmed",
+        "HatCap",
+        "HatCossack",
+        "HatFlat",
+        "HatTricorn",
+        "HatKercheif",
+        "JewelryPendant"
+      ]
+    },
     "extends": "Proto.NPC"
   },
   "Proto.CanineDomestic": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/canine:Armature"
+      },
+      "Skin": {
+        "skin": "characters/canine:Canine"
+      },
+      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Colors": {}
+    },
     "extends": "Proto.NPC"
   },
   "Proto.Dabori": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/dabori:Armature",
+        "animations": "characters/dabori:Armature"
+      },
+      "Skin": {
+        "skin": "characters/dabori:Dabori"
+      },
+      "ColorSlots": [
+        "Fur",
+        "Boots",
+        "Belt",
+        "Loincloth",
+        "Bracers",
+        "Hair",
+        "Eyeball",
+        "Iris",
+        "Armor"
+      ],
+      "FeatureSlots": [
+        "FacialHairSoul",
+        "FacialHairVanDyke",
+        "FacialHairMuttonChops",
+        "HairCrewMane",
+        "HairMohawk"
+      ]
+    },
     "extends": "Proto.NPC"
   },
   "Proto.Reshari": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/reshari:Armature"
+      },
+      "Skin": {
+        "skin": "characters/reshari:Reshari"
+      },
+      "ColorSlots": [
+        "Fur",
+        "Teeth",
+        "Nose",
+        "Sclera",
+        "Cornea",
+        "Pupil",
+        "Tunic",
+        "Belt",
+        "Greaves",
+        "Claw"
+      ],
+      "Colors": {}
+    },
     "extends": "Proto.NPC"
   },
   "Proto.Monster": {
     "type": "Actr",
-    "display_name": "",
-    "aspects": {}
+    "aspects": {
+      "Colors": {},
+      "Features": {}
+    }
   },
   "Proto.HumanMaleTunic": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithTunic"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Tunic",
+        "TunicTrim",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleRobe": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithRobe"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Robe",
+        "RobeTrim",
+        "RobeTrim2",
+        "Belt",
+        "Gauntlets",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleApron": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithApron"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Shirt",
+        "Apron",
+        "Straps",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleJerkinHooded": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithJerkinHooded"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hood",
+        "Tunic",
+        "Armor",
+        "Undershirt",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots"
+      ],
+      "FeatureSlots": []
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.CityGuardMale": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:CityGuard"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Tunic",
+        "TunicTrim",
+        "Collar",
+        "Shirt",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleTunicHeavy": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithTunicHeavy"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Tunic",
+        "TunicTrim",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleCoatHeavy": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithCoatHeavy"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Coat",
+        "CoatTrim",
+        "Shirt",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanMaleLongCoat": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithLongCoat"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "FacialHair",
+        "Coat",
+        "CoatTrim",
+        "Tunic",
+        "Shirt",
+        "Belt",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim"
+      ],
+      "FeatureSlots": [
+        "FacialHairBeard",
+        "FacialHairGoatee",
+        "FacialHairMustache",
+        "FacialHairMuttonChops",
+        "HairCrewCut",
+        "HairMediumCut",
+        "HairMediumCutLock",
+        "HairLong",
+        "HairThinning",
+        "HatCossack",
+        "HatCap",
+        "HatTallCap",
+        "HatTallPeaked",
+        "HatTricorn"
+      ]
+    },
     "extends": "Proto.HumanoidMale"
   },
   "Proto.HumanFemaleTunic": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-female:WithTunic"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "Tunic",
+        "TunicTrim",
+        "Belt",
+        "Sleeves",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim",
+        "Jewelry"
+      ]
+    },
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDress": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-female:WithDress"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "Tunic",
+        "TunicTrim",
+        "Belt",
+        "Sleeves",
+        "Gloves",
+        "Skirt",
+        "SkirtTrim",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim",
+        "Jewelry"
+      ]
+    },
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleLightArmor": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-female:WithLightArmor"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "Armor",
+        "Tunic",
+        "TunicTrim",
+        "Belt",
+        "Arms",
+        "Gauntlets",
+        "Legs",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim",
+        "Jewelry"
+      ]
+    },
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleFancyGown": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-female:WithFancyGown"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "Gorget",
+        "Corset",
+        "Robe",
+        "RobeTrim",
+        "BeltChain",
+        "Sleeves",
+        "Gloves",
+        "Petticoat",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim",
+        "Jewelry"
+      ]
+    },
     "extends": "Proto.HumanoidFemale"
   },
   "Proto.HumanFemaleDressHeavy": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-female:WithDressHeavy"
+      },
+      "ColorSlots": [
+        "Face",
+        "Hair",
+        "Tunic",
+        "Shirt",
+        "Corset",
+        "Belt",
+        "Sleeves",
+        "Gloves",
+        "Skirt",
+        "SkirtTrim",
+        "Boots",
+        "HatPrimary",
+        "HatDetail",
+        "HatFurTrim",
+        "Jewelry"
+      ]
+    },
     "extends": "Proto.HumanoidFemale"
   },
   "Spooksy": {
     "type": "Actr",
     "display_name": "Spooksy",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#73492d",
+        "Nose": "#462b1c"
+      }
+    },
     "extends": "Proto.CanineDomestic"
   },
   "Proto.DaboriArmored": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/dabori:DaboriArmored"
+      },
+      "ColorSlots": ["Fur", "Armor", "Hair", "Eyeball", "Iris"]
+    },
     "extends": "Proto.Dabori"
   },
   "Farmer1": {
     "type": "Actr",
     "display_name": "Clyde Hardy",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ce9b75",
+        "Hair": "#7b572f",
+        "Tunic": "#af9e7e",
+        "Legs": "#7d6a5a",
+        "Boots": "#48442e",
+        "Gauntlets": "#7a6a53",
+        "Sleeves": "#bb9129",
+        "TunicTrim": "#75621c",
+        "Belt": "#645235",
+        "Arms": "#be8c63"
+      },
+      "Features": {
+        "HairMediumCut": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "TestChar2": {
     "type": "Actr",
     "display_name": "Guardsman",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Tunic": "#225599",
+        "Face": "#e0a77a",
+        "Hair": "#dd8855",
+        "Legs": "#222255",
+        "Sleeves": "#2288cc",
+        "Boots": "#112233"
+      },
+      "Features": {
+        "HairMediumCut": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Marcus": {
     "type": "Actr",
     "display_name": "Marcus",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#a46e44",
+        "Hair": "#3b271a",
+        "Tunic": "#591805",
+        "Sleeves": "#713a24",
+        "Arms": "#461020",
+        "Legs": "#7b2132",
+        "Boots": "#171234",
+        "Gauntlets": "#2b2146",
+        "Belt": "#370a0b",
+        "TunicTrim": "#8e402d"
+      },
+      "Features": {
+        "HairMediumCutLock": true,
+        "FacialHairBeard": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Stephan": {
     "type": "Actr",
     "display_name": "Stephan",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#e4b38d",
+        "Hair": "#bb5f18",
+        "Tunic": "#8b7d24",
+        "Legs": "#676329",
+        "Boots": "#4b441c",
+        "Gauntlets": "#616134",
+        "Sleeves": "#bb9129",
+        "TunicTrim": "#75621c",
+        "Belt": "#5b5b26",
+        "Arms": "#dfa77a"
+      },
+      "Features": {
+        "HairCrewCut": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Blue": {
     "type": "Actr",
     "display_name": "Marcus",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ab7247",
+        "Hair": "#3b271a",
+        "Tunic": "#26326f",
+        "Sleeves": "#2b209c",
+        "Arms": "#698063",
+        "Legs": "#3c57a5",
+        "Boots": "#303032",
+        "Gauntlets": "#383a2e"
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Philo.Aynesworth": {
     "type": "Actr",
     "display_name": "Philo Aynesworth",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#7a4e2b",
+        "Hair": "#271b16",
+        "Robe": "#707289",
+        "RobeTrim": "#8a8da5",
+        "RobeTrim2": "#585e6a",
+        "Belt": "#424348"
+      },
+      "Features": {
+        "HairMediumCut": true
+      }
+    },
     "extends": "Proto.HumanMaleRobe"
   },
   "Shopkeeper": {
     "type": "Actr",
     "display_name": "Shopkeeper",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#b37c6c",
+        "Hair": "#b29e8f",
+        "Shirt": "#98895d",
+        "Apron": "#95804e",
+        "Straps": "#665d4a",
+        "Arms": "#a5a194",
+        "Boots": "#5d4e37",
+        "Legs": "#8a7b65",
+        "Belt": "#684725",
+        "Gauntlets": "#7e6e54",
+        "FacialHair": "#978981"
+      },
+      "Features": {
+        "HairThinning": true,
+        "FacialHairMuttonChops": true
+      }
+    },
     "extends": "Proto.HumanMaleApron"
   },
   "PoulRyba": {
     "type": "Actr",
     "display_name": "Poul Ryba",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#c69165",
+        "Arms": "#c28961",
+        "Hair": "#a49168",
+        "FacialHair": "#685d4a",
+        "Shirt": "#7d7666",
+        "Apron": "#55504a",
+        "Straps": "#484340",
+        "Belt": "#3e3930",
+        "Gauntlets": "#5f6140",
+        "Legs": "#3e3d2c",
+        "Boots": "#4b4031"
+      },
+      "Features": {
+        "FacialHairBeard": true,
+        "HairCrewCut": true
+      }
+    },
     "extends": "Proto.HumanMaleApron"
   },
   "AdokkaBalar": {
     "type": "Actr",
     "display_name": "Adokka Balar",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#bd7e0b",
+        "Arms": "#7d874e",
+        "Boots": "#553522",
+        "Hair": "#998067",
+        "Shirt": "#615f05",
+        "Legs": "#946b3f",
+        "Apron": "#463523",
+        "Belt": "#181a12",
+        "FacialHair": "#a78371"
+      },
+      "Features": {
+        "HairMediumCut": true,
+        "FacialHairMuttonChops": true
+      }
+    },
     "extends": "Proto.HumanMaleApron"
   },
   "CrimsonWatchAssassin": {
     "type": "Actr",
     "display_name": "Crimson Watch Assassin",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#885f40",
+        "Hood": "#810600",
+        "Tunic": "#0d0c1e",
+        "Armor": "#18171c",
+        "Arms": "#18152f",
+        "Boots": "#560000",
+        "Gauntlets": "#5f0001",
+        "Legs": "#1d1b1b",
+        "Undershirt": "#4b0500",
+        "Belt": "#890202"
+      }
+    },
     "extends": "Proto.HumanMaleJerkinHooded"
   },
   "Proto.BanditMaleHooded": {
@@ -178,76 +708,281 @@
   "Guard": {
     "type": "Actr",
     "display_name": "Guard",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hat": "#b7663d",
+        "Tunic": "#724d41",
+        "TunicTrim": "#6a3e35",
+        "Collar": "#a96d57",
+        "Shirt": "#e5a42b",
+        "Legs": "#73563b",
+        "Boots": "#6c452d"
+      }
+    },
     "extends": "Proto.CityGuardMale"
   },
   "Guard.DemoVillage": {
     "type": "Actr",
     "display_name": "Guard",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hat": "#405eb8",
+        "Tunic": "#2c4779",
+        "TunicTrim": "#3036b9",
+        "Collar": "#51608c",
+        "Shirt": "#859aa3",
+        "Legs": "#1736a4",
+        "Boots": "#1e284c",
+        "Face": "#b38952",
+        "Belt": "#2d2b6d"
+      }
+    },
     "extends": "Proto.CityGuardMale"
   },
   "Guard.DemoVillage2": {
     "type": "Actr",
     "display_name": "Guard",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hat": "#315ad4",
+        "Tunic": "#464a50",
+        "Collar": "#6a6a6a",
+        "TunicTrim": "#1a22b2",
+        "Shirt": "#9b8f70",
+        "Legs": "#474d4c",
+        "Boots": "#1e284c",
+        "Face": "#9a7340",
+        "Belt": "#2d2b6d",
+        "Gauntlets": "#a97b55"
+      }
+    },
     "extends": "Proto.CityGuardMale"
   },
   "SergeantStone": {
     "type": "Actr",
     "display_name": "Sergeant Stone",
-    "aspects": {},
+    "aspects": {
+      "Skin": {
+        "skin": "characters/humanoid-male:WithCoatHeavy"
+      },
+      "Colors": {
+        "Hair": "#918981",
+        "FacialHair": "#91806b",
+        "Coat": "#24378b",
+        "CoatTrim": "#435575",
+        "Shirt": "#775e31",
+        "Belt": "#452e2e",
+        "Gauntlets": "#5f4646",
+        "Legs": "#4e4437",
+        "Boots": "#2b3a48",
+        "HatPrimary": "#1c274f",
+        "HatDetail": "#686f83"
+      },
+      "Features": {
+        "HairThinning": true,
+        "FacialHairMuttonChops": true,
+        "HatTricorn": true
+      }
+    },
     "extends": "Proto.HumanMaleCoatHeavy"
   },
   "Proto.CrimsonWatchRecruit": {
     "type": "Actr",
     "display_name": "Crimson Watch Recruit",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Coat": "#1c0b0b",
+        "CoatTrim": "#702121",
+        "HatPrimary": "#230202",
+        "HatDetail": "#650d0d",
+        "Tunic": "#3b351f",
+        "Shirt": "#1f1c1c",
+        "Belt": "#333333",
+        "Boots": "#201c1c",
+        "Legs": "#371115",
+        "FacialHair": "#856539"
+      },
+      "Features": {
+        "FacialHairMuttonChops": true,
+        "HatCap": true
+      }
+    },
     "extends": "Proto.HumanMaleLongCoat"
   },
   "CrimsonWatchRecruit1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Coat": "#1c0b0b",
+        "CoatTrim": "#702121",
+        "HatPrimary": "#230202",
+        "HatDetail": "#650d0d",
+        "Tunic": "#3b351f",
+        "Shirt": "#1f1c1c",
+        "Belt": "#333333",
+        "Boots": "#201c1c",
+        "Legs": "#371115",
+        "FacialHair": "#856539"
+      },
+      "Features": {
+        "FacialHairMuttonChops": true,
+        "HatCap": true
+      }
+    },
     "extends": "Proto.CrimsonWatchRecruit"
   },
   "CrimsonWatchRecruit2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Coat": "#1a0000",
+        "CoatTrim": "#530202",
+        "HatPrimary": "#230202",
+        "HatDetail": "#650d0d",
+        "Tunic": "#2c2b2b",
+        "Shirt": "#000000",
+        "Belt": "#333333",
+        "Boots": "#161616",
+        "Legs": "#2d181a",
+        "FacialHair": "#5d3526",
+        "Face": "#ae8063",
+        "Hair": "#483936"
+      },
+      "Features": {
+        "HatCap": true,
+        "FacialHairBeard": true,
+        "HairThinning": true
+      }
+    },
     "extends": "Proto.CrimsonWatchRecruit"
   },
   "Abigail": {
     "type": "Actr",
     "display_name": "Abigail",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#c89167",
+        "Hair": "#c09935",
+        "Tunic": "#0b2c20",
+        "Sleeves": "#713a24",
+        "Arms": "#395557",
+        "Legs": "#16201f",
+        "Boots": "#163838",
+        "Gauntlets": "#1f2b2b",
+        "Belt": "#223932",
+        "TunicTrim": "#1c544a"
+      },
+      "Features": {
+        "HairPonyTail": true
+      }
+    },
     "extends": "Proto.HumanFemaleTunic"
   },
   "Eleanor": {
     "type": "Actr",
     "display_name": "Eleanor",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#805635",
+        "Hair": "#23170f",
+        "Tunic": "#6a5377",
+        "Sleeves": "#713a24",
+        "Arms": "#805635",
+        "Legs": "#403669",
+        "Boots": "#5d4076",
+        "Gauntlets": "#9a626d",
+        "Belt": "#8f657a",
+        "TunicTrim": "#b575a3"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.HumanFemaleTunic"
   },
   "Ivy": {
     "type": "Actr",
     "display_name": "Ivy Fischer",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#b5770b",
+        "Tunic": "#b46e9f",
+        "TunicTrim": "#b24583",
+        "Belt": "#824343",
+        "Sleeves": "#db97ea",
+        "Skirt": "#8e6868",
+        "SkirtTrim": "#b88e8e"
+      },
+      "Features": {
+        "HairLong": true
+      }
+    },
     "extends": "Proto.HumanFemaleDress"
   },
   "SigridRyba": {
     "type": "Actr",
     "display_name": "Sigrid Ryba",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#88806f",
+        "Tunic": "#948568",
+        "TunicTrim": "#7e684c",
+        "Belt": "#373e80",
+        "Sleeves": "#b9b0a2",
+        "Gloves": "#e3b06c",
+        "Skirt": "#8e7d6b",
+        "SkirtTrim": "#696357",
+        "Boots": "#5a4b38"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.HumanFemaleDress"
   },
   "Elspeth": {
     "type": "Actr",
     "display_name": "Elspeth",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ebc098",
+        "Hair": "#f4dcc8",
+        "Tunic": "#061808",
+        "TunicTrim": "#203224",
+        "Skirt": "#061808",
+        "SkirtTrim": "#212d23",
+        "Sleeves": "#1e3021",
+        "Gloves": "#ebc098",
+        "Belt": "#0b130b",
+        "Boots": "#000000"
+      },
+      "Features": {
+        "HairVeryLong": true
+      }
+    },
     "extends": "Proto.HumanFemaleDress"
   },
   "CrimsonWatchSkirmisher": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#8e6c53",
+        "Tunic": "#14060b",
+        "Armor": "#770100",
+        "TunicTrim": "#520000",
+        "Belt": "#88110d",
+        "Sleeves": "#754527",
+        "Arms": "#1f1e20",
+        "Gloves": "#6e5f51",
+        "Hair": "#6f381d",
+        "Gauntlets": "#690a06",
+        "Boots": "#65130b",
+        "Legs": "#180907"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.HumanFemaleLightArmor"
   },
   "Proto.BanditFemaleLightArmor": {
@@ -258,65 +993,219 @@
   "PhoebeKallan": {
     "type": "Actr",
     "display_name": "Alcaldesa Phoebe",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#c3c3c3",
+        "Robe": "#381e31",
+        "RobeTrim": "#72486b",
+        "Sleeves": "#613f5c",
+        "Corset": "#6f0c53",
+        "Petticoat": "#6a3e5e",
+        "Gloves": "#7c2162",
+        "Gorget": "#725268",
+        "HatPrimary": "#65264f",
+        "HatFurTrim": "#84637a",
+        "Jewelry": "#d4b230",
+        "BeltChain": "#807651",
+        "HatDetail": "#94527c",
+        "Boots": "#2e1c1c"
+      },
+      "Features": {
+        "HairVeryLong": true,
+        "HatCossack": true,
+        "JewelryPendant": true
+      }
+    },
     "extends": "Proto.HumanFemaleFancyGown"
   },
   "AdokkaSerela": {
     "type": "Actr",
     "display_name": "Adokka Serela",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#cd8f00",
+        "Hair": "#574a4a",
+        "Tunic": "#8f633a",
+        "Shirt": "#f7c596",
+        "Corset": "#a72033",
+        "Skirt": "#8b5440",
+        "SkirtTrim": "#e6b77c",
+        "Sleeves": "#e9b15e",
+        "HatPrimary": "#ce801d",
+        "Gloves": "#efa819"
+      },
+      "Features": {
+        "HatKerchief": true,
+        "HairShortLocks": true,
+        "HatKercheif": true
+      }
+    },
     "extends": "Proto.HumanFemaleDressHeavy"
   },
   "Shekku": {
     "type": "Actr",
     "display_name": "Shekku",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#4b4a4a",
+        "Tunic": "#303b13",
+        "Greaves": "#4d542b"
+      }
+    },
     "extends": "Proto.Reshari"
   },
   "Proto.Canine": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/canine:Armature"
+      },
+      "Skin": {
+        "skin": "characters/canine:Canine"
+      },
+      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Colors": {}
+    },
     "extends": "Proto.Monster"
   },
   "Proto.Ursine": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/ursine:Armature"
+      },
+      "Skin": {
+        "skin": "characters/ursine:Ursine"
+      },
+      "ColorSlots": ["Fur", "Teeth", "Nose", "Eye", "Eye2"],
+      "Colors": {}
+    },
     "extends": "Proto.Monster"
   },
   "Proto.Wasp": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/wasp:Armature"
+      },
+      "Skin": {
+        "skin": "characters/wasp:Wasp"
+      },
+      "ColorSlots": [
+        "Chitin1",
+        "Chitin2",
+        "Eye",
+        "Mandibles",
+        "Antennae",
+        "Wings",
+        "WingsOutline"
+      ],
+      "Colors": {}
+    },
     "extends": "Proto.Monster"
   },
   "Proto.Kreekin": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/kreekin:Armature"
+      },
+      "Skin": {
+        "skin": "characters/kreekin:Kreekin"
+      },
+      "ColorSlots": ["Chitin", "Claws", "Eye"],
+      "Colors": {
+        "Chitin": "#cdf037"
+      }
+    },
     "extends": "Proto.Monster"
   },
   "Proto.Skeleton": {
     "type": "Actr",
     "display_name": "Skeleton",
-    "aspects": {},
+    "aspects": {
+      "Armature": {
+        "armature": "characters/skeleton:HumanoidArmature",
+        "animations": "characters/humanoid-armature:HumanoidArmature"
+      },
+      "Skin": {
+        "skin": "characters/skeleton:Skeleton"
+      },
+      "ColorSlots": ["Bone"],
+      "FeatureSlots": ["SkeletonBoots"]
+    },
     "extends": "Proto.Monster"
   },
   "Bandit1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ce9b75",
+        "Hood": "#59433b",
+        "Tunic": "#5b4837",
+        "Armor": "#3d2f2f",
+        "Arms": "#8e7050",
+        "Boots": "#5f5247",
+        "Gauntlets": "#584235",
+        "Legs": "#665e58",
+        "Undershirt": "#726858",
+        "Belt": "#402626"
+      }
+    },
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#9b704f",
+        "Hood": "#3d3117",
+        "Tunic": "#302f2c",
+        "Armor": "#2e2720",
+        "Arms": "#1d1d1d",
+        "Boots": "#4d3d2f",
+        "Gauntlets": "#584235",
+        "Legs": "#2a2721",
+        "Undershirt": "#56504b",
+        "Belt": "#202c0e"
+      }
+    },
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#5a412d",
+        "Hood": "#826459",
+        "Tunic": "#4b655c",
+        "Armor": "#173c0f",
+        "Arms": "#717749",
+        "Boots": "#6a684b",
+        "Gauntlets": "#666c2c",
+        "Legs": "#665e58",
+        "Undershirt": "#344928",
+        "Belt": "#1e3618"
+      }
+    },
     "extends": "Proto.BanditMaleHooded"
   },
   "Bandit4": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#d7a37c",
+        "Hood": "#615d49",
+        "Tunic": "#5f5c43",
+        "Armor": "#3d3a2f",
+        "Arms": "#56513f",
+        "Boots": "#4d3d2e",
+        "Gauntlets": "#584235",
+        "Legs": "#746d44",
+        "Undershirt": "#44413d",
+        "Belt": "#453f3f"
+      }
+    },
     "extends": "Proto.BanditMaleHooded"
   },
   "SentinelRosseau": {
@@ -327,22 +1216,94 @@
   },
   "Bandit20": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#b0825f",
+        "Tunic": "#4b4332",
+        "Armor": "#514a3b",
+        "TunicTrim": "#3f382a",
+        "Belt": "#40361d",
+        "Sleeves": "#754527",
+        "Arms": "#766347",
+        "Gloves": "#6e5f51",
+        "Hair": "#846249",
+        "Gauntlets": "#65513b",
+        "Boots": "#513f35",
+        "Legs": "#876e5d"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit21": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#be9373",
+        "Tunic": "#32394b",
+        "Armor": "#3b4251",
+        "TunicTrim": "#2a2f3f",
+        "Belt": "#1d2840",
+        "Sleeves": "#754527",
+        "Arms": "#625e58",
+        "Gloves": "#6e5f51",
+        "Hair": "#302925",
+        "Gauntlets": "#3b4165",
+        "Boots": "#353851",
+        "Legs": "#696969"
+      },
+      "Features": {
+        "HairPonyTail": true
+      }
+    },
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit22": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#9e704c",
+        "Tunic": "#54533f",
+        "Armor": "#5f5c42",
+        "TunicTrim": "#3b3f2a",
+        "Belt": "#6f6d66",
+        "Sleeves": "#754527",
+        "Arms": "#7a4d20",
+        "Gloves": "#6e5f51",
+        "Hair": "#665050",
+        "Gauntlets": "#65653b",
+        "Boots": "#5e4b2d",
+        "Legs": "#372c2e"
+      },
+      "Features": {
+        "HairPonyTail": true
+      }
+    },
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Bandit23": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#8e6c53",
+        "Tunic": "#251117",
+        "Armor": "#161c20",
+        "TunicTrim": "#27252a",
+        "Belt": "#191f20",
+        "Sleeves": "#754527",
+        "Arms": "#1f1e20",
+        "Gloves": "#6e5f51",
+        "Hair": "#9d7e6d",
+        "Gauntlets": "#222320",
+        "Boots": "#3f2e32",
+        "Legs": "#372c2e"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.BanditFemaleLightArmor"
   },
   "Proto.FeralDog": {
@@ -353,178 +1314,463 @@
   },
   "FeralDog1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#9f825c"
+      }
+    },
     "extends": "Proto.FeralDog"
   },
   "FeralDog2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#745935"
+      }
+    },
     "extends": "Proto.FeralDog"
   },
   "FeralDog3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#c19761"
+      }
+    },
     "extends": "Proto.FeralDog"
   },
   "FeralDog4": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#3e3120",
+        "Eye": "#977979",
+        "Nose": "#4a3f37"
+      }
+    },
     "extends": "Proto.FeralDog"
   },
   "FeralDogAlpha": {
     "type": "Actr",
     "display_name": "Feral Dog",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#a68d6b",
+        "Eye": "#e6bb1f",
+        "Nose": "#4a3f37"
+      }
+    },
     "extends": "Proto.FeralDog"
   },
   "SmallBlackBear": {
     "type": "Actr",
     "display_name": "Small Black Bear",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#3f3425"
+      }
+    },
     "extends": "Proto.Ursine"
   },
   "BlackBear": {
     "type": "Actr",
     "display_name": "Black Bear",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Fur": "#3b3123"
+      }
+    },
     "extends": "Proto.Ursine"
   },
   "KreekinGreen": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#cdf037"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#91a535"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#a0c95a"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinGreen4": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#82bb59",
+        "Eye": "#c0046f"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "Proto.KreekinScout": {
     "type": "Actr",
     "display_name": "Kreekin Scout",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#91a535"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinScout1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#91a535"
+      }
+    },
     "extends": "Proto.KreekinScout"
   },
   "KreekinScout2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#a0c95a"
+      }
+    },
     "extends": "Proto.KreekinScout"
   },
   "KreekinScout3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#82bb59",
+        "Eye": "#c0046f"
+      }
+    },
     "extends": "Proto.KreekinScout"
   },
   "KreekinGray": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#767753",
+        "Eye": "#eea241"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinGray2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#868770",
+        "Eye": "#ffc602",
+        "Claws": "#7e7946"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinGray3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#5b5c49",
+        "Eye": "#bfa54e",
+        "Claws": "#7e7946"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "KreekinWhite": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Chitin": "#c7ccbc",
+        "Eye": "#6c780f",
+        "Claws": "#779a8e"
+      }
+    },
     "extends": "Proto.Kreekin"
   },
   "Skeletal.Warrior": {
     "type": "Actr",
     "display_name": "Skeletal Warrior",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Bone": "#aaaaaa"
+      },
+      "Features": {
+        "SkeletonBoots": true
+      }
+    },
     "extends": "Proto.Skeleton"
   },
   "Skeletal.Soldier": {
     "type": "Actr",
     "display_name": "Skeletal Soldier",
-    "aspects": {},
+    "aspects": {
+      "Colors": {},
+      "Features": {
+        "SkeletonBoots": true
+      }
+    },
     "extends": "Proto.Skeleton"
   },
   "Cordelia": {
     "type": "Actr",
     "display_name": "Cordelia Weber",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#4b340e",
+        "Tunic": "#2e48c8",
+        "TunicTrim": "#1c3a44",
+        "Belt": "#323673",
+        "Sleeves": "#2e3194",
+        "Skirt": "#3d3fcd",
+        "SkirtTrim": "#1d3457",
+        "Face": "#c89167",
+        "Gloves": "#c89167"
+      },
+      "Features": {
+        "HairPonyTail": true
+      }
+    },
     "extends": "Proto.HumanFemaleDress"
   },
   "Cordelia.Imprisoned": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#4b340e",
+        "Tunic": "#7e7365",
+        "TunicTrim": "#6b6050",
+        "Belt": "#4f4539",
+        "Sleeves": "#948a7c",
+        "Skirt": "#7e7365",
+        "SkirtTrim": "#6c5f4f",
+        "Face": "#c89167",
+        "Gloves": "#c89167"
+      }
+    },
     "extends": "Cordelia"
   },
   "Arlo": {
     "type": "Actr",
     "display_name": "Arlo Weber",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ba8753",
+        "Hair": "#504133",
+        "Coat": "#124c59",
+        "CoatTrim": "#557148",
+        "Tunic": "#5f594d",
+        "Boots": "#154734",
+        "Legs": "#1c4911",
+        "Shirt": "#a38319",
+        "Belt": "#43513e"
+      },
+      "Features": {
+        "HairMediumCut": true,
+        "FacialHairMuttonChops": true
+      }
+    },
     "extends": "Proto.HumanMaleLongCoat"
   },
   "Arlo.Imprisoned": {
     "type": "Actr",
     "display_name": "Arlo Weber",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ba8753",
+        "Hair": "#504133",
+        "FacialHair": "#504133",
+        "Tunic": "#847d76",
+        "TunicTrim": "#7a6e60",
+        "Belt": "#625a50",
+        "Arms": "#ba8753",
+        "Legs": "#a69686",
+        "Boots": "#6d6257",
+        "Gauntlets": "#72695d"
+      },
+      "Features": {
+        "HairMediumCut": true,
+        "FacialHairMuttonChops": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Proto.ConvictMale": {
     "type": "Actr",
     "display_name": "Convict Laborer",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ba8753",
+        "Hair": "#504133",
+        "FacialHair": "#504133",
+        "Tunic": "#847d76",
+        "TunicTrim": "#7a6e60",
+        "Belt": "#625a50",
+        "Arms": "#ba8753",
+        "Legs": "#a69686",
+        "Boots": "#6d6257",
+        "Gauntlets": "#72695d"
+      },
+      "Features": {
+        "HairMediumCut": true,
+        "FacialHairMuttonChops": true
+      }
+    },
     "extends": "Proto.HumanMaleTunic"
   },
   "Proto.ConvictFemale": {
     "type": "Actr",
     "display_name": "Convict Laborer",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#4b340e",
+        "Tunic": "#7e7365",
+        "TunicTrim": "#6b6050",
+        "Belt": "#4f4539",
+        "Sleeves": "#948a7c",
+        "Skirt": "#7e7365",
+        "SkirtTrim": "#6c5f4f",
+        "Face": "#c89167",
+        "Gloves": "#c89167"
+      }
+    },
     "extends": "Cordelia"
   },
   "ConvictFemale1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#69583e",
+        "Tunic": "#98846a",
+        "TunicTrim": "#6b6050",
+        "Belt": "#4f4539",
+        "Sleeves": "#7b7265",
+        "Skirt": "#908678",
+        "SkirtTrim": "#817667",
+        "Face": "#ba835a",
+        "Gloves": "#c89167"
+      },
+      "Features": {
+        "HairShortLocks": true
+      }
+    },
     "extends": "Proto.ConvictFemale"
   },
   "ConvictFemale2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#1a150c",
+        "Tunic": "#837f7a",
+        "TunicTrim": "#746f69",
+        "Belt": "#4f4539",
+        "Sleeves": "#a09a92",
+        "Skirt": "#7d756f",
+        "SkirtTrim": "#6e6964",
+        "Face": "#9c6d4a",
+        "Gloves": "#c89167"
+      },
+      "Features": {
+        "HairBeveled": true
+      }
+    },
     "extends": "Proto.ConvictFemale"
   },
   "ConvictFemale3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Hair": "#d5a06e",
+        "Tunic": "#766753",
+        "TunicTrim": "#534838",
+        "Belt": "#4f4539",
+        "Sleeves": "#7e6e58",
+        "Skirt": "#8d8172",
+        "SkirtTrim": "#7f6f5b",
+        "Face": "#c89167",
+        "Gloves": "#c89167"
+      },
+      "Features": {
+        "HairLong": true
+      }
+    },
     "extends": "Proto.ConvictFemale"
   },
   "ConvictMale1": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#ba8753",
+        "Hair": "#a97c52",
+        "FacialHair": "#8a623c",
+        "Tunic": "#948f88",
+        "TunicTrim": "#7a6e60",
+        "Belt": "#625a50",
+        "Arms": "#ba8753",
+        "Legs": "#8d7b6a",
+        "Boots": "#5c4f42",
+        "Gauntlets": "#a18768"
+      },
+      "Features": {
+        "HairMediumCut": true,
+        "FacialHairBeard": true
+      }
+    },
     "extends": "Proto.ConvictMale"
   },
   "ConvictMale2": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#926a42",
+        "Hair": "#504133",
+        "FacialHair": "#504133",
+        "Tunic": "#726659",
+        "TunicTrim": "#685c4e",
+        "Belt": "#564a3c",
+        "Arms": "#926a42",
+        "Legs": "#594e43",
+        "Boots": "#56493b",
+        "Gauntlets": "#594f41"
+      },
+      "Features": {
+        "HairMediumCut": true
+      }
+    },
     "extends": "Proto.ConvictMale"
   },
   "ConvictMale3": {
     "type": "Actr",
-    "aspects": {},
+    "aspects": {
+      "Colors": {
+        "Face": "#cd9359",
+        "Hair": "#9d9185",
+        "FacialHair": "#9d9185",
+        "Tunic": "#7f7c7a",
+        "TunicTrim": "#7a6e60",
+        "Belt": "#625a50",
+        "Arms": "#ba8753",
+        "Legs": "#7f7b78",
+        "Boots": "#65625f",
+        "Gauntlets": "#847e76"
+      },
+      "Features": {
+        "FacialHairGoatee": true,
+        "HairThinning": true
+      }
+    },
     "extends": "Proto.ConvictMale"
   }
 }

@@ -240,7 +240,7 @@ pub(crate) fn update_portals(
             continue;
         };
         let source_position = portal_xform.compute_transform().translation;
-        let target_position = Vec3::from(portal_target.pos);
+        let target_position = portal_target.pos;
         let differential = target_position - source_position;
         portal_camera_xform.translation = primary_transform.translation + differential;
         portal_camera_xform.rotation = primary_transform.rotation;

@@ -8,9 +8,6 @@
     "^[A-Za-z_][A-Za-z0-9_\\.-]*$": {
       "oneOf": [
         // {
-        //   "$ref": "./actor.schema.json"
-        // },
-        // {
         //   "$ref": "./behavior.schema.json"
         // },
         // {
@@ -24,9 +21,6 @@
         // },
         // {
         //   "$ref": "./effect.schema.json"
-        // },
-        // {
-        //   "$ref": "./fixture.schema.json"
         // },
         {
           "$ref": "./exemplar.schema.json"
@@ -46,12 +40,6 @@
         // {
         //   "$ref": "./remarkset.schema.json"
         // },
-        // {
-        //   "$ref": "./terrainfx.schema.json"
-        // },
-        // {
-        //   "$ref": "./wall.schema.json"
-        // }
       ]
     }
   },

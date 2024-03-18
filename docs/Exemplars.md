@@ -96,7 +96,7 @@ gives an example of a basic aspect:
 #[reflect(Aspect, Default)]
 pub struct PortalTarget {
     pub(crate) realm: String,
-    pub(crate) pos: Vector3,
+    pub(crate) pos: Vec3,
 }
 
 impl Aspect for PortalTarget {

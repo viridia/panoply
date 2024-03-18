@@ -1,7 +1,4 @@
-use crate::{
-    msgpack::Vector3,
-    scenery::{FIXTURE_TYPE, WALL_TYPE},
-};
+use crate::scenery::{FIXTURE_TYPE, WALL_TYPE};
 use bevy::prelude::*;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
@@ -60,11 +57,11 @@ impl Aspect for Portal {
 }
 
 /// Defines the remote location of a portal.
-#[derive(Component, Debug, Reflect, Clone, Default)]
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default)]
 pub struct PortalTarget {
     pub(crate) realm: String,
-    pub(crate) pos: Vector3,
+    pub(crate) pos: Vec3,
 }
 
 impl Aspect for PortalTarget {
@@ -84,5 +81,23 @@ impl Aspect for PortalTarget {
 
     fn clone_boxed(&self) -> Box<dyn Aspect> {
         Box::new(self.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialize() {
+        let target = PortalTarget {
+            realm: "Realm".to_string(),
+            pos: Vec3::new(1.0, 2.0, 3.0),
+        };
+        let ser = serde_json::to_string(&target).unwrap();
+        assert_eq!(ser, r#"{"realm":"Realm","pos":[1.0,2.0,3.0]}"#);
+        let des = serde_json::from_str::<PortalTarget>(&ser).unwrap();
+        assert_eq!(des.realm, "Realm");
+        assert_eq!(des.pos, Vec3::new(1.0, 2.0, 3.0));
     }
 }

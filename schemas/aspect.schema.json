@@ -219,6 +219,61 @@
       },
       "required": ["size", "offset"],
       "additionalProperties": false
+    },
+    "Armature": {
+      "type": "object",
+      "properties": {
+        "armature": {
+          "type": "string"
+        },
+        "animations": {
+          "type": "string"
+        }
+      },
+      "required": ["armature"],
+      "additionalProperties": false
+    },
+    "Skin": {
+      "type": "object",
+      "properties": {
+        "skin": {
+          "type": "string"
+        }
+      },
+      "required": ["skin"],
+      "additionalProperties": false
+    },
+    "ColorSlots": {
+      "type": "array",
+      "item": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_]+$"
+      }
+    },
+    "Colors": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "$ref": "./types.schema.json#/definitions/Color"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FeatureSlots": {
+      "type": "array",
+      "item": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_]+$"
+      }
+    },
+    "Features": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

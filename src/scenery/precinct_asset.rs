@@ -14,7 +14,10 @@ use serde::{
 use std::fmt::{self, Debug};
 use thiserror::Error;
 
-use crate::msgpack::{Box2d, Vector3};
+use crate::{
+    actors::{ActorInstance, ActorInstanceListDeserializer},
+    msgpack::Box2d,
+};
 
 use super::floor_region::FloorRegionSer;
 
@@ -40,7 +43,9 @@ pub struct PrecinctAsset {
     /// Packed terrain effect table
     pub(crate) terrain_fx: Option<Vec<i16>>,
 
-    // actors: Option<Vec<IActorInstanceData>>,
+    #[serde(default)]
+    pub(crate) actors: Vec<ActorInstance>,
+
     /// Table of scenery instances.
     #[serde(default)]
     pub(crate) scenery: Vec<CompressedInstance>,
@@ -131,8 +136,8 @@ impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
             Ok(Some(facing)) => result.facing = facing,
             _ => return Err(serde::de::Error::invalid_length(1, &self)),
         }
-        match seq.next_element::<Vector3>() {
-            Ok(Some(position)) => result.position = position.into(),
+        match seq.next_element::<Vec3>() {
+            Ok(Some(position)) => result.position = position,
             _ => return Err(serde::de::Error::invalid_length(2, &self)),
         }
         match seq.next_element::<Option<String>>() {
@@ -293,7 +298,12 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for PrecinctAssetDeserializer<'a, 'b> {
                             precinct.tiers = map.next_value()?;
                         }
                         Field::Actors => {
-                            // TODO
+                            precinct.actors =
+                                map.next_value_seed(ActorInstanceListDeserializer {
+                                    type_registry: self.type_registry,
+                                    load_context: self.load_context,
+                                    parent_label: "actors",
+                                })?;
                         }
                         Field::Layers => {
                             // TODO

@@ -8,6 +8,9 @@
     "type": {
       "enum": ["Flor", "Wall", "TrFx", "Fixt", "Actr", "Item"]
     },
+    "extends": {
+      "type": "string"
+    },
     "display_name": {
       "type": "string"
     },
