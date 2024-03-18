@@ -1,10 +1,8 @@
 # TODO
 
 - Bugs:
-  - Surface changes when scene loads?
   - Generation error [REPORTED]
   - Materials get loaded multiple times?
-  - CottageWallSkirtCorner turned wrong way.
 - Models
   - [x] replace model_loader
 - Wall Physics

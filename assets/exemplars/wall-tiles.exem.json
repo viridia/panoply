@@ -869,8 +869,7 @@
           "asset": "scenery/models/cottage.glb#CottageWallCorner"
         },
         {
-          "asset": "scenery/models/cottage.glb#CottageWallSkirtCorner",
-          "y_rotation": 90
+          "asset": "scenery/models/cottage.glb#CottageWallSkirtCorner"
         }
       ],
       "SceneryColliders": [
