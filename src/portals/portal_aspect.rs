@@ -89,7 +89,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_serialize() {
+    fn test_serialize_json() {
         let target = PortalTarget {
             realm: "Realm".to_string(),
             pos: Vec3::new(1.0, 2.0, 3.0),

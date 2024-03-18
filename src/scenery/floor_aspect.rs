@@ -43,41 +43,57 @@ impl Aspect for StdFloorSurface {
         meta_type == FLOOR_TYPE
     }
 
-    fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        // println!("Loading material: {}.StdFloorSurface.Material", label);
-        self.material =
-            load_context.labeled_asset_scope(format!("{}.StdFloorSurface.Material", label), |lc| {
-                let mut material = StandardMaterial {
-                    perceptual_roughness: self.roughness.unwrap_or(1.0),
-                    unlit: self.unlit.unwrap_or(false),
-                    ..default()
-                };
-                if let Some(color) = &self.color {
-                    material.base_color = color.0.into();
-                } else if let Some(texture) = &self.texture {
-                    material.base_color_texture = Some(lc.load_with_settings(
-                        texture,
-                        |settings: &mut ImageLoaderSettings| {
-                            settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                                label: Some("Floor Region".to_string()),
-                                address_mode_u: ImageAddressMode::Repeat,
-                                address_mode_v: ImageAddressMode::Repeat,
-                                address_mode_w: ImageAddressMode::Repeat,
-                                mag_filter: ImageFilterMode::Linear,
-                                min_filter: ImageFilterMode::Linear,
-                                mipmap_filter: ImageFilterMode::Linear,
-                                ..default()
-                            });
-                        },
-                    ));
-                }
-                // material.base_color_texture_transform = TextureTransform {
-                //     offset: Vec2::new(0.0, 0.0),
-                //     scale: Vec2::new(1.0, 1.0),
-                //     rotation: 0.0,
-                // };
-                material
-            });
+    fn load_dependencies(&mut self, _label: &str, load_context: &mut bevy::asset::LoadContext) {
+        let mut material_name = String::with_capacity(64);
+        material_name.push_str("Floor.Material");
+        if let Some(texture) = &self.texture {
+            material_name.push('.');
+            material_name.push_str(texture);
+        } else if let Some(color) = &self.color {
+            material_name.push('.');
+            material_name.push_str(color.0.to_hex().as_str());
+        }
+        if let Some(roughness) = self.roughness {
+            material_name.push('.');
+            material_name.push_str(&roughness.to_string());
+        }
+        if self.unlit.unwrap_or(false) {
+            material_name.push_str(".Unlit");
+        }
+        // println!("Loading material: {}", material_name);
+
+        self.material = load_context.labeled_asset_scope(material_name, |lc| {
+            let mut material = StandardMaterial {
+                perceptual_roughness: self.roughness.unwrap_or(1.0),
+                unlit: self.unlit.unwrap_or(false),
+                ..default()
+            };
+            if let Some(color) = &self.color {
+                material.base_color = color.0.into();
+            } else if let Some(texture) = &self.texture {
+                material.base_color_texture = Some(lc.load_with_settings(
+                    texture,
+                    |settings: &mut ImageLoaderSettings| {
+                        settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                            label: Some("Floor Region".to_string()),
+                            address_mode_u: ImageAddressMode::Repeat,
+                            address_mode_v: ImageAddressMode::Repeat,
+                            address_mode_w: ImageAddressMode::Repeat,
+                            mag_filter: ImageFilterMode::Linear,
+                            min_filter: ImageFilterMode::Linear,
+                            mipmap_filter: ImageFilterMode::Linear,
+                            ..default()
+                        });
+                    },
+                ));
+            }
+            // material.base_color_texture_transform = TextureTransform {
+            //     offset: Vec2::new(0.0, 0.0),
+            //     scale: Vec2::new(1.0, 1.0),
+            //     rotation: 0.0,
+            // };
+            material
+        });
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
