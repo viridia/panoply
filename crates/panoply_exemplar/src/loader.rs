@@ -2,7 +2,7 @@ use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
-    utils::{hashbrown::HashMap, BoxedFuture},
+    utils::hashbrown::HashMap,
 };
 use futures_lite::AsyncReadExt;
 use serde::{
@@ -211,23 +211,21 @@ impl AssetLoader for ExemplarLoader {
     type Error = ExemplarLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
-            let schematic_deserializer = CatalogDeserializer {
-                type_registry: &self.type_registry.read(),
-                load_context,
-            };
-            let catalog: ExemplarCatalog = schematic_deserializer.deserialize(&mut deserializer)?;
-            Ok(catalog)
-        })
+        load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
+        let schematic_deserializer = CatalogDeserializer {
+            type_registry: &self.type_registry.read(),
+            load_context,
+        };
+        let catalog: ExemplarCatalog = schematic_deserializer.deserialize(&mut deserializer)?;
+        Ok(catalog)
     }
 
     fn extensions(&self) -> &[&str] {

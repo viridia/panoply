@@ -9,7 +9,6 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::ImageSampler,
     },
-    utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
@@ -136,22 +135,20 @@ impl AssetLoader for TerrainMapLoader {
     type Error = TerrainMapLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let map: TerrainMapAsset =
-                rmps::from_slice(&bytes).expect("unable to decode terrain map data");
-            let area = (map.bounds.width() * map.bounds.height()) as usize;
-            assert!(map.shapes.len() == area);
-            assert!(map.biomes.len() == area);
-            Ok(map)
-        })
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let map: TerrainMapAsset =
+            rmps::from_slice(&bytes).expect("unable to decode terrain map data");
+        let area = (map.bounds.width() * map.bounds.height()) as usize;
+        assert!(map.shapes.len() == area);
+        assert!(map.biomes.len() == area);
+        Ok(map)
     }
 
     fn extensions(&self) -> &[&str] {

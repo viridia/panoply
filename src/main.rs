@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use bevy::{
+    asset::io::AssetSource,
     pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
@@ -36,7 +37,7 @@ use crate::{
     actors::ActorsPlugin,
     diagnostics::ScreenDiagsPlugin,
     instancing::InstancedModelsPlugin,
-    materials::MaterialsPlugin,
+    materials::{InlineAssetReader, MaterialsPlugin},
     msgpack::MsgpackExtPlugin,
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
@@ -83,6 +84,10 @@ fn main() {
     }
 
     App::new()
+        .register_asset_source(
+            "inline",
+            AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
+        )
         .add_plugins((
             DefaultPlugins
                 .set(WindowPlugin {

@@ -10,7 +10,6 @@ use bevy::{
     math::IRect,
     prelude::*,
     reflect::TypePath,
-    utils::BoxedFuture,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -125,52 +124,50 @@ impl AssetLoader for TerrainContoursTableLoader {
     type Error = TerrainContoursLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let shapes_ser: Vec<TerrainContourSer> =
-                rmps::from_slice(&bytes).expect("unable to decode terrain shape");
-            let mut res = TerrainContoursTable {
-                shapes: Vec::with_capacity(shapes_ser.len()),
-                by_id: Vec::with_capacity(shapes_ser.len()),
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let shapes_ser: Vec<TerrainContourSer> =
+            rmps::from_slice(&bytes).expect("unable to decode terrain shape");
+        let mut res = TerrainContoursTable {
+            shapes: Vec::with_capacity(shapes_ser.len()),
+            by_id: Vec::with_capacity(shapes_ser.len()),
+        };
+
+        for (index, shape) in shapes_ser.iter().enumerate() {
+            let mut sh = TerrainContour {
+                id: shape.id,
+                height: SquareArray::<i8>::new(HEIGHT_STRIDE, 0),
+                flora: SquareArray::<FloraType>::new(FLORA_STRIDE, FloraType::None),
+                has_terrain: shape.has_terrain,
+                has_water: shape.has_water,
             };
-
-            for (index, shape) in shapes_ser.iter().enumerate() {
-                let mut sh = TerrainContour {
-                    id: shape.id,
-                    height: SquareArray::<i8>::new(HEIGHT_STRIDE, 0),
-                    flora: SquareArray::<FloraType>::new(FLORA_STRIDE, FloraType::None),
-                    has_terrain: shape.has_terrain,
-                    has_water: shape.has_water,
-                };
-                let mut height: Vec<i8> = vec![0; HEIGHT_STRIDE * HEIGHT_STRIDE];
-                #[allow(clippy::needless_range_loop)]
-                for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
-                    height[i] = shape.height[i] as i8;
-                }
-                sh.height.copy_from_slice(height.as_slice());
-                let mut flora = Vec::<FloraType>::with_capacity(shape.flora.len());
-                flora.resize(shape.flora.len(), FloraType::None);
-                for i in 0..shape.flora.len() {
-                    flora[i] = FloraType::from_u8(shape.flora[i]);
-                }
-                flora.resize(shape.flora.len(), FloraType::None);
-                sh.flora.copy_from_slice(flora.as_slice());
-                res.shapes.push(sh);
-                if res.by_id.len() <= shape.id {
-                    res.by_id.resize(shape.id + 1, 0);
-                }
-                res.by_id[shape.id] = index;
+            let mut height: Vec<i8> = vec![0; HEIGHT_STRIDE * HEIGHT_STRIDE];
+            #[allow(clippy::needless_range_loop)]
+            for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
+                height[i] = shape.height[i] as i8;
             }
+            sh.height.copy_from_slice(height.as_slice());
+            let mut flora = Vec::<FloraType>::with_capacity(shape.flora.len());
+            flora.resize(shape.flora.len(), FloraType::None);
+            for i in 0..shape.flora.len() {
+                flora[i] = FloraType::from_u8(shape.flora[i]);
+            }
+            flora.resize(shape.flora.len(), FloraType::None);
+            sh.flora.copy_from_slice(flora.as_slice());
+            res.shapes.push(sh);
+            if res.by_id.len() <= shape.id {
+                res.by_id.resize(shape.id + 1, 0);
+            }
+            res.by_id[shape.id] = index;
+        }
 
-            Ok(TerrainContoursTableAsset(Arc::new(Mutex::new(res))))
-        })
+        Ok(TerrainContoursTableAsset(Arc::new(Mutex::new(res))))
     }
 
     fn extensions(&self) -> &[&str] {

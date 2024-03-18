@@ -3,7 +3,6 @@ use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::view::RenderLayers;
-use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -61,19 +60,16 @@ impl AssetLoader for RealmsLoader {
     type Error = RealmsLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let map: RealmData =
-                serde_json::from_slice(&bytes).expect("unable to decode RealmData");
-            Ok(map)
-        })
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let map: RealmData = serde_json::from_slice(&bytes).expect("unable to decode RealmData");
+        Ok(map)
     }
 
     fn extensions(&self) -> &[&str] {

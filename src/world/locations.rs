@@ -2,7 +2,6 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use bevy::utils::BoxedFuture;
 use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -48,20 +47,18 @@ impl AssetLoader for WorldLocationsLoader {
     type Error = WorldLocationsLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let locations: Vec<WorldLocation> =
-                serde_json::from_slice(&bytes).expect("unable to decode locations");
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let locations: Vec<WorldLocation> =
+            serde_json::from_slice(&bytes).expect("unable to decode locations");
 
-            Ok(WorldLocationsAsset(locations))
-        })
+        Ok(WorldLocationsAsset(locations))
     }
 
     fn extensions(&self) -> &[&str] {

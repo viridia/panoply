@@ -2,7 +2,6 @@ use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
-    utils::BoxedFuture,
 };
 use futures_lite::AsyncReadExt;
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
@@ -347,23 +346,21 @@ impl AssetLoader for PrecinctAssetLoader {
     type Error = PrecinctAssetLoaderError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let mut deserializer = rmps::Deserializer::from_read_ref(&bytes);
-            let precinct_deserializer = PrecinctAssetDeserializer {
-                type_registry: &self.type_registry.read(),
-                load_context,
-            };
-            let precinct: PrecinctAsset = precinct_deserializer.deserialize(&mut deserializer)?;
-            Ok(precinct)
-        })
+        load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let mut deserializer = rmps::Deserializer::from_read_ref(&bytes);
+        let precinct_deserializer = PrecinctAssetDeserializer {
+            type_registry: &self.type_registry.read(),
+            load_context,
+        };
+        let precinct: PrecinctAsset = precinct_deserializer.deserialize(&mut deserializer)?;
+        Ok(precinct)
     }
 
     fn extensions(&self) -> &[&str] {

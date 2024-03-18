@@ -3,7 +3,6 @@ use bevy::{
     gltf::{Gltf, GltfError, GltfLoader, GltfLoaderSettings},
     reflect::TypePath,
     render::render_asset::RenderAssetUsages,
-    utils::BoxedFuture,
 };
 use thiserror::Error;
 
@@ -31,39 +30,37 @@ impl AssetLoader for ModelLoader {
     type Error = GltfError;
     type Settings = ();
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let result = self
-                .inner
-                .load(
-                    reader,
-                    &GltfLoaderSettings {
-                        load_cameras: false,
-                        load_lights: false,
-                        load_meshes: RenderAssetUsages::RENDER_WORLD,
-                        load_materials: RenderAssetUsages::RENDER_WORLD,
-                        include_source: false,
-                    },
-                    load_context,
-                )
-                .await;
-            match result {
-                Ok(gltf) => {
-                    // info!("Loaded GLTF model: {:?}", gltf);
-                    for _scene_handle in gltf.scenes.iter() {
-                        // let scene = load_context.get_asset(&scene_handle).unwrap();
-                        // info!("Scene: {:?}", scene_handle.name);
-                    }
-                    Ok(gltf)
+        load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let result = self
+            .inner
+            .load(
+                reader,
+                &GltfLoaderSettings {
+                    load_cameras: false,
+                    load_lights: false,
+                    load_meshes: RenderAssetUsages::RENDER_WORLD,
+                    load_materials: RenderAssetUsages::RENDER_WORLD,
+                    include_source: false,
+                },
+                load_context,
+            )
+            .await;
+        match result {
+            Ok(gltf) => {
+                // info!("Loaded GLTF model: {:?}", gltf);
+                for _scene_handle in gltf.scenes.iter() {
+                    // let scene = load_context.get_asset(&scene_handle).unwrap();
+                    // info!("Scene: {:?}", scene_handle.name);
                 }
-                Err(_) => result,
+                Ok(gltf)
             }
-        })
+            Err(_) => result,
+        }
     }
 
     fn extensions(&self) -> &[&str] {
