@@ -62,14 +62,12 @@ fn add_wave(
     position: vec2<f32>,
     out: ptr<function, WaveAccum>,
 ) {
-    // TODO: globals.time is not working for vertex shaders:
-    // https://github.com/bevyengine/bevy/issues/10652
-    // let phase = freq * globals.time;
+    let phase = freq * globals.time;
     let wavelength = length(direction);
     let l = 1. / (wavelength * wavelength);
-    // let angle = (phase / wavelength + dot(direction, position) * l) * PI * 2.;
-    // (*out).amplitude += cos(angle) * strength;
-    // (*out).tangent += direction * l * sin(angle) * strength * PI * 2.;
+    let angle = (phase / wavelength + dot(direction, position) * l) * PI * 2.;
+    (*out).amplitude += cos(angle) * strength;
+    (*out).tangent += direction * l * sin(angle) * strength * PI * 2.;
 }
 
 @vertex

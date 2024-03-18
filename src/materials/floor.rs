@@ -64,6 +64,8 @@ impl AssetLoader for FloorMaterialLoader {
         _settings: &'a Self::Settings,
         load_context: &'a mut bevy::asset::LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
+        // println!("Loading floor material: {:?}", load_context.asset_path());
+        // Remove *all* file extensions, not just the last one.
         let path = load_context
             .path()
             .to_str()
@@ -71,7 +73,6 @@ impl AssetLoader for FloorMaterialLoader {
             .split('.')
             .next()
             .unwrap();
-        println!("Loading floor material: {:?}", path);
         let params = FloorMaterialParams::decode(path)?;
         let mut material = StandardMaterial {
             perceptual_roughness: params.roughness,
