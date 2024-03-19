@@ -9,7 +9,7 @@ use self::{
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
-    floor_noise::FloorNoiseMaterial,
+    // floor_noise::FloorNoiseMaterial,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
@@ -22,7 +22,7 @@ use self::{
 
 pub mod floor_aspect;
 mod floor_mesh;
-mod floor_noise;
+// mod floor_noise;
 mod floor_region;
 mod precinct;
 mod precinct_asset;
@@ -79,9 +79,9 @@ impl Plugin for SceneryPlugin {
             .register_type::<Option<Vec3>>()
             .register_type::<HashMap<String, Vec<Vec3>>>()
             .register_type::<HashMap<String, String>>()
-            .add_plugins(MaterialPlugin::<
-                ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,
-            >::default())
+            // .add_plugins(MaterialPlugin::<
+            //     ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,
+            // >::default())
             .add_systems(Startup, init_outline)
             .add_systems(
                 Update,

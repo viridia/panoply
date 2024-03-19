@@ -12,9 +12,10 @@
   - paths
   - biomes
 - Portals
-  - off-screen render
+  - perspective projection
+  - modified frustum
 - Possible crates:
-  - msgpack
+  - msgpack (no)
   - reflect_types
   - random
   - overlays

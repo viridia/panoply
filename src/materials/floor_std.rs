@@ -1,9 +1,3 @@
-use base64::{
-    alphabet,
-    engine::{general_purpose::NO_PAD, GeneralPurpose},
-    prelude::*,
-    DecodeError,
-};
 use bevy::{
     asset::AssetLoader,
     color::LinearRgba,
@@ -15,48 +9,28 @@ use bevy::{
     },
 };
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+
+use super::{MaterialLoaderError, MaterialParams};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct FloorMaterialParams {
+pub struct FloorStdMaterialParams {
     pub texture: Option<String>,
     pub color: Option<LinearRgba>,
     pub roughness: f32,
     pub unlit: bool,
 }
 
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum FloorMaterialLoaderError {
-    #[error("Could not decode floor material: {0}")]
-    DecodeMsgpack(#[from] rmp_serde::decode::Error),
-    #[error("Could not decode floor material base64: {0}")]
-    DecodeBase64(#[from] DecodeError),
-}
-
-pub const URL_SAFE_NO_PAD: GeneralPurpose = GeneralPurpose::new(&alphabet::URL_SAFE, NO_PAD);
-
-impl FloorMaterialParams {
-    pub fn encode(&self) -> Result<String, FloorMaterialLoaderError> {
-        let bytes = rmp_serde::to_vec(self).unwrap();
-        Ok(URL_SAFE_NO_PAD.encode(bytes))
-    }
-
-    pub fn decode(encoded: &str) -> Result<Self, FloorMaterialLoaderError> {
-        let bytes = URL_SAFE_NO_PAD.decode(encoded)?;
-        Ok(rmp_serde::from_slice(bytes.as_slice())?)
-    }
-}
+impl MaterialParams for FloorStdMaterialParams {}
 
 /// AssetLoader for floor materials.
 #[derive(Default)]
-pub struct FloorMaterialLoader;
+pub struct FloorStdMaterialLoader;
 
-impl AssetLoader for FloorMaterialLoader {
+impl AssetLoader for FloorStdMaterialLoader {
     type Asset = StandardMaterial;
     type Settings = ();
 
-    type Error = FloorMaterialLoaderError;
+    type Error = MaterialLoaderError;
 
     async fn load<'a>(
         &'a self,
@@ -64,16 +38,8 @@ impl AssetLoader for FloorMaterialLoader {
         _settings: &'a Self::Settings,
         load_context: &'a mut bevy::asset::LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
-        // println!("Loading floor material: {:?}", load_context.asset_path());
-        // Remove *all* file extensions, not just the last one.
-        let path = load_context
-            .path()
-            .to_str()
-            .unwrap()
-            .split('.')
-            .next()
-            .unwrap();
-        let params = FloorMaterialParams::decode(path)?;
+        let path = load_context.path().file_stem().unwrap().to_str().unwrap();
+        let params = FloorStdMaterialParams::decode(path)?;
         let mut material = StandardMaterial {
             perceptual_roughness: params.roughness,
             unlit: params.unlit,
@@ -107,7 +73,7 @@ impl AssetLoader for FloorMaterialLoader {
     }
 
     fn extensions(&self) -> &[&str] {
-        &["floor.mat"]
+        &["floor-std"]
     }
 }
 
@@ -117,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_floor_material_params() {
-        let params = FloorMaterialParams {
+        let params = FloorStdMaterialParams {
             texture: Some("texture.png".to_string()),
             color: Some(LinearRgba::new(0.5, 0.5, 0.5, 1.0)),
             roughness: 0.5,
@@ -128,7 +94,7 @@ mod tests {
             encoded,
             r#"lKt0ZXh0dXJlLnBuZ5TKPwAAAMo_AAAAyj8AAADKP4AAAMo_AAAAww"#
         );
-        let decoded = FloorMaterialParams::decode(&encoded).unwrap();
+        let decoded = FloorStdMaterialParams::decode(&encoded).unwrap();
         assert_eq!(params, decoded);
     }
 }

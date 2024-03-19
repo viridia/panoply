@@ -1,8 +1,10 @@
 use crate::{
-    materials::FloorMaterialParams, reflect_types::HexColor,
-    scenery::floor_noise::FloorNoiseMaterial,
+    materials::{
+        FloorNoisyMaterial, FloorNoisyMaterialParams, FloorStdMaterialParams, MaterialParams,
+    },
+    reflect_types::HexColor,
 };
-use bevy::{pbr::ExtendedMaterial, prelude::*};
+use bevy::prelude::*;
 use panoply_exemplar::*;
 
 use super::FLOOR_TYPE;
@@ -26,8 +28,6 @@ pub struct StdFloorSurface {
     /// Cached material handle
     #[reflect(ignore)]
     pub(crate) material: Handle<StandardMaterial>,
-    // water_current_x: Option<f32>,
-    // water_current_y: Option<f32>,
 }
 
 impl Aspect for StdFloorSurface {
@@ -40,14 +40,14 @@ impl Aspect for StdFloorSurface {
     }
 
     fn load_dependencies(&mut self, _label: &str, load_context: &mut bevy::asset::LoadContext) {
-        let params = FloorMaterialParams {
+        let params = FloorStdMaterialParams {
             texture: self.texture.clone(),
             color: self.color.map(|c| c.0.into()),
             roughness: self.roughness.unwrap_or(1.0),
             unlit: self.unlit.unwrap_or(false),
         };
-        self.material = load_context
-            .load::<StandardMaterial>(format!("inline://{}.floor.mat", params.encode().unwrap()));
+        self.material =
+            load_context.load(format!("inline://{}.floor-std", params.encode().unwrap()));
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -78,7 +78,7 @@ pub struct NoiseFloorSurface {
     roughness_alt: Option<f32>,
 
     #[reflect(ignore)]
-    pub(crate) material: Handle<ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>>,
+    pub(crate) material: Handle<FloorNoisyMaterial>,
 }
 
 impl Aspect for NoiseFloorSurface {
@@ -90,29 +90,16 @@ impl Aspect for NoiseFloorSurface {
         meta_type == FLOOR_TYPE
     }
 
-    fn load_dependencies(&mut self, label: &str, load_context: &mut bevy::asset::LoadContext) {
-        // println!("Loading material: {}.NoiseFloorSurface.Material", label);
-        self.material = load_context.labeled_asset_scope(
-            format!("{}.NoiseFloorSurface.Material", label),
-            |lc| {
-                // println!("Loading material: {}.NoiseFloorSurface.Material", label);
-                let std = StandardMaterial {
-                    perceptual_roughness: self.roughness.unwrap_or(1.0),
-                    ..default()
-                };
-                let material = FloorNoiseMaterial {
-                    color: self.color.into(),
-                    color_alt: self.color_alt.into(),
-                    roughness: self.roughness.unwrap_or(1.0),
-                    roughness_alt: self.roughness_alt.unwrap_or(self.roughness.unwrap_or(1.0)),
-                    noise: lc.load("terrain/textures/noise.png"),
-                };
-                ExtendedMaterial {
-                    base: std,
-                    extension: material,
-                }
-            },
-        );
+    fn load_dependencies(&mut self, _label: &str, load_context: &mut bevy::asset::LoadContext) {
+        let roughness = self.roughness.unwrap_or(1.0);
+        let params = FloorNoisyMaterialParams {
+            color: self.color.into(),
+            color_alt: self.color_alt.into(),
+            roughness,
+            roughness_alt: self.roughness_alt.unwrap_or(roughness),
+        };
+        self.material =
+            load_context.load(format!("inline://{}.floor-noisy", params.encode().unwrap()));
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
