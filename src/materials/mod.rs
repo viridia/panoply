@@ -85,23 +85,25 @@ impl AssetReader for InlineAssetReader {
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum MaterialLoaderError {
-    #[error("Could not decode floor material: {0}")]
+pub enum InlineAssetError {
+    #[error("Could not decode inline asset: {0}")]
     DecodeMsgpack(#[from] rmp_serde::decode::Error),
-    #[error("Could not decode floor material base64: {0}")]
+    #[error("Could not decode base64: {0}")]
     DecodeBase64(#[from] DecodeError),
+    #[error("Could not encode inline asset: {0}")]
+    EncodeMsgpack(#[from] rmp_serde::encode::Error),
 }
 
-pub trait MaterialParams
+pub trait InlineAssetParams
 where
     Self: Sized + Serialize + DeserializeOwned,
 {
-    fn encode(&self) -> Result<String, MaterialLoaderError> {
-        let bytes = rmp_serde::to_vec(self).unwrap();
+    fn encode(&self) -> Result<String, InlineAssetError> {
+        let bytes = rmp_serde::to_vec(self)?;
         Ok(URL_SAFE_NO_PAD.encode(bytes))
     }
 
-    fn decode(encoded: &str) -> Result<Self, MaterialLoaderError> {
+    fn decode(encoded: &str) -> Result<Self, InlineAssetError> {
         let bytes = URL_SAFE_NO_PAD.decode(encoded)?;
         Ok(rmp_serde::from_read(Cursor::new(bytes))?)
     }

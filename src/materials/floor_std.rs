@@ -10,7 +10,7 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{MaterialLoaderError, MaterialParams};
+use super::{InlineAssetError, InlineAssetParams};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FloorStdMaterialParams {
@@ -20,7 +20,7 @@ pub struct FloorStdMaterialParams {
     pub unlit: bool,
 }
 
-impl MaterialParams for FloorStdMaterialParams {}
+impl InlineAssetParams for FloorStdMaterialParams {}
 
 /// AssetLoader for floor materials.
 #[derive(Default)]
@@ -30,7 +30,7 @@ impl AssetLoader for FloorStdMaterialLoader {
     type Asset = StandardMaterial;
     type Settings = ();
 
-    type Error = MaterialLoaderError;
+    type Error = InlineAssetError;
 
     async fn load<'a>(
         &'a self,

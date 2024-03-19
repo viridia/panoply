@@ -3975,6 +3975,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "panoply_inline_assets"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.0",
+ "bevy 0.14.0-dev",
+ "futures-lite 2.2.0",
+ "rmp-serde",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "parking"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,6 +1,6 @@
 use crate::{
     materials::{
-        FloorNoisyMaterial, FloorNoisyMaterialParams, FloorStdMaterialParams, MaterialParams,
+        FloorNoisyMaterial, FloorNoisyMaterialParams, FloorStdMaterialParams, InlineAssetParams,
     },
     reflect_types::HexColor,
 };

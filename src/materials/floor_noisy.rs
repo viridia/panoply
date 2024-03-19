@@ -8,7 +8,7 @@ use bevy::{
 
 use serde::{Deserialize, Serialize};
 
-use super::{MaterialLoaderError, MaterialParams};
+use super::{InlineAssetError, InlineAssetParams};
 
 pub type FloorNoisyMaterial = ExtendedMaterial<StandardMaterial, FloorNoisyMaterialExt>;
 
@@ -20,7 +20,7 @@ pub struct FloorNoisyMaterialParams {
     pub roughness_alt: f32,
 }
 
-impl MaterialParams for FloorNoisyMaterialParams {}
+impl InlineAssetParams for FloorNoisyMaterialParams {}
 
 /// AssetLoader for floor materials.
 #[derive(Default)]
@@ -30,7 +30,7 @@ impl AssetLoader for FloorNoisyMaterialLoader {
     type Asset = FloorNoisyMaterial;
     type Settings = ();
 
-    type Error = MaterialLoaderError;
+    type Error = InlineAssetError;
 
     async fn load<'a>(
         &'a self,
