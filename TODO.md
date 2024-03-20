@@ -3,6 +3,8 @@
 - Bugs:
   - Generation error [REPORTED]
   - Materials get loaded multiple times?
+- Assets
+  - Asset Reader that allows cache miss
 - Models
   - [x] replace model_loader
 - Wall Physics
@@ -15,7 +17,10 @@
   - perspective projection
   - modified frustum
 - Possible crates:
+  - A proliferation of crates is not good. There should probably be a single engine crate.
+    - but only for parts of the engine that are game-agnostic.
   - msgpack (no)
+  - inline_assets?
   - reflect_types
   - random
   - overlays
