@@ -1,6 +1,7 @@
 use bevy::{math::IRect, prelude::*};
 
 mod viewpoint;
+pub mod viewport;
 pub use viewpoint::*;
 
 /// Marker which identifies the primary camera.

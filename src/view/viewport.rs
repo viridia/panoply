@@ -8,7 +8,7 @@ const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 
 /// Used to create margins around the viewport so that side panels don't overwrite the 3d scene.
 #[derive(Default, Resource, PartialEq)]
-struct ViewportInset {
+pub struct ViewportInset {
     pub left: f32,
     pub right: f32,
     pub top: f32,
@@ -17,7 +17,7 @@ struct ViewportInset {
 
 /// Update the camera viewport and fov properties based on the window size and the viewport
 /// margins.
-fn update_camera_viewport(
+pub fn update_camera_viewport(
     viewport_inset: Res<ViewportInset>,
     windows: Query<&Window, With<PrimaryWindow>>,
     mut camera_query: Query<(&mut Camera, &mut Projection), With<PrimaryCamera>>,
@@ -28,10 +28,10 @@ fn update_camera_viewport(
     let ww = window.resolution.physical_width() as f32;
     let wh = window.resolution.physical_height() as f32;
     let sf = window.resolution.scale_factor();
-    let left = viewport_inset.left * sf;
-    let right = viewport_inset.right * sf;
-    let top = viewport_inset.top * sf;
-    let bottom = viewport_inset.bottom * sf;
+    let left = (viewport_inset.left * sf).clamp(0., ww);
+    let right = (viewport_inset.right * sf).clamp(0., ww);
+    let top = (viewport_inset.top * sf).clamp(0., wh);
+    let bottom = (viewport_inset.bottom * sf).clamp(0., wh);
     let vw = (ww - left - right).max(1.);
     let vh = (wh - top - bottom).max(1.);
 
@@ -53,12 +53,12 @@ fn update_camera_viewport(
 
 /// Controller which updates the margins of the main 3D view so that it fits within the
 /// designated 2D panel.
-#[derive(Reflect, Default, Component)]
+#[derive(Reflect, Default, Component, Clone)]
 #[reflect(Default)]
 #[reflect(Component)]
-struct ViewportInsetElement;
+pub struct ViewportInsetElement;
 
-fn update_viewport_inset(
+pub fn update_viewport_inset(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     q_viewport: Query<(&Node, &GlobalTransform), With<ViewportInsetElement>>,
     mut viewport_inset: ResMut<ViewportInset>,

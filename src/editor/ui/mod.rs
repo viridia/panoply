@@ -5,10 +5,9 @@ use bevy_quill_obsidian::{
     colors,
     controls::{Splitter, SplitterDirection},
     focus::TabGroup,
-    viewport::ViewportInsetElement,
 };
 
-use crate::view::HudCamera;
+use crate::view::{viewport::ViewportInsetElement, HudCamera};
 
 use super::EditorSidebarWidth;
 
