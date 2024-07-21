@@ -7,9 +7,11 @@
   - Asset Reader that allows cache miss
   - Remove Box2d types, replace with 4-tuple.
   - Experiment with bevy_gltf_trait.
+  - Wall outlines
   - Preferences API.
 - Models
   - [x] replace model_loader
+  - Blackout walls
 - Wall Physics
   - implement
   - Use enum for collider type? Really depends on whether it's editable.

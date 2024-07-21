@@ -1,3 +1,4 @@
+#![feature(impl_trait_in_assoc_type)]
 #![allow(dead_code)]
 use bevy::{
     asset::io::AssetSource,
@@ -17,11 +18,13 @@ use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use world::Realm;
 
+#[cfg(feature = "editor")]
+mod editor;
+
 extern crate directories;
 
 mod actors;
 mod diagnostics;
-mod editor;
 mod instancing;
 mod materials;
 mod msgpack;
@@ -33,7 +36,7 @@ mod settings;
 mod terrain;
 mod view;
 mod world;
-use view::{PrimaryCamera, Viewpoint};
+use view::{HudCamera, PrimaryCamera, Viewpoint};
 
 use crate::{
     actors::ActorsPlugin,
@@ -84,68 +87,72 @@ fn main() {
         settings = s
     }
 
-    App::new()
-        .register_asset_source(
-            "inline",
-            AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
-        )
-        .add_plugins((
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Bevy Game".into(),
-                        resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
-                            .into(),
-                        position: WindowPosition::new(settings.window.position),
-                        // mode: WindowMode::SizedFullscreen,
-                        ..default()
-                    }),
+    let mut app = App::new();
+    app.register_asset_source(
+        "inline",
+        AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
+    )
+    .add_plugins((
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Bevy Game".into(),
+                    resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
+                        .into(),
+                    position: WindowPosition::new(settings.window.position),
+                    // mode: WindowMode::SizedFullscreen,
                     ..default()
-                })
-                .set(AssetPlugin::default()),
-            ScreenDiagsPlugin,
-            DefaultPickingPlugins,
-            QuillPlugin,
-            ObsidianUiPlugin,
-        ))
-        .insert_resource(DebugPickingMode::Disabled)
-        .insert_resource(settings)
-        // .insert_resource(Msaa::Off)
-        .insert_resource(Viewpoint {
-            position: Vec3::new(0., 0., 0.),
-            azimuth: 0.,
-            camera_distance: 20.,
-            elevation: PI * 0.25,
-            ..default()
-        })
-        .insert_resource(ToolState {
-            state: EditorState::World,
-        })
-        .add_systems(Startup, setup)
-        .add_systems(
-            Update,
-            (
-                rotate_shapes,
-                editor::camera_controller,
-                update_window_settings,
-                nav_to_center,
-            ),
-        )
-        .add_systems(Update, close_on_esc)
-        .add_plugins((
-            MsgpackExtPlugin,
-            ReflectTypesPlugin,
-            ExemplarPlugin,
-            MaterialsPlugin,
-            WorldPlugin,
-            TerrainPlugin,
-            SceneryPlugin,
-            ActorsPlugin,
-            InstancedModelsPlugin,
-            PortalPlugin,
-            // WorldInspectorPlugin::new(),
-        ))
-        .run();
+                }),
+                ..default()
+            })
+            .set(AssetPlugin::default()),
+        ScreenDiagsPlugin,
+        DefaultPickingPlugins,
+        QuillPlugin,
+        ObsidianUiPlugin,
+    ))
+    .insert_resource(DebugPickingMode::Disabled)
+    .insert_resource(settings)
+    // .insert_resource(Msaa::Off)
+    .insert_resource(Viewpoint {
+        position: Vec3::new(0., 0., 0.),
+        azimuth: 0.,
+        camera_distance: 20.,
+        elevation: PI * 0.25,
+        ..default()
+    })
+    .insert_resource(ToolState {
+        state: EditorState::World,
+    })
+    .add_systems(Startup, setup)
+    .add_systems(
+        Update,
+        (
+            rotate_shapes,
+            // editor::camera_controller,
+            update_window_settings,
+            nav_to_center,
+        ),
+    )
+    .add_systems(Update, close_on_esc)
+    .add_plugins((
+        MsgpackExtPlugin,
+        ReflectTypesPlugin,
+        ExemplarPlugin,
+        MaterialsPlugin,
+        WorldPlugin,
+        TerrainPlugin,
+        SceneryPlugin,
+        ActorsPlugin,
+        InstancedModelsPlugin,
+        PortalPlugin,
+        // WorldInspectorPlugin::new(),
+    ));
+
+    #[cfg(feature = "editor")]
+    app.add_plugins(editor::EditorPlugin);
+
+    app.run();
 
     println!("Exited!")
 }
@@ -250,7 +257,7 @@ fn setup(
             },
             ..default()
         },
-        // UiCameraConfig { show_ui: true },
+        HudCamera, // UiCameraConfig { show_ui: true },
     ));
 
     // Primary Camera

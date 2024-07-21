@@ -3,17 +3,30 @@ name = "panoply"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["editor"]
+editor = []          # Enable editor features
+
 [workspace]
 members = ["crates/*"]
 
-[dependencies]
+[workspace.dependencies]
 bevy = { version = "0.14.0", features = [
   "dynamic_linking",
   "file_watcher",
   "serialize",
 ] }
-bevy-inspector-egui = "0.19.0"
 bevy_mod_picking = { version = "0.20.1" }
+bevy_quill = "0.1.2"
+bevy_quill_obsidian = "0.1.0"
+panoply_exemplar = { path = "crates/panoply_exemplar" }
+
+[dependencies]
+bevy = { workspace = true }
+bevy-inspector-egui = "0.19.0"
+bevy_mod_picking = { workspace = true }
+bevy_quill = { workspace = true }
+bevy_quill_obsidian = { workspace = true }
 bitflags = "2.4.2"
 directories = "5.0.1"
 earcutr = "0.4.3"
@@ -26,10 +39,8 @@ serde_derive = "1.0.171"
 serde_json = "1.0.103"
 serde_repr = "0.1.16"
 thiserror = "1.0.57"
-panoply_exemplar = { path = "crates/panoply_exemplar" }
+panoply_exemplar = { workspace = true }
 base64 = "0.22.0"
-bevy_quill = "0.1.2"
-bevy_quill_obsidian = "0.1.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

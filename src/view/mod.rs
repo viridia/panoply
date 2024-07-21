@@ -7,6 +7,10 @@ pub use viewpoint::*;
 #[derive(Component)]
 pub struct PrimaryCamera;
 
+/// Marker which identifies the HUD camera.
+#[derive(Component)]
+pub struct HudCamera;
+
 /// Used to query precincts or parcels
 pub struct QueryRect {
     pub realm: Entity,
