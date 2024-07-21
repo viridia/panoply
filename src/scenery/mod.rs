@@ -1,6 +1,7 @@
 use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
+use scenery_element::set_se_model_render_layers;
 
 use crate::materials::OutlineMaterial;
 
@@ -44,7 +45,7 @@ pub const TIER_OFFSET: f32 = 0.02 - 2.; // Tiers are slightly higher than the te
 
 pub const WALL_TYPE: InstanceType = InstanceType::from_str("Wall");
 pub const FIXTURE_TYPE: InstanceType = InstanceType::from_str("Fixt");
-pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Flor");
+pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Floor");
 pub const TERRAIN_FX_TYPE: InstanceType = InstanceType::from_str("TrFx");
 
 #[derive(Resource, Default)]
@@ -101,6 +102,7 @@ impl Plugin for SceneryPlugin {
                     insert_floor_meshes,
                     rebuild_floor_materials,
                     spawn_se_model_instances,
+                    set_se_model_render_layers,
                 ),
             );
     }

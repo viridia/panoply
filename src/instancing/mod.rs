@@ -1,10 +1,12 @@
 use bevy::{gltf::GltfMesh, prelude::*};
 
 mod instance;
+mod layers;
 mod model_loader;
 mod plugin;
 
 pub use instance::*;
+pub use layers::*;
 pub use plugin::InstancedModelsPlugin;
 
 // export interface IModelInstance {

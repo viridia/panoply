@@ -6,7 +6,7 @@ use base64::{
     DecodeError, Engine,
 };
 use bevy::{asset::io::AssetReader, pbr::ExtendedMaterial, prelude::*};
-use futures_lite::AsyncRead;
+use futures_lite::{AsyncRead, AsyncSeek};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
@@ -49,6 +49,16 @@ impl AsyncRead for NullReader {
         _cx: &mut std::task::Context<'_>,
         _buf: &mut [u8],
     ) -> std::task::Poll<std::io::Result<usize>> {
+        std::task::Poll::Ready(Ok(0))
+    }
+}
+
+impl AsyncSeek for NullReader {
+    fn poll_seek(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+        _pos: std::io::SeekFrom,
+    ) -> std::task::Poll<std::io::Result<u64>> {
         std::task::Poll::Ready(Ok(0))
     }
 }

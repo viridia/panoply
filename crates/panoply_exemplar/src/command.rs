@@ -26,7 +26,7 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             };
             exemplars.push(exemplar.0.clone());
             if let Some(ref next) = exemplar.0.extends {
-                shandle = &next;
+                shandle = next;
             } else {
                 break;
             }

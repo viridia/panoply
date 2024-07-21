@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use bevy::{
     asset::io::AssetSource,
-    pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
         render_asset::RenderAssetUsages,
@@ -10,6 +9,9 @@ use bevy::{
         view::RenderLayers,
     },
 };
+use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
+use bevy_quill::QuillPlugin;
+use bevy_quill_obsidian::{viewport::ViewportCamera, ObsidianUiPlugin};
 use panoply_exemplar::ExemplarPlugin;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
@@ -44,7 +46,6 @@ use crate::{
     scenery::SceneryPlugin,
     settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
     terrain::TerrainPlugin,
-    view::{update_camera_viewport, update_viewport_inset, ViewportInset, ViewportInsetController},
     world::WorldPlugin,
 };
 
@@ -103,10 +104,13 @@ fn main() {
                 })
                 .set(AssetPlugin::default()),
             ScreenDiagsPlugin,
+            DefaultPickingPlugins,
+            QuillPlugin,
+            ObsidianUiPlugin,
         ))
+        .insert_resource(DebugPickingMode::Disabled)
         .insert_resource(settings)
         // .insert_resource(Msaa::Off)
-        .init_resource::<ViewportInset>()
         .insert_resource(Viewpoint {
             position: Vec3::new(0., 0., 0.),
             azimuth: 0.,
@@ -114,7 +118,6 @@ fn main() {
             elevation: PI * 0.25,
             ..default()
         })
-        .register_type::<ViewportInsetController>()
         .insert_resource(ToolState {
             state: EditorState::World,
         })
@@ -122,15 +125,13 @@ fn main() {
         .add_systems(
             Update,
             (
-                update_camera_viewport,
-                update_viewport_inset,
                 rotate_shapes,
                 editor::camera_controller,
                 update_window_settings,
                 nav_to_center,
             ),
         )
-        .add_systems(Update, bevy::window::close_on_esc)
+        .add_systems(Update, close_on_esc)
         .add_plugins((
             MsgpackExtPlugin,
             ReflectTypesPlugin,
@@ -237,40 +238,6 @@ fn setup(
         .into(),
     });
 
-    commands.spawn((
-        DirectionalLightBundle {
-            directional_light: DirectionalLight {
-                shadows_enabled: true,
-                color: Srgba {
-                    red: 1.,
-                    green: 1.,
-                    blue: 1.,
-                    alpha: 1.,
-                }
-                .into(),
-                illuminance: 3000.,
-                ..default()
-            },
-            transform: Transform {
-                translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_x(-PI / 3.),
-                ..default()
-            },
-            // The default cascade config is designed to handle large scenes.
-            // As this example has a much smaller world, we can tighten the shadow
-            // bounds for better visual quality.
-            cascade_shadow_config: CascadeShadowConfigBuilder {
-                first_cascade_far_bound: 4.0,
-                maximum_distance: 40.0,
-                ..default()
-            }
-            .into(),
-            ..default()
-        },
-        // TODO: Give each realm its own light? Or outdoor realms only?
-        RenderLayers::all(),
-    ));
-
     // TODO: Move to 'view' module
     // Ui Camera
     commands.spawn((
@@ -299,12 +266,10 @@ fn setup(
             // tonemapping: Tonemapping::AcesFitted,
             ..default()
         },
-        // RenderLayers::none(),
-        RenderLayers::all(), // For now, until we get GLTF scene layers sorted
+        RenderLayers::none(),
         PrimaryCamera,
+        ViewportCamera,
     ));
-
-    // TODO: Move to 'hud' module
 }
 
 fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
@@ -350,5 +315,11 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
             println!("Navigating to [overland]");
             viewpoint.realm = Some(entity)
         }
+    }
+}
+
+pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {
+    if input.just_pressed(KeyCode::Escape) {
+        exit.send(AppExit::Success);
     }
 }

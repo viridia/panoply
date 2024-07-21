@@ -144,7 +144,7 @@ pub fn create_mesh_instances(
                                                     transform: placement.transform,
                                                     ..Default::default()
                                                 },
-                                                placements.layer,
+                                                placements.layer.clone(),
                                             ))
                                             .id(),
                                     );

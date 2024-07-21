@@ -1,12 +1,16 @@
-use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers};
+use bevy::{
+    asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers, scene::SceneInstance,
+};
 
 use panoply_exemplar::*;
+
+use crate::instancing::PropagateRenderLayers;
 
 use super::scenery_aspect::{ModelComponent, SceneryModels};
 
 #[derive(Debug, Component, Default)]
 pub struct SceneryElement {
-    pub schematic: Handle<Exemplar>,
+    pub exemplar: Handle<Exemplar>,
     pub facing: f32,
     pub position: Vec3,
 }
@@ -28,16 +32,16 @@ pub struct SceneryElementMesh {
 
 pub fn update_se_aspects(
     mut commands: Commands,
-    mut query: Query<(Entity, &SceneryElement), With<SceneryElementRebuildAspects>>,
+    mut q_elements: Query<(Entity, &SceneryElement), With<SceneryElementRebuildAspects>>,
     server: Res<AssetServer>,
 ) {
-    for (entity, scenery_element) in query.iter_mut() {
-        let st = server.load_state(&scenery_element.schematic);
+    for (entity, scenery_element) in q_elements.iter_mut() {
+        let st = server.load_state(&scenery_element.exemplar);
         if st == LoadState::Loaded {
             commands
                 .entity(entity)
                 .add(UpdateAspects {
-                    exemplar: scenery_element.schematic.clone(),
+                    exemplar: scenery_element.exemplar.clone(),
                     finish: SceneryElementRebuildModels,
                 })
                 .remove::<SceneryElementRebuildAspects>();
@@ -47,21 +51,24 @@ pub fn update_se_aspects(
 
 pub fn spawn_se_models(
     mut commands: Commands,
-    mut query: Query<(Entity, &SceneryModels), With<SceneryElementRebuildModels>>,
+    mut query: Query<(Entity, &SceneryModels, &RenderLayers), With<SceneryElementRebuildModels>>,
     // mut meshes: ResMut<Assets<Mesh>>,
     server: Res<AssetServer>,
 ) {
-    for (entity, models) in query.iter_mut() {
+    for (entity, models, layers) in query.iter_mut() {
         commands.entity(entity).clear_children();
         for model in models.0.iter() {
             if let Some((fname, fragment)) = model.asset.split_once('#') {
                 let handle: Handle<Gltf> = server.load(fname.to_owned());
                 commands
-                    .spawn((SceneryElementMesh {
-                        handle,
-                        label: String::from(fragment),
-                        placement: model.clone(),
-                    },))
+                    .spawn((
+                        SceneryElementMesh {
+                            handle,
+                            label: String::from(fragment),
+                            placement: model.clone(),
+                        },
+                        layers.clone(),
+                    ))
                     .set_parent(entity);
             }
         }
@@ -91,7 +98,7 @@ pub fn spawn_se_model_instances(
                             transform,
                             ..Default::default()
                         },
-                        RenderLayers::layer(8),
+                        PropagateRenderLayers,
                     ));
                 } else {
                     error!("Model not found: [{}]", mesh.label);
@@ -100,6 +107,19 @@ pub fn spawn_se_model_instances(
                     // panic!();
                 }
             }
+        }
+    }
+}
+
+pub fn set_se_model_render_layers(
+    mut commands: Commands,
+    q_models_added: Query<(Entity, &RenderLayers, &PropagateRenderLayers), Added<SceneInstance>>,
+    q_children: Query<&Children>,
+) {
+    for (entity, layers, _) in q_models_added.iter() {
+        // println!("set_se_model_render_layers: {:?}", layers);
+        for descendant in q_children.iter_descendants(entity) {
+            commands.entity(descendant).insert(layers.clone());
         }
     }
 }

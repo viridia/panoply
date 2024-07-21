@@ -199,7 +199,7 @@ pub fn insert_terrain_maps(
         // println!("Inserting terrain map: [{}].", realm.name);
         commands.entity(entity).insert((
             TerrainMap {
-                handle: server.load(&terrain_path.to_string()),
+                handle: server.load(terrain_path.to_string()),
                 biome_texture: Image::default(),
                 ground_material: create_ground_material(&mut materials, &mut images, &server),
                 needs_rebuild_biomes: false,

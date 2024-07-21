@@ -13,6 +13,7 @@ use bevy::{
     render::{
         mesh::{Indices, PrimitiveTopology},
         render_asset::RenderAssetUsages,
+        view::RenderLayers,
     },
     tasks::{AsyncComputeTaskPool, Task},
 };
@@ -109,11 +110,11 @@ pub fn gen_floor_meshes(
 /// Consumes the output of the compute task and creates a mesh component for the floor geometry.
 pub(crate) fn insert_floor_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut ComputeFloorMeshTask)>,
+    mut q_floors: Query<(Entity, &mut ComputeFloorMeshTask, &RenderLayers)>,
     mut meshes: ResMut<Assets<Mesh>>,
     outline_material: ResMut<FloorOutline>,
 ) {
-    for (entity, mut task) in query.iter_mut() {
+    for (entity, mut task, layers) in q_floors.iter_mut() {
         if let Some(Some(task_result)) = future::block_on(future::poll_once(&mut task.0)) {
             let mesh = meshes.add(task_result.mesh);
             commands
@@ -124,12 +125,15 @@ pub(crate) fn insert_floor_meshes(
             if let Some(outline_mesh) = task_result.outline {
                 let outline_mesh = meshes.add(outline_mesh);
                 let outline = commands
-                    .spawn(MaterialMeshBundle {
-                        material: outline_material.0.clone(),
-                        mesh: outline_mesh,
-                        visibility: Visibility::Visible,
-                        ..default()
-                    })
+                    .spawn((
+                        MaterialMeshBundle {
+                            material: outline_material.0.clone(),
+                            mesh: outline_mesh,
+                            visibility: Visibility::Visible,
+                            ..default()
+                        },
+                        layers.clone(),
+                    ))
                     .id();
                 commands.entity(entity).add_child(outline);
             }

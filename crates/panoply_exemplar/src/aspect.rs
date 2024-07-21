@@ -95,6 +95,14 @@ impl<T: Component> RemoveComponent<T> {
     }
 }
 
+impl<T: Component> Default for RemoveComponent<T> {
+    fn default() -> Self {
+        Self {
+            _marker: Default::default(),
+        }
+    }
+}
+
 impl<T: Component> DetachAspect for RemoveComponent<T> {
     fn type_id(&self) -> TypeId {
         TypeId::of::<T>()

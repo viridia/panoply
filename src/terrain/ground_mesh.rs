@@ -68,7 +68,7 @@ pub fn gen_ground_meshes(
         commands
             .entity(entity)
             .insert(ComputeGroundMeshTask(task))
-            .insert(realm.layer)
+            .insert(realm.layer.clone())
             .remove::<RebuildParcelGroundMesh>();
     }
 }
@@ -99,7 +99,7 @@ pub fn insert_ground_meshes(
                             // Insert new mesh entity
                             parcel.ground_entity = Some(
                                 commands
-                                    .spawn((ground_mesh, realm.layer))
+                                    .spawn((ground_mesh, realm.layer.clone()))
                                     .set_parent(entity)
                                     .id(),
                             );

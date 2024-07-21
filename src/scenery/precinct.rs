@@ -77,7 +77,7 @@ impl Precinct {
                             changed = true;
                         }
                         if floor_region.poly != floor.poly {
-                            floor_region.poly = floor.poly.clone();
+                            floor_region.poly.clone_from(&floor.poly);
                             changed = true;
                         }
 
@@ -104,7 +104,7 @@ impl Precinct {
                                 schematic,
                                 poly: floor.poly.clone(),
                             },
-                            self.render_layer,
+                            self.render_layer.clone(),
                             RebuildFloorAspects,
                         ))
                         .set_parent(entity)
@@ -146,7 +146,7 @@ impl Precinct {
             commands
                 .spawn((
                     SceneryElement {
-                        schematic: scenery_schematics[elt.id].clone(),
+                        exemplar: scenery_schematics[elt.id].clone(),
                         facing,
                         position: elt.position,
                     },
@@ -155,7 +155,7 @@ impl Precinct {
                         transform,
                         ..default()
                     },
-                    self.render_layer,
+                    self.render_layer.clone(),
                     SceneryElementRebuildAspects,
                 ))
                 .set_parent(entity);

@@ -88,7 +88,7 @@ pub fn insert_water_meshes(
                                             ..default()
                                         },
                                         NotShadowCaster,
-                                        realm.layer,
+                                        realm.layer.clone(),
                                     ))
                                     .set_parent(entity)
                                     .id(),

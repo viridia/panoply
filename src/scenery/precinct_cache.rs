@@ -95,7 +95,7 @@ pub fn spawn_precincts(
                         println!("Creating precinct {} {} {}.", realm.name, x, z);
                         let asset_path = format!(
                             "scenery/precincts/{}/{}-{}.msgpack",
-                            "playground",
+                            realm.name,
                             precinct_coord(x),
                             precinct_coord(z)
                         );
@@ -108,7 +108,7 @@ pub fn spawn_precincts(
                                 asset,
                                 tiers: Vec::new(),
                                 scenery_instances: InstanceMap::new(),
-                                render_layer: realm.layer,
+                                render_layer: realm.layer.clone(),
                             },
                             SpatialBundle {
                                 transform: Transform::from_xyz(

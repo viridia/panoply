@@ -20,7 +20,7 @@ struct VertexOutput {
 fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
     var wposition = mfns::mesh_position_local_to_world(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
     wposition += vec4<f32>(vertex.normal * width, 0.0);
@@ -28,7 +28,7 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
     out.world_position = wposition;
     out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal, instance_index);
     out.position = mfns::mesh_position_local_to_clip(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(wposition.xyz, 1.0)
     );
 

@@ -122,7 +122,11 @@ pub fn insert_flora(
                         Some(entity) => entity,
                         None => {
                             let child = commands
-                                .spawn((SpatialBundle { ..default() }, ParcelFlora, realm.layer))
+                                .spawn((
+                                    SpatialBundle { ..default() },
+                                    ParcelFlora,
+                                    realm.layer.clone(),
+                                ))
                                 .id();
                             commands.entity(entity).add_child(child);
                             parcel.flora_entity = Some(child);
@@ -141,7 +145,7 @@ pub fn insert_flora(
                                     ModelPlacements {
                                         model: model.clone(),
                                         placement_list: value,
-                                        layer: realm.layer,
+                                        layer: realm.layer.clone(),
                                     },
                                     ModelPlacementChanged,
                                 ))

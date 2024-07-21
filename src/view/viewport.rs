@@ -8,7 +8,7 @@ const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 
 /// Used to create margins around the viewport so that side panels don't overwrite the 3d scene.
 #[derive(Default, Resource, PartialEq)]
-pub struct ViewportInset {
+struct ViewportInset {
     pub left: f32,
     pub right: f32,
     pub top: f32,
@@ -17,7 +17,7 @@ pub struct ViewportInset {
 
 /// Update the camera viewport and fov properties based on the window size and the viewport
 /// margins.
-pub fn update_camera_viewport(
+fn update_camera_viewport(
     viewport_inset: Res<ViewportInset>,
     windows: Query<&Window, With<PrimaryWindow>>,
     mut camera_query: Query<(&mut Camera, &mut Projection), With<PrimaryCamera>>,
@@ -56,42 +56,40 @@ pub fn update_camera_viewport(
 #[derive(Reflect, Default, Component)]
 #[reflect(Default)]
 #[reflect(Component)]
-pub struct ViewportInsetController {}
+struct ViewportInsetElement;
 
-// impl Controller for ViewportInsetController {}
-
-pub fn update_viewport_inset(
-    _windows: Query<&Window, With<PrimaryWindow>>,
-    // query: Query<(&ViewElement, &Node, &GlobalTransform), With<ViewportInsetController>>,
-    mut _viewport_inset: ResMut<ViewportInset>,
+fn update_viewport_inset(
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+    q_viewport: Query<(&Node, &GlobalTransform), With<ViewportInsetElement>>,
+    mut viewport_inset: ResMut<ViewportInset>,
 ) {
-    // let mut inset = ViewportInset::default();
-    // match query.get_single() {
-    //     Ok((_, node, transform)) => {
-    //         let position = transform.translation();
-    //         let ui_position = position.truncate();
-    //         let extents = node.size() / 2.0;
-    //         let min = ui_position - extents;
-    //         let max = ui_position + extents;
+    let mut inset = ViewportInset::default();
+    match q_viewport.get_single() {
+        Ok((node, transform)) => {
+            let position = transform.translation();
+            let ui_position = position.truncate();
+            let extents = node.size() / 2.0;
+            let min = ui_position - extents;
+            let max = ui_position + extents;
 
-    //         let window = windows.single();
-    //         let ww = window.resolution.physical_width() as f32;
-    //         let wh = window.resolution.physical_height() as f32;
-    //         let sf = window.resolution.scale_factor() as f32;
+            let window = q_windows.single();
+            let ww = window.resolution.physical_width() as f32;
+            let wh = window.resolution.physical_height() as f32;
+            let sf = window.resolution.scale_factor();
 
-    //         inset.left = min.x;
-    //         inset.top = min.y;
-    //         inset.right = ww / sf - max.x;
-    //         inset.bottom = wh / sf - max.y;
-    //     }
-    //     Err(_) => {
-    //         if query.iter().count() > 1 {
-    //             error!("Multiple ViewportInsetControllers!");
-    //         }
-    //     }
-    // }
+            inset.left = min.x;
+            inset.top = min.y;
+            inset.right = ww / sf - max.x;
+            inset.bottom = wh / sf - max.y;
+        }
+        Err(_) => {
+            if q_viewport.iter().count() > 1 {
+                error!("Multiple ViewportInsetControllers!");
+            }
+        }
+    }
 
-    // if inset != *viewport_inset {
-    //     *viewport_inset.as_mut() = inset;
-    // }
+    if inset != *viewport_inset {
+        *viewport_inset.as_mut() = inset;
+    }
 }

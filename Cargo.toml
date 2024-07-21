@@ -7,12 +7,13 @@ edition = "2021"
 members = ["crates/*"]
 
 [dependencies]
-bevy = { version = "0.14.0-dev", features = [
+bevy = { version = "0.14.0", features = [
   "dynamic_linking",
   "file_watcher",
+  "serialize",
 ] }
 bevy-inspector-egui = "0.19.0"
-# bevy_mod_picking = { git = "https://github.com/aevyrie/bevy_mod_picking.git", branch = "main" }
+bevy_mod_picking = { version = "0.20.1" }
 bitflags = "2.4.2"
 directories = "5.0.1"
 earcutr = "0.4.3"
@@ -27,6 +28,8 @@ serde_repr = "0.1.16"
 thiserror = "1.0.57"
 panoply_exemplar = { path = "crates/panoply_exemplar" }
 base64 = "0.22.0"
+bevy_quill = "0.1.2"
+bevy_quill_obsidian = "0.1.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -35,7 +38,3 @@ opt-level = 1
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
-
-[patch.crates-io]
-bevy = { version = "0.14.0-dev", path = "../bevy" }
-# bevy = { git = "https://github.com/bevyengine/bevy.git", features = ["dynamic_linking"], branch = "main" }

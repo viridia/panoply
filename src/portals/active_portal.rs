@@ -29,7 +29,7 @@ pub(crate) struct ActivePortal {
     /// The material that renders the portal aperture.
     material: Handle<StandardMaterial>,
 
-    /// Entity which renders the portal.
+    /// Entity which renders the portal texture onto the main view.
     portal_entity: Entity,
 
     /// The image buffer
@@ -174,7 +174,7 @@ pub(crate) fn spawn_portals(
                         transform,
                         ..Default::default()
                     },
-                    *layers,
+                    layers.clone(),
                 ))
                 .set_parent(entity)
                 .id();
@@ -191,7 +191,7 @@ pub(crate) fn spawn_portals(
                         },
                         ..default()
                     },
-                    RenderLayers::all(),
+                    RenderLayers::default(),
                     PortalCamera,
                 ))
                 .id();

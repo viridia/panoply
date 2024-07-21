@@ -63,9 +63,8 @@ pub fn camera_controller(
     // Update the camera render layers
     match viewpoint.realm {
         Some(realm) => {
-            if let Ok(_realm) = query_realms.get(realm) {
-                // *layers = realm.layer;
-                *layers = RenderLayers::all(); // For now, until we get GLTF scene layers sorted
+            if let Ok(realm) = query_realms.get(realm) {
+                *layers = realm.layer.clone();
             } else {
                 *layers = RenderLayers::none();
             }

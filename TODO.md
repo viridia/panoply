@@ -5,6 +5,9 @@
   - Materials get loaded multiple times?
 - Assets
   - Asset Reader that allows cache miss
+  - Remove Box2d types, replace with 4-tuple.
+  - Experiment with bevy_gltf_trait.
+  - Preferences API.
 - Models
   - [x] replace model_loader
 - Wall Physics
@@ -16,10 +19,8 @@
 - Portals
   - perspective projection
   - modified frustum
-- Possible crates:
-  - A proliferation of crates is not good. There should probably be a single engine crate.
-    - but only for parts of the engine that are game-agnostic.
-  - msgpack (no)
+- Possibly move to common crate:
+  - msgpack (no, we want to remove this actually, get rid of extension types)
   - inline_assets?
   - reflect_types
   - random

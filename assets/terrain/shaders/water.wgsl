@@ -76,7 +76,7 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
     var position = vertex.position;
     var normal = vertex.normal;
     var wposition = mfns::mesh_position_local_to_world(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
     let uv = wposition.xz;
@@ -97,11 +97,11 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
     position.z -= normal.z * 0.7;
 
     out.world_position = mfns::mesh_position_local_to_world(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(position, 1.0)
     );
     out.position = mfns::mesh_position_local_to_clip(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(position, 1.0)
     );
 
@@ -188,14 +188,15 @@ fn fragment(
     pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
 
     pbr_input.is_orthographic = false;
-    pbr_input.N = fns::apply_normal_mapping(
-        pbr_input.material.flags,
-        normal,
-        false, // double_sided,
-        is_front,
-        // uv,
-        view.mip_bias,
-    );
+    pbr_input.N = normalize(pbr_input.world_normal);
+    // pbr_input.N = fns::apply_normal_mapping(
+    //     pbr_input.material.flags,
+    //     normal,
+    //     false, // double_sided,
+    //     is_front,
+    //     // uv,
+    //     view.mip_bias,
+    // );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
     // We do the lighting calculation twice to simulate rough reflections.

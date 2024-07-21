@@ -6,7 +6,7 @@
   "type": "object",
   "properties": {
     "type": {
-      "enum": ["Flor", "Wall", "TrFx", "Fixt", "Actr", "Item"]
+      "enum": ["Floor", "Wall", "TrFx", "Fixt", "Actr", "Item"]
     },
     "extends": {
       "type": "string"

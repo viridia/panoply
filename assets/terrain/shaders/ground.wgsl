@@ -156,7 +156,7 @@ fn blend_biome(
 fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
     var wposition = mfns::mesh_position_local_to_world(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
 
@@ -198,7 +198,7 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
 
     out.world_position = wposition;
     out.position = mfns::mesh_position_local_to_clip(
-        mfns::get_model_matrix(instance_index),
+        mfns::get_world_from_local(instance_index),
         vec4<f32>(vertex.position, 1.0)
     );
 
@@ -286,13 +286,15 @@ fn fragment(
 
     pbr_input.is_orthographic = false;
 
-    pbr_input.N = fns::apply_normal_mapping(
-        pbr_input.material.flags,
-        mesh.world_normal,
-        false, // double_sided,
-        is_front,
-        view.mip_bias,
-    );
+    pbr_input.N = normalize(pbr_input.world_normal);
+    // let TBN = fns::calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
+    // pbr_input.N = fns::apply_normal_mapping(
+    //     pbr_input.material.flags,
+    //     TBN,
+    //     false, // double_sided,
+    //     is_front,
+    //     view.mip_bias,
+    // );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
     return tone_mapping(fns::apply_pbr_lighting(pbr_input), view.color_grading);

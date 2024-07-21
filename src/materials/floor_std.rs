@@ -48,21 +48,23 @@ impl AssetLoader for FloorStdMaterialLoader {
         if let Some(color) = params.color {
             material.base_color = color.into();
         } else if let Some(texture) = params.texture {
-            material.base_color_texture = Some(load_context.load_with_settings(
-                texture,
-                |settings: &mut ImageLoaderSettings| {
-                    settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                        label: Some("Floor Region".to_string()),
-                        address_mode_u: ImageAddressMode::Repeat,
-                        address_mode_v: ImageAddressMode::Repeat,
-                        address_mode_w: ImageAddressMode::Repeat,
-                        mag_filter: ImageFilterMode::Linear,
-                        min_filter: ImageFilterMode::Linear,
-                        mipmap_filter: ImageFilterMode::Linear,
-                        ..default()
-                    });
-                },
-            ));
+            material.base_color_texture = Some(
+                load_context
+                    .loader()
+                    .with_settings(|settings: &mut ImageLoaderSettings| {
+                        settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                            label: Some("Floor Region".to_string()),
+                            address_mode_u: ImageAddressMode::Repeat,
+                            address_mode_v: ImageAddressMode::Repeat,
+                            address_mode_w: ImageAddressMode::Repeat,
+                            mag_filter: ImageFilterMode::Linear,
+                            min_filter: ImageFilterMode::Linear,
+                            mipmap_filter: ImageFilterMode::Linear,
+                            ..default()
+                        });
+                    })
+                    .load(texture),
+            );
         }
         // material.base_color_texture_transform = TextureTransform {
         //     offset: Vec2::new(0.0, 0.0),
