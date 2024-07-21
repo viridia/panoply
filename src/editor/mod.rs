@@ -4,10 +4,19 @@ mod ui;
 
 pub struct EditorPlugin;
 
+#[derive(Resource)]
+pub struct EditorSidebarWidth(pub f32);
+
+impl Default for EditorSidebarWidth {
+    fn default() -> Self {
+        Self(300.0)
+    }
+}
+
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, ui::setup_editor_view)
+        app.init_resource::<EditorSidebarWidth>()
+            .add_systems(PostStartup, ui::setup_editor_view)
             .add_systems(Update, camera::camera_controller);
-        // app.add_startup_system(camera_controller.system());
     }
 }

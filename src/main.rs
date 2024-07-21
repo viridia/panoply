@@ -12,7 +12,10 @@ use bevy::{
 };
 use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
 use bevy_quill::QuillPlugin;
-use bevy_quill_obsidian::{viewport::ViewportCamera, ObsidianUiPlugin};
+use bevy_quill_obsidian::{
+    viewport::{self, ViewportCamera},
+    ObsidianUiPlugin,
+};
 use panoply_exemplar::ExemplarPlugin;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
@@ -111,6 +114,7 @@ fn main() {
         QuillPlugin,
         ObsidianUiPlugin,
     ))
+    .init_resource::<viewport::ViewportInset>()
     .insert_resource(DebugPickingMode::Disabled)
     .insert_resource(settings)
     // .insert_resource(Msaa::Off)
@@ -132,6 +136,8 @@ fn main() {
             // editor::camera_controller,
             update_window_settings,
             nav_to_center,
+            viewport::update_camera_viewport,
+            viewport::update_viewport_inset,
         ),
     )
     .add_systems(Update, close_on_esc)

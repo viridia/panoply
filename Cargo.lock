@@ -4542,6 +4542,7 @@ dependencies = [
  "bevy 0.14.0",
  "bevy-inspector-egui",
  "bevy_mod_picking",
+ "bevy_mod_stylebuilder",
  "bevy_quill",
  "bevy_quill_obsidian",
  "bitflags 2.6.0",
