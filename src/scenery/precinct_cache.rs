@@ -1,7 +1,6 @@
 use bevy::{math::IRect, prelude::*};
 
 use crate::{
-    instancing::InstanceMap,
     view::{QueryRect, Viewpoint},
     world::Realm,
 };
@@ -107,7 +106,6 @@ pub fn spawn_precincts(
                                 visible: true,
                                 asset,
                                 tiers: Vec::new(),
-                                scenery_instances: InstanceMap::new(),
                                 render_layer: realm.layer.clone(),
                             },
                             SpatialBundle {

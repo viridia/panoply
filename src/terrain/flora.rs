@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    instancing::{InstanceMap, ModelPlacement, PropagateRenderLayers},
+    instancing::PropagateRenderLayers,
     random::{noise3, WeightedChoice},
     world::Realm,
 };
@@ -20,6 +20,7 @@ use bevy::{
     asset::LoadState,
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
+    utils::HashMap,
 };
 use futures_lite::future;
 
@@ -30,7 +31,10 @@ pub struct ComputeFloraTask(Task<Option<FloraPlacementResult>>);
 pub struct ParcelFlora;
 
 pub struct FloraPlacementResult {
-    models: InstanceMap,
+    /// Map of model resource names to instances, used in building the instance components.
+    /// Each terrain parcel or scenery precinct will have one of these, which specifies how many
+    /// instances of each model are placed in the world, and where they are located.
+    models: HashMap<String, Vec<Transform>>,
 }
 
 #[derive(Debug, Component, Default)]
@@ -85,7 +89,7 @@ pub fn gen_flora(
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
-                models: InstanceMap::new(),
+                models: HashMap::new(),
             };
             if compute_flora_placement(
                 coords,
@@ -148,14 +152,14 @@ pub fn insert_flora(
                     for (model, value) in flora_placement.models.drain() {
                         if let Some((fname, fragment)) = model.split_once('#') {
                             let handle: Handle<Gltf> = server.load(fname.to_owned());
-                            for placement in value {
+                            for transform in value {
                                 children.push(
                                     commands
                                         .spawn((
                                             FloraElementMesh {
                                                 handle: handle.clone(),
                                                 label: fragment.to_string(),
-                                                transform: placement.transform,
+                                                transform,
                                             },
                                             realm.layer.clone(),
                                         ))
@@ -299,13 +303,10 @@ fn compute_flora_placement(
                         .models
                         .entry(model.clone())
                         .or_insert(Vec::with_capacity(6));
-                    entry.push(ModelPlacement {
-                        transform: Transform {
-                            translation,
-                            rotation,
-                            scale: Vec3::new(scale, scale, scale),
-                        },
-                        visible: true,
+                    entry.push(Transform {
+                        translation,
+                        rotation,
+                        scale: Vec3::new(scale, scale, scale),
                     })
                 }
             }

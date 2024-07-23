@@ -1,4 +1,3 @@
-use crate::instancing::InstanceMap;
 use panoply_exemplar::*;
 
 use super::{
@@ -29,7 +28,6 @@ pub struct Precinct {
     pub visible: bool,
     pub asset: Handle<PrecinctAsset>,
     pub tiers: Vec<PrecinctTier>,
-    pub scenery_instances: InstanceMap,
 }
 
 impl Precinct {

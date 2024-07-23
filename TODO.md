@@ -1,6 +1,6 @@
 # TODO
 
-- Trees: use scene instancing.
+- Delete remnants of scene instancing
 - Ground paths / trails / roads.
 - Bugs:
   - Materials get loaded multiple times?
