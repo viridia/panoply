@@ -1,7 +1,8 @@
 # TODO
 
+- Trees: use scene instancing.
+- Ground paths / trails / roads.
 - Bugs:
-  - Generation error [REPORTED]
   - Materials get loaded multiple times?
 - Assets
   - Asset Reader that allows cache miss

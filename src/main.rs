@@ -41,7 +41,6 @@ use view::{HudCamera, PrimaryCamera, Viewpoint};
 use crate::{
     actors::ActorsPlugin,
     diagnostics::ScreenDiagsPlugin,
-    instancing::InstancedModelsPlugin,
     materials::{InlineAssetReader, MaterialsPlugin},
     msgpack::MsgpackExtPlugin,
     portals::PortalPlugin,
@@ -146,7 +145,6 @@ fn main() {
         TerrainPlugin,
         SceneryPlugin,
         ActorsPlugin,
-        InstancedModelsPlugin,
         PortalPlugin,
         // WorldInspectorPlugin::new(),
     ));

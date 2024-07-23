@@ -5,7 +5,7 @@ use bevy::{
 
 use super::{
     biome::{BiomesAsset, BiomesHandle, BiomesLoader},
-    flora::{gen_flora, insert_flora},
+    flora::{gen_flora, insert_flora, spawn_flora_model_instances},
     gen_ground_meshes,
     ground_material::GroundMaterial,
     insert_ground_meshes, spawn_parcels,
@@ -56,6 +56,7 @@ impl Plugin for TerrainPlugin {
                     update_terrain_maps,
                     update_ground_material,
                     config_textures_modes,
+                    spawn_flora_model_instances,
                 ),
             );
     }

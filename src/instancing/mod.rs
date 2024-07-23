@@ -7,7 +7,6 @@ mod plugin;
 
 pub use instance::*;
 pub use layers::*;
-pub use plugin::InstancedModelsPlugin;
 
 // export interface IModelInstance {
 //     component: IModelComponent;

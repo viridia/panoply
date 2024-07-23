@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    instancing::{InstanceMap, ModelPlacement, ModelPlacementChanged, ModelPlacements},
+    instancing::{InstanceMap, ModelPlacement, PropagateRenderLayers},
     random::{noise3, WeightedChoice},
     world::Realm,
 };
@@ -31,6 +31,13 @@ pub struct ParcelFlora;
 
 pub struct FloraPlacementResult {
     models: InstanceMap,
+}
+
+#[derive(Debug, Component, Default)]
+pub struct FloraElementMesh {
+    pub handle: Handle<Gltf>,
+    pub label: String,
+    pub transform: Transform,
 }
 
 pub const HEIGHT_SCALE: f32 = 0.5;
@@ -104,6 +111,7 @@ pub fn gen_flora(
 pub fn insert_flora(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
+    server: Res<AssetServer>,
     realms_query: Query<(&Realm, &TerrainMap)>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
@@ -138,19 +146,23 @@ pub fn insert_flora(
                     let count = flora_placement.models.iter().fold(0, |n, c| n + c.1.len());
                     let mut children = Vec::<Entity>::with_capacity(count);
                     for (model, value) in flora_placement.models.drain() {
-                        children.push(
-                            commands
-                                .spawn((
-                                    SpatialBundle { ..default() },
-                                    ModelPlacements {
-                                        model: model.clone(),
-                                        placement_list: value,
-                                        layer: realm.layer.clone(),
-                                    },
-                                    ModelPlacementChanged,
-                                ))
-                                .id(),
-                        );
+                        if let Some((fname, fragment)) = model.split_once('#') {
+                            let handle: Handle<Gltf> = server.load(fname.to_owned());
+                            for placement in value {
+                                children.push(
+                                    commands
+                                        .spawn((
+                                            FloraElementMesh {
+                                                handle: handle.clone(),
+                                                label: fragment.to_string(),
+                                                transform: placement.transform,
+                                            },
+                                            realm.layer.clone(),
+                                        ))
+                                        .id(),
+                                );
+                            }
+                        }
                     }
                     commands.entity(flora_entity).replace_children(&children);
                 } else if let Some(flora_entity) = parcel.flora_entity {
@@ -159,6 +171,37 @@ pub fn insert_flora(
                 }
 
                 commands.entity(entity).remove::<ComputeFloraTask>();
+            }
+        }
+    }
+}
+
+pub fn spawn_flora_model_instances(
+    mut commands: Commands,
+    mut query: Query<(Entity, &FloraElementMesh), Without<Handle<Scene>>>,
+    assets_gltf: Res<Assets<Gltf>>,
+    server: Res<AssetServer>,
+) {
+    for (entity, mesh) in query.iter_mut() {
+        let result = server.load_state(&mesh.handle);
+        if result == LoadState::Loaded {
+            let asset = assets_gltf.get(&mesh.handle);
+            if let Some(gltf) = asset {
+                if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
+                    commands.entity(entity).insert((
+                        SceneBundle {
+                            scene: scene_handle.clone(),
+                            transform: mesh.transform,
+                            ..Default::default()
+                        },
+                        PropagateRenderLayers,
+                    ));
+                } else {
+                    error!("Model not found: [{}]", mesh.label);
+                    info!("Available scenes: [{:?}]", gltf.named_scenes.keys());
+                    commands.entity(entity).despawn();
+                    // panic!();
+                }
             }
         }
     }
