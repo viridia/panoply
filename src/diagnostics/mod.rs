@@ -57,7 +57,7 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     // let font = asset_server.load("fonts/screen-diags-font.ttf");
     let font = asset_server.load("fonts/Rubik/Rubik-VariableFont_wght.ttf");
     commands
-        .spawn(TextBundle {
+        .spawn((TextBundle {
             text: Text {
                 sections: vec![TextSection {
                     value: STRING_INITIAL.to_string(),
@@ -69,7 +69,14 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
                 }],
                 ..Default::default()
             },
+            style: Style {
+                position_type: PositionType::Absolute,
+                right: Val::Px(10.0),
+                top: Val::Px(10.0),
+                left: Val::Auto,
+                ..default()
+            },
             ..Default::default()
-        })
+        },))
         .insert(ScreenDiagsText);
 }

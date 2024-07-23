@@ -19,7 +19,9 @@ bevy = { version = "0.14.0", features = [
 bevy_mod_picking = { version = "0.20.1" }
 bevy_mod_stylebuilder = "0.1.1"
 bevy_quill = "0.1.2"
+# bevy_quill = { path = "../quill2" }
 bevy_quill_obsidian = "0.1.0"
+# bevy_quill_obsidian = { path = "../quill2/crates/bevy_quill_obsidian" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
 
 [dependencies]
@@ -51,3 +53,8 @@ opt-level = 1
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
+
+[patch.crates-io]
+bevy_mod_stylebuilder = { version = "0.1.1", path = "../quill2/crates/bevy_mod_stylebuilder" }
+bevy_quill = { version = "0.1.2", path = "../quill2" }
+bevy_quill_obsidian = { version = "0.1.0", path = "../quill2/crates/bevy_quill_obsidian" }

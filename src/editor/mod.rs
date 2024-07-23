@@ -16,6 +16,7 @@ impl Default for EditorSidebarWidth {
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<EditorSidebarWidth>()
+            .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(PostStartup, ui::setup_editor_view)
             .add_systems(Update, camera::camera_controller);
     }

@@ -1303,8 +1303,6 @@ dependencies = [
 [[package]]
 name = "bevy_mod_stylebuilder"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf4fc04cfb26f02ac444cf21b52bff91addb67a5625b30d541e812e84ffd178"
 dependencies = [
  "bevy 0.14.0",
  "bevy_mod_picking",
@@ -1498,8 +1496,6 @@ checksum = "c115c97a5c8a263bd0aa7001b999772c744ac5ba797d07c86f25734ce381ea69"
 [[package]]
 name = "bevy_quill"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "643ae41cfec5d500e318e14b52fd01ca2f6b42d70f09ec372e27824a8fe90b76"
 dependencies = [
  "bevy 0.14.0",
  "bevy_mod_stylebuilder",
@@ -1511,8 +1507,6 @@ dependencies = [
 [[package]]
 name = "bevy_quill_core"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01339782eaf21ae66f0edff36bc5709ec84727a29ab0d1c8a5b3219dd43ab384"
 dependencies = [
  "bevy 0.14.0",
  "bevy_mod_stylebuilder",
@@ -1523,8 +1517,6 @@ dependencies = [
 [[package]]
 name = "bevy_quill_obsidian"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01a92dc9c2246f2db940c8d306c2ee51b1f894c99c2c2bfa240afe72d9477503"
 dependencies = [
  "bevy 0.14.0",
  "bevy_mod_picking",

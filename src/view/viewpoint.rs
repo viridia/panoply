@@ -1,5 +1,7 @@
-use bevy::prelude::*;
+use bevy::{ecs::world::Command, prelude::*};
 use std::f32::consts::PI;
+
+use crate::world::Realm;
 
 /// Represents the focal point of attention, typically the coordinates of the player
 /// character.
@@ -43,6 +45,27 @@ impl Viewpoint {
             Quat::from_euler(EulerRot::ZYX, 0., self.azimuth + PI, -self.elevation);
         transform.translation =
             self.position + transform.rotation * Vec3::new(0., 0., self.camera_distance);
+    }
+}
+
+pub struct SetViewpointCmd {
+    pub position: Vec3,
+    pub realm: String,
+}
+
+impl Command for SetViewpointCmd {
+    fn apply(self, world: &mut World) {
+        println!("Go to {} {}", self.realm, self.position);
+        let mut realms = world.query::<(Entity, &Realm)>();
+        if let Some(realm) = realms
+            .iter(world)
+            .find(|(_, r)| r.name == self.realm)
+            .map(|(e, _)| e)
+        {
+            let mut viewpoint = world.get_resource_mut::<Viewpoint>().unwrap();
+            viewpoint.realm = Some(realm);
+            viewpoint.position = self.position;
+        }
     }
 }
 

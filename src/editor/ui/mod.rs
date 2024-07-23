@@ -1,11 +1,15 @@
+pub mod quick_nav;
+
 use bevy::{prelude::*, ui};
+use bevy_mod_picking::prelude::{ListenerMut, On};
 use bevy_mod_stylebuilder::*;
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{
     colors,
     controls::{Splitter, SplitterDirection},
-    focus::TabGroup,
+    focus::{DefaultKeyListener, KeyPressEvent, TabGroup},
 };
+use quick_nav::{QuickNavDialog, QuickNavOpen};
 
 use crate::view::{viewport::ViewportInsetElement, HudCamera};
 
@@ -29,7 +33,24 @@ impl ViewTemplate for EditorView {
 
         let sidebar_width = cx.use_resource::<EditorSidebarWidth>();
         Element::<NodeBundle>::new()
-            .insert((TabGroup::default(), TargetCamera(camera)))
+            .insert((
+                TabGroup::default(),
+                DefaultKeyListener,
+                TargetCamera(camera),
+            ))
+            .insert_dyn(
+                |_| {
+                    On::<KeyPressEvent>::run(
+                        |ev: ListenerMut<KeyPressEvent>,
+                         mut open: ResMut<NextState<QuickNavOpen>>| {
+                            if ev.key_code == KeyCode::KeyG {
+                                open.set(QuickNavOpen(true));
+                            }
+                        },
+                    )
+                },
+                (),
+            )
             .style(style_main)
             .children((
                 Element::<NodeBundle>::new().style(style_aside).style_dyn(
@@ -49,6 +70,7 @@ impl ViewTemplate for EditorView {
                 Element::<NodeBundle>::new()
                     .style(style_game_view)
                     .insert(ViewportInsetElement),
+                QuickNavDialog,
             ))
     }
 }

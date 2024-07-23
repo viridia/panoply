@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Represents a map location or nav point that can be teleported to.
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct WorldLocation {
     /// Realm name containing this location
     pub realm: String,
@@ -27,6 +27,12 @@ pub struct WorldLocation {
 
     /// Location of icon on map, defaults to 'pos' if not present.
     pub map_pos: Option<Vec3>,
+}
+
+impl WorldLocation {
+    pub fn display_name(&self) -> &str {
+        self.caption.as_deref().unwrap_or(&self.name)
+    }
 }
 
 #[derive(TypePath, Asset)]
