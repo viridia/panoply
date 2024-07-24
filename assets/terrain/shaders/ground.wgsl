@@ -271,7 +271,7 @@ fn fragment(
     sfc.terrain_noise = textureSample(noise, noise_sampler, fract(uv * 0.04)).x;
     sfc.under_darken = 0.;
     sfc.under_mix = 0.;
-    sfc.under_noise = textureSample(noise, noise_sampler, fract(uv * 0.2)).x;
+    sfc.under_noise = textureSample(noise, noise_sampler, fract(uv * 0.3)).x;
 
     let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * dirt_biome.tx_scale));
 
@@ -287,7 +287,7 @@ fn fragment(
 
 	// Packed and dried earth effects.
     if fx_earth > 0. {
-        let fx_blend: f32 = fx_earth;
+        let fx_blend: f32 = smoothstep(0.2, 1.0, fx_earth + sfc.under_noise);
         // under_color = dirt_color.rgb;
 		// float pathBlend = smoothstep(0., .5, fxPath);
 		// underColor = mix(
@@ -297,7 +297,7 @@ fn fragment(
 		// underMix = max(underMix, smoothstep(0., 0.9, fxPath + underNoise * 0.6));
 		sfc.under_darken = max(
             sfc.under_darken,
-            smoothstep(0.2, 0.7, fx_earth * 1.4 + sfc.under_noise * 1.4));
+            smoothstep(0.2, 0.9, fx_earth * 1.4 + sfc.under_noise * 1.4));
 		sfc.under_mix = max(sfc.under_mix, fx_blend);
     }
 
@@ -305,7 +305,6 @@ fn fragment(
     if fx_soil > 0. {
         let fx_blend: f32 = fx_soil;
         under_color = dirt_color.rgb * vec3f(.7, .6, .6);
-
 		// float soilBlend = smoothstep(0., .3, fxSoil);
 		// vec4 soilColor = texture2D(dirtTexture, vPosition.xz * 0.5) * vec4(.7, .6, .6, 1.);
 		// underColor = mix(underColor, soilColor.rgb, soilBlend);
@@ -320,13 +319,9 @@ fn fragment(
 	// Cobblestone effects.
     if fx_cobbles > 0. {
         let cobbles_color = textureSample(cobbles, cobbles_sampler, fract(uv * UV_ROT * cobbles_fx.tx_scale));
-		// vec4 cobblesColor = texture2D(cobblesTexture, vPosition.xz * 0.5);
 		let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
-		// float noise = dot(persist0_9, terrainNoise_2_5) * 0.5;
-		// float roadBlend = smoothstep(0.6, 0.9, fxRoad + underNoise + cracks * 0.9);
-        // let fx_blend: f32 = fx_cobbles;
-        let fx_blend: f32 = smoothstep(0.6, 0.9, fx_cobbles + sfc.under_noise + cracks * 0.9);
-		let dark_blend = smoothstep(0.0, 0.8, fx_cobbles * 1.7 + sfc.under_noise * 1.7 - 0.05);
+        let fx_blend: f32 = smoothstep(0.9, 1.2, fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9);
+		let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
 		// underRoughness = mix(underRoughness, 1.0 - cracks * 0.7, roadBlend);
 		sfc.under_mix = max(sfc.under_mix, fx_blend);
         under_color = mix(

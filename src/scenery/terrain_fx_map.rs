@@ -74,8 +74,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
                     if let Some(eff) = aspect.as_any().downcast_ref::<TerrainEffect>() {
                         vxt_attr.effect = eff.effect;
                         vxt_attr.effect_strength = eff.effect_strength.unwrap_or(0.);
-                        vxt_attr.elevation =
-                            (eff.elevation.unwrap_or(0.) * 127.0).clamp(-127., 127.) as i8;
+                        vxt_attr.elevation = eff.elevation.unwrap_or(0.);
                         if eff.continuous_x.unwrap_or(false) {
                             vxt_attr.options |= TerrainOptions::ContinuousX;
                         }

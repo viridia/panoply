@@ -105,6 +105,6 @@ bitflags! {
 pub struct TerrainFxVertexAttr {
     pub(crate) effect: TerrainTypes,
     pub(crate) effect_strength: f32,
-    pub(crate) elevation: i8,
+    pub(crate) elevation: f32,
     pub(crate) options: TerrainOptions,
 }

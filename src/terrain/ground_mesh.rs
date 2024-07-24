@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::{
     terrain::{
         ground_material::ATTRIBUTE_TERRAIN_STYLE, TerrainOptions, TerrainTypes,
-        PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE,
+        PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE,
     },
     world::Realm,
 };
@@ -14,7 +14,7 @@ use super::{
     square::SquareArray,
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    TerrainFxVertexAttr, PARCEL_MESH_RESOLUTION, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U,
+    TerrainFxVertexAttr, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE,
     PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
     PARCEL_TERRAIN_FX_AREA,
 };
@@ -49,6 +49,8 @@ struct TerrainFxMap([TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA]);
 impl TerrainFxMap {
     #[inline(always)]
     pub fn get(&self, x: usize, z: usize) -> TerrainFxVertexAttr {
+        assert!(x < PARCEL_TERRAIN_FX_SIZE);
+        assert!(z < PARCEL_TERRAIN_FX_SIZE);
         self.0[x + z * PARCEL_TERRAIN_FX_STRIDE]
     }
 }
@@ -157,8 +159,151 @@ fn compute_ground_mesh(
     );
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
-    let mut indices: Vec<u32> = Vec::with_capacity((PARCEL_MESH_RESOLUTION.pow(2)) as usize);
-    let mut terrain_style: Vec<[u32; 2]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
+    let mut indices: Vec<u32> = Vec::with_capacity((PARCEL_MESH_SIZE.pow(2)) as usize);
+    let mut terrain_style_f: Vec<[f32; 3]> = vec![[0., 0., 0.]; PARCEL_MESH_VERTEX_COUNT];
+    let mut terrain_style: Vec<[u32; 2]> = vec![[0, 0]; PARCEL_MESH_VERTEX_COUNT];
+    let mut terrain_elevation_offset: Vec<f32> = vec![0.; PARCEL_MESH_VERTEX_COUNT];
+
+    // const maxStrength = new Array<number>(eLength);
+
+    for z in -1..PARCEL_SIZE + 1 {
+        for x in -1..PARCEL_SIZE + 1 {
+            let tfx = terrain_fx.get((x + 1) as usize, (z + 1) as usize);
+            let cont_x = tfx.options.contains(TerrainOptions::ContinuousX);
+            let cont_z = tfx.options.contains(TerrainOptions::ContinuousY);
+            let x_span = if cont_x { -1..=1 } else { 0..=0 };
+            let z_span = if cont_z { -1..=1 } else { 0..=0 };
+
+            let elevation = tfx.elevation;
+            let mut local_strength = [[[0.0; 5]; 5]; 3];
+            // maxStrength.fill(0);
+            for fx in 0..3 {
+                let fx_mask = TerrainTypes(1 << fx);
+                let has_effect = tfx.effect.contains(fx_mask);
+                if has_effect {
+                    // For each tile that has a terrain effect, determine whether any neighboring tiles
+                    // have the same effect. Fill in the corners and sides of a 5x5 array.
+                    let center_strength = tfx.effect_strength;
+                    for rz in z_span.clone() {
+                        if z + rz < -1 || z + rz > PARCEL_SIZE {
+                            continue;
+                        }
+                        for rx in x_span.clone() {
+                            if x + rx < -1 || x + rx > PARCEL_SIZE {
+                                continue;
+                            }
+                            let adjacent =
+                                terrain_fx.get((x + rx + 1) as usize, (z + rz + 1) as usize);
+                            let has_adjacent = adjacent.effect.contains(fx_mask);
+                            let mut adjacent_strength = if has_adjacent {
+                                adjacent.effect_strength
+                            } else {
+                                0.0
+                            };
+
+                            if rx != 0 && rz != 0 {
+                                // Special case for corners - if both of the sides have strength, then
+                                // apply that to the corner.
+                                let adjacent_x =
+                                    terrain_fx.get((x + rx + 1) as usize, (z + 1) as usize);
+                                let adjacent_z =
+                                    terrain_fx.get((x + 1) as usize, (z + rz + 1) as usize);
+                                if adjacent_x.effect.contains(fx_mask)
+                                    && adjacent_z.effect.contains(fx_mask)
+                                {
+                                    adjacent_strength = adjacent_strength.max(
+                                        (adjacent_x.effect_strength + adjacent_z.effect_strength)
+                                            * 0.5,
+                                    );
+                                }
+                            }
+
+                            // Strength is the average of this tile and adjacent tile strength.
+                            // In the center, adjacent_strength == center_strength.
+                            if adjacent_strength != 0.0 {
+                                local_strength[fx][(rx * 2 + 2) as usize][(rz * 2 + 2) as usize] =
+                                    (center_strength + adjacent_strength) * 0.5;
+                            }
+                        }
+                    }
+
+                    // Now fill in the rest of the local strength array
+                    for zl in [0, 2] {
+                        for xl in [0, 2] {
+                            let s00 = local_strength[fx][xl][zl];
+                            let s10 = local_strength[fx][xl + 2][zl];
+                            let s01 = local_strength[fx][xl][zl + 2];
+                            let s11 = local_strength[fx][xl + 2][zl + 2];
+                            local_strength[fx][xl + 1][zl] = (s00 + s10) * 0.5;
+                            local_strength[fx][xl][zl + 1] = (s00 + s01) * 0.5;
+                            local_strength[fx][xl + 1][zl + 2] = (s01 + s11) * 0.5;
+                            local_strength[fx][xl + 2][zl + 1] = (s10 + s11) * 0.5;
+                            local_strength[fx][xl + 1][zl + 1] = (s00 + s01 + s10 + s11) * 0.25;
+                        }
+                    }
+                }
+
+                if elevation != 0.0 {
+                    for zl in 0..=4 {
+                        let zs = z * 4 + zl;
+                        if !(0..=PARCEL_MESH_SIZE).contains(&zs) {
+                            continue;
+                        }
+                        for xl in 0..=4 {
+                            let xs = x * 4 + xl;
+                            if !(0..=PARCEL_MESH_SIZE).contains(&xs) {
+                                continue;
+                            }
+                            let elevation =
+                                elevation * local_strength[fx][xl as usize][zl as usize];
+                            let index = (zs * PARCEL_MESH_STRIDE + xs) as usize;
+                            let terrain_el = &mut terrain_elevation_offset[index];
+                            if elevation > 0.0 {
+                                *terrain_el = terrain_el.max(elevation);
+                            } else if elevation < 0.0 {
+                                *terrain_el = terrain_el.min(elevation);
+                            }
+                        }
+                    }
+                }
+
+                // terrain_style.push([fx, 0]);
+            }
+
+            // Now apply the effect to the terrain
+            for zl in 0..=4 {
+                let zs = z * 4 + zl;
+                if !(0..=PARCEL_MESH_SIZE).contains(&zs) {
+                    continue;
+                }
+                for xl in 0..=4 {
+                    let xs = x * 4 + xl;
+                    if !(0..=PARCEL_MESH_SIZE).contains(&xs) {
+                        continue;
+                    }
+
+                    let index = (zs * PARCEL_MESH_STRIDE + xs) as usize;
+
+                    let fx_cobbles = local_strength[0][xl as usize][zl as usize];
+                    let fx_soil = local_strength[1][xl as usize][zl as usize];
+                    let fx_earth = local_strength[2][xl as usize][zl as usize];
+                    let tsf = &mut terrain_style_f[index];
+                    tsf[0] = tsf[0].max(fx_cobbles);
+                    tsf[1] = tsf[1].max(fx_soil);
+                    tsf[2] = tsf[2].max(fx_earth);
+                }
+            }
+        }
+    }
+
+    for (index, tsf) in terrain_style_f.iter().enumerate() {
+        let fx_cobbles = (tsf[0] * 255.0) as u32;
+        let fx_soil = (tsf[1] * 255.0) as u32;
+        let fx_earth = (tsf[2] * 255.0) as u32;
+        let terrain_style_0: u32 = pack_u32(fx_cobbles, fx_soil, fx_earth, 0);
+        let terrain_style_1: u32 = 0;
+        terrain_style[index] = [terrain_style_0, terrain_style_1];
+    }
 
     // Generate vertices
     let mut n = Vec3::new(0., 1., 0.);
@@ -166,7 +311,7 @@ fn compute_ground_mesh(
         for x in 0..PARCEL_MESH_STRIDE {
             position.push([
                 x as f32 * PARCEL_MESH_SCALE,
-                shm.get(x, z),
+                shm.get(x, z) + terrain_elevation_offset[(z * PARCEL_MESH_STRIDE + x) as usize],
                 z as f32 * PARCEL_MESH_SCALE,
             ]);
 
@@ -189,36 +334,14 @@ fn compute_ground_mesh(
 
             n.y = 1.;
             normal.push(n.normalize().to_array());
-
-            // let earth_fx = (if z > 40 && z < 60 && x > 10 && x < 30 {
-            //     1.0
-            // } else {
-            //     0.0
-            // } * 255.0) as u32;
-
-            // let soil_fx = (if z > 10 && z < 30 && x > 40 && x < 60 {
-            //     1.0
-            // } else {
-            //     0.0
-            // } * 255.0) as u32;
-
-            // let cobbles_fx = (if z > 10 && z < 30 && x > 10 && x < 30 {
-            //     1.0
-            // } else {
-            //     0.0
-            // } * 255.0) as u32;
-
-            // let terrain_style_0: u32 = earth_fx | (soil_fx << 8) | (cobbles_fx << 24);
-            // let terrain_style_1: u32 = 0;
-            // terrain_style.push([terrain_style_0, terrain_style_1]);
         }
     }
 
     // Generate indices
     for z in 0..PARCEL_MESH_STRIDE - 1 {
         for x in 0..PARCEL_MESH_STRIDE - 1 {
-            let tx = x * PARCEL_SIZE / PARCEL_MESH_RESOLUTION;
-            let tz = z * PARCEL_SIZE / PARCEL_MESH_RESOLUTION;
+            let tx = x * PARCEL_SIZE / PARCEL_MESH_SIZE;
+            let tz = z * PARCEL_SIZE / PARCEL_MESH_SIZE;
             let fx = terrain_fx.get((tx + 1) as usize, (tz + 1) as usize);
             // Handle terrain holes.
             if fx.options.contains(TerrainOptions::Hole) {
@@ -235,260 +358,6 @@ fn compute_ground_mesh(
             indices.push(b);
             indices.push(c);
             indices.push(d);
-        }
-    }
-
-    // Generate terrain styles
-    let mut effect_strength: [[[f32; TERRAIN_FX_FINE_SIZE]; TERRAIN_FX_FINE_SIZE]; 3] =
-        [[[0.0; TERRAIN_FX_FINE_SIZE]; TERRAIN_FX_FINE_SIZE]; 3];
-
-    for z in 0..PARCEL_TERRAIN_FX_SIZE {
-        for x in 0..PARCEL_TERRAIN_FX_SIZE {
-            let fx = terrain_fx.get(x, z);
-            for fx_type in 0..3 {
-                if fx.effect.contains(TerrainTypes(1 << fx_type)) {
-                    effect_strength[fx_type][x * 4 + 2][z * 4 + 2] = fx.effect_strength;
-                }
-            }
-
-            // const elevation = toSigned(effect[ftAccessor.indexOf(x + 1, y + 1) * 8 + 4]);
-            // maxStrength.fill(0);
-            // for (let fx = 0; fx < 4; fx += 1) {
-            //   const centerStrength = effect[ftAccessor.indexOf(x + 1, y + 1) * 8 + fx];
-            //   if (centerStrength) {
-            //     localStrength.fill(0);
-            //     // const centerStrength = ft?.terrainEffectStrength ?? 1;
-            //     for (let ry = -1; ry <= 1; ry += 1) {
-            //       if (y + ry < -1 || y + ry > PLOT_LENGTH + 1) {
-            //         continue;
-            //       }
-            //       if (ry !== 0 && !contY) {
-            //         continue;
-            //       }
-            //       for (let rx = -1; rx <= 1; rx += 1) {
-            //         if (x + rx < -1 || x + rx > PLOT_LENGTH + 1) {
-            //           continue;
-            //         }
-            //         if (rx !== 0 && !contX) {
-            //           continue;
-            //         }
-            //         let adjacentStrength =
-            //           effect[ftAccessor.indexOf(x + rx + 1, y + ry + 1) * 8 + fx];
-
-            //         if (rx !== 0 && ry && ry !== 0) {
-            //           // Special case for corners - if both of the sides have strength, then
-            //           // apply that to the corner.
-            //           const adjacentX = effect[ftAccessor.indexOf(x + rx + 1, y + 1) * 8 + fx];
-            //           const adjacentY = effect[ftAccessor.indexOf(x + 1, y + ry + 1) * 8 + fx];
-            //           if (adjacentX && adjacentY) {
-            //             adjacentStrength = Math.max(adjacentStrength, (adjacentX + adjacentY) * 0.5);
-            //           }
-            //         }
-
-            //         // Strength is the average of this tile and adjacent tile strength.
-            //         if (adjacentStrength !== 0) {
-            //           localStrength[eIndex(2 + rx * 2, 2 + ry * 2)] =
-            //             (centerStrength + adjacentStrength) * 0.5;
-            //         }
-            //       }
-            //     }
-
-            //     // Now fill in the rest of the local strength array
-            //     for (let yl = 0; yl <= 2; yl += 2) {
-            //       for (let xl = 0; xl <= 2; xl += 2) {
-            //         const s00 = localStrength[eIndex(xl, yl)];
-            //         const s10 = localStrength[eIndex(xl + 2, yl)];
-            //         const s01 = localStrength[eIndex(xl, yl + 2)];
-            //         const s11 = localStrength[eIndex(xl + 2, yl + 2)];
-            //         localStrength[eIndex(xl + 1, yl)] = (s00 + s10) * 0.5;
-            //         localStrength[eIndex(xl, yl + 1)] = (s00 + s01) * 0.5;
-            //         localStrength[eIndex(xl + 1, yl + 2)] = (s01 + s11) * 0.5;
-            //         localStrength[eIndex(xl + 2, yl + 1)] = (s10 + s11) * 0.5;
-            //         localStrength[eIndex(xl + 1, yl + 1)] = (s00 + s01 + s10 + s11) * 0.25;
-            //       }
-            //     }
-
-            //     // Now apply the effect to the terrain
-            //     if (fx < 4) {
-            //       for (let yl = 0; yl <= 4; yl += 1) {
-            //         const ys = y * SUBTILE_RESOLUTION + yl;
-            //         if (ys < 0 || ys > PLOT_SUBTILE_LENGTH) {
-            //           continue;
-            //         }
-            //         for (let xl = 0; xl <= 4; xl += 1) {
-            //           const xs = x * SUBTILE_RESOLUTION + xl;
-            //           if (xs < 0 || xs > PLOT_SUBTILE_LENGTH) {
-            //             continue;
-            //           }
-            //           const index = indexOf(x * SUBTILE_RESOLUTION + xl, y * SUBTILE_RESOLUTION + yl);
-            //           const localIndex = eIndex(xl, yl);
-            //           const effectiveStrength = localStrength[localIndex];
-            //           maxStrength[localIndex] = Math.max(maxStrength[localIndex], effectiveStrength);
-            //           if (effectiveStrength !== 0) {
-            //             this.terrainStyle[index * 8 + fx] = Math.max(
-            //               this.terrainStyle[index * 8 + fx],
-            //               effectiveStrength
-            //             );
-            //           }
-            //         }
-            //       }
-            //     }
-            //   }
-            // }
-
-            // if (elevation) {
-            //   for (let yl = 0; yl <= 4; yl += 1) {
-            //     const ys = y * SUBTILE_RESOLUTION + yl;
-            //     if (ys < 0 || ys > PLOT_SUBTILE_LENGTH) {
-            //       continue;
-            //     }
-            //     for (let xl = 0; xl <= 4; xl += 1) {
-            //       const xs = x * SUBTILE_RESOLUTION + xl;
-            //       if (xs < 0 || xs > PLOT_SUBTILE_LENGTH) {
-            //         continue;
-            //       }
-            //       const s = elevation * maxStrength[eIndex(xl, yl)] * (1 / (63 * 255));
-            //       const index = indexOf(x * SUBTILE_RESOLUTION + xl, y * SUBTILE_RESOLUTION + yl);
-            //       if (s > 0) {
-            //         hOffset[index] = Math.max(hOffset[index], s);
-            //       } else if (s < 0) {
-            //         hOffset[index] = Math.min(hOffset[index], s);
-            //       }
-            //     }
-            //   }
-            // }
-
-            // terrain_style.push([fx, 0]);
-        }
-    }
-
-    // Propagate terrain effects in Z direction to mid-points between tiles.
-    for z in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-        for x in 0..PARCEL_TERRAIN_FX_SIZE {
-            let fx0 = terrain_fx.get(x, z);
-            let fx1 = terrain_fx.get(x, z + 1);
-            let cont_z0 = fx0.options.contains(TerrainOptions::ContinuousY);
-            let cont_z1 = fx0.options.contains(TerrainOptions::ContinuousY);
-            if cont_z0 || cont_z1 {
-                for fx_type in 0..3 {
-                    if fx0.effect.contains(TerrainTypes(1 << fx_type))
-                        && fx1.effect.contains(TerrainTypes(1 << fx_type))
-                    {
-                        effect_strength[fx_type][x * 4 + 2][z * 4 + 4] =
-                            (fx0.effect_strength + fx1.effect_strength) * 0.5;
-                    }
-                }
-            }
-        }
-    }
-
-    // Propagate terrain effects in X direction to mid-points between tiles.
-    for z in 0..PARCEL_TERRAIN_FX_SIZE {
-        for x in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-            let fx0 = terrain_fx.get(x, z);
-            let fx1 = terrain_fx.get(x + 1, z);
-            let cont_x0 = fx0.options.contains(TerrainOptions::ContinuousX);
-            let cont_x1 = fx0.options.contains(TerrainOptions::ContinuousX);
-            if cont_x0 || cont_x1 {
-                for fx_type in 0..3 {
-                    if fx0.effect.contains(TerrainTypes(1 << fx_type))
-                        && fx1.effect.contains(TerrainTypes(1 << fx_type))
-                    {
-                        effect_strength[fx_type][x * 4 + 4][z * 4 + 2] =
-                            (fx0.effect_strength + fx1.effect_strength) * 0.5;
-                    }
-                }
-            }
-        }
-    }
-
-    for z in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-        for x in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-            for fx_type in 0..3 {
-                let lx = x * 4 + 4;
-                let lz = z * 4 + 4;
-                let s00 = effect_strength[fx_type][lx - 2][lz];
-                let s01 = effect_strength[fx_type][lx + 2][lz];
-                let s10 = effect_strength[fx_type][lx][lz - 2];
-                let s11 = effect_strength[fx_type][lx][lz + 2];
-                let count = (s00 > 0.0) as u32
-                    + (s01 > 0.0) as u32
-                    + (s10 > 0.0) as u32
-                    + (s11 > 0.0) as u32;
-                if count > 1 {
-                    effect_strength[fx_type][lx][lz] = s00.max(s01).max(s10).max(s11);
-                }
-            }
-        }
-    }
-
-    // Propagate terrain effects in Z direction to quad-points between tiles.
-    for z in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-        for x in 0..PARCEL_TERRAIN_FX_SIZE - 1 {
-            let lx = x * 4;
-            let lz = z * 4;
-            for fx_type in 0..3 {
-                effect_strength[fx_type][lx + 1][lz] =
-                    (effect_strength[fx_type][lx][lz] + effect_strength[fx_type][lx + 2][lz]) * 0.5;
-                effect_strength[fx_type][lx + 3][lz] = (effect_strength[fx_type][lx + 2][lz]
-                    + effect_strength[fx_type][lx + 4][lz])
-                    * 0.5;
-                effect_strength[fx_type][lx + 1][lz + 2] = (effect_strength[fx_type][lx][lz + 2]
-                    + effect_strength[fx_type][lx + 2][lz + 2])
-                    * 0.5;
-                effect_strength[fx_type][lx + 3][lz + 2] = (effect_strength[fx_type][lx + 2]
-                    [lz + 2]
-                    + effect_strength[fx_type][lx + 4][lz + 2])
-                    * 0.5;
-
-                effect_strength[fx_type][lx][lz + 1] =
-                    (effect_strength[fx_type][lx][lz] + effect_strength[fx_type][lx][lz + 2]) * 0.5;
-                effect_strength[fx_type][lx][lz + 3] = (effect_strength[fx_type][lx][lz + 2]
-                    + effect_strength[fx_type][lx][lz + 4])
-                    * 0.5;
-                effect_strength[fx_type][lx + 2][lz + 1] = (effect_strength[fx_type][lx + 2][lz]
-                    + effect_strength[fx_type][lx + 2][lz + 2])
-                    * 0.5;
-                effect_strength[fx_type][lx + 2][lz + 3] = (effect_strength[fx_type][lx + 2]
-                    [lz + 2]
-                    + effect_strength[fx_type][lx + 2][lz + 4])
-                    * 0.5;
-
-                effect_strength[fx_type][lx + 1][lz + 1] = (effect_strength[fx_type][lx][lz + 1]
-                    + effect_strength[fx_type][lx + 1][lz]
-                    + effect_strength[fx_type][lx + 2][lz + 1]
-                    + effect_strength[fx_type][lx + 1][lz + 2])
-                    * 0.25;
-                effect_strength[fx_type][lx + 3][lz + 1] = (effect_strength[fx_type][lx + 2]
-                    [lz + 1]
-                    + effect_strength[fx_type][lx + 3][lz]
-                    + effect_strength[fx_type][lx + 4][lz + 1]
-                    + effect_strength[fx_type][lx + 3][lz + 2])
-                    * 0.25;
-                effect_strength[fx_type][lx + 1][lz + 3] = (effect_strength[fx_type][lx][lz + 3]
-                    + effect_strength[fx_type][lx + 1][lz + 2]
-                    + effect_strength[fx_type][lx + 2][lz + 3]
-                    + effect_strength[fx_type][lx + 1][lz + 4])
-                    * 0.25;
-                effect_strength[fx_type][lx + 3][lz + 3] = (effect_strength[fx_type][lx + 2]
-                    [lz + 3]
-                    + effect_strength[fx_type][lx + 3][lz + 2]
-                    + effect_strength[fx_type][lx + 4][lz + 3]
-                    + effect_strength[fx_type][lx + 3][lz + 4])
-                    * 0.25;
-            }
-        }
-    }
-
-    for z in 0..PARCEL_MESH_STRIDE_U {
-        for x in 0..PARCEL_MESH_STRIDE_U {
-            let cobbles_fx = (effect_strength[0][x + 4][z + 4] * 255.0) as u32;
-            let soil_fx = (effect_strength[1][x + 4][z + 4] * 255.0) as u32;
-            let earth_fx = (effect_strength[2][x + 4][z + 4] * 255.0) as u32;
-
-            let terrain_style_0: u32 = pack_u32(cobbles_fx, soil_fx, earth_fx, 0);
-            let terrain_style_1: u32 = 0;
-            terrain_style.push([terrain_style_0, terrain_style_1]);
         }
     }
 
@@ -529,16 +398,16 @@ pub fn compute_interpolated_mesh(
                     &shape.height,
                     ihm,
                     &mut weights,
-                    1 + x * PARCEL_MESH_RESOLUTION,
-                    1 + z * PARCEL_MESH_RESOLUTION,
+                    1 + x * PARCEL_MESH_SIZE,
+                    1 + z * PARCEL_MESH_SIZE,
                     shape_ref.rotation as i32,
                 );
             }
         }
     }
 
-    for z in 0..=PARCEL_MESH_RESOLUTION + 2 {
-        for x in 0..=PARCEL_MESH_RESOLUTION + 2 {
+    for z in 0..=PARCEL_MESH_SIZE + 2 {
+        for x in 0..=PARCEL_MESH_SIZE + 2 {
             let w = weights.get(x, z);
             if w > 0. {
                 *ihm.get_mut_ref(x, z) /= w;
@@ -572,9 +441,9 @@ fn accumulate(
 ) {
     let src_rot = RotatingSquareArray::new(src.size(), rotation, src.elts());
     let x0 = x_offset.max(0);
-    let x1 = (x_offset + PARCEL_MESH_RESOLUTION + 1).min(dst.size() as i32);
+    let x1 = (x_offset + PARCEL_MESH_SIZE + 1).min(dst.size() as i32);
     let z0 = z_offset.max(0);
-    let z1 = (z_offset + PARCEL_MESH_RESOLUTION + 1).min(dst.size() as i32);
+    let z1 = (z_offset + PARCEL_MESH_SIZE + 1).min(dst.size() as i32);
 
     for z in z0..z1 {
         for x in x0..x1 {
