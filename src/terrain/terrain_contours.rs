@@ -4,7 +4,7 @@ extern crate rmp_serde as rmps;
 
 use std::sync::{Arc, Mutex};
 
-use super::{square::SquareArray, PARCEL_SIZE};
+use super::{square::SquareArray, PARCEL_SIZE, PARCEL_SIZE_U};
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     math::IRect,
@@ -14,8 +14,8 @@ use bevy::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-const HEIGHT_STRIDE: usize = (PARCEL_SIZE + 1) as usize;
-const FLORA_STRIDE: usize = PARCEL_SIZE as usize;
+const HEIGHT_STRIDE: usize = PARCEL_SIZE_U + 1;
+const FLORA_STRIDE: usize = PARCEL_SIZE_U;
 
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, Copy, Clone)]
 #[repr(u8)]

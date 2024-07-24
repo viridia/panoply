@@ -14,7 +14,7 @@ use super::{
         FloraType, TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset,
     },
     terrain_map::TerrainMap,
-    PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 use bevy::{
     asset::LoadState,
@@ -228,7 +228,7 @@ fn compute_flora_placement(
 
     // Flora array
     let flora = RotatingSquareArray::new(
-        PARCEL_SIZE as usize,
+        PARCEL_SIZE_U,
         shape_ref.rotation as i32,
         center.flora.elts(),
     );

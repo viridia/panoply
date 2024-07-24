@@ -1,7 +1,8 @@
 # TODO
 
-- Delete remnants of scene instancing
 - Ground paths / trails / roads.
+- Scenery outlines.
+- get rid of model_loader
 - Bugs:
   - Materials get loaded multiple times?
 - Assets

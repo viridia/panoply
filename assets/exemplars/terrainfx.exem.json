@@ -8,7 +8,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 1,
         "elevation": -0.14,
@@ -25,7 +25,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.75,
         "elevation": -0.1,
@@ -42,7 +42,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.5,
         "elevation": -0.05,
@@ -59,7 +59,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.25,
         "elevation": -0.025,
@@ -76,8 +76,8 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road",
-          "road"
+          "cobbles",
+          "path"
         ],
         "effect_strength": 1,
         "elevation": -0.1,
@@ -95,7 +95,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 1,
         "continuous_x": true,
@@ -111,7 +111,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "soil"
         ],
         "effect_strength": 1,
         "elevation": 0.1,
@@ -128,7 +128,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "path"
         ],
         "effect_strength": 1,
         "elevation": -0.1,
@@ -145,7 +145,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "path"
         ],
         "effect_strength": 0.75,
         "elevation": -0.1,
@@ -162,7 +162,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "path"
         ],
         "effect_strength": 0.5,
         "elevation": -0.08,
@@ -179,7 +179,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "path"
         ],
         "effect_strength": 0.4,
         "elevation": -0.07,
@@ -196,7 +196,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 1,
         "elevation": -0.2,
@@ -213,7 +213,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.75,
         "elevation": -0.2,
@@ -230,7 +230,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.5,
         "elevation": -0.1,
@@ -247,7 +247,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "cobbles"
         ],
         "effect_strength": 0.25,
         "elevation": -0.05,
@@ -261,8 +261,8 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road",
-          "road"
+          "cobbles",
+          "path"
         ],
         "effect_strength": 1,
         "elevation": -0.1,
@@ -276,8 +276,8 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road",
-          "road"
+          "cobbles",
+          "path"
         ],
         "effect_strength": 1,
         "continuous_x": true,
@@ -293,7 +293,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "soil"
         ],
         "effect_strength": 0.5,
         "elevation": 0.4,
@@ -309,7 +309,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "soil"
         ],
         "effect_strength": 0.5,
         "elevation": 0.4,
@@ -325,7 +325,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "soil"
         ],
         "effect_strength": 0.9,
         "elevation": 0.3,
@@ -341,7 +341,7 @@
     "aspects": {
       "TerrainEffect": {
         "effect": [
-          "road"
+          "soil"
         ],
         "effect_strength": 0.9,
         "elevation": 0.3,

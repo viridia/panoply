@@ -367,6 +367,7 @@ fn create_ground_material(
         grass: asset_server.load("terrain/textures/grass.png"),
         dirt: asset_server.load("terrain/textures/dirt.png"),
         moss: asset_server.load("terrain/textures/moss.png"),
+        cobbles: asset_server.load("terrain/textures/cobbles.png"),
         water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
         realm_offset: Vec2::new(0., 0.),
         biomes,

@@ -48,6 +48,8 @@ impl Viewpoint {
     }
 }
 
+/// Command which directly sets the viewpoint to a new position, used in editor.
+/// For gameplay, the viewpoint follows the "active entity".
 pub struct SetViewpointCmd {
     pub position: Vec3,
     pub realm: String,

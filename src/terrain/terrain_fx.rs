@@ -13,18 +13,16 @@ use serde::{
 /// Types of terrain effects.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Default, Reflect)]
 #[reflect(Default, Deserialize, Serialize)]
-pub struct TerrainTypes(u8);
+pub struct TerrainTypes(pub u8);
 
 bitflags! {
     impl TerrainTypes: u8 {
         /// Cobblestone road
-        const Road = 1 << 0;
+        const Cobbles = 1 << 0;
         /// Dark, earthy soil
         const Soil = 1 << 1;
         /// Trodden path or trail
         const Path = 1 << 2;
-        /// Paved stone
-        const Stone = 1 << 3;
     }
 }
 
@@ -34,17 +32,14 @@ impl Serialize for TerrainTypes {
         S: serde::ser::Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(self.bits().count_ones() as usize))?;
-        if self.contains(TerrainTypes::Road) {
-            seq.serialize_element("road")?;
+        if self.contains(TerrainTypes::Cobbles) {
+            seq.serialize_element("cobbles")?;
         }
         if self.contains(TerrainTypes::Soil) {
             seq.serialize_element("soil")?;
         }
         if self.contains(TerrainTypes::Path) {
             seq.serialize_element("path")?;
-        }
-        if self.contains(TerrainTypes::Stone) {
-            seq.serialize_element("stone")?;
         }
         seq.end()
     }
@@ -70,10 +65,9 @@ impl<'de> Deserialize<'de> for TerrainTypes {
                 let mut flags = TerrainTypes::default();
                 while let Some(ty) = seq.next_element::<&str>()? {
                     match ty {
-                        "road" => flags |= TerrainTypes::Road,
+                        "cobbles" => flags |= TerrainTypes::Cobbles,
                         "soil" => flags |= TerrainTypes::Soil,
                         "path" => flags |= TerrainTypes::Path,
-                        "stone" => flags |= TerrainTypes::Stone,
                         _ => {
                             warn!("Unknown terrain effect type: {}", ty);
                         }
@@ -92,6 +86,8 @@ pub struct TerrainOptions(u8);
 
 bitflags! {
     impl TerrainOptions: u8 {
+        /// No special options.
+        const None = 0;
         /// The terrain effect is continuous with respect to the x-axis. If false, then
         /// the effect is separate by tiles.
         const ContinuousX = 1 << 0;
@@ -108,7 +104,7 @@ bitflags! {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TerrainFxVertexAttr {
     pub(crate) effect: TerrainTypes,
-    pub(crate) effect_strength: u8,
+    pub(crate) effect_strength: f32,
     pub(crate) elevation: i8,
     pub(crate) options: TerrainOptions,
 }

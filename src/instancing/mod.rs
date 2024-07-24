@@ -1,8 +1,7 @@
-use bevy::{gltf::GltfMesh, prelude::*};
+use bevy::prelude::*;
 
 mod layers;
 mod model_loader;
-mod plugin;
 
 pub use layers::*;
 
@@ -40,26 +39,3 @@ pub struct ModelInstance {
 //     scale?: number;
 //     scaleVariance?: number;
 //   }
-
-// /** List of instances for a given 3d model.
-
-//     - A ModelRef can contains multiple components, each of which has a set of position
-//       parameters.
-//     - A ModelRef can be instantiated multiple times, with different parameters for each
-//       instance.
-
-//     Thus, the number of actual mesh instances is the product of these two sets.
-// */
-struct ModelInstanceList {
-    mesh: Handle<GltfMesh>,
-    // rebuild: boolean;
-    static_instances: Vec<ModelInstance>,
-    static_instance_count: usize,
-    // animatedInstances: IModelInstance[];
-    // animationGroups: Group[];
-    // instanceMeshes: InstancedMesh[];
-    // instanceTransforms: Matrix4[];
-    // boundingSphere: Sphere;
-    // boundingBox: Box3;
-    // modified?: boolean;
-}

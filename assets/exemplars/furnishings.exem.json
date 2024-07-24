@@ -1586,7 +1586,7 @@
     "aspects": {
       "SceneryModels": [
         {
-          "asset": "scenery/models/stonework.glb#IconPelarsis"
+          "asset": "scenery/models/stonework.glb#Icon.Pelarsis"
         }
       ],
       "SceneryColliders": [
