@@ -1279,6 +1279,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mod_preferences"
+version = "0.1.0"
+dependencies = [
+ "bevy 0.14.0",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "bevy_mod_raycast"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

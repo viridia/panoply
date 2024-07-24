@@ -1,19 +1,18 @@
 # TODO
 
-- Remove vegetation on terrain fx.
-- Scenery outlines.
-- get rid of model_loader
+- GLTF
+  - Wall outlines
+  - Blackout walls
+  - Flame animation
+  - get rid of model_loader
+  - Experiment with bevy_gltf_trait.
 - Bugs:
   - Materials get loaded multiple times?
+  - ground material sometimes doesn't see textures
 - Assets
   - Asset Reader that allows cache miss
   - Remove Box2d types, replace with 4-tuple.
-  - Experiment with bevy_gltf_trait.
-  - Wall outlines
   - Preferences API.
-- Models
-  - [x] replace model_loader
-  - Blackout walls
 - Wall Physics
   - implement
   - Use enum for collider type? Really depends on whether it's editable.
