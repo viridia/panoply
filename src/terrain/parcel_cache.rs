@@ -7,8 +7,8 @@ use crate::{
 
 use super::{
     parcel::{
-        Parcel, ParcelFloraChanged, ParcelKey, ParcelWaterChanged, RebuildParcelGroundMesh,
-        RebuildParcelTerrainFx, ShapeRef, ADJACENT_COUNT,
+        Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelWaterChanged,
+        RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, ADJACENT_COUNT,
     },
     terrain_map::{TerrainMap, TerrainMapAsset},
     TerrainFxVertexAttr, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
@@ -143,7 +143,7 @@ pub fn spawn_parcels(
                                     commands.entity(*entity).insert((
                                         RebuildParcelGroundMesh,
                                         ParcelWaterChanged,
-                                        ParcelFloraChanged,
+                                        // ParcelFloraChanged,
                                         RebuildParcelTerrainFx,
                                     ));
                                 }
@@ -164,8 +164,9 @@ pub fn spawn_parcels(
                                     ground_entity: None,
                                     water_entity: None,
                                     flora_entity: None,
-                                    terrain_fx: [TerrainFxVertexAttr::default();
-                                        PARCEL_TERRAIN_FX_AREA],
+                                    terrain_fx: ParcelTerrainFx(
+                                        [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA],
+                                    ),
                                 },
                                 SpatialBundle {
                                     transform: Transform::from_xyz(

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::{
     terrain::{
         ground_material::ATTRIBUTE_TERRAIN_STYLE, TerrainOptions, TerrainTypes,
-        PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE,
+        PARCEL_TERRAIN_FX_SIZE,
     },
     world::Realm,
 };
@@ -14,9 +14,8 @@ use super::{
     square::SquareArray,
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    TerrainFxVertexAttr, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE,
-    PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
-    PARCEL_TERRAIN_FX_AREA,
+    ParcelTerrainFx, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE, PARCEL_MESH_STRIDE,
+    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
 use bevy::{
     asset::LoadState,
@@ -43,17 +42,6 @@ pub const ATTRIBUTE_TERRAIN_FX: MeshVertexAttribute =
     MeshVertexAttribute::new("terrain_fx", 0x1000, VertexFormat::Uint8x4);
 
 const TERRAIN_FX_FINE_SIZE: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_MESH_SCALE_U;
-
-struct TerrainFxMap([TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA]);
-
-impl TerrainFxMap {
-    #[inline(always)]
-    pub fn get(&self, x: usize, z: usize) -> TerrainFxVertexAttr {
-        assert!(x < PARCEL_TERRAIN_FX_SIZE);
-        assert!(z < PARCEL_TERRAIN_FX_SIZE);
-        self.0[x + z * PARCEL_TERRAIN_FX_STRIDE]
-    }
-}
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
 pub fn gen_ground_meshes(
@@ -83,9 +71,8 @@ pub fn gen_ground_meshes(
 
         let shape_refs = parcel.contours;
         let terrain_fx = parcel.terrain_fx;
-        let task = pool.spawn(async move {
-            compute_ground_mesh(shape_refs, TerrainFxMap(terrain_fx), &contours)
-        });
+        let task =
+            pool.spawn(async move { compute_ground_mesh(shape_refs, &terrain_fx, &contours) });
         commands
             .entity(entity)
             .insert(ComputeGroundMeshTask(task))
@@ -136,7 +123,7 @@ pub fn insert_ground_meshes(
 #[allow(clippy::needless_range_loop)]
 fn compute_ground_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
-    terrain_fx: TerrainFxMap,
+    terrain_fx: &ParcelTerrainFx,
     shapes: &Arc<Mutex<TerrainContoursTable>>,
 ) -> Option<GroundMeshResult> {
     let shapes_table = shapes.lock().unwrap();
@@ -163,8 +150,6 @@ fn compute_ground_mesh(
     let mut terrain_style_f: Vec<[f32; 3]> = vec![[0., 0., 0.]; PARCEL_MESH_VERTEX_COUNT];
     let mut terrain_style: Vec<[u32; 2]> = vec![[0, 0]; PARCEL_MESH_VERTEX_COUNT];
     let mut terrain_elevation_offset: Vec<f32> = vec![0.; PARCEL_MESH_VERTEX_COUNT];
-
-    // const maxStrength = new Array<number>(eLength);
 
     for z in -1..PARCEL_SIZE + 1 {
         for x in -1..PARCEL_SIZE + 1 {

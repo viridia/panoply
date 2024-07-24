@@ -14,7 +14,7 @@ use super::{
         FloraType, TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset,
     },
     terrain_map::TerrainMap,
-    PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
+    ParcelTerrainFx, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 use bevy::{
     asset::LoadState,
@@ -87,6 +87,7 @@ pub fn gen_flora(
         let shape_ref = parcel.contours[4];
         let biome_indices = parcel.biomes;
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
+        let terrain_fx = parcel.terrain_fx;
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: HashMap::new(),
@@ -95,6 +96,7 @@ pub fn gen_flora(
                 coords,
                 shape_ref,
                 &contours,
+                &terrain_fx,
                 biome_indices,
                 &biomes,
                 &mut result,
@@ -215,6 +217,7 @@ fn compute_flora_placement(
     origin: IVec2,
     shape_ref: ShapeRef,
     contours: &Arc<Mutex<TerrainContoursTable>>,
+    terrain_fx: &ParcelTerrainFx,
     biome_indices: [u8; 4],
     biomes: &Arc<Mutex<BiomesTable>>,
     out: &mut FloraPlacementResult,
@@ -241,6 +244,11 @@ fn compute_flora_placement(
 
     for x in 0..PARCEL_SIZE {
         for z in 0..PARCEL_SIZE {
+            // Don't place flora on roads or other terrain fx.
+            let fx = terrain_fx.get((x + 1) as usize, (z + 1) as usize);
+            if !fx.effect.is_empty() {
+                continue;
+            }
             //     const fxOffset = ftAccessor.indexOf(x + 1, z + 1) * 8;
             //     if (
             //       effect &&
@@ -250,15 +258,14 @@ fn compute_flora_placement(
             //     ) {
             //       continue;
             //     }
-            let gx = origin.x + x;
-            let gz = origin.y + z;
-
             let feature = flora.get(x, z);
             if feature == FloraType::None {
                 continue;
             }
 
             // Weighted random selection of biome N or N+1.
+            let gx = origin.x + x;
+            let gz = origin.y + z;
             let xt: usize = if (x as f32 / PARCEL_SIZE_F + noise3(gx, gz, 5)) < 1. {
                 0
             } else {

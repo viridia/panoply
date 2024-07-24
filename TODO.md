@@ -1,6 +1,6 @@
 # TODO
 
-- Ground paths / trails / roads.
+- Remove vegetation on terrain fx.
 - Scenery outlines.
 - get rid of model_loader
 - Bugs:
@@ -18,8 +18,7 @@
   - implement
   - Use enum for collider type? Really depends on whether it's editable.
 - Finish terrain shader
-  - paths
-  - biomes
+  - biomes (snow, desert, etc.)
 - Portals
   - perspective projection
   - modified frustum

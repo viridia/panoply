@@ -115,11 +115,15 @@ pub fn set_se_model_render_layers(
     mut commands: Commands,
     q_models_added: Query<(Entity, &RenderLayers, &PropagateRenderLayers), Added<SceneInstance>>,
     q_children: Query<&Children>,
+    q_parents: Query<&Parent>,
 ) {
     for (entity, layers, _) in q_models_added.iter() {
         // println!("set_se_model_render_layers: {:?}", layers);
         for descendant in q_children.iter_descendants(entity) {
-            commands.entity(descendant).insert(layers.clone());
+            // Check needed to avoid despawn race condition
+            if q_parents.get(descendant).is_ok() {
+                commands.entity(descendant).insert(layers.clone());
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::terrain::{PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE};
+
 use super::{TerrainFxVertexAttr, PARCEL_TERRAIN_FX_AREA};
 #[derive(Eq, PartialEq, Hash)]
 pub struct ParcelKey {
@@ -27,6 +29,18 @@ impl ShapeRef {
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct ParcelTerrainFx(pub [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA]);
+
+impl ParcelTerrainFx {
+    #[inline(always)]
+    pub fn get(&self, x: usize, z: usize) -> TerrainFxVertexAttr {
+        assert!(x < PARCEL_TERRAIN_FX_SIZE);
+        assert!(z < PARCEL_TERRAIN_FX_SIZE);
+        self.0[x + z * PARCEL_TERRAIN_FX_STRIDE]
+    }
+}
+
 #[derive(Component)]
 pub struct Parcel {
     pub realm: Entity,
@@ -47,7 +61,7 @@ pub struct Parcel {
     pub flora_entity: Option<Entity>,
 
     /// Terrain effects for this parcel.
-    pub terrain_fx: [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA],
+    pub terrain_fx: ParcelTerrainFx,
 }
 
 #[derive(Component)]

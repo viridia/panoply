@@ -1,8 +1,9 @@
 use bevy::{asset::LoadState, prelude::*};
 
 use crate::terrain::{
-    Parcel, ParcelCache, RebuildParcelGroundMesh, RebuildParcelTerrainFx, TerrainFxVertexAttr,
-    TerrainOptions, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
+    Parcel, ParcelCache, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh,
+    RebuildParcelTerrainFx, TerrainFxVertexAttr, TerrainOptions, PARCEL_SIZE,
+    PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
 };
 use panoply_exemplar::*;
 
@@ -150,10 +151,10 @@ pub fn rebuild_parcel_terrain_fx(
                     terrain_fx_map.map_vertex_attr[fx_index];
             }
         }
-        parcel.terrain_fx = terrain_fx;
+        parcel.terrain_fx = ParcelTerrainFx(terrain_fx);
         commands
             .entity(entity)
-            .insert(RebuildParcelGroundMesh)
+            .insert((RebuildParcelGroundMesh, ParcelFloraChanged))
             .remove::<RebuildParcelTerrainFx>();
     }
 }

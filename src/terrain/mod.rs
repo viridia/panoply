@@ -36,6 +36,8 @@ pub const PARCEL_TERRAIN_FX_AREA: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_TERRAI
 
 pub use ground_mesh::*;
 pub use parcel::Parcel;
+pub use parcel::ParcelFloraChanged;
+pub use parcel::ParcelTerrainFx;
 pub use parcel::RebuildParcelGroundMesh;
 pub use parcel::RebuildParcelTerrainFx;
 pub use parcel_cache::*;
