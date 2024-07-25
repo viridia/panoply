@@ -110,7 +110,7 @@ impl ViewTemplate for LocationChooser {
             .iter()
             .map(|loc| LocationListItem {
                 name: loc.name.clone(),
-                display_name: loc.display_name().to_owned(),
+                display_name: loc.name.to_owned(),
                 selected: selected.as_ref().map_or(false, |s| *s == loc.name),
             })
             .collect();

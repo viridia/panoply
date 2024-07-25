@@ -1,5 +1,6 @@
 use bevy::{
-    asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers, scene::SceneInstance,
+    asset::LoadState, ecs::world::Command, gltf::Gltf, prelude::*, render::view::RenderLayers,
+    scene::SceneInstance,
 };
 
 use panoply_exemplar::*;
@@ -115,15 +116,28 @@ pub fn set_se_model_render_layers(
     mut commands: Commands,
     q_models_added: Query<(Entity, &RenderLayers, &PropagateRenderLayers), Added<SceneInstance>>,
     q_children: Query<&Children>,
-    q_parents: Query<&Parent>,
 ) {
     for (entity, layers, _) in q_models_added.iter() {
         // println!("set_se_model_render_layers: {:?}", layers);
         for descendant in q_children.iter_descendants(entity) {
-            // Check needed to avoid despawn race condition
-            if q_parents.get(descendant).is_ok() {
-                commands.entity(descendant).insert(layers.clone());
-            }
+            commands.add(SafeInsertLayers {
+                layers: layers.clone(),
+                target: descendant,
+            });
+        }
+    }
+}
+
+struct SafeInsertLayers {
+    layers: RenderLayers,
+    target: Entity,
+}
+
+impl Command for SafeInsertLayers {
+    fn apply(self, world: &mut World) {
+        // Check if entity exists.
+        if let Some(mut entity) = world.get_entity_mut(self.target) {
+            entity.insert(self.layers.clone());
         }
     }
 }

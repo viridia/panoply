@@ -1283,6 +1283,7 @@ name = "bevy_mod_preferences"
 version = "0.1.0"
 dependencies = [
  "bevy 0.14.0",
+ "directories",
  "serde",
  "serde_json",
  "thiserror",

@@ -38,7 +38,7 @@ pub struct FloraPlacementResult {
 }
 
 #[derive(Debug, Component, Default)]
-pub struct FloraElementMesh {
+pub struct FloraInstance {
     pub handle: Handle<Gltf>,
     pub label: String,
     pub transform: Transform,
@@ -50,8 +50,8 @@ pub const HEIGHT_SCALE: f32 = 0.5;
 #[allow(clippy::too_many_arguments)]
 pub fn gen_flora(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Parcel), With<ParcelFloraChanged>>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
+    mut q_parcels: Query<(Entity, &mut Parcel), With<ParcelFloraChanged>>,
+    q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
     ts_assets: Res<Assets<TerrainContoursTableAsset>>,
@@ -60,8 +60,8 @@ pub fn gen_flora(
 ) {
     let pool = AsyncComputeTaskPool::get();
 
-    for (entity, parcel) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
+    for (entity, parcel) in q_parcels.iter_mut() {
+        let realm = q_realms.get(parcel.realm);
         if realm.is_err() {
             return;
         }
@@ -116,12 +116,12 @@ pub fn gen_flora(
 /// Consumes the output of the compute task and creates instances for trees and.
 pub fn insert_flora(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
+    mut q_parcels: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
+    q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
 ) {
-    for (entity, mut parcel, mut task) in query.iter_mut() {
-        if let Ok((realm, _terrain)) = realms_query.get(parcel.realm) {
+    for (entity, mut parcel, mut task) in q_parcels.iter_mut() {
+        if let Ok((realm, _terrain)) = q_realms.get(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 // Remove existing flora
                 if let Some(flora_entity) = parcel.flora_entity {
@@ -133,7 +133,7 @@ pub fn insert_flora(
                 if let Some(mut flora_placement) = task_result {
                     // Get or create flora entity.
                     let flora_entity = match parcel.flora_entity {
-                        Some(entity) => entity,
+                        Some(flora_ent) => flora_ent,
                         None => {
                             let child = commands
                                 .spawn((
@@ -158,7 +158,7 @@ pub fn insert_flora(
                                 children.push(
                                     commands
                                         .spawn((
-                                            FloraElementMesh {
+                                            FloraInstance {
                                                 handle: handle.clone(),
                                                 label: fragment.to_string(),
                                                 transform,
@@ -184,11 +184,11 @@ pub fn insert_flora(
 
 pub fn spawn_flora_model_instances(
     mut commands: Commands,
-    mut query: Query<(Entity, &FloraElementMesh), Without<Handle<Scene>>>,
+    mut q_flora_instance: Query<(Entity, &FloraInstance), Without<Handle<Scene>>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
-    for (entity, mesh) in query.iter_mut() {
+    for (entity, mesh) in q_flora_instance.iter_mut() {
         let result = server.load_state(&mesh.handle);
         if result == LoadState::Loaded {
             let asset = assets_gltf.get(&mesh.handle);
@@ -249,15 +249,6 @@ fn compute_flora_placement(
             if !fx.effect.is_empty() {
                 continue;
             }
-            //     const fxOffset = ftAccessor.indexOf(x + 1, z + 1) * 8;
-            //     if (
-            //       effect &&
-            //       (effect[fxOffset + FX_ROAD] > 10 ||
-            //         effect[fxOffset + FX_PATH] > 10 ||
-            //         effect[fxOffset + FX_STONE] > 10)
-            //     ) {
-            //       continue;
-            //     }
             let feature = flora.get(x, z);
             if feature == FloraType::None {
                 continue;

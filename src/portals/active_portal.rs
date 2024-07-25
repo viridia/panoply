@@ -11,7 +11,7 @@ use bevy::{
     },
 };
 
-use crate::view::PrimaryCamera;
+use crate::{view::PrimaryCamera, world::Realm};
 
 use super::portal_aspect::{Portal, PortalSide, PortalTarget};
 
@@ -63,11 +63,13 @@ pub(crate) struct PortalCamera;
 #[allow(clippy::type_complexity)]
 pub(crate) fn spawn_portals(
     mut commands: Commands,
-    query_camera: Query<(&GlobalTransform, &Frustum), With<PrimaryCamera>>,
-    mut active_portal_query: Query<(
+    q_camera: Query<(&GlobalTransform, &Frustum), With<PrimaryCamera>>,
+    q_realms: Query<&Realm>,
+    mut q_active_portals: Query<(
         Entity,
         &GlobalTransform,
         &Portal,
+        &PortalTarget,
         &RenderLayers,
         Option<&ActivePortal>,
     )>,
@@ -75,13 +77,13 @@ pub(crate) fn spawn_portals(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    let Ok((primary_xform, frustum)) = query_camera.get_single() else {
+    let Ok((primary_xform, frustum)) = q_camera.get_single() else {
         warn!("No primary camera found");
         return;
     };
     let primary_transform = primary_xform.compute_transform();
 
-    for (entity, portal_xform, portal, layers, active) in active_portal_query.iter_mut() {
+    for (entity, portal_xform, portal, target, layers, active) in q_active_portals.iter_mut() {
         // Compute the transform for the portal aperture.
         let portal_transform = portal_xform.compute_transform();
         let aperture_transform = portal_transform
@@ -99,8 +101,13 @@ pub(crate) fn spawn_portals(
             radius: portal.size.length(),
         };
 
+        let realm = q_realms.iter().find(|r| r.name == target.realm);
+
         let is_visible = {
-            if !frustum.intersects_sphere(&bounds, false) {
+            if realm.is_none() {
+                // Realm not found
+                false
+            } else if !frustum.intersects_sphere(&bounds, false) {
                 // Portal is offscreen
                 false
             } else if portal.side == PortalSide::Both {
@@ -130,6 +137,7 @@ pub(crate) fn spawn_portals(
             let mut transform = Transform::from_translation(portal.offset);
             transform.rotate(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2));
             let mesh = meshes.add(Rectangle::from_size(portal.size));
+            let target_layer = realm.unwrap().layer.clone();
 
             let size = Extent3d {
                 width: 100,
@@ -191,7 +199,7 @@ pub(crate) fn spawn_portals(
                         },
                         ..default()
                     },
-                    RenderLayers::default(),
+                    target_layer,
                     PortalCamera,
                 ))
                 .id();
@@ -215,26 +223,26 @@ pub(crate) fn spawn_portals(
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn update_portals(
-    query_primary_camera: Query<(&Camera, &Transform, &GlobalTransform), With<PrimaryCamera>>,
-    query_portals: Query<
+    q_primary_camera: Query<(&Camera, &Transform, &GlobalTransform), With<PrimaryCamera>>,
+    q_portals: Query<
         (&Portal, &PortalTarget, &ActivePortal, &GlobalTransform),
         Without<PortalCamera>,
     >,
-    mut query_portal_camera: Query<
+    mut q_portal_camera: Query<
         (&mut Transform, &mut GlobalTransform),
         (With<PortalCamera>, Without<PrimaryCamera>),
     >,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut gizmos: Gizmos,
 ) {
-    let Ok((primary_camera, primary_transform, primary_global)) = query_primary_camera.get_single()
+    let Ok((primary_camera, primary_transform, primary_global)) = q_primary_camera.get_single()
     else {
         return;
     };
 
-    for (portal, portal_target, active_portal, portal_xform) in query_portals.iter() {
+    for (portal, portal_target, active_portal, portal_xform) in q_portals.iter() {
         let Ok((mut portal_camera_xform, mut portal_camera_global_xform)) =
-            query_portal_camera.get_mut(active_portal.camera)
+            q_portal_camera.get_mut(active_portal.camera)
         else {
             println!("No portal camera found");
             continue;
