@@ -29,7 +29,7 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
     out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal, instance_index);
     out.position = mfns::mesh_position_local_to_clip(
         mfns::get_world_from_local(instance_index),
-        vec4<f32>(wposition.xyz, 1.0)
+        vec4<f32>(vertex.position + vertex.normal * width, 1.0)
     );
 
     return out;

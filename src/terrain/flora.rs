@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    instancing::PropagateRenderLayers,
+    models::PropagateRenderLayers,
     random::{noise3, WeightedChoice},
     world::Realm,
 };

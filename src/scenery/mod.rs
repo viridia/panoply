@@ -1,9 +1,8 @@
 use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
-use scenery_element::set_se_model_render_layers;
 
-use crate::materials::OutlineMaterial;
+use crate::materials::{OutlineMaterial, OutlineMaterialExtension};
 
 use self::{
     floor_aspect::{FloorGeometry, FloorNav, NoiseFloorSurface, StdFloorSurface},
@@ -49,7 +48,7 @@ pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Floor");
 pub const TERRAIN_FX_TYPE: InstanceType = InstanceType::from_str("TrFx");
 
 #[derive(Resource, Default)]
-pub struct FloorOutline(pub Handle<ExtendedMaterial<StandardMaterial, OutlineMaterial>>);
+pub struct FloorOutline(pub Handle<OutlineMaterial>);
 
 pub struct SceneryPlugin;
 
@@ -102,14 +101,13 @@ impl Plugin for SceneryPlugin {
                     insert_floor_meshes,
                     rebuild_floor_materials,
                     spawn_se_model_instances,
-                    set_se_model_render_layers,
                 ),
             );
     }
 }
 
 fn init_outline(
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, OutlineMaterial>>>,
+    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, OutlineMaterialExtension>>>,
     mut floor_outline: ResMut<FloorOutline>,
 ) {
     floor_outline.0 = materials.add(ExtendedMaterial {
@@ -119,6 +117,6 @@ fn init_outline(
             cull_mode: Some(Face::Front),
             ..Default::default()
         },
-        extension: OutlineMaterial { width: 0.015 },
+        extension: OutlineMaterialExtension { width: 0.015 },
     });
 }

@@ -1,11 +1,8 @@
-use bevy::{
-    asset::LoadState, ecs::world::Command, gltf::Gltf, prelude::*, render::view::RenderLayers,
-    scene::SceneInstance,
-};
+use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers};
 
 use panoply_exemplar::*;
 
-use crate::instancing::PropagateRenderLayers;
+use crate::models::PropagateRenderLayers;
 
 use super::scenery_aspect::{ModelComponent, SceneryModels};
 
@@ -108,36 +105,6 @@ pub fn spawn_se_model_instances(
                     // panic!();
                 }
             }
-        }
-    }
-}
-
-pub fn set_se_model_render_layers(
-    mut commands: Commands,
-    q_models_added: Query<(Entity, &RenderLayers, &PropagateRenderLayers), Added<SceneInstance>>,
-    q_children: Query<&Children>,
-) {
-    for (entity, layers, _) in q_models_added.iter() {
-        // println!("set_se_model_render_layers: {:?}", layers);
-        for descendant in q_children.iter_descendants(entity) {
-            commands.add(SafeInsertLayers {
-                layers: layers.clone(),
-                target: descendant,
-            });
-        }
-    }
-}
-
-struct SafeInsertLayers {
-    layers: RenderLayers,
-    target: Entity,
-}
-
-impl Command for SafeInsertLayers {
-    fn apply(self, world: &mut World) {
-        // Check if entity exists.
-        if let Some(mut entity) = world.get_entity_mut(self.target) {
-            entity.insert(self.layers.clone());
         }
     }
 }

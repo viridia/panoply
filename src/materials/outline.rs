@@ -1,16 +1,16 @@
 use bevy::{
-    pbr::MaterialExtension,
+    pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
     render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
-pub struct OutlineMaterial {
+pub struct OutlineMaterialExtension {
     #[uniform(100)]
     pub width: f32,
 }
 
-impl MaterialExtension for OutlineMaterial {
+impl MaterialExtension for OutlineMaterialExtension {
     fn vertex_shader() -> ShaderRef {
         "shaders/outline.wgsl".into()
     }
@@ -19,3 +19,5 @@ impl MaterialExtension for OutlineMaterial {
         "shaders/outline.wgsl".into()
     }
 }
+
+pub type OutlineMaterial = ExtendedMaterial<StandardMaterial, OutlineMaterialExtension>;

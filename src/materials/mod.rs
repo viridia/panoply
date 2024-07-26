@@ -5,21 +5,24 @@ use base64::{
     engine::{general_purpose::NO_PAD, GeneralPurpose},
     DecodeError, Engine,
 };
-use bevy::{asset::io::AssetReader, pbr::ExtendedMaterial, prelude::*};
+use bevy::{asset::io::AssetReader, prelude::*};
 use futures_lite::{AsyncRead, AsyncSeek};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
+mod black;
 mod floor_noisy;
 mod floor_std;
 mod outline;
 
-pub use self::outline::OutlineMaterial;
+pub use self::outline::OutlineMaterialExtension;
+pub use black::{BlackMaterial, BlackMaterialExtension};
 pub use floor_noisy::FloorNoisyMaterial;
 use floor_noisy::FloorNoisyMaterialLoader;
 pub use floor_noisy::FloorNoisyMaterialParams;
 use floor_std::FloorStdMaterialLoader;
 pub use floor_std::FloorStdMaterialParams;
+pub use outline::OutlineMaterial;
 
 pub struct MaterialsPlugin;
 
@@ -28,9 +31,8 @@ impl Plugin for MaterialsPlugin {
         app.init_asset_loader::<FloorStdMaterialLoader>()
             .init_asset_loader::<FloorNoisyMaterialLoader>()
             .add_plugins(MaterialPlugin::<FloorNoisyMaterial>::default())
-            .add_plugins(MaterialPlugin::<
-                ExtendedMaterial<StandardMaterial, OutlineMaterial>,
-            >::default());
+            .add_plugins(MaterialPlugin::<OutlineMaterial>::default())
+            .add_plugins(MaterialPlugin::<BlackMaterial>::default());
     }
 }
 

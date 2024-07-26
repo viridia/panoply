@@ -13,6 +13,7 @@ use bevy::{
 use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
+use models::ModelsPlugin;
 use panoply_exemplar::ExemplarPlugin;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
@@ -25,8 +26,8 @@ extern crate directories;
 
 mod actors;
 mod diagnostics;
-mod instancing;
 mod materials;
+mod models;
 mod msgpack;
 mod portals;
 mod random;
@@ -146,6 +147,7 @@ fn main() {
         SceneryPlugin,
         ActorsPlugin,
         PortalPlugin,
+        ModelsPlugin,
         // WorldInspectorPlugin::new(),
     ));
 
