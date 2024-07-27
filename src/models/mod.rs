@@ -1,17 +1,13 @@
 // mod model_loader;
 
 use bevy::{
-    ecs::world::Command,
-    gltf::GltfMaterialExtras,
-    pbr::ExtendedMaterial,
-    prelude::*,
-    render::{render_resource::Face, view::RenderLayers},
-    scene::SceneInstance,
+    ecs::world::Command, gltf::GltfMaterialExtras, prelude::*, render::view::RenderLayers,
+    scene::SceneInstance, utils::HashMap,
 };
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
-use crate::materials::{OutlineMaterial, OutlineMaterialExtension};
+use crate::materials::{BlackMaterialHandle, FlameMaterialHandle, OutlineMaterialHandle};
 
 /// A component that indicates that we want to propagate render layers to all descendants.
 #[derive(Debug, Clone, Copy, Component)]
@@ -19,45 +15,10 @@ pub struct PropagateRenderLayers;
 
 pub struct ModelsPlugin;
 
-#[derive(Debug, Clone, Resource, Default)]
-struct OutlineMaterialHandle(Handle<OutlineMaterial>);
-
-#[derive(Debug, Clone, Resource, Default)]
-struct BlackMaterialHandle(Handle<StandardMaterial>);
-
 impl Plugin for ModelsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
-        app.init_resource::<OutlineMaterialHandle>()
-            .init_resource::<BlackMaterialHandle>()
-            .add_systems(Startup, (init_outline, init_black))
-            .add_systems(Update, (copy_model_render_layers, process_material_extras));
+        app.add_systems(Update, (copy_model_render_layers, process_material_extras));
     }
-}
-
-fn init_outline(
-    mut materials: ResMut<Assets<OutlineMaterial>>,
-    mut r_outline: ResMut<OutlineMaterialHandle>,
-) {
-    r_outline.0 = materials.add(ExtendedMaterial {
-        base: StandardMaterial {
-            base_color: Color::BLACK,
-            unlit: true,
-            cull_mode: Some(Face::Front),
-            ..Default::default()
-        },
-        extension: OutlineMaterialExtension { width: 0.015 },
-    });
-}
-
-fn init_black(
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut r_black: ResMut<BlackMaterialHandle>,
-) {
-    r_black.0 = materials.add(StandardMaterial {
-        base_color: Srgba::BLACK.into(),
-        unlit: true,
-        ..Default::default()
-    });
 }
 
 pub fn copy_model_render_layers(
@@ -102,17 +63,21 @@ struct MaterialOptions {
     #[serde(default, deserialize_with = "deserialize_bool")]
     unlit: Option<bool>,
 
-    #[serde(default, deserialize_with = "deserialize_bool")]
-    flame: Option<bool>,
+    // #[serde(default, deserialize_with = "deserialize_bool")]
+    flame: Option<Value>,
 
     #[serde(default, deserialize_with = "deserialize_bool")]
     portalglow: Option<bool>,
+
+    #[serde(flatten)]
+    extra: HashMap<String, Value>,
 }
 
 fn process_material_extras(
     mut commands: Commands,
     r_outline: Res<OutlineMaterialHandle>,
     r_black: Res<BlackMaterialHandle>,
+    r_flame: Res<FlameMaterialHandle>,
     q_materials: Query<
         (Entity, &Handle<StandardMaterial>, &GltfMaterialExtras),
         Added<GltfMaterialExtras>,
@@ -128,10 +93,14 @@ fn process_material_extras(
                 // Add outline material, but keep existing material as well.
                 commands.entity(entity).insert(r_outline.0.clone());
             } else if options.black.unwrap_or(false) || options.unlit.unwrap_or(false) {
-                // commands.entity(entity).remove::<Handle<StandardMaterial>>();
                 commands.entity(entity).insert(r_black.0.clone());
-            } else {
-                // warn!("Unknown material option: {:?}", extras);
+            } else if options.flame.is_some() {
+                commands
+                    .entity(entity)
+                    .remove::<Handle<StandardMaterial>>()
+                    .insert(r_flame.0.clone());
+            } else if !options.extra.is_empty() {
+                // warn!("Unknown material option: {:?}", options.extra);
                 // println!("material extras: {:?}", extras);
             }
         }

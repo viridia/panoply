@@ -5,34 +5,61 @@ use base64::{
     engine::{general_purpose::NO_PAD, GeneralPurpose},
     DecodeError, Engine,
 };
-use bevy::{asset::io::AssetReader, prelude::*};
+use bevy::{
+    asset::{embedded_asset, io::AssetReader},
+    pbr::ExtendedMaterial,
+    prelude::*,
+    render::render_resource::Face,
+};
 use futures_lite::{AsyncRead, AsyncSeek};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
-mod black;
+mod flame;
 mod floor_noisy;
 mod floor_std;
 mod outline;
 
-pub use self::outline::OutlineMaterialExtension;
-pub use black::{BlackMaterial, BlackMaterialExtension};
+pub use flame::FlameMaterial;
 pub use floor_noisy::FloorNoisyMaterial;
 use floor_noisy::FloorNoisyMaterialLoader;
 pub use floor_noisy::FloorNoisyMaterialParams;
 use floor_std::FloorStdMaterialLoader;
 pub use floor_std::FloorStdMaterialParams;
-pub use outline::OutlineMaterial;
+pub use outline::{OutlineMaterial, OutlineMaterialExtension};
+
+#[derive(Debug, Clone, Resource, Default)]
+pub struct OutlineMaterialHandle(pub Handle<OutlineMaterial>);
+
+#[derive(Debug, Clone, Resource, Default)]
+pub struct BlackMaterialHandle(pub Handle<StandardMaterial>);
+
+#[derive(Debug, Clone, Resource, Default)]
+pub struct FlameMaterialHandle(pub Handle<FlameMaterial>);
 
 pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset_loader::<FloorStdMaterialLoader>()
+        embedded_asset!(app, "flame.wgsl");
+        embedded_asset!(app, "flame_prepass.wgsl");
+        embedded_asset!(app, "outline.wgsl");
+        app.init_resource::<OutlineMaterialHandle>()
+            .init_resource::<BlackMaterialHandle>()
+            .init_resource::<FlameMaterialHandle>()
+            .init_asset_loader::<FloorStdMaterialLoader>()
             .init_asset_loader::<FloorNoisyMaterialLoader>()
             .add_plugins(MaterialPlugin::<FloorNoisyMaterial>::default())
             .add_plugins(MaterialPlugin::<OutlineMaterial>::default())
-            .add_plugins(MaterialPlugin::<BlackMaterial>::default());
+            .add_plugins(MaterialPlugin::<FlameMaterial>::default())
+            .add_systems(
+                Startup,
+                (
+                    create_outline_material,
+                    create_black_material,
+                    create_flame_material,
+                ),
+            );
     }
 }
 
@@ -119,4 +146,40 @@ where
         let bytes = URL_SAFE_NO_PAD.decode(encoded)?;
         Ok(rmp_serde::from_read(Cursor::new(bytes))?)
     }
+}
+
+fn create_outline_material(
+    mut materials: ResMut<Assets<OutlineMaterial>>,
+    mut r_outline: ResMut<OutlineMaterialHandle>,
+) {
+    r_outline.0 = materials.add(ExtendedMaterial {
+        base: StandardMaterial {
+            base_color: Color::BLACK,
+            unlit: true,
+            cull_mode: Some(Face::Front),
+            ..Default::default()
+        },
+        extension: OutlineMaterialExtension { width: 0.015 },
+    });
+}
+
+fn create_black_material(
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut r_black: ResMut<BlackMaterialHandle>,
+) {
+    r_black.0 = materials.add(StandardMaterial {
+        base_color: Srgba::BLACK.into(),
+        unlit: true,
+        ..Default::default()
+    });
+}
+
+pub fn create_flame_material(
+    mut materials: ResMut<Assets<FlameMaterial>>,
+    mut resource: ResMut<FlameMaterialHandle>,
+    asset_server: Res<AssetServer>,
+) {
+    resource.0 = materials.add(FlameMaterial {
+        noise: asset_server.load("textures/noise_1.png"),
+    });
 }

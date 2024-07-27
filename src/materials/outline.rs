@@ -12,11 +12,11 @@ pub struct OutlineMaterialExtension {
 
 impl MaterialExtension for OutlineMaterialExtension {
     fn vertex_shader() -> ShaderRef {
-        "shaders/outline.wgsl".into()
+        "embedded://panoply/materials/outline.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "shaders/outline.wgsl".into()
+        "embedded://panoply/materials/outline.wgsl".into()
     }
 }
 
