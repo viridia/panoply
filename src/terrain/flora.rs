@@ -14,7 +14,7 @@ use super::{
         FloraType, TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset,
     },
     terrain_map::TerrainMap,
-    ParcelTerrainFx, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
+    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 use bevy::{
     asset::LoadState,
@@ -47,10 +47,13 @@ pub struct FloraInstance {
 pub const HEIGHT_SCALE: f32 = 0.5;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn gen_flora(
     mut commands: Commands,
-    mut q_parcels: Query<(Entity, &mut Parcel), With<ParcelFloraChanged>>,
+    mut q_parcels: Query<
+        (Entity, &mut Parcel),
+        (With<ParcelFloraChanged>, Without<RebuildParcelTerrainFx>),
+    >,
     q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
@@ -125,7 +128,7 @@ pub fn insert_flora(
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 // Remove existing flora
                 if let Some(flora_entity) = parcel.flora_entity {
-                    println!("Dropping flora");
+                    // println!("Dropping flora {}", flora_entity);
                     commands.entity(flora_entity).despawn_descendants();
                 }
 
@@ -171,9 +174,6 @@ pub fn insert_flora(
                         }
                     }
                     commands.entity(flora_entity).replace_children(&children);
-                } else if let Some(flora_entity) = parcel.flora_entity {
-                    // There was no flora so remove all entities.
-                    commands.entity(flora_entity).despawn_descendants();
                 }
 
                 commands.entity(entity).remove::<ComputeFloraTask>();

@@ -143,7 +143,7 @@ pub fn spawn_parcels(
                                     commands.entity(*entity).insert((
                                         RebuildParcelGroundMesh,
                                         ParcelWaterChanged,
-                                        // ParcelFloraChanged,
+                                        ParcelFloraChanged,
                                         RebuildParcelTerrainFx,
                                     ));
                                 }

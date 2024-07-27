@@ -120,11 +120,11 @@ pub fn rebuild_terrain_fx_vertex_attrs(
 
 pub fn rebuild_parcel_terrain_fx(
     mut commands: Commands,
-    mut query_parcels: Query<(Entity, &mut Parcel), With<RebuildParcelTerrainFx>>,
-    query_precincts: Query<(&Precinct, &TerrainFxMap)>,
+    mut q_parcels: Query<(Entity, &mut Parcel), With<RebuildParcelTerrainFx>>,
+    q_precincts: Query<(&Precinct, &TerrainFxMap)>,
     mut precinct_cache: ResMut<PrecinctCache>,
 ) {
-    for (entity, mut parcel) in query_parcels.iter_mut() {
+    for (entity, mut parcel) in q_parcels.iter_mut() {
         let mut terrain_fx: [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA] =
             [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA];
         let precinct_key = PrecinctKey {
@@ -133,9 +133,13 @@ pub fn rebuild_parcel_terrain_fx(
             z: (parcel.coords.y * PARCEL_SIZE).div_euclid(PRECINCT_SIZE),
         };
         let Some(precinct_entity) = precinct_cache.get(&precinct_key) else {
+            // println!("No precinct entity for parcel {:?}", parcel.coords);
+            commands.entity(entity).remove::<RebuildParcelTerrainFx>();
             continue;
         };
-        let Ok((precinct, terrain_fx_map)) = query_precincts.get(precinct_entity) else {
+        let Ok((precinct, terrain_fx_map)) = q_precincts.get(precinct_entity) else {
+            // println!("No precinct for parcel {:?}", parcel.coords);
+            commands.entity(entity).remove::<RebuildParcelTerrainFx>();
             continue;
         };
         let x_offset = parcel.coords.x * PARCEL_SIZE - precinct.coords.x * PRECINCT_SIZE;
@@ -152,6 +156,7 @@ pub fn rebuild_parcel_terrain_fx(
             }
         }
         parcel.terrain_fx = ParcelTerrainFx(terrain_fx);
+        // println!("Rebuilt terrain fx for parcel {:?}", parcel.coords);
         commands
             .entity(entity)
             .insert((RebuildParcelGroundMesh, ParcelFloraChanged))

@@ -14,8 +14,8 @@ use super::{
     square::SquareArray,
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    ParcelTerrainFx, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE, PARCEL_MESH_STRIDE,
-    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
+    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U,
+    PARCEL_MESH_SIZE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
 use bevy::{
     asset::LoadState,
@@ -44,18 +44,25 @@ pub const ATTRIBUTE_TERRAIN_FX: MeshVertexAttribute =
 const TERRAIN_FX_FINE_SIZE: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_MESH_SCALE_U;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
+#[allow(clippy::type_complexity)]
 pub fn gen_ground_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Parcel), With<RebuildParcelGroundMesh>>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
+    mut q_parcels: Query<
+        (Entity, &mut Parcel),
+        (
+            With<RebuildParcelGroundMesh>,
+            Without<RebuildParcelTerrainFx>,
+        ),
+    >,
+    q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
     ts_assets: Res<Assets<TerrainContoursTableAsset>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
-    for (entity, parcel) in query.iter_mut() {
-        let Ok((realm, _map)) = realms_query.get(parcel.realm) else {
+    for (entity, parcel) in q_parcels.iter_mut() {
+        let Ok((realm, _map)) = q_realms.get(parcel.realm) else {
             return;
         };
 

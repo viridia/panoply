@@ -43,5 +43,5 @@ fn fragment(
     let noise_1 = textureSample(noise, noise_sampler, fract(uv + vec2f(0., time * 0.3)));
     let noise_2 = textureSample(noise, noise_sampler, fract(uv + vec2f(0., time * 0.5)));
     let alpha = smoothstep(0.5, 0.9, (noise_1.g + noise_2.g) * 0.5 + mesh.color.g);
-    return vec4f(0.5, alpha * 0.3, 0.1, alpha * 0.8) * alpha;
+    return vec4f(0.5, alpha * 0.3, 0.1, 0.1) * alpha;
 }

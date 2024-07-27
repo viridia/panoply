@@ -28,24 +28,27 @@ pub fn copy_model_render_layers(
 ) {
     for (entity, layers, _) in q_models_added.iter() {
         for descendant in q_children.iter_descendants(entity) {
-            commands.add(SafeInsertLayers {
-                layers: layers.clone(),
-                target: descendant,
-            });
+            commands.add(SafeInsert::new(layers.clone(), descendant));
         }
     }
 }
 
-struct SafeInsertLayers {
-    layers: RenderLayers,
+pub struct SafeInsert<C: Component> {
+    component: C,
     target: Entity,
 }
 
-impl Command for SafeInsertLayers {
+impl<C: Component> SafeInsert<C> {
+    pub fn new(component: C, target: Entity) -> Self {
+        Self { component, target }
+    }
+}
+
+impl<C: Component> Command for SafeInsert<C> {
     fn apply(self, world: &mut World) {
         // Check if entity exists.
         if let Some(mut entity) = world.get_entity_mut(self.target) {
-            entity.insert(self.layers.clone());
+            entity.insert(self.component);
         }
     }
 }

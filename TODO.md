@@ -1,11 +1,8 @@
 # TODO
 
 - GLTF
-  - Wall outlines
-  - Blackout walls
-  - Flame animation
-  - get rid of model_loader
-  - Experiment with bevy_gltf_trait.
+  - Flames look a bit too cartoony
+  - propagate crash
 - Bugs:
   - Materials get loaded multiple times?
   - ground material sometimes doesn't see textures
