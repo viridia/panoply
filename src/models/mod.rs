@@ -29,7 +29,7 @@ impl Plugin for ModelsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.init_resource::<OutlineMaterialHandle>()
             .init_resource::<BlackMaterialHandle>()
-            .add_systems(Startup, init_outline)
+            .add_systems(Startup, (init_outline, init_black))
             .add_systems(Update, (copy_model_render_layers, process_material_extras));
     }
 }
@@ -55,7 +55,7 @@ fn init_black(
 ) {
     r_black.0 = materials.add(StandardMaterial {
         base_color: Srgba::BLACK.into(),
-        // unlit: true,
+        unlit: true,
         ..Default::default()
     });
 }
