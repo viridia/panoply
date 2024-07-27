@@ -11,6 +11,7 @@ use bevy::{
     },
 };
 use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
+use bevy_mod_preferences::PreferencesPlugin;
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
 use models::ModelsPlugin;
@@ -61,19 +62,6 @@ struct EditorImages {
     play: Handle<Image>,
 }
 
-enum EditorState {
-    World,
-    Terrain,
-    Scenery,
-    Meta,
-    Play,
-}
-
-#[derive(Resource)]
-struct ToolState {
-    state: EditorState,
-}
-
 fn main() {
     let mut settings = UserSettings {
         window: WindowSettings {
@@ -110,6 +98,7 @@ fn main() {
         DefaultPickingPlugins,
         QuillPlugin,
         ObsidianUiPlugin,
+        PreferencesPlugin::new("panoply"),
     ))
     .init_resource::<view::viewport::ViewportInset>()
     .insert_resource(DebugPickingMode::Disabled)
@@ -121,9 +110,6 @@ fn main() {
         camera_distance: 20.,
         elevation: PI * 0.25,
         ..default()
-    })
-    .insert_resource(ToolState {
-        state: EditorState::World,
     })
     .add_systems(Startup, setup)
     .add_systems(
@@ -167,17 +153,6 @@ fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
         quest: assets.load("editor/icons/quest.png"),
         play: assets.load("editor/icons/play.png"),
     });
-}
-
-fn editor_ui_system(// mut tool_state_res: ResMut<ToolState>,
-    // images: Res<EditorImages>,
-) {
-    // let world_texture_id = contexts.add_image(images.world.clone());
-    // let terrain_texture_id = contexts.add_image(images.terrain.clone());
-    // let building_texture_id = contexts.add_image(images.building.clone());
-    // let quest_texture_id = contexts.add_image(images.quest.clone());
-    // let play_texture_id = contexts.add_image(images.play.clone());
-    // let tool_state = tool_state_res.as_mut();
 }
 
 /// A marker component for our shapes so we can query them separately from the ground plane
@@ -224,17 +199,6 @@ fn setup(
             Shape,
         ));
     }
-
-    // commands.spawn(PointLightBundle {
-    //     point_light: PointLight {
-    //         intensity: 5000.0,
-    //         range: 20.,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     transform: Transform::from_xyz(8.0, 16.0, 8.0),
-    //     ..default()
-    // });
 
     commands.insert_resource(AmbientLight {
         brightness: 0.5 * 1000.,

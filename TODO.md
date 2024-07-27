@@ -1,8 +1,7 @@
 # TODO
 
-- GLTF
-  - Flames look a bit too cartoony
-  - propagate crash
+- Editor modes
+  - Tool palette
 - Bugs:
   - Materials get loaded multiple times?
   - ground material sometimes doesn't see textures

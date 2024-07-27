@@ -12,6 +12,22 @@ pub struct PreferencesPlugin {
     pub app_name: String,
 }
 
+impl PreferencesPlugin {
+    pub fn new(app_name: &str) -> Self {
+        Self {
+            app_name: app_name.to_string(),
+        }
+    }
+}
+
+impl Default for PreferencesPlugin {
+    fn default() -> Self {
+        Self {
+            app_name: "bevy_app".to_string(),
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct PreferencesPath(pub std::path::PathBuf);
 
@@ -38,6 +54,8 @@ impl Plugin for PreferencesPlugin {
             if prefs_file.exists() && prefs_file.is_file() {
                 // std::fs::create_dir_all(&prefs_path.0).unwrap();
             }
+        } else {
+            warn!("Could not find user configuration directories");
         }
         // Load preferences
     }

@@ -19,16 +19,16 @@ bevy = { version = "0.14.0", features = [
 bevy_mod_picking = { version = "0.20.1" }
 bevy_mod_stylebuilder = "0.1.1"
 bevy_quill = "0.1.2"
-# bevy_quill = { path = "../quill2" }
 bevy_quill_obsidian = "0.1.0"
-# bevy_quill_obsidian = { path = "../quill2/crates/bevy_quill_obsidian" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
+bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
 
 [dependencies]
 bevy = { workspace = true }
 bevy-inspector-egui = "0.19.0"
 bevy_mod_picking = { workspace = true }
 bevy_mod_stylebuilder = { workspace = true }
+bevy_mod_preferences = { workspace = true }
 bevy_quill = { workspace = true }
 bevy_quill_obsidian = { workspace = true }
 bitflags = "2.4.2"

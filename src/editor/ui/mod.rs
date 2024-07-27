@@ -1,3 +1,4 @@
+mod mode_selector;
 pub mod quick_nav;
 
 use bevy::{prelude::*, ui};
@@ -8,7 +9,9 @@ use bevy_quill_obsidian::{
     colors,
     controls::{Splitter, SplitterDirection},
     focus::{DefaultKeyListener, KeyPressEvent, TabGroup},
+    prelude::Spacer,
 };
+use mode_selector::ModeSelector;
 use quick_nav::{QuickNavDialog, QuickNavOpen};
 
 use crate::view::{viewport::ViewportInsetElement, HudCamera};
@@ -53,12 +56,19 @@ impl ViewTemplate for EditorView {
             )
             .style(style_main)
             .children((
-                Element::<NodeBundle>::new().style(style_aside).style_dyn(
-                    move |width, sb| {
-                        sb.width(ui::Val::Px(width));
-                    },
-                    sidebar_width.0,
-                ),
+                Element::<NodeBundle>::new()
+                    .style(style_aside)
+                    .style_dyn(
+                        move |width, sb| {
+                            sb.width(ui::Val::Px(width));
+                        },
+                        sidebar_width.0,
+                    )
+                    .children(
+                        Element::<NodeBundle>::new()
+                            .style(style_aside_header)
+                            .children((ModeSelector, Spacer)),
+                    ),
                 Splitter::new()
                     .direction(SplitterDirection::Vertical)
                     .value(sidebar_width.0)
@@ -95,6 +105,11 @@ fn style_aside(ss: &mut StyleBuilder) {
         .flex_direction(ui::FlexDirection::Column)
         .width(200)
         .pointer_events(true);
+}
+
+fn style_aside_header(ss: &mut StyleBuilder) {
+    ss.display(ui::Display::Flex)
+        .flex_direction(ui::FlexDirection::Row);
 }
 
 fn style_game_view(ss: &mut StyleBuilder) {

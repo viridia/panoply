@@ -4,7 +4,9 @@
         loader: "bevy_render::texture::image_loader::ImageLoader",
         settings: (
             format: FromExtension,
-            is_srgb: true
+            is_srgb: true,
+            sampler: Default,
+            asset_usage: RenderAssetUsages("RENDER_WORLD"),
         ),
     ),
 )
