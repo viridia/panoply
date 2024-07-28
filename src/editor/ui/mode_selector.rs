@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_quill::prelude::*;
+use bevy_quill::{prelude::*, Switch};
 use bevy_quill_obsidian::prelude::*;
 
 use crate::editor::EditorState;
@@ -60,5 +60,23 @@ impl ViewTemplate for ModeSelector {
                     }),
                 ),
         ))
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct EditorModalControls;
+
+impl ViewTemplate for EditorModalControls {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let st = cx.use_resource::<State<EditorState>>().get().clone();
+
+        Switch::new(st)
+            .case(EditorState::World, "World")
+            .case(EditorState::Terrain, "Terrain")
+            .case(EditorState::Scenery, "Scenery")
+            .case(EditorState::Meta, "Meta")
+            .case(EditorState::Play, "Play")
     }
 }

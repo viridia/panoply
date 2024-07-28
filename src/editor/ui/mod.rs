@@ -11,7 +11,7 @@ use bevy_quill_obsidian::{
     focus::{DefaultKeyListener, KeyPressEvent, TabGroup},
     prelude::Spacer,
 };
-use mode_selector::ModeSelector;
+use mode_selector::{EditorModalControls, ModeSelector};
 use quick_nav::{QuickNavDialog, QuickNavOpen};
 
 use crate::view::{viewport::ViewportInsetElement, HudCamera};
@@ -64,11 +64,12 @@ impl ViewTemplate for EditorView {
                         },
                         sidebar_width.0,
                     )
-                    .children(
+                    .children((
                         Element::<NodeBundle>::new()
                             .style(style_aside_header)
                             .children((ModeSelector, Spacer)),
-                    ),
+                        EditorModalControls,
+                    )),
                 Splitter::new()
                     .direction(SplitterDirection::Vertical)
                     .value(sidebar_width.0)
