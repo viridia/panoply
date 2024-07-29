@@ -1,8 +1,14 @@
 use bevy::prelude::*;
-use bevy_quill::{prelude::*, Switch};
-use bevy_quill_obsidian::prelude::*;
+use bevy_quill::prelude::*;
+use bevy_quill_obsidian::{prelude::*, RoundedCorners};
 
 use crate::editor::EditorState;
+
+use super::{
+    mode_meta::EditModeMetadataControls, mode_play::EditModePlayControls,
+    mode_realm::EditModeRealmControls, mode_scenery::EditModeSceneryControls,
+    mode_terrain::EditModeTerrainControls,
+};
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct ModeSelector;
@@ -15,12 +21,13 @@ impl ViewTemplate for ModeSelector {
 
         ToolPalette::new().size(Size::Xl).columns(5).children((
             ToolIconButton::new("editor/icons/world.png")
+                .corners(RoundedCorners::Left)
                 .no_tint(true)
                 .size(Vec2::new(32., 24.))
-                .selected(st == EditorState::World)
+                .selected(st == EditorState::Realm)
                 .on_click(
                     cx.create_callback(|mut mode: ResMut<NextState<EditorState>>| {
-                        mode.set(EditorState::World);
+                        mode.set(EditorState::Realm);
                     }),
                 ),
             ToolIconButton::new("editor/icons/terrain.png")
@@ -51,6 +58,7 @@ impl ViewTemplate for ModeSelector {
                     }),
                 ),
             ToolIconButton::new("editor/icons/play.png")
+                .corners(RoundedCorners::Right)
                 .no_tint(true)
                 .size(Vec2::new(28., 24.))
                 .selected(st == EditorState::Play)
@@ -73,10 +81,10 @@ impl ViewTemplate for EditorModalControls {
         let st = cx.use_resource::<State<EditorState>>().get().clone();
 
         Switch::new(st)
-            .case(EditorState::World, "World")
-            .case(EditorState::Terrain, "Terrain")
-            .case(EditorState::Scenery, "Scenery")
-            .case(EditorState::Meta, "Meta")
-            .case(EditorState::Play, "Play")
+            .case(EditorState::Realm, EditModeRealmControls)
+            .case(EditorState::Terrain, EditModeTerrainControls)
+            .case(EditorState::Scenery, EditModeSceneryControls)
+            .case(EditorState::Meta, EditModeMetadataControls)
+            .case(EditorState::Play, EditModePlayControls)
     }
 }

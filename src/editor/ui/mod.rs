@@ -1,4 +1,11 @@
+mod controls;
+mod mode_meta;
+mod mode_play;
+mod mode_realm;
+mod mode_scenery;
 mod mode_selector;
+mod mode_terrain;
+
 pub mod quick_nav;
 
 use bevy::{prelude::*, ui};
@@ -100,7 +107,7 @@ fn style_main(ss: &mut StyleBuilder) {
 
 fn style_aside(ss: &mut StyleBuilder) {
     ss.display(ui::Display::Flex)
-        .background_color(colors::U2)
+        .background_color(colors::BACKGROUND)
         .padding(8)
         .gap(8)
         .flex_direction(ui::FlexDirection::Column)

@@ -2,6 +2,7 @@
 
 - Editor modes
   - Tool palette
+- Build an entity inspector
 - Bugs:
   - Materials get loaded multiple times?
   - ground material sometimes doesn't see textures

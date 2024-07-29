@@ -12,7 +12,7 @@ pub struct EditorSidebarWidth(pub f32);
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default, Reflect)]
 enum EditorState {
     #[default]
-    World,
+    Realm,
     Terrain,
     Scenery,
     Meta,
@@ -36,7 +36,7 @@ impl Default for EditorSidebarWidth {
 
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_state(EditorState::Meta)
+        app.insert_state(EditorState::Realm)
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<EditorPrefs>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
