@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="32"
+   height="29"
+   viewBox="0 0 8.467 7.673"
+   version="1.1"
+   id="svg1002"
+   sodipodi:docname="lower-draw.svg"
+   inkscape:export-filename="../../assets/editor/icons/lower-draw.png"
+   inkscape:export-xdpi="191.10001"
+   inkscape:export-ydpi="191.10001"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1006" />
+  <sodipodi:namedview
+     id="namedview1004"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="8.137931"
+     inkscape:cx="7.3728814"
+     inkscape:cy="14.5"
+     inkscape:window-width="1309"
+     inkscape:window-height="456"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1002" />
+  <path
+     d="M5.883 3.89l2.475-1.238v2.475L4.233 7.19v-.825"
+     fill="#837e4f"
+     id="path990" />
+  <path
+     d="M.11 5.127V2.652L2.583 3.89l1.65 2.475v.825z"
+     fill="#9f9a66"
+     id="path992" />
+  <path
+     d="M4.233 6.365L2.583 3.89h3.3z"
+     fill="#abd584"
+     id="path994" />
+  <path
+     d="M8.358 2.652L5.883 3.89h-3.3L.11 2.652 4.233.542z"
+     fill="#82d431"
+     id="path996" />
+  <path
+     d="M8.358 2.652v2.475L4.233 7.19.11 5.127V2.652L4.233.59z"
+     fill="none"
+     stroke="#000"
+     stroke-width=".218"
+     id="path998" />
+  <path
+     d="M3.437.094L3.408 1.78H2.57l1.65 1.685L5.868 1.75h-.84l.03-1.655z"
+     fill="#52b384"
+     stroke="#000"
+     stroke-width=".188"
+     id="path1000" />
+</svg>

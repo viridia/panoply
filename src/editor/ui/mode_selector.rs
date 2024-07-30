@@ -1,8 +1,7 @@
+use crate::editor::EditorState;
 use bevy::prelude::*;
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
-
-use crate::editor::EditorState;
 
 use super::{
     mode_meta::EditModeMetadataControls, mode_play::EditModePlayControls,
@@ -17,7 +16,7 @@ impl ViewTemplate for ModeSelector {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let st = cx.use_resource::<State<EditorState>>().get().clone();
+        let st = *cx.use_resource::<State<EditorState>>().get();
 
         ToolPalette::new().size(Size::Xl).columns(5).children((
             ToolIconButton::new("editor/icons/world.png")
@@ -78,7 +77,7 @@ impl ViewTemplate for EditorModalControls {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        let st = cx.use_resource::<State<EditorState>>().get().clone();
+        let st = *cx.use_resource::<State<EditorState>>().get();
 
         Switch::new(st)
             .case(EditorState::Realm, EditModeRealmControls)

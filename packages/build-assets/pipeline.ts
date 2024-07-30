@@ -103,6 +103,8 @@ function flora(targetName: string, relativeSrcDir: string, outFile: string) {
             if (m.getAlphaMode() === "BLEND") {
               m.setAlphaMode("MASK");
               m.setAlphaCutoff(0.1);
+            } else {
+              m.setExtras({ outline: 0.015 });
             }
           });
 

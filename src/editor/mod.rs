@@ -9,7 +9,7 @@ pub struct EditorPlugin;
 #[derive(Resource)]
 pub struct EditorSidebarWidth(pub f32);
 
-#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default, Reflect)]
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 enum EditorState {
     #[default]
     Realm,
@@ -17,6 +17,34 @@ enum EditorState {
     Scenery,
     Meta,
     Play,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+enum TerrainTool {
+    #[default]
+    RaiseDraw,
+    RaiseRect,
+    LowerDraw,
+    LowerRect,
+    FlattenDraw,
+    FlattenRect,
+    DrawTrees,
+    DrawShrubs,
+    DrawHerbs,
+    EraseFlora,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+enum SceneryTool {
+    #[default]
+    FloorDraw,
+    WallDraw,
+    FixtureDraw,
+    ActorPlacement,
+    TerrainFxDraw,
+    SceneryEdit,
+    EditLayers,
+    SceneryRect,
 }
 
 #[derive(Resource, Default, Reflect, PartialEq)]
@@ -36,7 +64,9 @@ impl Default for EditorSidebarWidth {
 
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_state(EditorState::Realm)
+        app.insert_state(EditorState::default())
+            .insert_state(TerrainTool::default())
+            .insert_state(SceneryTool::default())
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<EditorPrefs>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())

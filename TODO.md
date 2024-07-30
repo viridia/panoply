@@ -1,5 +1,6 @@
 # TODO
 
+- World camera pan needs to use bubbled scroll events.
 - Editor modes
   - Tool palette
 - Build an entity inspector

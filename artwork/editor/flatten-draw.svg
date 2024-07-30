@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="32"
+   height="29"
+   viewBox="0 0 8.467 7.673"
+   version="1.1"
+   id="svg731"
+   sodipodi:docname="flatten-draw.svg"
+   inkscape:export-filename="../../assets/editor/icons/flatten-draw.png"
+   inkscape:export-xdpi="576.06799"
+   inkscape:export-ydpi="576.06799"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview733"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="8.137931"
+     inkscape:cx="7.3728814"
+     inkscape:cy="14.5"
+     inkscape:window-width="1309"
+     inkscape:window-height="456"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg731" />
+  <defs
+     id="defs719">
+    <filter
+       id="a"
+       x="-0.068614632"
+       width="1.1364037"
+       y="-0.02344477"
+       height="1.0468888"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         stdDeviation=".005"
+         id="feGaussianBlur716" />
+    </filter>
+  </defs>
+  <path
+     d="M8.358 3.361v1.65L4.233 7.074v-1.65"
+     fill="#837e4f"
+     id="path721" />
+  <path
+     d="M.11 5.011v-1.65l4.123 2.063v1.65z"
+     fill="#9f9a66"
+     id="path723" />
+  <path
+     d="M8.358 3.361L4.233 5.424.11 3.36 4.233 1.3z"
+     fill="#82d431"
+     id="path725" />
+  <path
+     d="M8.358 3.361v1.65L4.233 7.074.11 5.01V3.36L4.233 1.3z"
+     fill="none"
+     stroke="#000"
+     stroke-width=".218"
+     id="path727" />
+  <path
+     d="M86.91 457.162l-7.555 7.72H83.2v11.475h-3.844l7.555 7.721 7.555-7.857H90.62V465.02h3.844z"
+     transform="matrix(0 -.1506 .21829 0 -98.506 15.287)"
+     fill="#52b384"
+     stroke="#000"
+     stroke-width=".862"
+     filter="url(#a)"
+     id="path729" />
+</svg>

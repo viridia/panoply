@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 8.467 5.556"
+   height="21"
+   width="32"
+   version="1.1"
+   id="svg573"
+   sodipodi:docname="rotate-cw.svg"
+   inkscape:export-filename="../../assets/editor/icons/rotate-cw.png"
+   inkscape:export-xdpi="192"
+   inkscape:export-ydpi="192"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview575"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="11.238095"
+     inkscape:cx="9.7881356"
+     inkscape:cy="10.5"
+     inkscape:window-width="1309"
+     inkscape:window-height="456"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg573" />
+  <defs
+     id="defs567">
+    <filter
+       id="a"
+       x="-0.037927064"
+       width="1.0758541"
+       y="-0.070078318"
+       height="1.1401566"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         stdDeviation=".605"
+         id="feGaussianBlur564" />
+    </filter>
+  </defs>
+  <path
+     transform="translate(0 .265) scale(.20555)"
+     d="M27.24 5.074a10.36 18.894 89.993 00-13.577-.043A10.36 18.894 89.993 002.292 17.775a10.36 18.894 89.993 0022.485 7.016l-1.77-4.021a6.23 11.313 89.81 01-12.57-3.021 6.23 11.313 89.81 014.422-8.464 6.23 11.313 89.81 0114.428 1.598l-3.533.73 11.258 5.477 2.725-8.363-3.194.659a10.36 18.894 89.993 00-9.302-4.311z"
+     fill-opacity=".464"
+     filter="url(#a)"
+     id="path569" />
+  <path
+     d="M5.505.54A2.13 3.884 89.993 002.714.533a2.13 3.884 89.993 00-2.338 2.62 2.13 3.884 89.993 004.622 1.442l-.364-.827a1.28 2.325 89.81 01-2.583-.62 1.28 2.325 89.81 01.909-1.74 1.28 2.325 89.81 012.965.328l-.726.15L7.513 3.01l.56-1.72-.656.136A2.13 3.884 89.993 005.505.541z"
+     fill="#37ce8c"
+     stroke="#000"
+     stroke-width=".259"
+     stroke-linecap="round"
+     stroke-dashoffset="17"
+     id="path571" />
+</svg>
