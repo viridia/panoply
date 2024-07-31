@@ -20,6 +20,7 @@ bevy_mod_picking = { version = "0.20.1" }
 bevy_mod_stylebuilder = "0.1.1"
 bevy_quill = "0.1.2"
 bevy_quill_obsidian = "0.1.0"
+bevy_quill_overlays = { version = "0.1.0" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
 bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
 
@@ -31,6 +32,7 @@ bevy_mod_stylebuilder = { workspace = true }
 bevy_mod_preferences = { workspace = true }
 bevy_quill = { workspace = true }
 bevy_quill_obsidian = { workspace = true }
+bevy_quill_overlays = { workspace = true }
 bitflags = "2.4.2"
 directories = "5.0.1"
 earcutr = "0.4.3"
@@ -58,3 +60,4 @@ opt-level = 3
 bevy_mod_stylebuilder = { version = "0.1.1", path = "../quill2/crates/bevy_mod_stylebuilder" }
 bevy_quill = { version = "0.1.2", path = "../quill2" }
 bevy_quill_obsidian = { version = "0.1.0", path = "../quill2/crates/bevy_quill_obsidian" }
+bevy_quill_overlays = { version = "0.1.0", path = "../quill2/crates/bevy_quill_overlays" }

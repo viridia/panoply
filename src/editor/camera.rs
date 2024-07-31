@@ -44,18 +44,22 @@ pub fn camera_controller(
         }
     }
 
-    viewpoint.rotate(
-        (movement(left && !strafe) - movement(right && !strafe))
-            * CAMERA_ROTATION_SPEED
-            * time.delta_seconds(),
-    );
+    if left || right {
+        viewpoint.rotate(
+            (movement(left && !strafe) - movement(right && !strafe))
+                * CAMERA_ROTATION_SPEED
+                * time.delta_seconds(),
+        );
+    }
 
-    viewpoint.move_local(
-        (movement(up) - movement(down)) * CAMERA_SPEED * time.delta_seconds() * fast,
-        (movement(left && strafe) - movement(right && strafe))
-            * CAMERA_SPEED
-            * time.delta_seconds(),
-    );
+    if up || down {
+        viewpoint.move_local(
+            (movement(up) - movement(down)) * CAMERA_SPEED * time.delta_seconds() * fast,
+            (movement(left && strafe) - movement(right && strafe))
+                * CAMERA_SPEED
+                * time.delta_seconds(),
+        );
+    }
 
     // Update the camera transform
     viewpoint.get_camera_transform(&mut transform);

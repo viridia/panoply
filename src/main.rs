@@ -14,6 +14,7 @@ use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
 use bevy_mod_preferences::PreferencesPlugin;
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
+use bevy_quill_overlays::QuillOverlaysPlugin;
 use models::ModelsPlugin;
 use panoply_exemplar::ExemplarPlugin;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -97,6 +98,7 @@ fn main() {
         ScreenDiagsPlugin,
         DefaultPickingPlugins,
         QuillPlugin,
+        QuillOverlaysPlugin,
         ObsidianUiPlugin,
         PreferencesPlugin::new("panoply"),
     ))

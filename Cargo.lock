@@ -1536,6 +1536,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_quill_overlays"
+version = "0.1.0"
+dependencies = [
+ "bevy 0.14.0",
+ "bevy_mod_picking",
+ "bevy_quill_core",
+]
+
+[[package]]
 name = "bevy_reflect"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3081,7 +3090,7 @@ dependencies = [
  "vec_map",
  "wasm-bindgen",
  "web-sys",
- "windows 0.44.0",
+ "windows 0.54.0",
 ]
 
 [[package]]
@@ -4540,6 +4549,7 @@ dependencies = [
  "bevy_mod_stylebuilder",
  "bevy_quill",
  "bevy_quill_obsidian",
+ "bevy_quill_overlays",
  "bitflags 2.6.0",
  "directories",
  "earcutr",

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_mod_preferences::{Preferences, ReflectPreferences};
+use ui::mode_realm;
 
 mod camera;
 mod ui;
@@ -67,10 +68,15 @@ impl Plugin for EditorPlugin {
         app.insert_state(EditorState::default())
             .insert_state(TerrainTool::default())
             .insert_state(SceneryTool::default())
+            .enable_state_scoped_entities::<EditorState>()
+            .enable_state_scoped_entities::<TerrainTool>()
+            .enable_state_scoped_entities::<SceneryTool>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<EditorPrefs>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(PostStartup, ui::setup_editor_view)
-            .add_systems(Update, camera::camera_controller);
+            .add_systems(Update, camera::camera_controller)
+            .add_systems(OnEnter(EditorState::Realm), mode_realm::enter)
+            .add_systems(OnExit(EditorState::Realm), mode_realm::exit);
     }
 }

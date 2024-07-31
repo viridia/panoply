@@ -1,10 +1,11 @@
 mod controls;
-mod mode_meta;
-mod mode_play;
-mod mode_realm;
-mod mode_scenery;
-mod mode_selector;
-mod mode_terrain;
+pub mod mode_meta;
+pub mod mode_play;
+pub mod mode_realm;
+pub mod mode_scenery;
+pub mod mode_selector;
+pub mod mode_terrain;
+mod overlays;
 
 pub mod quick_nav;
 

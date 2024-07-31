@@ -5,9 +5,22 @@ use bevy_quill_obsidian::{
     typography, RoundedCorners,
 };
 
+use crate::editor::ui::overlays::MapBoundsOverlay;
+
 use super::controls::{
     style_attribute_key, style_attribute_list, style_attribute_value, LocationChooser,
 };
+
+#[derive(Clone, Component)]
+pub struct MapOverlay;
+
+pub fn enter(mut commands: Commands) {
+    commands.spawn((MapBoundsOverlay.to_root(), MapOverlay));
+}
+
+pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<MapOverlay>>) {
+    q_overlays.iter().for_each(|e| commands.entity(e).despawn());
+}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct EditModeRealmControls;
