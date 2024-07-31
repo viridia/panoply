@@ -52,7 +52,7 @@ pub fn camera_controller(
         );
     }
 
-    if up || down {
+    if up || down || left || right {
         viewpoint.move_local(
             (movement(up) - movement(down)) * CAMERA_SPEED * time.delta_seconds() * fast,
             (movement(left && strafe) - movement(right && strafe))

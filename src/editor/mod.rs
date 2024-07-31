@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_mod_preferences::{Preferences, ReflectPreferences};
-use ui::mode_realm;
+use ui::{mode_realm, mode_terrain};
 
 mod camera;
 mod ui;
@@ -9,6 +9,9 @@ pub struct EditorPlugin;
 
 #[derive(Resource)]
 pub struct EditorSidebarWidth(pub f32);
+
+#[derive(Resource, Default)]
+pub struct SelectedParcel(pub Option<Entity>);
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 enum EditorState {
@@ -73,10 +76,13 @@ impl Plugin for EditorPlugin {
             .enable_state_scoped_entities::<SceneryTool>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<EditorPrefs>()
+            .init_resource::<SelectedParcel>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(PostStartup, ui::setup_editor_view)
             .add_systems(Update, camera::camera_controller)
             .add_systems(OnEnter(EditorState::Realm), mode_realm::enter)
-            .add_systems(OnExit(EditorState::Realm), mode_realm::exit);
+            .add_systems(OnExit(EditorState::Realm), mode_realm::exit)
+            .add_systems(OnEnter(EditorState::Terrain), mode_terrain::enter)
+            .add_systems(OnExit(EditorState::Terrain), mode_terrain::exit);
     }
 }

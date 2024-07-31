@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct SquareArray<T> {
     size: usize,
     elts: Vec<T>,
@@ -43,5 +44,11 @@ where
 
     pub fn elts(&self) -> &[T] {
         &self.elts
+    }
+}
+
+impl PartialEq for SquareArray<i8> {
+    fn eq(&self, other: &Self) -> bool {
+        self.size == other.size && self.elts == other.elts
     }
 }

@@ -8,6 +8,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
     utils::HashMap,
 };
+use bevy_mod_picking::backends::raycast::RaycastPickable;
 use futures_lite::future;
 
 use crate::world::Realm;
@@ -88,6 +89,11 @@ pub fn insert_water_meshes(
                                             ..default()
                                         },
                                         NotShadowCaster,
+                                        // Pickable {
+                                        //     should_block_lower: true,
+                                        //     is_hoverable: true,
+                                        // },
+                                        RaycastPickable,
                                         realm.layer.clone(),
                                     ))
                                     .set_parent(entity)

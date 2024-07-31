@@ -64,6 +64,12 @@ pub struct Parcel {
     pub terrain_fx: ParcelTerrainFx,
 }
 
+impl Parcel {
+    pub fn center_shape(&self) -> ShapeRef {
+        self.contours[CENTER_SHAPE]
+    }
+}
+
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct RebuildParcelTerrainFx;

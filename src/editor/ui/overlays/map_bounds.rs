@@ -1,6 +1,6 @@
 use bevy::{
     color::{palettes, Alpha},
-    math::{IRect, Quat, Rect, Vec2},
+    math::{IRect, Quat, Rect, Vec2, Vec3},
     prelude::Transform,
     render::view::RenderLayers,
 };
@@ -37,7 +37,7 @@ impl ViewTemplate for MapBoundsOverlay {
             None => IRect::default(),
         };
 
-        println!("viewpoint: {:?}", viewpoint);
+        // println!("viewpoint: {:?}", viewpoint);
         Overlay::new()
             .shape_dyn(
                 |(parcel_bounds, precinct_bounds), sb| {
@@ -78,9 +78,10 @@ impl ViewTemplate for MapBoundsOverlay {
                 (parcel_bounds, precinct_bounds),
             )
             .color(palettes::css::WHITE.with_alpha(0.5))
-            .transform(Transform::from_rotation(Quat::from_rotation_x(
-                std::f32::consts::PI / 2.,
-            )))
+            .transform(
+                Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI / 2.))
+                    .with_translation(Vec3::new(0., 0.05, 0.)),
+            )
             .insert_dyn(|layer| layer, layer)
     }
 }

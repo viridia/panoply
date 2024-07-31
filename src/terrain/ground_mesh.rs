@@ -27,6 +27,7 @@ use bevy::{
     },
     tasks::{AsyncComputeTaskPool, Task},
 };
+use bevy_mod_picking::backends::raycast::RaycastPickable;
 use futures_lite::future;
 
 pub struct GroundMeshResult {
@@ -114,7 +115,12 @@ pub fn insert_ground_meshes(
                             // Insert new mesh entity
                             parcel.ground_entity = Some(
                                 commands
-                                    .spawn((ground_mesh, realm.layer.clone()))
+                                    .spawn((
+                                        ground_mesh,
+                                        realm.layer.clone(),
+                                        // TODO: Might want to pick on physics colliders instead.
+                                        RaycastPickable,
+                                    ))
                                     .set_parent(entity)
                                     .id(),
                             );

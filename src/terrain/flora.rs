@@ -87,7 +87,7 @@ pub fn gen_flora(
             .0
             .clone();
 
-        let shape_ref = parcel.contours[4];
+        let shape_ref = parcel.center_shape();
         let biome_indices = parcel.biomes;
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let terrain_fx = parcel.terrain_fx;

@@ -1,7 +1,40 @@
-use crate::editor::TerrainTool;
+use crate::{
+    editor::{EditorState, SelectedParcel, TerrainTool},
+    view::events::{Pick, PickEvent, PickTarget},
+};
 use bevy::{prelude::*, ui};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, size::Size, RoundedCorners};
+
+use super::overlays::SelectedParcelOverlay;
+
+#[derive(Clone, Component)]
+pub struct ParcelOverlay;
+
+pub fn enter(mut commands: Commands) {
+    commands.spawn((SelectedParcelOverlay.to_root(), ParcelOverlay));
+    commands.spawn((
+        StateScoped(EditorState::Terrain),
+        Observer::new(pick_terrain),
+    ));
+}
+
+pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay>>) {
+    q_overlays.iter().for_each(|e| commands.entity(e).despawn());
+    commands.observe(pick_terrain);
+}
+
+pub fn pick_terrain(trigger: Trigger<PickEvent>, mut sp: ResMut<SelectedParcel>) {
+    match trigger.event() {
+        PickEvent::BeginStroke(Pick {
+            target: PickTarget::Parcel(p),
+        }) => {
+            sp.0 = Some(*p);
+        }
+        PickEvent::EndStroke(Pick { target: _target }) => {}
+        _ => {}
+    }
+}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct EditModeTerrainControls;

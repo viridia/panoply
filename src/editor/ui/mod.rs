@@ -125,5 +125,6 @@ fn style_game_view(ss: &mut StyleBuilder) {
     ss.display(Display::Flex)
         .flex_grow(1.)
         .align_self(ui::AlignSelf::Stretch)
-        .flex_direction(FlexDirection::Column);
+        .flex_direction(FlexDirection::Column)
+        .pointer_events(false);
 }

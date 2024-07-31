@@ -1,7 +1,14 @@
 use bevy::{asset::LoadState, math::IRect, prelude::*};
+use bevy_mod_picking::{
+    events::{Down, Pointer},
+    prelude::{ListenerMut, On},
+};
 
 use crate::{
-    view::{QueryRect, Viewpoint},
+    view::{
+        events::{Pick, PickEvent, PickTarget},
+        QueryRect, Viewpoint,
+    },
     world::Realm,
 };
 
@@ -154,7 +161,7 @@ pub fn spawn_parcels(
                         None => {
                             // println!("Creating parcel {} {}.", x, z);
                             // Insert new parcel
-                            let entity = commands.spawn((
+                            let mut entity = commands.spawn((
                                 Parcel {
                                     realm: rect.realm,
                                     coords: IVec2::new(x, z),
@@ -180,6 +187,16 @@ pub fn spawn_parcels(
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,
                                 RebuildParcelTerrainFx,
+                            ));
+                            let eid = entity.id();
+                            entity.insert(On::<Pointer<Down>>::run(
+                                move |mut ev: ListenerMut<Pointer<Down>>,
+                                      mut commands: Commands| {
+                                    ev.stop_propagation();
+                                    commands.trigger(PickEvent::BeginStroke(Pick {
+                                        target: PickTarget::Parcel(eid),
+                                    }));
+                                },
                             ));
                             parcel_cache.parcels.put(key, entity.id());
                         }

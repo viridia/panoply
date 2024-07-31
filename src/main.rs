@@ -10,7 +10,11 @@ use bevy::{
         view::RenderLayers,
     },
 };
-use bevy_mod_picking::{debug::DebugPickingMode, DefaultPickingPlugins};
+use bevy_mod_picking::{
+    backends::raycast::{RaycastBackendSettings, RaycastPickable},
+    debug::DebugPickingMode,
+    DefaultPickingPlugins,
+};
 use bevy_mod_preferences::PreferencesPlugin;
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
@@ -104,6 +108,10 @@ fn main() {
     ))
     .init_resource::<view::viewport::ViewportInset>()
     .insert_resource(DebugPickingMode::Disabled)
+    .insert_resource(RaycastBackendSettings {
+        require_markers: true,
+        ..default()
+    })
     .insert_resource(settings)
     // .insert_resource(Msaa::Off)
     .insert_resource(Viewpoint {
@@ -243,6 +251,7 @@ fn setup(
         },
         RenderLayers::none(),
         PrimaryCamera,
+        RaycastPickable,
     ));
 }
 
