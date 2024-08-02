@@ -53,22 +53,24 @@ pub fn hover(
                             | TerrainTool::FlattenDraw => {
                                 let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
                                 if pt.x >= 0
-                                    && pt.x < PARCEL_SIZE
+                                    && pt.x <= PARCEL_SIZE
                                     && pt.y >= 0
-                                    && pt.y < PARCEL_SIZE
+                                    && pt.y <= PARCEL_SIZE
                                 {
-                                    cursor = ParcelCursor::Point((parcel_id, pt));
+                                    cursor = ParcelCursor::Point {
+                                        parcel: parcel_id,
+                                        cursor_pos: pt,
+                                    };
                                 }
                             }
                             TerrainTool::RaiseRect
                             | TerrainTool::LowerRect
                             | TerrainTool::FlattenRect => {
                                 let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
-                                let rect = IRect::from_center_size(pt, IVec2::splat(0));
                                 if pt.x >= 0
-                                    && pt.x < PARCEL_SIZE
+                                    && pt.x <= PARCEL_SIZE
                                     && pt.y >= 0
-                                    && pt.y < PARCEL_SIZE
+                                    && pt.y <= PARCEL_SIZE
                                 {
                                     // Extract out the height map.
                                     let shape_ref = parcel.center_shape();
@@ -87,18 +89,30 @@ pub fn hover(
                                         continue;
                                     };
 
-                                    cursor =
-                                        ParcelCursor::FlatRect((parcel_id, rect, cursor_height));
+                                    cursor = ParcelCursor::FlatRect {
+                                        parcel: parcel_id,
+                                        anchor_pos: pt,
+                                        cursor_pos: pt,
+                                        altitude: cursor_height as f32,
+                                    };
                                 }
                             }
                             TerrainTool::DrawTrees
                             | TerrainTool::DrawShrubs
                             | TerrainTool::DrawHerbs
                             | TerrainTool::EraseFlora => {
-                                cursor = ParcelCursor::Point((
-                                    parcel_id,
-                                    IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32),
-                                ));
+                                let pt = IVec2::new(rpos.x.floor() as i32, rpos.y.floor() as i32);
+                                if pt.x >= 0
+                                    && pt.x < PARCEL_SIZE
+                                    && pt.y >= 0
+                                    && pt.y < PARCEL_SIZE
+                                {
+                                    cursor = ParcelCursor::DecalRect {
+                                        parcel: parcel_id,
+                                        anchor_pos: pt,
+                                        cursor_pos: pt,
+                                    };
+                                }
                             }
                         }
                         break;

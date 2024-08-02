@@ -21,13 +21,22 @@ pub enum ParcelCursor {
     None,
 
     /// When cursor is shown as a point.
-    Point((Entity, IVec2)),
+    Point { parcel: Entity, cursor_pos: IVec2 },
 
     /// When cursor is shown as a flat rectangle.
-    FlatRect((Entity, IRect, f32)),
+    FlatRect {
+        parcel: Entity,
+        anchor_pos: IVec2,
+        cursor_pos: IVec2,
+        altitude: f32,
+    },
 
     /// When cursor is shown as a which conforms to the terrain.
-    DecalRect((Entity, IRect)),
+    DecalRect {
+        parcel: Entity,
+        anchor_pos: IVec2,
+        cursor_pos: IVec2,
+    },
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
