@@ -1,12 +1,20 @@
-use bevy::prelude::*;
-use directories::BaseDirs;
+mod load;
+mod save;
 
-#[reflect_trait]
-pub trait Preferences
-where
-    Self: 'static + Sync + Send,
-{
-}
+use bevy::{ecs::world::Command, prelude::*};
+use directories::BaseDirs;
+pub use save::SavePreferences;
+
+/// Annotation for a type which causes the type's contents to be placed in a named table
+/// in the preferences file.
+#[derive(Debug, Clone, Reflect)]
+pub struct PreferencesGroup(pub &'static str);
+
+/// Annotation for a type which set the configuration key used to store the type in the
+/// preferences file. If a tuple struct contains both a `PreferencesGroup` and a `PreferencesKey`,
+/// the key will be placed in the group. Otherwise it will be a top-level key.
+#[derive(Debug, Clone, Reflect)]
+pub struct PreferencesKey(pub &'static str);
 
 pub struct PreferencesPlugin {
     pub app_name: String,
@@ -29,18 +37,22 @@ impl Default for PreferencesPlugin {
 }
 
 #[derive(Resource)]
-pub struct PreferencesPath(pub std::path::PathBuf);
+pub struct PreferencesDir(pub std::path::PathBuf);
 
 #[derive(Resource, Default)]
-pub struct PreferencesChannged(pub bool);
+pub struct PreferencesChanged(bool);
+
+#[derive(Resource, Default)]
+pub struct PreferencesDebounceTimer(f32);
 
 impl Plugin for PreferencesPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<PreferencesChannged>()
+        app.init_resource::<PreferencesChanged>()
+            .init_resource::<PreferencesDebounceTimer>()
             .add_systems(Update, save_preferences);
         if let Some(base_dirs) = BaseDirs::new() {
             let prefs_path = base_dirs.preference_dir().join(&self.app_name);
-            app.insert_resource(PreferencesPath(prefs_path.clone()));
+            app.insert_resource(PreferencesDir(prefs_path.clone()));
             info!("Preferences path: {:?}", prefs_path);
         } else {
             warn!("Could not find user configuration directories");
@@ -48,25 +60,38 @@ impl Plugin for PreferencesPlugin {
     }
 
     fn finish(&self, app: &mut App) {
-        // Only load preferences if the preferences file exists
-        if let Some(prefs_dir) = app.world().get_resource::<PreferencesPath>() {
-            let prefs_file = prefs_dir.0.join("prefs.ron");
-            if prefs_file.exists() && prefs_file.is_file() {
-                // std::fs::create_dir_all(&prefs_path.0).unwrap();
-            }
-        } else {
-            warn!("Could not find user configuration directories");
+        // Only load preferences if we were able to locate the user configuration directories.
+        if app.world().get_resource::<PreferencesDir>().is_some() {
+            load::load_preferences(app.world_mut());
         }
-        // Load preferences
     }
 }
 
-fn save_preferences(mut changed: ResMut<PreferencesChannged>, path: Option<Res<PreferencesPath>>) {
+fn save_preferences(
+    mut changed: ResMut<PreferencesChanged>,
+    mut timer: ResMut<PreferencesDebounceTimer>,
+    time: Res<Time>,
+    mut cmd: Commands,
+) {
     if changed.0 {
-        if let Some(path) = path {
-            let prefs_file = path.0.join("prefs.ron");
-            info!("Saving preferences path: {:?}", prefs_file);
+        timer.0 = (timer.0 - time.delta_seconds()).max(0.0);
+        if timer.0 <= 0.0 {
+            changed.0 = false;
+            cmd.add(SavePreferences::Always);
         }
-        changed.0 = false;
+    }
+}
+
+#[derive(Default)]
+pub struct SetPreferencesChanged;
+
+impl Command for SetPreferencesChanged {
+    fn apply(self, world: &mut World) {
+        let mut changed = world.get_resource_mut::<PreferencesChanged>().unwrap();
+        changed.0 = true;
+        let mut timer = world
+            .get_resource_mut::<PreferencesDebounceTimer>()
+            .unwrap();
+        timer.0 = 1.0;
     }
 }

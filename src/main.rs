@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 use bevy::{
     asset::io::AssetSource,
+    ecs::world::Command,
     prelude::*,
     render::{
         render_asset::RenderAssetUsages,
@@ -15,7 +16,7 @@ use bevy_mod_picking::{
     debug::DebugPickingMode,
     DefaultPickingPlugins,
 };
-use bevy_mod_preferences::PreferencesPlugin;
+use bevy_mod_preferences::{PreferencesPlugin, SavePreferences};
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
 use bevy_quill_overlays::QuillOverlaysPlugin;
@@ -89,7 +90,7 @@ fn main() {
         DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Bevy Game".into(),
+                    title: "Untitled Bevy Game".into(),
                     resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
                         .into(),
                     position: WindowPosition::new(settings.window.position),
@@ -301,8 +302,17 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
     }
 }
 
-pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {
+pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     if input.just_pressed(KeyCode::Escape) {
-        exit.send(AppExit::Success);
+        commands.add(SavePreferences::IfChanged);
+        commands.add(AppExitCmd);
+    }
+}
+
+pub struct AppExitCmd;
+
+impl Command for AppExitCmd {
+    fn apply(self, world: &mut World) {
+        world.send_event(AppExit::Success);
     }
 }

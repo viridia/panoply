@@ -43,19 +43,29 @@ pub struct SelectedParcelContour {
 impl ViewTemplate for SelectedParcelContour {
     type View = impl View;
     fn create(&self, cx: &mut Cx) -> Self::View {
+        // Get the parcel component and realm component
         let parcel = cx.use_component::<Parcel>(self.parcel).unwrap();
         let realm = cx.use_component::<Realm>(parcel.realm);
+
+        // We need the render layers from the realm.
         let layer = match realm {
             Some(realm) => realm.layer.clone(),
             None => RenderLayers::none(),
         };
+
+        // The bounds of the parcel in world space.
         let parcel_bounds = {
             let min = parcel.coords.as_vec2() * PARCEL_SIZE_F;
             Rect::from_corners(min, min + Vec2::splat(PARCEL_SIZE_F))
         };
+
+        // Look up the parcel's terrain contours. The terrain contour table is an asset.
+        // Note that assets is untracked because it's constantly changing.
         let shape_ref = parcel.center_shape();
         let ts_handle = cx.use_resource::<TerrainContoursHandle>().0.clone();
         let ts_assets = cx.use_resource_untracked::<Assets<TerrainContoursTableAsset>>();
+
+        // Extract out the height map.
         let terrain_heights = ts_assets.get(&ts_handle).map(|contours| {
             let lock = contours.0.lock().unwrap();
             let heights = lock.get(shape_ref.shape as usize).height.clone();

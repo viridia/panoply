@@ -1,11 +1,10 @@
 use bevy::{
     color::{palettes, Alpha},
-    math::{IRect, Quat, Rect, Vec2, Vec3},
-    prelude::Transform,
+    math::{IRect, Rect, Vec2},
     render::view::RenderLayers,
 };
 use bevy_quill::{Cx, View, ViewTemplate};
-use bevy_quill_overlays::{Overlay, PolygonOptions};
+use bevy_quill_overlays::{Overlay, PolygonOptions, ShapeOrientation};
 
 use crate::{scenery::PRECINCT_SIZE_F, terrain::PARCEL_SIZE_F, view::Viewpoint, world::Realm};
 
@@ -41,7 +40,8 @@ impl ViewTemplate for MapBoundsOverlay {
         Overlay::new()
             .shape_dyn(
                 |(parcel_bounds, precinct_bounds), sb| {
-                    sb.with_stroke_width(0.9)
+                    sb.with_orientation(ShapeOrientation::YPositive)
+                        .with_stroke_width(0.9)
                         .stroke_rect(parcel_bounds.inflate(0.9));
                     sb.with_stroke_width(0.1);
                     for x in precinct_bounds.min.x..precinct_bounds.max.x {
@@ -78,10 +78,6 @@ impl ViewTemplate for MapBoundsOverlay {
                 (parcel_bounds, precinct_bounds),
             )
             .color(palettes::css::WHITE.with_alpha(0.5))
-            .transform(
-                Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI / 2.))
-                    .with_translation(Vec3::new(0., 0.05, 0.)),
-            )
             .insert_dyn(|layer| layer, layer)
     }
 }

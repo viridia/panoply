@@ -1,12 +1,12 @@
 use bevy::{asset::LoadState, math::IRect, prelude::*};
 use bevy_mod_picking::{
-    events::{Down, Pointer},
+    events::{Down, Drag, DragEnd, DragStart, Pointer},
     prelude::{ListenerMut, On},
 };
 
 use crate::{
     view::{
-        events::{Pick, PickEvent, PickTarget},
+        events::{PickAction, PickEvent, PickTarget},
         QueryRect, Viewpoint,
     },
     world::Realm,
@@ -188,16 +188,43 @@ pub fn spawn_parcels(
                                 ParcelFloraChanged,
                                 RebuildParcelTerrainFx,
                             ));
-                            let eid = entity.id();
-                            entity.insert(On::<Pointer<Down>>::run(
+                            entity.insert((On::<Pointer<Down>>::run(
                                 move |mut ev: ListenerMut<Pointer<Down>>,
                                       mut commands: Commands| {
                                     ev.stop_propagation();
-                                    commands.trigger(PickEvent::BeginStroke(Pick {
-                                        target: PickTarget::Parcel(eid),
-                                    }));
+                                    commands.trigger(PickEvent {
+                                        action: PickAction::Down(ev.hit.position.unwrap()),
+                                        target: PickTarget::Parcel(ev.listener()),
+                                    });
                                 },
-                            ));
+                            ), On::<Pointer<DragStart>>::run(
+                                move |mut ev: ListenerMut<Pointer<DragStart>>,
+                                      mut commands: Commands| {
+                                    ev.stop_propagation();
+                                    commands.trigger(PickEvent {
+                                        action: PickAction::DragStart(ev.hit.position.unwrap()),
+                                        target: PickTarget::Parcel(ev.listener()),
+                                    });
+                                },
+                            ), On::<Pointer<Drag>>::run(
+                                move |mut ev: ListenerMut<Pointer<Drag>>,
+                                      mut commands: Commands| {
+                                    ev.stop_propagation();
+                                    commands.trigger(PickEvent {
+                                        action: PickAction::Drag,
+                                        target: PickTarget::Parcel(ev.listener()),
+                                    });
+                                },
+                            ), On::<Pointer<DragEnd>>::run(
+                                move |mut ev: ListenerMut<Pointer<DragEnd>>,
+                                      mut commands: Commands| {
+                                    ev.stop_propagation();
+                                    commands.trigger(PickEvent {
+                                        action: PickAction::DragEnd,
+                                        target: PickTarget::Parcel(ev.listener()),
+                                    });
+                                },
+                            )));
                             parcel_cache.parcels.put(key, entity.id());
                         }
                     };

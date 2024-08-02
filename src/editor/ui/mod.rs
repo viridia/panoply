@@ -11,6 +11,7 @@ pub mod quick_nav;
 
 use bevy::{prelude::*, ui};
 use bevy_mod_picking::prelude::{ListenerMut, On};
+use bevy_mod_preferences::SetPreferencesChanged;
 use bevy_mod_stylebuilder::*;
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{
@@ -81,11 +82,14 @@ impl ViewTemplate for EditorView {
                 Splitter::new()
                     .direction(SplitterDirection::Vertical)
                     .value(sidebar_width.0)
-                    .on_change(cx.create_callback(|value: In<f32>, world: &mut World| {
-                        let mut panel_width =
-                            world.get_resource_mut::<EditorSidebarWidth>().unwrap();
-                        panel_width.0 = value.max(200.);
-                    })),
+                    .on_change(cx.create_callback(
+                        |value: In<f32>,
+                         mut panel_width: ResMut<EditorSidebarWidth>,
+                         mut commands: Commands| {
+                            panel_width.0 = value.max(200.);
+                            commands.add(SetPreferencesChanged);
+                        },
+                    )),
                 Element::<NodeBundle>::new()
                     .style(style_game_view)
                     .insert(ViewportInsetElement),
