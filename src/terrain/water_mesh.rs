@@ -20,7 +20,7 @@ use super::{
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
     water_material::{WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION},
-    HEIGHT_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
+    PARCEL_HEIGHT_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
     PARCEL_WATER_VERTEX_COUNT,
 };
 
@@ -153,7 +153,7 @@ fn compute_water_mesh(
                 let index = position.len() as u32;
                 position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
                 normal.push(n.to_array());
-                depth_motion.push([depth * -HEIGHT_SCALE, 0., 0.]);
+                depth_motion.push([depth * -PARCEL_HEIGHT_SCALE, 0., 0.]);
                 index
             }
         };

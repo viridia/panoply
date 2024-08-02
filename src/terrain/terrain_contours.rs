@@ -4,7 +4,7 @@ extern crate rmp_serde as rmps;
 
 use std::sync::{Arc, Mutex};
 
-use super::{square::SquareArray, PARCEL_SIZE, PARCEL_SIZE_U};
+use super::{square::SquareArray, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     math::IRect,
@@ -61,6 +61,20 @@ pub struct TerrainContour {
     pub flora: SquareArray<FloraType>,
     pub has_terrain: bool,
     pub has_water: bool,
+}
+
+impl TerrainContour {
+    /// Get the height at a given point in the terrain contour.
+    pub fn height_at(&self, x: usize, y: usize, rotation: u8) -> f32 {
+        let (xr, yr) = match rotation {
+            0 => (x, y),
+            1 => (y, PARCEL_SIZE_U - x),
+            2 => (PARCEL_SIZE_U - x, PARCEL_SIZE_U - y),
+            3 => (PARCEL_SIZE_U - y, x),
+            _ => panic!("Invalid rotation"),
+        };
+        self.height.get(xr, yr) as f32 * PARCEL_HEIGHT_SCALE
+    }
 }
 
 // impl TerrainShape {

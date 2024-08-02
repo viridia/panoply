@@ -14,7 +14,8 @@ use super::{
         FloraType, TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset,
     },
     terrain_map::TerrainMap,
-    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
+    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_SIZE_U,
 };
 use bevy::{
     asset::LoadState,
@@ -43,8 +44,6 @@ pub struct FloraInstance {
     pub label: String,
     pub transform: Transform,
 }
-
-pub const HEIGHT_SCALE: f32 = 0.5;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -282,7 +281,7 @@ fn compute_flora_placement(
 
             let tx = x as f32 + 0.2 + noise3(gx, gz, 4) * 0.6;
             let tz = z as f32 + 0.2 + noise3(gx, gz, 5) * 0.6;
-            let ty: f32 = heights.get_interpolated(tx, tz) * HEIGHT_SCALE;
+            let ty: f32 = heights.get_interpolated(tx, tz) * PARCEL_HEIGHT_SCALE;
             // + match feature {
             //     FloraType::None => unreachable!(),
             //     FloraType::RandomTree => 1.25,

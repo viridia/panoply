@@ -17,6 +17,7 @@ mod water_mesh;
 pub const PARCEL_SIZE: i32 = 16;
 pub const PARCEL_SIZE_F: f32 = PARCEL_SIZE as f32;
 pub const PARCEL_SIZE_U: usize = PARCEL_SIZE as usize;
+pub const PARCEL_HEIGHT_SCALE: f32 = 0.5;
 
 pub const PARCEL_WATER_RESOLUTION: usize = 32;
 pub const PARCEL_WATER_RESOLUTION_S: i32 = 32;

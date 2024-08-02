@@ -14,9 +14,9 @@ use super::{
     square::SquareArray,
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
-    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U,
-    PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
-    PARCEL_SIZE, PARCEL_SIZE_F,
+    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE,
+    PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE,
+    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
 use bevy::{
     asset::LoadState,
@@ -37,8 +37,6 @@ pub struct GroundMeshResult {
 
 #[derive(Component)]
 pub struct ComputeGroundMeshTask(Task<Option<GroundMeshResult>>);
-
-pub const HEIGHT_SCALE: f32 = 0.5;
 
 pub const ATTRIBUTE_TERRAIN_FX: MeshVertexAttribute =
     MeshVertexAttribute::new("terrain_fx", 0x1000, VertexFormat::Uint8x4);
@@ -450,7 +448,7 @@ fn accumulate(
                 &src_rot,
                 (x - x_offset) as f32 * PARCEL_MESH_SCALE,
                 (z - z_offset) as f32 * PARCEL_MESH_SCALE,
-            ) * HEIGHT_SCALE;
+            ) * PARCEL_HEIGHT_SCALE;
             *weight.get_mut_ref(x as usize, z as usize) += 1.0;
         }
     }

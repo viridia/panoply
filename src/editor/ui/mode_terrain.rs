@@ -48,7 +48,7 @@ pub fn hover(
         Some(pos) => {
             *r_parcel_cursor = ParcelCursor::Point((
                 r_selected_parcel.0.unwrap(),
-                IVec2::new(pos.x as i32, pos.z as i32),
+                IVec2::new(pos.x.round() as i32, pos.z.round() as i32),
                 0,
             ));
         }
