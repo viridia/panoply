@@ -1,5 +1,9 @@
 use crate::{
     editor::{EditorMode, ParcelCursor, SelectedParcel, TerrainTool},
+    terrain::{
+        terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
+        Parcel, PARCEL_SIZE, PARCEL_SIZE_U,
+    },
     view::events::{PickAction, PickEvent, PickTarget},
 };
 use bevy::{prelude::*, ui};
@@ -30,31 +34,93 @@ pub fn hover(
     r_selected_parcel: Res<SelectedParcel>,
     mut r_parcel_cursor: ResMut<ParcelCursor>,
     r_hover_map: Res<HoverMap>,
-    // q_parcels: Query<&Parcel>,
+    r_tool: Res<State<TerrainTool>>,
+    r_contours_handle: Res<TerrainContoursHandle>,
+    r_contours_asset: Res<Assets<TerrainContoursTableAsset>>,
+    q_parcels: Query<&Parcel>,
 ) {
-    let mut position: Option<Vec3> = None;
-    if r_selected_parcel.0.is_some() {
-        if let Some(p) = r_hover_map.get(&PointerId::Mouse) {
-            for (_, hit_data) in p.iter() {
-                if hit_data.position.is_some() {
-                    position = hit_data.position;
-                    break;
+    let mut cursor: ParcelCursor = ParcelCursor::None;
+    if let Some(parcel_id) = r_selected_parcel.0 {
+        if let Ok(parcel) = q_parcels.get(parcel_id) {
+            let parcel_min = parcel.coords * PARCEL_SIZE;
+            if let Some(p) = r_hover_map.get(&PointerId::Mouse) {
+                for (_, hit_data) in p.iter() {
+                    if let Some(pos) = hit_data.position {
+                        let rpos = Vec2::new(pos.x, pos.z) - parcel_min.as_vec2();
+                        match r_tool.get() {
+                            TerrainTool::RaiseDraw
+                            | TerrainTool::LowerDraw
+                            | TerrainTool::FlattenDraw => {
+                                let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
+                                if pt.x >= 0
+                                    && pt.x < PARCEL_SIZE
+                                    && pt.y >= 0
+                                    && pt.y < PARCEL_SIZE
+                                {
+                                    cursor = ParcelCursor::Point((parcel_id, pt));
+                                }
+                            }
+                            TerrainTool::RaiseRect
+                            | TerrainTool::LowerRect
+                            | TerrainTool::FlattenRect => {
+                                let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
+                                let rect = IRect::from_center_size(pt, IVec2::splat(0));
+                                if pt.x >= 0
+                                    && pt.x < PARCEL_SIZE
+                                    && pt.y >= 0
+                                    && pt.y < PARCEL_SIZE
+                                {
+                                    // Extract out the height map.
+                                    let shape_ref = parcel.center_shape();
+                                    let Some(cursor_height) = r_contours_asset
+                                        .get(&r_contours_handle.0)
+                                        .map(|contours| {
+                                            let lock = contours.0.lock().unwrap();
+                                            let pos = pt - parcel_min;
+                                            lock.get(shape_ref.shape as usize).height_at(
+                                                pos.x.clamp(0, PARCEL_SIZE_U as i32) as usize,
+                                                pos.y.clamp(0, PARCEL_SIZE_U as i32) as usize,
+                                                shape_ref.rotation,
+                                            )
+                                        })
+                                    else {
+                                        continue;
+                                    };
+
+                                    cursor =
+                                        ParcelCursor::FlatRect((parcel_id, rect, cursor_height));
+                                }
+                            }
+                            TerrainTool::DrawTrees
+                            | TerrainTool::DrawShrubs
+                            | TerrainTool::DrawHerbs
+                            | TerrainTool::EraseFlora => {
+                                cursor = ParcelCursor::Point((
+                                    parcel_id,
+                                    IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32),
+                                ));
+                            }
+                        }
+                        break;
+                    }
                 }
             }
         }
     }
 
-    match position {
-        Some(pos) => {
-            *r_parcel_cursor = ParcelCursor::Point((
-                r_selected_parcel.0.unwrap(),
-                IVec2::new(pos.x.round() as i32, pos.z.round() as i32),
-                0,
-            ));
-        }
-        None => {
-            *r_parcel_cursor = ParcelCursor::None;
-        }
+    // match position {
+    //     Some(pos) => {
+    //         *r_parcel_cursor = ParcelCursor::Point((
+    //             r_selected_parcel.0.unwrap(),
+    //             IVec2::new(pos.x.round() as i32, pos.z.round() as i32),
+    //         ));
+    //     }
+    //     None => {
+    //         *r_parcel_cursor = ParcelCursor::None;
+    //     }
+    // }
+    if *r_parcel_cursor != cursor {
+        *r_parcel_cursor = cursor;
     }
 }
 
