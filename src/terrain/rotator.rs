@@ -4,7 +4,7 @@
 /// upon access.
 pub struct RotatingSquareArray<'a, T> {
     size: usize,
-    base_index: i32,
+    base_index: usize,
     dx: i32,
     dy: i32,
     elts: &'a [T],
@@ -26,19 +26,19 @@ where
     pub fn new(size: usize, rotation: i32, elts: &'a [T]) -> RotatingSquareArray<T> {
         let dx: i32;
         let dy: i32;
-        let base_index: i32;
-        let sz = size as i32;
+        let base_index: usize;
+        let sz = size;
         assert!(elts.len() == size * size);
 
         match rotation {
             0 => {
                 dx = 1;
-                dy = sz;
+                dy = sz as i32;
                 base_index = 0;
             }
 
             1 => {
-                dx = -sz;
+                dx = -(sz as i32);
                 dy = 1;
                 base_index = sz * (sz - 1);
             }
@@ -70,10 +70,12 @@ where
     }
 
     /// Return the array entry at the given coordinates.
-    pub fn get(&self, x: i32, y: i32) -> T {
-        assert!((x as usize) < self.size);
-        assert!((y as usize) < self.size);
-        self.elts[(self.base_index + x * self.dx + y * self.dy) as usize]
+    pub fn get(&self, x: usize, y: usize) -> T {
+        assert!(x < self.size);
+        assert!(y < self.size);
+        let xi = (x as i32) * self.dx;
+        let yi = (y as i32) * self.dy;
+        self.elts[(self.base_index as i32 + xi + yi) as usize]
     }
 }
 
@@ -89,10 +91,10 @@ impl<'a> RotatingSquareArray<'a, i8> {
         let y0 = yc.floor();
         let y1 = yc.ceil();
 
-        let h00 = self.get(x0 as i32, y0 as i32) as f32;
-        let h01 = self.get(x0 as i32, y1 as i32) as f32;
-        let h10 = self.get(x1 as i32, y0 as i32) as f32;
-        let h11 = self.get(x1 as i32, y1 as i32) as f32;
+        let h00 = self.get(x0 as usize, y0 as usize) as f32;
+        let h01 = self.get(x0 as usize, y1 as usize) as f32;
+        let h10 = self.get(x1 as usize, y0 as usize) as f32;
+        let h11 = self.get(x1 as usize, y1 as usize) as f32;
 
         let fx = xc - x0;
         let fy = yc - y0;

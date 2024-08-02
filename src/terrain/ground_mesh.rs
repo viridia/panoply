@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::{
     terrain::{
         ground_material::ATTRIBUTE_TERRAIN_STYLE, TerrainOptions, TerrainTypes,
-        PARCEL_TERRAIN_FX_SIZE,
+        PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE,
     },
     world::Realm,
 };
@@ -15,7 +15,8 @@ use super::{
     terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
     terrain_map::TerrainMap,
     ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_MESH_SCALE, PARCEL_MESH_SCALE_U,
-    PARCEL_MESH_SIZE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
+    PARCEL_SIZE, PARCEL_SIZE_F,
 };
 use bevy::{
     asset::LoadState,
@@ -305,18 +306,18 @@ fn compute_ground_mesh(
 
     // Generate vertices
     let mut n = Vec3::new(0., 1., 0.);
-    for z in 0..PARCEL_MESH_STRIDE {
-        for x in 0..PARCEL_MESH_STRIDE {
+    for z in 0..PARCEL_MESH_STRIDE_U {
+        for x in 0..PARCEL_MESH_STRIDE_U {
             position.push([
                 x as f32 * PARCEL_MESH_SCALE,
-                shm.get(x, z) + terrain_elevation_offset[(z * PARCEL_MESH_STRIDE + x) as usize],
+                shm.get(x, z) + terrain_elevation_offset[z * PARCEL_MESH_STRIDE_U + x],
                 z as f32 * PARCEL_MESH_SCALE,
             ]);
 
             // Off the edge of the smoothing array, use unsmoothed
             if x == 0 {
                 n.x = ihm.get(x, z + 1) - shm.get(x + 1, z);
-            } else if x == PARCEL_MESH_STRIDE - 1 {
+            } else if x == PARCEL_MESH_STRIDE_U - 1 {
                 n.x = shm.get(x - 1, z) - ihm.get(x + 2, z + 1);
             } else {
                 n.x = shm.get(x - 1, z) - shm.get(x + 1, z);
@@ -324,7 +325,7 @@ fn compute_ground_mesh(
 
             if z == 0 {
                 n.z = ihm.get(x + 1, z) - shm.get(x, z + 1);
-            } else if z == PARCEL_MESH_STRIDE - 1 {
+            } else if z == PARCEL_MESH_STRIDE_U - 1 {
                 n.z = shm.get(x, z - 1) - ihm.get(x + 1, z + 2);
             } else {
                 n.z = shm.get(x, z - 1) - shm.get(x, z + 1);
@@ -404,8 +405,8 @@ pub fn compute_interpolated_mesh(
         }
     }
 
-    for z in 0..=PARCEL_MESH_SIZE + 2 {
-        for x in 0..=PARCEL_MESH_SIZE + 2 {
+    for z in 0..=PARCEL_MESH_SIZE_U + 2 {
+        for x in 0..=PARCEL_MESH_SIZE_U + 2 {
             let w = weights.get(x, z);
             if w > 0. {
                 *ihm.get_mut_ref(x, z) /= w;
@@ -416,8 +417,8 @@ pub fn compute_interpolated_mesh(
 
 pub fn compute_smoothed_mesh(shm: &mut SquareArray<f32>, ihm: &SquareArray<f32>) {
     // Compute smoothed mesh
-    for z in 0..PARCEL_MESH_STRIDE {
-        for x in 0..PARCEL_MESH_STRIDE {
+    for z in 0..PARCEL_MESH_STRIDE_U {
+        for x in 0..PARCEL_MESH_STRIDE_U {
             let h4 = ihm.get(x, z + 1)
                 + ihm.get(x + 2, z + 1)
                 + ihm.get(x + 1, z)
@@ -445,12 +446,12 @@ fn accumulate(
 
     for z in z0..z1 {
         for x in x0..x1 {
-            *dst.get_mut_ref(x, z) += interpolate_square(
+            *dst.get_mut_ref(x as usize, z as usize) += interpolate_square(
                 &src_rot,
                 (x - x_offset) as f32 * PARCEL_MESH_SCALE,
                 (z - z_offset) as f32 * PARCEL_MESH_SCALE,
             ) * HEIGHT_SCALE;
-            *weight.get_mut_ref(x, z) += 1.0;
+            *weight.get_mut_ref(x as usize, z as usize) += 1.0;
         }
     }
 }
@@ -467,10 +468,10 @@ fn interpolate_square(square: &RotatingSquareArray<i8>, x: f32, z: f32) -> f32 {
     let z0 = cz.floor();
     let z1 = cz.ceil();
 
-    let h00 = square.get(x0 as i32, z0 as i32) as f32;
-    let h01 = square.get(x0 as i32, z1 as i32) as f32;
-    let h10 = square.get(x1 as i32, z0 as i32) as f32;
-    let h11 = square.get(x1 as i32, z1 as i32) as f32;
+    let h00 = square.get(x0 as usize, z0 as usize) as f32;
+    let h01 = square.get(x0 as usize, z1 as usize) as f32;
+    let h10 = square.get(x1 as usize, z0 as usize) as f32;
+    let h11 = square.get(x1 as usize, z1 as usize) as f32;
 
     let fx = cx - x0;
     let fy = cz - z0;

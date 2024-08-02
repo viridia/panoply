@@ -20,22 +20,22 @@ where
         self.elts.copy_from_slice(data);
     }
 
-    pub fn get(&self, x: i32, y: i32) -> T {
-        assert!((x as usize) < self.size);
-        assert!((y as usize) < self.size);
-        self.elts[(y as usize * self.size) + x as usize]
+    pub fn get(&self, x: usize, y: usize) -> T {
+        assert!(x < self.size);
+        assert!(y < self.size);
+        self.elts[y * self.size + x]
     }
 
-    pub fn get_mut_ref(&mut self, x: i32, y: i32) -> &mut T {
-        assert!((x as usize) < self.size);
-        assert!((y as usize) < self.size);
-        &mut self.elts[(y as usize * self.size) + x as usize]
+    pub fn get_mut_ref(&mut self, x: usize, y: usize) -> &mut T {
+        assert!(x < self.size);
+        assert!(y < self.size);
+        &mut self.elts[y * self.size + x]
     }
 
-    pub fn set(&mut self, x: i32, y: i32, value: T) {
-        assert!((x as usize) < self.size);
-        assert!((y as usize) < self.size);
-        self.elts[(y as usize * self.size) + x as usize] = value;
+    pub fn set(&mut self, x: usize, y: usize, value: T) {
+        assert!(x < self.size);
+        assert!(y < self.size);
+        self.elts[y * self.size + x] = value;
     }
 
     pub fn size(&self) -> usize {

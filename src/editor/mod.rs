@@ -28,7 +28,7 @@ pub enum ParcelCursor {
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(@PreferencesGroup("editor"), @PreferencesKey("mode"))]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("mode"))]
 enum EditorMode {
     #[default]
     Realm,
@@ -39,7 +39,7 @@ enum EditorMode {
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(@PreferencesGroup("editor"), @PreferencesKey("terrain_tool"))]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("terrain_tool"))]
 enum TerrainTool {
     #[default]
     RaiseDraw,
@@ -55,7 +55,7 @@ enum TerrainTool {
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(@PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
 enum SceneryTool {
     #[default]
     FloorDraw,
@@ -87,8 +87,11 @@ impl Plugin for EditorPlugin {
             .init_resource::<ParcelCursor>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
+            .register_type::<NextState<EditorMode>>()
             .register_type::<State<TerrainTool>>()
+            .register_type::<NextState<TerrainTool>>()
             .register_type::<State<SceneryTool>>()
+            .register_type::<NextState<SceneryTool>>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(PostStartup, ui::setup_editor_view)
             .add_systems(Update, camera::camera_controller)

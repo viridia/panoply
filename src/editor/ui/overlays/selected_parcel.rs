@@ -2,11 +2,11 @@ use bevy::{
     asset::Assets,
     color::{palettes, Alpha},
     math::{Rect, Vec2, Vec3},
-    prelude::Entity,
+    prelude::{default, Entity},
     render::view::RenderLayers,
 };
 use bevy_quill::{Cond, Cx, View, ViewTemplate};
-use bevy_quill_overlays::{LinesBuilder, Overlay};
+use bevy_quill_overlays::{LinesBuilder, Overlay, PolygonOptions, ShapeOrientation};
 
 use crate::{
     editor::SelectedParcel,
@@ -72,50 +72,106 @@ impl ViewTemplate for SelectedParcelContour {
             heights
         });
 
-        Overlay::new()
-            .mesh_dyn(
-                |(bounds, heights, rotation), sb: &mut LinesBuilder| {
-                    if let Some(heights) = heights {
-                        let rheights = rotator::RotatingSquareArray::new(
-                            heights.size(),
-                            rotation as i32,
-                            heights.elts(),
-                        );
-                        for x in 0..=PARCEL_SIZE_U {
-                            for z in 0..PARCEL_SIZE_U {
-                                let a = Vec3::new(
-                                    bounds.min.x + x as f32,
-                                    rheights.get(x as i32, z as i32) as f32 * 0.5,
-                                    bounds.min.y + z as f32,
-                                );
-                                let b = Vec3::new(
-                                    bounds.min.x + x as f32,
-                                    rheights.get(x as i32, z as i32 + 1) as f32 * 0.5,
-                                    bounds.min.y + (z + 1) as f32,
-                                );
-                                sb.line(a, b);
+        (
+            Overlay::new()
+                .mesh_dyn(
+                    |(bounds, heights, rotation), sb: &mut LinesBuilder| {
+                        if let Some(heights) = heights {
+                            let rheights = rotator::RotatingSquareArray::new(
+                                heights.size(),
+                                rotation as i32,
+                                heights.elts(),
+                            );
+                            for x in 0..=PARCEL_SIZE_U {
+                                for z in 0..PARCEL_SIZE_U {
+                                    let a = Vec3::new(
+                                        bounds.min.x + x as f32,
+                                        rheights.get(x, z) as f32 * 0.5,
+                                        bounds.min.y + z as f32,
+                                    );
+                                    let b = Vec3::new(
+                                        bounds.min.x + x as f32,
+                                        rheights.get(x, z + 1) as f32 * 0.5,
+                                        bounds.min.y + (z + 1) as f32,
+                                    );
+                                    sb.line(a, b);
+                                }
+                            }
+                            for z in 0..=PARCEL_SIZE_U {
+                                for x in 0..PARCEL_SIZE_U {
+                                    let a = Vec3::new(
+                                        bounds.min.x + x as f32,
+                                        rheights.get(x, z) as f32 * 0.5,
+                                        bounds.min.y + z as f32,
+                                    );
+                                    let b = Vec3::new(
+                                        bounds.min.x + (x + 1) as f32,
+                                        rheights.get(x + 1, z) as f32 * 0.5,
+                                        bounds.min.y + z as f32,
+                                    );
+                                    sb.line(a, b);
+                                }
                             }
                         }
-                        for z in 0..=PARCEL_SIZE_U {
-                            for x in 0..PARCEL_SIZE_U {
-                                let a = Vec3::new(
+                    },
+                    (parcel_bounds, terrain_heights.clone(), shape_ref.rotation),
+                )
+                .color(palettes::css::YELLOW.with_alpha(0.8))
+                .insert_dyn(|layer| layer, layer.clone()),
+            Overlay::new()
+                .shape_dyn(
+                    |(bounds, heights, rotation), sb| {
+                        sb.with_stroke_width(0.2)
+                            .with_orientation(ShapeOrientation::YPositive);
+                        if let Some(heights) = heights {
+                            let rheights = rotator::RotatingSquareArray::new(
+                                heights.size(),
+                                rotation as i32,
+                                heights.elts(),
+                            );
+                            let mut verts: Vec<Vec3> = Vec::with_capacity(PARCEL_SIZE_U * 4 + 3);
+                            for x in 0..=PARCEL_SIZE_U {
+                                verts.push(Vec3::new(
                                     bounds.min.x + x as f32,
-                                    rheights.get(x as i32, z as i32) as f32 * 0.5,
-                                    bounds.min.y + z as f32,
-                                );
-                                let b = Vec3::new(
-                                    bounds.min.x + (x + 1) as f32,
-                                    rheights.get(x as i32 + 1, z as i32) as f32 * 0.5,
-                                    bounds.min.y + z as f32,
-                                );
-                                sb.line(a, b);
+                                    rheights.get(x, 0) as f32 * 0.5 + 0.01,
+                                    bounds.min.y,
+                                ));
                             }
+                            for z in 1..PARCEL_SIZE_U {
+                                verts.push(Vec3::new(
+                                    bounds.max.x,
+                                    rheights.get(PARCEL_SIZE_U, z) as f32 * 0.5 + 0.01,
+                                    bounds.min.y + z as f32,
+                                ));
+                            }
+                            for x in 0..=PARCEL_SIZE_U {
+                                verts.push(Vec3::new(
+                                    bounds.max.x - x as f32,
+                                    rheights.get(PARCEL_SIZE_U - x, PARCEL_SIZE_U) as f32 * 0.5
+                                        + 0.01,
+                                    bounds.max.y,
+                                ));
+                            }
+                            for z in 1..PARCEL_SIZE_U {
+                                verts.push(Vec3::new(
+                                    bounds.min.x,
+                                    rheights.get(0, PARCEL_SIZE_U - z) as f32 * 0.5 + 0.01,
+                                    bounds.max.y - z as f32,
+                                ));
+                            }
+                            sb.stroke_polygon_3d(
+                                &verts,
+                                PolygonOptions {
+                                    closed: true,
+                                    ..default()
+                                },
+                            );
                         }
-                    }
-                },
-                (parcel_bounds, terrain_heights, shape_ref.rotation),
-            )
-            .color(palettes::css::YELLOW.with_alpha(0.8))
-            .insert_dyn(|layer| layer, layer)
+                    },
+                    (parcel_bounds, terrain_heights, shape_ref.rotation),
+                )
+                .color(palettes::css::YELLOW.with_alpha(0.8))
+                .insert_dyn(|layer| layer, layer),
+        )
     }
 }

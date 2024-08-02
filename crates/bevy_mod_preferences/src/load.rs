@@ -2,14 +2,15 @@ use std::fs;
 
 use bevy::{
     prelude::*,
-    reflect::{DynamicEnum, DynamicVariant, Enum, EnumInfo, ReflectFromPtr, ReflectMut, TypeInfo},
+    reflect::{
+        DynamicEnum, DynamicTuple, DynamicVariant, Enum, EnumInfo, ReflectFromPtr, ReflectMut,
+        TypeInfo, VariantInfo,
+    },
 };
 
 use crate::{PreferencesDir, PreferencesGroup, PreferencesKey};
 
 pub fn load_preferences(world: &mut World) {
-    println!("Loading preferences");
-
     let prefs_dir = world.get_resource::<PreferencesDir>().unwrap();
     let prefs_file = prefs_dir.0.join("prefs.toml");
 
@@ -74,7 +75,7 @@ pub fn load_preferences(world: &mut World) {
                             maybe_load_tuple_struct(tuple_struct, group_attr, key_attr, &table);
                         } else if tsty
                             .type_path()
-                            .starts_with("bevy_state::state::resources::State<")
+                            .starts_with("bevy_state::state::resources::NextState<")
                         {
                             let state_reflect = tuple_struct.field_mut(0).unwrap();
                             let state_info = state_reflect.get_represented_type_info().unwrap();
@@ -97,8 +98,76 @@ pub fn load_preferences(world: &mut World) {
                             warn!("Preferences: Enums not supported yet: {}", type_name);
                         } else if let Some(_key) = ety.custom_attributes().get::<PreferencesKey>() {
                             warn!("Preferences: Enums not supported yet: {}", type_name);
+                        } else if ety
+                            .type_path()
+                            .starts_with("bevy_state::state::resources::NextState<")
+                        {
+                            let Some(VariantInfo::Tuple(pending_ty)) = ety.variant("Pending")
+                            else {
+                                panic!("Expected Pending variant");
+                            };
+                            let state_ty = pending_ty.field_at(0).unwrap();
+                            let state_type_id = state_ty.type_id();
+                            let Some(state_type_reg) = registry_read.get(state_type_id) else {
+                                warn!(
+                                    "Expected state type registration for {}",
+                                    state_ty.type_path()
+                                );
+                                continue;
+                            };
+                            let state_info = state_type_reg.type_info();
+                            let group_attr = match state_info {
+                                TypeInfo::Struct(_) => todo!(),
+                                TypeInfo::TupleStruct(_) => todo!(),
+                                TypeInfo::Enum(enum_ty) => {
+                                    enum_ty.custom_attributes().get::<PreferencesGroup>()
+                                }
+                                _ => None,
+                            };
+                            let key_attr = match state_info {
+                                TypeInfo::Struct(_) => todo!(),
+                                TypeInfo::TupleStruct(_) => todo!(),
+                                TypeInfo::Enum(enum_ty) => {
+                                    enum_ty.custom_attributes().get::<PreferencesKey>()
+                                }
+                                _ => None,
+                            };
+                            if group_attr.is_none() && key_attr.is_none() {
+                                continue;
+                            }
+
+                            let Some(reflect_default) = state_type_reg.data::<ReflectDefault>()
+                            else {
+                                warn!("No ReflectDefault for {}", state_ty.type_path());
+                                continue;
+                            };
+                            let mut default_state = reflect_default.default();
+                            let change = match (state_info, default_state.reflect_mut()) {
+                                (TypeInfo::Struct(_), ReflectMut::Struct(_)) => false,
+                                (TypeInfo::TupleStruct(_), ReflectMut::TupleStruct(_)) => false,
+                                (TypeInfo::Enum(enum_ty), ReflectMut::Enum(enum_mut)) => {
+                                    maybe_load_enum(enum_ty, enum_mut, &table)
+                                }
+                                _ => false,
+                            };
+
+                            if change {
+                                let mut ptr = world.get_resource_mut_by_id(res_id).unwrap();
+                                let reflect_from_ptr = treg.data::<ReflectFromPtr>().unwrap();
+                                let ReflectMut::Enum(enum_mut) =
+                                    unsafe { reflect_from_ptr.as_reflect_mut(ptr.as_mut()) }
+                                        .reflect_mut()
+                                else {
+                                    panic!("Expected Enum");
+                                };
+
+                                let mut tuple = DynamicTuple::default();
+                                tuple.insert_boxed(default_state);
+                                let dynamic_enum =
+                                    DynamicEnum::new("Pending", DynamicVariant::Tuple(tuple));
+                                enum_mut.apply(dynamic_enum.as_reflect());
+                            }
                         }
-                        // warn!("Preferences: Enums not supported yet: {}", res.name());
                     }
 
                     // Other types cannot be preferences since they don't have attributes.
@@ -162,25 +231,29 @@ fn load_tuple_struct(tuple_struct: &mut dyn TupleStruct, key: &'static str, tabl
     }
 }
 
-fn maybe_load_enum(enum_ty: &EnumInfo, enum_mut: &mut dyn Enum, table: &toml::Table) {
+fn maybe_load_enum(enum_ty: &EnumInfo, enum_mut: &mut dyn Enum, table: &toml::Table) -> bool {
     let group_attr = enum_ty.custom_attributes().get::<PreferencesGroup>();
     let key_attr = enum_ty.custom_attributes().get::<PreferencesKey>();
     if let Some(group) = group_attr {
         let Some(group_value) = table.get(group.0) else {
-            return;
+            return false;
         };
         let Some(group) = group_value.as_table() else {
-            return;
+            return false;
         };
 
         if let Some(key) = key_attr {
             load_enum(enum_ty, enum_mut, key.0, group);
+            true
         } else {
             // TODO: Need to derive key name from tuple struct name
             todo!();
         }
     } else if let Some(key) = key_attr {
         load_enum(enum_ty, enum_mut, key.0, table);
+        true
+    } else {
+        false
     }
 }
 

@@ -242,10 +242,10 @@ fn compute_flora_placement(
         center.height.elts(),
     );
 
-    for x in 0..PARCEL_SIZE {
-        for z in 0..PARCEL_SIZE {
+    for x in 0..PARCEL_SIZE_U {
+        for z in 0..PARCEL_SIZE_U {
             // Don't place flora on roads or other terrain fx.
-            let fx = terrain_fx.get((x + 1) as usize, (z + 1) as usize);
+            let fx = terrain_fx.get(x + 1, z + 1);
             if !fx.effect.is_empty() {
                 continue;
             }
@@ -255,8 +255,8 @@ fn compute_flora_placement(
             }
 
             // Weighted random selection of biome N or N+1.
-            let gx = origin.x + x;
-            let gz = origin.y + z;
+            let gx = origin.x + x as i32;
+            let gz = origin.y + z as i32;
             let xt: usize = if (x as f32 / PARCEL_SIZE_F + noise3(gx, gz, 5)) < 1. {
                 0
             } else {

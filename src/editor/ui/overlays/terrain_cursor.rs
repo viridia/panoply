@@ -13,7 +13,7 @@ use crate::{
     terrain::{
         rotator,
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, PARCEL_SIZE_F, PARCEL_SIZE_U,
+        Parcel,
     },
     view::Viewpoint,
     world::Realm,

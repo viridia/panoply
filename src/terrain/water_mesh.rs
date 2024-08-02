@@ -149,7 +149,7 @@ fn compute_water_mesh(
         return match index_map.get(&UVec2::new(x as u32, z as u32)) {
             Some(&index) => index,
             None => {
-                let depth = shm.get(x as i32 * 2, z as i32 * 2);
+                let depth = shm.get(x * 2, z * 2);
                 let index = position.len() as u32;
                 position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
                 normal.push(n.to_array());
@@ -161,10 +161,10 @@ fn compute_water_mesh(
 
     for z in 0..PARCEL_WATER_RESOLUTION {
         for x in 0..PARCEL_WATER_RESOLUTION {
-            let da = shm.get(x as i32 * 2, z as i32 * 2);
-            let db = shm.get(x as i32 * 2 + 1, z as i32 * 2);
-            let dc = shm.get(x as i32 * 2 + 1, z as i32 * 2 + 1);
-            let dd = shm.get(x as i32 * 2, z as i32 * 2 + 1);
+            let da = shm.get(x * 2, z * 2);
+            let db = shm.get(x * 2 + 1, z * 2);
+            let dc = shm.get(x * 2 + 1, z * 2 + 1);
+            let dd = shm.get(x * 2, z * 2 + 1);
             if da < 0. || db < 0. || dc < 0. || dd < 0. {
                 let a = vertex_at(x, z);
                 let b = vertex_at(x, z + 1);
