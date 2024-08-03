@@ -150,7 +150,11 @@ impl ViewTemplate for FlatRectCursor {
             )
             .color(palettes::css::LIME.with_alpha(0.9))
             .underlay(0.8)
-            .transform(Transform::from_translation(Vec3::new(0., self.height, 0.)))
+            .transform(Transform::from_translation(Vec3::new(
+                (parcel.coords.x * PARCEL_SIZE) as f32,
+                self.height,
+                (parcel.coords.y * PARCEL_SIZE) as f32,
+            )))
             .insert_dyn(|layer| layer, layer)
     }
 }
@@ -174,15 +178,10 @@ impl ViewTemplate for DecalRectCursor {
             None => RenderLayers::none(),
         };
 
-        // Look up the parcel's terrain contours. The terrain contour        // The bounds of the parcel in world space.
-        let parcel_bounds = {
-            let min = parcel.coords * PARCEL_SIZE;
-            IRect::from_corners(min, min + IVec2::splat(PARCEL_SIZE - 1))
-        };
-
-        let mut rect = self.rect.intersect(parcel_bounds);
-        rect.min -= parcel_bounds.min;
-        rect.max -= parcel_bounds.min;
+        let parcel_origin = parcel.coords * PARCEL_SIZE;
+        let rect = self
+            .rect
+            .intersect(IRect::from_corners(IVec2::ZERO, IVec2::splat(PARCEL_SIZE)));
 
         // Note that assets is untracked because it's constantly changing.
         let shape_ref = parcel.center_shape();
@@ -245,7 +244,7 @@ impl ViewTemplate for DecalRectCursor {
                         );
                     }
                 },
-                (rect, parcel_bounds.min, terrain_heights, shape_ref.rotation),
+                (rect, parcel_origin, terrain_heights, shape_ref.rotation),
             )
             .color(palettes::css::LIME.with_alpha(0.9))
             .underlay(0.8)

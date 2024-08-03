@@ -68,6 +68,10 @@ impl Parcel {
     pub fn center_shape(&self) -> ShapeRef {
         self.contours[CENTER_SHAPE]
     }
+
+    pub fn has_shape(&self, shape: u16) -> bool {
+        self.contours.iter().any(|&s| s.shape == shape)
+    }
 }
 
 #[derive(Component)]

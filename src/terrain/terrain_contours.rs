@@ -88,7 +88,7 @@ impl TerrainContour {
         self.height.get(xr, yr) as i32
     }
 
-    /// Get the height at a given point in the terrain contour (unscaled).
+    /// Set the height at a given point in the terrain contour, accounting for rotation.
     pub fn set_height_at(&mut self, x: usize, y: usize, rotation: u8, value: i8) {
         let (xr, yr) = match rotation {
             0 => (x, y),
@@ -98,6 +98,18 @@ impl TerrainContour {
             _ => panic!("Invalid rotation"),
         };
         self.height.set(xr, yr, value)
+    }
+
+    /// Set the flora type at a given point in the terrain contour, accounting for rotation.
+    pub fn set_flora_at(&mut self, x: usize, y: usize, rotation: u8, value: FloraType) {
+        let (xr, yr) = match rotation {
+            0 => (x, y),
+            1 => (y, PARCEL_SIZE_U - 1 - x),
+            2 => (PARCEL_SIZE_U - 1 - x, PARCEL_SIZE_U - 1 - y),
+            3 => (PARCEL_SIZE_U - 1 - y, x),
+            _ => panic!("Invalid rotation"),
+        };
+        self.flora.set(xr, yr, value);
     }
 }
 
@@ -111,16 +123,6 @@ impl TerrainContour {
 //     }
 //     return this;
 //   }
-
-//   public fillFlora(area: Box2, flora: FloraType): this {
-//     const { min, max } = clampBox(area);
-//     for (let y = min.y; y < max.y; y += 1) {
-//       const rowOffset = y * PLOT_LENGTH;
-//       this.flora.fill(flora, rowOffset + min.x, rowOffset + max.x);
-//     }
-//     return this;
-//   }
-// }
 
 pub struct TerrainContoursTable {
     /// Array of shapes, in the order that they appear in the editor's shape catalog.

@@ -1,8 +1,9 @@
 use crate::{
     editor::{DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool},
     terrain::{
-        terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, ParcelFloraChanged, RebuildParcelGroundMesh, PARCEL_SIZE, PARCEL_SIZE_U,
+        terrain_contours::{FloraType, TerrainContoursHandle, TerrainContoursTableAsset},
+        Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, PARCEL_SIZE,
+        PARCEL_SIZE_U,
     },
     view::events::{PickAction, PickEvent, PickTarget},
 };
@@ -30,6 +31,7 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay
     commands.observe(on_pick_event);
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn hover(
     mut commands: Commands,
     r_selected_parcel: Res<SelectedParcel>,
@@ -37,7 +39,7 @@ pub fn hover(
     r_hover_map: Res<HoverMap>,
     r_tool: Res<State<TerrainTool>>,
     r_contours_handle: Res<TerrainContoursHandle>,
-    mut r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
+    r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
     q_parcels: Query<&Parcel>,
 ) {
     let mut drag_state = r_drag_state.clone();
@@ -80,37 +82,23 @@ pub fn hover(
                                         };
                                         drag_state.anchor_height = cursor_height;
                                         drag_state.anchor_pos = pickpos;
-                                    } else {
-                                        let new_height = match tool {
-                                            TerrainTool::RaiseDraw => drag_state.anchor_height + 1,
-                                            TerrainTool::LowerDraw => drag_state.anchor_height - 1,
-                                            TerrainTool::FlattenDraw => drag_state.anchor_height,
-                                            _ => unreachable!(),
-                                        }
-                                        .clamp(i8::MIN as i32, i8::MAX as i32);
-                                        let shape_ref = parcel.center_shape();
-                                        if let Some(contours) =
-                                            r_contours_asset.get_mut(&r_contours_handle.0)
-                                        {
-                                            let mut lock = contours.0.write().unwrap();
-                                            let pos = (pickpos - parcel_min)
-                                                .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
-                                            let contour = lock.get_mut(shape_ref.shape as usize);
-                                            contour.set_height_at(
-                                                pos.x as usize,
-                                                pos.y as usize,
-                                                shape_ref.rotation,
-                                                new_height as i8,
-                                            );
-                                        }
+                                        drag_state.drag_shape = DragShape::Point;
+                                        drag_state.cursor_pos = pickpos;
+                                    } else if drag_state.cursor_pos != pickpos {
+                                        drag_state.cursor_pos = pickpos;
+                                        modify_terrain(
+                                            *tool,
+                                            &drag_state,
+                                            parcel,
+                                            r_contours_handle,
+                                            r_contours_asset,
+                                        );
                                         commands.entity(parcel_id).insert((
                                             RebuildParcelGroundMesh,
-                                            // ParcelWaterChanged,
+                                            ParcelWaterChanged,
                                             ParcelFloraChanged,
                                         ));
                                     }
-                                    drag_state.drag_shape = DragShape::Point;
-                                    drag_state.cursor_pos = pickpos;
                                     break;
                                 }
                             }
@@ -126,12 +114,11 @@ pub fn hover(
                                             .get(&r_contours_handle.0)
                                             .map(|contours| {
                                                 let lock = contours.0.read().unwrap();
-                                                let pos = pickpos - parcel_min;
                                                 lock.get(shape_ref.shape as usize)
                                                     .unscaled_height_at(
-                                                        pos.x.clamp(0, PARCEL_SIZE_U as i32)
+                                                        pickpos.x.clamp(0, PARCEL_SIZE_U as i32)
                                                             as usize,
-                                                        pos.y.clamp(0, PARCEL_SIZE_U as i32)
+                                                        pickpos.y.clamp(0, PARCEL_SIZE_U as i32)
                                                             as usize,
                                                         shape_ref.rotation,
                                                     )
@@ -142,31 +129,8 @@ pub fn hover(
 
                                         drag_state.anchor_height = cursor_height;
                                         drag_state.anchor_pos = pickpos;
-                                    } else {
-                                        let new_height = match tool {
-                                            TerrainTool::RaiseRect => drag_state.anchor_height + 1,
-                                            TerrainTool::LowerRect => drag_state.anchor_height - 1,
-                                            TerrainTool::FlattenRect => drag_state.anchor_height,
-                                            _ => unreachable!(),
-                                        }
-                                        .clamp(i8::MIN as i32, i8::MAX as i32);
-                                        let shape_ref = parcel.center_shape();
-                                        if let Some(contours) =
-                                            r_contours_asset.get_mut(&r_contours_handle.0)
-                                        {
-                                            let mut lock = contours.0.write().unwrap();
-                                            let pos = (pickpos - parcel_min)
-                                                .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
-                                            let contour = lock.get_mut(shape_ref.shape as usize);
-                                            contour.set_height_at(
-                                                pos.x as usize,
-                                                pos.y as usize,
-                                                shape_ref.rotation,
-                                                new_height as i8,
-                                            );
-                                        }
+                                        drag_state.drag_shape = DragShape::FlatRect;
                                     }
-                                    drag_state.drag_shape = DragShape::FlatRect;
                                     drag_state.cursor_pos = pickpos;
                                     break;
                                 }
@@ -179,8 +143,21 @@ pub fn hover(
                                     terrain_pick_pos(DragShape::DecalRect, rpos, true)
                                 {
                                     drag_state.drag_shape = DragShape::DecalRect;
-                                    drag_state.cursor_pos = pickpos;
-                                    if !drag_state.dragging {
+                                    if drag_state.dragging {
+                                        if drag_state.cursor_pos != pickpos {
+                                            drag_state.cursor_pos = pickpos;
+                                            drag_state.anchor_pos = pickpos;
+                                            modify_terrain(
+                                                *tool,
+                                                &drag_state,
+                                                parcel,
+                                                r_contours_handle,
+                                                r_contours_asset,
+                                            );
+                                            commands.entity(parcel_id).insert(ParcelFloraChanged);
+                                        }
+                                    } else {
+                                        drag_state.cursor_pos = pickpos;
                                         drag_state.anchor_pos = pickpos;
                                     }
                                     break;
@@ -199,22 +176,25 @@ pub fn hover(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn on_pick_event(
     trigger: Trigger<PickEvent>,
+    mut commands: Commands,
+    q_parcels: Query<(Entity, &Parcel)>,
+    r_tool: Res<State<TerrainTool>>,
     mut r_selected_parcel: ResMut<SelectedParcel>,
     mut r_drag_state: ResMut<TerrainDragState>,
+    r_contours_handle: Res<TerrainContoursHandle>,
+    r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
 ) {
     let event = trigger.event();
+    let tool = r_tool.get();
     match event.action {
         PickAction::Leave => {
             // *r_parcel_cursor = ParcelCursor::None;
             r_drag_state.drag_shape = DragShape::None;
         }
-        PickAction::Down(_pos) => {
-            // if let PickTarget::Parcel(p) = event.target {
-            //     r_selected_parcel.0 = Some(p);
-            // }
-        }
+        PickAction::Down(_pos) => {}
         PickAction::RightClick => todo!(),
         PickAction::DblClick => todo!(),
         PickAction::DragStart(_pos) => {
@@ -222,14 +202,69 @@ pub fn on_pick_event(
                 if r_selected_parcel.0 != Some(p) {
                     r_selected_parcel.0 = Some(p);
                     r_drag_state.parcel = Some(p);
-                } else {
+                } else if let Some(parcel_id) = r_selected_parcel.0 {
                     r_drag_state.dragging = true;
+                    match tool {
+                        TerrainTool::RaiseDraw
+                        | TerrainTool::LowerDraw
+                        | TerrainTool::FlattenDraw
+                        | TerrainTool::FlattenRect
+                        | TerrainTool::DrawTrees
+                        | TerrainTool::DrawShrubs
+                        | TerrainTool::DrawHerbs
+                        | TerrainTool::EraseFlora => {
+                            let parcel = q_parcels.get(parcel_id).unwrap().1;
+                            modify_terrain(
+                                *tool,
+                                &r_drag_state,
+                                parcel,
+                                r_contours_handle,
+                                r_contours_asset,
+                            );
+                            commands.entity(parcel_id).insert((
+                                RebuildParcelGroundMesh,
+                                ParcelWaterChanged,
+                                ParcelFloraChanged,
+                            ));
+                        }
+
+                        _ => {}
+                    }
                 }
                 r_drag_state.anchor_pos = r_drag_state.cursor_pos;
             }
         }
         PickAction::Drag => {}
         PickAction::DragEnd => {
+            if let Some(parcel_id) = r_selected_parcel.0 {
+                if let Ok((_, parcel)) = q_parcels.get(parcel_id) {
+                    match tool {
+                        TerrainTool::RaiseRect
+                        | TerrainTool::LowerRect
+                        | TerrainTool::FlattenRect => {
+                            modify_terrain(
+                                *tool,
+                                &r_drag_state,
+                                parcel,
+                                r_contours_handle,
+                                r_contours_asset,
+                            );
+                        }
+
+                        _ => {}
+                    }
+                    let shape_ref = parcel.center_shape();
+                    for (parcel_id, parcel) in q_parcels.iter() {
+                        if parcel.has_shape(shape_ref.shape) {
+                            commands.entity(parcel_id).insert((
+                                RebuildParcelGroundMesh,
+                                ParcelWaterChanged,
+                                ParcelFloraChanged,
+                            ));
+                        }
+                    }
+                }
+            }
             r_drag_state.dragging = false;
         }
     }
@@ -252,12 +287,99 @@ fn terrain_pick_pos(drag_shape: DragShape, pos: Vec2, clamp: bool) -> Option<IVe
         DragShape::DecalRect => {
             let mut pt = IVec2::new(pos.x.floor() as i32, pos.y.floor() as i32);
             if clamp {
-                pt = pt.clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+                pt = pt.clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE - 1));
             }
-            if pt.x >= 0 && pt.x <= PARCEL_SIZE && pt.y >= 0 && pt.y <= PARCEL_SIZE {
+            if pt.x >= 0 && pt.x < PARCEL_SIZE && pt.y >= 0 && pt.y < PARCEL_SIZE {
                 Some(pt)
             } else {
                 None
+            }
+        }
+    }
+}
+
+fn modify_terrain(
+    tool: TerrainTool,
+    drag_state: &TerrainDragState,
+    parcel: &Parcel,
+    r_contours_handle: Res<TerrainContoursHandle>,
+    mut r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
+) {
+    match tool {
+        TerrainTool::RaiseDraw | TerrainTool::LowerDraw | TerrainTool::FlattenDraw => {
+            let new_height = match tool {
+                TerrainTool::RaiseDraw => drag_state.anchor_height + 1,
+                TerrainTool::LowerDraw => drag_state.anchor_height - 1,
+                TerrainTool::FlattenDraw => drag_state.anchor_height,
+                _ => unreachable!(),
+            }
+            .clamp(i8::MIN as i32, i8::MAX as i32);
+            let shape_ref = parcel.center_shape();
+            if let Some(contours) = r_contours_asset.get_mut(&r_contours_handle.0) {
+                let mut lock = contours.0.write().unwrap();
+                let pos = drag_state
+                    .cursor_pos
+                    .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+                let contour = lock.get_mut(shape_ref.shape as usize);
+                contour.set_height_at(
+                    pos.x as usize,
+                    pos.y as usize,
+                    shape_ref.rotation,
+                    new_height as i8,
+                );
+            }
+        }
+        TerrainTool::RaiseRect | TerrainTool::LowerRect | TerrainTool::FlattenRect => {
+            let new_height = match tool {
+                TerrainTool::RaiseRect => drag_state.anchor_height + 1,
+                TerrainTool::LowerRect => drag_state.anchor_height - 1,
+                TerrainTool::FlattenRect => drag_state.anchor_height,
+                _ => unreachable!(),
+            }
+            .clamp(i8::MIN as i32, i8::MAX as i32);
+            let shape_ref = parcel.center_shape();
+            if let Some(contours) = r_contours_asset.get_mut(&r_contours_handle.0) {
+                let mut lock = contours.0.write().unwrap();
+                let rect =
+                    IRect::from_corners(drag_state.anchor_pos, drag_state.cursor_pos).intersect(
+                        IRect::from_corners(IVec2::ZERO, IVec2::splat(PARCEL_SIZE - 1)),
+                    );
+                let contour = lock.get_mut(shape_ref.shape as usize);
+                for x in rect.min.x..=rect.max.x {
+                    for y in rect.min.y..=rect.max.y {
+                        contour.set_height_at(
+                            x as usize,
+                            y as usize,
+                            shape_ref.rotation,
+                            new_height as i8,
+                        );
+                    }
+                }
+            }
+        }
+        TerrainTool::DrawTrees
+        | TerrainTool::DrawShrubs
+        | TerrainTool::DrawHerbs
+        | TerrainTool::EraseFlora => {
+            let shape_ref = parcel.center_shape();
+            if let Some(contours) = r_contours_asset.get_mut(&r_contours_handle.0) {
+                let mut lock = contours.0.write().unwrap();
+                let pos = drag_state
+                    .cursor_pos
+                    .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE - 1));
+                let contour = lock.get_mut(shape_ref.shape as usize);
+                contour.set_flora_at(
+                    pos.x as usize,
+                    pos.y as usize,
+                    shape_ref.rotation,
+                    match tool {
+                        TerrainTool::DrawTrees => FloraType::RandomTree,
+                        TerrainTool::DrawShrubs => FloraType::RandomShrub,
+                        TerrainTool::DrawHerbs => FloraType::RandomHerb,
+                        TerrainTool::EraseFlora => FloraType::None,
+                        _ => unreachable!(),
+                    },
+                );
             }
         }
     }

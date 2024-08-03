@@ -35,11 +35,12 @@ pub struct FloraPlacementResult {
     /// Map of model resource names to instances, used in building the instance components.
     /// Each terrain parcel or scenery precinct will have one of these, which specifies how many
     /// instances of each model are placed in the world, and where they are located.
-    models: HashMap<String, Vec<Transform>>,
+    models: HashMap<String, Vec<(UVec2, Transform)>>,
 }
 
 #[derive(Debug, Component, Default)]
 pub struct FloraInstance {
+    pub coords: UVec2,
     pub handle: Handle<Gltf>,
     pub label: String,
     pub transform: Transform,
@@ -119,16 +120,26 @@ pub fn gen_flora(
 pub fn insert_flora(
     mut commands: Commands,
     mut q_parcels: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
+    mut q_flora: Query<(&mut FloraInstance, &mut Transform)>,
+    q_children: Query<&Children>,
     q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
 ) {
     for (entity, mut parcel, mut task) in q_parcels.iter_mut() {
         if let Ok((realm, _terrain)) = q_realms.get(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
+                let mut existing_flora = HashMap::<UVec2, Entity>::new();
                 // Remove existing flora
                 if let Some(flora_entity) = parcel.flora_entity {
                     // println!("Dropping flora {}", flora_entity);
-                    commands.entity(flora_entity).despawn_descendants();
+                    if let Ok(children) = q_children.get(flora_entity) {
+                        existing_flora.reserve(children.len());
+                        for child in children.iter() {
+                            if let Ok((flora, _)) = q_flora.get(*child) {
+                                existing_flora.insert(flora.coords, *child);
+                            }
+                        }
+                    }
                 }
 
                 // If there is flora
@@ -156,23 +167,51 @@ pub fn insert_flora(
                     for (model, value) in flora_placement.models.drain() {
                         if let Some((fname, fragment)) = model.split_once('#') {
                             let handle: Handle<Gltf> = server.load(fname.to_owned());
-                            for transform in value {
-                                children.push(
-                                    commands
-                                        .spawn((
-                                            FloraInstance {
-                                                handle: handle.clone(),
-                                                label: fragment.to_string(),
-                                                transform,
-                                            },
-                                            realm.layer.clone(),
-                                        ))
-                                        .id(),
-                                );
+                            for (ipos, transform) in value {
+                                if let Some(flora) = existing_flora.remove(&ipos) {
+                                    // Update old flora in place
+                                    if let Ok((mut flora_cmp, mut transform_cmp)) =
+                                        q_flora.get_mut(flora)
+                                    {
+                                        if flora_cmp.handle != handle || flora_cmp.label != fragment
+                                        {
+                                            // Replace flora model
+                                            flora_cmp.handle = handle.clone();
+                                            flora_cmp.label = fragment.to_string();
+                                            commands.entity(flora).remove::<Handle<Scene>>();
+                                        }
+                                        if *transform_cmp != transform {
+                                            *transform_cmp = transform;
+                                        }
+                                        children.push(flora);
+                                    }
+                                } else {
+                                    // Spawn new flora
+                                    children.push(
+                                        commands
+                                            .spawn((
+                                                FloraInstance {
+                                                    coords: ipos,
+                                                    handle: handle.clone(),
+                                                    label: fragment.to_string(),
+                                                    transform,
+                                                },
+                                                realm.layer.clone(),
+                                            ))
+                                            .id(),
+                                    );
+                                }
                             }
                         }
                     }
+
+                    // Replace children
                     commands.entity(flora_entity).replace_children(&children);
+
+                    // Despawn any remaining flora
+                    for (_, child_entity) in existing_flora.iter() {
+                        commands.entity(*child_entity).despawn_recursive();
+                    }
                 }
 
                 commands.entity(entity).remove::<ComputeFloraTask>();
@@ -300,11 +339,14 @@ fn compute_flora_placement(
                         .models
                         .entry(model.clone())
                         .or_insert(Vec::with_capacity(6));
-                    entry.push(Transform {
-                        translation,
-                        rotation,
-                        scale: Vec3::new(scale, scale, scale),
-                    })
+                    entry.push((
+                        UVec2::new(x as u32, z as u32),
+                        Transform {
+                            translation,
+                            rotation,
+                            scale: Vec3::new(scale, scale, scale),
+                        },
+                    ))
                 }
             }
 
