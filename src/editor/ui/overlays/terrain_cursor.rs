@@ -9,7 +9,7 @@ use bevy_quill::{Cx, Dynamic, IntoViewChild, View, ViewTemplate};
 use bevy_quill_overlays::{Overlay, PolygonOptions, ShapeOrientation};
 
 use crate::{
-    editor::{ParcelCursor, SelectedParcel},
+    editor::{DragShape, SelectedParcel, TerrainDragState},
     terrain::{
         rotator,
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
@@ -26,37 +26,29 @@ impl ViewTemplate for TerrainCursorOverlay {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         // let tool = *cx.use_resource::<State<TerrainTool>>().get();
-        let cursor = match cx.use_resource::<SelectedParcel>().0 {
-            Some(_) => cx.use_resource::<ParcelCursor>().clone(),
-            None => ParcelCursor::None,
+        let drag_state = match cx.use_resource::<SelectedParcel>().0 {
+            Some(_) => cx.use_resource::<TerrainDragState>().clone(),
+            None => TerrainDragState::default(),
         };
 
-        Dynamic::new(match cursor {
-            ParcelCursor::None => ().into_view_child(),
-            ParcelCursor::Point { parcel, cursor_pos } => PointCursor {
-                parcel,
-                point: cursor_pos,
+        Dynamic::new(match drag_state.drag_shape {
+            DragShape::None => ().into_view_child(),
+            DragShape::Point => PointCursor {
+                parcel: drag_state.parcel.unwrap(),
+                point: drag_state.cursor_pos,
             }
             .into_view_child(),
-            ParcelCursor::FlatRect {
-                parcel,
-                anchor_pos,
-                cursor_pos,
-                altitude,
-            } => FlatRectCursor {
-                parcel,
-                rect: IRect::from_corners(anchor_pos, cursor_pos),
-                height: altitude,
+            DragShape::FlatRect => FlatRectCursor {
+                parcel: drag_state.parcel.unwrap(),
+                rect: IRect::from_corners(drag_state.anchor_pos, drag_state.cursor_pos),
+                height: drag_state.anchor_height,
             }
             .into_view_child(),
-            ParcelCursor::DecalRect {
-                parcel,
-                anchor_pos,
-                cursor_pos,
-            } => DecalRectCursor {
-                parcel,
+            DragShape::DecalRect => DecalRectCursor {
+                parcel: drag_state.parcel.unwrap(),
                 rect: {
-                    let mut rect = IRect::from_corners(anchor_pos, cursor_pos);
+                    let mut rect =
+                        IRect::from_corners(drag_state.anchor_pos, drag_state.cursor_pos);
                     rect.max += IVec2::splat(1);
                     rect
                 },
@@ -185,7 +177,7 @@ impl ViewTemplate for DecalRectCursor {
         // Look up the parcel's terrain contours. The terrain contour        // The bounds of the parcel in world space.
         let parcel_bounds = {
             let min = parcel.coords * PARCEL_SIZE;
-            IRect::from_corners(min, min + IVec2::splat(PARCEL_SIZE))
+            IRect::from_corners(min, min + IVec2::splat(PARCEL_SIZE - 1))
         };
 
         let mut rect = self.rect.intersect(parcel_bounds);
@@ -206,7 +198,7 @@ impl ViewTemplate for DecalRectCursor {
 
         Overlay::new()
             .shape_dyn(
-                |(rect, bounds, heights, rotation), sb| {
+                |(rect, origin, heights, rotation), sb| {
                     sb.with_stroke_width(0.2)
                         .with_orientation(ShapeOrientation::YPositive);
                     if let Some(heights) = heights {
@@ -218,30 +210,30 @@ impl ViewTemplate for DecalRectCursor {
                         let mut verts: Vec<Vec3> = Vec::with_capacity(PARCEL_SIZE_U * 4 + 3);
                         for x in rect.min.x..=rect.max.x {
                             verts.push(Vec3::new(
-                                (bounds.min.x + x) as f32,
+                                (origin.x + x) as f32,
                                 rheights.get(x as usize, rect.min.y as usize) as f32 * 0.5 + 0.01,
-                                (bounds.min.y + rect.min.y) as f32,
+                                (origin.y + rect.min.y) as f32,
                             ));
                         }
                         for z in (rect.min.y + 1)..(rect.max.y - 1) {
                             verts.push(Vec3::new(
-                                (bounds.min.x + rect.max.x) as f32,
+                                (origin.x + rect.max.x) as f32,
                                 rheights.get(rect.max.x as usize, z as usize) as f32 * 0.5 + 0.01,
-                                (bounds.min.y + z) as f32,
+                                (origin.y + z) as f32,
                             ));
                         }
                         for x in (rect.min.x..=rect.max.x).rev() {
                             verts.push(Vec3::new(
-                                (bounds.min.x + x) as f32,
+                                (origin.x + x) as f32,
                                 rheights.get(x as usize, rect.max.y as usize) as f32 * 0.5 + 0.01,
-                                (bounds.min.y + rect.max.y) as f32,
+                                (origin.y + rect.max.y) as f32,
                             ));
                         }
                         for z in ((rect.min.y + 1)..(rect.max.y - 1)).rev() {
                             verts.push(Vec3::new(
-                                (bounds.min.x + rect.min.x) as f32,
+                                (origin.x + rect.min.x) as f32,
                                 rheights.get(rect.min.x as usize, z as usize) as f32 * 0.5 + 0.01,
-                                (bounds.min.x + z) as f32,
+                                (origin.x + z) as f32,
                             ));
                         }
                         sb.stroke_polygon_3d(
@@ -253,15 +245,10 @@ impl ViewTemplate for DecalRectCursor {
                         );
                     }
                 },
-                (rect, parcel_bounds, terrain_heights, shape_ref.rotation),
+                (rect, parcel_bounds.min, terrain_heights, shape_ref.rotation),
             )
             .color(palettes::css::LIME.with_alpha(0.9))
             .underlay(0.8)
-            // .transform(Transform::from_translation(Vec3::new(
-            //     0.,
-            //     cursor_height,
-            //     0.,
-            // )))
             .insert_dyn(|layer| layer, layer)
     }
 }

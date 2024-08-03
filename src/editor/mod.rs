@@ -14,34 +14,35 @@ pub struct EditorSidebarWidth(pub f32);
 #[derive(Resource, Default)]
 pub struct SelectedParcel(pub Option<Entity>);
 
-#[derive(Resource, Default, Clone, PartialEq)]
-pub enum ParcelCursor {
+#[derive(Resource, Default, Clone, Copy, PartialEq)]
+pub enum DragShape {
     /// When no cursor is shown
     #[default]
     None,
 
     /// When cursor is shown as a point.
-    Point { parcel: Entity, cursor_pos: IVec2 },
+    Point,
 
     /// When cursor is shown as a flat rectangle.
-    FlatRect {
-        parcel: Entity,
-        anchor_pos: IVec2,
-        cursor_pos: IVec2,
-        altitude: f32,
-    },
+    FlatRect,
 
     /// When cursor is shown as a which conforms to the terrain.
-    DecalRect {
-        parcel: Entity,
-        anchor_pos: IVec2,
-        cursor_pos: IVec2,
-    },
+    DecalRect,
+}
+
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct TerrainDragState {
+    pub(crate) dragging: bool,
+    pub(crate) drag_shape: DragShape,
+    pub(crate) parcel: Option<Entity>,
+    pub(crate) anchor_pos: IVec2,
+    pub(crate) cursor_pos: IVec2,
+    pub(crate) anchor_height: f32,
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("mode"))]
-enum EditorMode {
+pub(crate) enum EditorMode {
     #[default]
     Realm,
     Terrain,
@@ -52,7 +53,7 @@ enum EditorMode {
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("terrain_tool"))]
-enum TerrainTool {
+pub(crate) enum TerrainTool {
     #[default]
     RaiseDraw,
     RaiseRect,
@@ -68,7 +69,7 @@ enum TerrainTool {
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
-enum SceneryTool {
+pub(crate) enum SceneryTool {
     #[default]
     FloorDraw,
     WallDraw,
@@ -96,7 +97,8 @@ impl Plugin for EditorPlugin {
             .enable_state_scoped_entities::<SceneryTool>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
-            .init_resource::<ParcelCursor>()
+            // .init_resource::<ParcelCursor>()
+            .init_resource::<TerrainDragState>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
             .register_type::<NextState<EditorMode>>()

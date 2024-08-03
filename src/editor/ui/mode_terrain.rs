@@ -1,5 +1,5 @@
 use crate::{
-    editor::{EditorMode, ParcelCursor, SelectedParcel, TerrainTool},
+    editor::{DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool},
     terrain::{
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
         Parcel, PARCEL_SIZE, PARCEL_SIZE_U,
@@ -32,14 +32,17 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay
 
 pub fn hover(
     r_selected_parcel: Res<SelectedParcel>,
-    mut r_parcel_cursor: ResMut<ParcelCursor>,
+    mut r_drag_state: ResMut<TerrainDragState>,
     r_hover_map: Res<HoverMap>,
     r_tool: Res<State<TerrainTool>>,
     r_contours_handle: Res<TerrainContoursHandle>,
     r_contours_asset: Res<Assets<TerrainContoursTableAsset>>,
     q_parcels: Query<&Parcel>,
 ) {
-    let mut cursor: ParcelCursor = ParcelCursor::None;
+    let mut drag_state = r_drag_state.clone();
+    if !drag_state.dragging {
+        drag_state.drag_shape = DragShape::None;
+    }
     if let Some(parcel_id) = r_selected_parcel.0 {
         if let Ok(parcel) = q_parcels.get(parcel_id) {
             let parcel_min = parcel.coords * PARCEL_SIZE;
@@ -51,34 +54,29 @@ pub fn hover(
                             TerrainTool::RaiseDraw
                             | TerrainTool::LowerDraw
                             | TerrainTool::FlattenDraw => {
-                                let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
-                                if pt.x >= 0
-                                    && pt.x <= PARCEL_SIZE
-                                    && pt.y >= 0
-                                    && pt.y <= PARCEL_SIZE
+                                if let Some(pickpos) =
+                                    terrain_pick_pos(DragShape::Point, rpos, true)
                                 {
-                                    cursor = ParcelCursor::Point {
-                                        parcel: parcel_id,
-                                        cursor_pos: pt,
-                                    };
+                                    drag_state.drag_shape = DragShape::Point;
+                                    drag_state.cursor_pos = pickpos;
+                                    if !drag_state.dragging {
+                                        drag_state.anchor_pos = pickpos;
+                                    }
+                                    break;
                                 }
                             }
                             TerrainTool::RaiseRect
                             | TerrainTool::LowerRect
                             | TerrainTool::FlattenRect => {
-                                let pt = IVec2::new(rpos.x.round() as i32, rpos.y.round() as i32);
-                                if pt.x >= 0
-                                    && pt.x <= PARCEL_SIZE
-                                    && pt.y >= 0
-                                    && pt.y <= PARCEL_SIZE
+                                if let Some(pickpos) =
+                                    terrain_pick_pos(DragShape::FlatRect, rpos, true)
                                 {
-                                    // Extract out the height map.
                                     let shape_ref = parcel.center_shape();
                                     let Some(cursor_height) = r_contours_asset
                                         .get(&r_contours_handle.0)
                                         .map(|contours| {
                                             let lock = contours.0.lock().unwrap();
-                                            let pos = pt - parcel_min;
+                                            let pos = pickpos - parcel_min;
                                             lock.get(shape_ref.shape as usize).height_at(
                                                 pos.x.clamp(0, PARCEL_SIZE_U as i32) as usize,
                                                 pos.y.clamp(0, PARCEL_SIZE_U as i32) as usize,
@@ -89,29 +87,28 @@ pub fn hover(
                                         continue;
                                     };
 
-                                    cursor = ParcelCursor::FlatRect {
-                                        parcel: parcel_id,
-                                        anchor_pos: pt,
-                                        cursor_pos: pt,
-                                        altitude: cursor_height as f32,
-                                    };
+                                    drag_state.drag_shape = DragShape::FlatRect;
+                                    drag_state.cursor_pos = pickpos;
+                                    if !drag_state.dragging {
+                                        drag_state.anchor_height = cursor_height;
+                                        drag_state.anchor_pos = pickpos;
+                                    }
+                                    break;
                                 }
                             }
                             TerrainTool::DrawTrees
                             | TerrainTool::DrawShrubs
                             | TerrainTool::DrawHerbs
                             | TerrainTool::EraseFlora => {
-                                let pt = IVec2::new(rpos.x.floor() as i32, rpos.y.floor() as i32);
-                                if pt.x >= 0
-                                    && pt.x < PARCEL_SIZE
-                                    && pt.y >= 0
-                                    && pt.y < PARCEL_SIZE
+                                if let Some(pickpos) =
+                                    terrain_pick_pos(DragShape::DecalRect, rpos, true)
                                 {
-                                    cursor = ParcelCursor::DecalRect {
-                                        parcel: parcel_id,
-                                        anchor_pos: pt,
-                                        cursor_pos: pt,
-                                    };
+                                    drag_state.drag_shape = DragShape::DecalRect;
+                                    drag_state.cursor_pos = pickpos;
+                                    if !drag_state.dragging {
+                                        drag_state.anchor_pos = pickpos;
+                                    }
+                                    break;
                                 }
                             }
                         }
@@ -122,31 +119,21 @@ pub fn hover(
         }
     }
 
-    // match position {
-    //     Some(pos) => {
-    //         *r_parcel_cursor = ParcelCursor::Point((
-    //             r_selected_parcel.0.unwrap(),
-    //             IVec2::new(pos.x.round() as i32, pos.z.round() as i32),
-    //         ));
-    //     }
-    //     None => {
-    //         *r_parcel_cursor = ParcelCursor::None;
-    //     }
-    // }
-    if *r_parcel_cursor != cursor {
-        *r_parcel_cursor = cursor;
+    if *r_drag_state != drag_state {
+        *r_drag_state = drag_state;
     }
 }
 
 pub fn on_pick_event(
     trigger: Trigger<PickEvent>,
-    mut r_parcel_cursor: ResMut<ParcelCursor>,
     mut r_selected_parcel: ResMut<SelectedParcel>,
+    mut r_drag_state: ResMut<TerrainDragState>,
 ) {
     let event = trigger.event();
     match event.action {
         PickAction::Leave => {
-            *r_parcel_cursor = ParcelCursor::None;
+            // *r_parcel_cursor = ParcelCursor::None;
+            r_drag_state.drag_shape = DragShape::None;
         }
         PickAction::Down(_pos) => {
             // if let PickTarget::Parcel(p) = event.target {
@@ -157,11 +144,47 @@ pub fn on_pick_event(
         PickAction::DblClick => todo!(),
         PickAction::DragStart(_pos) => {
             if let PickTarget::Parcel(p) = event.target {
-                r_selected_parcel.0 = Some(p);
+                if r_selected_parcel.0 != Some(p) {
+                    r_selected_parcel.0 = Some(p);
+                    r_drag_state.parcel = Some(p);
+                } else {
+                    r_drag_state.dragging = true;
+                }
+                r_drag_state.anchor_pos = r_drag_state.cursor_pos;
             }
         }
         PickAction::Drag => {}
-        PickAction::DragEnd => {}
+        PickAction::DragEnd => {
+            r_drag_state.dragging = false;
+        }
+    }
+}
+
+fn terrain_pick_pos(drag_shape: DragShape, pos: Vec2, clamp: bool) -> Option<IVec2> {
+    match drag_shape {
+        DragShape::None => None,
+        DragShape::Point | DragShape::FlatRect => {
+            let mut pt = IVec2::new(pos.x.round() as i32, pos.y.round() as i32);
+            if clamp {
+                pt = pt.clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+            }
+            if pt.x >= 0 && pt.x <= PARCEL_SIZE && pt.y >= 0 && pt.y <= PARCEL_SIZE {
+                Some(pt)
+            } else {
+                None
+            }
+        }
+        DragShape::DecalRect => {
+            let mut pt = IVec2::new(pos.x.floor() as i32, pos.y.floor() as i32);
+            if clamp {
+                pt = pt.clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+            }
+            if pt.x >= 0 && pt.x <= PARCEL_SIZE && pt.y >= 0 && pt.y <= PARCEL_SIZE {
+                Some(pt)
+            } else {
+                None
+            }
+        }
     }
 }
 
