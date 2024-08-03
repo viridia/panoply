@@ -37,7 +37,7 @@ pub(crate) struct TerrainDragState {
     pub(crate) parcel: Option<Entity>,
     pub(crate) anchor_pos: IVec2,
     pub(crate) cursor_pos: IVec2,
-    pub(crate) anchor_height: f32,
+    pub(crate) anchor_height: i32,
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]

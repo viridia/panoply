@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use crate::{
     models::PropagateRenderLayers,
@@ -215,13 +215,13 @@ pub fn spawn_flora_model_instances(
 fn compute_flora_placement(
     origin: IVec2,
     shape_ref: ShapeRef,
-    contours: &Arc<Mutex<TerrainContoursTable>>,
+    contours: &Arc<RwLock<TerrainContoursTable>>,
     terrain_fx: &ParcelTerrainFx,
     biome_indices: [u8; 4],
     biomes: &Arc<Mutex<BiomesTable>>,
     out: &mut FloraPlacementResult,
 ) -> bool {
-    let contours_table = contours.lock().unwrap();
+    let contours_table = contours.read().unwrap();
     let biomes_table = biomes.lock().unwrap();
     let center = contours_table.get(shape_ref.shape as usize);
     if !center.has_terrain {

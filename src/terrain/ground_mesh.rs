@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use crate::{
     terrain::{
@@ -136,9 +136,9 @@ pub fn insert_ground_meshes(
 fn compute_ground_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
     terrain_fx: &ParcelTerrainFx,
-    shapes: &Arc<Mutex<TerrainContoursTable>>,
+    shapes: &Arc<RwLock<TerrainContoursTable>>,
 ) -> Option<GroundMeshResult> {
-    let shapes_table = shapes.lock().unwrap();
+    let shapes_table = shapes.read().unwrap();
     let terrain_shape = shapes_table.get(shape_refs[CENTER_SHAPE].shape as usize);
     if !terrain_shape.has_terrain {
         return None;

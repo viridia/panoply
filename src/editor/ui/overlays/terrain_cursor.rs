@@ -13,7 +13,7 @@ use crate::{
     terrain::{
         rotator,
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, PARCEL_SIZE, PARCEL_SIZE_U,
+        Parcel, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U,
     },
     world::Realm,
 };
@@ -41,7 +41,7 @@ impl ViewTemplate for TerrainCursorOverlay {
             DragShape::FlatRect => FlatRectCursor {
                 parcel: drag_state.parcel.unwrap(),
                 rect: IRect::from_corners(drag_state.anchor_pos, drag_state.cursor_pos),
-                height: drag_state.anchor_height,
+                height: drag_state.anchor_height as f32 * PARCEL_HEIGHT_SCALE,
             }
             .into_view_child(),
             DragShape::DecalRect => DecalRectCursor {
@@ -87,8 +87,8 @@ impl ViewTemplate for PointCursor {
         let cursor_height = ts_assets
             .get(&ts_handle)
             .map(|contours| {
-                let lock = contours.0.lock().unwrap();
-                let pos = self.point - parcel.coords * PARCEL_SIZE;
+                let lock = contours.0.read().unwrap();
+                let pos = self.point;
                 lock.get(shape_ref.shape as usize).height_at(
                     pos.x.clamp(0, PARCEL_SIZE_U as i32) as usize,
                     pos.y.clamp(0, PARCEL_SIZE_U as i32) as usize,
@@ -105,7 +105,7 @@ impl ViewTemplate for PointCursor {
                         .with_stroke_width(0.1)
                         .stroke_rect(rect);
                 },
-                self.point,
+                self.point + parcel.coords * PARCEL_SIZE,
             )
             .color(palettes::css::LIME.with_alpha(0.9))
             .underlay(0.8)
@@ -191,7 +191,7 @@ impl ViewTemplate for DecalRectCursor {
 
         // Extract out the height map.
         let terrain_heights = ts_assets.get(&ts_handle).map(|contours| {
-            let lock = contours.0.lock().unwrap();
+            let lock = contours.0.read().unwrap();
             let heights = lock.get(shape_ref.shape as usize).height.clone();
             heights
         });

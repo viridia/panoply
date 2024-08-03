@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use bevy::{
     asset::LoadState,
@@ -117,9 +117,9 @@ pub fn insert_water_meshes(
 
 fn compute_water_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
-    shapes: &Arc<Mutex<TerrainContoursTable>>,
+    shapes: &Arc<RwLock<TerrainContoursTable>>,
 ) -> Option<Mesh> {
-    let shapes_table = shapes.lock().unwrap();
+    let shapes_table = shapes.read().unwrap();
     let terrain_shape = shapes_table.get(shape_refs[4].shape as usize);
     if !terrain_shape.has_water {
         return None;

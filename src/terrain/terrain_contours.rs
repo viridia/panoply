@@ -2,7 +2,7 @@ use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use super::{square::SquareArray, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
 use bevy::{
@@ -75,6 +75,30 @@ impl TerrainContour {
         };
         self.height.get(xr, yr) as f32 * PARCEL_HEIGHT_SCALE
     }
+
+    /// Get the height at a given point in the terrain contour (unscaled).
+    pub fn unscaled_height_at(&self, x: usize, y: usize, rotation: u8) -> i32 {
+        let (xr, yr) = match rotation {
+            0 => (x, y),
+            1 => (y, PARCEL_SIZE_U - x),
+            2 => (PARCEL_SIZE_U - x, PARCEL_SIZE_U - y),
+            3 => (PARCEL_SIZE_U - y, x),
+            _ => panic!("Invalid rotation"),
+        };
+        self.height.get(xr, yr) as i32
+    }
+
+    /// Get the height at a given point in the terrain contour (unscaled).
+    pub fn set_height_at(&mut self, x: usize, y: usize, rotation: u8, value: i8) {
+        let (xr, yr) = match rotation {
+            0 => (x, y),
+            1 => (y, PARCEL_SIZE_U - x),
+            2 => (PARCEL_SIZE_U - x, PARCEL_SIZE_U - y),
+            3 => (PARCEL_SIZE_U - y, x),
+            _ => panic!("Invalid rotation"),
+        };
+        self.height.set(xr, yr, value)
+    }
 }
 
 // impl TerrainShape {
@@ -114,14 +138,14 @@ impl TerrainContoursTable {
     }
 
     /// Get a mutable reference to a terrain shape by it's id.
-    pub fn _get_mut(&mut self, id: usize) -> &TerrainContour {
+    pub fn get_mut(&mut self, id: usize) -> &mut TerrainContour {
         assert!(id < self.by_id.len());
         &mut self.shapes[self.by_id[id]]
     }
 }
 
 #[derive(TypePath, Asset)]
-pub struct TerrainContoursTableAsset(pub Arc<Mutex<TerrainContoursTable>>);
+pub struct TerrainContoursTableAsset(pub Arc<RwLock<TerrainContoursTable>>);
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -181,7 +205,7 @@ impl AssetLoader for TerrainContoursTableLoader {
             res.by_id[shape.id] = index;
         }
 
-        Ok(TerrainContoursTableAsset(Arc::new(Mutex::new(res))))
+        Ok(TerrainContoursTableAsset(Arc::new(RwLock::new(res))))
     }
 
     fn extensions(&self) -> &[&str] {

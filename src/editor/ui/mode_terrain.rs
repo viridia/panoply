@@ -2,7 +2,7 @@ use crate::{
     editor::{DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool},
     terrain::{
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, PARCEL_SIZE, PARCEL_SIZE_U,
+        Parcel, ParcelFloraChanged, RebuildParcelGroundMesh, PARCEL_SIZE, PARCEL_SIZE_U,
     },
     view::events::{PickAction, PickEvent, PickTarget},
 };
@@ -31,15 +31,17 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay
 }
 
 pub fn hover(
+    mut commands: Commands,
     r_selected_parcel: Res<SelectedParcel>,
     mut r_drag_state: ResMut<TerrainDragState>,
     r_hover_map: Res<HoverMap>,
     r_tool: Res<State<TerrainTool>>,
     r_contours_handle: Res<TerrainContoursHandle>,
-    r_contours_asset: Res<Assets<TerrainContoursTableAsset>>,
+    mut r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
     q_parcels: Query<&Parcel>,
 ) {
     let mut drag_state = r_drag_state.clone();
+    let tool = r_tool.get();
     if !drag_state.dragging {
         drag_state.drag_shape = DragShape::None;
     }
@@ -50,18 +52,65 @@ pub fn hover(
                 for (_, hit_data) in p.iter() {
                     if let Some(pos) = hit_data.position {
                         let rpos = Vec2::new(pos.x, pos.z) - parcel_min.as_vec2();
-                        match r_tool.get() {
+                        match tool {
                             TerrainTool::RaiseDraw
                             | TerrainTool::LowerDraw
                             | TerrainTool::FlattenDraw => {
                                 if let Some(pickpos) =
                                     terrain_pick_pos(DragShape::Point, rpos, true)
                                 {
+                                    if !drag_state.dragging {
+                                        let shape_ref = parcel.center_shape();
+                                        let Some(cursor_height) = r_contours_asset
+                                            .get(&r_contours_handle.0)
+                                            .map(|contours| {
+                                                let lock = contours.0.read().unwrap();
+                                                let pos = pickpos - parcel_min;
+                                                lock.get(shape_ref.shape as usize)
+                                                    .unscaled_height_at(
+                                                        pos.x.clamp(0, PARCEL_SIZE_U as i32)
+                                                            as usize,
+                                                        pos.y.clamp(0, PARCEL_SIZE_U as i32)
+                                                            as usize,
+                                                        shape_ref.rotation,
+                                                    )
+                                            })
+                                        else {
+                                            continue;
+                                        };
+                                        drag_state.anchor_height = cursor_height;
+                                        drag_state.anchor_pos = pickpos;
+                                    } else {
+                                        let new_height = match tool {
+                                            TerrainTool::RaiseDraw => drag_state.anchor_height + 1,
+                                            TerrainTool::LowerDraw => drag_state.anchor_height - 1,
+                                            TerrainTool::FlattenDraw => drag_state.anchor_height,
+                                            _ => unreachable!(),
+                                        }
+                                        .clamp(i8::MIN as i32, i8::MAX as i32);
+                                        let shape_ref = parcel.center_shape();
+                                        if let Some(contours) =
+                                            r_contours_asset.get_mut(&r_contours_handle.0)
+                                        {
+                                            let mut lock = contours.0.write().unwrap();
+                                            let pos = (pickpos - parcel_min)
+                                                .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+                                            let contour = lock.get_mut(shape_ref.shape as usize);
+                                            contour.set_height_at(
+                                                pos.x as usize,
+                                                pos.y as usize,
+                                                shape_ref.rotation,
+                                                new_height as i8,
+                                            );
+                                        }
+                                        commands.entity(parcel_id).insert((
+                                            RebuildParcelGroundMesh,
+                                            // ParcelWaterChanged,
+                                            ParcelFloraChanged,
+                                        ));
+                                    }
                                     drag_state.drag_shape = DragShape::Point;
                                     drag_state.cursor_pos = pickpos;
-                                    if !drag_state.dragging {
-                                        drag_state.anchor_pos = pickpos;
-                                    }
                                     break;
                                 }
                             }
@@ -71,28 +120,54 @@ pub fn hover(
                                 if let Some(pickpos) =
                                     terrain_pick_pos(DragShape::FlatRect, rpos, true)
                                 {
-                                    let shape_ref = parcel.center_shape();
-                                    let Some(cursor_height) = r_contours_asset
-                                        .get(&r_contours_handle.0)
-                                        .map(|contours| {
-                                            let lock = contours.0.lock().unwrap();
-                                            let pos = pickpos - parcel_min;
-                                            lock.get(shape_ref.shape as usize).height_at(
-                                                pos.x.clamp(0, PARCEL_SIZE_U as i32) as usize,
-                                                pos.y.clamp(0, PARCEL_SIZE_U as i32) as usize,
-                                                shape_ref.rotation,
-                                            )
-                                        })
-                                    else {
-                                        continue;
-                                    };
-
-                                    drag_state.drag_shape = DragShape::FlatRect;
-                                    drag_state.cursor_pos = pickpos;
                                     if !drag_state.dragging {
+                                        let shape_ref = parcel.center_shape();
+                                        let Some(cursor_height) = r_contours_asset
+                                            .get(&r_contours_handle.0)
+                                            .map(|contours| {
+                                                let lock = contours.0.read().unwrap();
+                                                let pos = pickpos - parcel_min;
+                                                lock.get(shape_ref.shape as usize)
+                                                    .unscaled_height_at(
+                                                        pos.x.clamp(0, PARCEL_SIZE_U as i32)
+                                                            as usize,
+                                                        pos.y.clamp(0, PARCEL_SIZE_U as i32)
+                                                            as usize,
+                                                        shape_ref.rotation,
+                                                    )
+                                            })
+                                        else {
+                                            continue;
+                                        };
+
                                         drag_state.anchor_height = cursor_height;
                                         drag_state.anchor_pos = pickpos;
+                                    } else {
+                                        let new_height = match tool {
+                                            TerrainTool::RaiseRect => drag_state.anchor_height + 1,
+                                            TerrainTool::LowerRect => drag_state.anchor_height - 1,
+                                            TerrainTool::FlattenRect => drag_state.anchor_height,
+                                            _ => unreachable!(),
+                                        }
+                                        .clamp(i8::MIN as i32, i8::MAX as i32);
+                                        let shape_ref = parcel.center_shape();
+                                        if let Some(contours) =
+                                            r_contours_asset.get_mut(&r_contours_handle.0)
+                                        {
+                                            let mut lock = contours.0.write().unwrap();
+                                            let pos = (pickpos - parcel_min)
+                                                .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE));
+                                            let contour = lock.get_mut(shape_ref.shape as usize);
+                                            contour.set_height_at(
+                                                pos.x as usize,
+                                                pos.y as usize,
+                                                shape_ref.rotation,
+                                                new_height as i8,
+                                            );
+                                        }
                                     }
+                                    drag_state.drag_shape = DragShape::FlatRect;
+                                    drag_state.cursor_pos = pickpos;
                                     break;
                                 }
                             }

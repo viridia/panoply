@@ -67,7 +67,7 @@ impl ViewTemplate for SelectedParcelContour {
 
         // Extract out the height map.
         let terrain_heights = ts_assets.get(&ts_handle).map(|contours| {
-            let lock = contours.0.lock().unwrap();
+            let lock = contours.0.read().unwrap();
             let heights = lock.get(shape_ref.shape as usize).height.clone();
             heights
         });
