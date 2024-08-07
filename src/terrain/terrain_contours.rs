@@ -144,6 +144,11 @@ impl TerrainContoursTable {
         assert!(id < self.by_id.len());
         &mut self.shapes[self.by_id[id]]
     }
+
+    /// List all terrain shapes.
+    pub fn list(&self) -> &[TerrainContour] {
+        &self.shapes
+    }
 }
 
 #[derive(TypePath, Asset)]

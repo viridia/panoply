@@ -11,6 +11,7 @@ use bevy::{
         view::RenderLayers,
     },
 };
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::{
     backends::raycast::{RaycastBackendSettings, RaycastPickable},
     debug::DebugPickingMode,
@@ -22,7 +23,6 @@ use bevy_quill_obsidian::ObsidianUiPlugin;
 use bevy_quill_overlays::QuillOverlaysPlugin;
 use models::ModelsPlugin;
 use panoply_exemplar::ExemplarPlugin;
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use std::f32::consts::PI;
 use world::Realm;
 
@@ -44,7 +44,7 @@ mod settings;
 mod terrain;
 mod view;
 mod world;
-use view::{HudCamera, PrimaryCamera, Viewpoint};
+use view::{layers::ReservedLayers, HudCamera, PrimaryCamera, Viewpoint};
 
 use crate::{
     actors::ActorsPlugin,
@@ -122,6 +122,7 @@ fn main() {
         elevation: PI * 0.25,
         ..default()
     })
+    .init_resource::<ReservedLayers>()
     .add_systems(Startup, setup)
     .add_systems(
         Update,

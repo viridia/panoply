@@ -36,12 +36,16 @@ pub const PARCEL_TERRAIN_FX_SIZE: usize = PARCEL_SIZE as usize + 2;
 pub const PARCEL_TERRAIN_FX_STRIDE: usize = PARCEL_TERRAIN_FX_SIZE;
 pub const PARCEL_TERRAIN_FX_AREA: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_TERRAIN_FX_SIZE;
 
+pub use ground_material::GroundMaterial;
 pub use ground_mesh::*;
 pub use parcel::Parcel;
 pub use parcel::ParcelTerrainFx;
 pub use parcel::{
-    ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
+    ParcelFloraChanged, ParcelThumbnail, ParcelWaterChanged, RebuildParcelGroundMesh,
+    RebuildParcelTerrainFx, ShapeRef,
 };
 pub use parcel_cache::*;
 pub use plugin::*;
 pub use terrain_fx::*;
+#[allow(unused_imports)]
+pub use terrain_map::{create_ground_material, TerrainMap, TerrainMapChanged};

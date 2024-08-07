@@ -105,9 +105,6 @@ pub struct TerrainMap {
     /** Asset data for terrain map. */
     pub handle: Handle<TerrainMapAsset>,
 
-    /** Biome lookup texture. */
-    pub biome_texture: Image,
-
     /** Material to use when rendering terrain. */
     pub ground_material: Handle<GroundMaterial>,
 
@@ -200,7 +197,6 @@ pub fn insert_terrain_maps(
         commands.entity(entity).insert((
             TerrainMap {
                 handle: server.load(terrain_path.to_string()),
-                biome_texture: Image::default(),
                 ground_material: create_ground_material(&mut materials, &mut images, &server),
                 needs_rebuild_biomes: false,
             },
@@ -225,27 +221,31 @@ pub fn update_terrain_maps(
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
                 let realm_name = asset_name_from_handle(&server, id);
-                if let Some((re, mut realm, _terrain)) =
+                if let Some((re, mut realm, terrain)) =
                     query.iter_mut().find(|r| r.1.name == realm_name)
                 {
                     let tm = tm_assets.get(*id).unwrap();
                     if realm.parcel_bounds != tm.bounds {
                         realm.update_bounds(tm.bounds, convert_parcel_to_precinct(&tm.bounds))
                     }
-                    commands.entity(re).insert((
-                        TerrainMap {
-                            handle: server.get_id_handle(*id).unwrap(),
-                            biome_texture: Image::default(),
-                            ground_material: create_ground_material(
-                                &mut materials,
-                                &mut images,
-                                &asset_server,
-                            ),
-                            needs_rebuild_biomes: false,
-                        },
-                        TerrainMapChanged,
-                    ));
-                    println!("Terrain map created: [{}].", realm_name);
+                    if terrain.is_none() {
+                        commands.entity(re).insert((
+                            TerrainMap {
+                                handle: server.get_id_handle(*id).unwrap(),
+                                ground_material: create_ground_material(
+                                    &mut materials,
+                                    &mut images,
+                                    &asset_server,
+                                ),
+                                needs_rebuild_biomes: false,
+                            },
+                            TerrainMapChanged,
+                        ));
+                        println!("Terrain map created: [{}].", realm_name);
+                    } else {
+                        println!("Terrain map changed: [{}].", realm_name);
+                        commands.entity(re).insert(TerrainMapChanged);
+                    }
                 }
             }
 
@@ -292,7 +292,7 @@ pub fn update_ground_material(
     mut commands: Commands,
     mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
-    mut images: ResMut<Assets<Image>>,
+    mut r_images: ResMut<Assets<Image>>,
     bm_handle: Res<BiomesHandle>,
     bm_assets: Res<Assets<BiomesAsset>>,
     tm_assets: Res<Assets<TerrainMapAsset>>,
@@ -329,7 +329,7 @@ pub fn update_ground_material(
                                 RenderAssetUsages::default(),
                             );
                             res.sampler = ImageSampler::nearest();
-                            m.biomes = images.add(res);
+                            r_images.insert(m.biomes.id(), res);
                         }
 
                         m.realm_offset =
@@ -343,7 +343,7 @@ pub fn update_ground_material(
     }
 }
 
-fn create_ground_material(
+pub fn create_ground_material(
     materials: &mut Assets<GroundMaterial>,
     images: &mut Assets<Image>,
     asset_server: &AssetServer,

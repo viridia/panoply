@@ -6,7 +6,7 @@ use bevy_mod_picking::{
 
 use crate::{
     view::{
-        events::{PickAction, PickEvent, PickTarget},
+        picking::{PickAction, PickEvent, PickTarget},
         QueryRect, Viewpoint,
     },
     world::Realm,
@@ -18,7 +18,7 @@ use super::{
         RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, ADJACENT_COUNT,
     },
     terrain_map::{TerrainMap, TerrainMapAsset},
-    TerrainFxVertexAttr, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
+    ParcelThumbnail, TerrainFxVertexAttr, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
 };
 
 #[derive(Resource)]
@@ -87,8 +87,8 @@ pub fn spawn_parcels(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
     mut parcel_cache: ResMut<ParcelCache>,
-    mut query: Query<&mut Parcel>,
-    realm_query: Query<(&Realm, &TerrainMap)>,
+    mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>)>,
+    q_realms: Query<(&Realm, &TerrainMap)>,
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     server: Res<AssetServer>,
 ) {
@@ -112,15 +112,15 @@ pub fn spawn_parcels(
     // ONLY if terrain maps haven't changed?
 
     // Reset the visibility bits for all parcels.
-    query.iter_mut().for_each(|mut parcel| {
-        parcel.visible = false;
+    q_parcels.iter_mut().for_each(|(mut parcel, thumbnail)| {
+        if thumbnail.is_none() {
+            parcel.visible = false;
+        }
     });
 
     // Function to add parcels to the cache based on a view rect.
     let mut fetch_parcels = |rect: &QueryRect| {
-        let realm = realm_query.get(rect.realm);
-        if realm.is_ok() {
-            let (_, terrain) = realm.unwrap();
+        if let Ok((realm, terrain)) = q_realms.get(rect.realm) {
             if server.load_state(&terrain.handle) != LoadState::Loaded {
                 return;
             }
@@ -143,10 +143,11 @@ pub fn spawn_parcels(
                     match entity {
                         Some(entity) => {
                             // Update existing parcel
-                            if let Ok(mut parcel) = query.get_mut(*entity) {
+                            if let Ok((mut parcel, _)) = q_parcels.get_mut(*entity) {
                                 if parcel.contours != contours || parcel.biomes != biomes {
                                     parcel.contours = contours;
                                     parcel.biomes = biomes;
+                                    // println!("Parcel {} {} changed: {:?}.", x, z, biomes);
                                     commands.entity(*entity).insert((
                                         RebuildParcelGroundMesh,
                                         ParcelWaterChanged,
@@ -159,7 +160,7 @@ pub fn spawn_parcels(
                         }
 
                         None => {
-                            // println!("Creating parcel {} {}.", x, z);
+                            // println!("Creating parcel {} {}; biomes: {:?}.", x, z, biomes);
                             // Insert new parcel
                             let mut entity = commands.spawn((
                                 Parcel {
@@ -175,6 +176,7 @@ pub fn spawn_parcels(
                                         [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA],
                                     ),
                                 },
+                                Name::new(format!("Parcel:{}:{}:{}", realm.name, x, z)),
                                 SpatialBundle {
                                     transform: Transform::from_xyz(
                                         x as f32 * PARCEL_SIZE_F,
@@ -240,8 +242,8 @@ pub fn spawn_parcels(
     while cache.len() > size {
         let entry = cache.peek_lru();
         if let Some((_, entity)) = entry {
-            if let Ok(parcel) = query.get_mut(*entity) {
-                if parcel.visible {
+            if let Ok((parcel, thumbnail)) = q_parcels.get_mut(*entity) {
+                if parcel.visible || thumbnail.is_some() {
                     break;
                 } else {
                     commands.entity(*entity).despawn_recursive();

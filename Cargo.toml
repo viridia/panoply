@@ -26,7 +26,7 @@ bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
 
 [dependencies]
 bevy = { workspace = true }
-bevy-inspector-egui = "0.19.0"
+bevy-inspector-egui = "0.25.1"
 bevy_mod_picking = { workspace = true }
 bevy_mod_stylebuilder = { workspace = true }
 bevy_mod_preferences = { workspace = true }
@@ -61,3 +61,7 @@ bevy_mod_stylebuilder = { version = "0.1.1", path = "../quill2/crates/bevy_mod_s
 bevy_quill = { version = "0.1.2", path = "../quill2" }
 bevy_quill_obsidian = { version = "0.1.0", path = "../quill2/crates/bevy_quill_obsidian" }
 bevy_quill_overlays = { version = "0.1.0", path = "../quill2/crates/bevy_quill_overlays" }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

@@ -3,6 +3,8 @@ use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChang
 use ui::{mode_realm, mode_terrain};
 
 mod camera;
+mod events;
+pub mod renderers;
 mod ui;
 
 pub struct EditorPlugin;
@@ -97,7 +99,6 @@ impl Plugin for EditorPlugin {
             .enable_state_scoped_entities::<SceneryTool>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
-            // .init_resource::<ParcelCursor>()
             .init_resource::<TerrainDragState>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
@@ -107,16 +108,30 @@ impl Plugin for EditorPlugin {
             .register_type::<State<SceneryTool>>()
             .register_type::<NextState<SceneryTool>>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
-            .add_systems(PostStartup, ui::setup_editor_view)
-            .add_systems(Update, camera::camera_controller)
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)
             .add_systems(OnEnter(EditorMode::Terrain), mode_terrain::enter)
             .add_systems(OnExit(EditorMode::Terrain), mode_terrain::exit)
             .add_systems(
+                Startup,
+                (
+                    renderers::setup_thumbnail_realm,
+                    renderers::setup_thumbnail_camera.after(renderers::setup_thumbnail_realm),
+                    renderers::setup_thumbnail_observer,
+                ),
+            )
+            .add_systems(PostStartup, ui::setup_editor_view)
+            .add_systems(
                 Update,
                 (
+                    camera::camera_controller,
                     watch_state_transitions,
+                    (
+                        renderers::create_terrain_thumbnails,
+                        renderers::update_terrain_thumbnails,
+                        renderers::assign_thumbnails_to_camera,
+                    )
+                        .chain(),
                     mode_terrain::hover.run_if(in_state(EditorMode::Terrain)),
                 ),
             );

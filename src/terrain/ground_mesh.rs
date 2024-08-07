@@ -63,7 +63,7 @@ pub fn gen_ground_meshes(
 
     for (entity, parcel) in q_parcels.iter_mut() {
         let Ok((realm, _map)) = q_realms.get(parcel.realm) else {
-            return;
+            continue;
         };
 
         if server.load_state(&ts_handle.0) != LoadState::Loaded {
@@ -119,6 +119,7 @@ pub fn insert_ground_meshes(
                                         realm.layer.clone(),
                                         // TODO: Might want to pick on physics colliders instead.
                                         RaycastPickable,
+                                        Name::new("Ground"),
                                     ))
                                     .set_parent(entity)
                                     .id(),

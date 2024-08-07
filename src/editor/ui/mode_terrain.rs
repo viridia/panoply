@@ -1,18 +1,24 @@
 use crate::{
-    editor::{DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool},
+    editor::{
+        events::ChangeContourEvent, DragShape, EditorMode, SelectedParcel, TerrainDragState,
+        TerrainTool,
+    },
     terrain::{
         terrain_contours::{FloraType, TerrainContoursHandle, TerrainContoursTableAsset},
         Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, PARCEL_SIZE,
         PARCEL_SIZE_U,
     },
-    view::events::{PickAction, PickEvent, PickTarget},
+    view::picking::{PickAction, PickEvent, PickTarget},
 };
 use bevy::{prelude::*, ui};
 use bevy_mod_picking::{focus::HoverMap, prelude::PointerId};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, size::Size, RoundedCorners};
 
-use super::overlays::{SelectedParcelOverlay, TerrainCursorOverlay};
+use super::{
+    controls::ContourChooser,
+    overlays::{SelectedParcelOverlay, TerrainCursorOverlay},
+};
 
 #[derive(Clone, Component)]
 pub struct ParcelOverlay;
@@ -31,7 +37,6 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay
     commands.observe(on_pick_event);
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn hover(
     mut commands: Commands,
     r_selected_parcel: Res<SelectedParcel>,
@@ -93,10 +98,8 @@ pub fn hover(
                                             r_contours_handle,
                                             r_contours_asset,
                                         );
-                                        commands.entity(parcel_id).insert((
-                                            RebuildParcelGroundMesh,
-                                            ParcelWaterChanged,
-                                            ParcelFloraChanged,
+                                        commands.trigger(ChangeContourEvent(
+                                            parcel.center_shape().shape as usize,
                                         ));
                                     }
                                     break;
@@ -155,6 +158,9 @@ pub fn hover(
                                                 r_contours_asset,
                                             );
                                             commands.entity(parcel_id).insert(ParcelFloraChanged);
+                                            commands.trigger(ChangeContourEvent(
+                                                parcel.center_shape().shape as usize,
+                                            ));
                                         }
                                     } else {
                                         drag_state.cursor_pos = pickpos;
@@ -226,6 +232,8 @@ pub fn on_pick_event(
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,
                             ));
+                            commands
+                                .trigger(ChangeContourEvent(parcel.center_shape().shape as usize));
                         }
 
                         _ => {}
@@ -249,6 +257,8 @@ pub fn on_pick_event(
                                 r_contours_handle,
                                 r_contours_asset,
                             );
+                            commands
+                                .trigger(ChangeContourEvent(parcel.center_shape().shape as usize));
                         }
 
                         _ => {}
@@ -497,7 +507,7 @@ impl ViewTemplate for EditModeTerrainControls {
                     .tint(false)
                     .corners(RoundedCorners::BottomRight),
             )),
-            ListView::new().style(|sb: &mut StyleBuilder| {
+            ContourChooser::new().style(|sb: &mut StyleBuilder| {
                 sb.grid_row_span(3);
             }),
             ListView::new(),

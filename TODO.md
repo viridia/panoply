@@ -1,5 +1,7 @@
 # TODO
 
+- Terrain contour list.
+- Skybox experiments
 - World camera pan needs to use bubbled scroll events.
 - Editor modes
   - Tool palette

@@ -29,7 +29,7 @@ const WATER_HEIGHT: f32 = -0.4;
 pub fn gen_water_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel), With<ParcelWaterChanged>>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
+    q_realms: Query<(&Realm, &TerrainMap)>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
     ts_assets: Res<Assets<TerrainContoursTableAsset>>,
@@ -37,7 +37,7 @@ pub fn gen_water_meshes(
     let pool = AsyncComputeTaskPool::get();
 
     for (entity, parcel) in query.iter_mut() {
-        let realm = realms_query.get(parcel.realm);
+        let realm = q_realms.get(parcel.realm);
         if realm.is_err() {
             return;
         }
@@ -52,6 +52,11 @@ pub fn gen_water_meshes(
             .0
             .clone();
 
+        // println!(
+        //     "Generating water mesh for parcel {}:{:?}",
+        //     realm.unwrap().0.name,
+        //     parcel.coords
+        // );
         let shape_refs = parcel.contours;
         let task = pool.spawn(async move { compute_water_mesh(shape_refs, &shapes) });
         commands
@@ -68,17 +73,21 @@ pub struct ComputeWaterMeshTask(Task<Option<Mesh>>);
 pub fn insert_water_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeWaterMeshTask)>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
+    q_realms: Query<&Realm>,
     mut meshes: ResMut<Assets<Mesh>>,
     material: Res<WaterMaterialResource>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        if let Ok((realm, _terrain)) = realms_query.get(parcel.realm) {
+        if let Ok(realm) = q_realms.get(parcel.realm) {
             if let Some(mesh_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(mesh) = mesh_result {
                     // Add or replace water
                     match parcel.water_entity {
                         None => {
+                            // println!(
+                            //     "Inserting water mesh for parcel {}:{}:{:?}",
+                            //     realm.name, realm.layer_index, parcel.coords
+                            // );
                             parcel.water_entity = Some(
                                 commands
                                     .spawn((
@@ -87,8 +96,8 @@ pub fn insert_water_meshes(
                                             material: material.handle.clone(),
                                             ..default()
                                         },
+                                        Name::new("Water"),
                                         NotShadowCaster,
-                                        // RaycastPickable,
                                         realm.layer.clone(),
                                     ))
                                     .set_parent(entity)
@@ -97,10 +106,18 @@ pub fn insert_water_meshes(
                         }
 
                         Some(ent) => {
+                            // println!(
+                            //     "Replacing water mesh for parcel {}:{}:{:?}",
+                            //     realm.name, realm.layer_index, parcel.coords
+                            // );
                             commands.entity(ent).insert(meshes.add(mesh));
                         }
                     }
                 } else if let Some(ent) = parcel.water_entity {
+                    println!(
+                        "Despawning water mesh for parcel {}:{}:{:?}",
+                        realm.name, realm.layer_index, parcel.coords
+                    );
                     commands.entity(ent).despawn_recursive();
                     parcel.water_entity = None;
                 }

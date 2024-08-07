@@ -192,12 +192,20 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
 
     let parcel_coords = floor(wposition.xz / 16.0) - realm_offset;
     let parcel_coords_i = vec2<i32>(i32(parcel_coords.x), i32(parcel_coords.y));
-    let biome_selection = vec4<u32>(
+    let biome_dimensions = textureDimensions(biomes, 0).xy;
+    var biome_selection = vec4<u32>(
         textureLoad(biomes, parcel_coords_i, 0).r,
         textureLoad(biomes, (parcel_coords_i + vec2(0, 1)), 0).r,
         textureLoad(biomes, (parcel_coords_i + vec2(1, 0)), 0).r,
         textureLoad(biomes, (parcel_coords_i + vec2(1, 1)), 0).r
     );
+    if parcel_coords_i.x < 0
+        || parcel_coords_i.y < 0
+        || parcel_coords_i.x >= i32(biome_dimensions.x)
+        || parcel_coords_i.y >= i32(biome_dimensions.y) {
+        // Out of bounds, use default biome, which happens to be 2.
+        biome_selection = vec4<u32>(2, 2, 2, 2);
+    }
 
     let parcel_uv = fract(wposition.xz / 16.);
     let biome_interpolation = vec4<f32>(

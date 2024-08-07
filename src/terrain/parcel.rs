@@ -93,3 +93,6 @@ pub struct ParcelWaterChanged;
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct ParcelFloraChanged;
+
+#[derive(Component)]
+pub struct ParcelThumbnail;

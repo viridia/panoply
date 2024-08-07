@@ -69,6 +69,7 @@ pub fn gen_flora(
             return;
         }
 
+        // Ensure that both the terrain contours and biomes are loaded.
         if server.load_state(&ts_handle.0) != LoadState::Loaded
             || server.load_state(&bm_handle.0) != LoadState::Loaded
         {
@@ -152,6 +153,7 @@ pub fn insert_flora(
                                 .spawn((
                                     SpatialBundle { ..default() },
                                     ParcelFlora,
+                                    Name::new("Flora"),
                                     realm.layer.clone(),
                                 ))
                                 .id();

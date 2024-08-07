@@ -10,9 +10,14 @@ use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::view::layers::ReservedLayers;
+
 #[derive(Default, Serialize, Deserialize, Clone, Copy)]
 pub enum RealmLighting {
+    /// Used for interior spaces like caves and dungeons.
     Interior,
+
+    /// Used for overland realms.
     #[default]
     Exterior,
 }
@@ -25,6 +30,9 @@ pub struct RealmData {
 
 #[derive(Component, Default, Asset, TypePath)]
 pub struct Realm {
+    /// Realm index, also used as layer index for rendering.
+    pub layer_index: usize,
+
     /// Realm index, also used as layer index for rendering.
     pub layer: RenderLayers,
 
@@ -40,6 +48,11 @@ pub struct Realm {
     /// Boundary of the map, in precincts, relative to the world origin - sync'd from TerrainMap.
     pub precinct_bounds: IRect,
 }
+
+/// Marker component for realms which are used for generating thumbnails and which aren't part of
+/// the world.
+#[derive(Component, Default, Asset, TypePath)]
+pub struct HiddenRealm;
 
 impl Realm {
     pub fn update_bounds(&mut self, parcel_bounds: IRect, precinct_bounds: IRect) {
@@ -96,12 +109,9 @@ pub fn sync_realms(
     assets: ResMut<Assets<RealmData>>,
     mut q_realms: Query<(Entity, &mut Realm)>,
     q_lights: Query<(Entity, &RenderLayers), With<DirectionalLight>>,
+    mut r_layers: ResMut<ReservedLayers>,
     mut ev_asset: EventReader<AssetEvent<RealmData>>,
 ) {
-    let mut layers_in_use = RenderLayers::none();
-    for (_, realm) in q_realms.iter_mut() {
-        layers_in_use = layers_in_use.union(&realm.layer);
-    }
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
@@ -109,12 +119,7 @@ pub fn sync_realms(
                 let realm_name = realm_name_from_handle(&server, id);
 
                 // Assign first unused id.
-                let mut layer: usize = 1;
-                while layers_in_use.intersects(&RenderLayers::layer(layer)) {
-                    layer += 1;
-                }
-                let render_layer = RenderLayers::layer(layer);
-                layers_in_use = layers_in_use.union(&render_layer);
+                let layer_index = r_layers.next_unused();
 
                 let mut exists = false;
                 for (_, mut comp) in q_realms.iter_mut() {
@@ -125,9 +130,10 @@ pub fn sync_realms(
                 }
 
                 if !exists {
-                    println!("Realm created: [{}], layer={}.", realm_name, layer);
-                    let render_layer = RenderLayers::layer(layer);
+                    println!("Realm created: [{}], layer={}.", realm_name, layer_index);
+                    let render_layer = RenderLayers::layer(layer_index);
                     commands.spawn(Realm {
+                        layer_index,
                         layer: render_layer.clone(),
                         name: realm_name.clone(),
                         lighting: realm.lighting,
@@ -140,13 +146,7 @@ pub fn sync_realms(
                         DirectionalLightBundle {
                             directional_light: DirectionalLight {
                                 shadows_enabled: true,
-                                color: Srgba {
-                                    red: 1.,
-                                    green: 1.,
-                                    blue: 1.,
-                                    alpha: 1.,
-                                }
-                                .into(),
+                                color: Srgba::WHITE.into(),
                                 illuminance: 3000.,
                                 ..default()
                             },
@@ -188,7 +188,8 @@ pub fn sync_realms(
                 let mut layers_to_remove = RenderLayers::none();
                 for (entity, comp) in q_realms.iter_mut() {
                     if comp.name == realm_name {
-                        layers_to_remove = layers_to_remove.union(&comp.layer);
+                        r_layers.release(comp.layer_index);
+                        layers_to_remove = layers_to_remove.with(comp.layer_index);
                         commands.entity(entity).despawn_recursive();
                     }
                 }
