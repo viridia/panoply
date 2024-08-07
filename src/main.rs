@@ -178,6 +178,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
 ) {
     let debug_material = materials.add(StandardMaterial {
         base_color_texture: Some(images.add(uv_debug_texture())),
@@ -212,16 +213,16 @@ fn setup(
         ));
     }
 
-    commands.insert_resource(AmbientLight {
-        brightness: 0.5 * 1000.,
-        color: Srgba {
-            red: 0.5,
-            green: 0.7,
-            blue: 1.,
-            alpha: 1.,
-        }
-        .into(),
-    });
+    // commands.insert_resource(AmbientLight {
+    //     brightness: 1000.,
+    //     color: Srgba {
+    //         red: 0.2,
+    //         green: 0.5,
+    //         blue: 1.,
+    //         alpha: 1.,
+    //     }
+    //     .into(),
+    // });
 
     // TODO: Move to 'view' module
     // Ui Camera
@@ -250,6 +251,11 @@ fn setup(
             },
             // tonemapping: Tonemapping::AcesFitted,
             ..default()
+        },
+        EnvironmentMapLight {
+            diffuse_map: assets.load("skybox_cubemap/skybox_diffuse.ktx2"),
+            specular_map: assets.load("skybox_cubemap/skybox_specular.ktx2"),
+            intensity: 200.0,
         },
         RenderLayers::none(),
         PrimaryCamera,

@@ -1,6 +1,11 @@
 # TODO
 
 - Terrain contour list.
+  - click to change shape
+  - filter by group
+  - sort by group
+  - background color by group
+  - water tile not always showing.
 - Skybox experiments
 - World camera pan needs to use bubbled scroll events.
 - Editor modes

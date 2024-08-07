@@ -74,8 +74,11 @@ impl ViewTemplate for ContourChooser {
             .map(|p| p.center_shape().shape as usize);
 
         let on_click: Callback<usize> = cx.create_callback(
-            move |shape_id: In<usize>, q_parcels: Query<&Parcel>, mut commands: Commands| {
-                let Some(parcel_id) = selected_parcel else {
+            move |shape_id: In<usize>,
+                  q_parcels: Query<&Parcel>,
+                  mut commands: Commands,
+                  r_selected: Res<SelectedParcel>| {
+                let Some(parcel_id) = r_selected.0 else {
                     return;
                 };
                 let Ok(parcel) = q_parcels.get(parcel_id) else {
@@ -169,7 +172,6 @@ impl ViewTemplate for ContourListEntry {
                         });
 
                         commands.entity(owner).insert(ThumbnailRef(thumbnail_ent));
-                        // commands.add(TriggerReaction(owner));
                     },
                 ));
             },
@@ -180,7 +182,6 @@ impl ViewTemplate for ContourListEntry {
         let thumbnail_cmp =
             thumbnail_ent.map(|ent| cx.use_component::<TerrainThumbnail>(ent).unwrap());
 
-        // TODO: Need a query to get the image.
         Element::<NodeBundle>::new()
             .style(style_item)
             .insert_dyn(

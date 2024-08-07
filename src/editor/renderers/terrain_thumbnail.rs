@@ -1,5 +1,6 @@
 use bevy::{
     asset::LoadState,
+    pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
         camera::RenderTarget,
@@ -73,7 +74,7 @@ pub fn setup_thumbnail_realm(
                 Realm {
                     layer: RenderLayers::layer(layer),
                     layer_index: layer,
-                    name: "Terrain Thumbnail Realm".to_string(),
+                    name: "ThumbnailRealm".to_string(),
                     lighting: RealmLighting::Exterior,
                     parcel_bounds: IRect::from_corners(IVec2::ZERO, IVec2::new(1, 1)),
                     precinct_bounds: IRect::from_corners(IVec2::ZERO, IVec2::ZERO),
@@ -134,6 +135,12 @@ pub fn setup_thumbnail_camera(
                         illuminance: 3000.,
                         ..default()
                     },
+                    cascade_shadow_config: CascadeShadowConfigBuilder {
+                        first_cascade_far_bound: 4.0,
+                        maximum_distance: 40.0,
+                        ..default()
+                    }
+                    .into(),
                     transform: Transform::from_rotation(Quat::from_rotation_x(-0.9)),
                     ..default()
                 },
@@ -324,7 +331,9 @@ pub fn assign_thumbnails_to_camera(
                 .looking_at(Vec3::new(8. + xpos, 0., 8.), Vec3::Y);
 
             commands.entity(e).remove::<RebuildTerrainThumbnail>();
-            break;
+            return;
         }
     }
+
+    camera.is_active = false;
 }

@@ -71,6 +71,15 @@ impl TerrainMapAsset {
         }
     }
 
+    /// Set the shape id and rotation at the given parcel coords.
+    pub fn set_shape_at(&mut self, pt: IVec2, shape: ShapeRef) {
+        if self.contains_pt(pt) {
+            let index = ((pt.y - self.bounds.min.y) * self.bounds.width() + pt.x
+                - self.bounds.min.x) as usize;
+            self.shapes[index] = (shape.shape << 2) | shape.rotation as u16;
+        }
+    }
+
     /// Return the shape id at the given parcel coords as well as all neighboring parcels.
     pub fn adjacent_shapes(&self, out: &mut [ShapeRef; ADJACENT_COUNT], pt: IVec2) {
         for z in [-1, 0, 1] {

@@ -1,12 +1,12 @@
 use crate::{
     editor::{
-        events::ChangeContourEvent, DragShape, EditorMode, SelectedParcel, TerrainDragState,
-        TerrainTool,
+        events::{ChangeContourEvent, ChangeTerrainEvent},
+        DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool,
     },
     terrain::{
         terrain_contours::{FloraType, TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, PARCEL_SIZE,
-        PARCEL_SIZE_U,
+        Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, ShapeRef,
+        TerrainMap, TerrainMapAsset, PARCEL_SIZE, PARCEL_SIZE_U,
     },
     view::picking::{PickAction, PickEvent, PickTarget},
 };
@@ -30,11 +30,14 @@ pub fn enter(mut commands: Commands) {
         StateScoped(EditorMode::Terrain),
         Observer::new(on_pick_event),
     ));
+    commands.spawn((
+        StateScoped(EditorMode::Terrain),
+        Observer::new(on_change_terrain),
+    ));
 }
 
 pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay>>) {
     q_overlays.iter().for_each(|e| commands.entity(e).despawn());
-    commands.observe(on_pick_event);
 }
 
 pub fn hover(
@@ -182,7 +185,6 @@ pub fn hover(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_pick_event(
     trigger: Trigger<PickEvent>,
     mut commands: Commands,
@@ -278,6 +280,27 @@ pub fn on_pick_event(
             r_drag_state.dragging = false;
         }
     }
+}
+
+pub fn on_change_terrain(
+    trigger: Trigger<ChangeTerrainEvent>,
+    q_parcels: Query<&Parcel>,
+    q_terrain_map: Query<&TerrainMap>,
+    mut r_terrain_map_assets: ResMut<Assets<TerrainMapAsset>>,
+    r_selected_parcel: Res<SelectedParcel>,
+) {
+    let Some(parcel_id) = r_selected_parcel.0 else {
+        return;
+    };
+    let Ok(parcel) = q_parcels.get(parcel_id) else {
+        return;
+    };
+    let Ok(terrain_map) = q_terrain_map.get(parcel.realm) else {
+        warn!("No terrain map for realm: {:?}", parcel.realm);
+        return;
+    };
+    let terrain_map_asset = r_terrain_map_assets.get_mut(&terrain_map.handle).unwrap();
+    terrain_map_asset.set_shape_at(parcel.coords, trigger.event().shape);
 }
 
 fn terrain_pick_pos(drag_shape: DragShape, pos: Vec2, clamp: bool) -> Option<IVec2> {
@@ -501,11 +524,51 @@ impl ViewTemplate for EditModeTerrainControls {
                     ),
                 ToolIconButton::new("editor/icons/rotate-ccw.png")
                     .size(Vec2::new(32., 24.))
-                    .tint(false),
+                    .tint(false)
+                    .on_click(cx.create_callback(
+                        |mut commands: Commands,
+                         q_parcels: Query<&Parcel>,
+                         r_selected_parcel: Res<SelectedParcel>| {
+                            let Some(parcel_id) = r_selected_parcel.0 else {
+                                return;
+                            };
+                            let Ok(parcel) = q_parcels.get(parcel_id) else {
+                                return;
+                            };
+                            commands.trigger(ChangeTerrainEvent {
+                                realm: parcel.realm,
+                                coords: parcel.coords,
+                                shape: ShapeRef {
+                                    shape: parcel.center_shape().shape,
+                                    rotation: (parcel.center_shape().rotation + 3) & 3,
+                                },
+                            });
+                        },
+                    )),
                 ToolIconButton::new("editor/icons/rotate-cw.png")
                     .size(Vec2::new(32., 24.))
                     .tint(false)
-                    .corners(RoundedCorners::BottomRight),
+                    .corners(RoundedCorners::BottomRight)
+                    .on_click(cx.create_callback(
+                        |mut commands: Commands,
+                         q_parcels: Query<&Parcel>,
+                         r_selected_parcel: Res<SelectedParcel>| {
+                            let Some(parcel_id) = r_selected_parcel.0 else {
+                                return;
+                            };
+                            let Ok(parcel) = q_parcels.get(parcel_id) else {
+                                return;
+                            };
+                            commands.trigger(ChangeTerrainEvent {
+                                realm: parcel.realm,
+                                coords: parcel.coords,
+                                shape: ShapeRef {
+                                    shape: parcel.center_shape().shape,
+                                    rotation: (parcel.center_shape().rotation + 1) & 3,
+                                },
+                            });
+                        },
+                    )),
             )),
             ContourChooser::new().style(|sb: &mut StyleBuilder| {
                 sb.grid_row_span(3);

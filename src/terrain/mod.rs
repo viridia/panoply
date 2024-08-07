@@ -48,4 +48,4 @@ pub use parcel_cache::*;
 pub use plugin::*;
 pub use terrain_fx::*;
 #[allow(unused_imports)]
-pub use terrain_map::{create_ground_material, TerrainMap, TerrainMapChanged};
+pub use terrain_map::{create_ground_material, TerrainMap, TerrainMapAsset, TerrainMapChanged};
