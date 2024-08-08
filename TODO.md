@@ -6,7 +6,6 @@
 - Terrain contour list.
   - filter by group
   - empty tile shows nothing, should show black floor.
-  - changing parcel to tile with no terrain doesn't despawn terrain mesh.
 - Skybox experiments
 - World camera pan needs to use bubbled scroll events.
 - Editor modes
@@ -31,9 +30,7 @@
   - inline_assets?
   - reflect_types
   - random
-  - overlays
 
-* cursors
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.
 * Finish water motion.

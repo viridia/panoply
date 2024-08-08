@@ -126,6 +126,10 @@ pub fn insert_ground_meshes(
                             );
                         }
                     }
+                } else if let Some(ground_mesh_ent) = parcel.ground_entity {
+                    // Remove mesh entity
+                    commands.entity(ground_mesh_ent).despawn_recursive();
+                    parcel.ground_entity = None;
                 }
                 commands.entity(entity).remove::<ComputeGroundMeshTask>();
             }
