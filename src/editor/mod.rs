@@ -2,6 +2,10 @@ use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChanged};
 use ui::{mode_realm, mode_terrain};
 
+use crate::terrain::terrain_groups::{
+    TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
+};
+
 mod camera;
 mod events;
 pub mod renderers;
@@ -91,7 +95,9 @@ impl Default for EditorSidebarWidth {
 
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_state(EditorMode::default())
+        app.init_asset::<TerrainGroupsAsset>()
+            .register_asset_loader(TerrainGroupsLoader)
+            .insert_state(EditorMode::default())
             .insert_state(TerrainTool::default())
             .insert_state(SceneryTool::default())
             .enable_state_scoped_entities::<EditorMode>()
@@ -100,6 +106,7 @@ impl Plugin for EditorPlugin {
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
             .init_resource::<TerrainDragState>()
+            .init_resource::<TerrainGroupsHandle>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
             .register_type::<NextState<EditorMode>>()

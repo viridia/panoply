@@ -10,6 +10,7 @@ pub mod rotator;
 mod square;
 pub mod terrain_contours;
 mod terrain_fx;
+pub mod terrain_groups;
 mod terrain_map;
 mod water_material;
 mod water_mesh;
@@ -49,3 +50,4 @@ pub use plugin::*;
 pub use terrain_fx::*;
 #[allow(unused_imports)]
 pub use terrain_map::{create_ground_material, TerrainMap, TerrainMapAsset, TerrainMapChanged};
+pub use water_mesh::ComputeWaterMeshTask;

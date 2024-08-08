@@ -17,9 +17,9 @@ use crate::{
     terrain::{
         create_ground_material,
         terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
-        GroundMaterial, Parcel, ParcelFloraChanged, ParcelTerrainFx, ParcelThumbnail,
-        ParcelWaterChanged, RebuildParcelGroundMesh, ShapeRef, TerrainFxVertexAttr, TerrainMap,
-        PARCEL_TERRAIN_FX_AREA,
+        ComputeGroundMeshTask, ComputeWaterMeshTask, GroundMaterial, Parcel, ParcelFloraChanged,
+        ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged, RebuildParcelGroundMesh, ShapeRef,
+        TerrainFxVertexAttr, TerrainMap, PARCEL_TERRAIN_FX_AREA,
     },
     view::layers::ReservedLayers,
     world::{HiddenRealm, Realm, RealmLighting},
@@ -30,11 +30,7 @@ pub struct TerrainThumbnail {
     pub contour_id: usize,
     pub render_target: Handle<Image>,
     preview_parcel: Option<Entity>,
-    // shape index
-    // output image
     // clip bounds
-    // realm?
-    // terrain plot groups
 }
 
 /// Marker component that indicates that a terrain thumbnail needs to be rebuilt.
@@ -52,8 +48,6 @@ pub(crate) struct ThumbnailCamera;
 pub struct TerrainThumbnailBuilder {
     camera: Entity,
     dir_light: Entity,
-    // render target
-    // which parcel is being rendered.
 }
 
 const PARCEL_SPACING: f32 = 40.0;
@@ -156,7 +150,6 @@ pub fn setup_thumbnail_observer(mut commands: Commands) {
         |event: Trigger<ChangeContourEvent>,
          mut commands: Commands,
          q_thumbnails: Query<(Entity, &TerrainThumbnail)>| {
-            info!("ChangeContourEvent: {}", event.event().0);
             if let Some((e, _)) = q_thumbnails
                 .iter()
                 .find(|(_, t)| t.contour_id == event.event().0)
@@ -307,6 +300,8 @@ pub fn assign_thumbnails_to_camera(
         (
             With<ParcelThumbnail>,
             Without<RebuildParcelGroundMesh>,
+            Without<ComputeGroundMeshTask>,
+            Without<ComputeWaterMeshTask>,
             Without<ParcelFloraChanged>,
             Without<ParcelWaterChanged>,
         ),

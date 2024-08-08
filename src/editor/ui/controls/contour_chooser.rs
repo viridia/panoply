@@ -8,12 +8,12 @@ use bevy_quill_obsidian::{colors, prelude::*, typography};
 
 use crate::{
     editor::{
-        events::{ChangeTerrainEvent, ThumbnailsReady},
+        events::{ModifyTerrainMapEvent, ThumbnailsReady},
         renderers::TerrainThumbnail,
         SelectedParcel,
     },
     terrain::{
-        terrain_contours::{TerrainContoursHandle, TerrainContoursTableAsset},
+        terrain_groups::{TerrainGroupsAsset, TerrainGroupsHandle},
         Parcel, ShapeRef,
     },
 };
@@ -35,7 +35,7 @@ fn style_listview_inner(ss: &mut StyleBuilder) {
 }
 
 fn style_item(ss: &mut StyleBuilder) {
-    ss.background_color(colors::U2).width(96).min_height(64);
+    ss.background_color(colors::U2).min_width(96).height(64);
 }
 
 fn style_item_id(ss: &mut StyleBuilder) {
@@ -84,7 +84,7 @@ impl ViewTemplate for ContourChooser {
                 let Ok(parcel) = q_parcels.get(parcel_id) else {
                     return;
                 };
-                commands.trigger(ChangeTerrainEvent {
+                commands.trigger(ModifyTerrainMapEvent {
                     realm: parcel.realm,
                     coords: parcel.coords,
                     shape: ShapeRef {
@@ -95,24 +95,25 @@ impl ViewTemplate for ContourChooser {
             },
         );
 
-        let tc_handle = cx.use_resource::<TerrainContoursHandle>().0.clone();
-        let tc_assets = cx.use_resource_untracked::<Assets<TerrainContoursTableAsset>>();
+        let tg_handle = cx.use_resource::<TerrainGroupsHandle>().0.clone();
+        let tg_assets = cx.use_resource_untracked::<Assets<TerrainGroupsAsset>>();
 
-        let items = tc_assets
-            .get(&tc_handle)
-            .map(|contours| {
-                let lock = contours.0.read().unwrap();
+        let items = tg_assets
+            .get(&tg_handle)
+            .map(|groups| {
+                let lock = groups.0.read().unwrap();
                 let items = lock
-                    .list()
+                    .0
                     .iter()
-                    .map(|shape| ContourListEntry {
-                        shape_id: shape.id,
-                        // name: shape.name.clone(),
-                        selected: Some(shape.id) == selected_contour,
-                        on_click,
+                    .flat_map(|group| {
+                        group.contours.iter().map(|shape| ContourListEntry {
+                            shape_id: *shape,
+                            bg_color: group.color.0,
+                            selected: Some(*shape) == selected_contour,
+                            on_click,
+                        })
                     })
                     .collect::<Vec<_>>();
-                // TODO: Sort
                 items
             })
             .unwrap_or_default();
@@ -123,6 +124,7 @@ impl ViewTemplate for ContourChooser {
             .scroll_enable_y(true)
             .children(For::each(items, |item| ContourListEntry {
                 shape_id: item.shape_id,
+                bg_color: item.bg_color,
                 selected: item.selected,
                 on_click: item.on_click,
             }))
@@ -135,6 +137,7 @@ struct ThumbnailRef(Option<Entity>);
 #[derive(Clone, PartialEq)]
 struct ContourListEntry {
     shape_id: usize,
+    bg_color: Srgba,
     // name: String,
     selected: bool,
     on_click: Callback<usize>,
@@ -145,6 +148,7 @@ impl ViewTemplate for ContourListEntry {
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_click = self.on_click;
         let shape_id = self.shape_id;
+        let bg_color = self.bg_color;
 
         let owner = cx.owner();
         cx.create_effect(
@@ -194,11 +198,11 @@ impl ViewTemplate for ContourListEntry {
                 (),
             )
             .style_dyn(
-                |selected, sb| {
+                move |selected, sb| {
                     if selected {
-                        sb.background_color(colors::U3);
+                        sb.background_color(bg_color.lighter(0.05));
                     } else {
-                        sb.background_color(colors::U2);
+                        sb.background_color(bg_color);
                     }
                 },
                 self.selected,

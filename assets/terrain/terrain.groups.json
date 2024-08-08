@@ -1,0 +1,89 @@
+[
+  {
+    "name": "default",
+    "visible": true,
+    "color": "#333333",
+    "contours": [0, 3, 7]
+  },
+  {
+    "name": "woods",
+    "visible": true,
+    "color": "#333322",
+    "contours": [6, 14, 39, 41, 46, 47, 64, 94]
+  },
+  {
+    "name": "forest",
+    "visible": true,
+    "color": "#223322",
+    "contours": [8, 42, 43, 44, 45, 65, 83, 84, 93]
+  },
+  {
+    "name": "shoreline",
+    "color": "#333344",
+    "visible": true,
+    "contours": [16, 17, 26, 27, 28, 29, 30, 35, 36, 40, 57]
+  },
+  {
+    "name": "river",
+    "color": "#334444",
+    "visible": true,
+    "contours": [31, 32, 33, 34, 37, 38]
+  },
+  {
+    "name": "hills",
+    "color": "#444433",
+    "visible": true,
+    "contours": [9, 58, 69]
+  },
+  {
+    "name": "hills-corner",
+    "color": "#444422",
+    "visible": true,
+    "contours": [13, 22, 23]
+  },
+  {
+    "name": "hills-convex",
+    "color": "#444411",
+    "visible": true,
+    "contours": [21, 24, 25]
+  },
+  {
+    "name": "hills-canyon",
+    "color": "#444400",
+    "visible": true,
+    "contours": []
+  },
+  {
+    "name": "mountains",
+    "color": "#333322",
+    "visible": true,
+    "contours": [
+      48, 49, 50, 51, 52, 53, 54, 55, 56, 59, 60, 61, 62, 63, 75, 76, 77, 78,
+      79, 80, 81, 82
+    ]
+  },
+  {
+    "name": "mountains-canyon",
+    "color": "#333311",
+    "visible": true,
+    "contours": [18, 19, 66, 67, 68, 70]
+  },
+  {
+    "name": "forest-hills",
+    "color": "#004400",
+    "visible": true,
+    "contours": [85, 86, 87, 88, 89, 90, 91, 92]
+  },
+  {
+    "name": "test",
+    "color": "#004400",
+    "visible": false,
+    "contours": [1, 2, 4, 5, 10, 11, 12, 15, 20]
+  },
+  {
+    "name": "city-terrace",
+    "color": "#222222",
+    "visible": true,
+    "contours": [71, 72]
+  }
+]

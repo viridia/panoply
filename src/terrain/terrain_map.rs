@@ -263,7 +263,7 @@ pub fn update_terrain_maps(
                 if let Some((entity, mut realm, _)) =
                     query.iter_mut().find(|(_, r, _)| r.name == realm_name)
                 {
-                    println!("Terrain map modified: [{}].", realm_name);
+                    // println!("Terrain map modified: [{}].", realm_name);
                     let tm = tm_assets.get(*id).unwrap();
                     if realm.parcel_bounds != tm.bounds {
                         realm.update_bounds(tm.bounds, convert_parcel_to_precinct(&tm.bounds))

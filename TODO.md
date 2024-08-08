@@ -1,11 +1,12 @@
 # TODO
 
+- File unsaved indicator.
+  - Track which things are unsaved.
+- Undo / Redo
 - Terrain contour list.
-  - click to change shape
   - filter by group
-  - sort by group
-  - background color by group
-  - water tile not always showing.
+  - empty tile shows nothing, should show black floor.
+  - changing parcel to tile with no terrain doesn't despawn terrain mesh.
 - Skybox experiments
 - World camera pan needs to use bubbled scroll events.
 - Editor modes
@@ -13,7 +14,6 @@
 - Build an entity inspector
 - Bugs:
   - Materials get loaded multiple times?
-  - ground material sometimes doesn't see textures
 - Assets
   - Asset Reader that allows cache miss
   - Remove Box2d types, replace with 4-tuple.

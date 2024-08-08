@@ -1,6 +1,6 @@
 use crate::{
     editor::{
-        events::{ChangeContourEvent, ChangeTerrainEvent},
+        events::{ChangeContourEvent, ModifyTerrainMapEvent},
         DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool,
     },
     terrain::{
@@ -283,7 +283,7 @@ pub fn on_pick_event(
 }
 
 pub fn on_change_terrain(
-    trigger: Trigger<ChangeTerrainEvent>,
+    trigger: Trigger<ModifyTerrainMapEvent>,
     q_parcels: Query<&Parcel>,
     q_terrain_map: Query<&TerrainMap>,
     mut r_terrain_map_assets: ResMut<Assets<TerrainMapAsset>>,
@@ -535,7 +535,7 @@ impl ViewTemplate for EditModeTerrainControls {
                             let Ok(parcel) = q_parcels.get(parcel_id) else {
                                 return;
                             };
-                            commands.trigger(ChangeTerrainEvent {
+                            commands.trigger(ModifyTerrainMapEvent {
                                 realm: parcel.realm,
                                 coords: parcel.coords,
                                 shape: ShapeRef {
@@ -559,7 +559,7 @@ impl ViewTemplate for EditModeTerrainControls {
                             let Ok(parcel) = q_parcels.get(parcel_id) else {
                                 return;
                             };
-                            commands.trigger(ChangeTerrainEvent {
+                            commands.trigger(ModifyTerrainMapEvent {
                                 realm: parcel.realm,
                                 coords: parcel.coords,
                                 shape: ShapeRef {

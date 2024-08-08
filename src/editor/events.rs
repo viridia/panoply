@@ -4,7 +4,7 @@ use crate::terrain::ShapeRef;
 
 /// Trigger event which changes the terrain for a parcel.
 #[derive(Clone, Debug, Event)]
-pub struct ChangeTerrainEvent {
+pub struct ModifyTerrainMapEvent {
     pub realm: Entity,
     pub coords: IVec2,
     pub shape: ShapeRef,
