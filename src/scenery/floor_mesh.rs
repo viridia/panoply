@@ -53,9 +53,9 @@ pub fn update_floor_aspects(
         ..Default::default()
     });
 
-    // Wait until schematic loaded before updating aspects
+    // Wait until exemplar loaded before updating aspects
     for (entity, floor_region) in query.iter_mut() {
-        let st = server.load_state(&floor_region.schematic);
+        let st = server.load_state(&floor_region.exemplar);
         if st == LoadState::Loaded {
             commands
                 .entity(entity)
@@ -66,7 +66,7 @@ pub fn update_floor_aspects(
                 },))
                 .remove::<RebuildFloorAspects>()
                 .add(UpdateAspects {
-                    exemplar: floor_region.schematic.clone(),
+                    exemplar: floor_region.exemplar.clone(),
                     finish: (RebuildFloorMaterials, RebuildFloorMesh),
                 });
         }

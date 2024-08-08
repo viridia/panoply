@@ -68,7 +68,7 @@ during attachment.
 To load an exemplar, you'll need to register the exemplar asset loader.
 
 Once an exemplar is loaded, you can attach it to an entity by issuing the `UpdateAspects`
-custom command. This command will merge the aspects from the instance, the schematic, and
+custom command. This command will merge the aspects from the instance, the exemplar, and
 any extension exemplars, eliminating duplicate aspects. If the entity already had aspects
 attached, then the command will do a "diff" of the old and new state, adding and removing
 aspects as needed, while preserving the state of aspects that didn't change.

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://viridia.org/faery/schematic.schema.json",
+  "$id": "https://viridia.org/faery/exemplar.schema.json",
   "title": "Schematic",
   "description": "Schematic Schema",
   "type": "object",

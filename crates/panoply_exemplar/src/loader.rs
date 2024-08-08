@@ -131,7 +131,7 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
     type Value = ExemplarCatalog;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("schematic catalog")
+        formatter.write_str("exemplar catalog")
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -148,14 +148,14 @@ impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
                 exemplar_name: &key,
             })?;
             let aliases = sdata.alias.clone();
-            let schematic = Arc::new(sdata);
-            let handle = lc.finish(Exemplar(schematic.clone()), None);
+            let exemplar = Arc::new(sdata);
+            let handle = lc.finish(Exemplar(exemplar.clone()), None);
             let handle = self
                 .load_context
                 .add_loaded_labeled_asset(key.clone(), handle);
             for alias in &aliases {
                 self.load_context
-                    .add_labeled_asset(alias.clone(), Exemplar(schematic.clone()));
+                    .add_labeled_asset(alias.clone(), Exemplar(exemplar.clone()));
             }
 
             entries.insert(key, handle);
@@ -220,11 +220,11 @@ impl AssetLoader for ExemplarLoader {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
         let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
-        let schematic_deserializer = CatalogDeserializer {
+        let exemplar_deserializer = CatalogDeserializer {
             type_registry: &self.type_registry.read(),
             load_context,
         };
-        let catalog: ExemplarCatalog = schematic_deserializer.deserialize(&mut deserializer)?;
+        let catalog: ExemplarCatalog = exemplar_deserializer.deserialize(&mut deserializer)?;
         Ok(catalog)
     }
 

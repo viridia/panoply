@@ -7,20 +7,20 @@ use crate::InstanceType;
 /// Defines a prototype for instantiating a game object.
 #[derive(TypePath)]
 pub struct ExemplarData {
-    /// Type of instance that this schematic can create.
+    /// Type of instance that this exemplar can create.
     pub meta_type: InstanceType,
 
     /// Optional human-readable display name.
     pub display_name: Option<String>,
 
-    /// List of alternate names for loading this schematic, used when migrating a schematic
+    /// List of alternate names for loading this exemplar, used when migrating a exemplar
     /// from an old name to a new one.
     pub(crate) alias: Vec<String>,
 
-    /// List of aspects that this schematic has.
+    /// List of aspects that this exemplar has.
     pub aspects: Vec<Box<dyn crate::Aspect>>,
 
-    /// Inherited prototype for this schematic.
+    /// Inherited prototype for this exemplar.
     pub extends: Option<Handle<Exemplar>>,
 }
 

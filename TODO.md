@@ -7,6 +7,7 @@
   - filter by group
   - empty tile shows nothing, should show black floor.
 - Skybox experiments
+- move prefs to own crate.
 - World camera pan needs to use bubbled scroll events.
 - Editor modes
   - Tool palette
@@ -50,9 +51,7 @@ Future:
 - [Error in PBR shader code](https://github.com/bevyengine/bevy/issues/12326)
 - [Support archive assets](https://github.com/bevyengine/bevy/issues/12279)
 - [Allow missing assets](https://github.com/bevyengine/bevy/issues/12210)
-- [Gltf material substitutions](https://github.com/bevyengine/bevy/issues/12209)
 - [Support hemisphere light](https://github.com/bevyengine/bevy/issues/12027)
-- [Tool to create env maps](https://github.com/bevyengine/bevy/issues/12233)
 
 # Aspects to define
 

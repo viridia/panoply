@@ -36,7 +36,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        floor_schematics: &[Handle<Exemplar>],
+        floor_exemplars: &[Handle<Exemplar>],
         query_floor_regions: &mut Query<(Entity, &mut FloorRegion)>,
     ) {
         // Sync tiers
@@ -62,7 +62,7 @@ impl Precinct {
 
             let mut j = 0;
             for floor in tier.pfloors.iter() {
-                let schematic: Handle<Exemplar> = floor_schematics[floor.surface_index].clone();
+                let exemplar: Handle<Exemplar> = floor_exemplars[floor.surface_index].clone();
                 if j < t.floor_regions.len() {
                     let floor_entity = t.floor_regions[j];
                     if let Ok((floor_entity, mut floor_region)) =
@@ -70,8 +70,8 @@ impl Precinct {
                     {
                         // Patch floor entity.
                         let mut changed = false;
-                        if floor_region.schematic != schematic {
-                            floor_region.schematic = schematic.clone();
+                        if floor_region.exemplar != exemplar {
+                            floor_region.exemplar = exemplar.clone();
                             changed = true;
                         }
                         if floor_region.poly != floor.poly {
@@ -87,7 +87,7 @@ impl Precinct {
                         commands.entity(floor_entity).insert((
                             FloorRegion {
                                 level: tier.level,
-                                schematic,
+                                exemplar,
                                 poly: floor.poly.clone(),
                             },
                             RebuildFloorAspects,
@@ -99,7 +99,7 @@ impl Precinct {
                         .spawn((
                             FloorRegion {
                                 level: tier.level,
-                                schematic,
+                                exemplar,
                                 poly: floor.poly.clone(),
                             },
                             self.render_layer.clone(),
@@ -132,7 +132,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        scenery_schematics: &[Handle<Exemplar>],
+        scenery_exemplars: &[Handle<Exemplar>],
     ) {
         // What do we want to do here?
         // We cannot place the model yet, because transforms are not loaded.
@@ -144,7 +144,7 @@ impl Precinct {
             commands
                 .spawn((
                     SceneryElement {
-                        exemplar: scenery_schematics[elt.id].clone(),
+                        exemplar: scenery_exemplars[elt.id].clone(),
                         facing,
                         position: elt.position,
                     },
@@ -239,7 +239,7 @@ pub fn read_precinct_data(
                     // TODO: Sync actors
 
                     let precinct_asset = assets.get(*id).unwrap();
-                    let floor_schematics: Vec<Handle<Exemplar>> = precinct_asset
+                    let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
                         .floor_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -249,11 +249,11 @@ pub fn read_precinct_data(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
-                        &floor_schematics,
+                        &floor_exemplars,
                         &mut query_floor_regions,
                     );
 
-                    let scenery_schematics: Vec<Handle<Exemplar>> = precinct_asset
+                    let scenery_exemplars: Vec<Handle<Exemplar>> = precinct_asset
                         .scenery_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -263,10 +263,10 @@ pub fn read_precinct_data(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
-                        &scenery_schematics,
+                        &scenery_exemplars,
                     );
 
-                    let fx_schematics: Vec<Handle<Exemplar>> = precinct_asset
+                    let fx_exemplars: Vec<Handle<Exemplar>> = precinct_asset
                         .terrain_fx_types
                         .iter()
                         .map(|s| asset_server.load(s))
@@ -276,7 +276,7 @@ pub fn read_precinct_data(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
-                        fx_schematics,
+                        fx_exemplars,
                     );
 
                     precinct.rebuild_actors(&mut commands, precinct_entity, precinct_asset);

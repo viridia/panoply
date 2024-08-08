@@ -12,7 +12,7 @@ pub struct FloorRegion {
     pub level: i32,
 
     /// Schematic reference
-    pub schematic: Handle<Exemplar>,
+    pub exemplar: Handle<Exemplar>,
 
     /// Polygonal outline of floor
     pub poly: Vec<Vec2>,

@@ -47,7 +47,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
     mut commands: Commands,
     mut query: Query<(Entity, &Precinct, &mut TerrainFxMap), With<RebuildTerrainFxVertexAttrs>>,
     parcel_cache: Res<ParcelCache>,
-    schematic_assets: Res<Assets<Exemplar>>,
+    exemplar_assets: Res<Assets<Exemplar>>,
     server: Res<AssetServer>,
 ) {
     for (entity, precinct, mut terrain_fx) in query.iter_mut() {
@@ -63,13 +63,13 @@ pub fn rebuild_terrain_fx_vertex_attrs(
             .exemplars
             .iter()
             .map(|s| {
-                // Note that we're accessing the schematic directly in this case instead
+                // Note that we're accessing the exemplar directly in this case instead
                 // of applying the aspects to an entity, since the individual effects are
                 // not associated with a single entity but with vertex attributes.
-                let s = schematic_assets.get(s).unwrap();
+                let s = exemplar_assets.get(s).unwrap();
                 let mut vxt_attr = TerrainFxVertexAttr::default();
                 for aspect in s.0.aspects.iter() {
-                    // TODO: Extends - require async resolution of the schematic.
+                    // TODO: Extends - require async resolution of the exemplar.
 
                     // Terrain effects
                     if let Some(eff) = aspect.as_any().downcast_ref::<TerrainEffect>() {
