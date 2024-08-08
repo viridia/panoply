@@ -7,7 +7,10 @@
    version="1.1"
    id="svg11125"
    sodipodi:docname="tile1.svg"
-   inkscape:version="1.2 (dc2aeda, 2022-05-15)"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   inkscape:export-filename="../../assets/editor/icons/tile1.png"
+   inkscape:export-xdpi="192"
+   inkscape:export-ydpi="192"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,12 +28,12 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="true"
      inkscape:zoom="9.8333334"
-     inkscape:cx="6.6610169"
-     inkscape:cy="13.118644"
+     inkscape:cx="9.8644067"
+     inkscape:cy="9.9661016"
      inkscape:window-width="786"
      inkscape:window-height="716"
-     inkscape:window-x="1918"
-     inkscape:window-y="715"
+     inkscape:window-x="394"
+     inkscape:window-y="105"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg11125">
     <inkscape:grid
@@ -43,7 +46,7 @@
      d="m 3.5,3.5 v 13 h 12 v -13 z"
      id="path11123"
      sodipodi:nodetypes="ccccc"
-     style="fill:none;stroke:var(--icon-color);stroke-width:1.5;stroke-dasharray:none;stroke-opacity:1" />
+     style="fill:none;stroke:#ffffff;stroke-width:1.5;stroke-dasharray:none;stroke-opacity:1" />
   <text
      xml:space="preserve"
      style="font-size:10.6667px;line-height:1.25;font-family:sans-serif;fill:var(--icon-color);fill-opacity:1"

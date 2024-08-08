@@ -7,7 +7,10 @@
    version="1.1"
    id="svg11125"
    sodipodi:docname="pointer.svg"
-   inkscape:version="1.2 (dc2aeda, 2022-05-15)"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   inkscape:export-filename="../../assets/editor/icons/pointer.png"
+   inkscape:export-xdpi="192"
+   inkscape:export-ydpi="192"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,17 +28,17 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="27.812867"
-     inkscape:cx="4.1887088"
-     inkscape:cy="12.350399"
-     inkscape:window-width="1868"
-     inkscape:window-height="1239"
-     inkscape:window-x="546"
-     inkscape:window-y="129"
+     inkscape:cx="9.7077371"
+     inkscape:cy="11.882989"
+     inkscape:window-width="1512"
+     inkscape:window-height="867"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg11125" />
   <path
      d="m 4.4015774,4.6270545 -0.021062,14.5352095 3.8865911,-2.630672 2.0491655,3.946193 4.224969,-2.700591 -2.467873,-3.445806 3.718846,-1.801846 z"
      id="path11123"
      sodipodi:nodetypes="cccccccc"
-     style="fill:none;stroke:var(--icon-color);stroke-width:1.7;stroke-dasharray:none;stroke-opacity:1" />
+     style="fill:none;stroke:#ffffff;stroke-width:1.7;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1" />
 </svg>

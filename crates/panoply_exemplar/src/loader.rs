@@ -58,8 +58,8 @@ impl<'de, 'a, 'b> Visitor<'de> for ExemplarVisitor<'a, 'b> {
                         return Err(de::Error::duplicate_field("type"));
                     }
                     // TODO: Implement type deserialization.
-                    let _meta_type: String = map.next_value()?;
-                    // println!("meta_type: {}", meta_type);
+                    let meta_type: String = map.next_value()?;
+                    result.meta_type = InstanceType::from_str(&meta_type);
                 }
                 Field::DisplayName => {
                     if result.display_name.is_some() {

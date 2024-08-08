@@ -47,6 +47,7 @@ serde_repr = "0.1.16"
 thiserror = "1.0.57"
 panoply_exemplar = { workspace = true }
 base64 = "0.22.0"
+regex = "1.10.6"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

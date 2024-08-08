@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChanged};
+use exemplars::ExemplarsHandleResource;
 use ui::{mode_realm, mode_terrain};
 
 use crate::terrain::terrain_groups::{
@@ -8,6 +9,8 @@ use crate::terrain::terrain_groups::{
 
 mod camera;
 mod events;
+mod exemplars;
+mod lib;
 pub mod renderers;
 mod ui;
 
@@ -87,6 +90,27 @@ pub(crate) enum SceneryTool {
     SceneryRect,
 }
 
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("floor_tool"))]
+pub(crate) enum FloorTool {
+    #[default]
+    Move,
+    Draw,
+    RectM,
+    RectL,
+    RectXL,
+    Beveled,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("wall_snap"))]
+pub(crate) enum WallSnap {
+    #[default]
+    Normal,
+    Offset,
+    Quarter,
+}
+
 impl Default for EditorSidebarWidth {
     fn default() -> Self {
         Self(300.0)
@@ -100,12 +124,17 @@ impl Plugin for EditorPlugin {
             .insert_state(EditorMode::default())
             .insert_state(TerrainTool::default())
             .insert_state(SceneryTool::default())
+            .insert_state(FloorTool::default())
+            .insert_state(WallSnap::default())
             .enable_state_scoped_entities::<EditorMode>()
             .enable_state_scoped_entities::<TerrainTool>()
             .enable_state_scoped_entities::<SceneryTool>()
+            .enable_state_scoped_entities::<FloorTool>()
+            .enable_state_scoped_entities::<WallSnap>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
             .init_resource::<TerrainDragState>()
+            .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
@@ -114,6 +143,10 @@ impl Plugin for EditorPlugin {
             .register_type::<NextState<TerrainTool>>()
             .register_type::<State<SceneryTool>>()
             .register_type::<NextState<SceneryTool>>()
+            .register_type::<State<FloorTool>>()
+            .register_type::<NextState<FloorTool>>()
+            .register_type::<State<WallSnap>>()
+            .register_type::<NextState<WallSnap>>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)

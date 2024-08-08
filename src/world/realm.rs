@@ -116,7 +116,7 @@ pub fn sync_realms(
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
                 let realm = assets.get(*id).unwrap();
-                let realm_name = realm_name_from_handle(&server, id);
+                let realm_name = realm_name_from_id(&server, id);
 
                 // Assign first unused id.
                 let layer_index = r_layers.next_unused();
@@ -173,7 +173,7 @@ pub fn sync_realms(
 
             AssetEvent::Modified { id } => {
                 let realm = assets.get(*id).unwrap();
-                let realm_name = realm_name_from_handle(&server, id);
+                let realm_name = realm_name_from_id(&server, id);
                 println!("Realm modified: [{}].", realm_name);
                 for (_, mut comp) in q_realms.iter_mut() {
                     if comp.name == realm_name {
@@ -183,7 +183,7 @@ pub fn sync_realms(
             }
 
             AssetEvent::Removed { id } => {
-                let realm_name = realm_name_from_handle(&server, id);
+                let realm_name = realm_name_from_id(&server, id);
                 println!("Realm removed: [{}].", realm_name);
                 let mut layers_to_remove = RenderLayers::none();
                 for (entity, comp) in q_realms.iter_mut() {
@@ -205,7 +205,7 @@ pub fn sync_realms(
     }
 }
 
-fn realm_name_from_handle(server: &Res<AssetServer>, handle: &AssetId<RealmData>) -> String {
+fn realm_name_from_id(server: &Res<AssetServer>, handle: &AssetId<RealmData>) -> String {
     let asset_path = server.get_path(*handle).unwrap();
     let path = asset_path.path();
     let filename = path.file_name().expect("Asset has no file name!");

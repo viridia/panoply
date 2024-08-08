@@ -229,7 +229,7 @@ pub fn update_terrain_maps(
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
-                let realm_name = asset_name_from_handle(&server, id);
+                let realm_name = asset_name_from_id(&server, id);
                 if let Some((re, mut realm, terrain)) =
                     query.iter_mut().find(|r| r.1.name == realm_name)
                 {
@@ -259,7 +259,7 @@ pub fn update_terrain_maps(
             }
 
             AssetEvent::Modified { id } => {
-                let realm_name = asset_name_from_handle(&server, id);
+                let realm_name = asset_name_from_id(&server, id);
                 if let Some((entity, mut realm, _)) =
                     query.iter_mut().find(|(_, r, _)| r.name == realm_name)
                 {
@@ -273,7 +273,7 @@ pub fn update_terrain_maps(
             }
 
             AssetEvent::Removed { id } => {
-                let map_name = asset_name_from_handle(&server, id);
+                let map_name = asset_name_from_id(&server, id);
                 println!("Terrain map removed: [{}].", map_name);
                 for (entity, realm, _terrain) in query.iter_mut() {
                     if realm.name == map_name {
@@ -288,7 +288,7 @@ pub fn update_terrain_maps(
     }
 }
 
-fn asset_name_from_handle(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) -> String {
+fn asset_name_from_id(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) -> String {
     let asset_path = server.get_path(*id).unwrap();
     let path = asset_path.path();
     let filename = path.file_name().expect("Asset has no file name!");

@@ -7,7 +7,10 @@
    version="1.1"
    id="svg11125"
    sodipodi:docname="octagon.svg"
-   inkscape:version="1.2 (dc2aeda, 2022-05-15)"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   inkscape:export-filename="../../assets/editor/icons/octagon.png"
+   inkscape:export-xdpi="192"
+   inkscape:export-ydpi="192"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,12 +28,12 @@
      inkscape:deskcolor="#7a7a7a"
      showgrid="true"
      inkscape:zoom="55.625734"
-     inkscape:cx="8.3684289"
-     inkscape:cy="8.1527014"
-     inkscape:window-width="1828"
-     inkscape:window-height="1461"
-     inkscape:window-x="425"
-     inkscape:window-y="25"
+     inkscape:cx="9.0066227"
+     inkscape:cy="9.5009982"
+     inkscape:window-width="1512"
+     inkscape:window-height="867"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg11125"
      showborder="true">
@@ -48,5 +51,5 @@
      d="m 2,5 v 9 l 3,3 h 8 l 3,-3 V 5 L 13,2 H 5 Z"
      id="path11123"
      sodipodi:nodetypes="ccccccccc"
-     style="fill:none;stroke:var(--icon-color);stroke-width:1.7;stroke-dasharray:none;stroke-opacity:1" />
+     style="fill:none;stroke:#ffffff;stroke-width:1.7;stroke-dasharray:none;stroke-opacity:1" />
 </svg>
