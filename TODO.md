@@ -175,10 +175,10 @@ Future:
   - DebugPhysicsOverlay
   - TargetingCircle
   - PathVisualizer
-  - TranslucentLines
+  - [x] TranslucentLines
   - TranslucentSprites
   - TranslucentPoints
-  - TranslucentMesh
+  - [x] TranslucentMesh
 - quests
   - StageId
   - Quest
@@ -190,19 +190,19 @@ Future:
   - ParticleAspect
 - physics
 - scenery
-  - Fixture
-  - FixtureArchetype
+  - [x] Fixture
+  - [x] FixtureArchetype
   - FixtureModels
   - FixtureObstacles
   - FixturePhysics
   - Floor
-  - FloorArchetype
-  - FloorModels
+  - [x] FloorArchetype
+  - [x] FloorModels
   - FloorObstacles
   - FloorPhysics
-  - PrecinctCache
-  - Precinct
-  - Tier
+  - [x] PrecinctCache
+  - [x] Precinct
+  - [x] Tier
 - skills
 - terrain
   - [x] ParcelCache
@@ -210,57 +210,26 @@ Future:
   - [x] TerrainShape
   - TerrainFx
 - view
-  - Viewpoint
+  - [x] Viewpoint
   - Portals
   - Cutaways
   - Nameplates
 - world
-  - Biome
-  - Realm
-  - World
+  - [x] Biome
+  - [x] Realm
+  - [x] World
 
 # Convert PNG to premultiplied alpha:
 
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
 convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
 
-# Overlays
+# Scenery modes:
 
-- Show
-- For
-- Overlay
-- TranslucentShape
-- TranslucentLines
-- TranslucentPoints
-- TranslucentSprites
-
-Overlay structure:
-
-Node
-old reflex?
-Children
-
-We need local memoization
-
-```rust
-fn (ctx: Local<ViewContext>) {
-  let color = ctx.create_selector(|world| world.get(...).resource.color);
-  let state = ctx.create_memo(|world| { la la la });
-  return ctx.render(||
-    Group::new([
-        FlatRect {
-          color: color(),
-          opacity: if state().selected { 1. } else { .5 },
-          ..default(),
-        }
-    ])
-  )
-}
-
-```
-
-thread 'main' panicked at /Users/talin/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bevy_ecs-0.14.0/src/system/commands/mod.rs:1250:13:
-error[B0003]: Could not insert a bundle (of type `(bevy_scene::bundle::SceneBundle, panoply::models::PropagateRenderLayers)`) for entity Entity { index: 18056, generation: 1 } because it doesn't exist in this World. See: https://bevyengine.org/learn/errors/#b0003
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-Encountered a panic when applying buffers for system `panoply::terrain::flora::spawn_flora_model_instances`!
-Encountered a panic in system `bevy_ecs::schedule::executor::apply_deferred`!
+SceneryOverlayNone
+SceneryOverlayFloorOutline
+SceneryOverlayFloorStamp
+SceneryOverlayPlaceWall
+SceneryOverlayPlaceFixture
+SceneryOverlayPlaceActor
+SceneryOverlayDrawTerrainFx

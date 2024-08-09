@@ -1,13 +1,86 @@
 use crate::{
     actors::ACTOR_TYPE,
-    editor::{FloorTool, SceneryTool, WallSnap},
+    editor::EditorMode,
     scenery::{FIXTURE_TYPE, FLOOR_TYPE, WALL_TYPE},
 };
 use bevy::{prelude::*, ui};
+use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
 
 use super::controls::ExemplarChooser;
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
+pub enum SceneryTool {
+    #[default]
+    FloorDraw,
+    WallDraw,
+    FixtureDraw,
+    ActorPlacement,
+    TerrainFxDraw,
+    SceneryEdit,
+    EditLayers,
+    SceneryRect,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("floor_tool"))]
+pub enum FloorTool {
+    #[default]
+    Move,
+    Draw,
+    RectM,
+    RectL,
+    RectXL,
+    Beveled,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("wall_snap"))]
+pub enum WallSnap {
+    #[default]
+    Normal,
+    Offset,
+    Quarter,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub enum SceneryOverlay {
+    FloorDraw,
+    FloorCreate,
+    PlaceWall,
+    PlaceFixture,
+    PlaceActor,
+    DrawTerrainFx,
+    Interact,
+    RectSelect,
+}
+
+impl ComputedStates for SceneryOverlay {
+    type SourceStates = (EditorMode, SceneryTool, FloorTool);
+
+    fn compute(sources: Self::SourceStates) -> Option<Self> {
+        if sources.0 != EditorMode::Scenery {
+            return None;
+        }
+        match sources.1 {
+            SceneryTool::FloorDraw => match sources.2 {
+                FloorTool::Move | FloorTool::Draw => Some(SceneryOverlay::FloorDraw),
+                FloorTool::RectM | FloorTool::RectL | FloorTool::RectXL | FloorTool::Beveled => {
+                    Some(SceneryOverlay::FloorCreate)
+                }
+            },
+            SceneryTool::WallDraw => Some(SceneryOverlay::PlaceWall),
+            SceneryTool::FixtureDraw => Some(SceneryOverlay::PlaceFixture),
+            SceneryTool::ActorPlacement => Some(SceneryOverlay::PlaceActor),
+            SceneryTool::TerrainFxDraw => Some(SceneryOverlay::DrawTerrainFx),
+            SceneryTool::SceneryEdit => Some(SceneryOverlay::Interact),
+            SceneryTool::SceneryRect => Some(SceneryOverlay::RectSelect),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct EditModeSceneryControls;

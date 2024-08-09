@@ -17,7 +17,7 @@ pub enum PickAction {
     Down(Vec3),
     RightClick,
     DblClick,
-    DragStart(Vec3),
+    DragStart { realm: Entity, pos: Vec3 },
     Drag,
     DragEnd,
 }

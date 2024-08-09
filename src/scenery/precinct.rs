@@ -6,6 +6,7 @@ use super::{
     rle::rle_decode,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
+    PRECINCT_SIZE_F,
 };
 use bevy::{prelude::*, render::view::RenderLayers};
 
@@ -31,6 +32,13 @@ pub struct Precinct {
 }
 
 impl Precinct {
+    pub fn contains_pt(&self, v: Vec3) -> bool {
+        v.x >= self.coords.x as f32 * PRECINCT_SIZE_F
+            && v.x < (self.coords.x + 1) as f32 * PRECINCT_SIZE_F
+            && v.z >= self.coords.y as f32 * PRECINCT_SIZE_F
+            && v.z < (self.coords.y + 1) as f32 * PRECINCT_SIZE_F
+    }
+
     pub fn rebuild_tiers(
         &mut self,
         commands: &mut Commands,

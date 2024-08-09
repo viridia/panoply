@@ -6,6 +6,10 @@ pub mod mode_scenery;
 pub mod mode_selector;
 pub mod mode_terrain;
 mod overlays;
+pub mod tool_floor_create;
+pub mod tool_floor_edit;
+pub mod tool_terrain_edit;
+pub mod tool_wall_create;
 
 pub mod quick_nav;
 

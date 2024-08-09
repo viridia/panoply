@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChanged};
 use exemplars::ExemplarsHandleResource;
-use ui::{mode_realm, mode_terrain};
+use ui::{
+    mode_realm,
+    mode_scenery::{FloorTool, SceneryOverlay, SceneryTool, WallSnap},
+    tool_floor_create, tool_floor_edit, tool_terrain_edit, tool_wall_create,
+};
 
 use crate::terrain::terrain_groups::{
     TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
@@ -22,6 +26,9 @@ pub struct EditorSidebarWidth(pub f32);
 
 #[derive(Resource, Default)]
 pub struct SelectedParcel(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct SelectedPrecinct(pub Option<Entity>);
 
 #[derive(Resource, Default, Clone, Copy, PartialEq)]
 pub enum DragShape {
@@ -51,7 +58,7 @@ pub(crate) struct TerrainDragState {
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("mode"))]
-pub(crate) enum EditorMode {
+pub enum EditorMode {
     #[default]
     Realm,
     Terrain,
@@ -76,41 +83,6 @@ pub(crate) enum TerrainTool {
     EraseFlora,
 }
 
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
-pub(crate) enum SceneryTool {
-    #[default]
-    FloorDraw,
-    WallDraw,
-    FixtureDraw,
-    ActorPlacement,
-    TerrainFxDraw,
-    SceneryEdit,
-    EditLayers,
-    SceneryRect,
-}
-
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("floor_tool"))]
-pub(crate) enum FloorTool {
-    #[default]
-    Move,
-    Draw,
-    RectM,
-    RectL,
-    RectXL,
-    Beveled,
-}
-
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("wall_snap"))]
-pub(crate) enum WallSnap {
-    #[default]
-    Normal,
-    Offset,
-    Quarter,
-}
-
 impl Default for EditorSidebarWidth {
     fn default() -> Self {
         Self(300.0)
@@ -126,6 +98,7 @@ impl Plugin for EditorPlugin {
             .insert_state(SceneryTool::default())
             .insert_state(FloorTool::default())
             .insert_state(WallSnap::default())
+            .add_computed_state::<SceneryOverlay>()
             .enable_state_scoped_entities::<EditorMode>()
             .enable_state_scoped_entities::<TerrainTool>()
             .enable_state_scoped_entities::<SceneryTool>()
@@ -133,6 +106,7 @@ impl Plugin for EditorPlugin {
             .enable_state_scoped_entities::<WallSnap>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
+            .init_resource::<SelectedPrecinct>()
             .init_resource::<TerrainDragState>()
             .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
@@ -150,8 +124,17 @@ impl Plugin for EditorPlugin {
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)
-            .add_systems(OnEnter(EditorMode::Terrain), mode_terrain::enter)
-            .add_systems(OnExit(EditorMode::Terrain), mode_terrain::exit)
+            .add_systems(OnEnter(EditorMode::Terrain), tool_terrain_edit::enter)
+            .add_systems(OnExit(EditorMode::Terrain), tool_terrain_edit::exit)
+            .add_systems(
+                OnEnter(SceneryOverlay::FloorCreate),
+                tool_floor_create::enter,
+            )
+            .add_systems(OnExit(SceneryOverlay::FloorCreate), tool_floor_create::exit)
+            .add_systems(OnEnter(SceneryOverlay::FloorDraw), tool_floor_edit::enter)
+            .add_systems(OnExit(SceneryOverlay::FloorDraw), tool_floor_edit::exit)
+            .add_systems(OnEnter(SceneryOverlay::PlaceWall), tool_wall_create::enter)
+            .add_systems(OnExit(SceneryOverlay::PlaceWall), tool_wall_create::exit)
             .add_systems(
                 Startup,
                 (
@@ -172,7 +155,10 @@ impl Plugin for EditorPlugin {
                         renderers::assign_thumbnails_to_camera,
                     )
                         .chain(),
-                    mode_terrain::hover.run_if(in_state(EditorMode::Terrain)),
+                    tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
+                    tool_floor_create::hover.run_if(in_state(SceneryOverlay::FloorCreate)),
+                    tool_floor_edit::hover.run_if(in_state(SceneryOverlay::FloorDraw)),
+                    tool_wall_create::hover.run_if(in_state(SceneryOverlay::PlaceWall)),
                 ),
             );
     }
@@ -183,9 +169,16 @@ fn watch_state_transitions(
     editor_mode: Res<State<EditorMode>>,
     terrain_tool: Res<State<TerrainTool>>,
     scenery_tool: Res<State<SceneryTool>>,
+    floor_tool: Res<State<FloorTool>>,
+    wall_snap: Res<State<WallSnap>>,
     mut commands: Commands,
 ) {
-    if editor_mode.is_changed() || terrain_tool.is_changed() || scenery_tool.is_changed() {
+    if editor_mode.is_changed()
+        || terrain_tool.is_changed()
+        || scenery_tool.is_changed()
+        || floor_tool.is_changed()
+        || wall_snap.is_changed()
+    {
         commands.push(SetPreferencesChanged);
     }
 }

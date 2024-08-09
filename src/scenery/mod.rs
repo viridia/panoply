@@ -24,7 +24,7 @@ pub mod floor_aspect;
 mod floor_mesh;
 // mod floor_noise;
 mod floor_region;
-mod precinct;
+pub mod precinct;
 mod precinct_asset;
 mod precinct_cache;
 mod rle;

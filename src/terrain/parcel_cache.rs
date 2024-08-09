@@ -120,6 +120,7 @@ pub fn spawn_parcels(
 
     // Function to add parcels to the cache based on a view rect.
     let mut fetch_parcels = |rect: &QueryRect| {
+        let realm_id = rect.realm;
         if let Ok((realm, terrain)) = q_realms.get(rect.realm) {
             if server.load_state(&terrain.handle) != LoadState::Loaded {
                 return;
@@ -204,7 +205,10 @@ pub fn spawn_parcels(
                                       mut commands: Commands| {
                                     ev.stop_propagation();
                                     commands.trigger(PickEvent {
-                                        action: PickAction::DragStart(ev.hit.position.unwrap()),
+                                        action: PickAction::DragStart{
+                                            realm: realm_id,
+                                            pos: ev.hit.position.unwrap()
+                                        },
                                         target: PickTarget::Parcel(ev.listener()),
                                     });
                                 },
