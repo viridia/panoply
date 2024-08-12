@@ -23,9 +23,9 @@ use self::{
 pub mod floor_aspect;
 mod floor_mesh;
 // mod floor_noise;
-mod floor_region;
+pub mod floor_region;
 pub mod precinct;
-mod precinct_asset;
+pub mod precinct_asset;
 mod precinct_cache;
 mod rle;
 mod scenery_aspect;
@@ -40,7 +40,7 @@ pub const PRECINCT_SIZE_F: f32 = PRECINCT_SIZE as f32;
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
-pub const TIER_OFFSET: f32 = 0.02 - 2.; // Tiers are slightly higher than the terrain.
+pub const TIER_OFFSET: f32 = 0.02; // Tiers are slightly higher than the terrain.
 
 pub const WALL_TYPE: InstanceType = InstanceType::from_str("Wall");
 pub const FIXTURE_TYPE: InstanceType = InstanceType::from_str("Fixt");

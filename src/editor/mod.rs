@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChanged};
 use exemplars::ExemplarsHandleResource;
+use lib::pick_plane::PlanePickBackend;
 use ui::{
     mode_realm,
-    mode_scenery::{FloorTool, SceneryOverlay, SceneryTool, WallSnap},
-    tool_floor_create, tool_floor_edit, tool_terrain_edit, tool_wall_create,
+    mode_scenery::{EditSceneryPlugin, FloorTool, SceneryTool, WallSnap},
+    tool_terrain_edit,
 };
 
 use crate::terrain::terrain_groups::{
@@ -26,9 +27,6 @@ pub struct EditorSidebarWidth(pub f32);
 
 #[derive(Resource, Default)]
 pub struct SelectedParcel(pub Option<Entity>);
-
-#[derive(Resource, Default)]
-pub struct SelectedPrecinct(pub Option<Entity>);
 
 #[derive(Resource, Default, Clone, Copy, PartialEq)]
 pub enum DragShape {
@@ -95,18 +93,10 @@ impl Plugin for EditorPlugin {
             .register_asset_loader(TerrainGroupsLoader)
             .insert_state(EditorMode::default())
             .insert_state(TerrainTool::default())
-            .insert_state(SceneryTool::default())
-            .insert_state(FloorTool::default())
-            .insert_state(WallSnap::default())
-            .add_computed_state::<SceneryOverlay>()
             .enable_state_scoped_entities::<EditorMode>()
             .enable_state_scoped_entities::<TerrainTool>()
-            .enable_state_scoped_entities::<SceneryTool>()
-            .enable_state_scoped_entities::<FloorTool>()
-            .enable_state_scoped_entities::<WallSnap>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
-            .init_resource::<SelectedPrecinct>()
             .init_resource::<TerrainDragState>()
             .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
@@ -115,26 +105,11 @@ impl Plugin for EditorPlugin {
             .register_type::<NextState<EditorMode>>()
             .register_type::<State<TerrainTool>>()
             .register_type::<NextState<TerrainTool>>()
-            .register_type::<State<SceneryTool>>()
-            .register_type::<NextState<SceneryTool>>()
-            .register_type::<State<FloorTool>>()
-            .register_type::<NextState<FloorTool>>()
-            .register_type::<State<WallSnap>>()
-            .register_type::<NextState<WallSnap>>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)
             .add_systems(OnEnter(EditorMode::Terrain), tool_terrain_edit::enter)
             .add_systems(OnExit(EditorMode::Terrain), tool_terrain_edit::exit)
-            .add_systems(
-                OnEnter(SceneryOverlay::FloorCreate),
-                tool_floor_create::enter,
-            )
-            .add_systems(OnExit(SceneryOverlay::FloorCreate), tool_floor_create::exit)
-            .add_systems(OnEnter(SceneryOverlay::FloorDraw), tool_floor_edit::enter)
-            .add_systems(OnExit(SceneryOverlay::FloorDraw), tool_floor_edit::exit)
-            .add_systems(OnEnter(SceneryOverlay::PlaceWall), tool_wall_create::enter)
-            .add_systems(OnExit(SceneryOverlay::PlaceWall), tool_wall_create::exit)
             .add_systems(
                 Startup,
                 (
@@ -156,11 +131,9 @@ impl Plugin for EditorPlugin {
                     )
                         .chain(),
                     tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
-                    tool_floor_create::hover.run_if(in_state(SceneryOverlay::FloorCreate)),
-                    tool_floor_edit::hover.run_if(in_state(SceneryOverlay::FloorDraw)),
-                    tool_wall_create::hover.run_if(in_state(SceneryOverlay::PlaceWall)),
                 ),
-            );
+            )
+            .add_plugins((EditSceneryPlugin, PlanePickBackend));
     }
 }
 

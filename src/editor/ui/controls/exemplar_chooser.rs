@@ -5,9 +5,9 @@ use panoply_exemplar::{Exemplar, InstanceType};
 
 #[derive(Clone, PartialEq)]
 pub struct ExemplarChooser {
-    pub selected: Option<String>,
+    pub selected: Option<AssetId<Exemplar>>,
     pub style: StyleHandle,
-    // pub on_change: Callback<String>,
+    pub on_change: Callback<Option<AssetId<Exemplar>>>,
     pub filter: String,
     pub instance_type: InstanceType,
 }
@@ -16,13 +16,13 @@ impl ViewTemplate for ExemplarChooser {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
-        // let on_change = self.on_change;
-        // let on_click = cx.create_callback(move |key: In<String>, world: &mut World| {
-        //     world.run_callback(on_change, key.clone());
-        // });
+        let on_change = self.on_change;
+        let on_click = cx.create_callback(move |key: In<AssetId<Exemplar>>, world: &mut World| {
+            world.run_callback(on_change, Some(*key));
+        });
         let asset_server = cx.use_resource_untracked::<AssetServer>();
         let exemplars = cx.use_resource_untracked::<Assets<Exemplar>>();
-        // let selected = self.selected.clone();
+        let selected = self.selected;
 
         let mut exemplars = exemplars
             .iter()
@@ -36,7 +36,7 @@ impl ViewTemplate for ExemplarChooser {
                         Some(ref name) => name.clone(),
                         None => path.label().unwrap_or("default").to_owned(),
                     },
-                    selected: false,
+                    selected: Some(id) == selected,
                 }
             })
             .collect::<Vec<_>>();
@@ -45,15 +45,23 @@ impl ViewTemplate for ExemplarChooser {
 
         ListView::new()
             .style((style_list, self.style.clone()))
-            .children(For::each_cmp(
-                exemplars,
-                |a, b| a.id == b.id && a.selected == b.selected,
-                move |loc| {
-                    ListRow::new(loc.path.clone())
-                        .selected(loc.selected)
-                        .children(loc.name.clone())
-                    // .on_click(on_click)
-                },
+            .children((
+                ListRow::new(())
+                    .selected(self.selected.is_none())
+                    .children("(erase)")
+                    .on_click(cx.create_callback(move |_: In<()>, world: &mut World| {
+                        world.run_callback(on_change, None);
+                    })),
+                For::each_cmp(
+                    exemplars,
+                    |a, b| a.id == b.id && a.selected == b.selected,
+                    move |loc| {
+                        ListRow::new(loc.id)
+                            .selected(loc.selected)
+                            .children(loc.name.clone())
+                            .on_click(on_click)
+                    },
+                ),
             ))
     }
 }

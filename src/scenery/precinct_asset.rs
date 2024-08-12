@@ -51,6 +51,44 @@ pub struct PrecinctAsset {
     // layers?: Record<string, ILayerData>,
 }
 
+impl PrecinctAsset {
+    pub fn find_tier(&self, level: i32) -> Option<&TierSer> {
+        self.tiers.iter().find(|t| t.level == level)
+    }
+
+    pub fn find_tier_mut(&mut self, level: i32) -> Option<&mut TierSer> {
+        self.tiers.iter_mut().find(|t| t.level == level)
+    }
+
+    pub fn add_tier(&mut self, level: i32) -> &mut TierSer {
+        let index = self
+            .tiers
+            .iter()
+            .position(|t| t.level >= level)
+            .unwrap_or(self.tiers.len());
+        self.tiers.insert(
+            index,
+            TierSer {
+                level,
+                pfloors: Vec::new(),
+                cutaways: None,
+            },
+        );
+        &mut self.tiers[index]
+    }
+
+    pub fn floor_type_index(&self, floor_type: &str) -> Option<usize> {
+        self.floor_types.iter().position(|ft| ft == floor_type)
+    }
+
+    pub fn add_floor_type(&mut self, floor_type: String) -> usize {
+        assert!(!self.floor_types.iter().any(|ft| ft == &floor_type));
+        let index = self.floor_types.len();
+        self.floor_types.push(floor_type);
+        index
+    }
+}
+
 /** Serialized schema for a tier */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TierSer {

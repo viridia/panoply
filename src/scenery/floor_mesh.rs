@@ -29,6 +29,7 @@ pub struct FloorMeshResult {
 pub struct FloorMeshParams {
     level: i32,
     poly: Vec<Vec2>,
+    holes: Vec<Vec<Vec2>>,
     has_texture: bool,
     sides: bool,
     raise: f32,
@@ -83,6 +84,7 @@ pub fn gen_floor_meshes(
     for (entity, floor_region, floor_geometry) in query.iter_mut() {
         let level = floor_region.level;
         let mut poly = floor_region.poly.clone();
+        let holes = floor_region.holes.clone();
         if poly.last() == poly.first() {
             poly.pop();
         }
@@ -94,6 +96,7 @@ pub fn gen_floor_meshes(
             compute_floor_mesh(FloorMeshParams {
                 level,
                 poly,
+                holes,
                 has_texture: true,
                 sides: geometry.sides.unwrap_or(true),
                 raise: geometry.raise.unwrap_or(0.),
@@ -184,12 +187,23 @@ pub(crate) fn rebuild_floor_materials(
 }
 
 fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
-    let vertices: Vec<f64> = params
-        .poly
-        .iter()
-        .flat_map(|v| vec![v.x as f64, v.y as f64])
-        .collect();
-    let Ok(triangles) = earcutr::earcut(&vertices, &[], 2) else {
+    let mut vertices: Vec<f64> = Vec::with_capacity(
+        params.poly.len() * 2 + params.holes.iter().map(|p| p.len()).sum::<usize>() * 2,
+    );
+    let mut holes: Vec<usize> = Vec::with_capacity(params.holes.len());
+    // Add the main polygon to vertices
+    vertices.extend(
+        params
+            .poly
+            .iter()
+            .flat_map(|v| vec![v.x as f64, v.y as f64]),
+    );
+    // Now add the holes
+    for hole in params.holes.iter() {
+        holes.push(vertices.len() / 2);
+        vertices.extend(hole.iter().flat_map(|v| vec![v.x as f64, v.y as f64]));
+    }
+    let Ok(triangles) = earcutr::earcut(&vertices, &holes, 2) else {
         return None;
     };
     if triangles.len() < 2 {
@@ -208,7 +222,7 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
 fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh {
     let y_min = params.level as f32 - FLOOR_THICKNESS + TIER_OFFSET;
     let y_max = params.level as f32 + params.raise + TIER_OFFSET;
-    let count = params.poly.len();
+    let count = params.poly.len() + params.holes.iter().map(|p| p.len()).sum::<usize>();
     let top_vertex_count = count;
     let vertex_count = top_vertex_count * 2;
 
@@ -226,6 +240,16 @@ fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh
             tex_coords.push([pt.x, pt.y]);
         }
     }
+    for hole in params.holes.iter() {
+        for v in hole.iter() {
+            position.push([v.x, y_max, v.y]);
+            normal.push([0., 1., 0.]);
+
+            if params.has_texture {
+                tex_coords.push([v.x, v.y]);
+            }
+        }
+    }
 
     // Bottom surface - needed for shadows
     for pt in params.poly.iter() {
@@ -234,6 +258,17 @@ fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh
 
         if params.has_texture {
             tex_coords.push([pt.x, pt.y]);
+        }
+    }
+
+    for hole in params.holes.iter() {
+        for v in hole.iter() {
+            position.push([v.x, y_min, v.y]);
+            normal.push([0., -1., 0.]);
+
+            if params.has_texture {
+                tex_coords.push([v.x, v.y]);
+            }
         }
     }
 
@@ -275,6 +310,36 @@ fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh
 
             last = *v;
         }
+
+        for hole in params.holes.iter() {
+            let mut last: Vec2 = *hole.last().unwrap();
+            for v in hole {
+                position.push([last.x, y_max, last.y]);
+                position.push([last.x, y_min, last.y]);
+                position.push([v.x, y_max, v.y]);
+                position.push([v.x, y_min, v.y]);
+
+                indices.extend([next_index, next_index + 2, next_index + 1]);
+                indices.extend([next_index + 1, next_index + 2, next_index + 3]);
+                next_index += 4;
+
+                let mut normal2 = Vec2::new(v.y - last.y, last.x - v.x).normalize();
+                normal.push([normal2.x, 0., normal2.y]);
+                normal.push([normal2.x, 0., normal2.y]);
+                normal.push([normal2.x, 0., normal2.y]);
+                normal.push([normal2.x, 0., normal2.y]);
+
+                normal2 *= 0.1;
+                if params.has_texture {
+                    tex_coords.push([last.x, last.y]);
+                    tex_coords.push([last.x + normal2.x, last.y + normal2.y]);
+                    tex_coords.push([v.x, v.y]);
+                    tex_coords.push([v.x + normal2.x, v.y + normal2.y]);
+                }
+
+                last = *v;
+            }
+        }
     }
 
     let mut mesh = Mesh::new(
@@ -308,15 +373,65 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
     for i in triangles.iter() {
         indices.push(*i as u32);
     }
+    for hole in params.holes.iter() {
+        for v in hole.iter() {
+            position.push([v.x, y_min, v.y]);
+            normal.push([0., -1., 0.]);
+        }
+    }
 
     // Sides and corners
-    let last_vtx2 = params.poly[count - 2];
-    let mut last_vtx = params.poly[count - 1];
+    compute_outline_sides(
+        &params.poly,
+        0,
+        y_max,
+        y_min,
+        &mut position,
+        &mut normal,
+        &mut indices,
+    );
+
+    let mut poly_base = count;
+    for hole in params.holes.iter() {
+        compute_outline_sides(
+            hole,
+            poly_base as u32,
+            y_max,
+            y_min,
+            &mut position,
+            &mut normal,
+            &mut indices,
+        );
+        poly_base += hole.len();
+    }
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::RENDER_WORLD,
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh.compute_aabb();
+    mesh
+}
+
+fn compute_outline_sides(
+    path: &[Vec2],
+    path_base: u32,
+    y_max: f32,
+    y_min: f32,
+    position: &mut Vec<[f32; 3]>,
+    normal: &mut Vec<[f32; 3]>,
+    indices: &mut Vec<u32>,
+) {
+    let count = path.len();
+    let last_vtx2 = path[count - 2];
+    let mut last_vtx = path[count - 1];
+    let mut v_dir2 = (last_vtx - last_vtx2).normalize();
     let base_index = position.len() as u32;
     let mut polygon_index = base_index;
-
-    let mut v_dir2 = (last_vtx - last_vtx2).normalize();
-    for (i, vtx) in params.poly.iter().enumerate() {
+    for (i, vtx) in path.iter().enumerate() {
         let Vec2 { x: lx, y: lz } = last_vtx;
         let v_dir = (*vtx - last_vtx).normalize();
 
@@ -353,9 +468,9 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
 
             // Bevel between side and bottom.
             let bi: u32 = if i > 0 { i - 1 } else { count - 1 } as u32;
-            indices.extend([polygon_index + 1, polygon_index + 3, bi]);
-            indices.extend([next_index + 1, i as u32, bi]);
-            indices.extend([polygon_index + 3, next_index + 1, bi]);
+            indices.extend([polygon_index + 1, polygon_index + 3, path_base + bi]);
+            indices.extend([next_index + 1, i as u32, path_base + bi]);
+            indices.extend([polygon_index + 3, next_index + 1, path_base + bi]);
 
             polygon_index = next_index;
         } else {
@@ -377,8 +492,8 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
 
             // Bevel between side and bottom.
             let bi = if i > 0 { i - 1 } else { count - 1 } as u32;
-            indices.extend([next_index + 1, i as u32, bi]);
-            indices.extend([polygon_index + 1, next_index + 1, bi]);
+            indices.extend([next_index + 1, path_base + i as u32, path_base + bi]);
+            indices.extend([polygon_index + 1, next_index + 1, path_base + bi]);
 
             polygon_index = next_index;
         }
@@ -386,14 +501,4 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
         last_vtx = *vtx;
         v_dir2 = v_dir;
     }
-
-    let mut mesh = Mesh::new(
-        PrimitiveTopology::TriangleList,
-        RenderAssetUsages::RENDER_WORLD,
-    );
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
-    mesh.insert_indices(Indices::U32(indices));
-    mesh.compute_aabb();
-    mesh
 }

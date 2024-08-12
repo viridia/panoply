@@ -82,8 +82,9 @@ impl Precinct {
                             floor_region.exemplar = exemplar.clone();
                             changed = true;
                         }
-                        if floor_region.poly != floor.poly {
+                        if floor_region.poly != floor.poly || floor_region.holes != floor.holes {
                             floor_region.poly.clone_from(&floor.poly);
+                            floor_region.holes.clone_from(&floor.holes);
                             changed = true;
                         }
 
@@ -97,6 +98,7 @@ impl Precinct {
                                 level: tier.level,
                                 exemplar,
                                 poly: floor.poly.clone(),
+                                holes: floor.holes.clone(),
                             },
                             RebuildFloorAspects,
                         ));
@@ -109,6 +111,7 @@ impl Precinct {
                                 level: tier.level,
                                 exemplar,
                                 poly: floor.poly.clone(),
+                                holes: floor.holes.clone(),
                             },
                             self.render_layer.clone(),
                             RebuildFloorAspects,

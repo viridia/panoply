@@ -5,6 +5,7 @@ pub enum PickTarget {
     #[default]
     None,
     Parcel(Entity),
+    PickPlane,
     Scenery,
     Actor,
     Fixture,

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_mod_picking::{focus::HoverMap, prelude::PointerId};
+use bevy_mod_picking::focus::HoverMap;
 
 use crate::view::picking::PickEvent;
 

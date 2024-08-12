@@ -1,4 +1,5 @@
 use std::fs;
+use thiserror::Error;
 
 use bevy::{
     prelude::*,
@@ -42,17 +43,16 @@ pub fn load_preferences(world: &mut World) {
     };
 
     let registry = world.get_resource::<AppTypeRegistry>().unwrap().clone();
-    let registry_read = registry.read();
     let resources = world
         .iter_resources()
         .map(|(res, _)| (res.type_id(), res.id()))
         .collect::<Vec<_>>();
     for (res_type_id, res_id) in resources {
         if let Some(tid) = res_type_id {
-            if let Some(treg) = registry_read.get(tid) {
+            if let Some(treg) = registry.read().get(tid) {
                 let type_name = treg.type_info().type_path();
                 match treg.type_info() {
-                    bevy::reflect::TypeInfo::Struct(stty) => {
+                    TypeInfo::Struct(stty) => {
                         if let Some(_group) = stty.custom_attributes().get::<PreferencesGroup>() {
                             // let group = table.get(group.0).unwrap().as_table().unwrap();
                             warn!("Preferences: Structs not supported yet: {}", type_name);
@@ -61,7 +61,8 @@ pub fn load_preferences(world: &mut World) {
                             warn!("Preferences: Structs not supported yet: {}", type_name);
                         }
                     }
-                    bevy::reflect::TypeInfo::TupleStruct(tsty) => {
+
+                    TypeInfo::TupleStruct(tsty) => {
                         let group_attr = tsty.custom_attributes().get::<PreferencesGroup>();
                         let key_attr = tsty.custom_attributes().get::<PreferencesKey>();
                         let mut ptr = world.get_resource_mut_by_id(res_id).unwrap();
@@ -72,7 +73,13 @@ pub fn load_preferences(world: &mut World) {
                             panic!("Expected TupleStruct");
                         };
                         if group_attr.is_some() || key_attr.is_some() {
-                            maybe_load_tuple_struct(tuple_struct, group_attr, key_attr, &table);
+                            maybe_load_tuple_struct(
+                                &registry,
+                                tuple_struct,
+                                group_attr,
+                                key_attr,
+                                &table,
+                            );
                         } else if tsty
                             .type_path()
                             .starts_with("bevy_state::state::resources::NextState<")
@@ -92,7 +99,8 @@ pub fn load_preferences(world: &mut World) {
                             }
                         }
                     }
-                    bevy::reflect::TypeInfo::Enum(ety) => {
+
+                    TypeInfo::Enum(ety) => {
                         if let Some(group) = ety.custom_attributes().get::<PreferencesGroup>() {
                             let _group = table.get(group.0).unwrap().as_table().unwrap();
                             warn!("Preferences: Enums not supported yet: {}", type_name);
@@ -108,7 +116,8 @@ pub fn load_preferences(world: &mut World) {
                             };
                             let state_ty = pending_ty.field_at(0).unwrap();
                             let state_type_id = state_ty.type_id();
-                            let Some(state_type_reg) = registry_read.get(state_type_id) else {
+                            let rr = registry.read();
+                            let Some(state_type_reg) = rr.get(state_type_id) else {
                                 warn!(
                                     "Expected state type registration for {}",
                                     state_ty.type_path()
@@ -180,6 +189,7 @@ pub fn load_preferences(world: &mut World) {
 }
 
 fn maybe_load_tuple_struct(
+    registry: &AppTypeRegistry,
     tuple_struct: &mut dyn TupleStruct,
     group_attr: Option<&PreferencesGroup>,
     key_attr: Option<&PreferencesKey>,
@@ -194,17 +204,22 @@ fn maybe_load_tuple_struct(
         };
 
         if let Some(key) = key_attr {
-            load_tuple_struct(tuple_struct, key.0, group);
+            load_tuple_struct(registry, tuple_struct, key.0, group);
         } else {
             // TODO: Need to derive key name from tuple struct name
             todo!();
         }
     } else if let Some(key) = key_attr {
-        load_tuple_struct(tuple_struct, key.0, table);
+        load_tuple_struct(registry, tuple_struct, key.0, table);
     }
 }
 
-fn load_tuple_struct(tuple_struct: &mut dyn TupleStruct, key: &'static str, table: &toml::Table) {
+fn load_tuple_struct(
+    registry: &AppTypeRegistry,
+    tuple_struct: &mut dyn TupleStruct,
+    key: &'static str,
+    table: &toml::Table,
+) {
     if tuple_struct.field_len() == 1 {
         let field_mut = tuple_struct.field_mut(0).unwrap();
         match field_mut.get_represented_type_info().unwrap() {
@@ -214,19 +229,39 @@ fn load_tuple_struct(tuple_struct: &mut dyn TupleStruct, key: &'static str, tabl
             TypeInfo::List(_) => todo!(),
             TypeInfo::Array(_) => todo!(),
             TypeInfo::Map(_) => todo!(),
-            TypeInfo::Enum(_) => todo!(),
-            TypeInfo::Value(val) => match table.get(key) {
-                Some(toml::Value::Float(float_val)) => {
-                    if let Some(float_field) = field_mut.downcast_mut::<f32>() {
-                        float_field.apply((*float_val as f32).as_reflect());
+            TypeInfo::Enum(en) => {
+                if en.type_path().starts_with("core::option::Option") {
+                    if table.contains_key(key) {
+                        let VariantInfo::Tuple(variant_info) = en.variant("Some").unwrap() else {
+                            panic!("Expected Tuple variant for Some");
+                        };
+                        let some_field = variant_info.field_at(0).unwrap();
+                        let rr = registry.read();
+                        let field_type = rr.get(some_field.type_id()).unwrap();
+                        let mut tuple = DynamicTuple::default();
+                        tuple.set_represented_type(Some(field_type.type_info()));
+                        drop(rr);
+                        decode_value(tuple.as_reflect_mut(), table.get(key).unwrap());
+                        let value = DynamicEnum::new("Some", DynamicVariant::Tuple(tuple));
+                        field_mut.apply(value.as_reflect());
                     } else {
-                        warn!("Preferences: Unsupported type: {:?}", val);
+                        // Key not found, set to None
+                        field_mut
+                            .apply(DynamicEnum::new("None", DynamicVariant::Unit).as_reflect());
+                    };
+                } else {
+                    warn!("Preferences: Unsupported enum type: {:?}", en);
+                }
+            }
+            TypeInfo::Value(_) => {
+                if let Some(value) = table.get(key) {
+                    if let Ok(value) =
+                        decode_value_boxed(field_mut.get_represented_type_info().unwrap(), value)
+                    {
+                        field_mut.apply(value.as_reflect())
                     }
                 }
-                _ => {
-                    warn!("Preferences: unsupported type: {}", key);
-                }
-            },
+            }
         }
     }
 }
@@ -274,4 +309,108 @@ fn load_enum(enum_ty: &EnumInfo, enum_mut: &mut dyn Enum, key: &'static str, tab
             warn!("Preferences: unsupported type: {}", key);
         }
     };
+}
+
+fn decode_value(field: &mut dyn Reflect, value: &toml::Value) {
+    match field.get_represented_type_info().unwrap() {
+        TypeInfo::Struct(_) => todo!("Implement struct deserialization"),
+        TypeInfo::TupleStruct(_) => todo!("Implement tuplestruct deserialization"),
+        TypeInfo::Tuple(_) => todo!("Implement tuple deserialization"),
+        TypeInfo::List(_) => todo!("Implement list deserialization"),
+        TypeInfo::Array(_) => todo!("Implement array deserialization"),
+        TypeInfo::Map(_) => todo!("Implement map deserialization"),
+        TypeInfo::Enum(_) => todo!("Implement enum deserialization"),
+        TypeInfo::Value(val_ty) => match value {
+            toml::Value::Float(float_val) => {
+                if let Some(float_field) = field.downcast_mut::<f32>() {
+                    float_field.apply((*float_val as f32).as_reflect());
+                } else if let Some(float_field) = field.downcast_mut::<f64>() {
+                    float_field.apply((*float_val).as_reflect());
+                } else {
+                    warn!("Preferences: Unsupported type: {:?}", val_ty);
+                }
+            }
+            toml::Value::String(str_val) => {
+                if let Some(str_field) = field.downcast_mut::<String>() {
+                    str_field.apply(str_val.as_reflect());
+                } else {
+                    warn!("Preferences: Unsupported type: {:?}", val_ty);
+                }
+            }
+            _ => {
+                warn!("Preferences: unsupported type: {}", val_ty.type_path());
+            }
+        },
+    };
+}
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum DecodeTomlError {
+    #[error("Unsupported type: {0}")]
+    UnsupportedConversion(&'static str),
+    #[error("Unsupported source type: {0}")]
+    UnsupportedSource(&'static str),
+}
+
+fn decode_value_boxed(
+    ty: &TypeInfo,
+    value: &toml::Value,
+) -> Result<Box<dyn Reflect>, DecodeTomlError> {
+    match value {
+        toml::Value::Float(float_val) => {
+            if ty.is::<f32>() {
+                Ok((*float_val as f32).clone_value())
+            } else if ty.is::<f64>() {
+                Ok((*float_val).clone_value())
+            } else {
+                warn!("Preferences: Unsupported conversion: {:?}", ty);
+                Err(DecodeTomlError::UnsupportedConversion(ty.type_path()))
+            }
+        }
+
+        toml::Value::Integer(int_val) => {
+            if ty.is::<f32>() {
+                Ok((*int_val as f32).clone_value())
+            } else if ty.is::<f64>() {
+                Ok((*int_val).clone_value())
+            } else if ty.is::<i8>() {
+                Ok(((*int_val).clamp(i8::MIN as i64, i8::MAX as i64) as i8).clone_value())
+            } else if ty.is::<i16>() {
+                Ok(((*int_val).clamp(i16::MIN as i64, i16::MAX as i64) as i16).clone_value())
+            } else if ty.is::<i32>() {
+                Ok(((*int_val).clamp(i32::MIN as i64, i32::MAX as i64) as i32).clone_value())
+            } else if ty.is::<i64>() {
+                Ok((*int_val).clone_value())
+            } else if ty.is::<u8>() {
+                Ok(((*int_val).clamp(u8::MIN as i64, u8::MAX as i64) as u8).clone_value())
+            } else if ty.is::<u16>() {
+                Ok(((*int_val).clamp(u16::MIN as i64, u16::MAX as i64) as u16).clone_value())
+            } else if ty.is::<u32>() {
+                Ok(((*int_val).clamp(u32::MIN as i64, u32::MAX as i64) as u32).clone_value())
+            } else if ty.is::<u64>() {
+                Ok(((*int_val).max(0) as u64).clone_value())
+            } else if ty.is::<usize>() {
+                Ok((*int_val as usize).clone_value())
+            } else {
+                warn!("Preferences: Unsupported conversion: {:?}", ty);
+                Err(DecodeTomlError::UnsupportedConversion(ty.type_path()))
+            }
+        }
+
+        toml::Value::String(str_val) => {
+            if ty.is::<String>() {
+                Ok(str_val.clone_value())
+            } else {
+                warn!("Preferences: Unsupported conversion: {:?}", ty);
+                Err(DecodeTomlError::UnsupportedConversion(ty.type_path()))
+            }
+        }
+
+        _ => {
+            warn!("Preferences: unsupported source type: {}", ty.type_path());
+            Err(DecodeTomlError::UnsupportedSource(ty.type_path()))
+            // Box::new(() as Reflect)
+        }
+    }
 }

@@ -7,8 +7,69 @@ use bevy::{prelude::*, ui};
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
+use panoply_exemplar::Exemplar;
 
-use super::controls::ExemplarChooser;
+use super::{controls::ExemplarChooser, tool_floor_create, tool_floor_edit, tool_wall_create};
+
+pub(crate) struct EditSceneryPlugin;
+
+impl Plugin for EditSceneryPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_state(SceneryTool::default())
+            .insert_state(FloorTool::default())
+            .insert_state(WallSnap::default())
+            .add_computed_state::<SceneryOverlay>()
+            .enable_state_scoped_entities::<SceneryTool>()
+            .enable_state_scoped_entities::<FloorTool>()
+            .enable_state_scoped_entities::<WallSnap>()
+            .init_resource::<SelectedPrecinct>()
+            .init_resource::<SelectedTier>()
+            .init_resource::<SceneryDragState>()
+            .init_resource::<FloorType>()
+            .init_resource::<FloorFilter>()
+            .register_type::<State<SceneryTool>>()
+            .register_type::<NextState<SceneryTool>>()
+            .register_type::<State<FloorTool>>()
+            .register_type::<NextState<FloorTool>>()
+            .register_type::<State<WallSnap>>()
+            .register_type::<NextState<WallSnap>>()
+            .register_type::<FloorType>()
+            .register_type::<FloorFilter>()
+            .register_type::<SelectedTier>()
+            .add_systems(
+                OnEnter(SceneryOverlay::FloorCreate),
+                tool_floor_create::enter,
+            )
+            .add_systems(OnExit(SceneryOverlay::FloorCreate), tool_floor_create::exit)
+            .add_systems(OnEnter(SceneryOverlay::FloorDraw), tool_floor_edit::enter)
+            .add_systems(OnExit(SceneryOverlay::FloorDraw), tool_floor_edit::exit)
+            .add_systems(OnEnter(SceneryOverlay::PlaceWall), tool_wall_create::enter)
+            .add_systems(OnExit(SceneryOverlay::PlaceWall), tool_wall_create::exit)
+            .add_systems(
+                Update,
+                (
+                    tool_floor_create::hover.run_if(in_state(SceneryOverlay::FloorCreate)),
+                    tool_floor_edit::hover.run_if(in_state(SceneryOverlay::FloorDraw)),
+                    tool_wall_create::hover.run_if(in_state(SceneryOverlay::PlaceWall)),
+                ),
+            );
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct SelectedPrecinct(pub Option<Entity>);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_tier"))]
+pub struct SelectedTier(pub usize);
+
+#[derive(Resource, Default, Reflect)]
+// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_floor_type"))]
+pub struct FloorType(pub Option<AssetId<Exemplar>>);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("floor_name_filter"))]
+pub struct FloorFilter(pub String);
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
@@ -55,6 +116,33 @@ pub enum SceneryOverlay {
     DrawTerrainFx,
     Interact,
     RectSelect,
+}
+
+// #[derive(Resource, Default, Clone, Copy, PartialEq)]
+// pub enum SceneryDragShape {
+//     /// When no cursor is shown
+//     #[default]
+//     None,
+
+//     /// When cursor is shown as a point.
+//     Point,
+
+//     /// When cursor is shown as a flat rectangle.
+//     FlatRect,
+
+//     /// When cursor is shown as a which conforms to the terrain.
+//     DecalRect,
+// }
+
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct SceneryDragState {
+    pub(crate) dragging: bool,
+    // pub(crate) drag_shape: DragShape,
+    pub(crate) precinct: Option<Entity>,
+    pub(crate) anchor_pos: Vec2,
+    pub(crate) cursor_pos: Vec2,
+    pub(crate) anchor_height: i32,
+    pub(crate) floor_outline: Vec<Vec2>,
 }
 
 impl ComputedStates for SceneryOverlay {
@@ -193,10 +281,10 @@ impl ViewTemplate for EditModeSceneryControls {
                         .corners(RoundedCorners::Left)
                         .selected(st == SceneryTool::FloorDraw),
                     ToolIconButton::new("editor/icons/rotate-ccw.png")
-                        .size(Vec2::new(32., 24.))
+                        .size(Vec2::new(24., 16.))
                         .tint(false),
                     ToolIconButton::new("editor/icons/rotate-cw.png")
-                        .size(Vec2::new(32., 24.))
+                        .size(Vec2::new(24., 16.))
                         .tint(false)
                         .corners(RoundedCorners::Right),
                 )),
@@ -208,46 +296,14 @@ impl ViewTemplate for EditModeSceneryControls {
                 .children((Switch::new(st)
                     .case(
                         SceneryTool::FloorDraw,
-                        (
-                            FloorToolSelector,
-                            ExemplarChooser {
-                                selected: None,
-                                instance_type: FLOOR_TYPE,
-                                filter: "".to_string(),
-                                style: style_exemplar_chooser.into_handle(),
-                            },
-                        ),
+                        (FloorToolSelector, FloorExemplarChooser),
                     )
                     .case(
                         SceneryTool::WallDraw,
-                        (
-                            WallSnapSelector,
-                            ExemplarChooser {
-                                selected: None,
-                                instance_type: WALL_TYPE,
-                                filter: "".to_string(),
-                                style: style_exemplar_chooser.into_handle(),
-                            },
-                        ),
+                        (WallSnapSelector, WallExemplarChooser),
                     )
-                    .case(
-                        SceneryTool::FixtureDraw,
-                        ExemplarChooser {
-                            selected: None,
-                            instance_type: FIXTURE_TYPE,
-                            filter: "".to_string(),
-                            style: style_exemplar_chooser.into_handle(),
-                        },
-                    )
-                    .case(
-                        SceneryTool::ActorPlacement,
-                        ExemplarChooser {
-                            selected: None,
-                            instance_type: ACTOR_TYPE,
-                            filter: "".to_string(),
-                            style: style_exemplar_chooser.into_handle(),
-                        },
-                    )
+                    .case(SceneryTool::FixtureDraw, FixtureExemplarChooser)
+                    .case(SceneryTool::ActorPlacement, ActorExemplarChooser)
                     .fallback(()),)),
         ))
     }
@@ -392,5 +448,101 @@ impl ViewTemplate for WallSnapSelector {
                         mode.set(WallSnap::Quarter);
                     })),
             ))
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct FloorExemplarChooser;
+
+impl ViewTemplate for FloorExemplarChooser {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let on_change = cx.create_callback(
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+                selected.0 = *key;
+            },
+        );
+        let selected = cx.use_resource::<FloorType>();
+        let filter = cx.use_resource::<FloorFilter>();
+        ExemplarChooser {
+            selected: selected.0,
+            instance_type: FLOOR_TYPE,
+            filter: filter.0.clone(),
+            style: style_exemplar_chooser.into_handle(),
+            on_change,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct WallExemplarChooser;
+
+impl ViewTemplate for WallExemplarChooser {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let on_change = cx.create_callback(
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+                selected.0 = *key;
+            },
+        );
+        let selected = cx.use_resource::<FloorType>();
+        let filter = cx.use_resource::<FloorFilter>();
+        ExemplarChooser {
+            selected: selected.0,
+            instance_type: WALL_TYPE,
+            filter: filter.0.clone(),
+            style: style_exemplar_chooser.into_handle(),
+            on_change,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct FixtureExemplarChooser;
+
+impl ViewTemplate for FixtureExemplarChooser {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let on_change = cx.create_callback(
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+                selected.0 = *key;
+            },
+        );
+        let selected = cx.use_resource::<FloorType>();
+        let filter = cx.use_resource::<FloorFilter>();
+        ExemplarChooser {
+            selected: selected.0,
+            instance_type: FIXTURE_TYPE,
+            filter: filter.0.clone(),
+            style: style_exemplar_chooser.into_handle(),
+            on_change,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub(crate) struct ActorExemplarChooser;
+
+impl ViewTemplate for ActorExemplarChooser {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let on_change = cx.create_callback(
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+                selected.0 = *key;
+            },
+        );
+        let selected = cx.use_resource::<FloorType>();
+        let filter = cx.use_resource::<FloorFilter>();
+        ExemplarChooser {
+            selected: selected.0,
+            instance_type: ACTOR_TYPE,
+            filter: filter.0.clone(),
+            style: style_exemplar_chooser.into_handle(),
+            on_change,
+        }
     }
 }

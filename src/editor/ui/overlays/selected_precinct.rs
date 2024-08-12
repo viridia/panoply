@@ -8,7 +8,7 @@ use bevy_quill::{Cond, Cx, View, ViewTemplate};
 use bevy_quill_overlays::{LinesBuilder, Overlay, ShapeOrientation};
 
 use crate::{
-    editor::SelectedPrecinct,
+    editor::ui::mode_scenery::SelectedPrecinct,
     scenery::{precinct::Precinct, PRECINCT_SIZE, PRECINCT_SIZE_F},
     world::Realm,
 };

@@ -48,6 +48,7 @@ thiserror = "1.0.57"
 panoply_exemplar = { workspace = true }
 base64 = "0.22.0"
 regex = "1.10.6"
+i_overlay = "1.4.2"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

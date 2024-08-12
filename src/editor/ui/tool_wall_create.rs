@@ -25,11 +25,10 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<PrecinctOverl
     q_overlays.iter().for_each(|e| commands.entity(e).despawn());
 }
 
-pub fn hover(
-    mut commands: Commands,
+pub fn hover(// mut commands: Commands,
     // r_selected_parcel: Res<SelectedParcel>,
     // mut r_drag_state: ResMut<TerrainDragState>,
-    r_hover_map: Res<HoverMap>,
+    // r_hover_map: Res<HoverMap>,
     // r_tool: Res<State<TerrainTool>>,
     // r_contours_handle: Res<TerrainContoursHandle>,
     // r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,

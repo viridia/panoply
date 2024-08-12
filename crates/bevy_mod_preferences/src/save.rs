@@ -24,6 +24,7 @@ impl Command for SavePreferences {
             changed.0 = false;
             let prefs_dir = world.get_resource::<PreferencesDir>().unwrap();
             let registry = world.get_resource::<AppTypeRegistry>().unwrap();
+            // let asset_server = world.get_resource::<AssetServer>();
             let registry_read = registry.read();
             let prefs_file_new = prefs_dir.0.join("prefs.toml.new");
             let prefs_file = prefs_dir.0.join("prefs.toml");
@@ -152,21 +153,15 @@ fn maybe_save_tuple_struct(
 fn save_tuple_struct(tuple_struct: &dyn TupleStruct, key: &'static str, table: &mut toml::Table) {
     if tuple_struct.field_len() == 1 {
         let field_reflect = tuple_struct.field(0).unwrap();
-        match field_reflect.get_represented_type_info().unwrap() {
-            TypeInfo::Struct(_) => todo!(),
-            TypeInfo::TupleStruct(_) => todo!(),
-            TypeInfo::Tuple(_) => todo!(),
-            TypeInfo::List(_) => todo!(),
-            TypeInfo::Array(_) => todo!(),
-            TypeInfo::Map(_) => todo!(),
-            TypeInfo::Enum(_) => todo!(),
-            TypeInfo::Value(val) => {
-                if let Some(f) = field_reflect.downcast_ref::<f32>() {
-                    let v = toml::Value::Float(*f as f64);
-                    table.insert(key.to_string(), v);
-                } else {
-                    warn!("Preferences: Unsupported type: {:?}", val);
-                }
+        match field_reflect.reflect_ref() {
+            ReflectRef::Struct(_) => todo!(),
+            ReflectRef::TupleStruct(_) => todo!(),
+            ReflectRef::Tuple(_) => todo!(),
+            ReflectRef::List(_) => todo!(),
+            ReflectRef::Array(_) => todo!(),
+            ReflectRef::Map(_) => todo!(),
+            ReflectRef::Enum(_) | ReflectRef::Value(_) => {
+                save_value(field_reflect, key, table);
             }
         }
     }
@@ -198,4 +193,76 @@ fn save_enum(enum_ref: &dyn Enum, key: &'static str, table: &mut toml::Table) {
     }
     let v = toml::Value::String(enum_ref.variant_name().to_string());
     table.insert(key.to_string(), v);
+}
+
+fn save_value(value: &dyn Reflect, key: &'static str, table: &mut toml::Table) {
+    match value.reflect_ref() {
+        ReflectRef::Struct(_) => todo!(),
+        ReflectRef::TupleStruct(_) => todo!(),
+        ReflectRef::Tuple(_) => todo!(),
+        ReflectRef::List(_) => todo!(),
+        ReflectRef::Array(_) => todo!(),
+        ReflectRef::Map(_) => todo!(),
+        ReflectRef::Enum(en) => {
+            let type_path = value.get_represented_type_info().unwrap().type_path();
+            if type_path.starts_with("core::option::Option") {
+                // None values just leave out the key.
+                if en.variant_name() == "Some" {
+                    let some_value = en.field_at(0).unwrap();
+                    save_value(some_value, key, table);
+                }
+            } else {
+                warn!("Preferences: Unsupported enum type: {:?}", type_path);
+            }
+        }
+        ReflectRef::Value(val) => {
+            if let Some(f) = value.downcast_ref::<f32>() {
+                let v = toml::Value::Float(*f as f64);
+                table.insert(key.to_string(), v);
+            } else if let Some(f) = value.downcast_ref::<f64>() {
+                let v = toml::Value::Float(*f);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<i8>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<i16>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<i32>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<i64>() {
+                let v = toml::Value::Integer(*i);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<u8>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<u16>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<u32>() {
+                let v = toml::Value::Integer(*i as i64);
+                table.insert(key.to_string(), v);
+            } else if let Some(i) = value.downcast_ref::<u64>() {
+                if *i <= i64::MAX as u64 {
+                    let v = toml::Value::Integer(*i as i64);
+                    table.insert(key.to_string(), v);
+                } else {
+                    warn!("Preferences: u64 value too large: {}", i);
+                }
+            } else if let Some(i) = value.downcast_ref::<usize>() {
+                if *i <= i64::MAX as usize {
+                    let v = toml::Value::Integer(*i as i64);
+                    table.insert(key.to_string(), v);
+                } else {
+                    warn!("Preferences: usize value too large: {}", i);
+                }
+            } else if let Some(s) = value.downcast_ref::<String>() {
+                let v = toml::Value::String(s.clone());
+                table.insert(key.to_string(), v);
+            } else {
+                warn!("Preferences: Unsupported type: {:?}", val);
+            }
+        }
+    }
 }

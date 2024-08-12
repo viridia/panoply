@@ -16,6 +16,9 @@ pub struct FloorRegion {
 
     /// Polygonal outline of floor
     pub poly: Vec<Vec2>,
+
+    /// Holes in the polygon.
+    pub holes: Vec<Vec<Vec2>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -30,11 +33,16 @@ pub struct FloorRegionSer {
         deserialize_with = "deserialize_poly"
     )]
     pub poly: Vec<Vec2>,
+
+    #[serde(default)]
+    pub holes: Vec<Vec<Vec2>>,
 }
 
 impl PartialEq for FloorRegionSer {
     fn eq(&self, other: &Self) -> bool {
-        self.surface_index == other.surface_index && self.poly == other.poly
+        self.surface_index == other.surface_index
+            && self.poly == other.poly
+            && self.holes == other.holes
     }
 }
 
