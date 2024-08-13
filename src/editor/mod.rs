@@ -1,12 +1,8 @@
 use bevy::prelude::*;
-use bevy_mod_preferences::{PreferencesGroup, PreferencesKey, SetPreferencesChanged};
+use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use exemplars::ExemplarsHandleResource;
 use lib::pick_plane::PlanePickBackend;
-use ui::{
-    mode_realm,
-    mode_scenery::{EditSceneryPlugin, FloorTool, SceneryTool, WallSnap},
-    tool_terrain_edit,
-};
+use ui::{mode_realm, mode_scenery::EditSceneryPlugin, tool_terrain_edit};
 
 use crate::terrain::terrain_groups::{
     TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
@@ -123,7 +119,6 @@ impl Plugin for EditorPlugin {
                 Update,
                 (
                     camera::camera_controller,
-                    watch_state_transitions,
                     (
                         renderers::create_terrain_thumbnails,
                         renderers::update_terrain_thumbnails,
@@ -134,24 +129,5 @@ impl Plugin for EditorPlugin {
                 ),
             )
             .add_plugins((EditSceneryPlugin, PlanePickBackend));
-    }
-}
-
-/// Mark preferences as changed whenever we change the editor mode.
-fn watch_state_transitions(
-    editor_mode: Res<State<EditorMode>>,
-    terrain_tool: Res<State<TerrainTool>>,
-    scenery_tool: Res<State<SceneryTool>>,
-    floor_tool: Res<State<FloorTool>>,
-    wall_snap: Res<State<WallSnap>>,
-    mut commands: Commands,
-) {
-    if editor_mode.is_changed()
-        || terrain_tool.is_changed()
-        || scenery_tool.is_changed()
-        || floor_tool.is_changed()
-        || wall_snap.is_changed()
-    {
-        commands.push(SetPreferencesChanged);
     }
 }

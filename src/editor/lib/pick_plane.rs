@@ -10,9 +10,12 @@ use bevy_mod_picking::{
     prelude::{ListenerMut, On},
 };
 
-use crate::view::{
-    picking::{PickAction, PickEvent, PickTarget},
-    Viewpoint,
+use crate::{
+    editor::ui::mode_scenery::SelectedTier,
+    view::{
+        picking::{PickAction, PickEvent, PickTarget},
+        Viewpoint,
+    },
 };
 
 /// Marks a camera that should be used in the backdrop picking backend.
@@ -82,6 +85,7 @@ pub fn update_hits(
     ray_map: Res<RayMap>,
     picking_cameras: Query<&Camera, With<PlanePick>>,
     picking_backdrop: Query<(Entity, &PlanePick), Without<Camera>>,
+    selected_tier: Res<SelectedTier>,
     mut output_events: EventWriter<PointerHits>,
 ) {
     let backdrop = picking_backdrop.get_single().unwrap();
@@ -91,8 +95,11 @@ pub fn update_hits(
             continue;
         };
 
+        println!("tier: {:?}", selected_tier.0);
         let plane = InfinitePlane3d::new(Vec3::new(0.0, 1.0, 0.0));
-        let Some(intersect) = ray.intersect_plane(Vec3::new(0.0, 0.0, 0.0), plane) else {
+        let Some(intersect) =
+            ray.intersect_plane(Vec3::new(0.0, selected_tier.0 as f32, 0.0), plane)
+        else {
             return;
         };
         // println!("hit: {:?}", intersect);
@@ -104,7 +111,7 @@ pub fn update_hits(
             Some(plane.normal.as_vec3()),
         );
         let picks = Vec::from([(backdrop.0, hit_data)]);
-        let order = camera.order as f32;
+        let order = (camera.order + 1) as f32;
         output_events.send(PointerHits::new(ray_id.pointer, picks, order));
     }
 }

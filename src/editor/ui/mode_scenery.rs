@@ -27,6 +27,12 @@ impl Plugin for EditSceneryPlugin {
             .init_resource::<SceneryDragState>()
             .init_resource::<FloorType>()
             .init_resource::<FloorFilter>()
+            .init_resource::<WallType>()
+            .init_resource::<WallFilter>()
+            .init_resource::<FixtureType>()
+            .init_resource::<FixtureFilter>()
+            .init_resource::<ActorType>()
+            .init_resource::<ActorFilter>()
             .register_type::<State<SceneryTool>>()
             .register_type::<NextState<SceneryTool>>()
             .register_type::<State<FloorTool>>()
@@ -35,6 +41,12 @@ impl Plugin for EditSceneryPlugin {
             .register_type::<NextState<WallSnap>>()
             .register_type::<FloorType>()
             .register_type::<FloorFilter>()
+            .register_type::<WallType>()
+            .register_type::<WallFilter>()
+            .register_type::<FixtureType>()
+            .register_type::<FixtureFilter>()
+            .register_type::<ActorType>()
+            .register_type::<ActorFilter>()
             .register_type::<SelectedTier>()
             .add_systems(
                 OnEnter(SceneryOverlay::FloorCreate),
@@ -61,15 +73,39 @@ pub struct SelectedPrecinct(pub Option<Entity>);
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_tier"))]
-pub struct SelectedTier(pub usize);
+pub struct SelectedTier(pub i16);
 
 #[derive(Resource, Default, Reflect)]
-// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_floor_type"))]
+// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("floor_type"))]
 pub struct FloorType(pub Option<AssetId<Exemplar>>);
 
 #[derive(Resource, Default, Reflect)]
-#[reflect(@PreferencesGroup("editor"), @PreferencesKey("floor_name_filter"))]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("floor_type_filter"))]
 pub struct FloorFilter(pub String);
+
+#[derive(Resource, Default, Reflect)]
+// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("wall_type"))]
+pub struct WallType(pub Option<AssetId<Exemplar>>);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("wall_type_filter"))]
+pub struct WallFilter(pub String);
+
+#[derive(Resource, Default, Reflect)]
+// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("fixture_type"))]
+pub struct FixtureType(pub Option<AssetId<Exemplar>>);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("fixture_type_filter"))]
+pub struct FixtureFilter(pub String);
+
+#[derive(Resource, Default, Reflect)]
+// #[reflect(@PreferencesGroup("editor"), @PreferencesKey("actor_type"))]
+pub struct ActorType(pub Option<AssetId<Exemplar>>);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("wall_type_filter"))]
+pub struct ActorFilter(pub String);
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("scenery_tool"))]
@@ -127,6 +163,7 @@ pub(crate) struct SceneryDragState {
     pub(crate) cursor_pos: Vec2,
     pub(crate) anchor_height: i32,
     pub(crate) floor_outline: Vec<Vec2>,
+    pub(crate) cursor_model: Option<Entity>,
 }
 
 impl ComputedStates for SceneryOverlay {
@@ -265,14 +302,24 @@ impl ViewTemplate for EditModeSceneryControls {
                         .corners(RoundedCorners::Left)
                         .selected(st == SceneryTool::FloorDraw),
                     ToolIconButton::new(
-                        "embedded://bevy_quill_obsidian/assets/icons/chevron_up.png",
-                    )
-                    .size(Vec2::new(16., 16.)),
-                    ToolIconButton::new(
                         "embedded://bevy_quill_obsidian/assets/icons/chevron_down.png",
                     )
                     .size(Vec2::new(16., 16.))
-                    .corners(RoundedCorners::Right),
+                    .on_click(cx.create_callback(
+                        |mut selected_tier: ResMut<SelectedTier>| {
+                            selected_tier.0 = (selected_tier.0 - 1).clamp(-8, 16);
+                        },
+                    )),
+                    ToolIconButton::new(
+                        "embedded://bevy_quill_obsidian/assets/icons/chevron_up.png",
+                    )
+                    .size(Vec2::new(16., 16.))
+                    .corners(RoundedCorners::Right)
+                    .on_click(cx.create_callback(
+                        |mut selected_tier: ResMut<SelectedTier>| {
+                            selected_tier.0 = (selected_tier.0 + 1).clamp(-8, 16);
+                        },
+                    )),
                 )),
             ListView::new().style(|sb: &mut StyleBuilder| {
                 sb.grid_row_start(3).grid_row_end(4).min_height(48);
@@ -469,12 +516,12 @@ impl ViewTemplate for WallExemplarChooser {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_change = cx.create_callback(
-            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<WallType>| {
                 selected.0 = *key;
             },
         );
-        let selected = cx.use_resource::<FloorType>();
-        let filter = cx.use_resource::<FloorFilter>();
+        let selected = cx.use_resource::<WallType>();
+        let filter = cx.use_resource::<WallFilter>();
         ExemplarChooser {
             selected: selected.0,
             instance_type: WALL_TYPE,
@@ -493,12 +540,12 @@ impl ViewTemplate for FixtureExemplarChooser {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_change = cx.create_callback(
-            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FixtureType>| {
                 selected.0 = *key;
             },
         );
-        let selected = cx.use_resource::<FloorType>();
-        let filter = cx.use_resource::<FloorFilter>();
+        let selected = cx.use_resource::<FixtureType>();
+        let filter = cx.use_resource::<FixtureFilter>();
         ExemplarChooser {
             selected: selected.0,
             instance_type: FIXTURE_TYPE,
@@ -517,12 +564,12 @@ impl ViewTemplate for ActorExemplarChooser {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_change = cx.create_callback(
-            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<FloorType>| {
+            |key: In<Option<AssetId<Exemplar>>>, mut selected: ResMut<ActorType>| {
                 selected.0 = *key;
             },
         );
-        let selected = cx.use_resource::<FloorType>();
-        let filter = cx.use_resource::<FloorFilter>();
+        let selected = cx.use_resource::<ActorType>();
+        let filter = cx.use_resource::<ActorFilter>();
         ExemplarChooser {
             selected: selected.0,
             instance_type: ACTOR_TYPE,
@@ -531,4 +578,10 @@ impl ViewTemplate for ActorExemplarChooser {
             on_change,
         }
     }
+}
+
+fn create_model_cursor(
+    mut r_drag_state: ResMut<SceneryDragState>,
+    r_scenery_tool: Res<State<SceneryTool>>,
+) {
 }

@@ -17,7 +17,7 @@ use bevy_mod_picking::{
     debug::DebugPickingMode,
     DefaultPickingPlugins,
 };
-use bevy_mod_preferences::{PreferencesPlugin, SavePreferences};
+use bevy_mod_preferences::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
 use bevy_quill_overlays::QuillOverlaysPlugin;
@@ -135,6 +135,7 @@ fn main() {
         ),
     )
     .add_systems(Update, close_on_esc)
+    .add_systems(Update, watch_prefs_changes)
     .add_plugins((
         MsgpackExtPlugin,
         ReflectTypesPlugin,

@@ -8,7 +8,7 @@ use bevy_quill::{Cond, Cx, View, ViewTemplate};
 use bevy_quill_overlays::{LinesBuilder, Overlay, ShapeOrientation};
 
 use crate::{
-    editor::ui::mode_scenery::SelectedPrecinct,
+    editor::ui::mode_scenery::{SelectedPrecinct, SelectedTier},
     scenery::{precinct::Precinct, PRECINCT_SIZE, PRECINCT_SIZE_F},
     world::Realm,
 };
@@ -38,6 +38,7 @@ impl ViewTemplate for SelectedPrecinctGrid {
             .use_component::<Precinct>(self.precinct.unwrap())
             .unwrap();
         let realm = cx.use_component::<Realm>(precinct.realm);
+        let tier = cx.use_resource::<SelectedTier>().0;
 
         // We need the render layers from the realm.
         let layer = match realm {
@@ -51,7 +52,7 @@ impl ViewTemplate for SelectedPrecinctGrid {
             Rect::from_corners(min, min + Vec2::splat(PRECINCT_SIZE_F))
         };
 
-        let height = 0.01;
+        let height = tier as f32 + 0.01;
         (
             Overlay::new()
                 .named("SelectedPrecinctOverlay")

@@ -1,11 +1,10 @@
 use bevy::{
     color::{palettes, Alpha},
-    math::Vec2,
     prelude::*,
     render::view::RenderLayers,
 };
 use bevy_quill::{Cond, Cx, View, ViewTemplate};
-use bevy_quill_overlays::{Overlay, PolygonOptions, ShapeOrientation};
+use bevy_quill_overlays::{Overlay, ShapeOrientation};
 
 use crate::{
     editor::ui::mode_scenery::{SceneryDragState, SelectedTier},
@@ -14,18 +13,24 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq)]
-pub struct FloorStampOverlay;
+pub struct WallDrawOverlay;
 
-impl ViewTemplate for FloorStampOverlay {
+impl ViewTemplate for WallDrawOverlay {
     type View = impl View;
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let drag_state = cx.use_resource::<SceneryDragState>();
+        let mut rect = Rect::from_corners(drag_state.cursor_pos, drag_state.anchor_pos);
+        rect.max += Vec2::splat(1.0);
+        rect = rect.intersect(Rect::from_corners(
+            Vec2::ZERO,
+            Vec2::splat(PRECINCT_SIZE as f32),
+        ));
         Cond::new(
-            drag_state.precinct.is_some(),
-            PolygonCursor {
+            drag_state.precinct.is_some() && rect.width() * rect.height() > 0.0,
+            WallOutline {
                 precinct: drag_state.precinct,
-                outline: drag_state.floor_outline.clone(),
+                rect,
             },
             (),
         )
@@ -33,12 +38,12 @@ impl ViewTemplate for FloorStampOverlay {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct PolygonCursor {
+pub struct WallOutline {
     pub precinct: Option<Entity>,
-    pub outline: Vec<Vec2>,
+    pub rect: Rect,
 }
 
-impl ViewTemplate for PolygonCursor {
+impl ViewTemplate for WallOutline {
     type View = impl View;
     fn create(&self, cx: &mut Cx) -> Self::View {
         // Get the parcel component and realm component
@@ -56,20 +61,14 @@ impl ViewTemplate for PolygonCursor {
 
         let height = tier as f32 + 0.011;
         Overlay::new()
-            .named("FloorStampOverlay")
+            .named("WallDrawOverlay")
             .shape_dyn(
-                |outline, sb| {
+                |rect, sb| {
                     sb.with_orientation(ShapeOrientation::YPositive)
                         .with_stroke_width(0.1);
-                    sb.stroke_polygon(
-                        &outline,
-                        PolygonOptions {
-                            closed: true,
-                            ..Default::default()
-                        },
-                    );
+                    sb.stroke_rect(rect);
                 },
-                self.outline.clone(),
+                self.rect,
             )
             .color(palettes::css::SILVER.with_alpha(0.9))
             .underlay(0.8)

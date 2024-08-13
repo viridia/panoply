@@ -1,9 +1,9 @@
 # TODO
 
 - Quit confirm dialog
+- Zoom In / Out
 - File unsaved indicator.
   - Track which things are unsaved.
-- Keyboard shortcuts don't always work.
 - Undo / Redo
 - Terrain contour list.
   - filter by group

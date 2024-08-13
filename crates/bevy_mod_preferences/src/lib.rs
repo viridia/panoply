@@ -1,9 +1,14 @@
 mod load;
 mod save;
+mod watch;
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{
+    ecs::{component::Tick, world::Command},
+    prelude::*,
+};
 use directories::BaseDirs;
 pub use save::SavePreferences;
+pub use watch::watch_prefs_changes;
 
 /// Annotation for a type which causes the type's contents to be placed in a named table
 /// in the preferences file.
@@ -15,6 +20,10 @@ pub struct PreferencesGroup(pub &'static str);
 /// the key will be placed in the group. Otherwise it will be a top-level key.
 #[derive(Debug, Clone, Reflect)]
 pub struct PreferencesKey(pub &'static str);
+
+/// Resource for tracking the last tick at which preferences were saved.
+#[derive(Debug, Clone, Resource)]
+pub struct PreferencesSaveTick(pub Tick);
 
 pub struct PreferencesPlugin {
     pub app_name: String,
@@ -64,6 +73,8 @@ impl Plugin for PreferencesPlugin {
         if app.world().get_resource::<PreferencesDir>().is_some() {
             load::load_preferences(app.world_mut());
         }
+        let tick = app.world_mut().change_tick();
+        app.world_mut().insert_resource(PreferencesSaveTick(tick));
     }
 }
 

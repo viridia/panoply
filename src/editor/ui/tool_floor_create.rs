@@ -54,21 +54,16 @@ pub fn exit(
 }
 
 pub fn hover(
-    // mut commands: Commands,
     r_selected_precinct: Res<SelectedPrecinct>,
     mut r_drag_state: ResMut<SceneryDragState>,
     r_hover_map: Res<HoverMap>,
     r_tool: Res<State<FloorTool>>,
-    // r_contours_handle: Res<TerrainContoursHandle>,
-    // r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
     q_precints: Query<&Precinct>,
 ) {
     let mut drag_state = r_drag_state.clone();
     drag_state.precinct = r_selected_precinct.0;
+    drag_state.cursor_model = None;
     let tool = *r_tool.get();
-    // if !drag_state.dragging {
-    //     drag_state.drag_shape = DragShape::None;
-    // }
     if let Some(precinct_id) = r_selected_precinct.0 {
         if let Ok(precinct) = q_precints.get(precinct_id) {
             let precinct_min = precinct.coords.as_vec2() * PRECINCT_SIZE_F;
