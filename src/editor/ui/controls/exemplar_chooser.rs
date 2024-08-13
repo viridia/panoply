@@ -3,6 +3,10 @@ use bevy_quill::prelude::*;
 use bevy_quill_obsidian::prelude::*;
 use panoply_exemplar::{Exemplar, InstanceType};
 
+/// View context component which stores the anchor element id for a menu.
+#[derive(Component)]
+struct SelectedExemplar(Option<AssetId<Exemplar>>);
+
 #[derive(Clone, PartialEq)]
 pub struct ExemplarChooser {
     pub selected: Option<AssetId<Exemplar>>,
@@ -17,12 +21,13 @@ impl ViewTemplate for ExemplarChooser {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let on_change = self.on_change;
-        let on_click = cx.create_callback(move |key: In<AssetId<Exemplar>>, world: &mut World| {
-            world.run_callback(on_change, Some(*key));
-        });
+        cx.insert(SelectedExemplar(self.selected));
+        let on_click =
+            cx.create_callback(move |key: In<AssetId<Exemplar>>, mut commands: Commands| {
+                commands.run_callback(on_change, Some(*key));
+            });
         let asset_server = cx.use_resource_untracked::<AssetServer>();
         let exemplars = cx.use_resource_untracked::<Assets<Exemplar>>();
-        let selected = self.selected;
 
         let mut exemplars = exemplars
             .iter()
@@ -36,7 +41,6 @@ impl ViewTemplate for ExemplarChooser {
                         Some(ref name) => name.clone(),
                         None => path.label().unwrap_or("default").to_owned(),
                     },
-                    selected: Some(id) == selected,
                 }
             })
             .collect::<Vec<_>>();
@@ -49,17 +53,18 @@ impl ViewTemplate for ExemplarChooser {
                 ListRow::new(())
                     .selected(self.selected.is_none())
                     .children("(erase)")
-                    .on_click(cx.create_callback(move |_: In<()>, world: &mut World| {
-                        world.run_callback(on_change, None);
-                    })),
+                    .on_click(
+                        cx.create_callback(move |_: In<()>, mut commands: Commands| {
+                            commands.run_callback(on_change, None);
+                        }),
+                    ),
                 For::each_cmp(
                     exemplars,
-                    |a, b| a.id == b.id && a.selected == b.selected,
-                    move |loc| {
-                        ListRow::new(loc.id)
-                            .selected(loc.selected)
-                            .children(loc.name.clone())
-                            .on_click(on_click)
+                    |a, b| a.id == b.id,
+                    move |loc| ExemplarRow {
+                        key: loc.id,
+                        name: loc.name.clone(),
+                        on_click,
                     },
                 ),
             ))
@@ -75,5 +80,26 @@ struct ExemplarListItem {
     path: String,
     id: AssetId<Exemplar>,
     name: String,
-    selected: bool,
+}
+
+#[derive(Clone, PartialEq)]
+struct ExemplarRow {
+    key: AssetId<Exemplar>,
+    name: String,
+    on_click: Callback<AssetId<Exemplar>>,
+}
+
+impl ViewTemplate for ExemplarRow {
+    type View = impl View;
+
+    fn create(&self, cx: &mut Cx) -> Self::View {
+        let selected = cx.use_inherited_component::<SelectedExemplar>().unwrap();
+        ListRow::new(self.key)
+            .selected(match (&self.key, selected.0.as_ref()) {
+                (a, Some(b)) => *a == *b,
+                _ => false,
+            })
+            .children(self.name.clone())
+            .on_click(self.on_click)
+    }
 }

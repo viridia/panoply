@@ -74,6 +74,7 @@ impl ViewTemplate for SelectedParcelContour {
 
         (
             Overlay::new()
+                .named("SelectedParcelOverlay")
                 .mesh_dyn(
                     |(bounds, heights, rotation), sb: &mut LinesBuilder| {
                         if let Some(heights) = heights {

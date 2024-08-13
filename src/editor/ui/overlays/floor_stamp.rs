@@ -55,6 +55,7 @@ impl ViewTemplate for PolygonCursor {
 
         let height = 0.01;
         Overlay::new()
+            .named("FloorStampOverlay")
             .shape_dyn(
                 |outline, sb| {
                     sb.with_orientation(ShapeOrientation::YPositive)

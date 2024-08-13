@@ -65,6 +65,7 @@ pub fn setup_thumbnail_realm(
         let layer = r_layers.next_unused();
         let realm = commands
             .spawn((
+                Name::new("ThumbnailRealm"),
                 Realm {
                     layer: RenderLayers::layer(layer),
                     layer_index: layer,
@@ -99,6 +100,7 @@ pub fn setup_thumbnail_camera(
     if r_builder.is_none() {
         let camera = commands
             .spawn((
+                Name::new("ThumbnailCamera"),
                 Camera3dBundle {
                     transform: Transform::from_translation(Vec3::new(-40. + 256., 40., -40.))
                         .looking_at(Vec3::new(8. + 256., 0., 8.), Vec3::Y),
@@ -122,6 +124,7 @@ pub fn setup_thumbnail_camera(
             .id();
         let dir_light = commands
             .spawn((
+                Name::new("ThumbnailDirLight"),
                 DirectionalLightBundle {
                     directional_light: DirectionalLight {
                         shadows_enabled: true,

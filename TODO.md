@@ -1,16 +1,15 @@
 # TODO
 
+- Quit confirm dialog
 - File unsaved indicator.
   - Track which things are unsaved.
+- Keyboard shortcuts don't always work.
 - Undo / Redo
 - Terrain contour list.
   - filter by group
   - empty tile shows nothing, should show black floor.
-- Skybox experiments
 - move prefs to own crate.
 - World camera pan needs to use bubbled scroll events.
-- Editor modes
-  - Tool palette
 - Build an entity inspector
 - Bugs:
   - Materials get loaded multiple times?
@@ -31,6 +30,7 @@
   - inline_assets?
   - reflect_types
   - random
+- Skybox experiments
 
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
   to track which region we're in.

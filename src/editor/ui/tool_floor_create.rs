@@ -4,7 +4,6 @@ use bevy_quill::View;
 use i_overlay::{
     core::{fill_rule::FillRule, overlay::ShapeType, overlay_rule::OverlayRule},
     i_float::point::IntPoint,
-    i_shape::f64::shape,
 };
 
 use crate::{
@@ -28,6 +27,7 @@ pub fn enter(mut commands: Commands, q_camera: Query<Entity, With<crate::view::P
     commands.spawn((SelectedPrecinctOverlay.to_root(), PrecinctOverlay));
     commands.spawn((FloorStampOverlay.to_root(), PrecinctOverlay));
     commands.spawn((
+        Name::new("FloorPickObserver"),
         StateScoped(SceneryOverlay::FloorCreate),
         Observer::new(on_pick_event),
     ));
@@ -36,6 +36,7 @@ pub fn enter(mut commands: Commands, q_camera: Query<Entity, With<crate::view::P
         commands.entity(camera).insert(PlanePick);
     }
     commands.spawn((
+        Name::new("FloorStampObserver"),
         StateScoped(SceneryOverlay::FloorCreate),
         Observer::new(on_stamp_floor),
     ));
@@ -112,14 +113,10 @@ pub fn hover(
 pub fn on_pick_event(
     trigger: Trigger<PickEvent>,
     mut commands: Commands,
-    // q_realms: Query<&Realm>,
     q_precincts: Query<(Entity, &Precinct)>,
-    // r_tool: Res<State<TerrainTool>>,
     mut r_selected_precinct: ResMut<SelectedPrecinct>,
     r_selected_floor_type: ResMut<FloorType>,
     mut r_drag_state: ResMut<SceneryDragState>,
-    // r_contours_handle: Res<TerrainContoursHandle>,
-    // r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
 ) {
     let event = trigger.event();
 
@@ -281,21 +278,6 @@ pub fn on_stamp_floor(
                         .map(|hole| hole.iter().rev().map(vec2_to_intpoint).collect::<Vec<_>>()),
                 );
                 ishape.add_shape(&shape, ShapeType::Subject);
-                // ishape.add_path(
-                //     &region
-                //         .poly
-                //         .iter()
-                //         .rev()
-                //         .map(vec2_to_intpoint)
-                //         .collect::<Vec<_>>(),
-                //     ShapeType::Subject,
-                // );
-                // for hole in region.holes.iter() {
-                //     ishape.add_path(
-                //         &hole.iter().map(vec2_to_intpoint).collect::<Vec<_>>(),
-                //         ShapeType::Hole,
-                //     );
-                // }
             }
 
             // Map event shape to overlay shape by converting the vertices to IntPoint.

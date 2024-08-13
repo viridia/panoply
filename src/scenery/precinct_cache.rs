@@ -100,6 +100,7 @@ pub fn spawn_precincts(
                         );
                         let asset = server.load(asset_path);
                         let entity = commands.spawn((
+                            Name::new(format!("Precinct:{}:{}:{}", realm.name, x, z)),
                             Precinct {
                                 realm: rect.realm,
                                 coords: IVec2::new(x, z),

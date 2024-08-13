@@ -38,6 +38,7 @@ impl ViewTemplate for MapBoundsOverlay {
 
         // println!("viewpoint: {:?}", viewpoint);
         Overlay::new()
+            .named("MapBoundsOverlay")
             .shape_dyn(
                 |(parcel_bounds, precinct_bounds), sb| {
                     sb.with_orientation(ShapeOrientation::YPositive)

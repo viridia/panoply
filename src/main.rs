@@ -198,6 +198,7 @@ fn setup(
 
     for (i, shape) in shapes.into_iter().enumerate() {
         commands.spawn((
+            Name::new("DebugShape"),
             PbrBundle {
                 mesh: shape,
                 material: debug_material.clone(),
@@ -227,6 +228,7 @@ fn setup(
     // TODO: Move to 'view' module
     // Ui Camera
     commands.spawn((
+        Name::new("HudCamera"),
         Camera2dBundle {
             camera: Camera {
                 // HUD goes on top of 3D
@@ -241,6 +243,7 @@ fn setup(
 
     // Primary Camera
     commands.spawn((
+        Name::new("PrimaryCamera"),
         Camera3dBundle {
             transform: Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
             camera: Camera {

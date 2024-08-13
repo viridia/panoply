@@ -118,22 +118,6 @@ pub enum SceneryOverlay {
     RectSelect,
 }
 
-// #[derive(Resource, Default, Clone, Copy, PartialEq)]
-// pub enum SceneryDragShape {
-//     /// When no cursor is shown
-//     #[default]
-//     None,
-
-//     /// When cursor is shown as a point.
-//     Point,
-
-//     /// When cursor is shown as a flat rectangle.
-//     FlatRect,
-
-//     /// When cursor is shown as a which conforms to the terrain.
-//     DecalRect,
-// }
-
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct SceneryDragState {
     pub(crate) dragging: bool,
@@ -280,13 +264,15 @@ impl ViewTemplate for EditModeSceneryControls {
                         .children("Cut")
                         .corners(RoundedCorners::Left)
                         .selected(st == SceneryTool::FloorDraw),
-                    ToolIconButton::new("editor/icons/rotate-ccw.png")
-                        .size(Vec2::new(24., 16.))
-                        .tint(false),
-                    ToolIconButton::new("editor/icons/rotate-cw.png")
-                        .size(Vec2::new(24., 16.))
-                        .tint(false)
-                        .corners(RoundedCorners::Right),
+                    ToolIconButton::new(
+                        "embedded://bevy_quill_obsidian/assets/icons/chevron_up.png",
+                    )
+                    .size(Vec2::new(16., 16.)),
+                    ToolIconButton::new(
+                        "embedded://bevy_quill_obsidian/assets/icons/chevron_down.png",
+                    )
+                    .size(Vec2::new(16., 16.))
+                    .corners(RoundedCorners::Right),
                 )),
             ListView::new().style(|sb: &mut StyleBuilder| {
                 sb.grid_row_start(3).grid_row_end(4).min_height(48);

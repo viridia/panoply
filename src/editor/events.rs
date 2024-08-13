@@ -28,3 +28,7 @@ pub struct ChangeContourEvent(pub usize);
 /// Trigger event which fires when the thumbnail table is ready.
 #[derive(Clone, Debug, Event)]
 pub struct ThumbnailsReady;
+
+/// Rotate the current selection.
+#[derive(Clone, Debug, Event)]
+pub struct RotateSelection(pub i32);

@@ -29,7 +29,7 @@ use quick_nav::{QuickNavDialog, QuickNavOpen};
 
 use crate::view::{viewport::ViewportInsetElement, HudCamera};
 
-use super::EditorSidebarWidth;
+use super::{events::RotateSelection, EditorSidebarWidth};
 
 pub fn setup_editor_view(mut commands: Commands, q_camera: Query<Entity, With<HudCamera>>) {
     let camera = q_camera.get_single().expect("HudCamera not found");
@@ -49,6 +49,7 @@ impl ViewTemplate for EditorView {
 
         let sidebar_width = cx.use_resource::<EditorSidebarWidth>();
         Element::<NodeBundle>::new()
+            .named("EditorView")
             .insert((
                 TabGroup::default(),
                 DefaultKeyListener,
@@ -58,9 +59,15 @@ impl ViewTemplate for EditorView {
                 |_| {
                     On::<KeyPressEvent>::run(
                         |ev: ListenerMut<KeyPressEvent>,
+                         mut commands: Commands,
                          mut open: ResMut<NextState<QuickNavOpen>>| {
+                            // println!("Key: {:?}", ev.key_code);
                             if ev.key_code == KeyCode::KeyG {
                                 open.set(QuickNavOpen(true));
+                            } else if ev.key_code == KeyCode::BracketLeft {
+                                commands.trigger(RotateSelection(-1));
+                            } else if ev.key_code == KeyCode::BracketRight {
+                                commands.trigger(RotateSelection(1));
                             }
                         },
                     )
@@ -70,6 +77,7 @@ impl ViewTemplate for EditorView {
             .style(style_main)
             .children((
                 Element::<NodeBundle>::new()
+                    .named("EditorSidePanel")
                     .style(style_aside)
                     .style_dyn(
                         move |width, sb| {
@@ -95,6 +103,7 @@ impl ViewTemplate for EditorView {
                         },
                     )),
                 Element::<NodeBundle>::new()
+                    .named("GameView")
                     .style(style_game_view)
                     .insert(ViewportInsetElement),
                 QuickNavDialog,

@@ -120,14 +120,18 @@ impl ViewTemplate for ContourChooser {
 
         ScrollView::new()
             .style((typography::text_default, style_listview, self.style.clone()))
-            .content_style(style_listview_inner)
+            // .content_style(style_listview_inner)
             .scroll_enable_y(true)
-            .children(For::each(items, |item| ContourListEntry {
-                shape_id: item.shape_id,
-                bg_color: item.bg_color,
-                selected: item.selected,
-                on_click: item.on_click,
-            }))
+            .children(
+                Element::<NodeBundle>::new()
+                    .style(style_listview_inner)
+                    .children(For::each(items, |item| ContourListEntry {
+                        shape_id: item.shape_id,
+                        bg_color: item.bg_color,
+                        selected: item.selected,
+                        on_click: item.on_click,
+                    })),
+            )
     }
 }
 
@@ -190,9 +194,9 @@ impl ViewTemplate for ContourListEntry {
             .style(style_item)
             .insert_dyn(
                 move |_| {
-                    On::<Pointer<Click>>::run(move |world: &mut World| {
+                    On::<Pointer<Click>>::run(move |mut commands: Commands| {
                         // ev.stop_propagation();
-                        world.run_callback(on_click, shape_id);
+                        commands.run_callback(on_click, shape_id);
                     })
                 },
                 (),

@@ -54,6 +54,7 @@ impl ViewTemplate for SelectedPrecinctGrid {
         let height = 0.01;
         (
             Overlay::new()
+                .named("SelectedPrecinctOverlay")
                 .mesh_dyn(
                     |_, sb: &mut LinesBuilder| {
                         for x in 0..=PRECINCT_SIZE {
