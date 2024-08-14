@@ -25,7 +25,7 @@ pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<PrecinctOverl
     q_overlays.iter().for_each(|e| commands.entity(e).despawn());
 }
 
-pub fn hover(
+pub fn update(
     mut commands: Commands,
     // r_selected_parcel: Res<SelectedParcel>,
     // mut r_drag_state: ResMut<TerrainDragState>,

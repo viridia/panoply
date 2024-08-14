@@ -2,13 +2,13 @@ use panoply_exemplar::*;
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
-    precinct_asset::PrecinctAsset,
+    precinct_asset::{PrecinctAsset, SceneryInstanceId},
     rle::rle_decode,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
     PRECINCT_SIZE_F,
 };
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::{prelude::*, render::view::RenderLayers, utils::hashbrown::HashMap};
 
 #[derive(Eq, PartialEq, Hash)]
 pub struct PrecinctKey {
@@ -138,23 +138,53 @@ impl Precinct {
         }
     }
 
-    pub fn rebuild_walls(
+    pub fn rebuild_scenery_elements(
         &mut self,
         commands: &mut Commands,
         entity: Entity,
+        children: Option<&Children>,
         asset: &PrecinctAsset,
         scenery_exemplars: &[Handle<Exemplar>],
+        query_scenery_elements: &mut Query<&mut SceneryElement>,
     ) {
-        // What do we want to do here?
-        // We cannot place the model yet, because transforms are not loaded.
-        // We need to spawn an entity per secenery element I think.
+        let mut child_map = HashMap::<SceneryInstanceId, Entity>::with_capacity(128);
+        if let Some(children) = children {
+            for child in children.iter() {
+                if let Ok(scenery_element) = query_scenery_elements.get_mut(*child) {
+                    child_map.insert(scenery_element.iid.clone(), *child);
+                }
+            }
+        }
+
         for elt in asset.scenery.iter() {
-            let mut transform = Transform::from_xyz(elt.position.x, elt.position.y, elt.position.z);
+            let mut transform = Transform::from_translation(elt.position);
             let facing = elt.facing * std::f32::consts::PI / 180.;
             transform.rotate(Quat::from_rotation_y(facing));
+            if let Some(se_ent) = child_map.remove(&elt.iid) {
+                if let Ok(mut scenery_element) = query_scenery_elements.get_mut(se_ent) {
+                    if scenery_element.exemplar == scenery_exemplars[elt.id] {
+                        if scenery_element.position != elt.position {
+                            scenery_element.position = elt.position;
+                            transform.translation = elt.position;
+                            commands.entity(se_ent).insert(transform);
+                        }
+                        if scenery_element.facing != facing {
+                            scenery_element.facing = facing;
+                            transform.rotation = Quat::from_rotation_y(facing);
+                            commands.entity(se_ent).insert(transform);
+                        }
+                        continue;
+                    }
+
+                    commands.entity(se_ent).remove_parent();
+                    commands.entity(se_ent).despawn_recursive();
+                }
+            }
+
             commands
                 .spawn((
                     SceneryElement {
+                        iid: elt.iid.clone(),
                         exemplar: scenery_exemplars[elt.id].clone(),
                         facing,
                         position: elt.position,
@@ -168,6 +198,11 @@ impl Precinct {
                     SceneryElementRebuildAspects,
                 ))
                 .set_parent(entity);
+        }
+
+        for se_ent in child_map.values() {
+            commands.entity(*se_ent).remove_parent();
+            commands.entity(*se_ent).despawn_recursive();
         }
     }
 
@@ -231,8 +266,9 @@ pub struct PrecinctRebuildScenery;
 /** React when precinct assets change and update the scenery. */
 pub fn read_precinct_data(
     mut commands: Commands,
-    mut query_precincts: Query<(Entity, &mut Precinct)>,
+    mut query_precincts: Query<(Entity, &mut Precinct, Option<&Children>)>,
     mut query_floor_regions: Query<(Entity, &mut FloorRegion)>,
+    mut query_scenery_elements: Query<&mut SceneryElement>,
     mut ev_asset: EventReader<AssetEvent<PrecinctAsset>>,
     assets: ResMut<Assets<PrecinctAsset>>,
     asset_server: Res<AssetServer>,
@@ -242,7 +278,7 @@ pub fn read_precinct_data(
             AssetEvent::Added { id }
             | AssetEvent::LoadedWithDependencies { id }
             | AssetEvent::Modified { id } => {
-                if let Some((precinct_entity, mut precinct)) =
+                if let Some((precinct_entity, mut precinct, precinct_children)) =
                     query_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
                 {
                     // TODO: Sync cutaway rects
@@ -270,11 +306,13 @@ pub fn read_precinct_data(
                         .map(|s| asset_server.load(s))
                         .collect();
 
-                    precinct.rebuild_walls(
+                    precinct.rebuild_scenery_elements(
                         &mut commands,
                         precinct_entity,
+                        precinct_children,
                         precinct_asset,
                         &scenery_exemplars,
+                        &mut query_scenery_elements,
                     );
 
                     let fx_exemplars: Vec<Handle<Exemplar>> = precinct_asset

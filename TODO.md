@@ -1,7 +1,10 @@
 # TODO
 
-- Quit confirm dialog
 - Zoom In / Out
+- Show wall create area
+- Better picking on tiers - disable terrain picks
+- Quit confirm dialog
+- Text input
 - File unsaved indicator.
   - Track which things are unsaved.
 - Undo / Redo
@@ -15,7 +18,7 @@
   - Materials get loaded multiple times?
 - Assets
   - Asset Reader that allows cache miss
-  - Remove Box2d types, replace with 4-tuple.
+  - Remove Box2d types, replace with 4-tuple, or perhaps 2-tuple of 2-tuple.
   - Preferences API.
 - Wall Physics
   - implement
@@ -48,7 +51,6 @@ Future:
 - [Reflection type aliases](https://github.com/bevyengine/bevy/issues/12387)
 - [Upstream bevy_mod_picking](https://github.com/bevyengine/bevy/issues/12365)
 - [Multi-pass materials](https://github.com/bevyengine/bevy/issues/12208)
-- [Error in PBR shader code](https://github.com/bevyengine/bevy/issues/12326)
 - [Support archive assets](https://github.com/bevyengine/bevy/issues/12279)
 - [Allow missing assets](https://github.com/bevyengine/bevy/issues/12210)
 - [Support hemisphere light](https://github.com/bevyengine/bevy/issues/12027)

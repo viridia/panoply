@@ -10,7 +10,10 @@ use serde::{
     ser::SerializeTuple,
     Deserialize, Serialize,
 };
-use std::fmt::{self, Debug};
+use std::{
+    fmt::{self, Debug},
+    sync::Arc,
+};
 use thiserror::Error;
 
 use crate::{
@@ -52,14 +55,17 @@ pub struct PrecinctAsset {
 }
 
 impl PrecinctAsset {
+    /// Return the tier with the given level.
     pub fn find_tier(&self, level: i32) -> Option<&TierSer> {
         self.tiers.iter().find(|t| t.level == level)
     }
 
+    /// Return a mutable reference to the tier with the given level.
     pub fn find_tier_mut(&mut self, level: i32) -> Option<&mut TierSer> {
         self.tiers.iter_mut().find(|t| t.level == level)
     }
 
+    /// Add a new tier with the given level.
     pub fn add_tier(&mut self, level: i32) -> &mut TierSer {
         let index = self
             .tiers
@@ -77,15 +83,79 @@ impl PrecinctAsset {
         &mut self.tiers[index]
     }
 
+    /// Return the table index of the given scenery exemplay.
+    pub fn scenery_type_index(&self, scenery_type: &str) -> Option<usize> {
+        self.scenery_types.iter().position(|st| st == scenery_type)
+    }
+
+    /// Add a new scenery type to the precinct.
+    pub fn add_scenery_type(&mut self, scenery_type: String) -> usize {
+        assert!(!self.scenery_types.iter().any(|st| st == &scenery_type));
+        let index = self.scenery_types.len();
+        self.scenery_types.push(scenery_type);
+        index
+    }
+
+    /// Add a new scenery element to the precinct. Returns the instance id.
+    pub fn add_scenery_element(
+        &mut self,
+        arch: usize,
+        facing: f32,
+        position: Vec3,
+    ) -> SceneryInstanceId {
+        let iid = SceneryInstanceId::Internal(self.next_scenery_id());
+        self.scenery.push(CompressedInstance {
+            id: arch,
+            facing,
+            position,
+            iid: iid.clone(),
+            aspects: InstanceAspects::default(),
+        });
+        iid
+    }
+
+    pub fn remove_scenery_elements<F: Fn(&SceneryInstanceId, usize, &Vec3) -> bool>(
+        &mut self,
+        filter: F,
+    ) -> Vec<CompressedInstance> {
+        let mut removed: Vec<CompressedInstance> = Vec::new();
+        self.scenery.retain(|c| {
+            if filter(&c.iid, c.id, &c.position) {
+                removed.push((*c).clone());
+                false
+            } else {
+                true
+            }
+        });
+        removed
+    }
+
+    /// Return the table index of the given floor type.
     pub fn floor_type_index(&self, floor_type: &str) -> Option<usize> {
         self.floor_types.iter().position(|ft| ft == floor_type)
     }
 
+    /// Add a new floor type to the precinct.
     pub fn add_floor_type(&mut self, floor_type: String) -> usize {
         assert!(!self.floor_types.iter().any(|ft| ft == &floor_type));
         let index = self.floor_types.len();
         self.floor_types.push(floor_type);
         index
+    }
+
+    fn next_scenery_id(&self) -> usize {
+        let mut next_id: usize = 0;
+        loop {
+            let found_id = next_id;
+            self.scenery.iter().for_each(|c| {
+                if let SceneryInstanceId::Internal(id) = c.iid {
+                    next_id = next_id.max(id + 1);
+                }
+            });
+            if next_id == found_id {
+                return next_id;
+            }
+        }
     }
 }
 
@@ -100,7 +170,36 @@ pub struct TierSer {
     pub(crate) cutaways: Option<Vec<Box2d>>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SceneryInstanceId {
+    #[default]
+    None,
+    Internal(usize),
+
+    #[serde(
+        serialize_with = "serialize_arc_string",
+        deserialize_with = "deserialize_arc_string"
+    )]
+    External(Arc<String>),
+}
+
+fn serialize_arc_string<S>(value: &Arc<String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::ser::Serializer,
+{
+    serializer.serialize_str(value)
+}
+
+fn deserialize_arc_string<'de, D>(deserializer: D) -> Result<Arc<String>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(Arc::new(s))
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct CompressedInstance {
     /// Archetype Id
     pub id: usize,
@@ -112,7 +211,7 @@ pub struct CompressedInstance {
     pub position: Vec3,
 
     /// Optional instance identifier
-    pub iid: Option<String>,
+    pub iid: SceneryInstanceId,
 
     /// List of aspects for this instance.
     pub aspects: InstanceAspects,
@@ -126,19 +225,14 @@ impl Serialize for CompressedInstance {
         let mut len = 3;
         if !self.aspects.is_empty() {
             len += 2;
-        } else if self.iid.is_some() {
+        } else if matches!(self.iid, SceneryInstanceId::External(_)) {
             len += 1;
         }
         let mut state = serializer.serialize_tuple(len)?;
         state.serialize_element(&self.id)?;
         state.serialize_element(&self.facing)?;
         state.serialize_element(&self.position)?;
-        if let Some(iid) = &self.iid {
-            state.serialize_element(iid)?;
-        } else if !self.aspects.is_empty() {
-            // Serialize 'none' as placeholder
-            state.serialize_element(&self.iid)?;
-        }
+        state.serialize_element(&self.iid)?;
         if !self.aspects.is_empty() {
             state.serialize_element(&self.aspects)?;
         }
@@ -177,9 +271,9 @@ impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
             Ok(Some(position)) => result.position = position,
             _ => return Err(serde::de::Error::invalid_length(2, &self)),
         }
-        match seq.next_element::<Option<String>>() {
+        match seq.next_element::<SceneryInstanceId>() {
             Ok(Some(iid)) => result.iid = iid,
-            _ => return Ok(result),
+            _ => return Err(serde::de::Error::invalid_length(3, &self)),
         }
         match seq.next_element_seed(AspectListDeserializer {
             type_registry: self.type_registry,

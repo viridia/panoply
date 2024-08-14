@@ -4,16 +4,20 @@ use panoply_exemplar::*;
 
 use crate::models::PropagateRenderLayers;
 
-use super::scenery_aspect::{ModelComponent, SceneryModels};
+use super::{
+    precinct_asset::SceneryInstanceId,
+    scenery_aspect::{ModelComponent, SceneryModels},
+};
 
 #[derive(Debug, Component, Default)]
 pub struct SceneryElement {
+    pub iid: SceneryInstanceId,
     pub exemplar: Handle<Exemplar>,
     pub facing: f32,
     pub position: Vec3,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 #[component(storage = "SparseSet")]
 pub struct SceneryElementRebuildAspects;
 

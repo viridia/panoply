@@ -95,14 +95,12 @@ pub fn update_hits(
             continue;
         };
 
-        println!("tier: {:?}", selected_tier.0);
         let plane = InfinitePlane3d::new(Vec3::new(0.0, 1.0, 0.0));
         let Some(intersect) =
             ray.intersect_plane(Vec3::new(0.0, selected_tier.0 as f32, 0.0), plane)
         else {
             return;
         };
-        // println!("hit: {:?}", intersect);
 
         let hit_data = HitData::new(
             ray_id.camera,

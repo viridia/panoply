@@ -16,7 +16,9 @@ use crate::{
 };
 
 use super::{
-    mode_scenery::{FloorTool, FloorType, SceneryDragState, SceneryOverlay, SelectedPrecinct},
+    mode_scenery::{
+        FloorTool, FloorType, SceneryDragState, SceneryOverlay, SelectedPrecinct, SelectedTier,
+    },
     overlays::{FloorStampOverlay, SelectedPrecinctOverlay},
 };
 
@@ -53,7 +55,7 @@ pub fn exit(
     }
 }
 
-pub fn hover(
+pub fn update(
     r_selected_precinct: Res<SelectedPrecinct>,
     mut r_drag_state: ResMut<SceneryDragState>,
     r_hover_map: Res<HoverMap>,
@@ -62,7 +64,7 @@ pub fn hover(
 ) {
     let mut drag_state = r_drag_state.clone();
     drag_state.precinct = r_selected_precinct.0;
-    drag_state.cursor_model = None;
+    drag_state.cursor_exemplar = None;
     let tool = *r_tool.get();
     if let Some(precinct_id) = r_selected_precinct.0 {
         if let Ok(precinct) = q_precints.get(precinct_id) {
@@ -110,6 +112,7 @@ pub fn on_pick_event(
     mut commands: Commands,
     q_precincts: Query<(Entity, &Precinct)>,
     mut r_selected_precinct: ResMut<SelectedPrecinct>,
+    r_selected_tier: ResMut<SelectedTier>,
     r_selected_floor_type: ResMut<FloorType>,
     mut r_drag_state: ResMut<SceneryDragState>,
 ) {
@@ -137,7 +140,7 @@ pub fn on_pick_event(
                 if let Some(precinct) = r_selected_precinct.0 {
                     commands.trigger(FloorStampEvent {
                         precinct,
-                        tier: 0,
+                        tier: r_selected_tier.0 as i32,
                         floor_type: r_selected_floor_type.0,
                         shape: vec![r_drag_state.floor_outline.clone()],
                     });
@@ -274,17 +277,17 @@ pub fn on_stamp_floor(
                 );
                 ishape.add_shape(&shape, ShapeType::Subject);
             }
-
-            // Map event shape to overlay shape by converting the vertices to IntPoint.
-            ishape.add_shape(
-                &event
-                    .shape
-                    .iter()
-                    .map(|path| path.iter().map(vec2_to_intpoint).collect::<Vec<_>>())
-                    .collect::<Vec<_>>(),
-                ShapeType::Clip,
-            );
         }
+
+        // Map event shape to overlay shape by converting the vertices to IntPoint.
+        ishape.add_shape(
+            &event
+                .shape
+                .iter()
+                .map(|path| path.iter().map(vec2_to_intpoint).collect::<Vec<_>>())
+                .collect::<Vec<_>>(),
+            ShapeType::Clip,
+        );
 
         let graph = ishape.into_graph(FillRule::NonZero);
         let v = if surface == surface_index {

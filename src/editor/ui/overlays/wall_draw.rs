@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     render::view::RenderLayers,
 };
-use bevy_quill::{Cond, Cx, View, ViewTemplate};
+use bevy_quill::prelude::*;
 use bevy_quill_overlays::{Overlay, ShapeOrientation};
 
 use crate::{
@@ -20,20 +20,15 @@ impl ViewTemplate for WallDrawOverlay {
 
     fn create(&self, cx: &mut Cx) -> Self::View {
         let drag_state = cx.use_resource::<SceneryDragState>();
-        let mut rect = Rect::from_corners(drag_state.cursor_pos, drag_state.anchor_pos);
-        rect.max += Vec2::splat(1.0);
-        rect = rect.intersect(Rect::from_corners(
-            Vec2::ZERO,
-            Vec2::splat(PRECINCT_SIZE as f32),
-        ));
-        Cond::new(
+        let rect = Rect::from_corners(drag_state.cursor_pos, drag_state.anchor_pos).inflate(0.5);
+        (Cond::new(
             drag_state.precinct.is_some() && rect.width() * rect.height() > 0.0,
             WallOutline {
                 precinct: drag_state.precinct,
                 rect,
             },
             (),
-        )
+        ),)
     }
 }
 

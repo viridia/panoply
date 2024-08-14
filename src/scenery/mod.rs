@@ -30,7 +30,7 @@ mod precinct_cache;
 mod rle;
 mod scenery_aspect;
 mod scenery_colliders;
-mod scenery_element;
+pub mod scenery_element;
 mod terrain_fx_aspect;
 mod terrain_fx_map;
 mod wall_aspect;

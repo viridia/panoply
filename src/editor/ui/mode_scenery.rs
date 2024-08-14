@@ -1,9 +1,17 @@
 use crate::{
     actors::ACTOR_TYPE,
-    editor::EditorMode,
-    scenery::{FIXTURE_TYPE, FLOOR_TYPE, WALL_TYPE},
+    editor::{
+        events::{PlaceWalls, RemoveWalls, RotateSelection},
+        EditorMode,
+    },
+    scenery::{
+        precinct::Precinct,
+        precinct_asset::{PrecinctAsset, SceneryInstanceId},
+        scenery_element::{SceneryElement, SceneryElementRebuildAspects},
+        FIXTURE_TYPE, FLOOR_TYPE, PRECINCT_SIZE_F, TIER_OFFSET, WALL_TYPE,
+    },
 };
-use bevy::{prelude::*, ui};
+use bevy::{prelude::*, render::view::RenderLayers, ui};
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
@@ -24,6 +32,7 @@ impl Plugin for EditSceneryPlugin {
             .enable_state_scoped_entities::<WallSnap>()
             .init_resource::<SelectedPrecinct>()
             .init_resource::<SelectedTier>()
+            .init_resource::<SelectedFacing>()
             .init_resource::<SceneryDragState>()
             .init_resource::<FloorType>()
             .init_resource::<FloorFilter>()
@@ -48,6 +57,7 @@ impl Plugin for EditSceneryPlugin {
             .register_type::<ActorType>()
             .register_type::<ActorFilter>()
             .register_type::<SelectedTier>()
+            .register_type::<SelectedFacing>()
             .add_systems(
                 OnEnter(SceneryOverlay::FloorCreate),
                 tool_floor_create::enter,
@@ -60,11 +70,14 @@ impl Plugin for EditSceneryPlugin {
             .add_systems(
                 Update,
                 (
-                    tool_floor_create::hover.run_if(in_state(SceneryOverlay::FloorCreate)),
-                    tool_floor_edit::hover.run_if(in_state(SceneryOverlay::FloorDraw)),
-                    tool_wall_create::hover.run_if(in_state(SceneryOverlay::PlaceWall)),
+                    tool_floor_create::update.run_if(in_state(SceneryOverlay::FloorCreate)),
+                    tool_floor_edit::update.run_if(in_state(SceneryOverlay::FloorDraw)),
+                    tool_wall_create::update.run_if(in_state(SceneryOverlay::PlaceWall)),
+                    update.run_if(in_state(EditorMode::Scenery)),
                 ),
-            );
+            )
+            .observe(place_walls)
+            .observe(remove_walls);
     }
 }
 
@@ -74,6 +87,10 @@ pub struct SelectedPrecinct(pub Option<Entity>);
 #[derive(Resource, Default, Reflect)]
 #[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_tier"))]
 pub struct SelectedTier(pub i16);
+
+#[derive(Resource, Default, Reflect)]
+#[reflect(@PreferencesGroup("editor"), @PreferencesKey("selected_facing"))]
+pub struct SelectedFacing(pub i32);
 
 #[derive(Resource, Default, Reflect)]
 // #[reflect(@PreferencesGroup("editor"), @PreferencesKey("floor_type"))]
@@ -157,13 +174,14 @@ pub enum SceneryOverlay {
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct SceneryDragState {
     pub(crate) dragging: bool,
-    // pub(crate) drag_shape: DragShape,
     pub(crate) precinct: Option<Entity>,
     pub(crate) anchor_pos: Vec2,
     pub(crate) cursor_pos: Vec2,
     pub(crate) anchor_height: i32,
     pub(crate) floor_outline: Vec<Vec2>,
+    pub(crate) cursor_exemplar: Option<AssetId<Exemplar>>,
     pub(crate) cursor_model: Option<Entity>,
+    pub(crate) cursor_layer: usize,
 }
 
 impl ComputedStates for SceneryOverlay {
@@ -285,11 +303,17 @@ impl ViewTemplate for EditModeSceneryControls {
                     ToolIconButton::new("editor/icons/rotate-ccw.png")
                         .size(Vec2::new(32., 24.))
                         .tint(false)
-                        .corners(RoundedCorners::BottomLeft),
+                        .corners(RoundedCorners::BottomLeft)
+                        .on_click(cx.create_callback(|mut commands: Commands| {
+                            commands.trigger(RotateSelection(-1));
+                        })),
                     ToolIconButton::new("editor/icons/rotate-cw.png")
                         .size(Vec2::new(32., 24.))
                         .tint(false)
-                        .corners(RoundedCorners::BottomRight),
+                        .corners(RoundedCorners::BottomRight)
+                        .on_click(cx.create_callback(|mut commands: Commands| {
+                            commands.trigger(RotateSelection(1));
+                        })),
                 )),
             ToolPalette::new()
                 .columns(3)
@@ -580,8 +604,160 @@ impl ViewTemplate for ActorExemplarChooser {
     }
 }
 
-fn create_model_cursor(
+fn update(
+    mut commands: Commands,
+    q_precints: Query<&Precinct>,
+    q_children: Query<&Children>,
+    mut q_scenery_elements: Query<&mut SceneryElement>,
     mut r_drag_state: ResMut<SceneryDragState>,
-    r_scenery_tool: Res<State<SceneryTool>>,
+    mut r_exemplars: ResMut<Assets<Exemplar>>,
+    r_selected_tier: Res<SelectedTier>,
+    r_selected_facing: Res<SelectedFacing>,
 ) {
+    let mut show_wall = false;
+    if let Some(exemplar_id) = r_drag_state.cursor_exemplar {
+        if let Some(ref exemplar) = r_exemplars.get_strong_handle(exemplar_id) {
+            let precinct = q_precints.get(r_drag_state.precinct.unwrap()).unwrap();
+            show_wall = true;
+            let facing = r_selected_facing.0 as f32 * -std::f32::consts::PI / 2.;
+
+            let mut coords: Vec<Vec3> = Vec::with_capacity(64);
+            let area = Rect::from_corners(r_drag_state.anchor_pos, r_drag_state.cursor_pos);
+            let mut x = area.min.x;
+            while x <= area.max.x {
+                let mut z = area.min.y;
+                while z <= area.max.y {
+                    coords.push(Vec3::new(x, r_selected_tier.0 as f32 + TIER_OFFSET, z));
+                    z += 1.0;
+                }
+                x += 1.0;
+            }
+
+            let cursor_model = match r_drag_state.cursor_model {
+                Some(parent) => parent,
+                None => commands.spawn(SpatialBundle::default()).id(),
+            };
+            r_drag_state.cursor_model = Some(cursor_model);
+            commands
+                .entity(cursor_model)
+                .insert(Transform::from_translation(Vec3::new(
+                    precinct.coords.x as f32 * PRECINCT_SIZE_F,
+                    r_selected_tier.0 as f32 + TIER_OFFSET,
+                    precinct.coords.y as f32 * PRECINCT_SIZE_F,
+                )));
+
+            let mut children = match q_children.get(cursor_model) {
+                Ok(children) => children.iter().copied().collect(),
+                Err(_) => Vec::new(),
+            };
+
+            if children.len() > coords.len() {
+                for child in children.iter().skip(coords.len()) {
+                    commands.entity(*child).despawn_recursive();
+                }
+                children.truncate(coords.len());
+            }
+
+            for (i, coord) in coords.iter().enumerate() {
+                let mut transform = Transform::from_translation(*coord);
+                transform.rotate(Quat::from_rotation_y(facing));
+                if i < children.len() {
+                    let child = children[i];
+                    let mut scenery_element = q_scenery_elements.get_mut(child).unwrap();
+                    if scenery_element.exemplar == *exemplar {
+                        scenery_element.position = *coord;
+                        scenery_element.facing = facing;
+                        commands.entity(child).insert(transform);
+                        continue;
+                    }
+                    commands.entity(child).despawn_recursive();
+                }
+
+                let child = commands
+                    .spawn((
+                        SceneryElement {
+                            iid: SceneryInstanceId::Internal(0),
+                            exemplar: exemplar.clone(),
+                            facing,
+                            position: *coord,
+                        },
+                        SpatialBundle {
+                            transform,
+                            ..default()
+                        },
+                        RenderLayers::layer(r_drag_state.cursor_layer),
+                        SceneryElementRebuildAspects,
+                    ))
+                    .id();
+                children.push(child);
+            }
+
+            commands.entity(cursor_model).replace_children(&children);
+        }
+    }
+
+    if !show_wall && r_drag_state.cursor_model.is_some() {
+        commands
+            .entity(r_drag_state.cursor_model.unwrap())
+            .despawn_recursive();
+        r_drag_state.cursor_model = None;
+    }
+}
+
+fn place_walls(
+    trigger: Trigger<PlaceWalls>,
+    mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
+    r_server: Res<AssetServer>,
+) {
+    let event = trigger.event();
+    let precinct = r_precinct_assets.get_mut(event.precinct.id()).unwrap();
+    let exemplar_path = r_server.get_path(event.exemplar).unwrap().to_string();
+    let archetype_id = match precinct.scenery_type_index(&exemplar_path) {
+        Some(id) => id,
+        None => precinct.add_scenery_type(exemplar_path),
+    };
+    let height = event.tier as f32 + TIER_OFFSET;
+    // TODO: For undo purposes, TBA
+    let mut added: Vec<SceneryInstanceId> = Vec::new();
+    let _removed = precinct.remove_scenery_elements(|_, _, pos| {
+        // TODO: Check for wall type?
+        pos.x >= event.area.min.x
+            && pos.x <= event.area.max.x
+            && pos.y > height - 0.5
+            && pos.y < height + 0.5
+            && pos.z >= event.area.min.y
+            && pos.z <= event.area.max.y
+    });
+    let mut x = event.area.min.x;
+    while x <= event.area.max.x {
+        let mut z = event.area.min.y;
+        while z <= event.area.max.y {
+            added.push(precinct.add_scenery_element(
+                archetype_id,
+                event.facing,
+                Vec3::new(x, height, z),
+            ));
+            z += 1.0;
+        }
+        x += 1.0;
+    }
+}
+
+fn remove_walls(
+    trigger: Trigger<RemoveWalls>,
+    mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
+) {
+    let event = trigger.event();
+    let precinct = r_precinct_assets.get_mut(event.precinct.id()).unwrap();
+    let height = event.tier as f32 + TIER_OFFSET;
+    let removed = precinct.remove_scenery_elements(|_, _, pos| {
+        // TODO: Check for wall type?
+        pos.x >= event.area.min.x
+            && pos.x <= event.area.max.x
+            && pos.y > height - 0.5
+            && pos.y < height + 0.5
+            && pos.z >= event.area.min.y
+            && pos.z <= event.area.max.y
+    });
+    println!("Removed {} walls.", removed.len());
 }

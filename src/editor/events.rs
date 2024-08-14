@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use panoply_exemplar::Exemplar;
 
-use crate::terrain::ShapeRef;
+use crate::{scenery::precinct_asset::PrecinctAsset, terrain::ShapeRef};
 
 /// Trigger event which changes the terrain for a parcel.
 #[derive(Clone, Debug, Event)]
@@ -32,3 +32,20 @@ pub struct ThumbnailsReady;
 /// Rotate the current selection.
 #[derive(Clone, Debug, Event)]
 pub struct RotateSelection(pub i32);
+
+#[derive(Clone, Debug, Event)]
+pub struct PlaceWalls {
+    pub precinct: Handle<PrecinctAsset>,
+    pub tier: i16,
+    pub area: Rect,
+    pub facing: f32,
+    pub exemplar: AssetId<Exemplar>,
+    pub replace: bool,
+}
+
+#[derive(Clone, Debug, Event)]
+pub struct RemoveWalls {
+    pub precinct: Handle<PrecinctAsset>,
+    pub tier: i16,
+    pub area: Rect,
+}
