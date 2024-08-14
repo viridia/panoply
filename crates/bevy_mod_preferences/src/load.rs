@@ -53,12 +53,18 @@ pub fn load_preferences(world: &mut World) {
                 let type_name = treg.type_info().type_path();
                 match treg.type_info() {
                     TypeInfo::Struct(stty) => {
-                        if let Some(_group) = stty.custom_attributes().get::<PreferencesGroup>() {
-                            // let group = table.get(group.0).unwrap().as_table().unwrap();
-                            warn!("Preferences: Structs not supported yet: {}", type_name);
-                        } else if let Some(_key) = stty.custom_attributes().get::<PreferencesKey>()
-                        {
-                            warn!("Preferences: Structs not supported yet: {}", type_name);
+                        let group_attr = stty.custom_attributes().get::<PreferencesGroup>();
+                        let key_attr = stty.custom_attributes().get::<PreferencesKey>();
+                        if group_attr.is_some() || key_attr.is_some() {
+                            let mut ptr = world.get_resource_mut_by_id(res_id).unwrap();
+                            let reflect_from_ptr = treg.data::<ReflectFromPtr>().unwrap();
+                            let ReflectMut::Struct(strct) =
+                                unsafe { reflect_from_ptr.as_reflect_mut(ptr.as_mut()) }
+                                    .reflect_mut()
+                            else {
+                                panic!("Expected Struct");
+                            };
+                            maybe_load_struct(&registry, strct, group_attr, key_attr, &table);
                         }
                     }
 
@@ -184,6 +190,82 @@ pub fn load_preferences(world: &mut World) {
                 }
             }
             // println!("Saving preferences for {:?}", res.name());
+        }
+    }
+}
+
+fn maybe_load_struct(
+    registry: &AppTypeRegistry,
+    strct: &mut dyn Struct,
+    group_attr: Option<&PreferencesGroup>,
+    key_attr: Option<&PreferencesKey>,
+    table: &toml::Table,
+) {
+    if let Some(group) = group_attr {
+        let Some(group_value) = table.get(group.0) else {
+            return;
+        };
+        let Some(group) = group_value.as_table() else {
+            return;
+        };
+
+        if let Some(_key) = key_attr {
+            todo!();
+        } else {
+            // TODO: Need to derive key name from tuple struct name
+            load_struct(registry, strct, group);
+            // todo!();
+        }
+    } else if let Some(_key) = key_attr {
+        todo!();
+        // load_struct(registry, strct, key.0, table);
+    }
+}
+
+fn load_struct(registry: &AppTypeRegistry, strct: &mut dyn Struct, table: &toml::Table) {
+    for i in 0..strct.field_len() {
+        let key = strct.name_at(i).unwrap().to_owned();
+        let field_mut = strct.field_at_mut(i).unwrap();
+        match field_mut.get_represented_type_info().unwrap() {
+            TypeInfo::Struct(_) => todo!(),
+            TypeInfo::TupleStruct(_) => todo!(),
+            TypeInfo::Tuple(_) => todo!(),
+            TypeInfo::List(_) => todo!(),
+            TypeInfo::Array(_) => todo!(),
+            TypeInfo::Map(_) => todo!(),
+            TypeInfo::Enum(en) => {
+                if en.type_path().starts_with("core::option::Option") {
+                    if table.contains_key(&key) {
+                        let VariantInfo::Tuple(variant_info) = en.variant("Some").unwrap() else {
+                            panic!("Expected Tuple variant for Some");
+                        };
+                        let some_field = variant_info.field_at(0).unwrap();
+                        let rr = registry.read();
+                        let field_type = rr.get(some_field.type_id()).unwrap();
+                        let mut tuple = DynamicTuple::default();
+                        tuple.set_represented_type(Some(field_type.type_info()));
+                        drop(rr);
+                        decode_value(tuple.as_reflect_mut(), table.get(&key).unwrap());
+                        let value = DynamicEnum::new("Some", DynamicVariant::Tuple(tuple));
+                        field_mut.apply(value.as_reflect());
+                    } else {
+                        // Key not found, set to None
+                        field_mut
+                            .apply(DynamicEnum::new("None", DynamicVariant::Unit).as_reflect());
+                    };
+                } else {
+                    warn!("Preferences: Unsupported enum type: {:?}", en);
+                }
+            }
+            TypeInfo::Value(_) => {
+                if let Some(value) = table.get(&key) {
+                    if let Ok(value) =
+                        decode_value_boxed(field_mut.get_represented_type_info().unwrap(), value)
+                    {
+                        field_mut.apply(value.as_reflect())
+                    }
+                }
+            }
         }
     }
 }

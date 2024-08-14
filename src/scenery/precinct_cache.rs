@@ -19,7 +19,7 @@ pub struct PrecinctCache {
 impl PrecinctCache {
     pub fn new() -> Self {
         Self {
-            size: 64,
+            size: 128,
             precincts: lru::LruCache::unbounded(),
         }
     }
@@ -47,8 +47,10 @@ pub fn spawn_precincts(
         return;
     }
 
+    let distance = viewpoint.camera_distance(); // Nominally 20
+
     // Determine coordinates of view in precinct units.
-    let view_radius = 32.;
+    let view_radius = distance * 0.75 + 20.;
     let query_rect = QueryRect {
         realm: viewpoint.realm.expect("Realm id expected"),
         bounds: IRect::new(

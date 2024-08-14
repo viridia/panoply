@@ -710,7 +710,10 @@ fn place_walls(
     r_server: Res<AssetServer>,
 ) {
     let event = trigger.event();
-    let precinct = r_precinct_assets.get_mut(event.precinct.id()).unwrap();
+    let Some(precinct) = r_precinct_assets.get_mut(event.precinct.id()) else {
+        warn!("Precinct not found: {:?}", event.precinct);
+        return;
+    };
     let exemplar_path = r_server.get_path(event.exemplar).unwrap().to_string();
     let archetype_id = match precinct.scenery_type_index(&exemplar_path) {
         Some(id) => id,
@@ -748,7 +751,10 @@ fn remove_walls(
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
 ) {
     let event = trigger.event();
-    let precinct = r_precinct_assets.get_mut(event.precinct.id()).unwrap();
+    let Some(precinct) = r_precinct_assets.get_mut(event.precinct.id()) else {
+        warn!("Precinct not found: {:?}", event.precinct);
+        return;
+    };
     let height = event.tier as f32 + TIER_OFFSET;
     let removed = precinct.remove_scenery_elements(|_, _, pos| {
         // TODO: Check for wall type?

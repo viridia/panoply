@@ -21,10 +21,10 @@ pub fn camera_controller(
     mut scroll_events: EventReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &mut RenderLayers), With<PrimaryCamera>>,
+    mut q_camera: Query<(&mut Transform, &mut RenderLayers), With<PrimaryCamera>>,
     query_realms: Query<&Realm>,
 ) {
-    let (mut transform, mut layers) = query.single_mut();
+    let (mut transform, mut layers) = q_camera.single_mut();
 
     let strafe =
         keyboard_input.pressed(KeyCode::ShiftLeft) || keyboard_input.pressed(KeyCode::ShiftRight);

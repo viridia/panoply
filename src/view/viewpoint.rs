@@ -46,6 +46,14 @@ impl Viewpoint {
         transform.translation =
             self.position + transform.rotation * Vec3::new(0., 0., self.camera_distance);
     }
+
+    pub fn camera_distance(&self) -> f32 {
+        self.camera_distance
+    }
+
+    pub fn set_camera_distance(&mut self, distance: f32) {
+        self.camera_distance = distance;
+    }
 }
 
 /// Command which directly sets the viewpoint to a new position, used in editor.

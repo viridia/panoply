@@ -30,7 +30,7 @@ pub struct ParcelCache {
 impl ParcelCache {
     pub fn new() -> Self {
         Self {
-            size: 64,
+            size: 128,
             parcels: lru::LruCache::unbounded(),
         }
     }
@@ -96,8 +96,10 @@ pub fn spawn_parcels(
         return;
     }
 
+    let distance = viewpoint.camera_distance(); // Nominally 20
+
     // Determine coordinates of view in parcel units.
-    let view_radius = 32.;
+    let view_radius = distance * 0.75 + 20.;
     let query_rect = QueryRect {
         realm: viewpoint.realm.expect("Realm id expected"),
         bounds: IRect::new(

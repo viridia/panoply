@@ -34,14 +34,17 @@ impl Command for SavePreferences {
                     if let Some(treg) = registry_read.get(tid) {
                         match treg.type_info() {
                             bevy::reflect::TypeInfo::Struct(stty) => {
-                                if let Some(_group) =
-                                    stty.custom_attributes().get::<PreferencesGroup>()
-                                {
-                                    warn!("Preferences: Structs not supported yet: {}", res.name());
-                                } else if let Some(_key) =
-                                    stty.custom_attributes().get::<PreferencesKey>()
-                                {
-                                    warn!("Preferences: Structs not supported yet: {}", res.name());
+                                let group_attr = stty.custom_attributes().get::<PreferencesGroup>();
+                                let key_attr = stty.custom_attributes().get::<PreferencesKey>();
+                                if group_attr.is_some() || key_attr.is_some() {
+                                    let ptr = world.get_resource_by_id(res.id()).unwrap();
+                                    let reflect_from_ptr = treg.data::<ReflectFromPtr>().unwrap();
+                                    let ReflectRef::Struct(st) =
+                                        unsafe { reflect_from_ptr.as_reflect(ptr) }.reflect_ref()
+                                    else {
+                                        panic!("Expected Struct");
+                                    };
+                                    maybe_save_struct(st, group_attr, key_attr, &mut table);
                                 }
                             }
                             bevy::reflect::TypeInfo::TupleStruct(tsty) => {
@@ -127,6 +130,47 @@ impl Command for SavePreferences {
     }
 }
 
+fn maybe_save_struct(
+    strct: &dyn Struct,
+    group_attr: Option<&PreferencesGroup>,
+    key_attr: Option<&PreferencesKey>,
+    table: &mut toml::Table,
+) {
+    if let Some(group) = group_attr {
+        let group = table
+            .entry(group.0.to_string())
+            .or_insert(toml::Value::Table(toml::Table::new()))
+            .as_table_mut()
+            .unwrap();
+        if let Some(_key) = key_attr {
+            todo!();
+        } else {
+            // TODO: Need to derive key name from tuple struct name
+            save_struct(strct, group);
+        }
+    } else if let Some(_key) = key_attr {
+        // save_struct(strct, key.0, table);
+        todo!();
+    }
+}
+
+fn save_struct(strct: &dyn Struct, table: &mut toml::Table) {
+    for i in 0..strct.field_len() {
+        let field_reflect = strct.field_at(i).unwrap();
+        match field_reflect.reflect_ref() {
+            ReflectRef::Struct(_) => todo!(),
+            ReflectRef::TupleStruct(_) => todo!(),
+            ReflectRef::Tuple(_) => todo!(),
+            ReflectRef::List(_) => todo!(),
+            ReflectRef::Array(_) => todo!(),
+            ReflectRef::Map(_) => todo!(),
+            ReflectRef::Enum(_) | ReflectRef::Value(_) => {
+                save_value(field_reflect, strct.name_at(i).unwrap(), table);
+            }
+        }
+    }
+}
+
 fn maybe_save_tuple_struct(
     tuple_struct: &dyn TupleStruct,
     group_attr: Option<&PreferencesGroup>,
@@ -195,7 +239,7 @@ fn save_enum(enum_ref: &dyn Enum, key: &'static str, table: &mut toml::Table) {
     table.insert(key.to_string(), v);
 }
 
-fn save_value(value: &dyn Reflect, key: &'static str, table: &mut toml::Table) {
+fn save_value(value: &dyn Reflect, key: &str, table: &mut toml::Table) {
     match value.reflect_ref() {
         ReflectRef::Struct(_) => todo!(),
         ReflectRef::TupleStruct(_) => todo!(),

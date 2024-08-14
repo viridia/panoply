@@ -2,7 +2,12 @@ use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use exemplars::ExemplarsHandleResource;
 use lib::pick_plane::PlanePickBackend;
-use ui::{mode_realm, mode_scenery::EditSceneryPlugin, tool_terrain_edit};
+use ui::{
+    mode_realm,
+    mode_scenery::EditSceneryPlugin,
+    tool_terrain_edit,
+    zoom_selector::{update_zoom_level, ZoomLevel},
+};
 
 use crate::terrain::terrain_groups::{
     TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
@@ -96,11 +101,13 @@ impl Plugin for EditorPlugin {
             .init_resource::<TerrainDragState>()
             .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
+            .init_resource::<ZoomLevel>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
             .register_type::<NextState<EditorMode>>()
             .register_type::<State<TerrainTool>>()
             .register_type::<NextState<TerrainTool>>()
+            .register_type::<ZoomLevel>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)
@@ -126,6 +133,7 @@ impl Plugin for EditorPlugin {
                     )
                         .chain(),
                     tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
+                    update_zoom_level,
                 ),
             )
             .add_plugins((EditSceneryPlugin, PlanePickBackend));

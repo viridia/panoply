@@ -160,7 +160,7 @@ pub fn sync_realms(
                             // bounds for better visual quality.
                             cascade_shadow_config: CascadeShadowConfigBuilder {
                                 first_cascade_far_bound: 4.0,
-                                maximum_distance: 40.0,
+                                maximum_distance: 130.0,
                                 ..default()
                             }
                             .into(),

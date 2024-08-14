@@ -10,6 +10,7 @@ pub mod tool_floor_create;
 pub mod tool_floor_edit;
 pub mod tool_terrain_edit;
 pub mod tool_wall_create;
+pub mod zoom_selector;
 
 pub mod quick_nav;
 
@@ -26,6 +27,7 @@ use bevy_quill_obsidian::{
 };
 use mode_selector::{EditorModalControls, ModeSelector};
 use quick_nav::{QuickNavDialog, QuickNavOpen};
+use zoom_selector::ZoomSelector;
 
 use crate::view::{viewport::ViewportInsetElement, HudCamera};
 
@@ -88,7 +90,7 @@ impl ViewTemplate for EditorView {
                     .children((
                         Element::<NodeBundle>::new()
                             .style(style_aside_header)
-                            .children((ModeSelector, Spacer)),
+                            .children((ModeSelector, Spacer, ZoomSelector)),
                         EditorModalControls,
                     )),
                 Splitter::new()
