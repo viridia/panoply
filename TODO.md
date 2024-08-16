@@ -5,7 +5,6 @@
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
 - Quit confirm dialog
 - Text input
-- Use Arc<String> more in resources. Also make serialization mod.
 - File unsaved indicator.
   - Track which things are unsaved.
 - Undo / Redo

@@ -627,7 +627,7 @@ fn update(
             while x <= area.max.x {
                 let mut z = area.min.y;
                 while z <= area.max.y {
-                    coords.push(Vec3::new(x, r_selected_tier.0 as f32 + TIER_OFFSET, z));
+                    coords.push(Vec3::new(x, 0., z));
                     z += 1.0;
                 }
                 x += 1.0;
