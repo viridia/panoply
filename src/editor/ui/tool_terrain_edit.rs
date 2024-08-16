@@ -14,14 +14,18 @@ use bevy::prelude::*;
 use bevy_mod_picking::{focus::HoverMap, prelude::PointerId};
 use bevy_quill::View;
 
-use super::overlays::{SelectedParcelOverlay, TerrainCursorOverlay};
+use super::overlays::{MapBoundsOverlay, SelectedParcelOverlay, TerrainCursorOverlay};
 
 #[derive(Clone, Component)]
 pub struct ParcelOverlay;
 
+#[derive(Clone, Component)]
+pub struct MapOverlay;
+
 pub fn enter(mut commands: Commands) {
     commands.spawn((SelectedParcelOverlay.to_root(), ParcelOverlay));
     commands.spawn((TerrainCursorOverlay.to_root(), ParcelOverlay));
+    commands.spawn((MapBoundsOverlay.to_root(), ParcelOverlay));
     commands.spawn((
         StateScoped(EditorMode::Terrain),
         Observer::new(on_pick_event),

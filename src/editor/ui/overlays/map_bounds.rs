@@ -1,6 +1,7 @@
 use bevy::{
     color::{palettes, Alpha},
     math::{IRect, Rect, Vec2},
+    prelude::Transform,
     render::view::RenderLayers,
 };
 use bevy_quill::{Cx, View, ViewTemplate};
@@ -42,9 +43,9 @@ impl ViewTemplate for MapBoundsOverlay {
             .shape_dyn(
                 |(parcel_bounds, precinct_bounds), sb| {
                     sb.with_orientation(ShapeOrientation::YPositive)
-                        .with_stroke_width(0.9)
-                        .stroke_rect(parcel_bounds.inflate(0.9));
-                    sb.with_stroke_width(0.1);
+                        .with_stroke_width(0.4)
+                        .stroke_rect(parcel_bounds.inflate(0.5));
+                    sb.with_stroke_width(0.05);
                     for x in precinct_bounds.min.x..precinct_bounds.max.x {
                         sb.stroke_polygon(
                             &[
@@ -78,7 +79,8 @@ impl ViewTemplate for MapBoundsOverlay {
                 },
                 (parcel_bounds, precinct_bounds),
             )
-            .color(palettes::css::WHITE.with_alpha(0.5))
+            .color(palettes::css::WHITE.with_alpha(0.3))
+            .insert(Transform::from_xyz(0., 0.001, 0.))
             .insert_dyn(|layer| layer, layer)
     }
 }

@@ -177,26 +177,8 @@ pub enum SceneryInstanceId {
     None,
     Internal(usize),
 
-    #[serde(
-        serialize_with = "serialize_arc_string",
-        deserialize_with = "deserialize_arc_string"
-    )]
+    #[serde(with = "panoply_exemplar::arcstring")]
     External(Arc<String>),
-}
-
-fn serialize_arc_string<S>(value: &Arc<String>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::ser::Serializer,
-{
-    serializer.serialize_str(value)
-}
-
-fn deserialize_arc_string<'de, D>(deserializer: D) -> Result<Arc<String>, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    Ok(Arc::new(s))
 }
 
 #[derive(Debug, Default, Clone)]

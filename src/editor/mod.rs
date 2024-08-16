@@ -58,6 +58,7 @@ pub(crate) struct TerrainDragState {
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
 #[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("mode"))]
 pub enum EditorMode {
+    Initial,
     #[default]
     Realm,
     Terrain,
@@ -92,7 +93,7 @@ impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<TerrainGroupsAsset>()
             .register_asset_loader(TerrainGroupsLoader)
-            .insert_state(EditorMode::default())
+            .insert_state(EditorMode::Initial)
             .insert_state(TerrainTool::default())
             .enable_state_scoped_entities::<EditorMode>()
             .enable_state_scoped_entities::<TerrainTool>()

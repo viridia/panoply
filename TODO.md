@@ -1,17 +1,19 @@
 # TODO
 
-- Zoom In / Out
-- Show wall create area
 - Better picking on tiers - disable terrain picks
+- Crash - inserting flora compute task on deleted entity.
+- wall draw sometimes kicks into remove mode - missing exemplar ref?
 - Quit confirm dialog
 - Text input
+- Use Arc<String> more in resources. Also make serialization mod.
 - File unsaved indicator.
   - Track which things are unsaved.
 - Undo / Redo
 - Terrain contour list.
   - filter by group
   - empty tile shows nothing, should show black floor.
-- move prefs to own crate.
+- think about converting realm name to Arc<String>. Either that or have a realm id.
+- move prefs to own crate (and use it).
 - World camera pan needs to use bubbled scroll events.
 - Build an entity inspector
 - Bugs:
@@ -226,12 +228,20 @@ Future:
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
 convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
 
-# Scenery modes:
+# Unsaved:
 
-SceneryOverlayNone
-SceneryOverlayFloorOutline
-SceneryOverlayFloorStamp
-SceneryOverlayPlaceWall
-SceneryOverlayPlaceFixture
-SceneryOverlayPlaceActor
-SceneryOverlayDrawTerrainFx
+- precincts
+- contours
+- terrain maps
+- exemplars
+
+# Editor folder organization
+
+- scenery
+  - mod
+  - panel
+  - tool_create_floor etc.
+  - enter / exit / update
+  - mutations / commands
+  - drag states
+  - overlays

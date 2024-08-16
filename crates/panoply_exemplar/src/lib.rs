@@ -3,6 +3,8 @@
 
 #![warn(missing_docs)]
 
+/// Serialzation and deserialization for `Arc<String>`.
+pub mod arcstring;
 mod aspect;
 mod aspect_list;
 mod command;

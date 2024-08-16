@@ -224,19 +224,18 @@ fn intpoint_to_vec2(p: &IntPoint) -> Vec2 {
 
 pub fn on_stamp_floor(
     trigger: Trigger<FloorStampEvent>,
-    mut q_precincts: Query<&mut Precinct>,
+    q_precincts: Query<&Precinct>,
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
     r_server: ResMut<AssetServer>,
 ) {
     let event = trigger.event();
-    let Ok(mut precinct) = q_precincts.get_mut(event.precinct) else {
+    let Ok(precinct) = q_precincts.get(event.precinct) else {
         return;
     };
     let precinct_asset = match r_precinct_assets.get_mut(precinct.asset.id()) {
-        Some(precinct_asset) => precinct_asset,
+        Some(precinct) => precinct,
         None => {
-            let precinct_asset = PrecinctAsset::default();
-            precinct.asset = r_precinct_assets.add(precinct_asset);
+            r_precinct_assets.insert(precinct.asset.id(), PrecinctAsset::default());
             r_precinct_assets.get_mut(precinct.asset.id()).unwrap()
         }
     };
