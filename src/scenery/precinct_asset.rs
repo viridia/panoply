@@ -16,10 +16,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{
-    actors::{ActorInstance, ActorInstanceListDeserializer},
-    msgpack::Box2d,
-};
+use crate::actors::{ActorInstance, ActorInstanceListDeserializer};
 
 use super::floor_region::FloorRegionSer;
 
@@ -77,7 +74,7 @@ impl PrecinctAsset {
             TierSer {
                 level,
                 pfloors: Vec::new(),
-                cutaways: None,
+                cutaways: Vec::new(),
             },
         );
         &mut self.tiers[index]
@@ -167,7 +164,8 @@ pub struct TierSer {
     #[serde(default)]
     pub(crate) pfloors: Vec<FloorRegionSer>,
 
-    pub(crate) cutaways: Option<Vec<Box2d>>,
+    #[serde(default, with = "panoply_exemplar::ser::vec_rect")]
+    pub(crate) cutaways: Vec<Rect>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -177,7 +175,7 @@ pub enum SceneryInstanceId {
     None,
     Internal(usize),
 
-    #[serde(with = "panoply_exemplar::arcstring")]
+    #[serde(with = "panoply_exemplar::ser::arcstring")]
     External(Arc<String>),
 }
 

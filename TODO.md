@@ -3,6 +3,7 @@
 - Better picking on tiers - disable terrain picks
 - Crash - inserting flora compute task on deleted entity.
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
+- separate crate for realms?
 - Quit confirm dialog
 - Text input
 - File unsaved indicator.
@@ -19,8 +20,6 @@
   - Materials get loaded multiple times?
 - Assets
   - Asset Reader that allows cache miss
-  - Remove Box2d types, replace with 4-tuple, or perhaps 2-tuple of 2-tuple.
-  - Preferences API.
 - Wall Physics
   - implement
   - Use enum for collider type? Really depends on whether it's editable.
@@ -233,6 +232,8 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
 - contours
 - terrain maps
 - exemplars
+- region?
+- quests and other meta.
 
 # Editor folder organization
 

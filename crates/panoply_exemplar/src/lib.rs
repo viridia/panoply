@@ -3,14 +3,14 @@
 
 #![warn(missing_docs)]
 
-/// Serialzation and deserialization for `Arc<String>`.
-pub mod arcstring;
 mod aspect;
 mod aspect_list;
 mod command;
 mod exemplar;
 mod instance_type;
 mod loader;
+/// Serialzation and deserialization functions.
+pub mod ser;
 
 use bevy::{
     app::{App, Plugin},

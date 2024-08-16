@@ -35,7 +35,6 @@ mod actors;
 mod diagnostics;
 mod materials;
 mod models;
-mod msgpack;
 mod portals;
 mod random;
 mod reflect_types;
@@ -50,7 +49,6 @@ use crate::{
     actors::ActorsPlugin,
     diagnostics::ScreenDiagsPlugin,
     materials::{InlineAssetReader, MaterialsPlugin},
-    msgpack::MsgpackExtPlugin,
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
@@ -137,7 +135,6 @@ fn main() {
     .add_systems(Update, close_on_esc)
     .add_systems(Update, watch_prefs_changes)
     .add_plugins((
-        MsgpackExtPlugin,
         ReflectTypesPlugin,
         ExemplarPlugin,
         MaterialsPlugin,
