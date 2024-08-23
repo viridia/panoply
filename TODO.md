@@ -11,6 +11,7 @@
 - Undo / Redo
 - Terrain contour list.
   - filter by group
+  - contours not appearing in the correct order in groups.
   - empty tile shows nothing, should show black floor.
 - think about converting realm name to Arc<String>. Either that or have a realm id.
 - move prefs to own crate (and use it).
@@ -226,11 +227,12 @@ Future:
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
 convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
 
-# Unsaved:
+# UnsavedState:
 
 - precincts
 - contours
 - terrain maps
+- terrain groups
 - exemplars
 - region?
 - quests and other meta.

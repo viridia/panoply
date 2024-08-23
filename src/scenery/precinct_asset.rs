@@ -47,7 +47,7 @@ pub struct PrecinctAsset {
 
     /// Table of scenery instances.
     #[serde(default)]
-    pub(crate) scenery: Vec<CompressedInstance>,
+    pub(crate) scenery: Vec<SceneryInstanceData>,
     // layers?: Record<string, ILayerData>,
 }
 
@@ -99,9 +99,11 @@ impl PrecinctAsset {
         arch: usize,
         facing: f32,
         position: Vec3,
+        instance_id: Option<SceneryInstanceId>,
     ) -> SceneryInstanceId {
-        let iid = SceneryInstanceId::Internal(self.next_scenery_id());
-        self.scenery.push(CompressedInstance {
+        let iid =
+            instance_id.unwrap_or_else(|| SceneryInstanceId::Internal(self.next_scenery_id()));
+        self.scenery.push(SceneryInstanceData {
             id: arch,
             facing,
             position,
@@ -114,8 +116,8 @@ impl PrecinctAsset {
     pub fn remove_scenery_elements<F: Fn(&SceneryInstanceId, usize, &Vec3) -> bool>(
         &mut self,
         filter: F,
-    ) -> Vec<CompressedInstance> {
-        let mut removed: Vec<CompressedInstance> = Vec::new();
+    ) -> Vec<SceneryInstanceData> {
+        let mut removed: Vec<SceneryInstanceData> = Vec::new();
         self.scenery.retain(|c| {
             if filter(&c.iid, c.id, &c.position) {
                 removed.push((*c).clone());
@@ -180,7 +182,7 @@ pub enum SceneryInstanceId {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct CompressedInstance {
+pub struct SceneryInstanceData {
     /// Archetype Id
     pub id: usize,
 
@@ -197,7 +199,7 @@ pub struct CompressedInstance {
     pub aspects: InstanceAspects,
 }
 
-impl Serialize for CompressedInstance {
+impl Serialize for SceneryInstanceData {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
@@ -227,7 +229,7 @@ struct CompressedInstanceVisitor<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
-    type Value = CompressedInstance;
+    type Value = SceneryInstanceData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a compressed instance tuple")
@@ -238,7 +240,7 @@ impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
         A: serde::de::SeqAccess<'de>,
     {
         // Tuple of length 3..5
-        let mut result: CompressedInstance = CompressedInstance::default();
+        let mut result: SceneryInstanceData = SceneryInstanceData::default();
         match seq.next_element::<usize>() {
             Ok(Some(id)) => result.id = id,
             _ => return Err(serde::de::Error::invalid_length(0, &self)),
@@ -275,7 +277,7 @@ struct CompressedInstanceDeserializer<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> DeserializeSeed<'de> for CompressedInstanceDeserializer<'a, 'b> {
-    type Value = CompressedInstance;
+    type Value = SceneryInstanceData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -296,7 +298,7 @@ struct CompressedInstanceListVisitor<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceListVisitor<'a, 'b> {
-    type Value = Vec<CompressedInstance>;
+    type Value = Vec<SceneryInstanceData>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a list of compressed instances")
@@ -306,7 +308,7 @@ impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceListVisitor<'a, 'b> {
     where
         A: serde::de::SeqAccess<'de>,
     {
-        let mut result: Vec<CompressedInstance> = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+        let mut result: Vec<SceneryInstanceData> = Vec::with_capacity(seq.size_hint().unwrap_or(0));
         while let Some(compressed_instance) =
             seq.next_element_seed(CompressedInstanceDeserializer {
                 type_registry: self.type_registry,
@@ -327,7 +329,7 @@ struct CompressedInstanceListDeserializer<'a, 'b> {
 }
 
 impl<'de, 'a, 'b> DeserializeSeed<'de> for CompressedInstanceListDeserializer<'a, 'b> {
-    type Value = Vec<CompressedInstance>;
+    type Value = Vec<SceneryInstanceData>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where

@@ -2,23 +2,35 @@ use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use exemplars::ExemplarsHandleResource;
 use lib::pick_plane::PlanePickBackend;
+use modified_assets::ModifiedAssets;
 use ui::{
     mode_realm,
     mode_scenery::EditSceneryPlugin,
     tool_terrain_edit,
     zoom_selector::{update_zoom_level, ZoomLevel},
 };
+use undo::UndoStack;
 
-use crate::terrain::terrain_groups::{
-    TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
+use crate::{
+    scenery::precinct_asset::PrecinctAsset,
+    terrain::{
+        terrain_contours::TerrainContoursTableAsset,
+        terrain_groups::{TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader},
+        TerrainMapAsset,
+    },
+    world::WorldLocationsAsset,
 };
 
 mod camera;
 mod events;
 mod exemplars;
 mod lib;
+mod modified_assets;
 pub mod renderers;
+mod scenery;
+mod terrain;
 mod ui;
+mod undo;
 
 pub struct EditorPlugin;
 
@@ -103,6 +115,12 @@ impl Plugin for EditorPlugin {
             .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
             .init_resource::<ZoomLevel>()
+            .init_resource::<ModifiedAssets<PrecinctAsset>>()
+            .init_resource::<ModifiedAssets<TerrainMapAsset>>()
+            .init_resource::<ModifiedAssets<TerrainContoursTableAsset>>()
+            .init_resource::<ModifiedAssets<TerrainGroupsAsset>>()
+            .init_resource::<ModifiedAssets<WorldLocationsAsset>>()
+            .init_resource::<UndoStack>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
             .register_type::<NextState<EditorMode>>()

@@ -22,7 +22,7 @@ pub struct TerrainGroup {
 #[derive(Default, Serialize, Deserialize)]
 pub struct TerrainGroupsTable(pub Vec<TerrainGroup>);
 
-#[derive(TypePath, Asset)]
+#[derive(TypePath, Asset, Default)]
 pub struct TerrainGroupsAsset(pub Arc<RwLock<TerrainGroupsTable>>);
 
 #[derive(Default)]

@@ -9,7 +9,7 @@ use super::{
     scenery_aspect::{ModelComponent, SceneryModels},
 };
 
-#[derive(Debug, Component, Default)]
+#[derive(Debug, Component, Clone, Default)]
 pub struct SceneryElement {
     pub iid: SceneryInstanceId,
     pub exemplar: Handle<Exemplar>,

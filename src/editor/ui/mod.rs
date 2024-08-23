@@ -29,7 +29,10 @@ use mode_selector::{EditorModalControls, ModeSelector};
 use quick_nav::{QuickNavDialog, QuickNavOpen};
 use zoom_selector::ZoomSelector;
 
-use crate::view::{viewport::ViewportInsetElement, HudCamera};
+use crate::{
+    editor::undo::{RedoCommand, UndoCommand},
+    view::{viewport::ViewportInsetElement, HudCamera},
+};
 
 use super::{events::RotateSelection, EditorSidebarWidth};
 
@@ -62,7 +65,14 @@ impl ViewTemplate for EditorView {
                     On::<KeyPressEvent>::run(
                         |ev: ListenerMut<KeyPressEvent>,
                          mut commands: Commands,
-                         mut open: ResMut<NextState<QuickNavOpen>>| {
+                         mut open: ResMut<NextState<QuickNavOpen>>,
+                         key: Res<ButtonInput<KeyCode>>| {
+                            let shift =
+                                key.pressed(KeyCode::ShiftLeft) || key.pressed(KeyCode::ShiftRight);
+                            let ctrl = key.pressed(KeyCode::ControlLeft)
+                                || key.pressed(KeyCode::ControlRight);
+                            let command =
+                                key.pressed(KeyCode::SuperLeft) || key.pressed(KeyCode::SuperRight);
                             // println!("Key: {:?}", ev.key_code);
                             if ev.key_code == KeyCode::KeyG {
                                 open.set(QuickNavOpen(true));
@@ -70,6 +80,12 @@ impl ViewTemplate for EditorView {
                                 commands.trigger(RotateSelection(-1));
                             } else if ev.key_code == KeyCode::BracketRight {
                                 commands.trigger(RotateSelection(1));
+                            } else if ev.key_code == KeyCode::KeyZ && (command || ctrl) {
+                                if shift {
+                                    commands.add(RedoCommand);
+                                } else {
+                                    commands.add(UndoCommand);
+                                }
                             }
                         },
                     )

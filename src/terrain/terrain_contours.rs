@@ -124,6 +124,7 @@ impl TerrainContour {
 //     return this;
 //   }
 
+#[derive(Default)]
 pub struct TerrainContoursTable {
     /// Array of shapes, in the order that they appear in the editor's shape catalog.
     shapes: Vec<TerrainContour>,
@@ -151,7 +152,7 @@ impl TerrainContoursTable {
     }
 }
 
-#[derive(TypePath, Asset)]
+#[derive(TypePath, Asset, Default)]
 pub struct TerrainContoursTableAsset(pub Arc<RwLock<TerrainContoursTable>>);
 
 #[non_exhaustive]

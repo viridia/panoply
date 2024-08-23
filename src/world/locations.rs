@@ -35,7 +35,7 @@ impl WorldLocation {
     }
 }
 
-#[derive(TypePath, Asset)]
+#[derive(TypePath, Asset, Default)]
 pub struct WorldLocationsAsset(pub Vec<WorldLocation>);
 
 #[non_exhaustive]

@@ -2,16 +2,18 @@ use crate::{
     actors::ACTOR_TYPE,
     editor::{
         events::{PlaceWalls, RemoveWalls, RotateSelection},
+        modified_assets::ModifiedAssets,
+        undo::{UndoEntry, UndoStack},
         EditorMode,
     },
     scenery::{
         precinct::Precinct,
-        precinct_asset::{PrecinctAsset, SceneryInstanceId},
+        precinct_asset::{PrecinctAsset, SceneryInstanceData, SceneryInstanceId},
         scenery_element::{SceneryElement, SceneryElementRebuildAspects},
         FIXTURE_TYPE, FLOOR_TYPE, PRECINCT_SIZE_F, TIER_OFFSET, WALL_TYPE,
     },
 };
-use bevy::{prelude::*, render::view::RenderLayers, ui};
+use bevy::{prelude::*, render::view::RenderLayers, ui, utils::hashbrown::HashSet};
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
@@ -704,10 +706,68 @@ fn update(
     }
 }
 
+#[derive(Debug, Event)]
+struct UndoPlaceWalls {
+    label: &'static str,
+    precinct: Handle<PrecinctAsset>,
+    added: Vec<SceneryInstanceData>,
+    removed: Vec<SceneryInstanceData>,
+}
+
+impl UndoEntry for UndoPlaceWalls {
+    fn label(&self) -> &'static str {
+        self.label
+    }
+
+    fn undo(&self, world: &mut World) {
+        let Some(mut precinct_assets) = world.get_resource_mut::<Assets<PrecinctAsset>>() else {
+            return;
+        };
+        let Some(precinct) = precinct_assets.get_mut(self.precinct.id()) else {
+            return;
+        };
+        let to_remove = HashSet::<SceneryInstanceId>::from_iter(
+            self.added.iter().map(|scenery| scenery.iid.clone()),
+        );
+        precinct.remove_scenery_elements(|iid, _, _| to_remove.contains(iid));
+        for scenery in self.removed.iter() {
+            precinct.add_scenery_element(
+                scenery.id,
+                scenery.facing,
+                scenery.position,
+                Some(scenery.iid.clone()),
+            );
+        }
+    }
+
+    fn redo(&self, world: &mut World) {
+        let Some(mut precinct_assets) = world.get_resource_mut::<Assets<PrecinctAsset>>() else {
+            return;
+        };
+        let Some(precinct) = precinct_assets.get_mut(self.precinct.id()) else {
+            return;
+        };
+        let to_remove = HashSet::<SceneryInstanceId>::from_iter(
+            self.removed.iter().map(|scenery| scenery.iid.clone()),
+        );
+        precinct.remove_scenery_elements(|iid, _, _| to_remove.contains(iid));
+        for scenery in self.added.iter() {
+            precinct.add_scenery_element(
+                scenery.id,
+                scenery.facing,
+                scenery.position,
+                Some(scenery.iid.clone()),
+            );
+        }
+    }
+}
+
 fn place_walls(
     trigger: Trigger<PlaceWalls>,
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
     r_server: Res<AssetServer>,
+    mut r_modified_precincts: ResMut<ModifiedAssets<PrecinctAsset>>,
+    mut r_undo_stack: ResMut<UndoStack>,
 ) {
     let event = trigger.event();
     let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
@@ -724,8 +784,8 @@ fn place_walls(
     };
     let height = event.tier as f32 + TIER_OFFSET;
     // TODO: For undo purposes, TBA
-    let mut added: Vec<SceneryInstanceId> = Vec::new();
-    let _removed = precinct.remove_scenery_elements(|_, _, pos| {
+    let mut added: Vec<SceneryInstanceData> = Vec::new();
+    let removed = precinct.remove_scenery_elements(|_, _, pos| {
         // TODO: Check for wall type?
         pos.x >= event.area.min.x
             && pos.x <= event.area.max.x
@@ -738,20 +798,32 @@ fn place_walls(
     while x <= event.area.max.x {
         let mut z = event.area.min.y;
         while z <= event.area.max.y {
-            added.push(precinct.add_scenery_element(
-                archetype_id,
-                event.facing,
-                Vec3::new(x, height, z),
-            ));
+            let position = Vec3::new(x, height, z);
+            added.push(SceneryInstanceData {
+                iid: precinct.add_scenery_element(archetype_id, event.facing, position, None),
+                id: archetype_id,
+                facing: event.facing,
+                position,
+                aspects: Default::default(),
+            });
             z += 1.0;
         }
         x += 1.0;
     }
+    r_modified_precincts.add(event.precinct.clone());
+    r_undo_stack.push(UndoPlaceWalls {
+        label: "Place Walls",
+        precinct: event.precinct.clone(),
+        added,
+        removed,
+    });
 }
 
 fn remove_walls(
     trigger: Trigger<RemoveWalls>,
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
+    mut r_modified_precincts: ResMut<ModifiedAssets<PrecinctAsset>>,
+    mut r_undo_stack: ResMut<UndoStack>,
 ) {
     let event = trigger.event();
     let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
@@ -771,5 +843,12 @@ fn remove_walls(
             && pos.z >= event.area.min.y
             && pos.z <= event.area.max.y
     });
-    println!("Removed {} walls.", removed.len());
+    // println!("Removed {} walls.", removed.len());
+    r_modified_precincts.add(event.precinct.clone());
+    r_undo_stack.push(UndoPlaceWalls {
+        label: "Remove Walls",
+        precinct: event.precinct.clone(),
+        added: Vec::new(),
+        removed,
+    });
 }
