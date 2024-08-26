@@ -3,7 +3,7 @@ use crate::{
     editor::{
         events::{PlaceWalls, RemoveWalls, RotateSelection},
         modified_assets::ModifiedAssets,
-        undo::{UndoEntry, UndoStack},
+        undo::{RedoEntry, UndoEntry, UndoStack},
         EditorMode,
     },
     scenery::{
@@ -719,13 +719,9 @@ impl UndoEntry for UndoPlaceWalls {
         self.label
     }
 
-    fn undo(&self, world: &mut World) {
-        let Some(mut precinct_assets) = world.get_resource_mut::<Assets<PrecinctAsset>>() else {
-            return;
-        };
-        let Some(precinct) = precinct_assets.get_mut(self.precinct.id()) else {
-            return;
-        };
+    fn undo(&self, world: &mut World) -> Box<dyn RedoEntry> {
+        let mut precinct_assets = world.get_resource_mut::<Assets<PrecinctAsset>>().unwrap();
+        let precinct = precinct_assets.get_mut(self.precinct.id()).unwrap();
         let to_remove = HashSet::<SceneryInstanceId>::from_iter(
             self.added.iter().map(|scenery| scenery.iid.clone()),
         );
@@ -738,15 +734,23 @@ impl UndoEntry for UndoPlaceWalls {
                 Some(scenery.iid.clone()),
             );
         }
+        Box::new(UndoPlaceWalls {
+            label: self.label,
+            precinct: self.precinct.clone(),
+            added: self.removed.clone(),
+            removed: self.added.clone(),
+        })
+    }
+}
+
+impl RedoEntry for UndoPlaceWalls {
+    fn label(&self) -> &str {
+        self.label
     }
 
-    fn redo(&self, world: &mut World) {
-        let Some(mut precinct_assets) = world.get_resource_mut::<Assets<PrecinctAsset>>() else {
-            return;
-        };
-        let Some(precinct) = precinct_assets.get_mut(self.precinct.id()) else {
-            return;
-        };
+    fn redo(&self, world: &mut World) -> Box<dyn UndoEntry> {
+        let mut precinct_assets = world.get_resource_mut::<Assets<PrecinctAsset>>().unwrap();
+        let precinct = precinct_assets.get_mut(self.precinct.id()).unwrap();
         let to_remove = HashSet::<SceneryInstanceId>::from_iter(
             self.removed.iter().map(|scenery| scenery.iid.clone()),
         );
@@ -759,6 +763,12 @@ impl UndoEntry for UndoPlaceWalls {
                 Some(scenery.iid.clone()),
             );
         }
+        Box::new(UndoPlaceWalls {
+            label: self.label,
+            precinct: self.precinct.clone(),
+            added: self.removed.clone(),
+            removed: self.added.clone(),
+        })
     }
 }
 

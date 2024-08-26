@@ -2,15 +2,19 @@ use bevy::{ecs::world::Command, prelude::*};
 
 pub trait UndoEntry: Send + Sync + 'static {
     fn label(&self) -> &str;
-    fn undo(&self, world: &mut World);
-    fn redo(&self, world: &mut World);
+    fn undo(&self, world: &mut World) -> Box<dyn RedoEntry>;
+}
+
+pub trait RedoEntry: Send + Sync + 'static {
+    fn label(&self) -> &str;
+    fn redo(&self, world: &mut World) -> Box<dyn UndoEntry>;
 }
 
 /// Resource that manages the undo / redo stack.
 #[derive(Default, Resource)]
 pub struct UndoStack {
     undo_stack: Vec<Box<dyn UndoEntry>>,
-    redo_stack: Vec<Box<dyn UndoEntry>>,
+    redo_stack: Vec<Box<dyn RedoEntry>>,
 }
 
 impl UndoStack {
@@ -35,15 +39,13 @@ impl UndoStack {
 
     pub fn undo(&mut self, world: &mut World) {
         if let Some(entity) = self.undo_stack.pop() {
-            entity.undo(world);
-            self.redo_stack.push(entity);
+            self.redo_stack.push(entity.undo(world));
         }
     }
 
     pub fn redo(&mut self, world: &mut World) {
         if let Some(entity) = self.redo_stack.pop() {
-            entity.redo(world);
-            self.undo_stack.push(entity);
+            self.undo_stack.push(entity.redo(world));
         }
     }
 }
