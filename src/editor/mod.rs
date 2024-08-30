@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use exemplars::ExemplarsHandleResource;
 use lib::pick_plane::PlanePickBackend;
-use modified_assets::ModifiedAssets;
 use ui::{
     mode_realm,
     mode_scenery::EditSceneryPlugin,
@@ -11,26 +10,20 @@ use ui::{
 };
 use undo::UndoStack;
 
-use crate::{
-    scenery::precinct_asset::PrecinctAsset,
-    terrain::{
-        terrain_contours::TerrainContoursTableAsset,
-        terrain_groups::{TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader},
-        TerrainMapAsset,
-    },
-    world::WorldLocationsAsset,
+use crate::terrain::terrain_groups::{
+    TerrainGroupsAsset, TerrainGroupsHandle, TerrainGroupsLoader,
 };
 
 mod camera;
 mod events;
 mod exemplars;
 mod lib;
-mod modified_assets;
 pub mod renderers;
 mod scenery;
 mod terrain;
 mod ui;
 mod undo;
+pub mod unsaved;
 
 pub struct EditorPlugin;
 
@@ -109,17 +102,13 @@ impl Plugin for EditorPlugin {
             .insert_state(TerrainTool::default())
             .enable_state_scoped_entities::<EditorMode>()
             .enable_state_scoped_entities::<TerrainTool>()
+            .init_resource::<unsaved::UnsavedAssets>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
             .init_resource::<TerrainDragState>()
             .init_resource::<ExemplarsHandleResource>()
             .init_resource::<TerrainGroupsHandle>()
             .init_resource::<ZoomLevel>()
-            .init_resource::<ModifiedAssets<PrecinctAsset>>()
-            .init_resource::<ModifiedAssets<TerrainMapAsset>>()
-            .init_resource::<ModifiedAssets<TerrainContoursTableAsset>>()
-            .init_resource::<ModifiedAssets<TerrainGroupsAsset>>()
-            .init_resource::<ModifiedAssets<WorldLocationsAsset>>()
             .init_resource::<UndoStack>()
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
@@ -152,6 +141,7 @@ impl Plugin for EditorPlugin {
                     )
                         .chain(),
                     tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
+                    unsaved::receive_asset_saving,
                     update_zoom_level,
                 ),
             )

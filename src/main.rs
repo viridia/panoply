@@ -155,16 +155,6 @@ fn main() {
     println!("Exited!")
 }
 
-fn load_assets_system(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.insert_resource(EditorImages {
-        world: assets.load("editor/icons/world.png"),
-        terrain: assets.load("editor/icons/terrain.png"),
-        building: assets.load("editor/icons/building.png"),
-        quest: assets.load("editor/icons/quest.png"),
-        play: assets.load("editor/icons/play.png"),
-    });
-}
-
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
 struct Shape;

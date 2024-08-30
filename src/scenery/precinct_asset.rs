@@ -1,9 +1,13 @@
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
+    asset::{
+        io::{AssetWriterError, Reader},
+        saver::AssetSaver,
+        AssetLoader, LoadContext,
+    },
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use futures_lite::AsyncReadExt;
+use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
 use serde::{
     de::{DeserializeSeed, Visitor},
@@ -23,7 +27,7 @@ use super::floor_region::FloorRegionSer;
 extern crate rmp_serde as rmps;
 
 /// TODO: use serialize_if not empty
-#[derive(TypePath, Asset, Serialize, Debug, Default)]
+#[derive(TypePath, Asset, Serialize, Debug, Default, Clone)]
 pub struct PrecinctAsset {
     /// Table of wall archetypes used by this precinct.
     pub(crate) scenery_types: Vec<String>,
@@ -204,10 +208,8 @@ impl Serialize for SceneryInstanceData {
     where
         S: serde::ser::Serializer,
     {
-        let mut len = 3;
+        let mut len = 4;
         if !self.aspects.is_empty() {
-            len += 2;
-        } else if matches!(self.iid, SceneryInstanceId::External(_)) {
             len += 1;
         }
         let mut state = serializer.serialize_tuple(len)?;
@@ -479,5 +481,46 @@ impl AssetLoader for PrecinctAssetLoader {
 
     fn extensions(&self) -> &[&str] {
         &["msgpack"]
+    }
+}
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum PrecinctAssetSaverError {
+    #[error("Could not save precinct: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not encode precinct: {0}")]
+    Decode(#[from] rmps::encode::Error),
+    #[error("Could not write precinct file: {0}")]
+    Rename(#[from] AssetWriterError),
+}
+
+pub struct PrecinctAssetSaver {
+    type_registry: TypeRegistryArc,
+}
+
+impl PrecinctAssetSaver {
+    pub fn new(type_registry: TypeRegistryArc) -> Self {
+        PrecinctAssetSaver { type_registry }
+    }
+}
+
+impl AssetSaver for PrecinctAssetSaver {
+    type Asset = PrecinctAsset;
+    type Settings = ();
+    type OutputLoader = PrecinctAssetLoader;
+    type Error = PrecinctAssetSaverError;
+
+    async fn save<'a>(
+        &'a self,
+        writer: &'a mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
+        _settings: &'a Self::Settings,
+    ) -> Result<(), Self::Error> {
+        // TODO: Optimize precinct - remove unused types. Should be done in serializer.
+        // rmps::encode::write(writer, &*asset)?; // Doesn't work with async writer
+        let v = rmps::encode::to_vec_named(&*asset)?;
+        writer.write_all(&v).await?;
+        Ok(())
     }
 }

@@ -2,9 +2,8 @@ use crate::{
     actors::ACTOR_TYPE,
     editor::{
         events::{PlaceWalls, RemoveWalls, RotateSelection},
-        modified_assets::ModifiedAssets,
         undo::{RedoEntry, UndoEntry, UndoStack},
-        EditorMode,
+        unsaved, EditorMode,
     },
     scenery::{
         precinct::Precinct,
@@ -734,11 +733,15 @@ impl UndoEntry for UndoPlaceWalls {
                 Some(scenery.iid.clone()),
             );
         }
+        let mut unsaved = world.get_resource_mut::<unsaved::UnsavedAssets>().unwrap();
+        unsaved
+            .precincts
+            .insert(self.precinct.clone(), unsaved::ModifiedState::Unsaved);
         Box::new(UndoPlaceWalls {
             label: self.label,
             precinct: self.precinct.clone(),
-            added: self.removed.clone(),
-            removed: self.added.clone(),
+            added: self.added.clone(),
+            removed: self.removed.clone(),
         })
     }
 }
@@ -763,11 +766,15 @@ impl RedoEntry for UndoPlaceWalls {
                 Some(scenery.iid.clone()),
             );
         }
+        let mut unsaved = world.get_resource_mut::<unsaved::UnsavedAssets>().unwrap();
+        unsaved
+            .precincts
+            .insert(self.precinct.clone(), unsaved::ModifiedState::Unsaved);
         Box::new(UndoPlaceWalls {
             label: self.label,
             precinct: self.precinct.clone(),
-            added: self.removed.clone(),
-            removed: self.added.clone(),
+            added: self.added.clone(),
+            removed: self.removed.clone(),
         })
     }
 }
@@ -776,8 +783,8 @@ fn place_walls(
     trigger: Trigger<PlaceWalls>,
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
     r_server: Res<AssetServer>,
-    mut r_modified_precincts: ResMut<ModifiedAssets<PrecinctAsset>>,
     mut r_undo_stack: ResMut<UndoStack>,
+    mut r_unsaved: ResMut<unsaved::UnsavedAssets>,
 ) {
     let event = trigger.event();
     let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
@@ -820,20 +827,22 @@ fn place_walls(
         }
         x += 1.0;
     }
-    r_modified_precincts.add(event.precinct.clone());
     r_undo_stack.push(UndoPlaceWalls {
         label: "Place Walls",
         precinct: event.precinct.clone(),
         added,
         removed,
     });
+    r_unsaved
+        .precincts
+        .insert(event.precinct.clone(), unsaved::ModifiedState::Unsaved);
 }
 
 fn remove_walls(
     trigger: Trigger<RemoveWalls>,
     mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
-    mut r_modified_precincts: ResMut<ModifiedAssets<PrecinctAsset>>,
     mut r_undo_stack: ResMut<UndoStack>,
+    mut r_unsaved: ResMut<unsaved::UnsavedAssets>,
 ) {
     let event = trigger.event();
     let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
@@ -854,11 +863,13 @@ fn remove_walls(
             && pos.z <= event.area.max.y
     });
     // println!("Removed {} walls.", removed.len());
-    r_modified_precincts.add(event.precinct.clone());
     r_undo_stack.push(UndoPlaceWalls {
         label: "Remove Walls",
         precinct: event.precinct.clone(),
         added: Vec::new(),
         removed,
     });
+    r_unsaved
+        .precincts
+        .insert(event.precinct.clone(), unsaved::ModifiedState::Unsaved);
 }

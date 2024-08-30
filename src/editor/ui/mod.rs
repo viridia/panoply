@@ -6,6 +6,7 @@ pub mod mode_scenery;
 pub mod mode_selector;
 pub mod mode_terrain;
 mod overlays;
+pub mod save_button;
 pub mod tool_floor_create;
 pub mod tool_floor_edit;
 pub mod tool_terrain_edit;
@@ -27,6 +28,7 @@ use bevy_quill_obsidian::{
 };
 use mode_selector::{EditorModalControls, ModeSelector};
 use quick_nav::{QuickNavDialog, QuickNavOpen};
+use save_button::SaveButton;
 use zoom_selector::ZoomSelector;
 
 use crate::{
@@ -106,7 +108,7 @@ impl ViewTemplate for EditorView {
                     .children((
                         Element::<NodeBundle>::new()
                             .style(style_aside_header)
-                            .children((ModeSelector, Spacer, ZoomSelector)),
+                            .children((ModeSelector, Spacer, SaveButton, ZoomSelector)),
                         EditorModalControls,
                     )),
                 Splitter::new()
@@ -153,7 +155,8 @@ fn style_aside(ss: &mut StyleBuilder) {
 
 fn style_aside_header(ss: &mut StyleBuilder) {
     ss.display(ui::Display::Flex)
-        .flex_direction(ui::FlexDirection::Row);
+        .flex_direction(ui::FlexDirection::Row)
+        .gap(8);
 }
 
 fn style_game_view(ss: &mut StyleBuilder) {
