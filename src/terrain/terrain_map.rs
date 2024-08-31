@@ -1,6 +1,10 @@
 extern crate rmp_serde as rmps;
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState},
+    asset::{
+        io::{AssetWriterError, Reader},
+        saver::AssetSaver,
+        AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState,
+    },
     math::IRect,
     prelude::*,
     reflect::TypePath,
@@ -10,7 +14,7 @@ use bevy::{
         texture::ImageSampler,
     },
 };
-use futures_lite::AsyncReadExt;
+use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -23,7 +27,7 @@ use super::{
     PARCEL_SIZE,
 };
 
-#[derive(Default, Serialize, Deserialize, TypePath, Asset)]
+#[derive(Default, Serialize, Deserialize, TypePath, Asset, Clone)]
 pub struct TerrainMapAsset {
     /** Boundary of the map relative to the world origin. */
     pub bounds: IRect,
@@ -159,6 +163,39 @@ impl AssetLoader for TerrainMapLoader {
 
     fn extensions(&self) -> &[&str] {
         &["terrain"]
+    }
+}
+
+#[derive(Default)]
+pub struct TerrainMapSaver;
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum TerrainMapSaverError {
+    #[error("Could not save terrain map: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not encode terrain map: {0}")]
+    Encode(#[from] rmps::encode::Error),
+    #[error("Could not commit terrain map: {0}")]
+    Commit(#[from] AssetWriterError),
+}
+
+impl AssetSaver for TerrainMapSaver {
+    type Asset = TerrainMapAsset;
+    type Error = TerrainMapSaverError;
+    type Settings = ();
+
+    type OutputLoader = TerrainMapLoader;
+
+    async fn save<'a>(
+        &'a self,
+        writer: &'a mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
+        _settings: &'a Self::Settings,
+    ) -> Result<(), TerrainMapSaverError> {
+        let v = rmps::encode::to_vec_named(&*asset)?;
+        writer.write_all(&v).await?;
+        Ok(())
     }
 }
 

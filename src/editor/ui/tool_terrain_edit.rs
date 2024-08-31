@@ -1,6 +1,7 @@
 use crate::{
     editor::{
         events::{ChangeContourEvent, ModifyTerrainMapEvent},
+        unsaved::{ModifiedState, UnsavedAssets},
         DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool,
     },
     terrain::{
@@ -288,6 +289,7 @@ pub fn on_modify_terrain(
     q_terrain_map: Query<&TerrainMap>,
     mut r_terrain_map_assets: ResMut<Assets<TerrainMapAsset>>,
     r_selected_parcel: Res<SelectedParcel>,
+    mut r_unsaved: ResMut<UnsavedAssets>,
 ) {
     let Some(parcel_id) = r_selected_parcel.0 else {
         return;
@@ -301,6 +303,9 @@ pub fn on_modify_terrain(
     };
     let terrain_map_asset = r_terrain_map_assets.get_mut(&terrain_map.handle).unwrap();
     terrain_map_asset.set_shape_at(parcel.coords, trigger.event().shape);
+    r_unsaved
+        .terrain_maps
+        .insert(terrain_map.handle.clone(), ModifiedState::Unsaved);
 }
 
 fn terrain_pick_pos(drag_shape: DragShape, pos: Vec2, clamp: bool) -> Option<IVec2> {

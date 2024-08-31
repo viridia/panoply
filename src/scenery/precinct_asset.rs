@@ -490,9 +490,9 @@ pub enum PrecinctAssetSaverError {
     #[error("Could not save precinct: {0}")]
     Io(#[from] std::io::Error),
     #[error("Could not encode precinct: {0}")]
-    Decode(#[from] rmps::encode::Error),
-    #[error("Could not write precinct file: {0}")]
-    Rename(#[from] AssetWriterError),
+    Encode(#[from] rmps::encode::Error),
+    #[error("Could not commit precinct file: {0}")]
+    Commit(#[from] AssetWriterError),
 }
 
 pub struct PrecinctAssetSaver {
@@ -504,6 +504,15 @@ impl PrecinctAssetSaver {
         PrecinctAssetSaver { type_registry }
     }
 }
+
+// pub fn save_precinct<'a>(
+//     writer: &'a mut bevy::asset::io::Writer,
+//     asset: &PrecinctAsset,
+// ) -> Result<(), Self::Error> {
+//     let v = rmps::encode::to_vec_named(&*asset)?;
+//     writer.write_all(&v).await?;
+//     Ok(())
+// }
 
 impl AssetSaver for PrecinctAssetSaver {
     type Asset = PrecinctAsset;
