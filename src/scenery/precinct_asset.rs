@@ -505,15 +505,6 @@ impl PrecinctAssetSaver {
     }
 }
 
-// pub fn save_precinct<'a>(
-//     writer: &'a mut bevy::asset::io::Writer,
-//     asset: &PrecinctAsset,
-// ) -> Result<(), Self::Error> {
-//     let v = rmps::encode::to_vec_named(&*asset)?;
-//     writer.write_all(&v).await?;
-//     Ok(())
-// }
-
 impl AssetSaver for PrecinctAssetSaver {
     type Asset = PrecinctAsset;
     type Settings = ();

@@ -1,12 +1,46 @@
 use crate::{
-    editor::{events::ModifyTerrainMapEvent, SelectedParcel, TerrainTool},
+    editor::{events::ModifyTerrainMapEvent, EditorMode, SelectedParcel},
     terrain::{Parcel, ShapeRef},
 };
 use bevy::{prelude::*, ui};
+use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, size::Size, RoundedCorners};
 
-use super::controls::ContourChooser;
+use super::{controls::ContourChooser, tool_terrain_edit};
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
+#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("terrain_tool"))]
+pub(crate) enum TerrainTool {
+    #[default]
+    RaiseDraw,
+    RaiseRect,
+    LowerDraw,
+    LowerRect,
+    FlattenDraw,
+    FlattenRect,
+    DrawTrees,
+    DrawShrubs,
+    DrawHerbs,
+    EraseFlora,
+}
+
+pub(crate) struct EditTerrainPlugin;
+
+impl Plugin for EditTerrainPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_state(TerrainTool::default())
+            .enable_state_scoped_entities::<TerrainTool>()
+            .register_type::<State<TerrainTool>>()
+            .register_type::<NextState<TerrainTool>>()
+            .add_systems(OnEnter(EditorMode::Terrain), tool_terrain_edit::enter)
+            .add_systems(OnExit(EditorMode::Terrain), tool_terrain_edit::exit)
+            .add_systems(
+                Update,
+                tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
+            );
+    }
+}
 
 #[derive(Clone, PartialEq)]
 pub(crate) struct EditModeTerrainControls;

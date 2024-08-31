@@ -1,13 +1,15 @@
 use crate::{
     editor::{
-        events::{ChangeContourEvent, ModifyTerrainMapEvent},
+        events::{ChangeContourEvent, ModifyTerrainMapEvent, RotateSelection},
+        terrain::UndoTerrainMapEdit,
+        undo::UndoStack,
         unsaved::{ModifiedState, UnsavedAssets},
-        DragShape, EditorMode, SelectedParcel, TerrainDragState, TerrainTool,
+        DragShape, EditorMode, SelectedParcel, TerrainDragState,
     },
     terrain::{
         terrain_contours::{FloraType, TerrainContoursHandle, TerrainContoursTableAsset},
-        Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, TerrainMap,
-        TerrainMapAsset, PARCEL_SIZE, PARCEL_SIZE_U,
+        Parcel, ParcelFloraChanged, ParcelWaterChanged, RebuildParcelGroundMesh, ShapeRef,
+        TerrainMap, TerrainMapAsset, PARCEL_SIZE, PARCEL_SIZE_U,
     },
     view::picking::{PickAction, PickEvent, PickTarget},
 };
@@ -15,7 +17,10 @@ use bevy::prelude::*;
 use bevy_mod_picking::{focus::HoverMap, prelude::PointerId};
 use bevy_quill::View;
 
-use super::overlays::{MapBoundsOverlay, SelectedParcelOverlay, TerrainCursorOverlay};
+use super::{
+    mode_terrain::TerrainTool,
+    overlays::{MapBoundsOverlay, SelectedParcelOverlay, TerrainCursorOverlay},
+};
 
 #[derive(Clone, Component)]
 pub struct ParcelOverlay;
@@ -34,6 +39,31 @@ pub fn enter(mut commands: Commands) {
     commands.spawn((
         StateScoped(EditorMode::Terrain),
         Observer::new(on_modify_terrain),
+    ));
+    commands.spawn((
+        StateScoped(EditorMode::Terrain),
+        Observer::new(
+            |trigger: Trigger<RotateSelection>,
+             mut commands: Commands,
+             q_parcels: Query<&Parcel>,
+             r_selected_parcel: Res<SelectedParcel>| {
+                let Some(parcel_id) = r_selected_parcel.0 else {
+                    return;
+                };
+                let Ok(parcel) = q_parcels.get(parcel_id) else {
+                    return;
+                };
+                let dir = (trigger.event().0 + 4) as u8;
+                commands.trigger(ModifyTerrainMapEvent {
+                    realm: parcel.realm,
+                    coords: parcel.coords,
+                    shape: ShapeRef {
+                        shape: parcel.center_shape().shape,
+                        rotation: (parcel.center_shape().rotation + dir).rem_euclid(4),
+                    },
+                });
+            },
+        ),
     ));
 }
 
@@ -290,6 +320,7 @@ pub fn on_modify_terrain(
     mut r_terrain_map_assets: ResMut<Assets<TerrainMapAsset>>,
     r_selected_parcel: Res<SelectedParcel>,
     mut r_unsaved: ResMut<UnsavedAssets>,
+    mut r_undo_stack: ResMut<UndoStack>,
 ) {
     let Some(parcel_id) = r_selected_parcel.0 else {
         return;
@@ -302,7 +333,15 @@ pub fn on_modify_terrain(
         return;
     };
     let terrain_map_asset = r_terrain_map_assets.get_mut(&terrain_map.handle).unwrap();
+    let before = terrain_map_asset.clone();
     terrain_map_asset.set_shape_at(parcel.coords, trigger.event().shape);
+    let after = terrain_map_asset.clone();
+    r_undo_stack.push(UndoTerrainMapEdit {
+        label: "Change Parcel",
+        handle: terrain_map.handle.clone(),
+        before,
+        after,
+    });
     r_unsaved
         .terrain_maps
         .insert(terrain_map.handle.clone(), ModifiedState::Unsaved);

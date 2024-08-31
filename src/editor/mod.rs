@@ -5,7 +5,7 @@ use lib::pick_plane::PlanePickBackend;
 use ui::{
     mode_realm,
     mode_scenery::EditSceneryPlugin,
-    tool_terrain_edit,
+    mode_terrain::EditTerrainPlugin,
     zoom_selector::{update_zoom_level, ZoomLevel},
 };
 use undo::UndoStack;
@@ -72,22 +72,6 @@ pub enum EditorMode {
     Play,
 }
 
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Reflect)]
-#[reflect(Default, @PreferencesGroup("editor"), @PreferencesKey("terrain_tool"))]
-pub(crate) enum TerrainTool {
-    #[default]
-    RaiseDraw,
-    RaiseRect,
-    LowerDraw,
-    LowerRect,
-    FlattenDraw,
-    FlattenRect,
-    DrawTrees,
-    DrawShrubs,
-    DrawHerbs,
-    EraseFlora,
-}
-
 impl Default for EditorSidebarWidth {
     fn default() -> Self {
         Self(300.0)
@@ -99,9 +83,7 @@ impl Plugin for EditorPlugin {
         app.init_asset::<TerrainGroupsAsset>()
             .register_asset_loader(TerrainGroupsLoader)
             .insert_state(EditorMode::Initial)
-            .insert_state(TerrainTool::default())
             .enable_state_scoped_entities::<EditorMode>()
-            .enable_state_scoped_entities::<TerrainTool>()
             .init_resource::<unsaved::UnsavedAssets>()
             .init_resource::<EditorSidebarWidth>()
             .init_resource::<SelectedParcel>()
@@ -113,14 +95,10 @@ impl Plugin for EditorPlugin {
             .register_type::<EditorSidebarWidth>()
             .register_type::<State<EditorMode>>()
             .register_type::<NextState<EditorMode>>()
-            .register_type::<State<TerrainTool>>()
-            .register_type::<NextState<TerrainTool>>()
             .register_type::<ZoomLevel>()
             .insert_state(ui::quick_nav::QuickNavOpen::default())
             .add_systems(OnEnter(EditorMode::Realm), mode_realm::enter)
             .add_systems(OnExit(EditorMode::Realm), mode_realm::exit)
-            .add_systems(OnEnter(EditorMode::Terrain), tool_terrain_edit::enter)
-            .add_systems(OnExit(EditorMode::Terrain), tool_terrain_edit::exit)
             .add_systems(
                 Startup,
                 (
@@ -140,11 +118,10 @@ impl Plugin for EditorPlugin {
                         renderers::assign_thumbnails_to_camera,
                     )
                         .chain(),
-                    tool_terrain_edit::hover.run_if(in_state(EditorMode::Terrain)),
                     unsaved::receive_asset_saving,
                     update_zoom_level,
                 ),
             )
-            .add_plugins((EditSceneryPlugin, PlanePickBackend));
+            .add_plugins((EditSceneryPlugin, EditTerrainPlugin, PlanePickBackend));
     }
 }

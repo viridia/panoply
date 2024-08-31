@@ -27,7 +27,7 @@ use super::{
     PARCEL_SIZE,
 };
 
-#[derive(Default, Serialize, Deserialize, TypePath, Asset, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, TypePath, Asset, Clone)]
 pub struct TerrainMapAsset {
     /** Boundary of the map relative to the world origin. */
     pub bounds: IRect,

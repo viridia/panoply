@@ -1,7 +1,7 @@
 use bevy::{
     asset::{
         saver::{AssetSaver, SavedAsset},
-        ErasedLoadedAsset, LoadedAsset,
+        AssetPath, ErasedLoadedAsset, LoadedAsset,
     },
     ecs::{system::SystemState, world::Command},
     prelude::*,
@@ -51,7 +51,26 @@ impl UnsavedAssets {
     }
 }
 
+// #[derive(Default)]
+// pub struct UnsavedAssetSet<A: AssetSaver> {
+//     assets: HashMap<Handle<A::Asset>, ModifiedState<A::Asset, A::Error>>,
+// }
+
+// impl<A: AssetSaver> UnsavedAssetSet<A> {
+//     pub fn add(&mut self, handle: Handle<A::Asset>) {
+//         self.assets.insert(handle, ModifiedState::Unsaved);
+//     }
+// }
+
 pub struct SaveCommand;
+
+impl SaveCommand {
+    fn get_temp_file_path(path: &AssetPath) -> std::path::PathBuf {
+        let mut file_path = path.path().to_path_buf();
+        file_path.set_extension(format!("{}.new", path.get_full_extension().unwrap()));
+        file_path
+    }
+}
 
 impl Command for SaveCommand {
     fn apply(self, world: &mut World) {
@@ -78,9 +97,8 @@ impl Command for SaveCommand {
             let task = task_pool.spawn(async move {
                 let path = server.get_path(&asset_handle).unwrap();
                 let source = server.get_source(path.source()).unwrap();
+                let file_path = Self::get_temp_file_path(&path);
                 let writer = source.writer().unwrap();
-                let mut file_path = path.path().to_path_buf();
-                file_path.set_extension(format!("{}.new", path.get_full_extension().unwrap()));
                 let mut write = writer.write(file_path.as_path()).await.unwrap();
                 let saver = PrecinctAssetSaver::new(registry);
                 let loaded_precinct = LoadedAsset::new_with_dependencies(asset, None);
@@ -106,9 +124,8 @@ impl Command for SaveCommand {
             let task = task_pool.spawn(async move {
                 let path = server.get_path(&asset_handle).unwrap();
                 let source = server.get_source(path.source()).unwrap();
+                let file_path = Self::get_temp_file_path(&path);
                 let writer = source.writer().unwrap();
-                let mut file_path = path.path().to_path_buf();
-                file_path.set_extension(format!("{}.new", path.get_full_extension().unwrap()));
                 let mut write = writer.write(file_path.as_path()).await.unwrap();
                 let saver = TerrainMapSaver;
                 let loaded_precinct = LoadedAsset::new_with_dependencies(asset, None);
