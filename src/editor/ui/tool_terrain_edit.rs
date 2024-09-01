@@ -1,7 +1,7 @@
 use crate::{
     editor::{
         events::{ChangeContourEvent, ModifyTerrainMapEvent, RotateSelection},
-        terrain::UndoTerrainMapEdit,
+        terrain::{UndoTerrainContourEdit, UndoTerrainMapEdit},
         undo::UndoStack,
         unsaved::{ModifiedState, UnsavedAssets},
         DragShape, EditorMode, SelectedParcel, TerrainDragState,
@@ -65,6 +65,25 @@ pub fn enter(mut commands: Commands) {
             },
         ),
     ));
+    commands.spawn((
+        StateScoped(EditorMode::Terrain),
+        Observer::new(
+            |trigger: Trigger<ChangeContourEvent>,
+             mut commands: Commands,
+             q_parcels: Query<(Entity, &Parcel)>| {
+                let shape = trigger.event().0 as u16;
+                for (parcel_id, parcel) in q_parcels.iter() {
+                    if parcel.has_shape(shape) {
+                        commands.entity(parcel_id).insert((
+                            RebuildParcelGroundMesh,
+                            ParcelWaterChanged,
+                            ParcelFloraChanged,
+                        ));
+                    }
+                }
+            },
+        ),
+    ));
 }
 
 pub fn exit(mut commands: Commands, q_overlays: Query<Entity, With<ParcelOverlay>>) {
@@ -125,7 +144,7 @@ pub fn hover(
                                         drag_state.cursor_pos = pickpos;
                                     } else if drag_state.cursor_pos != pickpos {
                                         drag_state.cursor_pos = pickpos;
-                                        modify_terrain(
+                                        modify_terrain_contour(
                                             *tool,
                                             &drag_state,
                                             parcel,
@@ -184,7 +203,7 @@ pub fn hover(
                                         if drag_state.cursor_pos != pickpos {
                                             drag_state.cursor_pos = pickpos;
                                             drag_state.anchor_pos = pickpos;
-                                            modify_terrain(
+                                            modify_terrain_contour(
                                                 *tool,
                                                 &drag_state,
                                                 parcel,
@@ -225,6 +244,8 @@ pub fn on_pick_event(
     mut r_drag_state: ResMut<TerrainDragState>,
     r_contours_handle: Res<TerrainContoursHandle>,
     r_contours_asset: ResMut<Assets<TerrainContoursTableAsset>>,
+    mut r_undo_stack: ResMut<UndoStack>,
+    mut r_unsaved: ResMut<UnsavedAssets>,
 ) {
     let event = trigger.event();
     let tool = r_tool.get();
@@ -253,18 +274,27 @@ pub fn on_pick_event(
                         | TerrainTool::DrawHerbs
                         | TerrainTool::EraseFlora => {
                             let parcel = q_parcels.get(parcel_id).unwrap().1;
-                            modify_terrain(
+                            let shape_ref = parcel.center_shape();
+                            if let Some(contours) = r_contours_asset.get(&r_contours_handle.0) {
+                                let mut lock = contours.0.write().unwrap();
+                                let contour = lock.get_mut(shape_ref.shape as usize);
+                                r_undo_stack.push(UndoTerrainContourEdit {
+                                    label: "Draw Terrain",
+                                    handle: r_contours_handle.0.clone(),
+                                    index: shape_ref.shape as usize,
+                                    data: contour.clone(),
+                                });
+                            }
+                            r_unsaved
+                                .terrain_contours
+                                .insert(r_contours_handle.0.clone(), ModifiedState::Unsaved);
+                            modify_terrain_contour(
                                 *tool,
                                 &r_drag_state,
                                 parcel,
                                 r_contours_handle,
                                 r_contours_asset,
                             );
-                            commands.entity(parcel_id).insert((
-                                RebuildParcelGroundMesh,
-                                ParcelWaterChanged,
-                                ParcelFloraChanged,
-                            ));
                             commands
                                 .trigger(ChangeContourEvent(parcel.center_shape().shape as usize));
                         }
@@ -283,7 +313,21 @@ pub fn on_pick_event(
                         TerrainTool::RaiseRect
                         | TerrainTool::LowerRect
                         | TerrainTool::FlattenRect => {
-                            modify_terrain(
+                            let shape_ref = parcel.center_shape();
+                            if let Some(contours) = r_contours_asset.get(&r_contours_handle.0) {
+                                let mut lock = contours.0.write().unwrap();
+                                let contour = lock.get_mut(shape_ref.shape as usize);
+                                r_undo_stack.push(UndoTerrainContourEdit {
+                                    label: "Draw Terrain",
+                                    handle: r_contours_handle.0.clone(),
+                                    index: shape_ref.shape as usize,
+                                    data: contour.clone(),
+                                });
+                            }
+                            r_unsaved
+                                .terrain_contours
+                                .insert(r_contours_handle.0.clone(), ModifiedState::Unsaved);
+                            modify_terrain_contour(
                                 *tool,
                                 &r_drag_state,
                                 parcel,
@@ -295,16 +339,6 @@ pub fn on_pick_event(
                         }
 
                         _ => {}
-                    }
-                    let shape_ref = parcel.center_shape();
-                    for (parcel_id, parcel) in q_parcels.iter() {
-                        if parcel.has_shape(shape_ref.shape) {
-                            commands.entity(parcel_id).insert((
-                                RebuildParcelGroundMesh,
-                                ParcelWaterChanged,
-                                ParcelFloraChanged,
-                            ));
-                        }
                     }
                 }
             }
@@ -375,7 +409,7 @@ fn terrain_pick_pos(drag_shape: DragShape, pos: Vec2, clamp: bool) -> Option<IVe
     }
 }
 
-fn modify_terrain(
+fn modify_terrain_contour(
     tool: TerrainTool,
     drag_state: &TerrainDragState,
     parcel: &Parcel,

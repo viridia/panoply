@@ -1,6 +1,7 @@
 # TODO
 
 - Better picking on tiers - disable terrain picks
+- move prefs to own crate (and use it).
 - Crash - inserting flora compute task on deleted entity.
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
 - separate crate for realms?
@@ -14,7 +15,6 @@
   - contours not appearing in the correct order in groups.
   - empty tile shows nothing, should show black floor.
 - think about converting realm name to Arc<String>. Either that or have a realm id.
-- move prefs to own crate (and use it).
 - World camera pan needs to use bubbled scroll events.
 - Build an entity inspector
 - Bugs:

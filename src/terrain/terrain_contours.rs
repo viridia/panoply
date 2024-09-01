@@ -1,12 +1,15 @@
-use futures_lite::AsyncReadExt;
+use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
-
 use std::sync::{Arc, RwLock};
 
 use super::{square::SquareArray, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
+    asset::{
+        io::{AssetWriterError, Reader},
+        saver::AssetSaver,
+        AssetLoader, LoadContext,
+    },
     math::IRect,
     prelude::*,
     reflect::TypePath,
@@ -39,28 +42,78 @@ impl FloraType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct TerrainContourSer {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerrainContour {
     pub id: usize,
 
-    pub height: serde_bytes::ByteBuf,
+    #[serde(
+        serialize_with = "serialize_height_array",
+        deserialize_with = "deserialize_height_array"
+    )]
+    pub height: SquareArray<i8>,
 
-    pub flora: serde_bytes::ByteBuf,
+    #[serde(
+        serialize_with = "serialize_flora_array",
+        deserialize_with = "deserialize_flora_array"
+    )]
+    pub flora: SquareArray<FloraType>,
 
-    // public needsUpdateVertices = false;
     #[serde(alias = "hasTerrain")]
     pub has_terrain: bool,
-
     #[serde(alias = "hasWater")]
     pub has_water: bool,
 }
 
-pub struct TerrainContour {
-    pub id: usize,
-    pub height: SquareArray<i8>,
-    pub flora: SquareArray<FloraType>,
-    pub has_terrain: bool,
-    pub has_water: bool,
+fn deserialize_height_array<'de, D>(deserializer: D) -> Result<SquareArray<i8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let data = serde_bytes::ByteBuf::deserialize(deserializer)?;
+    let mut res = SquareArray::<i8>::new(HEIGHT_STRIDE, 0);
+    assert_eq!(data.len(), HEIGHT_STRIDE * HEIGHT_STRIDE);
+    for i in 0..data.len() {
+        res.set(i % HEIGHT_STRIDE, i / HEIGHT_STRIDE, data[i] as i8);
+    }
+    Ok(res)
+}
+
+fn serialize_height_array<S>(data: &SquareArray<i8>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut bytes = Vec::<u8>::with_capacity(HEIGHT_STRIDE * HEIGHT_STRIDE);
+    for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
+        bytes.push(data.get(i % HEIGHT_STRIDE, i / HEIGHT_STRIDE) as u8);
+    }
+    serializer.serialize_bytes(bytes.as_ref())
+}
+
+fn deserialize_flora_array<'de, D>(deserializer: D) -> Result<SquareArray<FloraType>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let data = serde_bytes::ByteBuf::deserialize(deserializer)?;
+    let mut res = SquareArray::<FloraType>::new(FLORA_STRIDE, FloraType::None);
+    assert_eq!(data.len(), FLORA_STRIDE * FLORA_STRIDE);
+    for i in 0..data.len() {
+        res.set(
+            i % FLORA_STRIDE,
+            i / FLORA_STRIDE,
+            FloraType::from_u8(data[i]),
+        );
+    }
+    Ok(res)
+}
+
+fn serialize_flora_array<S>(data: &SquareArray<FloraType>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut res = Vec::<u8>::with_capacity(FLORA_STRIDE * FLORA_STRIDE);
+    for i in 0..FLORA_STRIDE * FLORA_STRIDE {
+        res.push(data.get(i % FLORA_STRIDE, i / FLORA_STRIDE) as u8);
+    }
+    serializer.serialize_bytes(res.as_ref())
 }
 
 impl TerrainContour {
@@ -111,18 +164,14 @@ impl TerrainContour {
         };
         self.flora.set(xr, yr, value);
     }
-}
 
-// impl TerrainShape {
-//   public fillHeight(area: Box2, height: number): TerrainPlot {
-//     const { min, max } = clampBox(area);
-//     height = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, height));
-//     for (let y = min.y; y <= max.y; y += 1) {
-//       const rowOffset = y * PLOT_VERTEX_STRIDE;
-//       this.terrainHeight.fill(height, rowOffset + min.x, rowOffset + max.x + 1);
-//     }
-//     return this;
-//   }
+    pub fn clone_from(&mut self, other: &TerrainContour) {
+        self.height.copy_from_slice(other.height.elts());
+        self.flora.copy_from_slice(other.flora.elts());
+        self.has_terrain = other.has_terrain;
+        self.has_water = other.has_water;
+    }
+}
 
 #[derive(Default)]
 pub struct TerrainContoursTable {
@@ -152,7 +201,7 @@ impl TerrainContoursTable {
     }
 }
 
-#[derive(TypePath, Asset, Default)]
+#[derive(TypePath, Asset, Default, Clone)]
 pub struct TerrainContoursTableAsset(pub Arc<RwLock<TerrainContoursTable>>);
 
 #[non_exhaustive]
@@ -178,35 +227,15 @@ impl AssetLoader for TerrainContoursTableLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let shapes_ser: Vec<TerrainContourSer> =
+        let shapes: Vec<TerrainContour> =
             rmps::from_slice(&bytes).expect("unable to decode terrain shape");
+        let num_shapes = shapes.len();
         let mut res = TerrainContoursTable {
-            shapes: Vec::with_capacity(shapes_ser.len()),
-            by_id: Vec::with_capacity(shapes_ser.len()),
+            shapes,
+            by_id: Vec::with_capacity(num_shapes),
         };
 
-        for (index, shape) in shapes_ser.iter().enumerate() {
-            let mut sh = TerrainContour {
-                id: shape.id,
-                height: SquareArray::<i8>::new(HEIGHT_STRIDE, 0),
-                flora: SquareArray::<FloraType>::new(FLORA_STRIDE, FloraType::None),
-                has_terrain: shape.has_terrain,
-                has_water: shape.has_water,
-            };
-            let mut height: Vec<i8> = vec![0; HEIGHT_STRIDE * HEIGHT_STRIDE];
-            #[allow(clippy::needless_range_loop)]
-            for i in 0..HEIGHT_STRIDE * HEIGHT_STRIDE {
-                height[i] = shape.height[i] as i8;
-            }
-            sh.height.copy_from_slice(height.as_slice());
-            let mut flora = Vec::<FloraType>::with_capacity(shape.flora.len());
-            flora.resize(shape.flora.len(), FloraType::None);
-            for i in 0..shape.flora.len() {
-                flora[i] = FloraType::from_u8(shape.flora[i]);
-            }
-            flora.resize(shape.flora.len(), FloraType::None);
-            sh.flora.copy_from_slice(flora.as_slice());
-            res.shapes.push(sh);
+        for (index, shape) in res.shapes.iter().enumerate() {
             if res.by_id.len() <= shape.id {
                 res.by_id.resize(shape.id + 1, 0);
             }
@@ -218,6 +247,47 @@ impl AssetLoader for TerrainContoursTableLoader {
 
     fn extensions(&self) -> &[&str] {
         &["contours"]
+    }
+}
+
+pub struct TerrainContoursTableSaver;
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum TerrainContoursSaverError {
+    #[error("Could not save terrain contours: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not encode terrain contours: {0}")]
+    Encode(#[from] rmps::encode::Error),
+    #[error("Could not commit terrain contours file: {0}")]
+    Commit(#[from] AssetWriterError),
+}
+
+impl TerrainContoursTableSaver {
+    pub fn encode(
+        &self,
+        asset: &TerrainContoursTableAsset,
+    ) -> Result<Vec<u8>, rmps::encode::Error> {
+        let table = asset.0.read().unwrap();
+        rmps::encode::to_vec_named(&table.shapes)
+    }
+}
+
+impl AssetSaver for TerrainContoursTableSaver {
+    type Asset = TerrainContoursTableAsset;
+    type Settings = ();
+    type OutputLoader = TerrainContoursTableLoader;
+    type Error = TerrainContoursSaverError;
+
+    async fn save<'a>(
+        &'a self,
+        writer: &'a mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
+        _settings: &'a Self::Settings,
+    ) -> Result<(), Self::Error> {
+        let v = self.encode(&asset)?;
+        writer.write_all(&v).await?;
+        Ok(())
     }
 }
 
