@@ -1,6 +1,6 @@
 use crate::view::Viewpoint;
 use bevy::prelude::*;
-use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
+use bevy_basic_prefs::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
 

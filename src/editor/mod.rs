@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
+use bevy_basic_prefs::{PreferencesGroup, PreferencesKey};
 use exemplars::ExemplarsHandleResource;
 use lib::pick_plane::PlanePickBackend;
 use ui::{

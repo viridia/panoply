@@ -16,8 +16,8 @@ pub mod zoom_selector;
 pub mod quick_nav;
 
 use bevy::{prelude::*, ui};
+use bevy_basic_prefs::SetPreferencesChanged;
 use bevy_mod_picking::prelude::{ListenerMut, On};
-use bevy_mod_preferences::SetPreferencesChanged;
 use bevy_mod_stylebuilder::*;
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{

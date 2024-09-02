@@ -9,7 +9,6 @@
 - Text input
 - File unsaved indicator.
   - Track which things are unsaved.
-- Undo / Redo
 - Terrain contour list.
   - filter by group
   - contours not appearing in the correct order in groups.
@@ -227,16 +226,6 @@ Future:
 convert quest.png -background black -alpha Remove quest.png -compose Copy_Opacity -composite quest.png
 convert artwork/export/editor/building.png -background black -alpha Remove artwork/export/editor/building.png -compose Copy_Opacity -composite assets/editor/building.png
 
-# UnsavedState:
-
-- precincts
-- contours
-- terrain maps
-- terrain groups
-- exemplars
-- region?
-- quests and other meta.
-
 # Editor folder organization
 
 - scenery
@@ -247,13 +236,3 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
   - mutations / commands
   - drag states
   - overlays
-
-# Asset saving
-
-let source = asset_server.get_source(AssetSourceId::Default).unwrap();
-let writer = source.writer().unwrap();
-let mut write = writer.write(Path::new("bunny.meshlet_mesh")).await.unwrap();
-let saver = CompressedImageSaver;
-let loaded_image = LoadedAsset::new_with_dependencies(Image::default(), None);
-let erased = ErasedLoadedAsset::from(loaded_image);
-saver.save(&mut \*write, &erased, &()).await;

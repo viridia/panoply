@@ -12,12 +12,12 @@ use bevy::{
     },
 };
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_basic_prefs::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
 use bevy_mod_picking::{
     backends::raycast::{RaycastBackendSettings, RaycastPickable},
     debug::DebugPickingMode,
     DefaultPickingPlugins,
 };
-use bevy_mod_preferences::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
 use bevy_quill::QuillPlugin;
 use bevy_quill_obsidian::ObsidianUiPlugin;
 use bevy_quill_overlays::QuillOverlaysPlugin;

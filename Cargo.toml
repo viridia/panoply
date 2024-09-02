@@ -23,10 +23,12 @@ bevy_quill_obsidian = "0.1.0"
 bevy_quill_overlays = { version = "0.1.0" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
 bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
+bevy_basic_prefs = { git = "https://github.com/viridia/bevy_basic_prefs.git", version = "0.1.0" }
 
 [dependencies]
 bevy = { workspace = true }
 bevy-inspector-egui = "0.25.1"
+bevy_basic_prefs = { workspace = true }
 bevy_mod_picking = { workspace = true }
 bevy_mod_stylebuilder = { workspace = true }
 bevy_mod_preferences = { workspace = true }

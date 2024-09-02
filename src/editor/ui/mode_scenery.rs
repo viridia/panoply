@@ -13,7 +13,7 @@ use crate::{
     },
 };
 use bevy::{prelude::*, render::view::RenderLayers, ui, utils::hashbrown::HashSet};
-use bevy_mod_preferences::{PreferencesGroup, PreferencesKey};
+use bevy_basic_prefs::{PreferencesGroup, PreferencesKey};
 use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
 use panoply_exemplar::Exemplar;
