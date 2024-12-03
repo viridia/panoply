@@ -2,6 +2,7 @@
 name = "panoply_exemplar"
 version = "0.1.0"
 edition = "2021"
+private = true
 
 [dependencies]
 bevy = { workspace = true }

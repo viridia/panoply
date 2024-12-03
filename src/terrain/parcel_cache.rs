@@ -1,7 +1,9 @@
 use bevy::{math::IRect, prelude::*};
 use panoply_terrain::{
     Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
-    RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainFxVertexAttr, ADJACENT_COUNT,
+    RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainContoursHandle,
+    TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
+    CENTER_SHAPE,
 };
 use rapier3d::{
     na::Vector3,
@@ -88,12 +90,19 @@ pub fn spawn_parcels(
     mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>)>,
     mut q_realms: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
+    r_contours_handle: Res<TerrainContoursHandle>,
+    r_contours_assets: Res<Assets<TerrainContoursTableAsset>>,
     server: Res<AssetServer>,
 ) {
     if viewpoint.realm.is_none() {
         return;
     }
 
+    let Some(contours_asset) = r_contours_assets.get(&r_contours_handle.0) else {
+        return;
+    };
+
+    let contours_table = contours_asset.0.read().unwrap();
     let distance = viewpoint.camera_distance(); // Nominally 20
 
     // Determine coordinates of view in parcel units.
@@ -139,15 +148,23 @@ pub fn spawn_parcels(
                     };
                     let mut contours: [ShapeRef; 9] = [ShapeRef::new(); ADJACENT_COUNT];
                     terrain_map.adjacent_shapes(&mut contours, IVec2::new(x, z));
+                    let center = contours_table.get(contours[CENTER_SHAPE].shape as usize);
                     let biomes = terrain_map.adjacent_biomes(IVec2::new(x, z));
                     let entity = parcel_cache.parcels.get(&key);
+
                     match entity {
                         Some(entity) => {
                             // Update existing parcel
                             if let Ok((mut parcel, _)) = q_parcels.get_mut(*entity) {
-                                if parcel.contours != contours || parcel.biomes != biomes {
+                                if parcel.contours != contours
+                                    || parcel.biomes != biomes
+                                    || parcel.has_terrain != center.has_terrain
+                                    || parcel.has_water != center.has_water
+                                {
                                     parcel.contours = contours;
                                     parcel.biomes = biomes;
+                                    parcel.has_terrain = center.has_terrain;
+                                    parcel.has_water = center.has_water;
                                     // println!("Parcel {} {} changed: {:?}.", x, z, biomes);
                                     commands.entity(*entity).insert((
                                         RebuildParcelGroundMesh,
@@ -185,6 +202,8 @@ pub fn spawn_parcels(
                                     ),
                                     physics: rb_handle,
                                     terrain_collider: ColliderHandle::default(),
+                                    has_terrain: center.has_terrain,
+                                    has_water: center.has_water,
                                 },
                                 Name::new(format!("Parcel:{}:{}:{}", realm.name, x, z)),
                                 Transform::from_xyz(
@@ -193,9 +212,9 @@ pub fn spawn_parcels(
                                     z as f32 * PARCEL_SIZE_F,
                                 ),
                                 Visibility::Visible,
-                                RebuildParcelGroundMesh,
+                                // RebuildParcelGroundMesh,
                                 ParcelWaterChanged,
-                                ParcelFloraChanged,
+                                // ParcelFloraChanged,
                                 RebuildParcelTerrainFx,
                             ));
                             // TODO: Restore picking

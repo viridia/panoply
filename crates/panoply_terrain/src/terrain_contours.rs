@@ -3,14 +3,13 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 use std::sync::{Arc, RwLock};
 
-use super::{PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
+use super::{PARCEL_HEIGHT_SCALE, PARCEL_SIZE_U};
 use bevy::{
     asset::{
         io::{AssetWriterError, Reader},
         saver::AssetSaver,
         AssetLoader, AsyncWriteExt, LoadContext,
     },
-    math::IRect,
     prelude::*,
     reflect::TypePath,
 };
@@ -300,11 +299,3 @@ impl FromWorld for TerrainContoursHandle {
         TerrainContoursHandle(server.load("terrain/terrain.contours"))
     }
 }
-
-const PARCEL_BOUNDS: IRect = IRect {
-    min: IVec2 { x: 0, y: 0 },
-    max: IVec2 {
-        x: PARCEL_SIZE + 1,
-        y: PARCEL_SIZE + 1,
-    },
-};

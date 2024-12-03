@@ -76,10 +76,10 @@ pub fn create_water_material(
     asset_server: Res<AssetServer>,
 ) {
     resource.handle = materials.add(WaterMaterial {
-        water_color: Srgba::rgb(0.0, 0.3, 0.0).into(),
+        water_color: Srgba::rgb(0.0, 0.3, 0.1).into(),
         sky_color: [
-            Srgba::rgb(0.5, 0.6, 0.8).into(),
-            Srgba::rgb(0.8, 0.9, 1.0).into(),
+            Srgba::rgb(0.3, 0.4, 0.8).into(),
+            Srgba::rgb(0.6, 0.7, 1.0).into(),
         ],
         waves: asset_server.load("terrain/textures/water-waves-2.png"),
         sky: asset_server.load("terrain/textures/water-clouds.png"),

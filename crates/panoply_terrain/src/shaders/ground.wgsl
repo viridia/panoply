@@ -106,35 +106,12 @@ struct VertexOutput {
 //     0.5, 0.45, 0.9,
 //     0.1, // tx_scale
 //     vec3<f32>(0.65, 0.65, 0.65));
-// const grass_biome = BiomeSurfaceAttrs(
-//     0.99,
-//     0.5, 0.45, 0.55,
-//     0.5, 0.48, 0.60,
-//     0.35, // tx_scale
-//     vec3<f32>(0.20, 0.5, 0.30));
 // const moss_biome = BiomeSurfaceAttrs(
 //     0.99,
 //     0.8, 0.65, 0.67,
 //     0.8, 0.65, 0.85,
 //     0.45, // tx_scale
 //     vec3<f32>(0.6, 0.6, 0.6));
-
-// struct TerrainFxSurfaceAttrs {
-//     // Roughness of this biome surface
-//     // roughness: f32,
-//     // blend_var: f32,
-//     // blend_t0: f32,
-//     // blend_t1: f32,
-//     // edge_var: f32,
-//     // edge_t0: f32,
-//     // edge_t1: f32,
-
-//     // Texture scale
-//     tx_scale: f32,
-
-//     // Darkened color which shows up at edges of top surface (near roads etc.).
-//     // edge_tint: vec3<f32>,
-// }
 
 // const cobbles_fx = TerrainFxSurfaceAttrs(
 //     0.45, // tx_scale
@@ -226,14 +203,6 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
         dot(biome_weight[2], biome_interpolation),
         dot(biome_weight[3], biome_interpolation)
     );
-    // out.biome_weight_0 = vec4<f32>(
-    //     biome_weight[0],
-    //     biome_weight[1],
-    //     biome_weight[2],
-    //     biome_weight[3]
-    // );
-    // out.biome_weight_1 = vec4<f32>(0., 0., 0., 0.);
-    // out.biome_weight_2 = vec4<f32>(0., 0., 0., 0.);
     return out;
 }
 

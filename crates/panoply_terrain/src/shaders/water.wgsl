@@ -2,6 +2,7 @@
 #define VERTEX_WAVES 1
 #define FOAM 1
 #define SKY 1
+#define STANDARD_MATERIAL_CLEARCOAT 1
 
 #import bevy_core_pipeline::tonemapping::tone_mapping
 #import bevy_pbr::{
@@ -177,7 +178,10 @@ fn fragment(
 
     var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = color;
+    pbr_input.material.perceptual_roughness = 0.9;
     pbr_input.material.metallic = 0.;
+    pbr_input.material.clearcoat = 0.2;
+    pbr_input.material.clearcoat_perceptual_roughness = 0.1;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
     pbr_input.world_normal = fns::prepare_world_normal(
@@ -185,27 +189,13 @@ fn fragment(
         false,
         is_front,
     );
-    pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
-
-    pbr_input.is_orthographic = false;
     pbr_input.N = normalize(pbr_input.world_normal);
-    // pbr_input.N = fns::apply_normal_mapping(
-    //     pbr_input.material.flags,
-    //     normal,
-    //     false, // double_sided,
-    //     is_front,
-    //     // uv,
-    //     view.mip_bias,
-    // );
+    pbr_input.clearcoat_N = pbr_input.N;
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
+    pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
+    pbr_input.is_orthographic = false;
 
-    // We do the lighting calculation twice to simulate rough reflections.
-    pbr_input.material.perceptual_roughness = 0.1;
     var out_color = fns::apply_pbr_lighting(pbr_input);
-    pbr_input.material.perceptual_roughness = 0.6;
-    var out_color_2 = fns::apply_pbr_lighting(pbr_input);
-    out_color = mix(out_color, out_color_2, 0.4);
-
     out_color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);
     return tone_mapping(out_color, view.color_grading);
 }

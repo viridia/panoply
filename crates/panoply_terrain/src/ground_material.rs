@@ -121,6 +121,8 @@ pub struct GroundMaterialCache {
     // Biome textures.
     pub grass: Handle<Image>,
     pub moss: Handle<Image>,
+
+    pub material: Option<Handle<GroundMaterial>>,
     // pub sand: Handle<Image>,
     // pub snow: Handle<Image>,
 }
@@ -134,6 +136,7 @@ impl FromWorld for GroundMaterialCache {
             cobbles: assets.load("terrain/textures/cobbles.png"),
             grass: assets.load("terrain/textures/grass.png"),
             moss: assets.load("terrain/textures/moss.png"),
+            material: None,
             // sand: assets.load("textures/sand.png"),
             // snow: assets.load("textures/snow.png"),
         }
@@ -141,26 +144,33 @@ impl FromWorld for GroundMaterialCache {
 }
 
 impl GroundMaterialCache {
-    pub fn get_material(&self, materials: &mut Assets<GroundMaterial>) -> Handle<GroundMaterial> {
-        materials.add(GroundMaterial {
-            noise: self.noise.clone(),
-            dirt: self.dirt.clone(),
-            cobbles: self.cobbles.clone(),
-            surface0: self.grass.clone(),
-            surface1: self.moss.clone(),
-            water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
-            biome_weight: Mat4::from_cols(
-                Vec4::new(1.0, 1.0, 1.0, 1.0),
-                Vec4::new(0.0, 1.0, 1.0, 1.0),
-                Vec4::new(0.0, 0.0, 0.0, 0.0),
-                Vec4::new(0.0, 0.0, 0.0, 0.0),
-            ),
-            biome_surface: [
-                BiomeSurfaceAttrs::GRASS,
-                BiomeSurfaceAttrs::GRASS,
-                BiomeSurfaceAttrs::GRASS,
-                BiomeSurfaceAttrs::GRASS,
-            ],
-        })
+    pub fn get_material(
+        &mut self,
+        materials: &mut Assets<GroundMaterial>,
+    ) -> Handle<GroundMaterial> {
+        self.material
+            .get_or_insert_with(|| {
+                materials.add(GroundMaterial {
+                    noise: self.noise.clone(),
+                    dirt: self.dirt.clone(),
+                    cobbles: self.cobbles.clone(),
+                    surface0: self.grass.clone(),
+                    surface1: self.moss.clone(),
+                    water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
+                    biome_weight: Mat4::from_cols(
+                        Vec4::new(1.0, 1.0, 1.0, 1.0),
+                        Vec4::new(0.0, 1.0, 1.0, 1.0),
+                        Vec4::new(0.0, 0.0, 0.0, 0.0),
+                        Vec4::new(0.0, 0.0, 0.0, 0.0),
+                    ),
+                    biome_surface: [
+                        BiomeSurfaceAttrs::GRASS,
+                        BiomeSurfaceAttrs::GRASS,
+                        BiomeSurfaceAttrs::GRASS,
+                        BiomeSurfaceAttrs::GRASS,
+                    ],
+                })
+            })
+            .clone()
     }
 }

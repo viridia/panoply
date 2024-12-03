@@ -93,7 +93,7 @@ pub fn insert_ground_meshes(
     mut realms_query: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
-    r_material_cache: Res<GroundMaterialCache>,
+    mut r_material_cache: ResMut<GroundMaterialCache>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
         if let Ok((realm, mut realm_physics, terrain_map)) = realms_query.get_mut(parcel.realm) {

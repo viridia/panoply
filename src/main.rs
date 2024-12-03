@@ -1,4 +1,3 @@
-#![feature(impl_trait_in_assoc_type)]
 #![allow(dead_code)]
 use bevy::{
     asset::io::AssetSource,
@@ -13,12 +12,6 @@ use bevy::{
 };
 use bevy_basic_prefs::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-// use bevy_mod_picking::{
-//     backends::raycast::{RaycastBackendSettings, RaycastPickable},
-// };
-// use bevy_quill::QuillPlugin;
-// use bevy_quill_obsidian::ObsidianUiPlugin;
-// use bevy_quill_overlays::QuillOverlaysPlugin;
 use models::ModelsPlugin;
 use panoply_core::{Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
@@ -27,14 +20,11 @@ use std::f32::consts::PI;
 // #[cfg(feature = "editor")]
 // mod editor;
 
-// extern crate directories;
-
 mod actors;
 mod diagnostics;
 mod materials;
 mod models;
 mod portals;
-// mod random;
 mod reflect_types;
 mod scenery;
 mod settings;
@@ -196,6 +186,7 @@ fn setup(
             )
             .with_rotation(Quat::from_rotation_x(-PI / 4.)),
             Shape,
+            RenderLayers::from_layers(&[0, 1, 2, 3, 4, 5]),
         ));
     }
 

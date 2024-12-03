@@ -71,6 +71,14 @@ pub struct Parcel {
 
     /// Collider for terrain
     pub terrain_collider: ColliderHandle,
+
+    /// Whether this parcel has terrain
+    pub has_terrain: bool,
+
+    /// Whether this parcel has water
+    pub has_water: bool,
+    // pub height: SquareArray<i8>,
+    // pub flora: SquareArray<FloraType>,
 }
 
 impl Parcel {
