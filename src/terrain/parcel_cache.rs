@@ -1,24 +1,22 @@
-use bevy::{asset::LoadState, math::IRect, prelude::*};
-use bevy_mod_picking::{
-    events::{Down, Drag, DragEnd, DragStart, Pointer},
-    prelude::{ListenerMut, On},
+use bevy::{math::IRect, prelude::*};
+use panoply_terrain::{
+    Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
+    RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainFxVertexAttr, ADJACENT_COUNT,
+};
+use rapier3d::{
+    na::Vector3,
+    prelude::{ColliderHandle, RigidBodyBuilder},
 };
 
-use crate::{
-    view::{
-        picking::{PickAction, PickEvent, PickTarget},
-        QueryRect, Viewpoint,
-    },
-    world::Realm,
+use crate::view::{
+    picking::{PickAction, PickEvent, PickTarget},
+    QueryRect,
 };
+use panoply_core::{Realm, RealmPhysics, Viewpoint};
 
 use super::{
-    parcel::{
-        Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelWaterChanged,
-        RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, ADJACENT_COUNT,
-    },
     terrain_map::{TerrainMap, TerrainMapAsset},
-    ParcelThumbnail, TerrainFxVertexAttr, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
+    PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
 };
 
 #[derive(Resource)]
@@ -59,7 +57,7 @@ pub struct ParcelRectIterator<'a> {
     z: i32,
 }
 
-impl<'a> Iterator for ParcelRectIterator<'a> {
+impl Iterator for ParcelRectIterator<'_> {
     type Item = Entity;
     fn next(&mut self) -> Option<Entity> {
         while self.z < self.rect.max.y {
@@ -88,7 +86,7 @@ pub fn spawn_parcels(
     viewpoint: Res<Viewpoint>,
     mut parcel_cache: ResMut<ParcelCache>,
     mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>)>,
-    q_realms: Query<(&Realm, &TerrainMap)>,
+    mut q_realms: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     server: Res<AssetServer>,
 ) {
@@ -122,9 +120,9 @@ pub fn spawn_parcels(
 
     // Function to add parcels to the cache based on a view rect.
     let mut fetch_parcels = |rect: &QueryRect| {
-        let realm_id = rect.realm;
-        if let Ok((realm, terrain)) = q_realms.get(rect.realm) {
-            if server.load_state(&terrain.handle) != LoadState::Loaded {
+        // let realm_id = rect.realm;
+        if let Ok((realm, mut realm_physics, terrain)) = q_realms.get_mut(rect.realm) {
+            if !server.load_state(&terrain.handle).is_loaded() {
                 return;
             }
             let terrain_map = terrain_map_assets
@@ -165,7 +163,14 @@ pub fn spawn_parcels(
                         None => {
                             // println!("Creating parcel {} {}; biomes: {:?}.", x, z, biomes);
                             // Insert new parcel
-                            let mut entity = commands.spawn((
+                            let rb_builder = RigidBodyBuilder::fixed().translation(Vector3::new(
+                                x as f32 * PARCEL_SIZE_F,
+                                0.,
+                                z as f32 * PARCEL_SIZE_F,
+                            ));
+                            let rigid_body = rb_builder.build();
+                            let rb_handle = realm_physics.insert_body(rigid_body);
+                            let entity = commands.spawn((
                                 Parcel {
                                     realm: rect.realm,
                                     coords: IVec2::new(x, z),
@@ -178,61 +183,62 @@ pub fn spawn_parcels(
                                     terrain_fx: ParcelTerrainFx(
                                         [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA],
                                     ),
+                                    physics: rb_handle,
+                                    terrain_collider: ColliderHandle::default(),
                                 },
                                 Name::new(format!("Parcel:{}:{}:{}", realm.name, x, z)),
-                                SpatialBundle {
-                                    transform: Transform::from_xyz(
-                                        x as f32 * PARCEL_SIZE_F,
-                                        0.,
-                                        z as f32 * PARCEL_SIZE_F,
-                                    ),
-                                    ..default()
-                                },
+                                Transform::from_xyz(
+                                    x as f32 * PARCEL_SIZE_F,
+                                    0.,
+                                    z as f32 * PARCEL_SIZE_F,
+                                ),
+                                Visibility::Visible,
                                 RebuildParcelGroundMesh,
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,
                                 RebuildParcelTerrainFx,
                             ));
-                            entity.insert((On::<Pointer<Down>>::run(
-                                move |mut ev: ListenerMut<Pointer<Down>>,
-                                      mut commands: Commands| {
-                                    ev.stop_propagation();
-                                    commands.trigger(PickEvent {
-                                        action: PickAction::Down(ev.hit.position.unwrap()),
-                                        target: PickTarget::Parcel(ev.listener()),
-                                    });
-                                },
-                            ), On::<Pointer<DragStart>>::run(
-                                move |mut ev: ListenerMut<Pointer<DragStart>>,
-                                      mut commands: Commands| {
-                                    ev.stop_propagation();
-                                    commands.trigger(PickEvent {
-                                        action: PickAction::DragStart{
-                                            realm: realm_id,
-                                            pos: ev.hit.position.unwrap()
-                                        },
-                                        target: PickTarget::Parcel(ev.listener()),
-                                    });
-                                },
-                            ), On::<Pointer<Drag>>::run(
-                                move |mut ev: ListenerMut<Pointer<Drag>>,
-                                      mut commands: Commands| {
-                                    ev.stop_propagation();
-                                    commands.trigger(PickEvent {
-                                        action: PickAction::Drag,
-                                        target: PickTarget::Parcel(ev.listener()),
-                                    });
-                                },
-                            ), On::<Pointer<DragEnd>>::run(
-                                move |mut ev: ListenerMut<Pointer<DragEnd>>,
-                                      mut commands: Commands| {
-                                    ev.stop_propagation();
-                                    commands.trigger(PickEvent {
-                                        action: PickAction::DragEnd,
-                                        target: PickTarget::Parcel(ev.listener()),
-                                    });
-                                },
-                            )));
+                            // TODO: Restore picking
+                            // entity.insert((On::<Pointer<Down>>::run(
+                            //     move |mut ev: ListenerMut<Pointer<Down>>,
+                            //           mut commands: Commands| {
+                            //         ev.stop_propagation();
+                            //         commands.trigger(PickEvent {
+                            //             action: PickAction::Down(ev.hit.position.unwrap()),
+                            //             target: PickTarget::Parcel(ev.listener()),
+                            //         });
+                            //     },
+                            // ), On::<Pointer<DragStart>>::run(
+                            //     move |mut ev: ListenerMut<Pointer<DragStart>>,
+                            //           mut commands: Commands| {
+                            //         ev.stop_propagation();
+                            //         commands.trigger(PickEvent {
+                            //             action: PickAction::DragStart{
+                            //                 realm: realm_id,
+                            //                 pos: ev.hit.position.unwrap()
+                            //             },
+                            //             target: PickTarget::Parcel(ev.listener()),
+                            //         });
+                            //     },
+                            // ), On::<Pointer<Drag>>::run(
+                            //     move |mut ev: ListenerMut<Pointer<Drag>>,
+                            //           mut commands: Commands| {
+                            //         ev.stop_propagation();
+                            //         commands.trigger(PickEvent {
+                            //             action: PickAction::Drag,
+                            //             target: PickTarget::Parcel(ev.listener()),
+                            //         });
+                            //     },
+                            // ), On::<Pointer<DragEnd>>::run(
+                            //     move |mut ev: ListenerMut<Pointer<DragEnd>>,
+                            //           mut commands: Commands| {
+                            //         ev.stop_propagation();
+                            //         commands.trigger(PickEvent {
+                            //             action: PickAction::DragEnd,
+                            //             target: PickTarget::Parcel(ev.listener()),
+                            //         });
+                            //     },
+                            // )));
                             parcel_cache.parcels.put(key, entity.id());
                         }
                     };
@@ -258,4 +264,17 @@ pub fn spawn_parcels(
         }
         cache.pop_lru();
     }
+}
+
+pub(crate) fn cleanup_parcel_physics(world: &mut World) {
+    world
+        .register_component_hooks::<Parcel>()
+        .on_remove(|mut world, entity, _component| {
+            let parcel = world.get::<Parcel>(entity).unwrap();
+            let rb_handle = parcel.physics;
+            let Some(mut realm_physics) = world.get_mut::<RealmPhysics>(parcel.realm) else {
+                return;
+            };
+            realm_physics.remove_body(rb_handle);
+        });
 }

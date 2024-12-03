@@ -4,7 +4,6 @@ use bevy::{
     reflect::{TypeRegistry, TypeRegistryArc},
     utils::hashbrown::HashMap,
 };
-use futures_lite::AsyncReadExt;
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -33,7 +32,7 @@ struct ExemplarVisitor<'a, 'b> {
     exemplar_name: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for ExemplarVisitor<'a, 'b> {
+impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
     type Value = ExemplarData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -107,7 +106,7 @@ struct ExemplarDeserializer<'a, 'b> {
     exemplar_name: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for ExemplarDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for ExemplarDeserializer<'_, '_> {
     type Value = ExemplarData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -127,7 +126,7 @@ struct CatalogVisitor<'a, 'b> {
     load_context: &'a mut LoadContext<'b>,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for CatalogVisitor<'a, 'b> {
+impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
     type Value = ExemplarCatalog;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> std::fmt::Result {
@@ -170,7 +169,7 @@ struct CatalogDeserializer<'a, 'b> {
     load_context: &'a mut LoadContext<'b>,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for CatalogDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
     type Value = ExemplarCatalog;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -211,11 +210,11 @@ impl AssetLoader for ExemplarLoader {
     type Error = ExemplarLoaderError;
     type Settings = ();
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;

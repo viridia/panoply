@@ -60,7 +60,7 @@ pub struct ViewportInsetElement;
 
 pub fn update_viewport_inset(
     q_windows: Query<&Window, With<PrimaryWindow>>,
-    q_viewport: Query<(&Node, &GlobalTransform), With<ViewportInsetElement>>,
+    q_viewport: Query<(&ComputedNode, &GlobalTransform), With<ViewportInsetElement>>,
     mut viewport_inset: ResMut<ViewportInset>,
 ) {
     let mut inset = ViewportInset::default();

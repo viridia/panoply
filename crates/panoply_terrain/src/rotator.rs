@@ -23,7 +23,7 @@ where
     ///   are 0..=3.
     /// * `elts` - the elements of the array, a borrowed reference. The length of the array
     ///   must be `size` * `size`.
-    pub fn new(size: usize, rotation: i32, elts: &'a [T]) -> RotatingSquareArray<T> {
+    pub fn new(size: usize, rotation: i32, elts: &'a [T]) -> RotatingSquareArray<'a, T> {
         let dx: i32;
         let dy: i32;
         let base_index: usize;
@@ -79,7 +79,7 @@ where
     }
 }
 
-impl<'a> RotatingSquareArray<'a, i8> {
+impl RotatingSquareArray<'_, i8> {
     /// Return the array entry at the given coordinates. This version accepts floating-point
     /// coordinates, the result is a linearly-interpolated value.
     pub fn get_interpolated(&self, x: f32, y: f32) -> f32 {

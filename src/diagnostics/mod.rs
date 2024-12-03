@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 use bevy::{
     color::palettes,
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
@@ -34,14 +32,10 @@ fn update(
     let fps_diags = extract_fps(&diagnostics);
 
     for mut text in text_query.iter_mut() {
-        let value = &mut text.sections[0].value;
-        value.clear();
-
         if let Some(fps) = fps_diags {
-            write!(value, "{}{:.0}", STRING_FORMAT, fps).unwrap();
+            text.0 = format!("{}{:.0}", STRING_FORMAT, fps);
         } else {
-            value.clear();
-            write!(value, "{}", STRING_MISSING).unwrap();
+            text.0 = STRING_MISSING.to_string();
         }
     }
 }
@@ -57,26 +51,21 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     // let font = asset_server.load("fonts/screen-diags-font.ttf");
     let font = asset_server.load("fonts/Rubik/Rubik-VariableFont_wght.ttf");
     commands
-        .spawn((TextBundle {
-            text: Text {
-                sections: vec![TextSection {
-                    value: STRING_INITIAL.to_string(),
-                    style: TextStyle {
-                        font,
-                        font_size: FONT_SIZE,
-                        color: FONT_COLOR.into(),
-                    },
-                }],
-                ..Default::default()
+        .spawn((
+            Text::new(STRING_INITIAL),
+            TextFont {
+                font,
+                font_size: FONT_SIZE,
+                ..default()
             },
-            style: Style {
+            TextColor(FONT_COLOR.into()),
+            Node {
                 position_type: PositionType::Absolute,
                 right: Val::Px(10.0),
                 top: Val::Px(10.0),
                 left: Val::Auto,
                 ..default()
             },
-            ..Default::default()
-        },))
+        ))
         .insert(ScreenDiagsText);
 }

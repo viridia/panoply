@@ -236,3 +236,16 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
   - mutations / commands
   - drag states
   - overlays
+
+# New Ground Shader
+
+- texture slots
+  - dirt
+  - cobbles
+- biome slots
+  - texture index
+  - blend weights for corners (xyzw)
+  - rotation
+  - scale
+  - blend params
+    - noise factor

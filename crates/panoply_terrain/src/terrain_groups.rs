@@ -1,4 +1,3 @@
-use futures_lite::AsyncReadExt;
 use std::sync::{Arc, RwLock};
 use thiserror::Error;
 
@@ -9,13 +8,13 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::reflect_types::HexColor;
-
 #[derive(Default, Serialize, Deserialize)]
 pub struct TerrainGroup {
     pub name: String,
     pub visible: bool,
-    pub color: HexColor,
+
+    #[serde(with = "panoply_exemplar::ser::hex_color")]
+    pub color: Srgba,
     pub contours: Vec<usize>,
 }
 
@@ -40,11 +39,11 @@ impl AssetLoader for TerrainGroupsLoader {
     type Settings = ();
     type Error = TerrainGroupsLoaderError;
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;

@@ -1,24 +1,20 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use crate::{
-    models::PropagateRenderLayers,
+use crate::models::PropagateRenderLayers;
+use panoply_core::{
     random::{noise3, WeightedChoice},
-    world::Realm,
+    Realm,
+};
+use panoply_terrain::{
+    BiomesAsset, BiomesHandle, BiomesTable, FloraType, Parcel, ParcelFloraChanged, ParcelTerrainFx,
+    RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, TerrainContoursHandle,
+    TerrainContoursTable, TerrainContoursTableAsset,
 };
 
 use super::{
-    biome::{BiomesAsset, BiomesHandle, BiomesTable},
-    parcel::{Parcel, ParcelFloraChanged, ShapeRef},
-    rotator::RotatingSquareArray,
-    terrain_contours::{
-        FloraType, TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset,
-    },
-    terrain_map::TerrainMap,
-    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F,
-    PARCEL_SIZE_U,
+    terrain_map::TerrainMap, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 use bevy::{
-    asset::LoadState,
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
     utils::HashMap,
@@ -70,8 +66,8 @@ pub fn gen_flora(
         }
 
         // Ensure that both the terrain contours and biomes are loaded.
-        if server.load_state(&ts_handle.0) != LoadState::Loaded
-            || server.load_state(&bm_handle.0) != LoadState::Loaded
+        if !server.load_state(&ts_handle.0).is_loaded()
+            || !server.load_state(&bm_handle.0).is_loaded()
         {
             return;
         }
@@ -151,7 +147,8 @@ pub fn insert_flora(
                         None => {
                             let child = commands
                                 .spawn((
-                                    SpatialBundle { ..default() },
+                                    Transform::default(),
+                                    Visibility::default(),
                                     ParcelFlora,
                                     Name::new("Flora"),
                                     realm.layer.clone(),
@@ -180,7 +177,7 @@ pub fn insert_flora(
                                             // Replace flora model
                                             flora_cmp.handle = handle.clone();
                                             flora_cmp.label = fragment.to_string();
-                                            commands.entity(flora).remove::<Handle<Scene>>();
+                                            commands.entity(flora).remove::<SceneRoot>();
                                         }
                                         if *transform_cmp != transform {
                                             *transform_cmp = transform;
@@ -224,22 +221,19 @@ pub fn insert_flora(
 
 pub fn spawn_flora_model_instances(
     mut commands: Commands,
-    mut q_flora_instance: Query<(Entity, &FloraInstance), Without<Handle<Scene>>>,
+    mut q_flora_instance: Query<(Entity, &FloraInstance), Without<SceneRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
     for (entity, mesh) in q_flora_instance.iter_mut() {
         let result = server.load_state(&mesh.handle);
-        if result == LoadState::Loaded {
+        if result.is_loaded() {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     commands.entity(entity).insert((
-                        SceneBundle {
-                            scene: scene_handle.clone(),
-                            transform: mesh.transform,
-                            ..Default::default()
-                        },
+                        SceneRoot(scene_handle.clone()),
+                        mesh.transform,
                         PropagateRenderLayers,
                     ));
                 } else {

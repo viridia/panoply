@@ -10,8 +10,8 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/humanoid-male:HumanoidArmature",
-        "animations": "characters/humanoid-armature:HumanoidArmature"
+        "armature": "characters/humanoid-male.glb#HumanoidArmature",
+        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
       },
       "FeatureSlots": [
         "FacialHairBeard",
@@ -36,8 +36,8 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/humanoid-female:HumanoidArmature",
-        "animations": "characters/humanoid-armature:HumanoidArmature"
+        "armature": "characters/humanoid-female.glb#HumanoidArmature",
+        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
       },
       "FeatureSlots": [
         "HairCoiffed",
@@ -62,9 +62,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/canine:Armature"
+        "armature": "characters/canine.glb#Armature"
       },
-      "Skin": "characters/canine:Canine",
+      "Skin": "characters/canine.glb#Canine",
       "ColorSlots": [
         "Fur",
         "Teeth",
@@ -80,10 +80,10 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/dabori:Armature",
-        "animations": "characters/dabori:Armature"
+        "armature": "characters/dabori.glb#Armature",
+        "animations": "characters/dabori.glb#Armature"
       },
-      "Skin": "characters/dabori:Dabori",
+      "Skin": "characters/dabori.glb#Dabori",
       "ColorSlots": [
         "Fur",
         "Boots",
@@ -109,9 +109,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/reshari:Armature"
+        "armature": "characters/reshari.glb#Armature"
       },
-      "Skin": "characters/reshari:Reshari",
+      "Skin": "characters/reshari.glb#Reshari",
       "ColorSlots": [
         "Fur",
         "Teeth",
@@ -138,7 +138,7 @@
   "Proto.HumanMaleTunic": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithTunic",
+      "Skin": "characters/humanoid-male.glb#WithTunic",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -160,7 +160,7 @@
   "Proto.HumanMaleRobe": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithRobe",
+      "Skin": "characters/humanoid-male.glb#WithRobe",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -181,7 +181,7 @@
   "Proto.HumanMaleApron": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithApron",
+      "Skin": "characters/humanoid-male.glb#WithApron",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -204,7 +204,7 @@
   "Proto.HumanMaleJerkinHooded": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithJerkinHooded",
+      "Skin": "characters/humanoid-male.glb#WithJerkinHooded",
       "ColorSlots": [
         "Face",
         "Hood",
@@ -224,7 +224,7 @@
   "Proto.CityGuardMale": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:CityGuard",
+      "Skin": "characters/humanoid-male.glb#CityGuard",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -248,7 +248,7 @@
   "Proto.HumanMaleTunicHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithTunicHeavy",
+      "Skin": "characters/humanoid-male.glb#WithTunicHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -270,7 +270,7 @@
   "Proto.HumanMaleCoatHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithCoatHeavy",
+      "Skin": "characters/humanoid-male.glb#WithCoatHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -293,7 +293,7 @@
   "Proto.HumanMaleLongCoat": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithLongCoat",
+      "Skin": "characters/humanoid-male.glb#WithLongCoat",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -331,7 +331,7 @@
   "Proto.HumanFemaleTunic": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-female:WithTunic",
+      "Skin": "characters/humanoid-female.glb#WithTunic",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -353,7 +353,7 @@
   "Proto.HumanFemaleDress": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-female:WithDress",
+      "Skin": "characters/humanoid-female.glb#WithDress",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -376,7 +376,7 @@
   "Proto.HumanFemaleLightArmor": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-female:WithLightArmor",
+      "Skin": "characters/humanoid-female.glb#WithLightArmor",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -399,7 +399,7 @@
   "Proto.HumanFemaleFancyGown": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-female:WithFancyGown",
+      "Skin": "characters/humanoid-female.glb#WithFancyGown",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -423,7 +423,7 @@
   "Proto.HumanFemaleDressHeavy": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/humanoid-female:WithDressHeavy",
+      "Skin": "characters/humanoid-female.glb#WithDressHeavy",
       "ColorSlots": [
         "Face",
         "Hair",
@@ -458,7 +458,7 @@
   "Proto.DaboriArmored": {
     "type": "Actr",
     "aspects": {
-      "Skin": "characters/dabori:DaboriArmored",
+      "Skin": "characters/dabori.glb#DaboriArmored",
       "ColorSlots": [
         "Fur",
         "Armor",
@@ -740,7 +740,7 @@
     "type": "Actr",
     "display_name": "Sergeant Stone",
     "aspects": {
-      "Skin": "characters/humanoid-male:WithCoatHeavy",
+      "Skin": "characters/humanoid-male.glb#WithCoatHeavy",
       "Colors": {
         "Hair": "#918981",
         "FacialHair": "#91806b",
@@ -1034,9 +1034,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/canine:Armature"
+        "armature": "characters/canine.glb#Armature"
       },
-      "Skin": "characters/canine:Canine",
+      "Skin": "characters/canine.glb#Canine",
       "ColorSlots": [
         "Fur",
         "Teeth",
@@ -1052,9 +1052,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/ursine:Armature"
+        "armature": "characters/ursine.glb#Armature"
       },
-      "Skin": "characters/ursine:Ursine",
+      "Skin": "characters/ursine.glb#Ursine",
       "ColorSlots": [
         "Fur",
         "Teeth",
@@ -1070,9 +1070,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/wasp:Armature"
+        "armature": "characters/wasp.glb#Armature"
       },
-      "Skin": "characters/wasp:Wasp",
+      "Skin": "characters/wasp.glb#Wasp",
       "ColorSlots": [
         "Chitin1",
         "Chitin2",
@@ -1090,9 +1090,9 @@
     "type": "Actr",
     "aspects": {
       "Armature": {
-        "armature": "characters/kreekin:Armature"
+        "armature": "characters/kreekin.glb#Armature"
       },
-      "Skin": "characters/kreekin:Kreekin",
+      "Skin": "characters/kreekin.glb#Kreekin",
       "ColorSlots": [
         "Chitin",
         "Claws",
@@ -1109,10 +1109,10 @@
     "display_name": "Skeleton",
     "aspects": {
       "Armature": {
-        "armature": "characters/skeleton:HumanoidArmature",
-        "animations": "characters/humanoid-armature:HumanoidArmature"
+        "armature": "characters/skeleton.glb#HumanoidArmature",
+        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
       },
-      "Skin": "characters/skeleton:Skeleton",
+      "Skin": "characters/skeleton.glb#Skeleton",
       "ColorSlots": [
         "Bone"
       ],

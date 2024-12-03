@@ -1,9 +1,10 @@
 use bevy::{math::IRect, prelude::*};
 
-mod viewpoint;
+// mod viewpoint;
 pub mod viewport;
-pub use viewpoint::*;
-pub mod layers;
+// pub use viewpoint::*;
+pub mod camera;
+// pub mod layers;
 pub mod picking;
 
 /// Marker which identifies the primary camera.
@@ -15,6 +16,7 @@ pub struct PrimaryCamera;
 pub struct HudCamera;
 
 /// Used to query precincts or parcels
+#[derive(Debug)]
 pub struct QueryRect {
     pub realm: Entity,
     pub bounds: IRect,

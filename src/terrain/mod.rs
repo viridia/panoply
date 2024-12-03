@@ -1,18 +1,9 @@
 #![allow(dead_code)]
-mod biome;
 mod flora;
-mod ground_material;
 mod ground_mesh;
-mod parcel;
 mod parcel_cache;
 mod plugin;
-pub mod rotator;
-mod square;
-pub mod terrain_contours;
-mod terrain_fx;
-pub mod terrain_groups;
 mod terrain_map;
-mod water_material;
 mod water_mesh;
 
 pub const PARCEL_SIZE: i32 = 16;
@@ -37,19 +28,10 @@ pub const PARCEL_TERRAIN_FX_SIZE: usize = PARCEL_SIZE as usize + 2;
 pub const PARCEL_TERRAIN_FX_STRIDE: usize = PARCEL_TERRAIN_FX_SIZE;
 pub const PARCEL_TERRAIN_FX_AREA: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_TERRAIN_FX_SIZE;
 
-pub use ground_material::GroundMaterial;
 pub use ground_mesh::*;
-pub use parcel::Parcel;
-pub use parcel::ParcelTerrainFx;
-pub use parcel::{
-    ParcelFloraChanged, ParcelThumbnail, ParcelWaterChanged, RebuildParcelGroundMesh,
-    RebuildParcelTerrainFx, ShapeRef,
-};
 pub use parcel_cache::*;
 pub use plugin::*;
-pub use terrain_fx::*;
+// pub use terrain_fx::*;
 #[allow(unused_imports)]
-pub use terrain_map::{
-    create_ground_material, TerrainMap, TerrainMapAsset, TerrainMapChanged, TerrainMapSaver,
-};
+pub use terrain_map::{TerrainMap, TerrainMapAsset, TerrainMapChanged, TerrainMapSaver};
 pub use water_mesh::ComputeWaterMeshTask;

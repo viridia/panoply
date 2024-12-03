@@ -6,11 +6,19 @@ use bevy::pbr::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use bevy::render::view::RenderLayers;
-use futures_lite::AsyncReadExt;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::view::layers::ReservedLayers;
+use crate::layers::ReservedLayers;
+use crate::realm_physics::RealmPhysics;
+
+// use crate::view::layers::ReservedLayers;
+
+#[derive(Default, Serialize, Deserialize, TypePath, Asset)]
+pub struct RealmData {
+    /** Type of lighting for this realm. */
+    pub lighting: RealmLighting,
+}
 
 #[derive(Default, Serialize, Deserialize, Clone, Copy)]
 pub enum RealmLighting {
@@ -20,12 +28,6 @@ pub enum RealmLighting {
     /// Used for overland realms.
     #[default]
     Exterior,
-}
-
-#[derive(Default, Serialize, Deserialize, TypePath, Asset)]
-pub struct RealmData {
-    /** Type of lighting for this realm. */
-    pub lighting: RealmLighting,
 }
 
 #[derive(Component, Default, Asset, TypePath)]
@@ -76,11 +78,11 @@ impl AssetLoader for RealmsLoader {
     type Error = RealmsLoaderError;
     type Settings = ();
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
@@ -103,7 +105,7 @@ impl FromWorld for RealmsHandleResource {
     }
 }
 
-pub fn sync_realms(
+pub fn load_realms(
     mut commands: Commands,
     server: Res<AssetServer>,
     assets: ResMut<Assets<RealmData>>,
@@ -132,40 +134,39 @@ pub fn sync_realms(
                 if !exists {
                     println!("Realm created: [{}], layer={}.", realm_name, layer_index);
                     let render_layer = RenderLayers::layer(layer_index);
-                    commands.spawn(Realm {
-                        layer_index,
-                        layer: render_layer.clone(),
-                        name: realm_name.clone(),
-                        lighting: realm.lighting,
-                        parcel_bounds: IRect::default(),
-                        precinct_bounds: IRect::default(),
-                    });
+                    commands.spawn((
+                        Realm {
+                            layer_index,
+                            layer: render_layer.clone(),
+                            name: realm_name.clone(),
+                            lighting: realm.lighting,
+                            parcel_bounds: IRect::default(),
+                            precinct_bounds: IRect::default(),
+                        },
+                        Name::new(format!("Realm:{}", realm_name)),
+                        RealmPhysics::default(),
+                    ));
 
                     // Light for realm
                     commands.spawn((
-                        DirectionalLightBundle {
-                            directional_light: DirectionalLight {
-                                shadows_enabled: true,
-                                color: Srgba::WHITE.into(),
-                                illuminance: 3000.,
-                                ..default()
-                            },
-                            transform: Transform {
-                                translation: Vec3::new(0.0, 2.0, 0.0),
-                                rotation: Quat::from_rotation_x(-PI / 3.),
-                                ..default()
-                            },
-                            // The default cascade config is designed to handle large scenes.
-                            // As this example has a much smaller world, we can tighten the shadow
-                            // bounds for better visual quality.
-                            cascade_shadow_config: CascadeShadowConfigBuilder {
-                                first_cascade_far_bound: 4.0,
-                                maximum_distance: 130.0,
-                                ..default()
-                            }
-                            .into(),
+                        DirectionalLight {
+                            shadows_enabled: true,
+                            color: Srgba::WHITE.into(),
+                            illuminance: 3000.,
                             ..default()
                         },
+                        Transform {
+                            translation: Vec3::new(0.0, 2.0, 0.0),
+                            rotation: Quat::from_rotation_x(-PI / 3.),
+                            ..default()
+                        },
+                        Visibility::Visible,
+                        CascadeShadowConfigBuilder {
+                            first_cascade_far_bound: 4.0,
+                            maximum_distance: 130.0,
+                            ..default()
+                        }
+                        .build(),
                         render_layer,
                     ));
                 }

@@ -17,7 +17,7 @@ impl ViewTemplate for SaveButton {
             .size(Size::Xl)
             .disabled(empty)
             .on_click(cx.create_callback(|mut commands: Commands| {
-                commands.add(unsaved::SaveCommand);
+                commands.queue(unsaved::SaveCommand);
             }))
     }
 }

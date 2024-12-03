@@ -16,7 +16,7 @@ pub const ATTRIBUTE_TERRAIN_STYLE: MeshVertexAttribute =
 
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
-pub struct GroundMaterial {
+struct GroundMaterial {
     #[texture(1)]
     #[sampler(2)]
     pub noise: Handle<Image>,
@@ -70,7 +70,7 @@ impl Material for GroundMaterial {
         let vertex_layout = layout.0.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
             Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),
-            ATTRIBUTE_TERRAIN_STYLE.at_shader_location(2),
+            // ATTRIBUTE_TERRAIN_STYLE.at_shader_location(2),
         ])?;
         descriptor.vertex.buffers = vec![vertex_layout];
         Ok(())

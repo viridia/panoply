@@ -1,9 +1,7 @@
 use bevy::{math::IRect, prelude::*};
 
-use crate::{
-    view::{QueryRect, Viewpoint},
-    world::Realm,
-};
+use crate::view::QueryRect;
+use panoply_core::{Realm, Viewpoint};
 
 use super::{
     precinct::{Precinct, PrecinctKey},
@@ -110,15 +108,14 @@ pub fn spawn_precincts(
                                 asset,
                                 tiers: Vec::new(),
                                 render_layer: realm.layer.clone(),
+                                actors: Vec::new(),
                             },
-                            SpatialBundle {
-                                transform: Transform::from_xyz(
-                                    x as f32 * PRECINCT_SIZE_F,
-                                    0.,
-                                    z as f32 * PRECINCT_SIZE_F,
-                                ),
-                                ..default()
-                            },
+                            Transform::from_xyz(
+                                x as f32 * PRECINCT_SIZE_F,
+                                0.,
+                                z as f32 * PRECINCT_SIZE_F,
+                            ),
+                            Visibility::Visible,
                         ));
                         precinct_cache.precincts.put(key, entity.id());
                     }

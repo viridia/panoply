@@ -1,38 +1,35 @@
 use std::sync::{Arc, RwLock};
 
-use crate::{
-    terrain::{
-        ground_material::ATTRIBUTE_TERRAIN_STYLE, TerrainOptions, TerrainTypes,
-        PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE,
-    },
-    world::Realm,
+use crate::terrain::{PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE};
+use panoply_core::{Realm, RealmPhysics};
+use panoply_terrain::{
+    GroundMaterial, Parcel, ParcelTerrainFx, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
+    RotatingSquareArray, ShapeRef, SquareArray, TerrainOptions, TerrainTypes, ADJACENT_COUNT,
+    CENTER_SHAPE, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U,
+    PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
 
-use super::{
-    parcel::{Parcel, RebuildParcelGroundMesh, ShapeRef, ADJACENT_COUNT, CENTER_SHAPE},
-    rotator::RotatingSquareArray,
-    square::SquareArray,
-    terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
-    terrain_map::TerrainMap,
-    ParcelTerrainFx, RebuildParcelTerrainFx, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE,
-    PARCEL_MESH_SCALE_U, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE,
-    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
-};
+use super::{terrain_map::TerrainMap, PARCEL_MESH_SCALE_U};
 use bevy::{
-    asset::LoadState,
     prelude::*,
     render::{
-        mesh::{Indices, MeshVertexAttribute},
+        mesh::{Indices, MeshAabb, MeshVertexAttribute},
         render_asset::RenderAssetUsages,
         render_resource::{PrimitiveTopology, VertexFormat},
     },
     tasks::{AsyncComputeTaskPool, Task},
 };
-use bevy_mod_picking::backends::raycast::RaycastPickable;
+use panoply_terrain::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
+// use bevy_mod_picking::backends::raycast::RaycastPickable;
 use futures_lite::future;
+use rapier3d::{
+    math::Point,
+    prelude::{Collider, ColliderBuilder},
+};
 
 pub struct GroundMeshResult {
     mesh: Mesh,
+    collider: Collider,
 }
 
 #[derive(Component)]
@@ -54,7 +51,7 @@ pub fn gen_ground_meshes(
             Without<RebuildParcelTerrainFx>,
         ),
     >,
-    q_realms: Query<(&Realm, &TerrainMap)>,
+    q_realms: Query<&Realm>,
     server: Res<AssetServer>,
     ts_handle: Res<TerrainContoursHandle>,
     ts_assets: Res<Assets<TerrainContoursTableAsset>>,
@@ -62,11 +59,11 @@ pub fn gen_ground_meshes(
     let pool = AsyncComputeTaskPool::get();
 
     for (entity, parcel) in q_parcels.iter_mut() {
-        let Ok((realm, _map)) = q_realms.get(parcel.realm) else {
+        let Ok(realm) = q_realms.get(parcel.realm) else {
             continue;
         };
 
-        if server.load_state(&ts_handle.0) != LoadState::Loaded {
+        if !server.load_state(&ts_handle.0).is_loaded() {
             return;
         }
 
@@ -92,33 +89,43 @@ pub fn gen_ground_meshes(
 pub fn insert_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeGroundMeshTask)>,
-    realms_query: Query<(&Realm, &TerrainMap)>,
+    mut realms_query: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<GroundMaterial>>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        if let Ok((realm, terrain_map)) = realms_query.get(parcel.realm) {
+        if let Ok((realm, mut realm_physics, terrain_map)) = realms_query.get_mut(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(ground_result) = task_result {
-                    let ground_mesh = MaterialMeshBundle {
-                        mesh: meshes.add(ground_result.mesh),
-                        material: terrain_map.ground_material.clone(),
-                        visibility: Visibility::Visible,
-                        ..default()
-                    };
+                    let mesh = meshes.add(ground_result.mesh);
+                    let material = materials.add(GroundMaterial {});
+                    // let material = terrain_map.ground_material.clone();
+                    // let ground_mesh = MaterialMeshBundle {
+                    //     mesh: meshes.add(ground_result.mesh),
+                    //     material: terrain_map.ground_material.clone(),
+                    //     visibility: Visibility::Visible,
+                    //     ..default()
+                    // };
                     match parcel.ground_entity {
                         Some(ground_entity) => {
                             // Replace mesh
-                            commands.entity(ground_entity).insert(ground_mesh);
+                            commands.entity(ground_entity).insert((
+                                Mesh3d(mesh),
+                                MeshMaterial3d(material),
+                                Visibility::Visible,
+                            ));
                         }
                         None => {
                             // Insert new mesh entity
                             parcel.ground_entity = Some(
                                 commands
                                     .spawn((
-                                        ground_mesh,
+                                        Mesh3d(mesh),
+                                        MeshMaterial3d(material),
+                                        Visibility::Visible,
                                         realm.layer.clone(),
                                         // TODO: Might want to pick on physics colliders instead.
-                                        RaycastPickable,
+                                        RayCastPickable,
                                         Name::new("Ground"),
                                     ))
                                     .set_parent(entity)
@@ -126,10 +133,14 @@ pub fn insert_ground_meshes(
                             );
                         }
                     }
+                    realm_physics.remove_collider(parcel.terrain_collider);
+                    parcel.terrain_collider =
+                        realm_physics.insert_collider(parcel.physics, ground_result.collider);
                 } else if let Some(ground_mesh_ent) = parcel.ground_entity {
                     // Remove mesh entity
                     commands.entity(ground_mesh_ent).despawn_recursive();
                     parcel.ground_entity = None;
+                    realm_physics.remove_collider(parcel.terrain_collider);
                 }
                 commands.entity(entity).remove::<ComputeGroundMeshTask>();
             }
@@ -163,7 +174,9 @@ fn compute_ground_mesh(
     );
     let mut position: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
     let mut normal: Vec<[f32; 3]> = Vec::with_capacity(PARCEL_MESH_VERTEX_COUNT);
-    let mut indices: Vec<u32> = Vec::with_capacity((PARCEL_MESH_SIZE.pow(2)) as usize);
+    let mut indices: Vec<u32> = Vec::with_capacity((PARCEL_MESH_SIZE.pow(2)) as usize * 3);
+    let mut collider_indices: Vec<[u32; 3]> =
+        Vec::with_capacity((PARCEL_MESH_SIZE.pow(2)) as usize);
     let mut terrain_style_f: Vec<[f32; 3]> = vec![[0., 0., 0.]; PARCEL_MESH_VERTEX_COUNT];
     let mut terrain_style: Vec<[u32; 2]> = vec![[0, 0]; PARCEL_MESH_VERTEX_COUNT];
     let mut terrain_elevation_offset: Vec<f32> = vec![0.; PARCEL_MESH_VERTEX_COUNT];
@@ -360,17 +373,31 @@ fn compute_ground_mesh(
             indices.push(b);
             indices.push(c);
             indices.push(d);
+
+            collider_indices.push([a, b, d]);
+            collider_indices.push([b, c, d]);
         }
     }
 
     assert_eq!(position.len(), normal.len());
     assert_eq!(position.len(), terrain_style.len());
+
+    let collider_builder = ColliderBuilder::trimesh(
+        position
+            .iter()
+            .map(|vtx| Point::<f32>::new(vtx[0], vtx[1], vtx[2]))
+            .collect(),
+        collider_indices,
+    );
+
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
-    mesh.insert_attribute(ATTRIBUTE_TERRAIN_STYLE, terrain_style);
+    // mesh.insert_attribute(ATTRIBUTE_TERRAIN_STYLE, terrain_style);
     mesh.insert_indices(Indices::U32(indices));
     mesh.compute_aabb();
-    Some(GroundMeshResult { mesh })
+
+    let collider = collider_builder.build();
+    Some(GroundMeshResult { mesh, collider })
 }
 
 fn pack_u32(n0: u32, n1: u32, n2: u32, n3: u32) -> u32 {

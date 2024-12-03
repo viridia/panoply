@@ -38,11 +38,11 @@ pub struct WaterMaterial {
 
 impl Material for WaterMaterial {
     fn fragment_shader() -> ShaderRef {
-        "terrain/shaders/water.wgsl".into()
+        "embedded://panoply_terrain/shaders/water.wgsl".into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        "terrain/shaders/water.wgsl".into()
+        "embedded://panoply_terrain/shaders/water.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

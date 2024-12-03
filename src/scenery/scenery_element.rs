@@ -1,4 +1,4 @@
-use bevy::{asset::LoadState, gltf::Gltf, prelude::*, render::view::RenderLayers};
+use bevy::{gltf::Gltf, prelude::*, render::view::RenderLayers};
 
 use panoply_exemplar::*;
 
@@ -39,10 +39,10 @@ pub fn update_se_aspects(
 ) {
     for (entity, scenery_element) in q_elements.iter_mut() {
         let st = server.load_state(&scenery_element.exemplar);
-        if st == LoadState::Loaded {
+        if st.is_loaded() {
             commands
                 .entity(entity)
-                .add(UpdateAspects {
+                .queue(UpdateAspects {
                     exemplar: scenery_element.exemplar.clone(),
                     finish: SceneryElementRebuildModels,
                 })
@@ -82,24 +82,21 @@ pub fn spawn_se_models(
 
 pub fn spawn_se_model_instances(
     mut commands: Commands,
-    mut query: Query<(Entity, &SceneryElementMesh), Without<Handle<Scene>>>,
+    mut query: Query<(Entity, &SceneryElementMesh), Without<SceneRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
     for (entity, mesh) in query.iter_mut() {
         let result = server.load_state(&mesh.handle);
-        if result == LoadState::Loaded {
+        if result.is_loaded() {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
                     commands.entity(entity).insert((
-                        SceneBundle {
-                            scene: scene_handle.clone(),
-                            transform,
-                            ..Default::default()
-                        },
+                        SceneRoot(scene_handle.clone()),
+                        transform,
                         PropagateRenderLayers,
                     ));
                 } else {

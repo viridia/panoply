@@ -76,7 +76,7 @@ impl ViewTemplate for QuickNavDialog {
                                 Some(loc) => {
                                     let realm = loc.realm.clone();
                                     let position = loc.pos;
-                                    world.commands().add(SetViewpointCmd { position, realm });
+                                    world.commands().queue(SetViewpointCmd { position, realm });
                                 }
                                 None => {
                                     println!("No location selected");

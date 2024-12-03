@@ -16,7 +16,7 @@ struct AspectListVisitor<'a, 'b> {
     label_prefix: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for AspectListVisitor<'a, 'b> {
+impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
     type Value = Vec<Box<dyn Aspect>>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -56,7 +56,7 @@ pub struct AspectListDeserializer<'a, 'b> {
     pub label_prefix: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for AspectListDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for AspectListDeserializer<'_, '_> {
     type Value = Vec<Box<dyn Aspect>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>

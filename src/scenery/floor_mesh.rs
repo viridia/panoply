@@ -8,10 +8,9 @@ use crate::scenery::{
     FLOOR_THICKNESS, TIER_OFFSET,
 };
 use bevy::{
-    asset::LoadState,
     prelude::*,
     render::{
-        mesh::{Indices, PrimitiveTopology},
+        mesh::{Indices, MeshAabb, PrimitiveTopology},
         render_asset::RenderAssetUsages,
         view::RenderLayers,
     },
@@ -57,16 +56,12 @@ pub fn update_floor_aspects(
     // Wait until exemplar loaded before updating aspects
     for (entity, floor_region) in query.iter_mut() {
         let st = server.load_state(&floor_region.exemplar);
-        if st == LoadState::Loaded {
+        if st.is_loaded() {
             commands
                 .entity(entity)
-                .insert((MaterialMeshBundle {
-                    material: material.clone(),
-                    visibility: Visibility::Hidden,
-                    ..default()
-                },))
+                .insert((MeshMaterial3d(material.clone()), Visibility::Hidden))
                 .remove::<RebuildFloorAspects>()
-                .add(UpdateAspects {
+                .queue(UpdateAspects {
                     exemplar: floor_region.exemplar.clone(),
                     finish: (RebuildFloorMaterials, RebuildFloorMesh),
                 });
@@ -122,19 +117,16 @@ pub(crate) fn insert_floor_meshes(
             let mesh = meshes.add(task_result.mesh);
             commands
                 .entity(entity)
-                .insert(mesh.clone())
+                .insert(Mesh3d(mesh.clone()))
                 .remove::<ComputeFloorMeshTask>()
                 .despawn_descendants();
             if let Some(outline_mesh) = task_result.outline {
                 let outline_mesh = meshes.add(outline_mesh);
                 let outline = commands
                     .spawn((
-                        MaterialMeshBundle {
-                            material: outline_material.0.clone(),
-                            mesh: outline_mesh,
-                            visibility: Visibility::Visible,
-                            ..default()
-                        },
+                        MeshMaterial3d(outline_material.0.clone()),
+                        Mesh3d(outline_mesh.clone()),
+                        Visibility::Hidden,
                         layers.clone(),
                     ))
                     .id();
@@ -159,26 +151,26 @@ pub(crate) fn rebuild_floor_materials(
             // println!("Attaching material: {:?}", surf.material.path());
             commands
                 .entity(entity)
-                .insert((surf.material.clone(), Visibility::Visible))
+                .insert((MeshMaterial3d(surf.material.clone()), Visibility::Visible))
                 .remove::<RebuildFloorMaterials>();
         } else if let Some(proc_surface) = nsurf {
             // Procedural textured surface.
             let material = proc_surface.material.clone();
             commands
                 .entity(entity)
-                .remove::<Handle<StandardMaterial>>()
-                .insert((material, Visibility::Visible))
+                .remove::<MeshMaterial3d<StandardMaterial>>()
+                .insert((MeshMaterial3d(material), Visibility::Visible))
                 .remove::<RebuildFloorMaterials>();
         } else {
             // Debug surface.
             commands
                 .entity(entity)
                 .insert((
-                    materials.add(StandardMaterial {
+                    MeshMaterial3d(materials.add(StandardMaterial {
                         base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
                         unlit: true,
                         ..Default::default()
-                    }),
+                    })),
                     Visibility::Visible,
                 ))
                 .remove::<RebuildFloorMaterials>();

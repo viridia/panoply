@@ -3,8 +3,10 @@ use panoply_exemplar::InstanceType;
 
 mod actor_aspect;
 mod actor_instance;
+mod actor_model;
 
 pub use actor_instance::*;
+pub use actor_model::*;
 
 use self::actor_aspect::{Armature, ColorSlots, Colors, Combatant, FeatureSlots, Features, Skin};
 

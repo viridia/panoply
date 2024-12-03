@@ -1,14 +1,14 @@
-use futures_lite::{AsyncReadExt, AsyncWriteExt};
+use crate::SquareArray;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 use std::sync::{Arc, RwLock};
 
-use super::{square::SquareArray, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
+use super::{PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_U};
 use bevy::{
     asset::{
         io::{AssetWriterError, Reader},
         saver::AssetSaver,
-        AssetLoader, LoadContext,
+        AssetLoader, AsyncWriteExt, LoadContext,
     },
     math::IRect,
     prelude::*,
@@ -219,11 +219,11 @@ impl AssetLoader for TerrainContoursTableLoader {
     type Error = TerrainContoursLoaderError;
     type Settings = ();
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
@@ -279,11 +279,11 @@ impl AssetSaver for TerrainContoursTableSaver {
     type OutputLoader = TerrainContoursTableLoader;
     type Error = TerrainContoursSaverError;
 
-    async fn save<'a>(
-        &'a self,
-        writer: &'a mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
-        _settings: &'a Self::Settings,
+    async fn save(
+        &self,
+        writer: &mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        _settings: &Self::Settings,
     ) -> Result<(), Self::Error> {
         let v = self.encode(&asset)?;
         writer.write_all(&v).await?;

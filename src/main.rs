@@ -3,47 +3,45 @@
 use bevy::{
     asset::io::AssetSource,
     ecs::world::Command,
+    image::ImageSampler,
     prelude::*,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
-        texture::ImageSampler,
         view::RenderLayers,
     },
 };
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_basic_prefs::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
-use bevy_mod_picking::{
-    backends::raycast::{RaycastBackendSettings, RaycastPickable},
-    debug::DebugPickingMode,
-    DefaultPickingPlugins,
-};
-use bevy_quill::QuillPlugin;
-use bevy_quill_obsidian::ObsidianUiPlugin;
-use bevy_quill_overlays::QuillOverlaysPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_mod_picking::{
+//     backends::raycast::{RaycastBackendSettings, RaycastPickable},
+// };
+// use bevy_quill::QuillPlugin;
+// use bevy_quill_obsidian::ObsidianUiPlugin;
+// use bevy_quill_overlays::QuillOverlaysPlugin;
 use models::ModelsPlugin;
+use panoply_core::{Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
-use world::Realm;
 
-#[cfg(feature = "editor")]
-mod editor;
+// #[cfg(feature = "editor")]
+// mod editor;
 
-extern crate directories;
+// extern crate directories;
 
 mod actors;
 mod diagnostics;
 mod materials;
 mod models;
 mod portals;
-mod random;
+// mod random;
 mod reflect_types;
 mod scenery;
 mod settings;
 mod terrain;
 mod view;
 mod world;
-use view::{layers::ReservedLayers, HudCamera, PrimaryCamera, Viewpoint};
+use view::{HudCamera, PrimaryCamera};
 
 use crate::{
     actors::ActorsPlugin,
@@ -99,18 +97,18 @@ fn main() {
             })
             .set(AssetPlugin::default()),
         ScreenDiagsPlugin,
-        DefaultPickingPlugins,
-        QuillPlugin,
-        QuillOverlaysPlugin,
-        ObsidianUiPlugin,
+        // DefaultPickingPlugins,
+        // QuillPlugin,
+        // QuillOverlaysPlugin,
+        // ObsidianUiPlugin,
         PreferencesPlugin::new("panoply"),
     ))
     .init_resource::<view::viewport::ViewportInset>()
-    .insert_resource(DebugPickingMode::Disabled)
-    .insert_resource(RaycastBackendSettings {
-        require_markers: true,
-        ..default()
-    })
+    // .insert_resource(DebugPickingMode::Disabled)
+    // .insert_resource(RaycastBackendSettings {
+    //     require_markers: true,
+    //     ..default()
+    // })
     .insert_resource(settings)
     // .insert_resource(Msaa::Off)
     .insert_resource(Viewpoint {
@@ -124,12 +122,14 @@ fn main() {
     .add_systems(Startup, setup)
     .add_systems(
         Update,
+        (rotate_shapes, update_window_settings, nav_to_center),
+    )
+    .add_systems(
+        PostUpdate,
         (
-            rotate_shapes,
-            update_window_settings,
-            nav_to_center,
             view::viewport::update_viewport_inset,
             view::viewport::update_camera_viewport.after(view::viewport::update_viewport_inset),
+            view::camera::update_camera_pos,
         ),
     )
     .add_systems(Update, close_on_esc)
@@ -147,8 +147,8 @@ fn main() {
         // WorldInspectorPlugin::new(),
     ));
 
-    #[cfg(feature = "editor")]
-    app.add_plugins(editor::EditorPlugin);
+    // #[cfg(feature = "editor")]
+    // app.add_plugins(editor::EditorPlugin);
 
     app.run();
 
@@ -187,17 +187,14 @@ fn setup(
     for (i, shape) in shapes.into_iter().enumerate() {
         commands.spawn((
             Name::new("DebugShape"),
-            PbrBundle {
-                mesh: shape,
-                material: debug_material.clone(),
-                transform: Transform::from_xyz(
-                    0.0,
-                    2.0,
-                    -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
-                )
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-                ..default()
-            },
+            Mesh3d(shape),
+            MeshMaterial3d(debug_material.clone()),
+            Transform::from_xyz(
+                0.0,
+                2.0,
+                -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
+            )
+            .with_rotation(Quat::from_rotation_x(-PI / 4.)),
             Shape,
         ));
     }
@@ -217,46 +214,42 @@ fn setup(
     // Ui Camera
     commands.spawn((
         Name::new("HudCamera"),
-        Camera2dBundle {
-            camera: Camera {
-                // HUD goes on top of 3D
-                order: 1,
-                clear_color: ClearColorConfig::None,
-                ..default()
-            },
+        Camera2d,
+        Camera {
+            // HUD goes on top of 3D
+            order: 1,
+            clear_color: ClearColorConfig::None,
             ..default()
         },
-        HudCamera, // UiCameraConfig { show_ui: true },
+        HudCamera,
     ));
 
     // Primary Camera
     commands.spawn((
         Name::new("PrimaryCamera"),
-        Camera3dBundle {
-            transform: Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
-            camera: Camera {
-                // Renders the 3d view first,
-                order: 0,
-                clear_color: ClearColorConfig::Custom(Color::BLACK),
-                ..default()
-            },
-            // tonemapping: Tonemapping::AcesFitted,
+        Camera3d::default(),
+        Transform::from_xyz(100.0, 100., 150.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Camera {
+            // Renders the 3d view first,
+            order: 0,
+            clear_color: ClearColorConfig::Custom(Color::BLACK),
             ..default()
         },
         EnvironmentMapLight {
             diffuse_map: assets.load("skybox_cubemap/skybox_diffuse.ktx2"),
             specular_map: assets.load("skybox_cubemap/skybox_specular.ktx2"),
             intensity: 200.0,
+            ..Default::default()
         },
         RenderLayers::none(),
         PrimaryCamera,
-        RaycastPickable,
+        RayCastPickable,
     ));
 }
 
 fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.rotate_y(time.delta_seconds() / 2.);
+        transform.rotate_y(time.delta_secs() / 2.);
     }
 }
 
@@ -302,8 +295,8 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
 
 pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     if input.just_pressed(KeyCode::Escape) {
-        commands.add(SavePreferences::IfChanged);
-        commands.add(AppExitCmd);
+        commands.queue(SavePreferences::IfChanged);
+        commands.queue(AppExitCmd);
     }
 }
 

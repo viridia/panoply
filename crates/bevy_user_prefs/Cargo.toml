@@ -1,0 +1,10 @@
+[package]
+name = "bevy_user_prefs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.15.0", default-features = false }
+directories = { version = "5.0.1" }
+thiserror = { version = "1.0.63" }
+toml = { version = "0.8.19" }

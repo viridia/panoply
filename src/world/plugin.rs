@@ -1,20 +1,15 @@
 use bevy::prelude::*;
+use panoply_core::PanoplyCorePlugin;
 
-use super::{
-    sync_realms, RealmData, RealmsHandleResource, RealmsLoader, WorldLocationsAsset,
-    WorldLocationsLoader, WorldLocationsResource,
-};
+use super::{WorldLocationsAsset, WorldLocationsLoader, WorldLocationsResource};
 
 pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.register_asset_loader(RealmsLoader)
+        app.add_plugins(PanoplyCorePlugin)
             .register_asset_loader(WorldLocationsLoader)
-            .init_asset::<RealmData>()
             .init_asset::<WorldLocationsAsset>()
-            .init_resource::<RealmsHandleResource>()
-            .init_resource::<WorldLocationsResource>()
-            .add_systems(Update, sync_realms);
+            .init_resource::<WorldLocationsResource>();
     }
 }

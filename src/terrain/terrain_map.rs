@@ -3,27 +3,27 @@ use bevy::{
     asset::{
         io::{AssetWriterError, Reader},
         saver::AssetSaver,
-        AssetLoader, LoadContext, LoadedFolder, RecursiveDependencyLoadState,
+        AssetLoader, LoadContext, LoadedFolder,
     },
+    image::ImageSampler,
     math::IRect,
     prelude::*,
     reflect::TypePath,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
-        texture::ImageSampler,
     },
 };
-use futures_lite::{AsyncReadExt, AsyncWriteExt};
+use futures_lite::AsyncWriteExt;
+use panoply_terrain::{BiomesAsset, BiomesHandle, ShapeRef, ADJACENT_COUNT};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{scenery::PRECINCT_SIZE, world::Realm};
+use crate::scenery::PRECINCT_SIZE;
+use panoply_core::Realm;
 
 use super::{
-    biome::{BiomesAsset, BiomesHandle},
-    ground_material::GroundMaterial,
-    parcel::{ShapeRef, ADJACENT_COUNT},
+    // ground_material::GroundMaterial,
     PARCEL_SIZE,
 };
 
@@ -119,7 +119,7 @@ pub struct TerrainMap {
     pub handle: Handle<TerrainMapAsset>,
 
     /** Material to use when rendering terrain. */
-    pub ground_material: Handle<GroundMaterial>,
+    // pub ground_material: Handle<GroundMaterial>,
 
     /** Flag indicating we need to rebuild the biome texture. */
     pub needs_rebuild_biomes: bool,
@@ -145,11 +145,11 @@ impl AssetLoader for TerrainMapLoader {
     type Error = TerrainMapLoaderError;
     type Settings = ();
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
@@ -187,11 +187,11 @@ impl AssetSaver for TerrainMapSaver {
 
     type OutputLoader = TerrainMapLoader;
 
-    async fn save<'a>(
-        &'a self,
-        writer: &'a mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
-        _settings: &'a Self::Settings,
+    async fn save(
+        &self,
+        writer: &mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        _settings: &Self::Settings,
     ) -> Result<(), TerrainMapSaverError> {
         let v = rmps::encode::to_vec_named(&*asset)?;
         writer.write_all(&v).await?;
@@ -214,13 +214,13 @@ pub fn insert_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm), Without<TerrainMap>>,
-    mut materials: ResMut<Assets<GroundMaterial>>,
-    mut images: ResMut<Assets<Image>>,
+    // mut materials: ResMut<Assets<GroundMaterial>>,
+    // mut images: ResMut<Assets<Image>>,
     terrain_folder: Res<TerrainMapsHandleResource>,
     terrain_folder_asset: Res<Assets<LoadedFolder>>,
 ) {
     if let Some(st) = server.get_recursive_dependency_load_state(&terrain_folder.0) {
-        if st != RecursiveDependencyLoadState::Loaded {
+        if !st.is_loaded() {
             return;
         }
     }
@@ -243,7 +243,7 @@ pub fn insert_terrain_maps(
         commands.entity(entity).insert((
             TerrainMap {
                 handle: server.load(terrain_path.to_string()),
-                ground_material: create_ground_material(&mut materials, &mut images, &server),
+                // ground_material: create_ground_material(&mut materials, &mut images, &server),
                 needs_rebuild_biomes: false,
             },
             TerrainMapChanged,
@@ -258,8 +258,8 @@ pub fn update_terrain_maps(
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm, Option<&mut TerrainMap>)>,
     mut ev_asset: EventReader<AssetEvent<TerrainMapAsset>>,
-    mut materials: ResMut<Assets<GroundMaterial>>,
-    mut images: ResMut<Assets<Image>>,
+    // mut materials: ResMut<Assets<GroundMaterial>>,
+    // mut images: ResMut<Assets<Image>>,
     tm_assets: Res<Assets<TerrainMapAsset>>,
     asset_server: Res<AssetServer>,
 ) {
@@ -278,11 +278,11 @@ pub fn update_terrain_maps(
                         commands.entity(re).insert((
                             TerrainMap {
                                 handle: server.get_id_handle(*id).unwrap(),
-                                ground_material: create_ground_material(
-                                    &mut materials,
-                                    &mut images,
-                                    &asset_server,
-                                ),
+                                // ground_material: create_ground_material(
+                                //     &mut materials,
+                                //     &mut images,
+                                //     &asset_server,
+                                // ),
                                 needs_rebuild_biomes: false,
                             },
                             TerrainMapChanged,
@@ -337,7 +337,7 @@ fn asset_name_from_id(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) 
 pub fn update_ground_material(
     mut commands: Commands,
     mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
-    mut materials: ResMut<Assets<GroundMaterial>>,
+    // mut materials: ResMut<Assets<GroundMaterial>>,
     mut r_images: ResMut<Assets<Image>>,
     bm_handle: Res<BiomesHandle>,
     bm_assets: Res<Assets<BiomesAsset>>,
@@ -348,39 +348,39 @@ pub fn update_ground_material(
             let biomes_table = &biomes.biomes;
             for (entity, _realm, terrain) in query.iter_mut() {
                 if let Some(terr) = tm_assets.get(&terrain.handle) {
-                    if let Some(m) = materials.get_mut(&terrain.ground_material) {
-                        // println!("Updating material {}", realm.name);
+                    // if let Some(m) = materials.get_mut(&terrain.ground_material) {
+                    //     // println!("Updating material {}", realm.name);
 
-                        if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
-                            let mut texture_data = Vec::<u8>::new();
-                            let rows = terr.bounds.height() as usize;
-                            let stride = terr.bounds.width() as usize;
-                            texture_data.resize(rows * stride, 0);
-                            for z in 0..rows {
-                                for x in 0..stride {
-                                    let bi = terr.biomes[z * stride + x];
-                                    let surface = biomes_table[bi as usize].surface;
-                                    texture_data[z * stride + x] = surface as u8;
-                                }
-                            }
-                            let mut res = Image::new_fill(
-                                Extent3d {
-                                    width: terr.bounds.width() as u32,
-                                    height: terr.bounds.height() as u32,
-                                    depth_or_array_layers: 1,
-                                },
-                                TextureDimension::D2,
-                                &texture_data,
-                                TextureFormat::R8Uint,
-                                RenderAssetUsages::default(),
-                            );
-                            res.sampler = ImageSampler::nearest();
-                            r_images.insert(m.biomes.id(), res);
-                        }
+                    //     if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
+                    //         let mut texture_data = Vec::<u8>::new();
+                    //         let rows = terr.bounds.height() as usize;
+                    //         let stride = terr.bounds.width() as usize;
+                    //         texture_data.resize(rows * stride, 0);
+                    //         for z in 0..rows {
+                    //             for x in 0..stride {
+                    //                 let bi = terr.biomes[z * stride + x];
+                    //                 let surface = biomes_table[bi as usize].surface;
+                    //                 texture_data[z * stride + x] = surface as u8;
+                    //             }
+                    //         }
+                    //         let mut res = Image::new_fill(
+                    //             Extent3d {
+                    //                 width: terr.bounds.width() as u32,
+                    //                 height: terr.bounds.height() as u32,
+                    //                 depth_or_array_layers: 1,
+                    //             },
+                    //             TextureDimension::D2,
+                    //             &texture_data,
+                    //             TextureFormat::R8Uint,
+                    //             RenderAssetUsages::default(),
+                    //         );
+                    //         res.sampler = ImageSampler::nearest();
+                    //         r_images.insert(m.biomes.id(), res);
+                    //     }
 
-                        m.realm_offset =
-                            Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
-                    }
+                    //     m.realm_offset =
+                    //         Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
+                    // }
                 }
 
                 commands.entity(entity).remove::<TerrainMapChanged>();
@@ -389,36 +389,37 @@ pub fn update_ground_material(
     }
 }
 
-pub fn create_ground_material(
-    materials: &mut Assets<GroundMaterial>,
-    images: &mut Assets<Image>,
-    asset_server: &AssetServer,
-) -> Handle<GroundMaterial> {
-    let mut res = Image::new_fill(
-        Extent3d {
-            width: 1u32,
-            height: 1u32,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &[0u8],
-        TextureFormat::R8Uint,
-        RenderAssetUsages::default(),
-    );
-    res.sampler = ImageSampler::nearest();
-    let biomes = images.add(res);
+// pub fn create_ground_material(
+//     // materials: &mut Assets<GroundMaterial>,
+//     images: &mut Assets<Image>,
+//     asset_server: &AssetServer,
+// ) -> Handle<GroundMaterial> {
+//     let mut res = Image::new_fill(
+//         Extent3d {
+//             width: 1u32,
+//             height: 1u32,
+//             depth_or_array_layers: 1,
+//         },
+//         TextureDimension::D2,
+//         &[0u8],
+//         TextureFormat::R8Uint,
+//         RenderAssetUsages::default(),
+//     );
+//     res.sampler = ImageSampler::nearest();
+//     let biomes = images.add(res);
 
-    materials.add(GroundMaterial {
-        noise: asset_server.load("terrain/textures/noise.png"),
-        grass: asset_server.load("terrain/textures/grass.png"),
-        dirt: asset_server.load("terrain/textures/dirt.png"),
-        moss: asset_server.load("terrain/textures/moss.png"),
-        cobbles: asset_server.load("terrain/textures/cobbles.png"),
-        water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
-        realm_offset: Vec2::new(0., 0.),
-        biomes,
-    })
-}
+//     todo!();
+//     // materials.add(GroundMaterial {
+//     //     noise: asset_server.load("terrain/textures/noise.png"),
+//     //     grass: asset_server.load("terrain/textures/grass.png"),
+//     //     dirt: asset_server.load("terrain/textures/dirt.png"),
+//     //     moss: asset_server.load("terrain/textures/moss.png"),
+//     //     cobbles: asset_server.load("terrain/textures/cobbles.png"),
+//     //     water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
+//     //     realm_offset: Vec2::new(0., 0.),
+//     //     biomes,
+//     // })
+// }
 
 const PARCELS_PER_PRECINCT: i32 = PRECINCT_SIZE / PARCEL_SIZE;
 

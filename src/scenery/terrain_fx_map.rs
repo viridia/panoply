@@ -1,10 +1,10 @@
-use bevy::{asset::LoadState, prelude::*};
-
-use crate::terrain::{
-    Parcel, ParcelCache, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh,
-    RebuildParcelTerrainFx, TerrainFxVertexAttr, TerrainOptions, PARCEL_SIZE,
-    PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
+use bevy::prelude::*;
+use panoply_terrain::{
+    Parcel, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
+    TerrainFxVertexAttr, TerrainOptions,
 };
+
+use crate::terrain::{ParcelCache, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE};
 use panoply_exemplar::*;
 
 use super::{
@@ -54,7 +54,7 @@ pub fn rebuild_terrain_fx_vertex_attrs(
         let all_loaded = terrain_fx
             .exemplars
             .iter()
-            .all(|s| server.load_state(s) == LoadState::Loaded);
+            .all(|s| server.load_state(s).is_loaded());
         if !all_loaded {
             continue;
         }

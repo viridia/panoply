@@ -85,10 +85,10 @@ fn save_preferences(
     mut cmd: Commands,
 ) {
     if changed.0 {
-        timer.0 = (timer.0 - time.delta_seconds()).max(0.0);
+        timer.0 = (timer.0 - time.delta_secs()).max(0.0);
         if timer.0 <= 0.0 {
             changed.0 = false;
-            cmd.add(SavePreferences::Always);
+            cmd.queue(SavePreferences::Always);
         }
     }
 }

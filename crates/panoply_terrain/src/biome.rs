@@ -1,4 +1,3 @@
-use futures_lite::AsyncReadExt;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
@@ -10,7 +9,7 @@ use bevy::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::random::Choice;
+use panoply_core::random::Choice;
 
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, Copy, Clone)]
 #[repr(u8)]
@@ -70,11 +69,11 @@ impl AssetLoader for BiomesLoader {
     type Settings = ();
     type Error = BiomesLoaderError;
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;

@@ -32,7 +32,7 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             }
         }
 
-        if let Some(mut entity) = world.get_entity_mut(id) {
+        if let Ok(mut entity) = world.get_entity_mut(id) {
             // Get the set of aspects currently owned.
             let mut to_remove: HashMap<TypeId, &'static dyn DetachAspect> =
                 match entity.get_mut::<OwnedAspects>() {
@@ -44,7 +44,8 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
             let mut next_owned: HashMap<TypeId, &'static dyn DetachAspect> =
                 HashMap::with_capacity(0);
 
-            // First process aspects on the instance
+            // First process aspects on the instance. We temporarily swap out the aspects
+            // to avoid borrowing issues.
             let mut aspects_copy: Vec<Box<dyn Aspect>> = Vec::new();
             if let Some(mut instance_aspects) = entity.get_mut::<InstanceAspects>() {
                 std::mem::swap(&mut instance_aspects.0, &mut aspects_copy);

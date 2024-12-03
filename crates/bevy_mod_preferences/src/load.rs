@@ -177,10 +177,10 @@ pub fn load_preferences(world: &mut World) {
                                 };
 
                                 let mut tuple = DynamicTuple::default();
-                                tuple.insert_boxed(default_state);
+                                tuple.insert_boxed(default_state.into_partial_reflect());
                                 let dynamic_enum =
                                     DynamicEnum::new("Pending", DynamicVariant::Tuple(tuple));
-                                enum_mut.apply(dynamic_enum.as_reflect());
+                                enum_mut.apply(dynamic_enum.as_partial_reflect());
                             }
                         }
                     }
@@ -233,6 +233,7 @@ fn load_struct(registry: &AppTypeRegistry, strct: &mut dyn Struct, table: &toml:
             TypeInfo::List(_) => todo!(),
             TypeInfo::Array(_) => todo!(),
             TypeInfo::Map(_) => todo!(),
+            TypeInfo::Set(_) => todo!(),
             TypeInfo::Enum(en) => {
                 if en.type_path().starts_with("core::option::Option") {
                     if table.contains_key(&key) {
@@ -245,24 +246,25 @@ fn load_struct(registry: &AppTypeRegistry, strct: &mut dyn Struct, table: &toml:
                         let mut tuple = DynamicTuple::default();
                         tuple.set_represented_type(Some(field_type.type_info()));
                         drop(rr);
-                        decode_value(tuple.as_reflect_mut(), table.get(&key).unwrap());
+                        decode_value(tuple.as_partial_reflect_mut(), table.get(&key).unwrap());
                         let value = DynamicEnum::new("Some", DynamicVariant::Tuple(tuple));
-                        field_mut.apply(value.as_reflect());
+                        field_mut.apply(value.as_partial_reflect());
                     } else {
                         // Key not found, set to None
-                        field_mut
-                            .apply(DynamicEnum::new("None", DynamicVariant::Unit).as_reflect());
+                        field_mut.apply(
+                            DynamicEnum::new("None", DynamicVariant::Unit).as_partial_reflect(),
+                        );
                     };
                 } else {
                     warn!("Preferences: Unsupported enum type: {:?}", en);
                 }
             }
-            TypeInfo::Value(_) => {
+            TypeInfo::Opaque(_) => {
                 if let Some(value) = table.get(&key) {
                     if let Ok(value) =
                         decode_value_boxed(field_mut.get_represented_type_info().unwrap(), value)
                     {
-                        field_mut.apply(value.as_reflect())
+                        field_mut.apply(value.as_partial_reflect())
                     }
                 }
             }
@@ -311,6 +313,7 @@ fn load_tuple_struct(
             TypeInfo::List(_) => todo!(),
             TypeInfo::Array(_) => todo!(),
             TypeInfo::Map(_) => todo!(),
+            TypeInfo::Set(_) => todo!(),
             TypeInfo::Enum(en) => {
                 if en.type_path().starts_with("core::option::Option") {
                     if table.contains_key(key) {
@@ -323,24 +326,25 @@ fn load_tuple_struct(
                         let mut tuple = DynamicTuple::default();
                         tuple.set_represented_type(Some(field_type.type_info()));
                         drop(rr);
-                        decode_value(tuple.as_reflect_mut(), table.get(key).unwrap());
+                        decode_value(tuple.as_partial_reflect_mut(), table.get(key).unwrap());
                         let value = DynamicEnum::new("Some", DynamicVariant::Tuple(tuple));
-                        field_mut.apply(value.as_reflect());
+                        field_mut.apply(value.as_partial_reflect());
                     } else {
                         // Key not found, set to None
-                        field_mut
-                            .apply(DynamicEnum::new("None", DynamicVariant::Unit).as_reflect());
+                        field_mut.apply(
+                            DynamicEnum::new("None", DynamicVariant::Unit).as_partial_reflect(),
+                        );
                     };
                 } else {
                     warn!("Preferences: Unsupported enum type: {:?}", en);
                 }
             }
-            TypeInfo::Value(_) => {
+            TypeInfo::Opaque(_) => {
                 if let Some(value) = table.get(key) {
                     if let Ok(value) =
                         decode_value_boxed(field_mut.get_represented_type_info().unwrap(), value)
                     {
-                        field_mut.apply(value.as_reflect())
+                        field_mut.apply(value.as_partial_reflect())
                     }
                 }
             }
@@ -383,7 +387,7 @@ fn load_enum(enum_ty: &EnumInfo, enum_mut: &mut dyn Enum, key: &'static str, tab
             };
             if variant.name() != enum_mut.variant_name() {
                 let dynamic_enum = DynamicEnum::new(variant.name(), DynamicVariant::Unit);
-                enum_mut.apply(dynamic_enum.as_reflect());
+                enum_mut.apply(dynamic_enum.as_partial_reflect());
             }
         }
         None => {}
@@ -393,7 +397,7 @@ fn load_enum(enum_ty: &EnumInfo, enum_mut: &mut dyn Enum, key: &'static str, tab
     };
 }
 
-fn decode_value(field: &mut dyn Reflect, value: &toml::Value) {
+fn decode_value(field: &mut dyn PartialReflect, value: &toml::Value) {
     match field.get_represented_type_info().unwrap() {
         TypeInfo::Struct(_) => todo!("Implement struct deserialization"),
         TypeInfo::TupleStruct(_) => todo!("Implement tuplestruct deserialization"),
@@ -401,20 +405,21 @@ fn decode_value(field: &mut dyn Reflect, value: &toml::Value) {
         TypeInfo::List(_) => todo!("Implement list deserialization"),
         TypeInfo::Array(_) => todo!("Implement array deserialization"),
         TypeInfo::Map(_) => todo!("Implement map deserialization"),
+        TypeInfo::Set(_) => todo!("Implement set deserialization"),
         TypeInfo::Enum(_) => todo!("Implement enum deserialization"),
-        TypeInfo::Value(val_ty) => match value {
+        TypeInfo::Opaque(val_ty) => match value {
             toml::Value::Float(float_val) => {
-                if let Some(float_field) = field.downcast_mut::<f32>() {
-                    float_field.apply((*float_val as f32).as_reflect());
-                } else if let Some(float_field) = field.downcast_mut::<f64>() {
-                    float_field.apply((*float_val).as_reflect());
+                if let Some(float_field) = field.try_downcast_mut::<f32>() {
+                    float_field.apply((*float_val as f32).as_partial_reflect());
+                } else if let Some(float_field) = field.try_downcast_mut::<f64>() {
+                    float_field.apply((*float_val).as_partial_reflect());
                 } else {
                     warn!("Preferences: Unsupported type: {:?}", val_ty);
                 }
             }
             toml::Value::String(str_val) => {
-                if let Some(str_field) = field.downcast_mut::<String>() {
-                    str_field.apply(str_val.as_reflect());
+                if let Some(str_field) = field.try_downcast_mut::<String>() {
+                    str_field.apply(str_val.as_partial_reflect());
                 } else {
                     warn!("Preferences: Unsupported type: {:?}", val_ty);
                 }
@@ -438,7 +443,7 @@ pub enum DecodeTomlError {
 fn decode_value_boxed(
     ty: &TypeInfo,
     value: &toml::Value,
-) -> Result<Box<dyn Reflect>, DecodeTomlError> {
+) -> Result<Box<dyn PartialReflect>, DecodeTomlError> {
     match value {
         toml::Value::Float(float_val) => {
             if ty.is::<f32>() {

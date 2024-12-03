@@ -11,6 +11,7 @@ use bevy::{
     },
     utils::HashMap,
 };
+use rapier3d::prelude::{ColliderHandle, RigidBodyHandle};
 
 use crate::{
     editor::events::{ChangeContourEvent, ThumbnailsReady},
@@ -56,7 +57,7 @@ const PARCEL_SPACING: f32 = 40.0;
 pub fn setup_thumbnail_realm(
     mut commands: Commands,
     r_realm: Option<ResMut<TerrainThumbnailRealm>>,
-    mut r_materials: ResMut<Assets<GroundMaterial>>,
+    // mut r_materials: ResMut<Assets<GroundMaterial>>,
     mut r_images: ResMut<Assets<Image>>,
     mut r_layers: ResMut<ReservedLayers>,
     r_server: Res<AssetServer>,
@@ -76,11 +77,11 @@ pub fn setup_thumbnail_realm(
                 },
                 TerrainMap {
                     handle: Handle::default(),
-                    ground_material: create_ground_material(
-                        &mut r_materials,
-                        &mut r_images,
-                        &r_server,
-                    ),
+                    // ground_material: create_ground_material(
+                    //     &mut r_materials,
+                    //     &mut r_images,
+                    //     &r_server,
+                    // ),
                     needs_rebuild_biomes: false,
                 },
                 HiddenRealm,
@@ -217,6 +218,7 @@ pub fn create_terrain_thumbnails(
                     render_target,
                     preview_parcel: None,
                 },
+                Name::new(format!("TerrainThumbnail:{}", contour_id)),
                 RebuildTerrainThumbnail,
             ));
             changed = true;
@@ -271,6 +273,8 @@ pub fn update_terrain_thumbnails(
                 terrain_fx: ParcelTerrainFx(
                     [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA],
                 ),
+                physics: RigidBodyHandle::default(),
+                terrain_collider: ColliderHandle::default(),
             };
 
             let shape_pos = t.contour_id as f32 * PARCEL_SPACING;

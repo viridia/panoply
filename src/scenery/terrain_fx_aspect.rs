@@ -1,6 +1,6 @@
-use crate::terrain::TerrainTypes;
 use bevy::prelude::*;
 use panoply_exemplar::*;
+use panoply_terrain::TerrainTypes;
 
 use super::TERRAIN_FX_TYPE;
 

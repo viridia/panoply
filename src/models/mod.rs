@@ -28,7 +28,7 @@ pub fn copy_model_render_layers(
 ) {
     for (entity, layers, _) in q_models_added.iter() {
         for descendant in q_children.iter_descendants(entity) {
-            commands.add(SafeInsert::new(layers.clone(), descendant));
+            commands.queue(SafeInsert::new(layers.clone(), descendant));
         }
     }
 }
@@ -47,7 +47,7 @@ impl<C: Component> SafeInsert<C> {
 impl<C: Component> Command for SafeInsert<C> {
     fn apply(self, world: &mut World) {
         // Check if entity exists.
-        if let Some(mut entity) = world.get_entity_mut(self.target) {
+        if let Ok(mut entity) = world.get_entity_mut(self.target) {
             entity.insert(self.component);
         }
     }
@@ -82,11 +82,15 @@ fn process_material_extras(
     r_black: Res<BlackMaterialHandle>,
     r_flame: Res<FlameMaterialHandle>,
     q_materials: Query<
-        (Entity, &Handle<StandardMaterial>, &GltfMaterialExtras),
+        (
+            Entity,
+            &mut MeshMaterial3d<StandardMaterial>,
+            &GltfMaterialExtras,
+        ),
         Added<GltfMaterialExtras>,
     >,
 ) {
-    for (entity, _material, extras) in q_materials.iter() {
+    for (entity, material, extras) in q_materials.iter() {
         // println!("material extras: {:?}", extras);
         let options = serde_json::from_str::<MaterialOptions>(&extras.value);
         // println!("material options: {:?}", options);
@@ -94,14 +98,19 @@ fn process_material_extras(
             if options.outline.is_some() {
                 // println!("outline material");
                 // Add outline material, but keep existing material as well.
-                commands.entity(entity).insert(r_outline.0.clone());
+                commands
+                    .entity(entity)
+                    .insert(MeshMaterial3d(r_outline.0.clone()));
             } else if options.black.unwrap_or(false) || options.unlit.unwrap_or(false) {
-                commands.entity(entity).insert(r_black.0.clone());
+                commands
+                    .entity(entity)
+                    // TODO: Remove standard material?
+                    .insert(MeshMaterial3d(r_black.0.clone()));
             } else if options.flame.is_some() {
                 commands
                     .entity(entity)
-                    .remove::<Handle<StandardMaterial>>()
-                    .insert(r_flame.0.clone());
+                    .remove::<MeshMaterial3d<StandardMaterial>>()
+                    .insert(MeshMaterial3d(r_flame.0.clone()));
             } else if !options.extra.is_empty() {
                 // warn!("Unknown material option: {:?}", options.extra);
                 // println!("material extras: {:?}", extras);

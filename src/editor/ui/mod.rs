@@ -84,9 +84,9 @@ impl ViewTemplate for EditorView {
                                 commands.trigger(RotateSelection(1));
                             } else if ev.key_code == KeyCode::KeyZ && (command || ctrl) {
                                 if shift {
-                                    commands.add(RedoCommand);
+                                    commands.queue(RedoCommand);
                                 } else {
-                                    commands.add(UndoCommand);
+                                    commands.queue(UndoCommand);
                                 }
                             }
                         },
@@ -119,7 +119,7 @@ impl ViewTemplate for EditorView {
                          mut panel_width: ResMut<EditorSidebarWidth>,
                          mut commands: Commands| {
                             panel_width.0 = value.max(200.);
-                            commands.add(SetPreferencesChanged);
+                            commands.queue(SetPreferencesChanged);
                         },
                     )),
                 Element::<NodeBundle>::new()

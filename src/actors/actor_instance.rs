@@ -1,7 +1,8 @@
-use bevy::asset::Handle;
+use bevy::asset::{Handle, LoadState};
 use bevy::math::Vec3;
-use bevy::{asset::LoadContext, reflect::TypeRegistry};
-use panoply_exemplar::{AspectListDeserializer, Exemplar, InstanceAspects};
+use bevy::prelude::Component;
+use bevy::{asset::LoadContext, prelude::*, reflect::TypeRegistry};
+use panoply_exemplar::{AspectListDeserializer, Exemplar, InstanceAspects, UpdateAspects};
 use serde::{de, Deserialize};
 use serde::{
     de::{DeserializeSeed, Visitor},
@@ -9,9 +10,41 @@ use serde::{
 };
 use std::fmt::{self, Debug};
 
+use crate::scenery::precinct_asset::SceneryInstanceId;
+
+/// Component that defines an actor (mob).
+#[derive(Debug, Component, Clone, Default)]
+pub struct ActorInstance {
+    /// Instance identifier
+    pub(crate) iid: SceneryInstanceId,
+
+    /// Exemplar id for this actor
+    pub(crate) exemplar: Handle<Exemplar>,
+
+    /// Position within the realm (world coordinates)
+    pub(crate) position: Vec3,
+
+    /// Actor facing direction, in degrees
+    pub(crate) facing: f32,
+    // List of aspects for this instance.
+    // These should probably be aspects.
+    // readonly layer?: string;
+    // readonly groupId?: string;
+    // readonly transient?: boolean;
+    // readonly ally?: string;
+}
+
+#[derive(Component, Clone)]
+#[component(storage = "SparseSet")]
+pub struct ActorRebuildAspects;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct ActorRebuildModels;
+
 /// Serialized instance of an actor.
 #[derive(Debug, Clone, Default)]
-pub struct ActorInstance {
+pub struct ActorInstanceData {
     /// Exemplar id for this actor
     pub(crate) exemplar: Handle<Exemplar>,
 
@@ -24,8 +57,8 @@ pub struct ActorInstance {
     /// Actor facing direction, in degrees
     pub(crate) facing: f32,
 
-    /// Optional instance identifier
-    pub(crate) iid: Option<String>,
+    /// Instance identifier
+    pub(crate) iid: SceneryInstanceId,
 
     /// List of aspects for this instance.
     pub(crate) aspects: InstanceAspects,
@@ -36,7 +69,7 @@ pub struct ActorInstance {
     // readonly ally?: string;
 }
 
-impl Serialize for ActorInstance {
+impl Serialize for ActorInstanceData {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -71,8 +104,8 @@ struct ActorInstanceVisitor<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceVisitor<'a, 'b> {
-    type Value = ActorInstance;
+impl<'de> Visitor<'de> for ActorInstanceVisitor<'_, '_> {
+    type Value = ActorInstanceData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("an actor instance")
@@ -82,7 +115,7 @@ impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceVisitor<'a, 'b> {
     where
         A: serde::de::MapAccess<'de>,
     {
-        let mut result = ActorInstance::default();
+        let mut result = ActorInstanceData::default();
         while let Some(key) = map.next_key()? {
             match key {
                 Field::Exemplar => {
@@ -111,10 +144,10 @@ impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceVisitor<'a, 'b> {
                     result.facing = map.next_value()?;
                 }
                 Field::Iid => {
-                    if result.iid.is_some() {
+                    if result.iid != SceneryInstanceId::None {
                         return Err(de::Error::duplicate_field("iid"));
                     }
-                    result.iid = Some(map.next_value()?);
+                    result.iid = map.next_value()?;
                 }
                 Field::Aspects => {
                     if !result.aspects.is_empty() {
@@ -139,8 +172,8 @@ pub struct ActorInstanceDeserializer<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for ActorInstanceDeserializer<'a, 'b> {
-    type Value = ActorInstance;
+impl<'de> DeserializeSeed<'de> for ActorInstanceDeserializer<'_, '_> {
+    type Value = ActorInstanceData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -160,8 +193,8 @@ struct ActorInstanceListVisitor<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceListVisitor<'a, 'b> {
-    type Value = Vec<ActorInstance>;
+impl<'de> Visitor<'de> for ActorInstanceListVisitor<'_, '_> {
+    type Value = Vec<ActorInstanceData>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a list of actor instances")
@@ -171,7 +204,7 @@ impl<'de, 'a, 'b> Visitor<'de> for ActorInstanceListVisitor<'a, 'b> {
     where
         A: serde::de::SeqAccess<'de>,
     {
-        let mut result: Vec<ActorInstance> = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+        let mut result: Vec<ActorInstanceData> = Vec::with_capacity(seq.size_hint().unwrap_or(0));
         while let Some(compressed_instance) = seq.next_element_seed(ActorInstanceDeserializer {
             type_registry: self.type_registry,
             load_context: self.load_context,
@@ -189,8 +222,8 @@ pub struct ActorInstanceListDeserializer<'a, 'b> {
     pub(crate) parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for ActorInstanceListDeserializer<'a, 'b> {
-    type Value = Vec<ActorInstance>;
+impl<'de> DeserializeSeed<'de> for ActorInstanceListDeserializer<'_, '_> {
+    type Value = Vec<ActorInstanceData>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -201,5 +234,28 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for ActorInstanceListDeserializer<'a, 'b>
             load_context: self.load_context,
             parent_label: self.parent_label,
         })
+    }
+}
+
+pub fn update_actor_aspects(
+    mut commands: Commands,
+    mut q_elements: Query<(Entity, &ActorInstance), With<ActorRebuildAspects>>,
+    server: Res<AssetServer>,
+) {
+    for (entity, actors) in q_elements.iter_mut() {
+        let st = server.load_state(&actors.exemplar);
+        if matches!(st, LoadState::Loaded) {
+            // info!(
+            //     "Updating actor aspects for entity: {:?}",
+            //     server.get_path(&actors.exemplar)
+            // );
+            commands
+                .entity(entity)
+                .queue(UpdateAspects {
+                    exemplar: actors.exemplar.clone(),
+                    finish: ActorRebuildModels,
+                })
+                .remove::<ActorRebuildAspects>();
+        }
     }
 }

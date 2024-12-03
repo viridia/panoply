@@ -7,7 +7,7 @@ use bevy::{
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use futures_lite::{AsyncReadExt, AsyncWriteExt};
+use futures_lite::AsyncWriteExt;
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
 use serde::{
     de::{DeserializeSeed, Visitor},
@@ -20,7 +20,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::actors::{ActorInstance, ActorInstanceListDeserializer};
+use crate::actors::{ActorInstanceData, ActorInstanceListDeserializer};
 
 use super::floor_region::FloorRegionSer;
 
@@ -47,7 +47,7 @@ pub struct PrecinctAsset {
     pub(crate) terrain_fx: Option<Vec<i16>>,
 
     #[serde(default)]
-    pub(crate) actors: Vec<ActorInstance>,
+    pub(crate) actors: Vec<ActorInstanceData>,
 
     /// Table of scenery instances.
     #[serde(default)]
@@ -230,7 +230,7 @@ struct CompressedInstanceVisitor<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceVisitor<'a, 'b> {
+impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
     type Value = SceneryInstanceData;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -278,7 +278,7 @@ struct CompressedInstanceDeserializer<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for CompressedInstanceDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for CompressedInstanceDeserializer<'_, '_> {
     type Value = SceneryInstanceData;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -299,7 +299,7 @@ struct CompressedInstanceListVisitor<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> Visitor<'de> for CompressedInstanceListVisitor<'a, 'b> {
+impl<'de> Visitor<'de> for CompressedInstanceListVisitor<'_, '_> {
     type Value = Vec<SceneryInstanceData>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -330,7 +330,7 @@ struct CompressedInstanceListDeserializer<'a, 'b> {
     parent_label: &'a str,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for CompressedInstanceListDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for CompressedInstanceListDeserializer<'_, '_> {
     type Value = Vec<SceneryInstanceData>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -350,14 +350,14 @@ struct PrecinctAssetDeserializer<'a, 'b> {
     load_context: &'a mut LoadContext<'b>,
 }
 
-impl<'de, 'a, 'b> DeserializeSeed<'de> for PrecinctAssetDeserializer<'a, 'b> {
+impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
     type Value = PrecinctAsset;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        #[derive(Deserialize)]
+        #[derive(Deserialize, Debug)]
         #[serde(field_identifier, rename_all = "snake_case")]
         enum Field {
             SceneryTypes,
@@ -375,7 +375,7 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for PrecinctAssetDeserializer<'a, 'b> {
             load_context: &'a mut LoadContext<'b>,
         }
 
-        impl<'de, 'a, 'b> Visitor<'de> for PrecinctVisitor<'a, 'b> {
+        impl<'de> Visitor<'de> for PrecinctVisitor<'_, '_> {
             type Value = PrecinctAsset;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -462,11 +462,11 @@ impl AssetLoader for PrecinctAssetLoader {
     type Error = PrecinctAssetLoaderError;
     type Settings = ();
 
-    async fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader<'_>,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext<'_>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
@@ -511,11 +511,11 @@ impl AssetSaver for PrecinctAssetSaver {
     type OutputLoader = PrecinctAssetLoader;
     type Error = PrecinctAssetSaverError;
 
-    async fn save<'a>(
-        &'a self,
-        writer: &'a mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
-        _settings: &'a Self::Settings,
+    async fn save(
+        &self,
+        writer: &mut bevy::asset::io::Writer,
+        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        _settings: &Self::Settings,
     ) -> Result<(), Self::Error> {
         // TODO: Optimize precinct - remove unused types. Should be done in serializer.
         // rmps::encode::write(writer, &*asset)?; // Doesn't work with async writer

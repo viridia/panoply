@@ -1,9 +1,12 @@
 use bevy::prelude::*;
+use rapier3d::prelude::{Collider, ColliderHandle, RigidBodyHandle};
 
-use crate::terrain::{PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE};
+use crate::metrics::{PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE};
 
-use super::{TerrainFxVertexAttr, PARCEL_TERRAIN_FX_AREA};
-#[derive(Eq, PartialEq, Hash)]
+use crate::terrain_fx::TerrainFxVertexAttr;
+use crate::PARCEL_TERRAIN_FX_AREA;
+
+#[derive(Eq, PartialEq, Hash, Clone)]
 pub struct ParcelKey {
     pub realm: Entity,
     pub x: i32,
@@ -62,6 +65,12 @@ pub struct Parcel {
 
     /// Terrain effects for this parcel.
     pub terrain_fx: ParcelTerrainFx,
+
+    /// Physics rigid body for this parcel.
+    pub physics: RigidBodyHandle,
+
+    /// Collider for terrain
+    pub terrain_collider: ColliderHandle,
 }
 
 impl Parcel {
@@ -72,6 +81,12 @@ impl Parcel {
     pub fn has_shape(&self, shape: u16) -> bool {
         self.contours.iter().any(|&s| s.shape == shape)
     }
+}
+
+#[derive(Component)]
+pub struct ParcelPhysics {
+    pub terrain_collider: Collider,
+    pub flora_collider: Collider,
 }
 
 #[derive(Component)]

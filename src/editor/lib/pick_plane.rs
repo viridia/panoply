@@ -4,11 +4,11 @@
 #![deny(missing_docs)]
 
 use bevy::prelude::*;
-use bevy_mod_picking::{
-    backend::prelude::*,
-    events::{Down, Drag, DragEnd, DragStart, Pointer},
-    prelude::{ListenerMut, On},
-};
+// use bevy_mod_picking::{
+//     backend::prelude::*,
+//     events::{Down, Drag, DragEnd, DragStart, Pointer},
+//     prelude::{ListenerMut, On},
+// };
 
 use crate::{
     editor::ui::mode_scenery::SelectedTier,

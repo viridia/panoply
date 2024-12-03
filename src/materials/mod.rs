@@ -6,7 +6,10 @@ use base64::{
     DecodeError, Engine,
 };
 use bevy::{
-    asset::{embedded_asset, io::AssetReader},
+    asset::{
+        embedded_asset,
+        io::{AssetReader, AsyncSeekForward},
+    },
     pbr::ExtendedMaterial,
     prelude::*,
     render::render_resource::Face,
@@ -92,19 +95,33 @@ impl AsyncSeek for NullReader {
     }
 }
 
+impl AsyncSeekForward for NullReader {
+    fn poll_seek_forward(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+        _offset: u64,
+    ) -> std::task::Poll<std::io::Result<u64>> {
+        std::task::Poll::Ready(Ok(0))
+    }
+}
+
+impl bevy::asset::io::Reader for NullReader {}
+
 impl AssetReader for InlineAssetReader {
     async fn read<'a>(
         &'a self,
         _path: &'a std::path::Path,
-    ) -> Result<Box<bevy::asset::io::Reader<'a>>, bevy::asset::io::AssetReaderError> {
-        Ok(Box::new(NullReader))
+    ) -> Result<impl bevy::asset::io::Reader + 'a, bevy::asset::io::AssetReaderError> {
+        Ok(NullReader)
     }
 
     async fn read_meta<'a>(
         &'a self,
         path: &'a std::path::Path,
-    ) -> Result<Box<bevy::asset::io::Reader<'a>>, bevy::asset::io::AssetReaderError> {
-        Err(bevy::asset::io::AssetReaderError::NotFound(path.to_owned()))
+    ) -> Result<impl bevy::asset::io::Reader + 'a, bevy::asset::io::AssetReaderError> {
+        Result::<NullReader, bevy::asset::io::AssetReaderError>::Err(
+            bevy::asset::io::AssetReaderError::NotFound(path.to_path_buf()),
+        )
     }
 
     async fn read_directory<'a>(

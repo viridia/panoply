@@ -11,7 +11,8 @@ use bevy::{
     },
 };
 
-use crate::{view::PrimaryCamera, world::Realm};
+use crate::view::PrimaryCamera;
+use panoply_core::Realm;
 
 use super::portal_aspect::{Portal, PortalSide, PortalTarget};
 
@@ -176,12 +177,9 @@ pub(crate) fn spawn_portals(
 
             let portal_entity = commands
                 .spawn((
-                    MaterialMeshBundle::<StandardMaterial> {
-                        mesh: mesh.clone(),
-                        material: material.clone(),
-                        transform,
-                        ..Default::default()
-                    },
+                    Mesh3d(mesh.clone()),
+                    MeshMaterial3d(material.clone()),
+                    transform,
                     layers.clone(),
                 ))
                 .set_parent(entity)
@@ -189,16 +187,14 @@ pub(crate) fn spawn_portals(
 
             let camera = commands
                 .spawn((
-                    Camera3dBundle {
-                        transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
-                        camera: Camera {
-                            order: -1,
-                            clear_color: ClearColorConfig::Custom(Color::BLACK),
-                            target: RenderTarget::Image(image_handle.clone()),
-                            ..default()
-                        },
+                    Camera3d::default(),
+                    Camera {
+                        order: -1,
+                        clear_color: ClearColorConfig::Custom(Color::BLACK),
+                        target: RenderTarget::Image(image_handle.clone()),
                         ..default()
                     },
+                    Transform::from_translation(Vec3::new(0., 0., 0.)),
                     target_layer,
                     PortalCamera,
                 ))
@@ -260,8 +256,7 @@ pub(crate) fn update_portals(
             .transform
             .transform_point(Vec3::new(0., 0., 0.));
         gizmos.rect(
-            center,
-            active_portal.transform.rotation,
+            Isometry3d::new(center, active_portal.transform.rotation),
             portal.size,
             palettes::basic::GREEN,
         );
@@ -285,7 +280,7 @@ pub(crate) fn update_portals(
             min: Vec2::new(f32::MAX, f32::MAX),
             max: Vec2::new(f32::MIN, f32::MIN),
         };
-        if let Some(pos) = primary_camera.world_to_viewport(primary_global, center) {
+        if let Ok(pos) = primary_camera.world_to_viewport(primary_global, center) {
             // println!("pos: {:?}", pos);
             rect = rect.union_point(pos);
         }
@@ -296,7 +291,7 @@ pub(crate) fn update_portals(
                     .transform
                     .transform_point(Vec3::new(*x, *y, 0.));
                 gizmos.arrow(pos, pos + normal, palettes::css::GOLD);
-                if let Some(pos) = primary_camera.world_to_viewport(primary_global, pos) {
+                if let Ok(pos) = primary_camera.world_to_viewport(primary_global, pos) {
                     rect = rect.union_point(pos);
                 }
             }
@@ -316,8 +311,7 @@ pub(crate) fn update_portals(
                 ),
             };
             gizmos.rect_2d(
-                screen_rect.center(),
-                0.,
+                Isometry2d::new(screen_rect.center(), Rot2::radians(0.)),
                 screen_rect.size(),
                 palettes::css::RED,
             );

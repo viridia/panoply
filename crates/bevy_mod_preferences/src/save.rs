@@ -164,7 +164,8 @@ fn save_struct(strct: &dyn Struct, table: &mut toml::Table) {
             ReflectRef::List(_) => todo!(),
             ReflectRef::Array(_) => todo!(),
             ReflectRef::Map(_) => todo!(),
-            ReflectRef::Enum(_) | ReflectRef::Value(_) => {
+            ReflectRef::Set(_) => todo!(),
+            ReflectRef::Enum(_) | ReflectRef::Opaque(_) => {
                 save_value(field_reflect, strct.name_at(i).unwrap(), table);
             }
         }
@@ -204,7 +205,8 @@ fn save_tuple_struct(tuple_struct: &dyn TupleStruct, key: &'static str, table: &
             ReflectRef::List(_) => todo!(),
             ReflectRef::Array(_) => todo!(),
             ReflectRef::Map(_) => todo!(),
-            ReflectRef::Enum(_) | ReflectRef::Value(_) => {
+            ReflectRef::Set(_) => todo!(),
+            ReflectRef::Enum(_) | ReflectRef::Opaque(_) => {
                 save_value(field_reflect, key, table);
             }
         }
@@ -239,7 +241,7 @@ fn save_enum(enum_ref: &dyn Enum, key: &'static str, table: &mut toml::Table) {
     table.insert(key.to_string(), v);
 }
 
-fn save_value(value: &dyn Reflect, key: &str, table: &mut toml::Table) {
+fn save_value(value: &dyn PartialReflect, key: &str, table: &mut toml::Table) {
     match value.reflect_ref() {
         ReflectRef::Struct(_) => todo!(),
         ReflectRef::TupleStruct(_) => todo!(),
@@ -247,6 +249,7 @@ fn save_value(value: &dyn Reflect, key: &str, table: &mut toml::Table) {
         ReflectRef::List(_) => todo!(),
         ReflectRef::Array(_) => todo!(),
         ReflectRef::Map(_) => todo!(),
+        ReflectRef::Set(_) => todo!(),
         ReflectRef::Enum(en) => {
             let type_path = value.get_represented_type_info().unwrap().type_path();
             if type_path.starts_with("core::option::Option") {
@@ -259,49 +262,49 @@ fn save_value(value: &dyn Reflect, key: &str, table: &mut toml::Table) {
                 warn!("Preferences: Unsupported enum type: {:?}", type_path);
             }
         }
-        ReflectRef::Value(val) => {
-            if let Some(f) = value.downcast_ref::<f32>() {
+        ReflectRef::Opaque(val) => {
+            if let Some(f) = value.try_downcast_ref::<f32>() {
                 let v = toml::Value::Float(*f as f64);
                 table.insert(key.to_string(), v);
-            } else if let Some(f) = value.downcast_ref::<f64>() {
+            } else if let Some(f) = value.try_downcast_ref::<f64>() {
                 let v = toml::Value::Float(*f);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<i8>() {
+            } else if let Some(i) = value.try_downcast_ref::<i8>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<i16>() {
+            } else if let Some(i) = value.try_downcast_ref::<i16>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<i32>() {
+            } else if let Some(i) = value.try_downcast_ref::<i32>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<i64>() {
+            } else if let Some(i) = value.try_downcast_ref::<i64>() {
                 let v = toml::Value::Integer(*i);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<u8>() {
+            } else if let Some(i) = value.try_downcast_ref::<u8>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<u16>() {
+            } else if let Some(i) = value.try_downcast_ref::<u16>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<u32>() {
+            } else if let Some(i) = value.try_downcast_ref::<u32>() {
                 let v = toml::Value::Integer(*i as i64);
                 table.insert(key.to_string(), v);
-            } else if let Some(i) = value.downcast_ref::<u64>() {
+            } else if let Some(i) = value.try_downcast_ref::<u64>() {
                 if *i <= i64::MAX as u64 {
                     let v = toml::Value::Integer(*i as i64);
                     table.insert(key.to_string(), v);
                 } else {
                     warn!("Preferences: u64 value too large: {}", i);
                 }
-            } else if let Some(i) = value.downcast_ref::<usize>() {
+            } else if let Some(i) = value.try_downcast_ref::<usize>() {
                 if *i <= i64::MAX as usize {
                     let v = toml::Value::Integer(*i as i64);
                     table.insert(key.to_string(), v);
                 } else {
                     warn!("Preferences: usize value too large: {}", i);
                 }
-            } else if let Some(s) = value.downcast_ref::<String>() {
+            } else if let Some(s) = value.try_downcast_ref::<String>() {
                 let v = toml::Value::String(s.clone());
                 table.insert(key.to_string(), v);
             } else {

@@ -1,47 +1,30 @@
-use bevy::{
-    prelude::*,
-    render::texture::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor},
-};
-
 use super::{
-    biome::{BiomesAsset, BiomesHandle, BiomesLoader},
+    cleanup_parcel_physics,
     flora::{gen_flora, insert_flora, spawn_flora_model_instances},
-    gen_ground_meshes,
-    ground_material::GroundMaterial,
-    insert_ground_meshes, spawn_parcels,
-    terrain_contours::{
-        TerrainContoursHandle, TerrainContoursTableAsset, TerrainContoursTableLoader,
-    },
+    gen_ground_meshes, insert_ground_meshes, spawn_parcels,
     terrain_map::{
         insert_terrain_maps, update_ground_material, update_terrain_maps, TerrainMapAsset,
         TerrainMapLoader, TerrainMapsHandleResource,
     },
-    water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
     water_mesh::{gen_water_meshes, insert_water_meshes},
-    ParcelCache, TerrainTypes,
+    ParcelCache,
 };
+use bevy::{
+    image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor},
+    prelude::*,
+};
+use panoply_terrain::PanoplyTerrainPlugin;
 
 pub struct TerrainPlugin;
 
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(PanoplyTerrainPlugin);
         app.insert_resource(ParcelCache::new())
-            .register_asset_loader(TerrainContoursTableLoader)
             .register_asset_loader(TerrainMapLoader)
-            .register_asset_loader(BiomesLoader)
-            .register_type::<TerrainTypes>()
-            .init_asset::<TerrainContoursTableAsset>()
             .init_asset::<TerrainMapAsset>()
-            .init_asset::<BiomesAsset>()
-            .init_resource::<BiomesHandle>()
-            .init_resource::<TerrainContoursHandle>()
             .init_resource::<TerrainMapsHandleResource>()
-            .init_resource::<WaterMaterialResource>()
-            .add_plugins((
-                MaterialPlugin::<GroundMaterial>::default(),
-                MaterialPlugin::<WaterMaterial>::default(),
-            ))
-            .add_systems(Startup, create_water_material)
+            .add_systems(Startup, cleanup_parcel_physics)
             .add_systems(
                 Update,
                 (

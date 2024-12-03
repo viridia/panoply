@@ -103,8 +103,9 @@ bitflags! {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TerrainFxVertexAttr {
-    pub(crate) effect: TerrainTypes,
-    pub(crate) effect_strength: f32,
-    pub(crate) elevation: f32,
-    pub(crate) options: TerrainOptions,
+    // TODO: Doesn't need to be public
+    pub effect: TerrainTypes,
+    pub effect_strength: f32,
+    pub elevation: f32,
+    pub options: TerrainOptions,
 }

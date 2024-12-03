@@ -1,7 +1,6 @@
+use crate::Realm;
 use bevy::{ecs::world::Command, prelude::*};
 use std::f32::consts::PI;
-
-use crate::world::Realm;
 
 /// Represents the focal point of attention, typically the coordinates of the player
 /// character.

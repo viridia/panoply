@@ -118,7 +118,7 @@ pub(crate) struct AspectDeserializer<'a> {
     pub(crate) type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
+impl<'de> DeserializeSeed<'de> for AspectDeserializer<'_> {
     type Value = Box<dyn Aspect>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -127,7 +127,7 @@ impl<'a, 'de> DeserializeSeed<'de> for AspectDeserializer<'a> {
     {
         let reflect_deserializer =
             TypedReflectDeserializer::new(self.type_registration, self.type_registry);
-        let deserialized_value: Box<dyn Reflect> =
+        let deserialized_value: Box<dyn PartialReflect> =
             match reflect_deserializer.deserialize(deserializer) {
                 Ok(value) => value,
                 Err(err) => {

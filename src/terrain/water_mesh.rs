@@ -1,25 +1,27 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    asset::LoadState,
     pbr::NotShadowCaster,
     prelude::*,
-    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
+    render::{
+        mesh::{Indices, MeshAabb},
+        render_asset::RenderAssetUsages,
+        render_resource::PrimitiveTopology,
+    },
     tasks::{AsyncComputeTaskPool, Task},
     utils::HashMap,
 };
 use futures_lite::future;
 
-use crate::world::Realm;
+use panoply_core::Realm;
+use panoply_terrain::{
+    Parcel, ParcelWaterChanged, ShapeRef, SquareArray, TerrainContoursHandle, TerrainContoursTable,
+    TerrainContoursTableAsset, WaterMaterialResource, ADJACENT_COUNT, ATTRIBUTE_DEPTH_MOTION,
+};
 
 use super::{
-    compute_interpolated_mesh, compute_smoothed_mesh,
-    parcel::{Parcel, ParcelWaterChanged, ShapeRef, ADJACENT_COUNT},
-    square::SquareArray,
-    terrain_contours::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset},
-    terrain_map::TerrainMap,
-    water_material::{WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION},
-    PARCEL_HEIGHT_SCALE, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
+    compute_interpolated_mesh, compute_smoothed_mesh, terrain_map::TerrainMap, PARCEL_HEIGHT_SCALE,
+    PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
     PARCEL_WATER_VERTEX_COUNT,
 };
 
@@ -42,7 +44,7 @@ pub fn gen_water_meshes(
             return;
         }
 
-        if server.load_state(&ts_handle.0) != LoadState::Loaded {
+        if !server.load_state(&ts_handle.0).is_loaded() {
             return;
         }
 
@@ -91,11 +93,8 @@ pub fn insert_water_meshes(
                             parcel.water_entity = Some(
                                 commands
                                     .spawn((
-                                        MaterialMeshBundle {
-                                            mesh: meshes.add(mesh),
-                                            material: material.handle.clone(),
-                                            ..default()
-                                        },
+                                        Mesh3d(meshes.add(mesh)),
+                                        MeshMaterial3d(material.handle.clone()),
                                         Name::new("Water"),
                                         NotShadowCaster,
                                         realm.layer.clone(),
@@ -110,7 +109,7 @@ pub fn insert_water_meshes(
                             //     "Replacing water mesh for parcel {}:{}:{:?}",
                             //     realm.name, realm.layer_index, parcel.coords
                             // );
-                            commands.entity(ent).insert(meshes.add(mesh));
+                            commands.entity(ent).insert(Mesh3d(meshes.add(mesh)));
                         }
                     }
                 } else if let Some(ent) = parcel.water_entity {
@@ -157,18 +156,16 @@ fn compute_water_mesh(
 
     let n = Vec3::new(0., 1., 0.);
 
-    let mut vertex_at = |x: usize, z: usize| {
-        return match index_map.get(&UVec2::new(x as u32, z as u32)) {
-            Some(&index) => index,
-            None => {
-                let depth = shm.get(x * 2, z * 2);
-                let index = position.len() as u32;
-                position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
-                normal.push(n.to_array());
-                depth_motion.push([depth * -PARCEL_HEIGHT_SCALE, 0., 0.]);
-                index
-            }
-        };
+    let mut vertex_at = |x: usize, z: usize| match index_map.get(&UVec2::new(x as u32, z as u32)) {
+        Some(&index) => index,
+        None => {
+            let depth = shm.get(x * 2, z * 2);
+            let index = position.len() as u32;
+            position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
+            normal.push(n.to_array());
+            depth_motion.push([depth * -PARCEL_HEIGHT_SCALE, 0., 0.]);
+            index
+        }
     };
 
     for z in 0..PARCEL_WATER_RESOLUTION {

@@ -1,5 +1,5 @@
 use bevy::{
-    asset::AssetLoader,
+    asset::{io::Reader, AssetLoader, LoadContext},
     color::LinearRgba,
     pbr::{ExtendedMaterial, MaterialExtension, StandardMaterial},
     prelude::*,
@@ -32,11 +32,11 @@ impl AssetLoader for FloorNoisyMaterialLoader {
 
     type Error = InlineAssetError;
 
-    async fn load<'a>(
-        &'a self,
-        _reader: &'a mut bevy::asset::io::Reader<'_>,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut bevy::asset::LoadContext<'_>,
+    async fn load(
+        &self,
+        _reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let path = load_context.path().file_stem().unwrap().to_str().unwrap();
         let params = FloorNoisyMaterialParams::decode(path)?;

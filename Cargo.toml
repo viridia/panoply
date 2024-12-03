@@ -11,46 +11,52 @@ editor = []          # Enable editor features
 members = ["crates/*"]
 
 [workspace.dependencies]
-bevy = { version = "0.14.1", features = [
+bevy = { version = "0.15", features = [
+  "bevy_animation",
   "dynamic_linking",
   "file_watcher",
   "serialize",
 ] }
-bevy_mod_picking = { version = "0.20.1" }
-bevy_mod_stylebuilder = "0.1.1"
-bevy_quill = "0.1.2"
-bevy_quill_obsidian = "0.1.0"
-bevy_quill_overlays = { version = "0.1.0" }
+# bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
+bevy_basic_prefs = { git = "https://github.com/viridia/bevy_basic_prefs.git", version = "0.1.1" }
+bitflags = "2.4.2"
+lru = "0.11.0"
+bevy_user_prefs = { path = "crates/bevy_user_prefs" }
+panoply_core = { path = "crates/panoply_core" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
-bevy_mod_preferences = { path = "crates/bevy_mod_preferences" }
-bevy_basic_prefs = { git = "https://github.com/viridia/bevy_basic_prefs.git", version = "0.1.0" }
+panoply_terrain = { path = "crates/panoply_terrain" }
+rapier3d = { version = "0.22.0" }
+rmp-serde = "1.1.2"
+serde = "1.0.171"
+serde_json = "1.0.103"
+serde_repr = "0.1.16"
+serde_bytes = "0.11.12"
+thiserror = "1.0.57"
 
 [dependencies]
+base64 = "0.22.0"
 bevy = { workspace = true }
-bevy-inspector-egui = "0.25.1"
 bevy_basic_prefs = { workspace = true }
-bevy_mod_picking = { workspace = true }
-bevy_mod_stylebuilder = { workspace = true }
-bevy_mod_preferences = { workspace = true }
-bevy_quill = { workspace = true }
-bevy_quill_obsidian = { workspace = true }
-bevy_quill_overlays = { workspace = true }
-bitflags = "2.4.2"
+# bevy_mod_preferences = { workspace = true }
+bevy-inspector-egui = "0.25.1"
+bitflags = { workspace = true }
 directories = "5.0.1"
 earcutr = "0.4.3"
 futures-lite = "2.2.0"
-lru = "0.11.0"
-rmp-serde = "1.1.2"
-serde = "1.0.171"
-serde_bytes = "0.11.12"
-serde_derive = "1.0.171"
-serde_json = "1.0.103"
-serde_repr = "0.1.16"
-thiserror = "1.0.57"
-panoply_exemplar = { workspace = true }
-base64 = "0.22.0"
-regex = "1.10.6"
 i_overlay = "1.4.2"
+lru = { workspace = true }
+panoply_core = { workspace = true }
+panoply_exemplar = { workspace = true }
+panoply_terrain = { workspace = true }
+rapier3d = { workspace = true }
+regex = "1.10.6"
+rmp-serde = { workspace = true }
+serde = { workspace = true }
+serde_bytes = { workspace = true }
+serde_derive = "1.0.171"
+serde_json = { workspace = true }
+serde_repr = { workspace = true }
+thiserror = { workspace = true }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -59,12 +65,6 @@ opt-level = 1
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
-
-[patch.crates-io]
-bevy_mod_stylebuilder = { version = "0.1.1", path = "../quill2/crates/bevy_mod_stylebuilder" }
-bevy_quill = { version = "0.1.2", path = "../quill2" }
-bevy_quill_obsidian = { version = "0.1.0", path = "../quill2/crates/bevy_quill_obsidian" }
-bevy_quill_overlays = { version = "0.1.0", path = "../quill2/crates/bevy_quill_overlays" }
 
 [lints.clippy]
 type_complexity = "allow"

@@ -2,7 +2,10 @@ use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, uti
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
-use crate::materials::{OutlineMaterial, OutlineMaterialExtension};
+use crate::{
+    actors::{spawn_actor_model_instances, spawn_actor_models, update_actor_aspects},
+    materials::{OutlineMaterial, OutlineMaterialExtension},
+};
 
 use self::{
     floor_aspect::{FloorGeometry, FloorNav, NoiseFloorSurface, StdFloorSurface},
@@ -94,6 +97,9 @@ impl Plugin for SceneryPlugin {
                     // Wall and fixture processing
                     update_se_aspects.after(read_precinct_data),
                     spawn_se_models.after(update_se_aspects),
+                    // Actor processing
+                    update_actor_aspects.after(read_precinct_data),
+                    spawn_actor_models.after(update_actor_aspects),
                     // TerrainFx processing
                     rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
                     rebuild_parcel_terrain_fx.after(rebuild_terrain_fx_vertex_attrs),
@@ -101,6 +107,7 @@ impl Plugin for SceneryPlugin {
                     insert_floor_meshes,
                     rebuild_floor_materials,
                     spawn_se_model_instances,
+                    spawn_actor_model_instances,
                 ),
             );
     }
