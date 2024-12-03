@@ -3,10 +3,11 @@ use std::sync::{Arc, RwLock};
 use crate::terrain::{PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE};
 use panoply_core::{Realm, RealmPhysics};
 use panoply_terrain::{
-    GroundMaterial, Parcel, ParcelTerrainFx, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
-    RotatingSquareArray, ShapeRef, SquareArray, TerrainOptions, TerrainTypes, ADJACENT_COUNT,
-    CENTER_SHAPE, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U,
-    PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
+    GroundMaterial, GroundMaterialCache, Parcel, ParcelTerrainFx, RebuildParcelGroundMesh,
+    RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray, TerrainOptions,
+    TerrainTypes, ADJACENT_COUNT, CENTER_SHAPE, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE,
+    PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
+    PARCEL_SIZE, PARCEL_SIZE_F,
 };
 
 use super::{terrain_map::TerrainMap, PARCEL_MESH_SCALE_U};
@@ -92,13 +93,14 @@ pub fn insert_ground_meshes(
     mut realms_query: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
+    r_material_cache: Res<GroundMaterialCache>,
 ) {
     for (entity, mut parcel, mut task) in query.iter_mut() {
         if let Ok((realm, mut realm_physics, terrain_map)) = realms_query.get_mut(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(ground_result) = task_result {
                     let mesh = meshes.add(ground_result.mesh);
-                    let material = materials.add(GroundMaterial {});
+                    let material = r_material_cache.get_material(materials.as_mut());
                     // let material = terrain_map.ground_material.clone();
                     // let ground_mesh = MaterialMeshBundle {
                     //     mesh: meshes.add(ground_result.mesh),
@@ -392,7 +394,7 @@ fn compute_ground_mesh(
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
-    // mesh.insert_attribute(ATTRIBUTE_TERRAIN_STYLE, terrain_style);
+    mesh.insert_attribute(GroundMaterial::ATTRIBUTE_TERRAIN_STYLE, terrain_style);
     mesh.insert_indices(Indices::U32(indices));
     mesh.compute_aabb();
 

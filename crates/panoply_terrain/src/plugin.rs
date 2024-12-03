@@ -1,5 +1,5 @@
 use crate::{
-    ground_material::GroundMaterial,
+    ground_material::{GroundMaterial, GroundMaterialCache},
     water_material::{create_water_material, WaterMaterialResource},
     BiomesAsset, BiomesHandle, BiomesLoader, TerrainContoursHandle, TerrainContoursTableAsset,
     TerrainContoursTableLoader, TerrainTypes, WaterMaterial,
@@ -48,6 +48,7 @@ impl Plugin for PanoplyTerrainPlugin {
             .init_asset::<BiomesAsset>()
             .init_resource::<BiomesHandle>()
             .init_resource::<TerrainContoursHandle>()
+            .init_resource::<GroundMaterialCache>()
             // .init_resource::<TerrainMapsHandleResource>()
             .init_resource::<WaterMaterialResource>()
             .add_plugins((

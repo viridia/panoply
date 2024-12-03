@@ -15,7 +15,7 @@ mod water_material;
 // mod terrain_map;
 
 pub use biome::*;
-pub use ground_material::GroundMaterial;
+pub use ground_material::{GroundMaterial, GroundMaterialCache};
 pub use metrics::*;
 pub use parcel::*;
 pub use rotator::*;
