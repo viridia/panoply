@@ -1,4 +1,5 @@
 #define FRAGMENT_WAVES 1
+// #define FRAGMENT_WAVES_2 1
 #define VERTEX_WAVES 1
 #define FOAM 1
 #define SKY 1
@@ -6,13 +7,17 @@
 
 #import bevy_core_pipeline::tonemapping::tone_mapping
 #import bevy_pbr::{
+    lighting,
     mesh_bindings::mesh,
     mesh_functions as mfns,
     mesh_view_bindings::globals,
     mesh_view_bindings::view,
+    mesh_view_bindings::lights,
+    mesh_view_types,
     mesh_types::MESH_FLAGS_SHADOW_RECEIVER_BIT,
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
+    shadows,
 }
 
 @group(2) @binding(1)
@@ -111,39 +116,75 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
     return out;
 }
 
-@fragment
-fn fragment(
-    @builtin(front_facing) is_front: bool,
-    mesh: VertexOutput,
-) -> @location(0) vec4<f32> {
-    let uv = vec2<f32>(mesh.world_position.xz);
+struct FragmentWaveGenerator {
+    freq: f32,
+    strength: f32,
+    direction: vec2<f32>,
+}
 
+const FRAGMENT_WAVES = array(
+    FragmentWaveGenerator(0.11, 0.07, vec2(1.0, 0.0)),
+    FragmentWaveGenerator(0.21, 0.03, vec2(0.9, 0.1)),
+    FragmentWaveGenerator(0.51, 0.03, vec2(0.9, -.1)),
+
+    FragmentWaveGenerator(0.12, 0.07, vec2(0.0, 1.0)),
+    FragmentWaveGenerator(0.22, 0.03, vec2(0.1, 0.9)),
+    FragmentWaveGenerator(0.52, 0.03, vec2(-.1, 0.9)),
+
+    FragmentWaveGenerator(0.13, 0.05, vec2(-1.0, 0.0)),
+    FragmentWaveGenerator(0.23, 0.03, vec2(-1.0, 0.0)),
+    FragmentWaveGenerator(0.53, 0.03, vec2(-1.0, 0.0)),
+
+    FragmentWaveGenerator(0.14, 0.05, vec2(0.0, -1.0)),
+    FragmentWaveGenerator(0.24, 0.03, vec2(0.0, -1.0)),
+    FragmentWaveGenerator(0.54, 0.03, vec2(0.0, -1.0)),
+);
+
+@fragment
+fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
+    let uv = vec2<f32>(mesh.world_position.xz);
     let water_depth = mesh.world_position.y + mesh.depth;
     var normal = mesh.world_normal;
     var chop = vec3<f32>(0.);
 
 #ifdef FRAGMENT_WAVES
-    var d = 1. - min(1., length(uv) / 16.);
     var motion = vec2(0., 0.);
-    var iter: f32 = 1.;
-    var frequency = 0.05;
-    var time_mult = 0.4;
-    var weight = .05;
+    var time_mult = 0.7;
+    var weight = 0.0;
+    for (var i = 0u; i < 12u; i++) {
+        let direction = FRAGMENT_WAVES[i].direction;
+        let frequency = FRAGMENT_WAVES[i].freq;
+        var strength = FRAGMENT_WAVES[i].strength;
+        // if direction.x < 0.1 {
+        //     strength *= 0.1;
+        // }
+
+        let m = mat2x2(direction.x, direction.y, -direction.y, direction.x);
+        let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
+        let d = textureSample(waves, waves_sampler, fract(p)).rgb - 0.25;
+        chop += vec3f(d.x, 0.0, d.y) * strength;
+        weight += strength;
+    }
+    normal = normalize(normal + chop / weight * 0.5);
+#endif
+
+#ifdef FRAGMENT_WAVES_2
+    // var d = 1. - min(1., length(uv) / 16.);
+    // var motion = vec2(0., 0.);
+    var iter: f32 = 0.1;
+    var frequency = 2.;
+    var weight = .1;
+    var speed = 1.0;
     for (var i = 0; i < 12; i++) {
         let s = sin(iter);
         let c = cos(iter);
-        let w = dot(motion, vec2(c, s)) + 1.;
-        let m = mat2x2(c, s, -s, c);
-        let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
-        let n = textureSample(waves, waves_sampler, fract(p)).x;
-        let d = vec3<f32>(
-            n - textureSample(waves, waves_sampler, fract(p + vec2<f32>(1.0 / 16.0, 0.))).x,
-            0.,
-            n - textureSample(waves, waves_sampler, fract(p + vec2<f32>(0., 1.0 / 16.0))).x
-        );
-        chop += d * weight * w;
-        frequency *= 1.21;
-        time_mult *= 1.07;
+        let direction = vec2(c, s);
+        let phi = dot(uv, direction) * frequency + speed * globals.time;
+        let s1 = sin(phi);
+        chop.x += direction.x * s1 * 0.01;
+        chop.z += direction.y * s1 * 0.01;
+        frequency *= 1.123;
+        speed *= 1.07;
         // weight *= 0.82;
         iter += 1232.399963;
     }
@@ -176,26 +217,60 @@ fn fragment(
     color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
 #endif
 
-    var pbr_input: PbrInput = pbr_input_new();
-    pbr_input.material.base_color = color;
-    pbr_input.material.perceptual_roughness = 0.9;
-    pbr_input.material.metallic = 0.;
-    pbr_input.material.clearcoat = 0.2;
-    pbr_input.material.clearcoat_perceptual_roughness = 0.1;
-    pbr_input.frag_coord = mesh.position;
-    pbr_input.world_position = mesh.world_position;
-    pbr_input.world_normal = fns::prepare_world_normal(
-        normal,
-        false,
-        is_front,
-    );
-    pbr_input.N = normalize(pbr_input.world_normal);
-    pbr_input.clearcoat_N = pbr_input.N;
-    pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
-    pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
-    pbr_input.is_orthographic = false;
+    let view_z = dot(vec4<f32>(
+        view.view_from_world[0].z,
+        view.view_from_world[1].z,
+        view.view_from_world[2].z,
+        view.view_from_world[3].z
+    ), mesh.world_position);
 
-    var out_color = fns::apply_pbr_lighting(pbr_input);
-    out_color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);
-    return tone_mapping(out_color, view.color_grading);
+    let V = fns::calculate_view(mesh.world_position, false);
+    let n_directional_lights = lights.n_directional_lights;
+    for (var i: u32 = 0u; i < n_directional_lights; i = i + 1u) {
+        // check if this light should be skipped, which occurs if this light does not intersect with the view
+        // note point and spot lights aren't skippable, as the relevant lights are filtered in `assign_lights_to_clusters`
+        let light = &lights.directional_lights[i];
+        if (*light).skip != 0u {
+            continue;
+        }
+
+        var shadow: f32 = 1.0;
+        if ((lights.directional_lights[i].flags & mesh_view_types::DIRECTIONAL_LIGHT_FLAGS_SHADOWS_ENABLED_BIT) != 0u) {
+            shadow = shadows::fetch_directional_shadow(i, mesh.world_position, normal, view_z);
+        }
+
+        let L = (*light).direction_to_light.xyz;
+        let H = normalize(L + V);
+        let n_dot_h = dot(normal, H);
+        let spec = specular_fast_pbr(n_dot_h, 0.007) * 0.0005
+            + specular_fast_pbr(n_dot_h, 0.05) * 0.00002;
+        color += vec4f((*light).color.rgb * spec * shadow, 0.0);
+    }
+
+    // var pbr_input: PbrInput = pbr_input_new();
+    // pbr_input.material.base_color = color;
+    // pbr_input.material.perceptual_roughness = 0.9;
+    // pbr_input.material.metallic = 0.;
+    // pbr_input.material.clearcoat = 0.2;
+    // pbr_input.material.clearcoat_perceptual_roughness = 0.1;
+    // pbr_input.frag_coord = mesh.position;
+    // pbr_input.world_position = mesh.world_position;
+    // pbr_input.world_normal = normal;
+    // pbr_input.N = normalize(pbr_input.world_normal);
+    // pbr_input.clearcoat_N = pbr_input.N;
+    // pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
+    // pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
+    // pbr_input.is_orthographic = false;
+
+    // color = fns::apply_pbr_lighting(pbr_input);
+
+    color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);
+    return tone_mapping(color, view.color_grading);
+}
+
+fn specular_fast_pbr(NdotH: f32, roughness: f32) -> f32 {
+    let a = roughness * roughness;
+    let a2 = a * a;
+    let d = NdotH * NdotH * (a2 - 1.0) + 1.0;
+    return a2 / (d * d);
 }

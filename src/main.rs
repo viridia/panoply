@@ -13,7 +13,7 @@ use bevy::{
 use bevy_basic_prefs::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
-use panoply_core::{Realm, ReservedLayers, Viewpoint};
+use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 
@@ -31,7 +31,6 @@ mod settings;
 mod terrain;
 mod view;
 mod world;
-use view::{HudCamera, PrimaryCamera};
 
 use crate::{
     actors::ActorsPlugin,
@@ -119,7 +118,6 @@ fn main() {
         (
             view::viewport::update_viewport_inset,
             view::viewport::update_camera_viewport.after(view::viewport::update_viewport_inset),
-            view::camera::update_camera_pos,
         ),
     )
     .add_systems(Update, close_on_esc)

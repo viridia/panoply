@@ -10,7 +10,7 @@ pub fn compute_interpolated_mesh(
     shape_refs: [ShapeRef; ADJACENT_COUNT],
     shapes_table: &TerrainContoursTable,
 ) {
-    let mut weights = SquareArray::<f32>::new((PARCEL_MESH_STRIDE + 2) as usize, 0.);
+    let mut weights = SquareArray::<f32>::new(PARCEL_MESH_STRIDE_U + 2, 0.);
 
     let center = shapes_table.get(shape_refs[4].shape as usize);
     if !center.has_terrain {

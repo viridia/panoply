@@ -11,8 +11,7 @@ use bevy::{
     },
 };
 
-use crate::view::PrimaryCamera;
-use panoply_core::Realm;
+use panoply_core::{PrimaryCamera, Realm};
 
 use super::portal_aspect::{Portal, PortalSide, PortalTarget};
 

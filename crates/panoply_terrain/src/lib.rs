@@ -1,6 +1,6 @@
 mod biome;
 mod ground_material;
-mod metrics;
+pub mod metrics;
 mod parcel;
 // mod parcel_cache;
 mod compute_mesh;

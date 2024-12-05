@@ -1,4 +1,5 @@
-use crate::Realm;
+use crate::{PrimaryCamera, Realm};
+use bevy::render::view::RenderLayers;
 use bevy::{ecs::world::Command, prelude::*};
 use std::f32::consts::PI;
 
@@ -74,6 +75,32 @@ impl Command for SetViewpointCmd {
             let mut viewpoint = world.get_resource_mut::<Viewpoint>().unwrap();
             viewpoint.realm = Some(realm);
             viewpoint.position = self.position;
+        }
+    }
+}
+
+/// Synchronize the camera position with the viewpoint.
+pub fn update_camera_pos(
+    viewpoint: ResMut<Viewpoint>,
+    mut q_camera: Query<(&mut Transform, &mut RenderLayers), With<PrimaryCamera>>,
+    q_realms: Query<&Realm>,
+) {
+    let (mut transform, mut layers) = q_camera.single_mut();
+
+    // Update the camera transform
+    viewpoint.get_camera_transform(&mut transform);
+
+    // Update the camera render layers
+    match viewpoint.realm {
+        Some(realm) => {
+            if let Ok(realm) = q_realms.get(realm) {
+                *layers = realm.layer.clone();
+            } else {
+                *layers = RenderLayers::none();
+            }
+        }
+        None => {
+            *layers = RenderLayers::none();
         }
     }
 }

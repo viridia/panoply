@@ -1,8 +1,7 @@
 use bevy::{prelude::*, reflect::Reflect, render::camera::Viewport, window::PrimaryWindow};
+use panoply_core::PrimaryCamera;
 
 // use crate::guise::{Controller, ViewElement};
-
-use super::PrimaryCamera;
 
 const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 

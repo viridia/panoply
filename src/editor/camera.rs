@@ -60,21 +60,4 @@ pub fn camera_controller(
                 * time.delta_seconds(),
         );
     }
-
-    // Update the camera transform
-    viewpoint.get_camera_transform(&mut transform);
-
-    // Update the camera render layers
-    match viewpoint.realm {
-        Some(realm) => {
-            if let Ok(realm) = query_realms.get(realm) {
-                *layers = realm.layer.clone();
-            } else {
-                *layers = RenderLayers::none();
-            }
-        }
-        None => {
-            *layers = RenderLayers::none();
-        }
-    }
 }

@@ -17,6 +17,7 @@ use panoply_core::Realm;
 use panoply_terrain::{
     Parcel, ParcelWaterChanged, ShapeRef, SquareArray, TerrainContoursHandle, TerrainContoursTable,
     TerrainContoursTableAsset, WaterMaterialResource, ADJACENT_COUNT, ATTRIBUTE_DEPTH_MOTION,
+    PARCEL_SIZE_F,
 };
 
 use super::{
@@ -161,7 +162,11 @@ fn compute_water_mesh(
         None => {
             let depth = shm.get(x * 2, z * 2);
             let index = position.len() as u32;
-            position.push([x as f32 * 0.5, WATER_HEIGHT, z as f32 * 0.5]);
+            position.push([
+                x as f32 * (PARCEL_SIZE_F / PARCEL_WATER_RESOLUTION as f32),
+                WATER_HEIGHT,
+                z as f32 * (PARCEL_SIZE_F / PARCEL_WATER_RESOLUTION as f32),
+            ]);
             normal.push(n.to_array());
             depth_motion.push([depth * -PARCEL_HEIGHT_SCALE, 0., 0.]);
             index
