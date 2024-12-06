@@ -277,7 +277,8 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
     for (entity, realm) in realms.iter() {
         if realm.name == "overland" {
             println!("Navigating to [overland]");
-            viewpoint.realm = Some(entity)
+            viewpoint.realm = Some(entity);
+            // viewpoint.set_camera_distance(10., 10.);
         }
     }
 }

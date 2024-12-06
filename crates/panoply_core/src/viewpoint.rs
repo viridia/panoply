@@ -1,3 +1,4 @@
+use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
 use bevy::render::view::RenderLayers;
 use bevy::{ecs::world::Command, prelude::*};
@@ -12,6 +13,7 @@ pub struct Viewpoint {
     pub azimuth: f32,
     pub elevation: f32,
     pub camera_distance: f32,
+    pub camera_distance_transition: Option<Transition<f32>>,
 }
 
 impl Viewpoint {
@@ -51,8 +53,30 @@ impl Viewpoint {
         self.camera_distance
     }
 
-    pub fn set_camera_distance(&mut self, distance: f32) {
-        self.camera_distance = distance;
+    pub fn set_camera_distance(&mut self, distance: f32, duration: f32) {
+        if duration <= 0. {
+            self.camera_distance = distance;
+            self.camera_distance_transition = None;
+        } else {
+            self.camera_distance_transition = Some(Transition::new(
+                self.camera_distance,
+                distance,
+                duration,
+                bevy::prelude::EaseFunction::QuadraticInOut,
+            ));
+        }
+    }
+}
+
+pub fn viewpoint_transitions(time: Res<Time>, mut viewpoint: ResMut<Viewpoint>) {
+    if let Some(transition) = &mut viewpoint.camera_distance_transition {
+        transition.advance(time.delta_secs());
+        let value = transition.current();
+        let finished = transition.is_finished();
+        viewpoint.camera_distance = value;
+        if finished {
+            viewpoint.camera_distance_transition = None;
+        }
     }
 }
 
