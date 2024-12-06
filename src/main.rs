@@ -10,11 +10,13 @@ use bevy::{
         view::RenderLayers,
     },
 };
-use bevy_basic_prefs::{watch_prefs_changes, PreferencesPlugin, SavePreferences};
+// use bevy_basic_prefs::{watch_prefs_changes, SavePreferences};
+use bevy_user_prefs::{AutosavePrefsPlugin, Preferences, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
+use settings::{load_window_settings, WindowSettingsPlugin};
 use std::f32::consts::PI;
 
 // #[cfg(feature = "editor")]
@@ -39,7 +41,7 @@ use crate::{
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
-    settings::{load_user_settings, update_window_settings, UserSettings, WindowSettings},
+    settings::update_window_settings,
     terrain::TerrainPlugin,
     world::WorldPlugin,
 };
@@ -54,17 +56,12 @@ struct EditorImages {
 }
 
 fn main() {
-    let mut settings = UserSettings {
-        window: WindowSettings {
-            fullscreen: false,
-            position: IVec2::new(0, 0),
-            size: UVec2::new(800, 600),
-        },
+    let mut prefs = Preferences::new("org.viridia.panoply");
+    let mut window = Window {
+        title: "Untitled Bevy Game".into(),
+        ..default()
     };
-
-    if let Some(s) = load_user_settings() {
-        settings = s
-    }
+    load_window_settings(&mut prefs, &mut window);
 
     let mut app = App::new();
     app.register_asset_source(
@@ -74,31 +71,23 @@ fn main() {
     .add_plugins((
         DefaultPlugins
             .set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Untitled Bevy Game".into(),
-                    resolution: (settings.window.size.x as f32, settings.window.size.y as f32)
-                        .into(),
-                    position: WindowPosition::new(settings.window.position),
-                    // mode: WindowMode::SizedFullscreen,
-                    ..default()
-                }),
+                primary_window: Some(window),
                 ..default()
             })
             .set(AssetPlugin::default()),
         ScreenDiagsPlugin,
-        // DefaultPickingPlugins,
-        // QuillPlugin,
-        // QuillOverlaysPlugin,
-        // ObsidianUiPlugin,
-        PreferencesPlugin::new("panoply"),
+        AutosavePrefsPlugin,
+        WindowSettingsPlugin,
+        // PreferencesPlugin::new("panoply"),
     ))
+    .insert_resource(prefs)
     .init_resource::<view::viewport::ViewportInset>()
     // .insert_resource(DebugPickingMode::Disabled)
     // .insert_resource(RaycastBackendSettings {
     //     require_markers: true,
     //     ..default()
     // })
-    .insert_resource(settings)
+    // .insert_resource(settings)
     // .insert_resource(Msaa::Off)
     .insert_resource(Viewpoint {
         position: Vec3::new(0., 0., 0.),
@@ -121,7 +110,7 @@ fn main() {
         ),
     )
     .add_systems(Update, close_on_esc)
-    .add_systems(Update, watch_prefs_changes)
+    // .add_systems(Update, watch_prefs_changes)
     .add_plugins((
         ReflectTypesPlugin,
         ExemplarPlugin,

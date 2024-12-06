@@ -1,67 +1,79 @@
 use bevy::{
     prelude::*,
-    window::{WindowCloseRequested, WindowMode},
+    window::{PrimaryWindow, WindowMode},
 };
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
-extern crate directories;
-use directories::ProjectDirs;
+// use bevy_basic_prefs::SetPreferencesChanged;
+use bevy_user_prefs::{Preferences, SetPreferencesChanged};
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Default, Debug)]
 pub struct WindowSettings {
     pub fullscreen: bool,
     pub position: IVec2,
     pub size: UVec2,
 }
 
-#[derive(Resource, Default, Serialize, Deserialize, Debug)]
-pub struct UserSettings {
-    pub window: WindowSettings,
-}
-
 /// System which keeps the window settings up to date when the user resizes or moves the window.
 /// Also writes the settings when the window is closed.
 pub fn update_window_settings(
     mut move_events: EventReader<WindowMoved>,
-    mut close_requested_events: EventReader<WindowCloseRequested>,
-    mut settings: ResMut<UserSettings>,
-    windows: Query<&mut Window>,
+    windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut preferences: ResMut<Preferences>,
+    mut commands: Commands,
 ) {
-    for event in move_events.read() {
-        settings.window.position = event.position;
-        // println!("Window moved: {} {}", event.position.x, event.position.y);
+    let Ok(window) = windows.get_single() else {
+        return;
+    };
+
+    let mut window_moved = false;
+    for _event in move_events.read() {
+        window_moved = true;
     }
 
-    for _ in close_requested_events.read() {
-        let window = windows.single();
-        settings.window.size = UVec2::new(
-            window.resolution.physical_width(),
-            window.resolution.physical_height(),
-        );
-        settings.window.fullscreen = window.mode != WindowMode::Windowed;
-        save_user_settings(&settings);
-        // println!("Window closed requested");
-    }
-}
-
-pub fn load_user_settings() -> Option<UserSettings> {
-    if let Some(proj_dirs) = ProjectDirs::from("org", "viridia", "bevy-game") {
-        let config_path = proj_dirs.config_dir().join("settings.json");
-        if config_path.is_file() {
-            let text = std::fs::read_to_string(&config_path).unwrap();
-            return Some(serde_json::from_str::<UserSettings>(&text).unwrap());
+    if window_moved {
+        if let Some(app_prefs) = preferences.get_mut("prefs") {
+            let mut window_prefs = app_prefs.get_group_mut("window").unwrap();
+            window_prefs.set_bool("fullscreen", window.mode != WindowMode::Windowed);
+            match window.position {
+                WindowPosition::At(pos) => {
+                    window_prefs.set_ivec2("position", pos);
+                }
+                _ => {
+                    window_prefs.remove("position");
+                }
+            }
+            window_prefs.set_vec2(
+                "size",
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            );
+            commands.queue(SetPreferencesChanged);
         }
     }
-    None
 }
 
-pub fn save_user_settings(prefs: &UserSettings) {
-    if let Some(proj_dirs) = ProjectDirs::from("org", "viridia", "bevy-game") {
-        std::fs::create_dir_all(proj_dirs.config_dir()).expect("Failed to create config dir.");
-        std::fs::write(
-            proj_dirs.config_dir().join("settings.json"),
-            serde_json::to_string(&prefs).unwrap(),
-        )
-        .unwrap();
+pub struct WindowSettingsPlugin;
+
+impl Plugin for WindowSettingsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, update_window_settings);
+    }
+}
+
+pub fn load_window_settings(prefs: &mut Preferences, window: &mut Window) {
+    if let Some(app_prefs) = prefs.get("prefs") {
+        if let Some(window_prefs) = app_prefs.get_group("window") {
+            if let Some(fullscreen) = window_prefs.get_bool("fullscreen") {
+                window.mode = if fullscreen {
+                    WindowMode::SizedFullscreen(MonitorSelection::Current)
+                } else {
+                    WindowMode::Windowed
+                };
+            }
+            if let Some(pos) = window_prefs.get_ivec2("position") {
+                window.position = WindowPosition::new(pos);
+            }
+            if let Some(size) = window_prefs.get_vec2("size") {
+                window.resolution = (size.x, size.y).into();
+            }
+        }
     }
 }

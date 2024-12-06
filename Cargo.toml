@@ -37,10 +37,11 @@ thiserror = "1.0.57"
 base64 = "0.22.0"
 bevy = { workspace = true }
 bevy_basic_prefs = { workspace = true }
+bevy_user_prefs = { workspace = true }
 # bevy_mod_preferences = { workspace = true }
 bevy-inspector-egui = "0.25.1"
 bitflags = { workspace = true }
-directories = "5.0.1"
+# directories = "5.0.1"
 earcutr = "0.4.3"
 futures-lite = "2.2.0"
 i_overlay = "1.4.2"

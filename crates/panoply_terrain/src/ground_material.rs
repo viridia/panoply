@@ -55,6 +55,42 @@ impl BiomeSurfaceAttrs {
         tx_scale: 0.2,
         edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
     };
+
+    pub const SAND: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
+        roughness: 0.99,
+        blend_var: 0.1,
+        blend_t0: 0.4,
+        blend_t1: 0.5,
+        edge_var: 0.5,
+        edge_t0: 0.45,
+        edge_t1: 0.9,
+        tx_scale: 0.2,
+        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+    };
+
+    pub const SNOW: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
+        roughness: 0.99,
+        blend_var: 0.1,
+        blend_t0: 0.4,
+        blend_t1: 0.5,
+        edge_var: 0.5,
+        edge_t0: 0.45,
+        edge_t1: 0.9,
+        tx_scale: 0.2,
+        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+    };
+
+    pub const TAIGA: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
+        roughness: 0.99,
+        blend_var: 0.1,
+        blend_t0: 0.4,
+        blend_t1: 0.5,
+        edge_var: 0.5,
+        edge_t0: 0.45,
+        edge_t1: 0.9,
+        tx_scale: 0.2,
+        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+    };
 }
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
@@ -184,7 +220,7 @@ impl GroundMaterialCache {
             biomes_table.get_biome(parcel_biomes[2]).surface,
             biomes_table.get_biome(parcel_biomes[3]).surface,
         ];
-        println!("parcel_biomes: {:?}", biomes);
+        // println!("parcel_biomes: {:?}", biomes);
         let mut biome_textures: [Handle<Image>; 4] = [
             Handle::default(),
             Handle::default(),
@@ -218,7 +254,7 @@ impl GroundMaterialCache {
         }
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Sand) {
             biome_textures[surface_index] = self.sand.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::MOSS;
+            biome_surface[surface_index] = BiomeSurfaceAttrs::SAND;
             biome_weight
                 .col_mut(surface_index)
                 .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Sand));
@@ -226,7 +262,7 @@ impl GroundMaterialCache {
         }
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Snow) {
             biome_textures[surface_index] = self.snow.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::MOSS;
+            biome_surface[surface_index] = BiomeSurfaceAttrs::SNOW;
             biome_weight
                 .col_mut(surface_index)
                 .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Snow));
@@ -235,14 +271,14 @@ impl GroundMaterialCache {
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Tundra) {}
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Taiga) {
             biome_textures[surface_index] = self.taiga.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::MOSS;
+            biome_surface[surface_index] = BiomeSurfaceAttrs::TAIGA;
             biome_weight
                 .col_mut(surface_index)
                 .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Taiga));
             surface_index += 1;
         }
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Chaparral) {}
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Rock) {}
+        // if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Rock) {}
         // if surface_index < 4 &&
 
         self.material
