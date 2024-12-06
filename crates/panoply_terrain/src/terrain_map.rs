@@ -333,61 +333,6 @@ fn asset_name_from_id(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) 
     filename_str[0..dot].to_string()
 }
 
-pub fn update_ground_material(
-    mut commands: Commands,
-    mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
-    mut materials: ResMut<Assets<GroundMaterial>>,
-    mut r_images: ResMut<Assets<Image>>,
-    bm_handle: Res<BiomesHandle>,
-    bm_assets: Res<Assets<BiomesAsset>>,
-    tm_assets: Res<Assets<TerrainMapAsset>>,
-) {
-    if let Some(biomes_asset) = bm_assets.get(&bm_handle.0) {
-        if let Ok(biomes) = biomes_asset.0.try_lock() {
-            let biomes_table = &biomes.biomes;
-            for (entity, _realm, terrain) in query.iter_mut() {
-                if let Some(terr) = tm_assets.get(&terrain.handle) {
-                    // if let Some(m) = materials.get_mut(&terrain.ground_material) {
-                    //     // println!("Updating material {}", realm.name);
-
-                    //     if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
-                    //         let mut texture_data = Vec::<u8>::new();
-                    //         let rows = terr.bounds.height() as usize;
-                    //         let stride = terr.bounds.width() as usize;
-                    //         texture_data.resize(rows * stride, 0);
-                    //         for z in 0..rows {
-                    //             for x in 0..stride {
-                    //                 let bi = terr.biomes[z * stride + x];
-                    //                 let surface = biomes_table[bi as usize].surface;
-                    //                 texture_data[z * stride + x] = surface as u8;
-                    //             }
-                    //         }
-                    //         let mut res = Image::new_fill(
-                    //             Extent3d {
-                    //                 width: terr.bounds.width() as u32,
-                    //                 height: terr.bounds.height() as u32,
-                    //                 depth_or_array_layers: 1,
-                    //             },
-                    //             TextureDimension::D2,
-                    //             &texture_data,
-                    //             TextureFormat::R8Uint,
-                    //             RenderAssetUsages::default(),
-                    //         );
-                    //         res.sampler = ImageSampler::nearest();
-                    //         r_images.insert(m.biomes.id(), res);
-                    //     }
-
-                    // m.realm_offset =
-                    //     Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
-                    // }
-                }
-
-                commands.entity(entity).remove::<TerrainMapChanged>();
-            }
-        }
-    }
-}
-
 // pub fn create_ground_material(
 //     materials: &mut Assets<GroundMaterial>,
 //     images: &mut Assets<Image>,

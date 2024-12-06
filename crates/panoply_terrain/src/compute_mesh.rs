@@ -1,7 +1,7 @@
 use crate::{
     RotatingSquareArray, ShapeRef, SquareArray, TerrainContoursTable, ADJACENT_COUNT,
     PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U,
-    PARCEL_MESH_STRIDE, PARCEL_MESH_STRIDE_U, PARCEL_SIZE_F,
+    PARCEL_MESH_STRIDE_U, PARCEL_SIZE_F,
 };
 
 pub fn compute_interpolated_mesh(
@@ -29,7 +29,7 @@ pub fn compute_interpolated_mesh(
                     &mut weights,
                     1 + x * PARCEL_MESH_SIZE,
                     1 + z * PARCEL_MESH_SIZE,
-                    shape_ref.rotation as i32,
+                    shape_ref.rotation,
                 );
             }
         }
@@ -60,13 +60,13 @@ pub fn compute_smoothed_mesh(shm: &mut SquareArray<f32>, ihm: &SquareArray<f32>)
     }
 }
 
-fn accumulate(
+pub(crate) fn accumulate(
     src: &SquareArray<i8>,
     dst: &mut SquareArray<f32>,
     weight: &mut SquareArray<f32>,
     x_offset: i32,
     z_offset: i32,
-    rotation: i32,
+    rotation: u8,
 ) {
     let src_rot = RotatingSquareArray::new(src.size(), rotation, src.elts());
     let x0 = x_offset.max(0);

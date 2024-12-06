@@ -3,14 +3,14 @@ use std::sync::{Arc, RwLock};
 use crate::terrain::{PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE};
 use panoply_core::{Realm, RealmPhysics};
 use panoply_terrain::{
-    GroundMaterial, GroundMaterialCache, Parcel, ParcelTerrainFx, RebuildParcelGroundMesh,
-    RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray, TerrainOptions,
-    TerrainTypes, ADJACENT_COUNT, CENTER_SHAPE, PARCEL_HEIGHT_SCALE, PARCEL_MESH_SCALE,
-    PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT,
-    PARCEL_SIZE, PARCEL_SIZE_F,
+    BiomesAsset, BiomesHandle, GroundMaterial, GroundMaterialCache, Parcel, ParcelTerrainFx,
+    RebuildParcelGroundMesh, RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray,
+    TerrainOptions, TerrainTypes, ADJACENT_COUNT, CENTER_SHAPE, PARCEL_HEIGHT_SCALE,
+    PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE,
+    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
 
-use super::{terrain_map::TerrainMap, PARCEL_MESH_SCALE_U};
+use super::PARCEL_MESH_SCALE_U;
 use bevy::{
     prelude::*,
     render::{
@@ -90,17 +90,28 @@ pub fn gen_ground_meshes(
 pub fn insert_ground_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Parcel, &mut ComputeGroundMeshTask)>,
-    mut realms_query: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
+    mut realms_query: Query<(&Realm, &mut RealmPhysics)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<GroundMaterial>>,
     mut r_material_cache: ResMut<GroundMaterialCache>,
+    bm_handle: Res<BiomesHandle>,
+    bm_assets: Res<Assets<BiomesAsset>>,
 ) {
+    let Some(biomes_asset) = bm_assets.get(&bm_handle.0) else {
+        return;
+    };
+
+    let biomes_table = biomes_asset.0.lock().unwrap();
     for (entity, mut parcel, mut task) in query.iter_mut() {
-        if let Ok((realm, mut realm_physics, terrain_map)) = realms_query.get_mut(parcel.realm) {
+        if let Ok((realm, mut realm_physics)) = realms_query.get_mut(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
                 if let Some(ground_result) = task_result {
                     let mesh = meshes.add(ground_result.mesh);
-                    let material = r_material_cache.get_material(materials.as_mut());
+                    let material = r_material_cache.get_material(
+                        materials.as_mut(),
+                        parcel.biomes,
+                        &biomes_table,
+                    );
                     // let material = terrain_map.ground_material.clone();
                     // let ground_mesh = MaterialMeshBundle {
                     //     mesh: meshes.add(ground_result.mesh),
@@ -431,7 +442,7 @@ pub fn compute_interpolated_mesh(
                     &mut weights,
                     1 + x * PARCEL_MESH_SIZE,
                     1 + z * PARCEL_MESH_SIZE,
-                    shape_ref.rotation as i32,
+                    shape_ref.rotation,
                 );
             }
         }
@@ -468,7 +479,7 @@ fn accumulate(
     weight: &mut SquareArray<f32>,
     x_offset: i32,
     z_offset: i32,
-    rotation: i32,
+    rotation: u8,
 ) {
     let src_rot = RotatingSquareArray::new(src.size(), rotation, src.elts());
     let x0 = x_offset.max(0);

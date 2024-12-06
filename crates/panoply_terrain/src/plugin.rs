@@ -19,7 +19,7 @@ use bevy::{
 //     insert_ground_meshes,
 //     spawn_parcels,
 //     terrain_map::{
-//         insert_terrain_maps, update_ground_material, update_terrain_maps, TerrainMapAsset,
+//         insert_terrain_maps, update_terrain_maps, TerrainMapAsset,
 //         TerrainMapLoader, TerrainMapsHandleResource,
 //     },
 //     water_material::{create_water_material, WaterMaterial, WaterMaterialResource},
@@ -56,7 +56,7 @@ impl Plugin for PanoplyTerrainPlugin {
                 MaterialPlugin::<WaterMaterial>::default(),
             ))
             .add_systems(Startup, create_water_material)
-            // .add_systems(Startup, (create_water_material, cleanup_parcel_physics))
+            // .add_systems(Startup, (cleanup_parcel_physics))
             // .add_systems(
             //     Update,
             //     (
@@ -69,7 +69,6 @@ impl Plugin for PanoplyTerrainPlugin {
             //         insert_flora,
             //         insert_terrain_maps,
             //         update_terrain_maps,
-            //         update_ground_material,
             //         config_textures_modes,
             //         spawn_flora_model_instances,
             //     ),

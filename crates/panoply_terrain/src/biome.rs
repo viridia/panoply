@@ -51,6 +51,16 @@ pub struct BiomesTable {
     pub biomes: Vec<BiomeData>,
 }
 
+impl BiomesTable {
+    pub fn get_biome(&self, index: u8) -> &BiomeData {
+        if index as usize >= self.biomes.len() {
+            &self.biomes[0]
+        } else {
+            &self.biomes[index as usize]
+        }
+    }
+}
+
 #[derive(TypePath, Asset)]
 pub struct BiomesAsset(pub Arc<Mutex<BiomesTable>>);
 

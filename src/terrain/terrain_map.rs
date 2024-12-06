@@ -5,27 +5,19 @@ use bevy::{
         saver::AssetSaver,
         AssetLoader, LoadContext, LoadedFolder,
     },
-    image::ImageSampler,
     math::IRect,
     prelude::*,
     reflect::TypePath,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-    },
 };
 use futures_lite::AsyncWriteExt;
-use panoply_terrain::{BiomesAsset, BiomesHandle, ShapeRef, ADJACENT_COUNT};
+use panoply_terrain::{ShapeRef, ADJACENT_COUNT};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::scenery::PRECINCT_SIZE;
 use panoply_core::Realm;
 
-use super::{
-    // ground_material::GroundMaterial,
-    PARCEL_SIZE,
-};
+use super::PARCEL_SIZE;
 
 #[derive(Debug, Default, Serialize, Deserialize, TypePath, Asset, Clone)]
 pub struct TerrainMapAsset {
@@ -261,7 +253,7 @@ pub fn update_terrain_maps(
     // mut materials: ResMut<Assets<GroundMaterial>>,
     // mut images: ResMut<Assets<Image>>,
     tm_assets: Res<Assets<TerrainMapAsset>>,
-    asset_server: Res<AssetServer>,
+    // asset_server: Res<AssetServer>,
 ) {
     for ev in ev_asset.read() {
         match ev {
@@ -333,93 +325,6 @@ fn asset_name_from_id(server: &Res<AssetServer>, id: &AssetId<TerrainMapAsset>) 
     let dot = filename_str.find('.').unwrap_or(filename_str.len());
     filename_str[0..dot].to_string()
 }
-
-pub fn update_ground_material(
-    mut commands: Commands,
-    mut query: Query<(Entity, &Realm, &mut TerrainMap), With<TerrainMapChanged>>,
-    // mut materials: ResMut<Assets<GroundMaterial>>,
-    mut r_images: ResMut<Assets<Image>>,
-    bm_handle: Res<BiomesHandle>,
-    bm_assets: Res<Assets<BiomesAsset>>,
-    tm_assets: Res<Assets<TerrainMapAsset>>,
-) {
-    if let Some(biomes_asset) = bm_assets.get(&bm_handle.0) {
-        if let Ok(biomes) = biomes_asset.0.try_lock() {
-            let biomes_table = &biomes.biomes;
-            for (entity, _realm, terrain) in query.iter_mut() {
-                if let Some(terr) = tm_assets.get(&terrain.handle) {
-                    // if let Some(m) = materials.get_mut(&terrain.ground_material) {
-                    //     // println!("Updating material {}", realm.name);
-
-                    //     if terr.bounds.width() > 0 && terr.bounds.height() > 0 {
-                    //         let mut texture_data = Vec::<u8>::new();
-                    //         let rows = terr.bounds.height() as usize;
-                    //         let stride = terr.bounds.width() as usize;
-                    //         texture_data.resize(rows * stride, 0);
-                    //         for z in 0..rows {
-                    //             for x in 0..stride {
-                    //                 let bi = terr.biomes[z * stride + x];
-                    //                 let surface = biomes_table[bi as usize].surface;
-                    //                 texture_data[z * stride + x] = surface as u8;
-                    //             }
-                    //         }
-                    //         let mut res = Image::new_fill(
-                    //             Extent3d {
-                    //                 width: terr.bounds.width() as u32,
-                    //                 height: terr.bounds.height() as u32,
-                    //                 depth_or_array_layers: 1,
-                    //             },
-                    //             TextureDimension::D2,
-                    //             &texture_data,
-                    //             TextureFormat::R8Uint,
-                    //             RenderAssetUsages::default(),
-                    //         );
-                    //         res.sampler = ImageSampler::nearest();
-                    //         r_images.insert(m.biomes.id(), res);
-                    //     }
-
-                    //     m.realm_offset =
-                    //         Vec2::new(terr.bounds.min.x as f32 - 1., terr.bounds.min.y as f32 - 1.);
-                    // }
-                }
-
-                commands.entity(entity).remove::<TerrainMapChanged>();
-            }
-        }
-    }
-}
-
-// pub fn create_ground_material(
-//     // materials: &mut Assets<GroundMaterial>,
-//     images: &mut Assets<Image>,
-//     asset_server: &AssetServer,
-// ) -> Handle<GroundMaterial> {
-//     let mut res = Image::new_fill(
-//         Extent3d {
-//             width: 1u32,
-//             height: 1u32,
-//             depth_or_array_layers: 1,
-//         },
-//         TextureDimension::D2,
-//         &[0u8],
-//         TextureFormat::R8Uint,
-//         RenderAssetUsages::default(),
-//     );
-//     res.sampler = ImageSampler::nearest();
-//     let biomes = images.add(res);
-
-//     todo!();
-//     // materials.add(GroundMaterial {
-//     //     noise: asset_server.load("terrain/textures/noise.png"),
-//     //     grass: asset_server.load("terrain/textures/grass.png"),
-//     //     dirt: asset_server.load("terrain/textures/dirt.png"),
-//     //     moss: asset_server.load("terrain/textures/moss.png"),
-//     //     cobbles: asset_server.load("terrain/textures/cobbles.png"),
-//     //     water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
-//     //     realm_offset: Vec2::new(0., 0.),
-//     //     biomes,
-//     // })
-// }
 
 const PARCELS_PER_PRECINCT: i32 = PRECINCT_SIZE / PARCEL_SIZE;
 

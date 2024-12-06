@@ -8,7 +8,6 @@ use bevy::{
     app::{App, FixedUpdate, Plugin, PostUpdate, Update},
     asset::AssetApp,
     prelude::Component,
-    render::camera,
 };
 pub use layers::ReservedLayers;
 pub use realm::Realm;

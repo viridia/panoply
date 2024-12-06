@@ -1,3 +1,5 @@
+use crate::SquareArray;
+
 /// Provides access to a square array such that the array elements are rotated in one of
 /// four cardinal orientations: 0, 90, 180 or 240 degrees. The underlying array elements are
 /// not modified; instead, the rotation is carried out by transforming the array coordinates
@@ -23,7 +25,7 @@ where
     ///   are 0..=3.
     /// * `elts` - the elements of the array, a borrowed reference. The length of the array
     ///   must be `size` * `size`.
-    pub fn new(size: usize, rotation: i32, elts: &'a [T]) -> RotatingSquareArray<'a, T> {
+    pub fn new(size: usize, rotation: u8, elts: &'a [T]) -> RotatingSquareArray<'a, T> {
         let dx: i32;
         let dy: i32;
         let base_index: usize;
@@ -76,6 +78,16 @@ where
         let xi = (x as i32) * self.dx;
         let yi = (y as i32) * self.dy;
         self.elts[(self.base_index as i32 + xi + yi) as usize]
+    }
+
+    pub fn as_square_array(&self) -> SquareArray<T> {
+        let mut sa = SquareArray::new(self.size, self.elts[0]);
+        for y in 0..self.size {
+            for x in 0..self.size {
+                sa.set(x, y, self.get(x, y));
+            }
+        }
+        sa
     }
 }
 

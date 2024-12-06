@@ -1,4 +1,4 @@
-use crate::SquareArray;
+use crate::{RotatingSquareArray, SquareArray};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 extern crate rmp_serde as rmps;
 use std::sync::{Arc, RwLock};
@@ -169,6 +169,12 @@ impl TerrainContour {
         self.flora.copy_from_slice(other.flora.elts());
         self.has_terrain = other.has_terrain;
         self.has_water = other.has_water;
+    }
+
+    /// Return a copy of the flora array, with the given rotation.
+    pub fn into_flora_square(&self, rotation: u8) -> SquareArray<FloraType> {
+        let flora_rotated = RotatingSquareArray::new(FLORA_STRIDE, rotation, self.flora.elts());
+        flora_rotated.as_square_array()
     }
 }
 

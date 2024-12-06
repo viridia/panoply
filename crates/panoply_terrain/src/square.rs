@@ -47,7 +47,7 @@ where
     }
 }
 
-impl PartialEq for SquareArray<i8> {
+impl<T: PartialEq> PartialEq for SquareArray<T> {
     fn eq(&self, other: &Self) -> bool {
         self.size == other.size && self.elts == other.elts
     }

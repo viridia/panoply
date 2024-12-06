@@ -4,7 +4,7 @@ use rapier3d::prelude::{Collider, ColliderHandle, RigidBodyHandle};
 use crate::metrics::{PARCEL_TERRAIN_FX_SIZE, PARCEL_TERRAIN_FX_STRIDE};
 
 use crate::terrain_fx::TerrainFxVertexAttr;
-use crate::PARCEL_TERRAIN_FX_AREA;
+use crate::{FloraType, SquareArray, PARCEL_TERRAIN_FX_AREA};
 
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub struct ParcelKey {
@@ -44,6 +44,8 @@ impl ParcelTerrainFx {
     }
 }
 
+pub type ParcelBiomes = [u8; 4];
+
 #[derive(Component)]
 pub struct Parcel {
     pub realm: Entity,
@@ -52,7 +54,7 @@ pub struct Parcel {
     pub contours: [ShapeRef; ADJACENT_COUNT],
 
     /// Biome ids assigned to each corner.
-    pub biomes: [u8; 4],
+    pub biomes: ParcelBiomes,
 
     /// Entity that represents the ground mesh of this parcel.
     pub ground_entity: Option<Entity>,
@@ -77,8 +79,12 @@ pub struct Parcel {
 
     /// Whether this parcel has water
     pub has_water: bool,
-    // pub height: SquareArray<i8>,
-    // pub flora: SquareArray<FloraType>,
+
+    /// Terrain height field, including margins.
+    // pub terrain_height: SquareArray<f32>,
+
+    // Flora table for this parcel
+    pub flora: SquareArray<FloraType>,
 }
 
 impl Parcel {
@@ -99,11 +105,15 @@ pub struct ParcelPhysics {
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct RebuildParcelTerrainFx;
+pub struct RebuildTerrainShape;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct RebuildParcelGroundMesh;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct RebuildParcelTerrainFx;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]

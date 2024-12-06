@@ -49,6 +49,16 @@ var surface1: texture_2d<f32>;
 @group(2) @binding(10)
 var surface1_sampler: sampler;
 
+@group(2) @binding(11)
+var surface2: texture_2d<f32>;
+@group(2) @binding(12)
+var surface2_sampler: sampler;
+
+@group(2) @binding(13)
+var surface3: texture_2d<f32>;
+@group(2) @binding(14)
+var surface3_sampler: sampler;
+
 // @group(2) @binding(7)
 // var moss: texture_2d<f32>;
 // @group(2) @binding(8)
@@ -213,10 +223,10 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let uv = vec2<f32>(mesh.world_position.xz);
 
-	// let fx_cobbles = mesh.terrain_style.x;
-	// let fx_soil = mesh.terrain_style.y;
-	// let fx_earth = mesh.terrain_style.z;
-	// // let fx_path = mesh.terrain_style.w;
+	  let fx_cobbles = mesh.terrain_style.x;
+  	let fx_soil = mesh.terrain_style.y;
+  	let fx_earth = mesh.terrain_style.z;
+	// let fx_path = mesh.terrain_style.w;
 
     let slope = 1.0 - pow(mesh.slope, 2.);
     let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * 0.1));
@@ -237,79 +247,97 @@ fn fragment(
 
     var under_color = dirt_color.xyz;
 
-	// // Packed and dried earth effects.
-  //   if fx_earth > 0. {
-  //       let fx_blend: f32 = smoothstep(0.2, 1.0, fx_earth + sfc.under_noise);
-  //       // under_color = dirt_color.rgb;
-	// 	// float pathBlend = smoothstep(0., .5, fxPath);
-	// 	// underColor = mix(
-	// 	// 	dirtColor.xyz * 0.5,
-	// 	// 	dirtColor.xyz * (1. - vBiomeWeight[Moss] * 0.5),
-	// 	// 	pathBlend);
-	// 	// underMix = max(underMix, smoothstep(0., 0.9, fxPath + underNoise * 0.6));
-	// 	sfc.under_darken = max(
-  //           sfc.under_darken,
-  //           smoothstep(0.2, 0.9, fx_earth * 1.4 + sfc.under_noise * 1.4));
-	// 	sfc.under_mix = max(sfc.under_mix, fx_blend);
-  //   }
-
-	// // Tilled soil effects - farm fields, graves, etc.
-  //   if fx_soil > 0. {
-  //       let fx_blend: f32 = fx_soil;
-  //       under_color = dirt_color.rgb * vec3f(.7, .6, .6);
-	// 	// float soilBlend = smoothstep(0., .3, fxSoil);
-	// 	// vec4 soilColor = texture2D(dirtTexture, vPosition.xz * 0.5) * vec4(.7, .6, .6, 1.);
-	// 	// underColor = mix(underColor, soilColor.rgb, soilBlend);
-	// 	// underRoughness = mix(underRoughness, 0.9, soilBlend);
-	// 	// underMix = max(underMix, smoothstep(0.3, 1.1, fxSoil * 2. + underNoise * 0.6));
-	// 	sfc.under_darken = max(
-  //           sfc.under_darken,
-  //           smoothstep(0.3, 1.1, fx_soil * 2. + sfc.under_noise * 0.6));
-	// 	sfc.under_mix = max(sfc.under_mix, fx_blend);
-  //   }
-
-	// // Cobblestone effects.
-  //   if fx_cobbles > 0. {
-  //       let cobbles_color = textureSample(cobbles, cobbles_sampler, fract(uv * UV_ROT * cobbles_fx.tx_scale));
-	// 	let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
-  //       let fx_blend: f32 = smoothstep(0.9, 1.2, fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9);
-	// 	let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
-	// 	// underRoughness = mix(underRoughness, 1.0 - cracks * 0.7, roadBlend);
-	// 	sfc.under_mix = max(sfc.under_mix, fx_blend);
-  //       under_color = mix(
-  //           mix(under_color, under_color * 0.7, dark_blend),
-  //           cobbles_color.rgb, fx_blend);
-	// 	sfc.under_darken = max(sfc.under_darken, dark_blend);
-  //   }
-
-  //   // No terrain fx underwater
-  //   sfc.under_mix = max(0., min(sfc.under_mix, 2.0 + mesh.world_position.y * 3.));
-  //   sfc.under_darken = max(0., min(sfc.under_darken, 2.0 + mesh.world_position.y * 3.));
-
-  //   // Dirt surface
-  //   let bw_dirt = mesh.biome_weight_0.y;
-  //   if bw_dirt > 0. {
-  //       blend_biome(&sfc, dirt_biome, bw_dirt, dirt_color.rgb);
-  //   }
-
-  //   // Grass surface
-    let bw_grass = mesh.biome_weight.y;
-    if bw_grass > 0. {
-        let grass_color = textureSample(
-            surface1,
-            surface1_sampler,
-            fract(uv * UV_ROT * biome_surface[0].tx_scale));
-        blend_biome(&sfc, biome_surface[0], bw_grass, grass_color.rgb);
+	// Packed and dried earth effects.
+    if fx_earth > 0. {
+        let fx_blend: f32 = smoothstep(0.2, 1.0, fx_earth + sfc.under_noise);
+        // under_color = dirt_color.rgb;
+		// float pathBlend = smoothstep(0., .5, fxPath);
+		// underColor = mix(
+		// 	dirtColor.xyz * 0.5,
+		// 	dirtColor.xyz * (1. - vBiomeWeight[Moss] * 0.5),
+		// 	pathBlend);
+		// underMix = max(underMix, smoothstep(0., 0.9, fxPath + underNoise * 0.6));
+		sfc.under_darken = max(
+            sfc.under_darken,
+            smoothstep(0.2, 0.9, fx_earth * 1.4 + sfc.under_noise * 1.4));
+		sfc.under_mix = max(sfc.under_mix, fx_blend);
     }
 
-  //   // Moss surface
-  //   let bw_moss = mesh.biome_weight_0.w;
-  //   if bw_moss > 0. {
-  //       let moss_color = textureSample(moss, moss_sampler, fract(uv * UV_ROT * moss_biome.tx_scale));
-  //       blend_biome(&sfc, moss_biome, bw_moss, moss_color.rgb);
-  //   }
+	// Tilled soil effects - farm fields, graves, etc.
+    if fx_soil > 0. {
+        let fx_blend: f32 = fx_soil;
+        under_color = dirt_color.rgb * vec3f(.7, .6, .6);
+		// float soilBlend = smoothstep(0., .3, fxSoil);
+		// vec4 soilColor = texture2D(dirtTexture, vPosition.xz * 0.5) * vec4(.7, .6, .6, 1.);
+		// underColor = mix(underColor, soilColor.rgb, soilBlend);
+		// underRoughness = mix(underRoughness, 0.9, soilBlend);
+		// underMix = max(underMix, smoothstep(0.3, 1.1, fxSoil * 2. + underNoise * 0.6));
+		sfc.under_darken = max(
+            sfc.under_darken,
+            smoothstep(0.3, 1.1, fx_soil * 2. + sfc.under_noise * 0.6));
+		sfc.under_mix = max(sfc.under_mix, fx_blend);
+    }
 
-  //   // Mix top layer and under layer.
+	// Cobblestone effects.
+    if fx_cobbles > 0. {
+        let cobbles_color = textureSample(cobbles, cobbles_sampler, fract(uv * UV_ROT * 0.45));
+    		let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
+        let fx_blend: f32 = smoothstep(0.9, 1.2, fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9);
+    		let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
+    		// underRoughness = mix(underRoughness, 1.0 - cracks * 0.7, roadBlend);
+    		sfc.under_mix = max(sfc.under_mix, fx_blend);
+            under_color = mix(
+                mix(under_color, under_color * 0.7, dark_blend),
+                cobbles_color.rgb, fx_blend);
+        sfc.under_darken = max(sfc.under_darken, dark_blend);
+    }
+
+    // No terrain fx underwater
+    sfc.under_mix = max(0., min(sfc.under_mix, 2.0 + mesh.world_position.y * 3.));
+    sfc.under_darken = max(0., min(sfc.under_darken, 2.0 + mesh.world_position.y * 3.));
+
+    let s0_weight = mesh.biome_weight.x;
+    let s1_weight = mesh.biome_weight.y;
+    let s2_weight = mesh.biome_weight.z;
+    let s3_weight = mesh.biome_weight.w;
+
+     // Surface 0
+    if s1_weight < 1.0 && s2_weight < 1.0 && s3_weight < 1.0 {
+        let color = textureSample(
+            surface0,
+            surface0_sampler,
+            fract(uv * UV_ROT * biome_surface[0].tx_scale));
+        blend_biome(&sfc, biome_surface[0], s0_weight, color.rgb);
+    }
+
+    // Surface 1
+    if s1_weight > 0. && s2_weight < 1.0 && s3_weight < 1.0 {
+        let color = textureSample(
+            surface1,
+            surface1_sampler,
+            fract(uv * UV_ROT * biome_surface[1].tx_scale));
+        blend_biome(&sfc, biome_surface[1], s1_weight, color.rgb);
+    }
+
+    // Surface 2
+    if s2_weight > 0. && s3_weight < 1.0 {
+        let color = textureSample(
+            surface2,
+            surface2_sampler,
+            fract(uv * UV_ROT * biome_surface[2].tx_scale));
+        blend_biome(&sfc, biome_surface[2], s2_weight, color.rgb);
+    }
+
+    // Surface 3
+    if s3_weight > 0. {
+        let color = textureSample(
+            surface3,
+            surface3_sampler,
+            fract(uv * UV_ROT * biome_surface[3].tx_scale));
+        blend_biome(&sfc, biome_surface[3], s3_weight, color.rgb);
+    }
+
+    // Mix top layer and under layer.
     let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), sfc.under_mix);
     var diffuse_color = vec4<f32>(combined.xyz, 1.0);
     let roughness = combined.w;
@@ -328,18 +356,8 @@ fn fragment(
         is_front,
     );
     pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
-
     pbr_input.is_orthographic = false;
-
     pbr_input.N = normalize(pbr_input.world_normal);
-    // let TBN = fns::calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
-    // pbr_input.N = fns::apply_normal_mapping(
-    //     pbr_input.material.flags,
-    //     TBN,
-    //     false, // double_sided,
-    //     is_front,
-    //     view.mip_bias,
-    // );
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
     return tone_mapping(fns::apply_pbr_lighting(pbr_input), view.color_grading);

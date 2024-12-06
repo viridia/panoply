@@ -3,7 +3,7 @@ mod ground_material;
 pub mod metrics;
 mod parcel;
 // mod parcel_cache;
-mod compute_mesh;
+// mod compute_mesh;
 mod plugin;
 mod rotator;
 mod square;

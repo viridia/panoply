@@ -7,7 +7,7 @@ use panoply_core::{
 };
 use panoply_terrain::{
     BiomesAsset, BiomesHandle, BiomesTable, FloraType, Parcel, ParcelFloraChanged, ParcelTerrainFx,
-    RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, TerrainContoursHandle,
+    RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray, TerrainContoursHandle,
     TerrainContoursTable, TerrainContoursTableAsset,
 };
 
@@ -88,6 +88,7 @@ pub fn gen_flora(
         let biome_indices = parcel.biomes;
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let terrain_fx = parcel.terrain_fx;
+        let flora_table = parcel.flora.clone();
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: HashMap::new(),
@@ -97,6 +98,7 @@ pub fn gen_flora(
                 shape_ref,
                 &contours,
                 &terrain_fx,
+                &flora_table,
                 biome_indices,
                 &biomes,
                 &mut result,
@@ -252,6 +254,7 @@ fn compute_flora_placement(
     shape_ref: ShapeRef,
     contours: &Arc<RwLock<TerrainContoursTable>>,
     terrain_fx: &ParcelTerrainFx,
+    flora: &SquareArray<FloraType>,
     biome_indices: [u8; 4],
     biomes: &Arc<Mutex<BiomesTable>>,
     out: &mut FloraPlacementResult,
@@ -264,15 +267,11 @@ fn compute_flora_placement(
     }
 
     // Flora array
-    let flora = RotatingSquareArray::new(
-        PARCEL_SIZE_U,
-        shape_ref.rotation as i32,
-        center.flora.elts(),
-    );
+    // let flora = RotatingSquareArray::new(PARCEL_SIZE_U, shape_ref.rotation, center.flora.elts());
 
     let heights = RotatingSquareArray::new(
         center.height.size(),
-        shape_ref.rotation as i32,
+        shape_ref.rotation,
         center.height.elts(),
     );
 

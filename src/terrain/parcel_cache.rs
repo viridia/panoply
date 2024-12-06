@@ -2,18 +2,13 @@ use bevy::{math::IRect, prelude::*};
 use panoply_terrain::{
     Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
     RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainContoursHandle,
-    TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
-    CENTER_SHAPE,
+    TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT, CENTER_SHAPE,
 };
 use rapier3d::{
     na::Vector3,
     prelude::{ColliderHandle, RigidBodyBuilder},
 };
 
-use crate::view::{
-    picking::{PickAction, PickEvent, PickTarget},
-    QueryRect,
-};
 use panoply_core::{Realm, RealmPhysics, Viewpoint};
 
 use super::{
@@ -107,15 +102,13 @@ pub fn spawn_parcels(
 
     // Determine coordinates of view in parcel units.
     let view_radius = distance * 0.75 + 20.;
-    let query_rect = QueryRect {
-        realm: viewpoint.realm.expect("Realm id expected"),
-        bounds: IRect::new(
-            ((viewpoint.position.x - view_radius) / PARCEL_SIZE_F).floor() as i32,
-            ((viewpoint.position.z - view_radius) / PARCEL_SIZE_F).floor() as i32,
-            ((viewpoint.position.x + view_radius) / PARCEL_SIZE_F).ceil() as i32,
-            ((viewpoint.position.z + view_radius) / PARCEL_SIZE_F).ceil() as i32,
-        ),
-    };
+    let realm_id = viewpoint.realm.expect("Realm id expected");
+    let query_rect = IRect::new(
+        ((viewpoint.position.x - view_radius) / PARCEL_SIZE_F).floor() as i32,
+        ((viewpoint.position.z - view_radius) / PARCEL_SIZE_F).floor() as i32,
+        ((viewpoint.position.x + view_radius) / PARCEL_SIZE_F).ceil() as i32,
+        ((viewpoint.position.z + view_radius) / PARCEL_SIZE_F).ceil() as i32,
+    );
 
     // TODO: return here if query rects (including portals) was the same as last time.
     // ONLY if terrain maps haven't changed?
@@ -128,9 +121,8 @@ pub fn spawn_parcels(
     });
 
     // Function to add parcels to the cache based on a view rect.
-    let mut fetch_parcels = |rect: &QueryRect| {
-        // let realm_id = rect.realm;
-        if let Ok((realm, mut realm_physics, terrain)) = q_realms.get_mut(rect.realm) {
+    let mut fetch_parcels = |realm_id: Entity, bounds: IRect| {
+        if let Ok((realm, mut realm_physics, terrain)) = q_realms.get_mut(realm_id) {
             if !server.load_state(&terrain.handle).is_loaded() {
                 return;
             }
@@ -139,10 +131,10 @@ pub fn spawn_parcels(
                 .expect("expecting terrain map");
 
             // Set parcels within the query rect as visible; also load missing parcels.
-            for z in rect.bounds.min.y..rect.bounds.max.y {
-                for x in rect.bounds.min.x..rect.bounds.max.x {
+            for z in bounds.min.y..bounds.max.y {
+                for x in bounds.min.x..bounds.max.x {
                     let key = ParcelKey {
-                        realm: rect.realm,
+                        realm: realm_id,
                         x,
                         z,
                     };
@@ -151,6 +143,7 @@ pub fn spawn_parcels(
                     let center = contours_table.get(contours[CENTER_SHAPE].shape as usize);
                     let biomes = terrain_map.adjacent_biomes(IVec2::new(x, z));
                     let entity = parcel_cache.parcels.get(&key);
+                    let flora = center.into_flora_square(contours[CENTER_SHAPE].rotation);
 
                     match entity {
                         Some(entity) => {
@@ -159,12 +152,10 @@ pub fn spawn_parcels(
                                 if parcel.contours != contours
                                     || parcel.biomes != biomes
                                     || parcel.has_terrain != center.has_terrain
-                                    || parcel.has_water != center.has_water
                                 {
                                     parcel.contours = contours;
                                     parcel.biomes = biomes;
                                     parcel.has_terrain = center.has_terrain;
-                                    parcel.has_water = center.has_water;
                                     // println!("Parcel {} {} changed: {:?}.", x, z, biomes);
                                     commands.entity(*entity).insert((
                                         RebuildParcelGroundMesh,
@@ -173,6 +164,17 @@ pub fn spawn_parcels(
                                         RebuildParcelTerrainFx,
                                     ));
                                 }
+
+                                if parcel.has_water != center.has_water {
+                                    parcel.has_water = center.has_water;
+                                    commands.entity(*entity).insert(ParcelWaterChanged);
+                                }
+
+                                if parcel.flora != flora {
+                                    parcel.flora = flora;
+                                    commands.entity(*entity).insert(ParcelFloraChanged);
+                                }
+
                                 parcel.visible = true;
                             }
                         }
@@ -189,7 +191,7 @@ pub fn spawn_parcels(
                             let rb_handle = realm_physics.insert_body(rigid_body);
                             let entity = commands.spawn((
                                 Parcel {
-                                    realm: rect.realm,
+                                    realm: realm_id,
                                     coords: IVec2::new(x, z),
                                     visible: true,
                                     contours,
@@ -197,6 +199,7 @@ pub fn spawn_parcels(
                                     ground_entity: None,
                                     water_entity: None,
                                     flora_entity: None,
+                                    flora,
                                     terrain_fx: ParcelTerrainFx(
                                         [TerrainFxVertexAttr::default(); PARCEL_TERRAIN_FX_AREA],
                                     ),
@@ -212,9 +215,9 @@ pub fn spawn_parcels(
                                     z as f32 * PARCEL_SIZE_F,
                                 ),
                                 Visibility::Visible,
-                                // RebuildParcelGroundMesh,
+                                RebuildParcelGroundMesh,
                                 ParcelWaterChanged,
-                                // ParcelFloraChanged,
+                                ParcelFloraChanged,
                                 RebuildParcelTerrainFx,
                             ));
                             // TODO: Restore picking
@@ -266,7 +269,7 @@ pub fn spawn_parcels(
         }
     };
 
-    fetch_parcels(&query_rect);
+    fetch_parcels(realm_id, query_rect);
 
     let size = parcel_cache.size;
     let cache = &mut parcel_cache.parcels;

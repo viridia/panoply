@@ -90,7 +90,7 @@ fn process_material_extras(
         Added<GltfMaterialExtras>,
     >,
 ) {
-    for (entity, material, extras) in q_materials.iter() {
+    for (entity, _material, extras) in q_materials.iter() {
         // println!("material extras: {:?}", extras);
         let options = serde_json::from_str::<MaterialOptions>(&extras.value);
         // println!("material options: {:?}", options);
