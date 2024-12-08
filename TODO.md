@@ -1,7 +1,14 @@
+# Migration
+
+- Scripting
+- Biome data
+- Camera movement
+- Revive editor
+- Preferences
+
 # TODO
 
 - Better picking on tiers - disable terrain picks
-- move prefs to own crate (and use it).
 - Crash - inserting flora compute task on deleted entity.
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
 - separate crate for realms?
@@ -32,7 +39,6 @@
   - msgpack (no, we want to remove this actually, get rid of extension types)
   - inline_assets?
   - reflect_types
-  - random
 - Skybox experiments
 
 * TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
@@ -249,3 +255,188 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
   - scale
   - blend params
     - noise factor
+
+# Scripting
+
+Access to:
+
+- player
+- viewpoint
+
+- register quest
+- register dialog
+- register mod
+
+  - add character asset
+
+- In old engine, scripts were part of archetypes.
+
+```js
+/** Defines a package of behaviors for an actor or object in the world. */
+export interface IAspectType<
+  SelfType extends Instance = Instance,
+  Props extends {} = {},
+  Config extends {} = {}
+> {
+  /** Type of instance that this behavior can apply to (Actor, fixture, etc.). */
+  type: InstanceTypeMask;
+
+  /** Qualified name of this aspect (filled in by loader). */
+  qname?: string;
+
+  /** Configuration parameters for this aspect. */
+  config?: IPropertyDescriptors<Config>;
+
+  /** Properties which are added to instances that attach this behavior. */
+  properties?: IPropertyDescriptors<Props>;
+
+  /** Formulas to be bound to the specified properties */
+  formulas?: IFormulaGenerators<SelfType, Props, Config>;
+
+  /** Ways in which the player can interact with this instance. */
+  interactions?: IInteraction<SelfType, Props, Config>[];
+
+  /** List of quest roles associated with this actor. */
+  questRoles?: string[];
+
+  /** A task which runs when instance is instantiated and is run in the instance scope.
+      This scope will get destroyed when the instance is unloaded.
+   */
+  init?: (self: SelfType, props: Props, config: Config) => void;
+
+  /** Generates list of goals to be associated with this behavior (actors only) */
+  goals?: (self: SelfType, props: Props) => GoalChildren;
+
+  /** Method invoked when the actor is not doing anything. Returns the type of animation
+      that should be run when idling.
+   */
+  idle?: (self: SelfType, props: Props) => string | undefined;
+
+  /** Predicate function for sensor instances. */
+  canSense?: (self: SelfType, props: Props, target: PositionableInstance) => boolean;
+
+  /** If defined, this actor is conditional - only appears in specific quest stages. */
+  present?: (self: SelfType, props: Props) => boolean;
+}
+```
+
+- effectively we want a script to be able to implement:
+
+  - a Scenery exemplar
+  - an Actor exemplar
+  - an Item exempler
+  - a Skill
+  - a QuestStage
+
+- argument to handlers:
+  self
+  self.here
+  self.world
+
+```lua
+book(self) {
+  self.add_interaction({
+      id: 'read',
+      cursor: 'read',
+      icon: 'read',
+      caption: 'Read',
+      action: (self, props, config) => {
+        if (props?.content) {
+          const ui = getSystem(GAME_UI_STATE_KEY);
+          ui.openBook = {
+            content: props.content,
+            frame: config.frame ?? 'codex',
+          };
+        }
+      },
+      distance: 1,
+  })
+}
+
+combat(self) {
+  self.add_interaction({
+    id: 'attack',
+    cursor: 'melee',
+    icon: 'sword',
+    caption: 'Attack',
+    when: self => {
+      return self.alive;
+    },
+    focus: true,
+    combat: true,
+  });
+
+  self.add_interaction({
+    id: 'loot',
+    cursor: 'loot',
+    icon: 'loot',
+    caption: 'Loot',
+    distance: 1,
+    when: self => {
+      return !self.alive && self.hasInventoryItems;
+    },
+    action: self => {
+      const ui = getSystem(GAME_UI_STATE_KEY);
+      ui.openContainerDialog(self, 'corpse');
+    },
+  });
+
+  self.add_interaction({
+    id: 'loot-empty',
+    cursor: 'loot-empty',
+    icon: 'lootEmpty',
+    caption: 'Empty',
+    distance: 1,
+    when: self => {
+      return !self.alive && !self.hasInventoryItems;
+    },
+    action: self => {
+      const ui = getSystem(GAME_UI_STATE_KEY);
+      ui.openContainerDialog(self, 'corpse');
+    },
+  }),
+}
+
+fn combat(self) {
+  self.on_interact = combat_interact;
+}
+
+fn combat_interact() {
+    if self.alive {
+      return {
+        id: 'attack',
+        cursor: 'melee',
+        icon: 'sword',
+        caption: 'Attack',
+        when: self => {
+          return self.alive;
+        },
+        focus: true,
+        combat: true,
+      }
+    } else if self.hasInventoryItems {
+    } else {
+    }
+}
+```
+
+# Scripting data types:
+
+- builtin types
+  - i32
+  - i64
+  - f32
+  - f64
+  - bool
+  - string
+  - struct
+  - array
+  - tuple
+  - union
+  - function
+  - closure
+- native types
+  - optional
+  - vec2 / vec4 / vec4
+  - ivec2 / ivec3 / ivec4
+  - uvec2 / uvec3 / uvec4

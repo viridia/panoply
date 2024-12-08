@@ -2,7 +2,6 @@ use bevy::{
     prelude::*,
     window::{PrimaryWindow, WindowMode},
 };
-// use bevy_basic_prefs::SetPreferencesChanged;
 use bevy_user_prefs::{Preferences, SetPreferencesChanged};
 
 #[derive(Default, Debug)]

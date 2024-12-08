@@ -10,14 +10,14 @@ use bevy::{
         view::RenderLayers,
     },
 };
-// use bevy_basic_prefs::{watch_prefs_changes, SavePreferences};
 use bevy_user_prefs::{AutosavePrefsPlugin, Preferences, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
-use settings::{load_window_settings, WindowSettingsPlugin};
+use scripting::ScriptsPlugin;
 use std::f32::consts::PI;
+use window_settings::{load_window_settings, WindowSettingsPlugin};
 
 // #[cfg(feature = "editor")]
 // mod editor;
@@ -29,9 +29,10 @@ mod models;
 mod portals;
 mod reflect_types;
 mod scenery;
-mod settings;
+mod scripting;
 mod terrain;
 mod view;
+mod window_settings;
 mod world;
 
 use crate::{
@@ -41,8 +42,8 @@ use crate::{
     portals::PortalPlugin,
     reflect_types::ReflectTypesPlugin,
     scenery::SceneryPlugin,
-    settings::update_window_settings,
     terrain::TerrainPlugin,
+    window_settings::update_window_settings,
     world::WorldPlugin,
 };
 
@@ -121,6 +122,7 @@ fn main() {
         ActorsPlugin,
         PortalPlugin,
         ModelsPlugin,
+        ScriptsPlugin,
         // WorldInspectorPlugin::new(),
     ));
 
