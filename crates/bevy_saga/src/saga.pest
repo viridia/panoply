@@ -1,0 +1,45 @@
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+
+dec_literal = @{ ASCII_DIGIT ~ (ASCII_DIGIT | "_")* }
+float       = @{ dec_literal ~ ("." ~ (ASCII_DIGIT | "_")*) ~ (^"e" ~ ("+" | "-")? ~ dec_literal)? }
+integer     = @{ dec_literal ~ "u"? }
+hex_integer = @{ "0x" ~ HEX_DIGIT ~ (HEX_DIGIT | "_")* ~ "u"? }
+ident       = @{ (UPPERCASE_LETTER | "_") ~ (UPPERCASE_LETTER | LOWERCASE_LETTER | ASCII_DIGIT | "_")* }
+
+bin_op      = _{
+    add
+  | subtract
+  | multiply
+  | divide
+  | modulus
+  | bitwise_and
+  | bitwise_or
+  | bitwise_xor
+  | logical_and
+  | logical_or
+}
+add         =  { "+" }
+subtract    =  { "-" }
+multiply    =  { "*" }
+divide      =  { "/" }
+modulus     =  { "%" }
+bitwise_and =  { "&" }
+bitwise_or  =  { "|" }
+bitwise_xor =  { "^" }
+logical_and =  { "&&" }
+logical_or  =  { "||" }
+
+tuple   = { "(" ~ expr ~ ("," ~ expr)* ~ ","? ~ ")" }
+primary = { float | integer | hex_integer | ident | tuple | "(" ~ expr ~ ")" }
+binary  = { primary ~ (bin_op ~ primary)* }
+expr    = { binary }
+
+stmt = { expr ~ ";" }
+
+param_decl  = { ident ~ ":" ~ ident }
+func_params = { param_decl ~ ("," ~ param_decl)* ~ ","? }
+func_return = { "->" ~ ident }
+func_body   = { "{" ~ stmt* ~ "}" }
+func_defn   = { "fn" ~ ident ~ "(" ~ func_params ~ ")" ~ func_return? ~ func_body }
+
+decl = { func_defn }
