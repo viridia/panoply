@@ -21,3 +21,11 @@ pub enum BinaryOp {
     Gt,
     Ge,
 }
+
+/// Set of possible unary operators.
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum UnaryOp {
+    Not,
+    Neg,
+    BitNot,
+}

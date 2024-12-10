@@ -21,6 +21,9 @@ lazy_static! {
             .op(Op::infix(logical_and, Left))
             .op(Op::infix(add, Left) | Op::infix(subtract, Left))
             .op(Op::infix(multiply, Left) | Op::infix(divide, Left) | Op::infix(modulus, Left))
+            .op(Op::prefix(neg))
+            .op(Op::prefix(not))
+            .op(Op::prefix(complement))
             // .op(Op::infix(power, Right))
     };
 }
@@ -30,8 +33,22 @@ pub(crate) fn build_ast<'a>(arena: &'a Bump, expression: Pairs<Rule>) -> &'a AST
         .map_primary(|pair| {
             let location: TokenLocation = pair.as_span().into();
             match pair.as_rule() {
+                Rule::unit => {
+                    println!("unit: {:?}", pair);
+                    let mut decls: Vec<&'a ASTNode<'a>> = Vec::new();
+                    pair.into_inner().for_each(|decl| match decl.as_rule() {
+                        Rule::decl => {
+                            println!("decl: {:?}", decl.as_str());
+                            decls.push(build_ast(arena, decl.into_inner()));
+                        }
+                        _ => todo!("to_ast: {:?}", decl.as_rule()),
+                    });
+                    let decls = arena.alloc_slice_copy(decls.as_slice());
+                    arena.alloc(ASTNode::new(location, ast::NodeKind::Unit(decls)))
+                }
                 Rule::expr => build_ast(arena, pair.into_inner()),
                 Rule::binary => build_ast(arena, pair.into_inner()),
+                Rule::unary => build_ast(arena, pair.into_inner()),
                 Rule::primary => build_ast(arena, pair.into_inner()),
                 Rule::float => {
                     let value = arena.alloc_str(pair.as_str());

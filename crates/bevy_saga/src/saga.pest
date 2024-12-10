@@ -29,17 +29,29 @@ bitwise_xor =  { "^" }
 logical_and =  { "&&" }
 logical_or  =  { "||" }
 
+unary_op   = _{
+    neg
+  | not
+  | complement
+}
+neg        =  { "-" }
+not        =  { "!" }
+complement =  { "~" }
+
 tuple   = { "(" ~ expr ~ ("," ~ expr)* ~ ","? ~ ")" }
 primary = { float | integer | hex_integer | ident | tuple | "(" ~ expr ~ ")" }
-binary  = { primary ~ (bin_op ~ primary)* }
+unary   = { unary_op ~ unary | primary }
+binary  = { unary ~ (bin_op ~ unary)* }
 expr    = { binary }
 
-stmt = { expr ~ ";" }
+stmt  = { expr ~ ";" }
+block = { "{" ~ stmt* ~ (expr)? ~ "}" }
 
 param_decl  = { ident ~ ":" ~ ident }
-func_params = { param_decl ~ ("," ~ param_decl)* ~ ","? }
+func_params = { (param_decl ~ ("," ~ param_decl)* ~ ","?)? }
 func_return = { "->" ~ ident }
-func_body   = { "{" ~ stmt* ~ "}" }
+func_body   = { block }
 func_defn   = { "fn" ~ ident ~ "(" ~ func_params ~ ")" ~ func_return? ~ func_body }
 
 decl = { func_defn }
+unit = { decl* ~ EOI }

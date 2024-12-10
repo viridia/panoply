@@ -1,129 +1,27 @@
-use std::sync::Arc;
-
-use bevy::utils::HashMap;
-
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::{CompilationError, CompilationUnit},
     expr::{Expr, ExprKind},
-    types::{Type, TypeVarId},
+    types::Type,
     TypeError,
 };
 
-#[derive(Default)]
-pub(crate) struct TypeInference {
-    /// Equivalence constraints.
-    constraints: Vec<(Type, Type)>,
+use super::type_inference::TypeInference;
 
-    /// Type variable substitutions.
-    substitutions: HashMap<TypeVarId, Type>,
-}
-
-impl TypeInference {
-    fn replace_type_vars(&self, ty: &mut Type) {
-        *ty = self.substitute(ty);
-    }
-
-    fn substitute(&self, ty: &Type) -> Type {
-        match ty {
-            Type::Infer(id) => {
-                if let Some(substituted_type) = self.substitutions.get(id) {
-                    self.substitute(substituted_type)
-                } else {
-                    ty.clone()
-                }
+pub(crate) fn build_unit<'a>(
+    unit: &'a mut CompilationUnit,
+    ast: &'a ASTNode<'a>,
+    inference: &mut TypeInference,
+) {
+    if let NodeKind::Unit(decls) = &ast.kind {
+        for decl in *decls {
+            match &decl.kind {
+                NodeKind::Decl(d) => todo!(),
+                _ => panic!("Invalid AST node for declaration: {:?}", decl.kind),
             }
-
-            Type::Error(_) => {
-                // Do nothing
-                ty.clone()
-            }
-
-            Type::Tuple(types) => {
-                // TODO: Return the original type if no substitutions are made.
-                let mut new_types = Vec::with_capacity(types.len());
-                for t in types.iter() {
-                    new_types.push(self.substitute(t));
-                }
-                Type::Tuple(Arc::from(new_types))
-            }
-
-            // TODO: Return the original type if no substitutions are made.
-            Type::Array(ty) => Type::Array(Arc::new(self.substitute(ty))),
-
-            _ => ty.clone(),
         }
-    }
-
-    fn occurs_check(&self, var_id: TypeVarId, ty: &Type) -> bool {
-        match ty {
-            Type::Infer(id) => {
-                if *id == var_id {
-                    return true;
-                }
-                // Check if this type variable has a substitution
-                if let Some(substituted_type) = self.substitutions.get(id) {
-                    return self.occurs_check(var_id, substituted_type);
-                }
-                false
-            }
-            _ => false,
-        }
-    }
-
-    fn unify(&mut self, t1: &Type, t2: &Type) -> Result<(), TypeError> {
-        let t1 = self.substitute(t1);
-        let t2 = self.substitute(t2);
-
-        if t1 == t2 {
-            return Ok(());
-        }
-
-        match (&t1, &t2) {
-            (Type::Error(err), _) | (_, Type::Error(err)) => Err(err.clone()),
-
-            (Type::Infer(id), ty) | (ty, Type::Infer(id)) => {
-                if self.occurs_check(*id, ty) {
-                    return Err(TypeError::RecursiveType(Arc::new(ty.clone())));
-                } else {
-                    self.substitutions.insert(*id, ty.clone());
-                }
-                Ok(())
-            }
-
-            (Type::I32, Type::IUnsized) | (Type::IUnsized, Type::I32) => Ok(()),
-            (Type::I64, Type::IUnsized) | (Type::IUnsized, Type::I64) => Ok(()),
-
-            (Type::Tuple(types1), Type::Tuple(types2)) => {
-                if types1.len() != types2.len() {
-                    return Err(TypeError::MismatchedTypes(
-                        Arc::new(t1.clone()),
-                        Arc::new(t2.clone()),
-                    ));
-                }
-                for (t1, t2) in types1.iter().zip(types2.iter()) {
-                    self.unify(t1, t2)?;
-                }
-                Ok(())
-            }
-
-            (Type::Array(t1), Type::Array(t2)) => self.unify(t1, t2),
-
-            // (Type::Int, Type::Float) | (Type::Float, Type::Int) => {
-            //     Ok(()) // Allow implicit conversion between int and float
-            // }
-            _ => Err(TypeError::MismatchedTypes(
-                Arc::new(t1.clone()),
-                Arc::new(t2.clone()),
-            )),
-        }
-    }
-
-    pub(crate) fn solve_constraints(&mut self) -> Result<(), TypeError> {
-        while let Some((t1, t2)) = self.constraints.pop() {
-            self.unify(&t1, &t2)?;
-        }
-        Ok(())
+    } else {
+        panic!("Invalid AST node for compilation unit: {:?}", ast.kind);
     }
 }
 
@@ -151,6 +49,7 @@ pub(crate) fn build_exprs<'a>(
             };
             Expr::new(id, ast.location, ExprKind::ConstInteger(value)).with_type(typ)
         }
+
         NodeKind::ConstFloat(value, suffix) => {
             let id = unit.next_expr_id();
             let value = value.parse::<f64>().unwrap();
@@ -161,14 +60,17 @@ pub(crate) fn build_exprs<'a>(
             };
             Expr::new(id, ast.location, ExprKind::ConstFloat(value)).with_type(typ)
         }
+
         NodeKind::String(_) => todo!(),
         NodeKind::Ident(_) => todo!(),
+
         NodeKind::BinaryExpr { op, lhs, rhs } => {
             let id = unit.next_expr_id();
             let lhs_expr = build_exprs(unit, lhs, inference);
             let rhs_expr = build_exprs(unit, rhs, inference);
             let ty = match op {
                 crate::oper::BinaryOp::MemberAccess => todo!(),
+
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
                 | crate::oper::BinaryOp::Mul
@@ -199,12 +101,11 @@ pub(crate) fn build_exprs<'a>(
                     Type::Boolean
                 }
 
-                crate::oper::BinaryOp::Shl => todo!(),
-                crate::oper::BinaryOp::Shr => todo!(),
+                crate::oper::BinaryOp::Shl | crate::oper::BinaryOp::Shr => todo!(),
 
-                crate::oper::BinaryOp::Eq
-                | crate::oper::BinaryOp::Ne
-                | crate::oper::BinaryOp::Lt
+                crate::oper::BinaryOp::Eq | crate::oper::BinaryOp::Ne => todo!(),
+
+                crate::oper::BinaryOp::Lt
                 | crate::oper::BinaryOp::Le
                 | crate::oper::BinaryOp::Gt
                 | crate::oper::BinaryOp::Ge => {
@@ -215,6 +116,7 @@ pub(crate) fn build_exprs<'a>(
                     Type::Boolean
                 }
             };
+
             Expr::new(
                 id,
                 ast.location,
@@ -225,6 +127,10 @@ pub(crate) fn build_exprs<'a>(
                 },
             )
             .with_type(ty)
+        }
+
+        _ => {
+            panic!("Invalid AST node for expression: {:?}", ast.kind);
         }
     }
 }
@@ -251,6 +157,7 @@ pub(crate) fn assign_types(
             assign_types(rhs, inference)?;
             match op {
                 crate::oper::BinaryOp::MemberAccess => todo!(),
+
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
                 | crate::oper::BinaryOp::Mul
@@ -276,8 +183,9 @@ pub(crate) fn assign_types(
                         }
                     }
                 }
-                crate::oper::BinaryOp::LogAnd => todo!(),
-                crate::oper::BinaryOp::LogOr => todo!(),
+
+                crate::oper::BinaryOp::LogAnd | crate::oper::BinaryOp::LogOr => todo!(),
+
                 crate::oper::BinaryOp::BitAnd
                 | crate::oper::BinaryOp::BitOr
                 | crate::oper::BinaryOp::BitXor => {
@@ -301,14 +209,14 @@ pub(crate) fn assign_types(
                         }
                     }
                 }
-                crate::oper::BinaryOp::Shl => todo!(),
-                crate::oper::BinaryOp::Shr => todo!(),
-                crate::oper::BinaryOp::Eq => todo!(),
-                crate::oper::BinaryOp::Ne => todo!(),
-                crate::oper::BinaryOp::Lt => todo!(),
-                crate::oper::BinaryOp::Le => todo!(),
-                crate::oper::BinaryOp::Gt => todo!(),
-                crate::oper::BinaryOp::Ge => todo!(),
+                crate::oper::BinaryOp::Shl | crate::oper::BinaryOp::Shr => todo!(),
+
+                crate::oper::BinaryOp::Eq | crate::oper::BinaryOp::Ne => todo!(),
+
+                crate::oper::BinaryOp::Lt
+                | crate::oper::BinaryOp::Le
+                | crate::oper::BinaryOp::Gt
+                | crate::oper::BinaryOp::Ge => todo!(),
             }
         }
     }

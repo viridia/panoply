@@ -3,8 +3,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq, Clone)]
 pub enum TypeError {
-    #[error("Mismatched types: {0} {1}")]
-    MismatchedTypes(Arc<Type>, Arc<Type>),
+    #[error("Mismatched types")]
+    MismatchedTypes,
     #[error("Recursive type: {0}")]
     RecursiveType(Arc<Type>),
 }
