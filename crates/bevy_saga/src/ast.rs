@@ -12,8 +12,11 @@ pub(crate) struct ASTNode<'a> {
 }
 
 impl<'a> ASTNode<'a> {
-    pub fn new(location: TokenLocation, kind: NodeKind<'a>) -> Self {
-        Self { location, kind }
+    pub fn new(location: impl Into<TokenLocation>, kind: NodeKind<'a>) -> Self {
+        Self {
+            location: location.into(),
+            kind,
+        }
     }
 }
 
@@ -37,7 +40,7 @@ pub(crate) enum NodeKind<'a> {
     Decl(&'a DeclKind<'a>),
     ConstInteger(&'a str, IntegerSuffix),
     ConstFloat(&'a str, FloatSuffix),
-    String(Symbol),
+    String(&'a str),
     Ident(Symbol),
     UnaryExpr {
         op: UnaryOp,
@@ -48,6 +51,8 @@ pub(crate) enum NodeKind<'a> {
         lhs: &'a ASTNode<'a>,
         rhs: &'a ASTNode<'a>,
     },
+    Empty,
+    Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
 }
 
 // Content of an AST declaration.
@@ -82,7 +87,8 @@ pub(crate) enum DeclKind<'a> {
 /// AST for a function parameter
 #[derive(Debug)]
 pub(crate) struct FunctionParam<'a> {
-    name: Symbol,
-    typ: &'a ASTNode<'a>,
-    value: &'a ASTNode<'a>,
+    pub(crate) location: TokenLocation,
+    pub(crate) name: Symbol,
+    pub(crate) typ: &'a ASTNode<'a>,
+    // pub(crate) value: &'a ASTNode<'a>,
 }

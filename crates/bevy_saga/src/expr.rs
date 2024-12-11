@@ -1,4 +1,9 @@
-use std::fmt::{write, Display};
+use std::{
+    cell::RefCell,
+    fmt::{write, Display},
+};
+
+use bevy::utils::HashMap;
 
 use crate::{location::TokenLocation, oper::BinaryOp, types::Type};
 
@@ -6,6 +11,31 @@ pub(crate) type NodeId = usize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Hash)]
 pub(crate) struct Symbol(pub(crate) usize);
+
+pub(crate) struct SymbolTable(RefCell<HashMap<String, Symbol>>);
+
+impl SymbolTable {
+    pub fn new() -> Self {
+        Self(RefCell::new(HashMap::new()))
+    }
+
+    pub fn intern(&self, name: &str) -> Symbol {
+        let mut symbols = self.0.borrow_mut();
+        match symbols.get(name) {
+            Some(symbol) => *symbol,
+            None => {
+                let id = symbols.len();
+                let symbol = Symbol(id);
+                symbols.insert(name.to_string(), symbol);
+                symbol
+            }
+        }
+    }
+
+    // pub fn get(&self, name: &str) -> Option<Symbol> {
+    //     self.0.get(name).copied()
+    // }
+}
 
 /// Content of an Expression node.
 #[derive(Debug)]

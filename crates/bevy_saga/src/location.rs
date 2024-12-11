@@ -1,5 +1,3 @@
-use pest::Span;
-
 /// Source location for an AST node.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TokenLocation {
@@ -18,18 +16,11 @@ impl TokenLocation {
             end: self.end.max(other.end),
         }
     }
-
-    pub fn as_span<'i>(&self, input: &'i str) -> Option<Span<'i>> {
-        Span::new(input, self.start, self.end)
-    }
 }
 
-impl From<Span<'_>> for TokenLocation {
-    fn from(span: Span) -> Self {
-        Self {
-            start: span.start(),
-            end: span.end(),
-        }
+impl From<(usize, usize)> for TokenLocation {
+    fn from((start, end): (usize, usize)) -> Self {
+        Self { start, end }
     }
 }
 
