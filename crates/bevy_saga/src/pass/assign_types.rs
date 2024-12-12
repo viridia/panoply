@@ -1,8 +1,9 @@
+use std::result;
+
 use crate::{
     compiler::CompilationError,
     expr::{Expr, ExprKind},
     types::Type,
-    TypeError,
 };
 
 use super::type_inference::TypeInference;
@@ -12,14 +13,15 @@ pub(crate) fn assign_types(
     inference: &TypeInference,
 ) -> Result<(), CompilationError> {
     match expr.kind {
+        ExprKind::Empty => {}
         ExprKind::ConstInteger(_) => {
             inference.replace_type_vars(&mut expr.typ);
         }
         ExprKind::ConstFloat(_) => {
             inference.replace_type_vars(&mut expr.typ);
         }
-        ExprKind::String(symbol) => todo!(),
-        ExprKind::Ident(symbol) => todo!(),
+        ExprKind::String(_symbol) => todo!(),
+        ExprKind::Ident(_symbol) => todo!(),
         ExprKind::BinaryExpr {
             op,
             ref mut lhs,
@@ -41,10 +43,9 @@ pub(crate) fn assign_types(
                             expr.typ = ty;
                         }
 
-                        Type::Error(TypeError::RecursiveType(_)) => {
-                            return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
-                        }
-
+                        // Type::Error(TypeError::RecursiveType(_)) => {
+                        //     return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
+                        // }
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,
@@ -67,10 +68,9 @@ pub(crate) fn assign_types(
                             expr.typ = ty;
                         }
 
-                        Type::Error(TypeError::RecursiveType(_)) => {
-                            return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
-                        }
-
+                        // Type::Error(TypeError::RecursiveType(_)) => {
+                        //     return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
+                        // }
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,
@@ -89,6 +89,15 @@ pub(crate) fn assign_types(
                 | crate::oper::BinaryOp::Le
                 | crate::oper::BinaryOp::Gt
                 | crate::oper::BinaryOp::Ge => todo!(),
+            }
+        }
+
+        ExprKind::Block(ref mut stmts, ref mut result) => {
+            for stmt in stmts.iter_mut() {
+                assign_types(stmt, inference)?;
+            }
+            if let Some(ref mut result) = result {
+                assign_types(result.as_mut(), inference)?;
             }
         }
     }

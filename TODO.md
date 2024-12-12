@@ -440,3 +440,12 @@ fn combat_interact() {
   - vec2 / vec4 / vec4
   - ivec2 / ivec3 / ivec4
   - uvec2 / uvec3 / uvec4
+
+# Syntax:
+
+- unary
+- memberof
+- tuple
+- string
+- hex int
+- unicode idents

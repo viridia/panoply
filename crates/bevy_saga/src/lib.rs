@@ -1,13 +1,16 @@
+mod asset;
 mod ast;
 mod compiler;
+mod decl;
 mod expr;
 mod location;
 mod oper;
 mod parser;
 mod pass;
 mod types;
-// mod vm;
 mod wasm;
 
-pub use compiler::CompilationUnit;
-pub use types::{Type, TypeError};
+pub use compiler::{CompilationError, CompilationUnit};
+pub use types::Type;
+
+pub use asset::*;

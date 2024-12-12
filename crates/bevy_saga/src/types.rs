@@ -1,13 +1,4 @@
 use std::{fmt::Display, sync::Arc};
-use thiserror::Error;
-
-#[derive(Debug, Error, PartialEq, Clone)]
-pub enum TypeError {
-    #[error("Mismatched types")]
-    MismatchedTypes,
-    #[error("Recursive type: {0}")]
-    RecursiveType(Arc<Type>),
-}
 
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -24,11 +15,11 @@ pub enum Type {
     String,
     Tuple(Arc<[Type]>),
     Array(Arc<Type>),
-    Error(TypeError),
-    // Function {
-    //     params: SmallVec<[Param<'a>; 2]>,
-    //     ret: &'a Type<'a>,
-    // },
+    Function {
+        params: Vec<Arc<Type>>,
+        ret: Arc<Type>,
+    },
+    // TODO: Struct, Record, Option, Enum
 }
 
 impl Display for Type {
@@ -54,7 +45,19 @@ impl Display for Type {
                 write!(f, ")")
             }
             Type::Array(ty) => write!(f, "[{}]", ty),
-            Type::Error(err) => write!(f, "Error({})", err),
+            Type::Function { params, ret } => {
+                write!(f, "(")?;
+                for (i, ty) in params.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    ty.fmt(f)?;
+                }
+                if !matches!(ret.as_ref(), Type::None) {
+                    write!(f, ") -> {}", ret)?
+                }
+                Ok(())
+            } // Type::Error(err) => write!(f, "Error({})", err),
         }
     }
 }

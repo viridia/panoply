@@ -2,18 +2,34 @@ use std::sync::Arc;
 
 use bevy::utils::HashMap;
 
-use crate::{types::TypeVarId, Type, TypeError};
+use crate::{location::TokenLocation, types::TypeVarId, CompilationError, Type};
+
+#[derive(Debug)]
+struct Constraint {
+    left: Type,
+    right: Type,
+    location: TokenLocation,
+    // reason: ConstraintReason,
+}
 
 #[derive(Default)]
 pub(crate) struct TypeInference {
     /// Equivalence constraints.
-    pub(crate) constraints: Vec<(Type, Type)>,
+    pub(crate) constraints: Vec<Constraint>,
 
     /// Type variable substitutions.
     pub(crate) substitutions: HashMap<TypeVarId, Type>,
 }
 
 impl TypeInference {
+    pub(crate) fn add_constraint(&mut self, left: Type, right: Type, location: TokenLocation) {
+        self.constraints.push(Constraint {
+            left,
+            right,
+            location,
+        });
+    }
+
     pub(crate) fn replace_type_vars(&self, ty: &mut Type) {
         *ty = self.substitute(ty);
     }
@@ -28,11 +44,10 @@ impl TypeInference {
                 }
             }
 
-            Type::Error(_) => {
-                // Do nothing
-                ty.clone()
-            }
-
+            // Type::Error(_) => {
+            //     // Do nothing
+            //     ty.clone()
+            // }
             Type::Tuple(types) => {
                 // TODO: Return the original type if no substitutions are made.
                 let mut new_types = Vec::with_capacity(types.len());
@@ -65,7 +80,12 @@ impl TypeInference {
         }
     }
 
-    fn unify(&mut self, t1: &Type, t2: &Type) -> Result<(), TypeError> {
+    fn unify(
+        &mut self,
+        t1: &Type,
+        t2: &Type,
+        location: TokenLocation,
+    ) -> Result<(), CompilationError> {
         let t1 = self.substitute(t1);
         let t2 = self.substitute(t2);
 
@@ -74,11 +94,10 @@ impl TypeInference {
         }
 
         match (&t1, &t2) {
-            (Type::Error(err), _) | (_, Type::Error(err)) => Err(err.clone()),
-
+            // (Type::Error(err), _) | (_, Type::Error(err)) => Err(err.clone()),
             (Type::Infer(id), ty) | (ty, Type::Infer(id)) => {
                 if self.occurs_check(*id, ty) {
-                    return Err(TypeError::RecursiveType(Arc::new(ty.clone())));
+                    return Err(CompilationError::RecursiveType(location, ty.clone()));
                 } else {
                     self.substitutions.insert(*id, ty.clone());
                 }
@@ -90,26 +109,39 @@ impl TypeInference {
 
             (Type::Tuple(types1), Type::Tuple(types2)) => {
                 if types1.len() != types2.len() {
-                    return Err(TypeError::MismatchedTypes);
+                    return Err(CompilationError::MismatchedTypes(
+                        location,
+                        t1.clone(),
+                        t2.clone(),
+                    ));
                 }
                 for (t1, t2) in types1.iter().zip(types2.iter()) {
-                    self.unify(t1, t2)?;
+                    self.unify(t1, t2, location)?;
                 }
                 Ok(())
             }
 
-            (Type::Array(t1), Type::Array(t2)) => self.unify(t1, t2),
+            (Type::Array(t1), Type::Array(t2)) => self.unify(t1, t2, location),
 
             // (Type::Int, Type::Float) | (Type::Float, Type::Int) => {
             //     Ok(()) // Allow implicit conversion between int and float
             // }
-            _ => Err(TypeError::MismatchedTypes),
+            _ => Err(CompilationError::MismatchedTypes(
+                location,
+                t1.clone(),
+                t2.clone(),
+            )),
         }
     }
 
-    pub(crate) fn solve_constraints(&mut self) -> Result<(), TypeError> {
-        while let Some((t1, t2)) = self.constraints.pop() {
-            self.unify(&t1, &t2)?;
+    pub(crate) fn solve_constraints(&mut self) -> Result<(), CompilationError> {
+        while let Some(Constraint {
+            left: t1,
+            right: t2,
+            location,
+        }) = self.constraints.pop()
+        {
+            self.unify(&t1, &t2, location)?;
         }
         Ok(())
     }

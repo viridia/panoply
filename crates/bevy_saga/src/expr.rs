@@ -1,60 +1,26 @@
-use std::{
-    cell::RefCell,
-    fmt::{write, Display},
-};
-
-use bevy::utils::HashMap;
-
-use crate::{location::TokenLocation, oper::BinaryOp, types::Type};
-
-pub(crate) type NodeId = usize;
-
-#[derive(Debug, Clone, Copy, PartialEq, Hash)]
-pub(crate) struct Symbol(pub(crate) usize);
-
-pub(crate) struct SymbolTable(RefCell<HashMap<String, Symbol>>);
-
-impl SymbolTable {
-    pub fn new() -> Self {
-        Self(RefCell::new(HashMap::new()))
-    }
-
-    pub fn intern(&self, name: &str) -> Symbol {
-        let mut symbols = self.0.borrow_mut();
-        match symbols.get(name) {
-            Some(symbol) => *symbol,
-            None => {
-                let id = symbols.len();
-                let symbol = Symbol(id);
-                symbols.insert(name.to_string(), symbol);
-                symbol
-            }
-        }
-    }
-
-    // pub fn get(&self, name: &str) -> Option<Symbol> {
-    //     self.0.get(name).copied()
-    // }
-}
+use crate::{decl, location::TokenLocation, oper::BinaryOp, types::Type};
+use std::fmt::Display;
 
 /// Content of an Expression node.
 #[derive(Debug)]
 pub(crate) enum ExprKind {
+    /// Expression that represents a bare semicolon.
+    Empty,
     ConstInteger(i64),
     ConstFloat(f64),
-    String(Symbol),
-    Ident(Symbol),
+    String(decl::Symbol),
+    Ident(decl::Symbol),
     BinaryExpr {
         op: BinaryOp,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
+    Block(Vec<Expr>, Option<Box<Expr>>),
 }
 
 /// Expression node.
 #[derive(Debug)]
 pub(crate) struct Expr {
-    pub(crate) id: NodeId,
     pub(crate) location: TokenLocation,
     pub(crate) kind: ExprKind,
     pub(crate) typ: Type,
@@ -63,6 +29,7 @@ pub(crate) struct Expr {
 impl Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
+            ExprKind::Empty => write!(f, ";"),
             ExprKind::ConstInteger(value) => value.fmt(f),
             ExprKind::ConstFloat(value) => {
                 let mut str_val = value.to_string();
@@ -103,14 +70,24 @@ impl Display for Expr {
                 }?;
                 rhs.fmt(f)
             }
+            ExprKind::Block(ref stmts, ref result) => {
+                write!(f, "{{")?;
+                for stmt in stmts {
+                    stmt.fmt(f)?;
+                }
+                if let Some(result) = result {
+                    write!(f, "; ")?;
+                    result.fmt(f)?;
+                }
+                write!(f, "}}")
+            }
         }
     }
 }
 
 impl Expr {
-    pub fn new(id: NodeId, location: TokenLocation, value: ExprKind) -> Self {
+    pub fn new(location: TokenLocation, value: ExprKind) -> Self {
         Self {
-            id: 0,
             location,
             kind: value,
             typ: Type::None,

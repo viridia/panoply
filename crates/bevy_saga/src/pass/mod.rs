@@ -1,8 +1,10 @@
+#![allow(unused_imports)]
+
 mod assign_types;
-// mod build_ast;
 mod build_exprs;
+mod resolve_types;
 mod type_inference;
 
-// pub(crate) use build_ast::build_ast;
-pub(crate) use build_exprs::{assign_types, build_exprs};
+pub(crate) use assign_types::assign_types;
+pub(crate) use build_exprs::{build_exprs, build_module_decls, build_module_exprs};
 pub(crate) use type_inference::TypeInference;

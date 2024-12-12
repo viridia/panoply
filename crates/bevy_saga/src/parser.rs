@@ -1,17 +1,17 @@
-use crate::ast::{ASTNode, DeclKind, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind};
-use crate::expr::{Symbol, SymbolTable};
+use crate::ast::{
+    ASTNode, DeclKind, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind, TypeKind,
+};
+use crate::decl;
 use crate::oper::BinaryOp;
 use bumpalo::Bump;
 
 peg::parser! {
-    pub grammar saga_parser<'a, 's>(arena: &'a Bump, symbols: &'s SymbolTable) for str {
+    pub grammar saga_parser<'a, 's>(arena: &'a Bump, symbols: &'s decl::SymbolTable) for str {
         rule _() = quiet!{[' ' | '\n' | '\t']*}
 
         rule dec_literal() = n:$(['0'..='9']['0'..='9' | '_']*) { }
-        rule name() -> Symbol =
-            start:position!()
+        rule name() -> decl::Symbol =
             n:$(['a'..='z' | 'A'..='Z' | '_']['a'..='z' | 'A'..='Z' | '0'..='9' | '_']*)
-            end:position!()
             {
                 symbols.intern(n)
             }
@@ -219,6 +219,42 @@ peg::parser! {
             arena.alloc(ASTNode::new((0, 0), NodeKind::Empty))
         }
 
+        rule builtin_type() -> &'a ASTNode<'a> =
+            start:position!()
+            t:(   "bool" { TypeKind::Boolean }
+                / "i32" { TypeKind::I32 }
+                / "i64" { TypeKind::I64 }
+                / "f32" { TypeKind::F32 }
+                / "f64" { TypeKind::F64 }
+            )
+            end:position!()
+            {
+                arena.alloc(ASTNode::new((start, end), NodeKind::Type(t)))
+            }
+
+        rule type_name() -> &'a ASTNode<'a> =
+            start:position!()
+            n:(ident() ** (_ "::" _))
+            end:position!()
+            {
+                if n.len() == 1 {
+                    n[0]
+                } else {
+                    let names = arena.alloc_slice_copy(n.as_slice());
+                    arena.alloc(ASTNode::new((start, end), NodeKind::QName(names)))
+                }
+            }
+
+        rule array_type() -> &'a ASTNode<'a> =
+            start:position!()
+            "[" _ t:type_expr() _ "]"
+            end:position!()
+        {
+            arena.alloc(ASTNode::new((start, end), NodeKind::Type(TypeKind::Array(t))))
+        }
+
+        pub rule type_expr() -> &'a ASTNode<'a> = builtin_type() / type_name() / array_type()
+
         rule stmt() -> &'a ASTNode<'a> =
             start:position!()
             s:(
@@ -243,7 +279,7 @@ peg::parser! {
 
         rule param_decl() -> &'a FunctionParam<'a> =
             start:position!()
-            id:name() _ ":" _ ty:ident()
+            id:name() _ ":" _ ty:type_expr()
             end:position!()
         {
             let location = (start, end);
@@ -270,7 +306,7 @@ peg::parser! {
             ")"
             { params.unwrap_or(arena.alloc_slice_copy(&[])) }
 
-        rule func_return() -> &'a ASTNode<'a> = "->" _ t:ident() { t }
+        rule func_return() -> &'a ASTNode<'a> = "->" _ t:type_expr() { t }
         rule func_body() -> &'a ASTNode<'a> = t:block() { t }
         rule func_defn() -> &'a ASTNode<'a> =
             start:position!()
@@ -287,9 +323,9 @@ peg::parser! {
         }
 
         pub rule decl() -> &'a ASTNode<'a> = f:func_defn() { f } / expected!("declaration")
-        pub rule unit() -> &'a ASTNode<'a> = _ d:(d:decl() _ { d })* {
+        pub rule compilation_unit() -> &'a ASTNode<'a> = _ d:(d:decl() _ { d })* {
             let decls = arena.alloc_slice_copy(d.as_slice());
-            arena.alloc(ASTNode::new((0, 0), NodeKind::Unit(decls)))
+            arena.alloc(ASTNode::new((0, 0), NodeKind::Program(decls)))
         }
     }
 }
@@ -302,7 +338,7 @@ mod tests {
     #[test]
     pub fn test_literal_int() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -317,7 +353,7 @@ mod tests {
     #[test]
     pub fn test_literal_int_i32() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1i32", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -331,7 +367,7 @@ mod tests {
     #[test]
     pub fn test_literal_int_i64() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1i64", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -345,7 +381,7 @@ mod tests {
     #[test]
     pub fn test_literal_float() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -395,7 +431,7 @@ mod tests {
     #[test]
     pub fn test_binop() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0 + 5", &arena, &symbols);
         match ast {
             Ok(ASTNode {
@@ -419,7 +455,7 @@ mod tests {
     #[test]
     pub fn test_binop_err() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0 + +", &arena, &symbols).unwrap_err();
         println!("{:?}", ast);
         assert_eq!(ast.location.offset, 6);
@@ -430,7 +466,7 @@ mod tests {
     #[test]
     pub fn test_params() {
         let arena = Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = decl::SymbolTable::new();
         let ast = saga_parser::param_list("()", &arena, &symbols).unwrap();
         assert_eq!(ast.len(), 0);
 

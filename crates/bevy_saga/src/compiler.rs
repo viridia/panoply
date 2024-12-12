@@ -1,16 +1,15 @@
-use thiserror::Error;
-
-use std::cell::RefCell;
-
-use bevy::utils::HashMap;
+use std::marker::PhantomData;
 
 use crate::{
-    expr::{Expr, Symbol},
+    decl::{Scope, SymbolTable},
     location::TokenLocation,
     oper::BinaryOp,
+    parser::saga_parser,
+    pass,
     types::TypeVarId,
     Type,
 };
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum CompilationError {
@@ -22,43 +21,49 @@ pub enum CompilationError {
     RecursiveType(TokenLocation, Type),
     #[error("Invalid type for binary operator {2} to {3}")]
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
+    #[error("Function redefinition: {1}")]
+    FunctionRedefinition(TokenLocation, String),
 }
 
 /// Contains all of the information needed to compile a single script file.
-pub struct CompilationUnit {
-    pub(crate) next_expr_id: usize,
+pub struct CompilationUnit<'cu> {
     pub(crate) next_typevar_id: usize,
-    pub(crate) symbols: RefCell<Vec<String>>,
-    pub(crate) decls: HashMap<Symbol, Decl>,
+    pub(crate) symbols: SymbolTable,
+    pub(crate) root_scope: Scope<'cu>,
 }
 
-impl Default for CompilationUnit {
+impl<'cu> Default for CompilationUnit<'cu> {
     fn default() -> Self {
         Self {
-            next_expr_id: 0,
             next_typevar_id: 0,
-            symbols: RefCell::new(Vec::new()),
-            decls: HashMap::default(),
+            symbols: SymbolTable::new(),
+            root_scope: Scope::new(None),
         }
     }
 }
 
-impl CompilationUnit {
+impl<'cu> CompilationUnit<'cu> {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub(crate) fn alloc_symbol(&self, value: &str) -> Symbol {
-        let mut symbols = self.symbols.borrow_mut();
-        let id = Symbol(symbols.len());
-        symbols.push(value.to_string());
-        id
+    /// Compile a script file.
+    pub async fn compile(&mut self, src: &str) -> Result<(), CompilationError> {
+        let arena = bumpalo::Bump::new();
+        let ast = saga_parser::compilation_unit(src, &arena, &self.symbols).map_err(|e| {
+            eprintln!("Error parsing script: {}", e);
+            // CompilationError::ExpectExpression(TokenLocation::default())
+            todo!();
+        })?;
+        pass::build_module_decls(self, ast)?;
+        self.resolve_imports().await?;
+        pass::build_module_exprs(self, ast)?;
+        Ok(())
     }
 
-    pub(crate) fn next_expr_id(&mut self) -> usize {
-        let id = self.next_expr_id;
-        self.next_expr_id += 1;
-        id
+    async fn resolve_imports(&mut self) -> Result<(), CompilationError> {
+        // TODO: Implement
+        Ok(())
     }
 
     pub(crate) fn next_typevar_id(&mut self) -> TypeVarId {
@@ -66,20 +71,10 @@ impl CompilationUnit {
         self.next_typevar_id += 1;
         TypeVarId(id)
     }
-}
 
-pub(crate) struct Decl {
-    // pub(crate) id: NodeId,
-    pub(crate) name: Symbol,
-    pub(crate) loc: TokenLocation,
-    pub(crate) typ: TypeVarId,
-}
-
-pub enum DeclKind {
-    Const(Type, Expr),
-    Function(Type),
-    Struct(Type),
-    Enum(Type),
+    pub(crate) fn fresh_typevar(&mut self) -> Type {
+        Type::Infer(self.next_typevar_id())
+    }
 }
 
 #[cfg(test)]
@@ -87,12 +82,14 @@ mod tests {
     use crate::{
         ast::{self, FloatSuffix, IntegerSuffix},
         compiler::CompilationUnit,
-        expr::SymbolTable,
+        decl::SymbolTable,
         oper,
         parser::saga_parser,
         pass::{self, assign_types},
         Type,
     };
+    use futures_lite::future;
+    use walrus::ModuleConfig;
 
     #[test]
     fn parse_integer() {
@@ -192,25 +189,25 @@ mod tests {
         let expr = pass::build_exprs(&mut unit, node, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0 * 0");
         let err = inference.solve_constraints().unwrap_err();
-        assert_eq!(err.to_string(), "Mismatched types");
+        assert_eq!(err.to_string(), "Mismatched types: f32 i32");
     }
 
     #[test]
     fn parse_module() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let node = saga_parser::unit(
+        let node = saga_parser::compilation_unit(
             r#"
-            fn test() {
+            fn test() -> i32 {
                 1 + 2
             }"#,
             &arena,
             &symbols,
         )
         .unwrap();
-        assert!(matches!(node.kind, ast::NodeKind::Unit(_)));
+        assert!(matches!(node.kind, ast::NodeKind::Program(_)));
         match node.kind {
-            ast::NodeKind::Unit(decls) => {
+            ast::NodeKind::Program(decls) => {
                 assert_eq!(decls.len(), 1);
                 let decl = decls[0];
                 assert!(matches!(decl.kind, ast::NodeKind::Decl(_)));
@@ -226,5 +223,30 @@ mod tests {
         // assert_eq!(span.start(), 0);
         // assert_eq!(span.end(), 2);
         // assert_eq!(span.lines().next(), Some("20"));
+        let config = ModuleConfig::default();
+        let mut module = walrus::Module::with_config(config);
+
+        let mut test_fn = walrus::FunctionBuilder::new(
+            &mut module.types,
+            &[walrus::ValType::I32],
+            &[walrus::ValType::I32],
+        );
+
+        test_fn
+            .func_body()
+            .i32_const(1)
+            .i32_const(2)
+            .binop(walrus::ir::BinaryOp::I32Add);
+        let test_fn = test_fn.finish(Vec::new(), &mut module.funcs);
+
+        // Export the `test` function.
+        module.exports.add("test", test_fn);
+        let wasm = module.emit_wasm();
+    }
+
+    #[test]
+    fn test_compiler() {
+        let mut unit = CompilationUnit::new();
+        future::block_on(unit.compile("fn test() -> i32 { 1 + 2 }")).unwrap();
     }
 }

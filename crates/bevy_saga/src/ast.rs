@@ -1,5 +1,5 @@
 use crate::{
-    expr::Symbol,
+    decl::Symbol,
     location::TokenLocation,
     oper::{BinaryOp, UnaryOp},
 };
@@ -36,12 +36,13 @@ pub(crate) enum FloatSuffix {
 // Content of an AST node.
 #[derive(Debug)]
 pub(crate) enum NodeKind<'a> {
-    Unit(&'a [&'a ASTNode<'a>]),
+    Program(&'a [&'a ASTNode<'a>]),
     Decl(&'a DeclKind<'a>),
     ConstInteger(&'a str, IntegerSuffix),
     ConstFloat(&'a str, FloatSuffix),
-    String(&'a str),
+    String(Symbol),
     Ident(Symbol),
+    QName(&'a [&'a ASTNode<'a>]),
     UnaryExpr {
         op: UnaryOp,
         arg: &'a ASTNode<'a>,
@@ -53,6 +54,7 @@ pub(crate) enum NodeKind<'a> {
     },
     Empty,
     Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
+    Type(TypeKind<'a>),
 }
 
 // Content of an AST declaration.
@@ -91,4 +93,22 @@ pub(crate) struct FunctionParam<'a> {
     pub(crate) name: Symbol,
     pub(crate) typ: &'a ASTNode<'a>,
     // pub(crate) value: &'a ASTNode<'a>,
+}
+
+/// Represents an AST for a type expression
+#[derive(Debug)]
+pub enum TypeKind<'a> {
+    Boolean,
+    I32,
+    I64,
+    F32,
+    F64,
+    String,
+    Tuple(&'a [&'a ASTNode<'a>]),
+    Array(&'a ASTNode<'a>),
+    Function {
+        params: &'a [&'a ASTNode<'a>],
+        ret: &'a ASTNode<'a>,
+    },
+    // TODO: Struct, Record, Option, Enum
 }
