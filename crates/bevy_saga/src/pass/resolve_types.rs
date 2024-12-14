@@ -4,6 +4,7 @@ use crate::{
     Type,
 };
 
+/// Convert AST types to type expressions.
 pub(crate) fn resolve_types<'s, 'a>(scope: &'s Scope<'s>, ast: &'a ASTNode<'a>) -> Type {
     match ast.kind {
         NodeKind::Type(ref typ) => match typ {

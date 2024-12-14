@@ -441,11 +441,17 @@ fn combat_interact() {
   - ivec2 / ivec3 / ivec4
   - uvec2 / uvec3 / uvec4
 
-# Syntax:
+# Scripting TODOs
 
-- unary
-- memberof
-- tuple
-- string
-- hex int
-- unicode idents
+- Built-in coercions
+- Function calls
+- Assert
+- String data model
+- String escapes
+- Basic Blocks
+- If
+- Loop / Break / Continue
+- While
+- For
+- Switch
+- Logical Operator Short-Circuiting

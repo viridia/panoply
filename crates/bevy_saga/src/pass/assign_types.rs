@@ -1,4 +1,4 @@
-use std::result;
+use core::result;
 
 use crate::{
     compiler::CompilationError,
@@ -41,9 +41,6 @@ pub(crate) fn assign_types(
                             expr.typ = ty;
                         }
 
-                        // Type::Error(TypeError::RecursiveType(_)) => {
-                        //     return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
-                        // }
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,
@@ -66,9 +63,6 @@ pub(crate) fn assign_types(
                             expr.typ = ty;
                         }
 
-                        // Type::Error(TypeError::RecursiveType(_)) => {
-                        //     return Err(CompilationError::RecursiveType(expr.location, ty.clone()))
-                        // }
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,

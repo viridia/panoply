@@ -24,6 +24,23 @@ pub enum Type {
     // TODO: Struct, Record, Option, Enum
 }
 
+impl Type {
+    /// Returns true if the type is void.
+    pub fn is_void(&self) -> bool {
+        matches!(self, Type::Void)
+    }
+
+    /// Returns true if the type is a tuple.
+    pub fn is_integer(&self) -> bool {
+        matches!(self, Type::I32 | Type::I64)
+    }
+
+    /// Returns true if the type is a float.
+    pub fn is_float(&self) -> bool {
+        matches!(self, Type::F32 | Type::F64)
+    }
+}
+
 impl Display for Type {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {

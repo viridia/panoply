@@ -10,13 +10,12 @@ use bevy::{
         view::RenderLayers,
     },
 };
-use bevy_saga::{SagaPlugin, ScriptAsset};
+use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
 use bevy_user_prefs::{AutosavePrefsPlugin, Preferences, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
-// use scripting::ScriptsPlugin;
 use std::f32::consts::PI;
 use window_settings::{load_window_settings, WindowSettingsPlugin};
 
@@ -84,7 +83,6 @@ fn main() {
     ))
     .insert_resource(prefs)
     .init_resource::<view::viewport::ViewportInset>()
-    // .insert_resource(DebugPickingMode::Disabled)
     // .insert_resource(RaycastBackendSettings {
     //     require_markers: true,
     //     ..default()
@@ -99,6 +97,7 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
+    .init_resource::<TestScriptHandle>()
     .add_systems(Startup, (setup, run_script))
     .add_systems(
         Update,
@@ -112,6 +111,7 @@ fn main() {
         ),
     )
     .add_systems(Update, close_on_esc)
+    .add_systems(Update, receive_script_assets)
     // .add_systems(Update, watch_prefs_changes)
     .add_plugins((
         ReflectTypesPlugin,
@@ -235,11 +235,57 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
     }
 }
 
-fn run_script(server: Res<AssetServer>) {
-    let _script = server.load::<ScriptAsset>("scripts/hello.saga");
-    // let mut lua = Lua::new();
-    // let chunk = lua.load("print('Hello, world!')");
-    // let () = chunk.call(()).unwrap();
+#[derive(Debug, Resource, Default)]
+struct TestScriptHandle(Handle<ScriptAsset>);
+
+fn run_script(server: Res<AssetServer>, mut handle: ResMut<TestScriptHandle>) {
+    let script = server.load::<ScriptAsset>("scripts/hello.saga");
+    handle.0 = script;
+}
+
+/** React when precinct assets change and update the scenery. */
+pub fn receive_script_assets(
+    // mut commands: Commands,
+    mut ev_asset: EventReader<AssetEvent<ScriptAsset>>,
+    assets: ResMut<Assets<ScriptAsset>>,
+    // asset_server: Res<AssetServer>,
+    r_vm: Res<SagaVmResource>,
+) {
+    for ev in ev_asset.read() {
+        match ev {
+            AssetEvent::Added { id } => {
+                info!("Script asset added: {:?}", id);
+                let script = assets.get(*id).unwrap();
+                let mut vm = r_vm.0.lock().unwrap();
+                let result = script.call::<(), i32>(&mut vm, "hello", ()).unwrap();
+                info!("Script result: {:?}", result);
+            }
+
+            AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
+                info!("Script asset loaded: {:?}", id);
+
+                // if let Some((precinct_entity, mut precinct, precinct_children)) =
+                //     q_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
+                // {
+                //     // TODO: Sync cutaway rects
+                //     // TODO: Sync nav mesh, physics, light sources, particles, etc.
+                //     // TODO: Sync actors
+
+                //     let precinct_asset = assets.get(*id).unwrap();
+                //     let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
+                //         .floor_types
+                //         .iter()
+                //         .map(|s| asset_server.load(s))
+                //         .collect();
+
+                // }
+            }
+
+            AssetEvent::Removed { id: _ } => {}
+
+            AssetEvent::Unused { id: _ } => {}
+        }
+    }
 }
 
 /// Creates a colorful test pattern

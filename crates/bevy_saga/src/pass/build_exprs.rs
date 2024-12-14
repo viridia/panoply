@@ -1,8 +1,8 @@
-use std::result;
+use core::result;
 
 use crate::{
     ast::{ASTNode, NodeKind},
-    compiler::{CompilationError, CompilationUnit},
+    compiler::CompilationError,
     decl,
     expr::{Expr, ExprKind},
     types::Type,
@@ -13,7 +13,8 @@ use super::{
 };
 
 pub(crate) fn build_module_decls<'ast>(
-    unit: &mut CompilationUnit,
+    symbols: &decl::SymbolTable,
+    scope: &mut decl::Scope,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
     if let NodeKind::Program(decls) = &ast.kind {
@@ -24,8 +25,8 @@ pub(crate) fn build_module_decls<'ast>(
                         name, params, body, ..
                     } => {
                         // Multiple declarations of the same function are not allowed.
-                        if unit.root_scope.contains(*name) {
-                            let name_str = unit.symbols.resolve(*name);
+                        if scope.contains(*name) {
+                            let name_str = symbols.resolve(*name);
                             return Err(CompilationError::FunctionRedefinition(
                                 decl.location,
                                 name_str,
@@ -50,7 +51,7 @@ pub(crate) fn build_module_decls<'ast>(
                             },
                         };
 
-                        unit.root_scope.insert(f);
+                        scope.insert(f);
                     }
                     crate::ast::DeclKind::Let { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Const { name, typ, value } => todo!(),
@@ -68,7 +69,7 @@ pub(crate) fn build_module_decls<'ast>(
 }
 
 pub(crate) fn build_module_exprs<'ast>(
-    unit: &mut CompilationUnit,
+    scope: &mut decl::Scope,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
     if let NodeKind::Program(decls) = &ast.kind {
@@ -81,7 +82,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         ret: ret_ast,
                         ..
                     } => {
-                        let decl = unit.root_scope.get(*name).unwrap();
+                        let decl = scope.get(*name).unwrap();
                         let decl::DeclKind::Function { ref params, .. } = decl.kind else {
                             unreachable!()
                         };
@@ -89,7 +90,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         let mut body_expr = build_exprs(body_ast, &mut inference);
                         let ret_type = match ret_ast.kind {
                             NodeKind::Empty => Type::Void,
-                            _ => resolve_types(&unit.root_scope, ret_ast),
+                            _ => resolve_types(&scope, ret_ast),
                         };
                         inference.add_constraint(
                             ret_type.clone(),
@@ -99,7 +100,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         inference.solve_constraints()?;
                         assign_types(&mut body_expr, &inference)?;
 
-                        let decl = unit.root_scope.get_mut(*name).unwrap();
+                        let decl = scope.get_mut(*name).unwrap();
                         let decl::DeclKind::Function {
                             ref mut body,
                             ref mut ret,

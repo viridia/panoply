@@ -1649,6 +1649,7 @@ dependencies = [
  "smallvec",
  "thiserror 1.0.69",
  "walrus",
+ "wasmprinter 0.221.2",
  "wasmtime",
 ]
 
@@ -6900,6 +6901,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmprinter"
+version = "0.221.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a80742ff1b9e6d8c231ac7c7247782c6fc5bce503af760bca071811e5fc9ee56"
+dependencies = [
+ "anyhow",
+ "termcolor",
+ "wasmparser 0.221.2",
+]
+
+[[package]]
 name = "wasmtime"
 version = "27.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7054,7 +7066,7 @@ dependencies = [
  "target-lexicon",
  "wasm-encoder 0.219.1",
  "wasmparser 0.219.1",
- "wasmprinter",
+ "wasmprinter 0.219.1",
  "wasmtime-component-util",
 ]
 

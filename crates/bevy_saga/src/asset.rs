@@ -1,3 +1,4 @@
+use crate::CompilationUnit;
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
@@ -5,13 +6,15 @@ use bevy::{
 use core::str;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
+use wasmprinter::print_bytes;
 use wasmtime::Module;
 
-use crate::CompilationUnit;
+type StoreData = ();
 
 pub struct Vm {
     engine: wasmtime::Engine,
-    linker: wasmtime::Linker<wasmtime::Engine>,
+    store: wasmtime::Store<StoreData>,
+    linker: wasmtime::Linker<StoreData>,
 }
 
 #[derive(Resource)]
@@ -20,7 +23,38 @@ pub struct SagaVmResource(pub Arc<Mutex<Vm>>);
 impl SagaVmResource {}
 
 #[derive(TypePath, Asset)]
-pub struct ScriptAsset(Module);
+pub struct ScriptAsset {
+    module: Module,
+}
+
+impl ScriptAsset {
+    pub fn call<Params, Results>(
+        &self,
+        vm: &mut Vm,
+        func_name: &str,
+        args: Params,
+    ) -> Result<Results, wasmtime::Error>
+    where
+        Params: wasmtime::WasmParams,
+        Results: wasmtime::WasmResults,
+    {
+        let instance = vm.linker.instantiate(&mut vm.store, &self.module)?;
+        let func = instance
+            .get_typed_func::<Params, Results>(&mut vm.store, func_name)
+            .unwrap();
+        func.call(&mut vm.store, args)
+    }
+}
+
+// All wasm objects operate within the context of a "store". Each
+// `Store` has a type parameter to store host-specific data, which in
+// this case we're using `4` for.
+// let mut store = Store::new(&engine, 4);
+// let instance = linker.instantiate(&mut store, &module)?;
+// let hello = instance.get_typed_func::<(), ()>(&mut store, "hello")?;
+
+// // And finally we can call the wasm!
+// hello.call(&mut store, ())?;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -29,7 +63,7 @@ pub enum SagaLoaderError {
     Io(#[from] std::io::Error),
     #[error("Could not decode Lua source from UTF-8: {0}")]
     DecodeUtf8(#[from] core::str::Utf8Error),
-    #[error("{0}")]
+    #[error("{0:?}")]
     Wasm(#[from] wasmtime::Error),
     #[error("Compilation failed")]
     Compilation,
@@ -70,9 +104,11 @@ impl AssetLoader for SagaLoader {
             return Err(SagaLoaderError::Compilation);
         }
         let wasm = unit.module.emit_wasm();
+        println!("{}", wasmprinter::print_bytes(&wasm).unwrap());
         let vm = self.vm.lock().unwrap();
         let module = Module::new(&vm.engine, wasm)?;
-        Ok(ScriptAsset(module))
+        // let instance = vm.linker.instantiate(&mut vm.store, &module)?;
+        Ok(ScriptAsset { module })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -108,7 +144,7 @@ impl AssetLoader for WasmLoader {
         reader.read_to_end(&mut bytes).await?;
         let vm = self.vm.lock().unwrap();
         let module = Module::new(&vm.engine, bytes)?;
-        Ok(ScriptAsset(module))
+        Ok(ScriptAsset { module })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -120,9 +156,13 @@ pub struct SagaPlugin;
 
 impl Plugin for SagaPlugin {
     fn build(&self, app: &mut App) {
+        let engine = wasmtime::Engine::default();
+        let store = wasmtime::Store::<StoreData>::new(&engine, ());
+        let linker = wasmtime::Linker::new(&engine);
         let vm = Arc::new(Mutex::new(Vm {
-            engine: wasmtime::Engine::default(),
-            linker: wasmtime::Linker::new(&wasmtime::Engine::default()),
+            engine,
+            store,
+            linker,
         }));
         app.init_asset::<ScriptAsset>()
             .register_asset_loader(SagaLoader { vm: vm.clone() })

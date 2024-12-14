@@ -3,9 +3,7 @@ use crate::{
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
-    pass,
-    types::TypeVarId,
-    Type,
+    pass, Type,
 };
 use thiserror::Error;
 
@@ -83,9 +81,9 @@ impl<'cu> CompilationUnit<'cu> {
                 CompilationError::Expected(location, tokens)
             })?;
 
-        pass::build_module_decls(self, ast)?;
+        pass::build_module_decls(&self.symbols, &mut self.root_scope, ast)?;
         self.resolve_imports().await?;
-        pass::build_module_exprs(self, ast)?;
+        pass::build_module_exprs(&mut self.root_scope, ast)?;
         pass::gen_module(self)?;
         Ok(())
     }
