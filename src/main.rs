@@ -10,12 +10,13 @@ use bevy::{
         view::RenderLayers,
     },
 };
+use bevy_saga::{SagaPlugin, ScriptAsset};
 use bevy_user_prefs::{AutosavePrefsPlugin, Preferences, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
-use scripting::ScriptsPlugin;
+// use scripting::ScriptsPlugin;
 use std::f32::consts::PI;
 use window_settings::{load_window_settings, WindowSettingsPlugin};
 
@@ -98,7 +99,7 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
-    .add_systems(Startup, setup)
+    .add_systems(Startup, (setup, run_script))
     .add_systems(
         Update,
         (rotate_shapes, update_window_settings, nav_to_center),
@@ -122,7 +123,8 @@ fn main() {
         ActorsPlugin,
         PortalPlugin,
         ModelsPlugin,
-        ScriptsPlugin,
+        // ScriptsPlugin,
+        SagaPlugin,
         // WorldInspectorPlugin::new(),
     ));
 
@@ -231,6 +233,13 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
     for mut transform in &mut query {
         transform.rotate_y(time.delta_secs() / 2.);
     }
+}
+
+fn run_script(server: Res<AssetServer>) {
+    let _script = server.load::<ScriptAsset>("scripts/hello.saga");
+    // let mut lua = Lua::new();
+    // let chunk = lua.load("print('Hello, world!')");
+    // let () = chunk.call(()).unwrap();
 }
 
 /// Creates a colorful test pattern

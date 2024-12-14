@@ -42,12 +42,14 @@ impl SymbolTable {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct Decl {
     pub(crate) loc: TokenLocation,
     pub(crate) name: Symbol,
     pub(crate) kind: DeclKind,
 }
 
+#[derive(Debug)]
 pub enum DeclKind {
     Const(Type, Expr),
     Let(Type, Expr),

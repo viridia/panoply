@@ -5157,6 +5157,7 @@ dependencies = [
  "base64 0.22.1",
  "bevy 0.15.0",
  "bevy-inspector-egui",
+ "bevy_saga",
  "bevy_user_prefs",
  "bitflags 2.6.0",
  "earcutr",

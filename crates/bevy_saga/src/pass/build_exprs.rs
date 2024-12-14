@@ -86,14 +86,17 @@ pub(crate) fn build_module_exprs<'ast>(
                             unreachable!()
                         };
                         let mut inference: TypeInference = Default::default();
-                        let mut body_expr = build_exprs(unit, body_ast, &mut inference);
-                        let ret_type = resolve_types(&unit.root_scope, ret_ast);
+                        let mut body_expr = build_exprs(body_ast, &mut inference);
+                        let ret_type = match ret_ast.kind {
+                            NodeKind::Empty => Type::Void,
+                            _ => resolve_types(&unit.root_scope, ret_ast),
+                        };
                         inference.add_constraint(
-                            body_expr.typ.clone(),
                             ret_type.clone(),
+                            body_expr.typ.clone(),
                             body_expr.location,
                         );
-                        inference.solve_constraints();
+                        inference.solve_constraints()?;
                         assign_types(&mut body_expr, &inference)?;
 
                         let decl = unit.root_scope.get_mut(*name).unwrap();
@@ -123,17 +126,13 @@ pub(crate) fn build_module_exprs<'ast>(
     }
 }
 
-pub(crate) fn build_exprs<'a>(
-    unit: &'a mut CompilationUnit,
-    ast: &'a ASTNode<'a>,
-    inference: &mut TypeInference,
-) -> Expr {
+pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInference) -> Expr {
     match &ast.kind {
         NodeKind::ConstInteger(value, suffix) => {
             let value = value.parse::<i64>().unwrap();
             let typ = match suffix {
                 &crate::ast::IntegerSuffix::Unsized => {
-                    let ty = unit.fresh_typevar();
+                    let ty = inference.fresh_typevar();
                     if value > i32::MAX as i64 || value < i32::MIN as i64 {
                         inference.add_constraint(ty.clone(), Type::I64, ast.location);
                     } else {
@@ -161,11 +160,9 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Ident(_) => todo!(),
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(unit, lhs, inference);
-            let rhs_expr = build_exprs(unit, rhs, inference);
+            let lhs_expr = build_exprs(lhs, inference);
+            let rhs_expr = build_exprs(rhs, inference);
             let ty = match op {
-                crate::oper::BinaryOp::MemberAccess => todo!(),
-
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
                 | crate::oper::BinaryOp::Mul
@@ -174,7 +171,7 @@ pub(crate) fn build_exprs<'a>(
                 | crate::oper::BinaryOp::BitAnd
                 | crate::oper::BinaryOp::BitOr
                 | crate::oper::BinaryOp::BitXor => {
-                    let ty = unit.fresh_typevar();
+                    let ty = inference.fresh_typevar();
                     // Both sides must be the same, which is also the result type.
                     inference.add_constraint(ty.clone(), lhs_expr.typ.clone(), lhs_expr.location);
                     inference.add_constraint(ty.clone(), rhs_expr.typ.clone(), rhs_expr.location);
@@ -184,13 +181,13 @@ pub(crate) fn build_exprs<'a>(
                 crate::oper::BinaryOp::LogAnd | crate::oper::BinaryOp::LogOr => {
                     // Both sides must be boolean.
                     inference.add_constraint(
-                        lhs_expr.typ.clone(),
                         Type::Boolean,
+                        lhs_expr.typ.clone(),
                         lhs_expr.location,
                     );
                     inference.add_constraint(
-                        rhs_expr.typ.clone(),
                         Type::Boolean,
+                        rhs_expr.typ.clone(),
                         rhs_expr.location,
                     );
                     Type::Boolean
@@ -204,12 +201,10 @@ pub(crate) fn build_exprs<'a>(
                 | crate::oper::BinaryOp::Le
                 | crate::oper::BinaryOp::Gt
                 | crate::oper::BinaryOp::Ge => {
-                    // Both sides must be the same.
-                    inference.add_constraint(
-                        lhs_expr.typ.clone(),
-                        rhs_expr.typ.clone(),
-                        ast.location,
-                    );
+                    let ty = inference.fresh_typevar();
+                    // Both sides must be the same, but the result type is Boolean.
+                    inference.add_constraint(ty.clone(), lhs_expr.typ.clone(), lhs_expr.location);
+                    inference.add_constraint(ty.clone(), rhs_expr.typ.clone(), rhs_expr.location);
                     Type::Boolean
                 }
             };
@@ -229,16 +224,20 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(unit, stmt, inference);
+                let stmt_expr = build_exprs(stmt, inference);
                 stmt_exprs.push(stmt_expr);
             }
 
-            let result_expr = result.map(|result| Box::new(build_exprs(unit, result, inference)));
+            let result_expr = result.map(|result| Box::new(build_exprs(result, inference)));
             let result_type = result_expr
                 .as_ref()
                 .map(|expr| expr.typ.clone())
                 .unwrap_or(Type::None);
-            Expr::new(ast.location, ExprKind::Block(stmt_exprs, result_expr)).with_type(result_type)
+            let location = result_expr
+                .as_ref()
+                .map(|expr| expr.location)
+                .unwrap_or(ast.location);
+            Expr::new(location, ExprKind::Block(stmt_exprs, result_expr)).with_type(result_type)
         }
 
         _ => {

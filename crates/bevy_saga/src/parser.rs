@@ -2,14 +2,17 @@ use crate::ast::{
     ASTNode, DeclKind, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind, TypeKind,
 };
 use crate::decl;
-use crate::oper::BinaryOp;
+use crate::location::TokenLocation;
+use crate::oper::{BinaryOp, UnaryOp};
 use bumpalo::Bump;
 
 peg::parser! {
     pub grammar saga_parser<'a, 's>(arena: &'a Bump, symbols: &'s decl::SymbolTable) for str {
-        rule _() = quiet!{[' ' | '\n' | '\t']*}
+        rule ws() = quiet!{[' ' | '\n' | '\t']}
+        rule line_comment() = quiet!{("//" [^'\n']*)}
+        rule _() = quiet!{(ws() / line_comment())*}
 
-        rule dec_literal() = n:$(['0'..='9']['0'..='9' | '_']*) { }
+        rule digits() = n:$(['0'..='9']['0'..='9' | '_']*) { }
         rule name() -> decl::Symbol =
             n:$(['a'..='z' | 'A'..='Z' | '_']['a'..='z' | 'A'..='Z' | '0'..='9' | '_']*)
             {
@@ -19,9 +22,9 @@ peg::parser! {
         rule lit_float() -> &'a ASTNode<'a> =
             start:position!()
             n:$(
-                dec_literal() &(['.' | 'e' | 'f'])
+                digits() &(['.' | 'e' | 'f'])
                 ("." ['0'..='9' | '_']*)?
-                ("e" ['+' | '-']? dec_literal())?
+                ("e" ['+' | '-']? digits())?
             )
             s:("f32" { FloatSuffix::F32 } / "f64" { FloatSuffix::F64 })?
             end:position!()
@@ -32,13 +35,21 @@ peg::parser! {
         }
         rule lit_int() -> &'a ASTNode<'a> =
             start:position!()
-            n:$(dec_literal())
+            n:$(digits())
             s:("i32" { IntegerSuffix::I32 } / "i64" { IntegerSuffix::I64 })?
             end:position!()
         {
             // let location = TokenLocation::new(start, end);
             let value = arena.alloc_str(n);
             arena.alloc(ASTNode::new((start, end), NodeKind::ConstInteger(value, s.unwrap_or(IntegerSuffix::Unsized))))
+        }
+        rule lit_string() -> &'a ASTNode<'a> =
+            start:position!()
+            n:$("\"" [^'"']* "\"")
+            end:position!()
+        {
+            let value = arena.alloc_str(n);
+            arena.alloc(ASTNode::new((start, end), NodeKind::String(symbols.intern(value))))
         }
         rule ident() -> &'a ASTNode<'a> =
             start:position!()
@@ -52,6 +63,7 @@ peg::parser! {
         e:(
             lit_float()
             / lit_int()
+            / lit_string()
             / ident()
             / "(" _ e:expr() _ ")" { e }
             / expected!("expression")
@@ -211,6 +223,34 @@ peg::parser! {
                 }))
             }
             --
+            "-" arg:(@) {
+                arena.alloc(ASTNode::new(arg.location, NodeKind::UnaryExpr {
+                    op: UnaryOp::Neg,
+                    arg,
+                }))
+            }
+            "!" arg:(@) {
+                arena.alloc(ASTNode::new(arg.location, NodeKind::UnaryExpr {
+                    op: UnaryOp::Not,
+                    arg,
+                }))
+            }
+            "~" arg:(@) {
+                arena.alloc(ASTNode::new(arg.location, NodeKind::UnaryExpr {
+                    op: UnaryOp::BitNot,
+                    arg,
+                }))
+            }
+            func:(@) _ "(" _ args:(a: expr() ** (_ "," _) { a }) _ ")" {
+                let location = func.location.union(&args.last().unwrap().location);
+                arena.alloc(
+                    ASTNode::new(location, NodeKind::Call(func, arena.alloc_slice_copy(args.as_slice()))))
+            }
+            base:(@) _ "." _ start:position!() field:name() end:position!() {
+                let location = base.location.union(&TokenLocation::new(start, end));
+                arena.alloc(
+                    ASTNode::new(location, NodeKind::Field(base, field)))
+            }
             p:primary() { p }
         }
 
@@ -436,8 +476,11 @@ mod tests {
         match ast {
             Ok(ASTNode {
                 kind: NodeKind::BinaryExpr { op, lhs, rhs },
+                location,
                 ..
             }) => {
+                assert_eq!(location.start(), 0);
+                assert_eq!(location.end(), 7);
                 assert_eq!(*op, BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
@@ -459,7 +502,6 @@ mod tests {
         let ast = saga_parser::expr("1.0 + +", &arena, &symbols).unwrap_err();
         println!("{:?}", ast);
         assert_eq!(ast.location.offset, 6);
-        // assert!(ast.expected.tokens().in(&"expression"));
         println!("{:?}", ast.expected);
     }
 

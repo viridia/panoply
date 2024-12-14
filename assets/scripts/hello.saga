@@ -1,3 +1,4 @@
 fn hello() {
-    println("Hello from SAGA");
+    //println("Hello from SAGA");
+    1 + 2
 }

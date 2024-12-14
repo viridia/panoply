@@ -30,8 +30,6 @@ pub(crate) fn assign_types(
             assign_types(lhs, inference)?;
             assign_types(rhs, inference)?;
             match op {
-                crate::oper::BinaryOp::MemberAccess => todo!(),
-
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
                 | crate::oper::BinaryOp::Mul

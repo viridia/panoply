@@ -15,13 +15,22 @@ struct Constraint {
 #[derive(Default)]
 pub(crate) struct TypeInference {
     /// Equivalence constraints.
-    pub(crate) constraints: Vec<Constraint>,
+    constraints: Vec<Constraint>,
+
+    /// Next type variable ID.
+    next_typevar_id: usize,
 
     /// Type variable substitutions.
     pub(crate) substitutions: HashMap<TypeVarId, Type>,
 }
 
 impl TypeInference {
+    pub(crate) fn fresh_typevar(&mut self) -> Type {
+        let id = self.next_typevar_id;
+        self.next_typevar_id += 1;
+        Type::Infer(TypeVarId(id))
+    }
+
     pub(crate) fn add_constraint(&mut self, left: Type, right: Type, location: TokenLocation) {
         self.constraints.push(Constraint {
             left,
@@ -93,8 +102,8 @@ impl TypeInference {
             return Ok(());
         }
 
+        // println!("Unifying {:?} and {:?} at {:?}", t1, t2, location);
         match (&t1, &t2) {
-            // (Type::Error(err), _) | (_, Type::Error(err)) => Err(err.clone()),
             (Type::Infer(id), ty) | (ty, Type::Infer(id)) => {
                 if self.occurs_check(*id, ty) {
                     return Err(CompilationError::RecursiveType(location, ty.clone()));
@@ -123,9 +132,6 @@ impl TypeInference {
 
             (Type::Array(t1), Type::Array(t2)) => self.unify(t1, t2, location),
 
-            // (Type::Int, Type::Float) | (Type::Float, Type::Int) => {
-            //     Ok(()) // Allow implicit conversion between int and float
-            // }
             _ => Err(CompilationError::MismatchedTypes(
                 location,
                 t1.clone(),
@@ -135,6 +141,7 @@ impl TypeInference {
     }
 
     pub(crate) fn solve_constraints(&mut self) -> Result<(), CompilationError> {
+        self.constraints.reverse();
         while let Some(Constraint {
             left: t1,
             right: t2,

@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use wasmtime::Module;
 
-use crate::{compiler::CompilationError, CompilationUnit};
+use crate::CompilationUnit;
 
 pub struct Vm {
     engine: wasmtime::Engine,
@@ -28,11 +28,11 @@ pub enum SagaLoaderError {
     #[error("Could not load exemplar: {0}")]
     Io(#[from] std::io::Error),
     #[error("Could not decode Lua source from UTF-8: {0}")]
-    DecodeUtf8(#[from] std::str::Utf8Error),
-    #[error("Wasm Error: {0}")]
+    DecodeUtf8(#[from] core::str::Utf8Error),
+    #[error("{0}")]
     Wasm(#[from] wasmtime::Error),
-    #[error("Compilation Error: {0}")]
-    Compilation(#[from] CompilationError),
+    #[error("Compilation failed")]
+    Compilation,
 }
 
 pub struct SagaLoader {
@@ -57,15 +57,21 @@ impl AssetLoader for SagaLoader {
         &self,
         reader: &mut dyn Reader,
         _settings: &Self::Settings,
-        _load_context: &mut LoadContext<'_>,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
+        let path = load_context.path().to_str().unwrap();
         let src = str::from_utf8(&bytes)?;
-        let mut unit = CompilationUnit::new();
-        unit.compile(src).await?;
+        let mut unit = CompilationUnit::new(path, src);
+        let err = unit.compile().await;
+        if let Err(err) = err {
+            unit.report_error(&err);
+            return Err(SagaLoaderError::Compilation);
+        }
+        let wasm = unit.module.emit_wasm();
         let vm = self.vm.lock().unwrap();
-        let module = Module::new(&vm.engine, bytes)?;
+        let module = Module::new(&vm.engine, wasm)?;
         Ok(ScriptAsset(module))
     }
 
@@ -75,14 +81,14 @@ impl AssetLoader for SagaLoader {
 }
 
 pub struct WasmLoader {
-    engine: Arc<Mutex<Vm>>,
+    vm: Arc<Mutex<Vm>>,
 }
 
 impl FromWorld for WasmLoader {
     fn from_world(world: &mut World) -> Self {
         let resource = world.get_resource::<SagaVmResource>().unwrap();
         Self {
-            engine: resource.0.clone(),
+            vm: resource.0.clone(),
         }
     }
 }
@@ -100,12 +106,27 @@ impl AssetLoader for WasmLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let vm = self.engine.lock().unwrap();
+        let vm = self.vm.lock().unwrap();
         let module = Module::new(&vm.engine, bytes)?;
         Ok(ScriptAsset(module))
     }
 
     fn extensions(&self) -> &[&str] {
         &["wasm"]
+    }
+}
+
+pub struct SagaPlugin;
+
+impl Plugin for SagaPlugin {
+    fn build(&self, app: &mut App) {
+        let vm = Arc::new(Mutex::new(Vm {
+            engine: wasmtime::Engine::default(),
+            linker: wasmtime::Linker::new(&wasmtime::Engine::default()),
+        }));
+        app.init_asset::<ScriptAsset>()
+            .register_asset_loader(SagaLoader { vm: vm.clone() })
+            .register_asset_loader(WasmLoader { vm: vm.clone() })
+            .insert_resource(SagaVmResource(vm.clone()));
     }
 }

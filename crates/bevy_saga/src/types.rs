@@ -1,4 +1,5 @@
-use std::{fmt::Display, sync::Arc};
+use core::fmt::Display;
+use std::sync::Arc;
 
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -6,6 +7,7 @@ pub enum Type {
     #[default]
     None, // No type specified
     Infer(TypeVarId), // Type to be inferred
+    Void,             // No value
     Boolean,
     IUnsized,
     I32,
@@ -23,10 +25,11 @@ pub enum Type {
 }
 
 impl Display for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Type::None => write!(f, "None"),
             Type::Infer(id) => write!(f, "Infer({})", id.0),
+            Type::Void => write!(f, "void"),
             Type::Boolean => write!(f, "bool"),
             Type::IUnsized => write!(f, "{{integer}}"),
             Type::I32 => write!(f, "i32"),

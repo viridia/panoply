@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::{
     decl::{Scope, SymbolTable},
     location::TokenLocation,
@@ -15,7 +13,13 @@ use thiserror::Error;
 pub enum CompilationError {
     #[error("Expression expected")]
     ExpectExpression(TokenLocation),
-    #[error("Mismatched types: {1} {2}")]
+    #[error("Declaration expected")]
+    ExpectDeclaration(TokenLocation),
+    #[error("Statement expected")]
+    ExpectStatement(TokenLocation),
+    #[error("Expected {1}")]
+    Expected(TokenLocation, String),
+    #[error("Cannot assign type {2} to {1}")]
     MismatchedTypes(TokenLocation, Type, Type),
     #[error("Recursive type: {1}")]
     RecursiveType(TokenLocation, Type),
@@ -25,55 +29,106 @@ pub enum CompilationError {
     FunctionRedefinition(TokenLocation, String),
 }
 
-/// Contains all of the information needed to compile a single script file.
-pub struct CompilationUnit<'cu> {
-    pub(crate) next_typevar_id: usize,
-    pub(crate) symbols: SymbolTable,
-    pub(crate) root_scope: Scope<'cu>,
-}
-
-impl<'cu> Default for CompilationUnit<'cu> {
-    fn default() -> Self {
-        Self {
-            next_typevar_id: 0,
-            symbols: SymbolTable::new(),
-            root_scope: Scope::new(None),
+impl CompilationError {
+    pub fn location(&self) -> TokenLocation {
+        match self {
+            CompilationError::ExpectExpression(loc)
+            | CompilationError::ExpectDeclaration(loc)
+            | CompilationError::ExpectStatement(loc)
+            | CompilationError::Expected(loc, _)
+            | CompilationError::MismatchedTypes(loc, _, _)
+            | CompilationError::RecursiveType(loc, _)
+            | CompilationError::InvalidBinaryOpType(loc, _, _, _)
+            | CompilationError::FunctionRedefinition(loc, _) => *loc,
         }
     }
 }
 
+/// Contains all of the information needed to compile a single script file.
+pub struct CompilationUnit<'cu> {
+    path: &'cu str,
+    src: &'cu str,
+    pub(crate) symbols: SymbolTable,
+    pub(crate) root_scope: Scope<'cu>,
+    pub(crate) module: walrus::Module,
+}
+
 impl<'cu> CompilationUnit<'cu> {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(path: &'cu str, src: &'cu str) -> Self {
+        let config = walrus::ModuleConfig::default();
+        Self {
+            path,
+            src,
+            symbols: SymbolTable::new(),
+            root_scope: Scope::new(None),
+            module: walrus::Module::with_config(config),
+        }
     }
 
     /// Compile a script file.
-    pub async fn compile(&mut self, src: &str) -> Result<(), CompilationError> {
+    pub async fn compile(&mut self) -> Result<(), CompilationError> {
         let arena = bumpalo::Bump::new();
-        let ast = saga_parser::compilation_unit(src, &arena, &self.symbols).map_err(|e| {
-            eprintln!("Error parsing script: {}", e);
-            // CompilationError::ExpectExpression(TokenLocation::default())
-            todo!();
-        })?;
+        let ast =
+            saga_parser::compilation_unit(self.src, &arena, &self.symbols).map_err(|err| {
+                let location = TokenLocation::new(err.location.offset, err.location.offset + 1);
+                for token in err.expected.tokens() {
+                    match token {
+                        "expression" => return CompilationError::ExpectExpression(location),
+                        "declaration" => return CompilationError::ExpectDeclaration(location),
+                        "statement" => return CompilationError::ExpectStatement(location),
+                        _ => {}
+                    }
+                }
+                let tokens = err.expected.to_string();
+                CompilationError::Expected(location, tokens)
+            })?;
+
         pass::build_module_decls(self, ast)?;
         self.resolve_imports().await?;
         pass::build_module_exprs(self, ast)?;
+        pass::gen_module(self)?;
         Ok(())
     }
 
+    /// Load and resolve imported symbols from other modules.
     async fn resolve_imports(&mut self) -> Result<(), CompilationError> {
         // TODO: Implement
         Ok(())
     }
 
-    pub(crate) fn next_typevar_id(&mut self) -> TypeVarId {
-        let id = self.next_typevar_id;
-        self.next_typevar_id += 1;
-        TypeVarId(id)
+    /// Emit the compiled module as a WebAssembly binary.
+    pub fn emit_wasm(&mut self) -> Vec<u8> {
+        self.module.emit_wasm()
     }
 
-    pub(crate) fn fresh_typevar(&mut self) -> Type {
-        Type::Infer(self.next_typevar_id())
+    pub(crate) fn report_error(&self, err: &CompilationError) {
+        let location = err.location();
+        let mut line_ct = 1;
+        let mut offset = 0;
+        for line in self.src.lines() {
+            let end_offset = offset + line.len();
+            let token_end = location.end().min(end_offset);
+            if offset <= location.start() && location.start() < end_offset {
+                eprintln!(
+                    "{}:{}:{} {}",
+                    self.path,
+                    line_ct,
+                    location.start() - offset + 1,
+                    err
+                );
+                eprintln!("{}", line);
+                eprintln!(
+                    "{}{}",
+                    " ".repeat(location.start() - offset),
+                    "^".repeat(token_end - location.start())
+                );
+                return;
+            }
+            line_ct += 1;
+            offset = end_offset + 1;
+        }
+
+        eprintln!("{}:{:?}:{}", self.path, location.start(), err);
     }
 }
 
@@ -95,14 +150,14 @@ mod tests {
     fn parse_integer() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let node = saga_parser::expr("20", &arena, &symbols).unwrap();
+        let unit = CompilationUnit::new("--str--", "20");
+        let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
             ast::NodeKind::ConstInteger("20", IntegerSuffix::Unsized)
         ));
-        let mut unit = CompilationUnit::new();
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(&mut unit, node, &mut inference);
+        let expr = pass::build_exprs(node, &mut inference);
         assert_eq!(expr.to_string(), "20");
         inference.solve_constraints().unwrap();
         // let span = expr.location.as_span("20").unwrap();
@@ -115,14 +170,14 @@ mod tests {
     fn parse_float() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let node = saga_parser::expr("20.0", &arena, &symbols).unwrap();
+        let unit = CompilationUnit::new("--str--", "20.0");
+        let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
             ast::NodeKind::ConstFloat("20.0", FloatSuffix::F32)
         ));
-        let mut unit = CompilationUnit::new();
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(&mut unit, node, &mut inference);
+        let expr = pass::build_exprs(node, &mut inference);
         assert_eq!(expr.to_string(), "20.0");
         inference.solve_constraints().unwrap();
     }
@@ -131,7 +186,8 @@ mod tests {
     fn parse_binop_add() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let node = saga_parser::expr("20.0 + 10.0", &arena, &symbols).unwrap();
+        let unit = CompilationUnit::new("--str--", "20.0 + 10.0");
+        let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
             ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
                 assert_eq!(*op, oper::BinaryOp::Add);
@@ -146,19 +202,20 @@ mod tests {
             }
             _ => panic!(),
         }
-        let mut unit = CompilationUnit::new();
         let mut inference: pass::TypeInference = Default::default();
-        let mut expr = pass::build_exprs(&mut unit, node, &mut inference);
+        let mut expr = pass::build_exprs(node, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0");
         inference.solve_constraints().unwrap();
         assign_types(&mut expr, &inference).unwrap();
         assert_eq!(expr.typ, Type::F32);
     }
+
     #[test]
     fn parse_binop_prec() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let node = saga_parser::expr("20.0 + 10.0 * 0", &arena, &symbols).unwrap();
+        let unit = CompilationUnit::new("--str--", "20.0 + 10.0 * 0");
+        let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
             ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
                 assert_eq!(*op, oper::BinaryOp::Add);
@@ -184,12 +241,11 @@ mod tests {
             }
             _ => panic!(),
         }
-        let mut unit = CompilationUnit::new();
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(&mut unit, node, &mut inference);
+        let expr = pass::build_exprs(node, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0 * 0");
         let err = inference.solve_constraints().unwrap_err();
-        assert_eq!(err.to_string(), "Mismatched types: f32 i32");
+        assert_eq!(err.to_string(), "Cannot assign type i32 to f32");
     }
 
     #[test]
@@ -241,12 +297,11 @@ mod tests {
 
         // Export the `test` function.
         module.exports.add("test", test_fn);
-        let wasm = module.emit_wasm();
     }
 
     #[test]
     fn test_compiler() {
-        let mut unit = CompilationUnit::new();
-        future::block_on(unit.compile("fn test() -> i32 { 1 + 2 }")).unwrap();
+        let mut unit = CompilationUnit::new("--str--", "fn test() -> i32 { 1 + 2 }");
+        future::block_on(unit.compile()).unwrap();
     }
 }

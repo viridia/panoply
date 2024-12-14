@@ -10,6 +10,7 @@ pub(crate) enum ExprKind {
     ConstFloat(f64),
     String(decl::Symbol),
     Ident(decl::Symbol),
+    // Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
         op: BinaryOp,
         lhs: Box<Expr>,
@@ -48,7 +49,6 @@ impl Display for Expr {
                 // TODO: Parens if necessary.
                 lhs.fmt(f)?;
                 match op {
-                    BinaryOp::MemberAccess => write!(f, "."),
                     BinaryOp::Add => write!(f, " + "),
                     BinaryOp::Sub => write!(f, " - "),
                     BinaryOp::Mul => write!(f, " * "),

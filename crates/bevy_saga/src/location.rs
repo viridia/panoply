@@ -6,53 +6,32 @@ pub struct TokenLocation {
 }
 
 impl TokenLocation {
+    /// Create a new location.
     pub fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }
 
+    /// Union of two locations. Computes a span that covers both locations.
     pub fn union(&self, other: &Self) -> Self {
         Self {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
         }
     }
+
+    /// The start offset of the location.
+    pub fn start(&self) -> usize {
+        self.start
+    }
+
+    /// The end offset of the location
+    pub fn end(&self) -> usize {
+        self.end
+    }
 }
 
 impl From<(usize, usize)> for TokenLocation {
     fn from((start, end): (usize, usize)) -> Self {
         Self { start, end }
-    }
-}
-
-/// Source location for an AST node.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SourcePos {
-    pub line: usize,
-    pub col: usize,
-}
-
-impl SourcePos {
-    pub fn min(self, other: Self) -> Self {
-        if self.line < other.line {
-            self
-        } else if self.line > other.line {
-            other
-        } else if self.col < other.col {
-            self
-        } else {
-            other
-        }
-    }
-
-    pub fn max(self, other: Self) -> Self {
-        if self.line > other.line {
-            self
-        } else if self.line < other.line {
-            other
-        } else if self.col > other.col {
-            self
-        } else {
-            other
-        }
     }
 }

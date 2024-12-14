@@ -1,7 +1,6 @@
 /// Set of possible binary operators.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum BinaryOp {
-    MemberAccess,
     Add,
     Sub,
     Mul,

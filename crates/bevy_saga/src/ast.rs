@@ -37,12 +37,16 @@ pub(crate) enum FloatSuffix {
 #[derive(Debug)]
 pub(crate) enum NodeKind<'a> {
     Program(&'a [&'a ASTNode<'a>]),
+    Empty,
     Decl(&'a DeclKind<'a>),
+    Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
     ConstInteger(&'a str, IntegerSuffix),
     ConstFloat(&'a str, FloatSuffix),
     String(Symbol),
     Ident(Symbol),
     QName(&'a [&'a ASTNode<'a>]),
+    Call(&'a ASTNode<'a>, &'a [&'a ASTNode<'a>]),
+    Field(&'a ASTNode<'a>, Symbol),
     UnaryExpr {
         op: UnaryOp,
         arg: &'a ASTNode<'a>,
@@ -52,8 +56,6 @@ pub(crate) enum NodeKind<'a> {
         lhs: &'a ASTNode<'a>,
         rhs: &'a ASTNode<'a>,
     },
-    Empty,
-    Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
     Type(TypeKind<'a>),
 }
 
