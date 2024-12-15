@@ -30,9 +30,10 @@ peg::parser! {
             end:position!()
         {
             let value = arena.alloc_str(n);
-            arena.alloc(ASTNode::new((start, end), NodeKind::ConstFloat(value, s.unwrap_or(FloatSuffix::F32))))
+            arena.alloc(ASTNode::new((start, end), NodeKind::LitFloat(value, s.unwrap_or(FloatSuffix::F32))))
 
         }
+
         rule lit_int() -> &'a ASTNode<'a> =
             start:position!()
             n:$(digits())
@@ -41,16 +42,47 @@ peg::parser! {
         {
             // let location = TokenLocation::new(start, end);
             let value = arena.alloc_str(n);
-            arena.alloc(ASTNode::new((start, end), NodeKind::ConstInteger(value, s.unwrap_or(IntegerSuffix::Unsized))))
+            arena.alloc(ASTNode::new((start, end), NodeKind::LitInt(value, s.unwrap_or(IntegerSuffix::Unsized))))
         }
+
         rule lit_string() -> &'a ASTNode<'a> =
             start:position!()
-            n:$("\"" [^'"']* "\"")
+            ['"']
+            s:(
+                (['\\'] ch:(
+                    ['n'] { '\n' }
+                    / ['r'] { '\r' }
+                    / ['t'] { '\t' }
+                    / ['"'] { '\"' }
+                    / ['\''] { '\'' }
+                    / ['\\'] { '\\' }
+                    / ['0'] { '\0' }
+                    / ['u'] ['{'] d:$(['0'..='9' | 'a'..='f' | 'A'..='F']*<1,6>) ['}'] {
+                        let code = u32::from_str_radix(d, 16).unwrap();
+                        core::char::from_u32(code).unwrap()
+                    }
+                ) { ch })
+                / [^'"' | '\\']
+                / expected!("string char")
+            )*
+            ['"']
             end:position!()
         {
-            let value = arena.alloc_str(n);
-            arena.alloc(ASTNode::new((start, end), NodeKind::String(symbols.intern(value))))
+            let mut value = String::new();
+            for part in s {
+                value.push(part);
+            }
+            arena.alloc(ASTNode::new((start, end), NodeKind::LitString(symbols.intern(&value))))
         }
+
+        rule lit_bool() -> &'a ASTNode<'a> =
+            start:position!()
+            value:( "true" { true } / "false" { false } )
+            end:position!()
+        {
+            arena.alloc(ASTNode::new((start, end), NodeKind::LitBool(value)))
+        }
+
         rule ident() -> &'a ASTNode<'a> =
             start:position!()
             n:name()
@@ -64,6 +96,7 @@ peg::parser! {
             lit_float()
             / lit_int()
             / lit_string()
+            / lit_bool()
             / ident()
             / "(" _ e:expr() _ ")" { e }
             / expected!("expression")
@@ -374,59 +407,59 @@ peg::parser! {
 mod tests {
     use super::*;
     use bumpalo::Bump;
+    use decl::Symbol;
 
     #[test]
-    pub fn test_literal_int() {
+    pub fn literal_int() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1", &arena, &symbols);
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstInteger("1", IntegerSuffix::Unsized),
+                kind: NodeKind::LitInt("1", IntegerSuffix::Unsized),
                 ..
             })
         ));
-        // assert_eq!(ast, Ok(vec![1, 1, 2, 3, 5, 8]));
     }
 
     #[test]
-    pub fn test_literal_int_i32() {
+    pub fn literal_int_i32() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1i32", &arena, &symbols);
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstInteger("1", IntegerSuffix::I32),
+                kind: NodeKind::LitInt("1", IntegerSuffix::I32),
                 ..
             })
         ));
     }
 
     #[test]
-    pub fn test_literal_int_i64() {
+    pub fn literal_int_i64() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1i64", &arena, &symbols);
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstInteger("1", IntegerSuffix::I64),
+                kind: NodeKind::LitInt("1", IntegerSuffix::I64),
                 ..
             })
         ));
     }
 
     #[test]
-    pub fn test_literal_float() {
+    pub fn literal_float() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0", &arena, &symbols);
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstFloat("1.0", FloatSuffix::F32),
+                kind: NodeKind::LitFloat("1.0", FloatSuffix::F32),
                 ..
             })
         ));
@@ -435,7 +468,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstFloat("1.", FloatSuffix::F32),
+                kind: NodeKind::LitFloat("1.", FloatSuffix::F32),
                 ..
             })
         ));
@@ -444,7 +477,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstFloat("1.0e10", FloatSuffix::F32),
+                kind: NodeKind::LitFloat("1.0e10", FloatSuffix::F32),
                 ..
             })
         ));
@@ -453,7 +486,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstFloat("1.0", FloatSuffix::F32),
+                kind: NodeKind::LitFloat("1.0", FloatSuffix::F32),
                 ..
             })
         ));
@@ -462,14 +495,63 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::ConstFloat("1.0", FloatSuffix::F64),
+                kind: NodeKind::LitFloat("1.0", FloatSuffix::F64),
                 ..
             })
         ));
     }
 
     #[test]
-    pub fn test_binop() {
+    pub fn literal_string() {
+        let arena = Bump::new();
+        let symbols = decl::SymbolTable::new();
+        let ast = saga_parser::expr("\"hello\"", &arena, &symbols).unwrap();
+        match ast {
+            ASTNode {
+                kind: NodeKind::LitString(s),
+                ..
+            } => {
+                assert_eq!(symbols.resolve(*s), "hello");
+            }
+            _ => panic!(),
+        };
+
+        let ast = saga_parser::expr("\"hello\\n\"", &arena, &symbols).unwrap();
+        match ast {
+            ASTNode {
+                kind: NodeKind::LitString(s),
+                ..
+            } => {
+                assert_eq!(symbols.resolve(*s), "hello\n");
+            }
+            _ => panic!(),
+        };
+
+        let ast = saga_parser::expr("\"hello\\\"\"", &arena, &symbols).unwrap();
+        match ast {
+            ASTNode {
+                kind: NodeKind::LitString(s),
+                ..
+            } => {
+                assert_eq!(symbols.resolve(*s), "hello\"");
+            }
+            _ => panic!(),
+        };
+
+        let ast = saga_parser::expr("\"hello\u{25ff}\"", &arena, &symbols).unwrap();
+        match ast {
+            ASTNode {
+                kind: NodeKind::LitString(s),
+                ..
+            } => {
+                assert_eq!(symbols.resolve(*s), "hello◿");
+            }
+            _ => panic!(),
+        };
+    }
+
+    #[test]
+    pub fn binop_add() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0 + 5", &arena, &symbols);
@@ -484,11 +566,11 @@ mod tests {
                 assert_eq!(*op, BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    NodeKind::ConstFloat("1.0", FloatSuffix::F32)
+                    NodeKind::LitFloat("1.0", FloatSuffix::F32)
                 ));
                 assert!(matches!(
                     rhs.kind,
-                    NodeKind::ConstInteger("5", IntegerSuffix::Unsized)
+                    NodeKind::LitInt("5", IntegerSuffix::Unsized)
                 ));
             }
             _ => panic!(),
@@ -496,7 +578,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_binop_err() {
+    pub fn binop_err() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::expr("1.0 + +", &arena, &symbols).unwrap_err();
@@ -506,7 +588,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_params() {
+    pub fn param_list() {
         let arena = Bump::new();
         let symbols = decl::SymbolTable::new();
         let ast = saga_parser::param_list("()", &arena, &symbols).unwrap();

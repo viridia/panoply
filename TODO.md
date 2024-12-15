@@ -443,7 +443,9 @@ fn combat_interact() {
 
 # Scripting TODOs
 
-- Built-in coercions
+- Streamline unit tests.
+- Risk: Closures in Components
+- Built-in coercions (intrinsic functions)
 - Function calls
 - Assert
 - String data model

@@ -8,7 +8,7 @@ mod oper;
 mod parser;
 mod pass;
 mod types;
-mod wasm;
+// mod wasm;
 
 pub use compiler::{CompilationError, CompilationUnit};
 pub use types::Type;

@@ -6,7 +6,6 @@ use bevy::{
 use core::str;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use wasmprinter::print_bytes;
 use wasmtime::Module;
 
 type StoreData = ();
@@ -17,6 +16,17 @@ pub struct Vm {
     linker: wasmtime::Linker<StoreData>,
 }
 
+impl Vm {
+    pub fn new_instance(&mut self, wasm: &[u8]) -> Result<wasmtime::Instance, wasmtime::Error> {
+        let module = Module::new(&self.engine, wasm)?;
+        self.linker.instantiate(&mut self.store, &module)
+    }
+
+    pub fn instantiate(&mut self, module: &Module) -> Result<wasmtime::Instance, wasmtime::Error> {
+        self.linker.instantiate(&mut self.store, module)
+    }
+}
+
 #[derive(Resource)]
 pub struct SagaVmResource(pub Arc<Mutex<Vm>>);
 
@@ -24,7 +34,7 @@ impl SagaVmResource {}
 
 #[derive(TypePath, Asset)]
 pub struct ScriptAsset {
-    module: Module,
+    instance: wasmtime::Instance,
 }
 
 impl ScriptAsset {
@@ -38,23 +48,13 @@ impl ScriptAsset {
         Params: wasmtime::WasmParams,
         Results: wasmtime::WasmResults,
     {
-        let instance = vm.linker.instantiate(&mut vm.store, &self.module)?;
-        let func = instance
+        let func = self
+            .instance
             .get_typed_func::<Params, Results>(&mut vm.store, func_name)
             .unwrap();
         func.call(&mut vm.store, args)
     }
 }
-
-// All wasm objects operate within the context of a "store". Each
-// `Store` has a type parameter to store host-specific data, which in
-// this case we're using `4` for.
-// let mut store = Store::new(&engine, 4);
-// let instance = linker.instantiate(&mut store, &module)?;
-// let hello = instance.get_typed_func::<(), ()>(&mut store, "hello")?;
-
-// // And finally we can call the wasm!
-// hello.call(&mut store, ())?;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -105,10 +105,9 @@ impl AssetLoader for SagaLoader {
         }
         let wasm = unit.module.emit_wasm();
         println!("{}", wasmprinter::print_bytes(&wasm).unwrap());
-        let vm = self.vm.lock().unwrap();
-        let module = Module::new(&vm.engine, wasm)?;
-        // let instance = vm.linker.instantiate(&mut vm.store, &module)?;
-        Ok(ScriptAsset { module })
+        let mut vm = self.vm.lock().unwrap();
+        let instance = vm.new_instance(&wasm)?;
+        Ok(ScriptAsset { instance })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -142,9 +141,9 @@ impl AssetLoader for WasmLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let vm = self.vm.lock().unwrap();
-        let module = Module::new(&vm.engine, bytes)?;
-        Ok(ScriptAsset { module })
+        let mut vm = self.vm.lock().unwrap();
+        let instance = vm.new_instance(&bytes)?;
+        Ok(ScriptAsset { instance })
     }
 
     fn extensions(&self) -> &[&str] {

@@ -152,7 +152,7 @@ mod tests {
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
-            ast::NodeKind::ConstInteger("20", IntegerSuffix::Unsized)
+            ast::NodeKind::LitInt("20", IntegerSuffix::Unsized)
         ));
         let mut inference: pass::TypeInference = Default::default();
         let expr = pass::build_exprs(node, &mut inference);
@@ -172,7 +172,7 @@ mod tests {
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
-            ast::NodeKind::ConstFloat("20.0", FloatSuffix::F32)
+            ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
         ));
         let mut inference: pass::TypeInference = Default::default();
         let expr = pass::build_exprs(node, &mut inference);
@@ -191,11 +191,11 @@ mod tests {
                 assert_eq!(*op, oper::BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    ast::NodeKind::ConstFloat("20.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
                 ));
                 assert!(matches!(
                     rhs.kind,
-                    ast::NodeKind::ConstFloat("10.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat("10.0", FloatSuffix::F32)
                 ));
             }
             _ => panic!(),
@@ -219,18 +219,18 @@ mod tests {
                 assert_eq!(*op, oper::BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    ast::NodeKind::ConstFloat("20.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
                 ));
                 match &rhs.kind {
                     ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
                         assert_eq!(*op, oper::BinaryOp::Mul);
                         assert!(matches!(
                             lhs.kind,
-                            ast::NodeKind::ConstFloat("10.0", FloatSuffix::F32)
+                            ast::NodeKind::LitFloat("10.0", FloatSuffix::F32)
                         ));
                         assert!(matches!(
                             rhs.kind,
-                            ast::NodeKind::ConstInteger("0", IntegerSuffix::Unsized)
+                            ast::NodeKind::LitInt("0", IntegerSuffix::Unsized)
                         ));
                     }
                     _ => panic!(),

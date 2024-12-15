@@ -129,7 +129,7 @@ pub(crate) fn build_module_exprs<'ast>(
 
 pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInference) -> Expr {
     match &ast.kind {
-        NodeKind::ConstInteger(value, suffix) => {
+        NodeKind::LitInt(value, suffix) => {
             let value = value.parse::<i64>().unwrap();
             let typ = match suffix {
                 &crate::ast::IntegerSuffix::Unsized => {
@@ -147,7 +147,7 @@ pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInferenc
             Expr::new(ast.location, ExprKind::ConstInteger(value)).with_type(typ)
         }
 
-        NodeKind::ConstFloat(value, suffix) => {
+        NodeKind::LitFloat(value, suffix) => {
             let value = value.parse::<f64>().unwrap();
             let typ = match suffix {
                 crate::ast::FloatSuffix::F32 => Type::F32,
@@ -157,7 +157,7 @@ pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInferenc
             Expr::new(ast.location, ExprKind::ConstFloat(value)).with_type(typ)
         }
 
-        NodeKind::String(_) => todo!(),
+        NodeKind::LitString(_) => todo!(),
         NodeKind::Ident(_) => todo!(),
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {

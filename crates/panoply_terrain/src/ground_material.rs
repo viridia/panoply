@@ -268,7 +268,9 @@ impl GroundMaterialCache {
                 .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Snow));
             surface_index += 1;
         }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Tundra) {}
+        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Tundra) {
+            // TODO
+        }
         if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Taiga) {
             biome_textures[surface_index] = self.taiga.clone();
             biome_surface[surface_index] = BiomeSurfaceAttrs::TAIGA;
@@ -277,7 +279,9 @@ impl GroundMaterialCache {
                 .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Taiga));
             surface_index += 1;
         }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Chaparral) {}
+        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Chaparral) {
+            // TODO
+        }
         // if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Rock) {}
         // if surface_index < 4 &&
 
