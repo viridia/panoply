@@ -12,7 +12,7 @@ pub(crate) fn assign_types(
     expr: &mut Expr,
     inference: &TypeInference,
 ) -> Result<(), CompilationError> {
-    match expr.kind {
+    match &mut expr.kind {
         ExprKind::Empty => {}
         ExprKind::ConstInteger(_) => {
             inference.replace_type_vars(&mut expr.typ);
@@ -20,13 +20,10 @@ pub(crate) fn assign_types(
         ExprKind::ConstFloat(_) => {
             inference.replace_type_vars(&mut expr.typ);
         }
-        ExprKind::String(_symbol) => todo!(),
+        ExprKind::ConstBool(_) => {}
+        ExprKind::ConstString(_symbol) => todo!(),
         ExprKind::Ident(_symbol) => todo!(),
-        ExprKind::BinaryExpr {
-            op,
-            ref mut lhs,
-            ref mut rhs,
-        } => {
+        ExprKind::BinaryExpr { op, lhs, rhs } => {
             assign_types(lhs, inference)?;
             assign_types(rhs, inference)?;
             match op {
@@ -44,7 +41,7 @@ pub(crate) fn assign_types(
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,
-                                op,
+                                *op,
                                 lhs.typ.clone(),
                                 rhs.typ.clone(),
                             ))
@@ -66,7 +63,7 @@ pub(crate) fn assign_types(
                         _ => {
                             return Err(CompilationError::InvalidBinaryOpType(
                                 expr.location,
-                                op,
+                                *op,
                                 lhs.typ.clone(),
                                 rhs.typ.clone(),
                             ))
@@ -82,6 +79,10 @@ pub(crate) fn assign_types(
                 | crate::oper::BinaryOp::Gt
                 | crate::oper::BinaryOp::Ge => todo!(),
             }
+        }
+
+        ExprKind::Cast { arg, typ } => {
+            todo!();
         }
 
         ExprKind::Block(ref mut stmts, ref mut result) => {

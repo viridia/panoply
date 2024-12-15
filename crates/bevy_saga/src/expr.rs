@@ -1,5 +1,5 @@
 use crate::{decl, location::TokenLocation, oper::BinaryOp, types::Type};
-use std::fmt::Display;
+use core::fmt::Display;
 
 /// Content of an Expression node.
 #[derive(Debug)]
@@ -8,13 +8,18 @@ pub(crate) enum ExprKind {
     Empty,
     ConstInteger(i64),
     ConstFloat(f64),
-    String(decl::Symbol),
+    ConstBool(bool),
+    ConstString(decl::Symbol),
     Ident(decl::Symbol),
     // Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
         op: BinaryOp,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
+    },
+    Cast {
+        arg: Box<Expr>,
+        typ: Type,
     },
     Block(Vec<Expr>, Option<Box<Expr>>),
 }
@@ -39,7 +44,8 @@ impl Display for Expr {
                 }
                 str_val.fmt(f)
             }
-            ExprKind::String(symbol) => write!(f, "String({})", symbol.0),
+            ExprKind::ConstBool(value) => value.fmt(f),
+            ExprKind::ConstString(symbol) => write!(f, "String({})", symbol.0),
             ExprKind::Ident(symbol) => write!(f, "Ident({})", symbol.0),
             ExprKind::BinaryExpr {
                 op,
@@ -69,6 +75,11 @@ impl Display for Expr {
                     BinaryOp::Ge => write!(f, " >= "),
                 }?;
                 rhs.fmt(f)
+            }
+            ExprKind::Cast { ref arg, ref typ } => {
+                arg.fmt(f)?;
+                write!(f, " as ")?;
+                typ.fmt(f)
             }
             ExprKind::Block(ref stmts, ref result) => {
                 write!(f, "{{")?;

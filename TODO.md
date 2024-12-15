@@ -443,6 +443,7 @@ fn combat_interact() {
 
 # Scripting TODOs
 
+- arenas for: types? exprs? decls?
 - Streamline unit tests.
 - Risk: Closures in Components
 - Built-in coercions (intrinsic functions)

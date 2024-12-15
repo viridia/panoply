@@ -53,10 +53,6 @@ impl TypeInference {
                 }
             }
 
-            // Type::Error(_) => {
-            //     // Do nothing
-            //     ty.clone()
-            // }
             Type::Tuple(types) => {
                 // TODO: Return the original type if no substitutions are made.
                 let mut new_types = Vec::with_capacity(types.len());

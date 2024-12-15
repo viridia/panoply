@@ -28,10 +28,9 @@ peg::parser! {
             )
             s:("f32" { FloatSuffix::F32 } / "f64" { FloatSuffix::F64 })?
             end:position!()
-        {
-            let value = arena.alloc_str(n);
-            arena.alloc(ASTNode::new((start, end), NodeKind::LitFloat(value, s.unwrap_or(FloatSuffix::F32))))
-
+        {?
+            let value = n.parse::<f64>().map_err(|_| "invalid float literal")?;
+            Ok(arena.alloc(ASTNode::new((start, end), NodeKind::LitFloat(value, s.unwrap_or(FloatSuffix::F32)))))
         }
 
         rule lit_int() -> &'a ASTNode<'a> =
@@ -39,10 +38,10 @@ peg::parser! {
             n:$(digits())
             s:("i32" { IntegerSuffix::I32 } / "i64" { IntegerSuffix::I64 })?
             end:position!()
-        {
+        {?
             // let location = TokenLocation::new(start, end);
-            let value = arena.alloc_str(n);
-            arena.alloc(ASTNode::new((start, end), NodeKind::LitInt(value, s.unwrap_or(IntegerSuffix::Unsized))))
+            let value = n.parse::<i64>().map_err(|_| "invalid integer literal")?;
+            Ok(arena.alloc(ASTNode::new((start, end), NodeKind::LitInt(value, s.unwrap_or(IntegerSuffix::Unsized)))))
         }
 
         rule lit_string() -> &'a ASTNode<'a> =
@@ -256,6 +255,14 @@ peg::parser! {
                 }))
             }
             --
+            arg:(@) _ "as" _ typ:@ {
+                let location = arg.location.union(&typ.location);
+                arena.alloc(ASTNode::new(location, NodeKind::Cast {
+                    arg,
+                    typ,
+                }))
+            }
+            --
             "-" arg:(@) {
                 arena.alloc(ASTNode::new(arg.location, NodeKind::UnaryExpr {
                     op: UnaryOp::Neg,
@@ -407,7 +414,6 @@ peg::parser! {
 mod tests {
     use super::*;
     use bumpalo::Bump;
-    use decl::Symbol;
 
     #[test]
     pub fn literal_int() {
@@ -417,7 +423,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitInt("1", IntegerSuffix::Unsized),
+                kind: NodeKind::LitInt(1, IntegerSuffix::Unsized),
                 ..
             })
         ));
@@ -431,7 +437,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitInt("1", IntegerSuffix::I32),
+                kind: NodeKind::LitInt(1, IntegerSuffix::I32),
                 ..
             })
         ));
@@ -445,7 +451,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitInt("1", IntegerSuffix::I64),
+                kind: NodeKind::LitInt(1, IntegerSuffix::I64),
                 ..
             })
         ));
@@ -459,7 +465,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitFloat("1.0", FloatSuffix::F32),
+                kind: NodeKind::LitFloat(1.0, FloatSuffix::F32),
                 ..
             })
         ));
@@ -468,7 +474,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitFloat("1.", FloatSuffix::F32),
+                kind: NodeKind::LitFloat(1., FloatSuffix::F32),
                 ..
             })
         ));
@@ -477,7 +483,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitFloat("1.0e10", FloatSuffix::F32),
+                kind: NodeKind::LitFloat(1.0e10, FloatSuffix::F32),
                 ..
             })
         ));
@@ -486,7 +492,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitFloat("1.0", FloatSuffix::F32),
+                kind: NodeKind::LitFloat(1.0, FloatSuffix::F32),
                 ..
             })
         ));
@@ -495,7 +501,7 @@ mod tests {
         assert!(matches!(
             ast,
             Ok(ASTNode {
-                kind: NodeKind::LitFloat("1.0", FloatSuffix::F64),
+                kind: NodeKind::LitFloat(1.0, FloatSuffix::F64),
                 ..
             })
         ));
@@ -566,11 +572,11 @@ mod tests {
                 assert_eq!(*op, BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    NodeKind::LitFloat("1.0", FloatSuffix::F32)
+                    NodeKind::LitFloat(1.0, FloatSuffix::F32)
                 ));
                 assert!(matches!(
                     rhs.kind,
-                    NodeKind::LitInt("5", IntegerSuffix::Unsized)
+                    NodeKind::LitInt(5, IntegerSuffix::Unsized)
                 ));
             }
             _ => panic!(),

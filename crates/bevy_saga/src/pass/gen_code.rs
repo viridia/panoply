@@ -68,6 +68,12 @@ fn gen_expr<'a>(
 ) -> Result<(), CompilationError> {
     match &expr.kind {
         ExprKind::Empty => todo!(),
+        ExprKind::ConstBool(value) => {
+            match value {
+                true => out.i32_const(1),
+                false => out.i32_const(0),
+            };
+        }
         ExprKind::ConstInteger(value) => {
             match expr.typ {
                 Type::I32 => out.i32_const(*value as i32),
@@ -82,7 +88,7 @@ fn gen_expr<'a>(
                 _ => panic!("Invalid float type: {:?}", expr.typ),
             };
         }
-        ExprKind::String(symbol) => todo!(),
+        ExprKind::ConstString(symbol) => todo!(),
         ExprKind::Ident(symbol) => todo!(),
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             gen_expr(unit, lhs, out)?;
@@ -241,6 +247,11 @@ fn gen_expr<'a>(
                     };
                 }
             }
+        }
+
+        ExprKind::Cast { arg, typ } => {
+            gen_expr(unit, arg, out)?;
+            todo!();
         }
 
         ExprKind::Block(vec, expr) => {

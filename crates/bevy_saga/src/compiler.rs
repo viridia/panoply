@@ -5,6 +5,7 @@ use crate::{
     parser::saga_parser,
     pass, Type,
 };
+use bumpalo::Bump;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -46,6 +47,7 @@ impl CompilationError {
 pub struct CompilationUnit<'cu> {
     path: &'cu str,
     src: &'cu str,
+    pub(crate) arena: Bump,
     pub(crate) symbols: SymbolTable,
     pub(crate) root_scope: Scope<'cu>,
     pub(crate) module: walrus::Module,
@@ -57,6 +59,7 @@ impl<'cu> CompilationUnit<'cu> {
         Self {
             path,
             src,
+            arena: bumpalo::Bump::new(),
             symbols: SymbolTable::new(),
             root_scope: Scope::new(None),
             module: walrus::Module::with_config(config),
@@ -152,10 +155,10 @@ mod tests {
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
-            ast::NodeKind::LitInt("20", IntegerSuffix::Unsized)
+            ast::NodeKind::LitInt(20, IntegerSuffix::Unsized)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
         assert_eq!(expr.to_string(), "20");
         inference.solve_constraints().unwrap();
         // let span = expr.location.as_span("20").unwrap();
@@ -172,10 +175,10 @@ mod tests {
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
-            ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
+            ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
         assert_eq!(expr.to_string(), "20.0");
         inference.solve_constraints().unwrap();
     }
@@ -191,17 +194,17 @@ mod tests {
                 assert_eq!(*op, oper::BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
                 ));
                 assert!(matches!(
                     rhs.kind,
-                    ast::NodeKind::LitFloat("10.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat(10.0, FloatSuffix::F32)
                 ));
             }
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let mut expr = pass::build_exprs(node, &mut inference);
+        let mut expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0");
         inference.solve_constraints().unwrap();
         assign_types(&mut expr, &inference).unwrap();
@@ -219,18 +222,18 @@ mod tests {
                 assert_eq!(*op, oper::BinaryOp::Add);
                 assert!(matches!(
                     lhs.kind,
-                    ast::NodeKind::LitFloat("20.0", FloatSuffix::F32)
+                    ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
                 ));
                 match &rhs.kind {
                     ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
                         assert_eq!(*op, oper::BinaryOp::Mul);
                         assert!(matches!(
                             lhs.kind,
-                            ast::NodeKind::LitFloat("10.0", FloatSuffix::F32)
+                            ast::NodeKind::LitFloat(10.0, FloatSuffix::F32)
                         ));
                         assert!(matches!(
                             rhs.kind,
-                            ast::NodeKind::LitInt("0", IntegerSuffix::Unsized)
+                            ast::NodeKind::LitInt(0, IntegerSuffix::Unsized)
                         ));
                     }
                     _ => panic!(),
@@ -240,7 +243,7 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0 * 0");
         let err = inference.solve_constraints().unwrap_err();
         assert_eq!(err.to_string(), "Cannot assign type i32 to f32");

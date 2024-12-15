@@ -87,7 +87,7 @@ pub(crate) fn build_module_exprs<'ast>(
                             unreachable!()
                         };
                         let mut inference: TypeInference = Default::default();
-                        let mut body_expr = build_exprs(body_ast, &mut inference);
+                        let mut body_expr = build_exprs(body_ast, scope, &mut inference);
                         let ret_type = match ret_ast.kind {
                             NodeKind::Empty => Type::Void,
                             _ => resolve_types(&scope, ret_ast),
@@ -127,14 +127,17 @@ pub(crate) fn build_module_exprs<'ast>(
     }
 }
 
-pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInference) -> Expr {
+pub(crate) fn build_exprs<'a>(
+    ast: &'a ASTNode<'a>,
+    scope: &decl::Scope,
+    inference: &mut TypeInference,
+) -> Expr {
     match &ast.kind {
         NodeKind::LitInt(value, suffix) => {
-            let value = value.parse::<i64>().unwrap();
             let typ = match suffix {
                 &crate::ast::IntegerSuffix::Unsized => {
                     let ty = inference.fresh_typevar();
-                    if value > i32::MAX as i64 || value < i32::MIN as i64 {
+                    if *value > i32::MAX as i64 || *value < i32::MIN as i64 {
                         inference.add_constraint(ty.clone(), Type::I64, ast.location);
                     } else {
                         inference.add_constraint(ty.clone(), Type::I32, ast.location);
@@ -144,25 +147,35 @@ pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInferenc
                 crate::ast::IntegerSuffix::I32 => Type::I32,
                 crate::ast::IntegerSuffix::I64 => Type::I64,
             };
-            Expr::new(ast.location, ExprKind::ConstInteger(value)).with_type(typ)
+            Expr::new(ast.location, ExprKind::ConstInteger(*value)).with_type(typ)
         }
 
         NodeKind::LitFloat(value, suffix) => {
-            let value = value.parse::<f64>().unwrap();
+            // let value = value.parse::<f64>().unwrap();
             let typ = match suffix {
                 crate::ast::FloatSuffix::F32 => Type::F32,
                 crate::ast::FloatSuffix::F64 => Type::F64,
                 _ => unreachable!(),
             };
-            Expr::new(ast.location, ExprKind::ConstFloat(value)).with_type(typ)
+            Expr::new(ast.location, ExprKind::ConstFloat(*value)).with_type(typ)
         }
 
-        NodeKind::LitString(_) => todo!(),
-        NodeKind::Ident(_) => todo!(),
+        NodeKind::LitString(value) => {
+            Expr::new(ast.location, ExprKind::ConstString(*value)).with_type(Type::String)
+        }
+
+        NodeKind::LitBool(value) => {
+            Expr::new(ast.location, ExprKind::ConstBool(*value)).with_type(Type::Boolean)
+        }
+
+        NodeKind::Ident(symbol) => match scope.get(*symbol) {
+            Some(_) => todo!(),
+            None => todo!(),
+        },
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, inference);
-            let rhs_expr = build_exprs(rhs, inference);
+            let lhs_expr = build_exprs(lhs, scope, inference);
+            let rhs_expr = build_exprs(rhs, scope, inference);
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -225,11 +238,11 @@ pub(crate) fn build_exprs<'a>(ast: &'a ASTNode<'a>, inference: &mut TypeInferenc
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, inference);
+                let stmt_expr = build_exprs(stmt, scope, inference);
                 stmt_exprs.push(stmt_expr);
             }
 
-            let result_expr = result.map(|result| Box::new(build_exprs(result, inference)));
+            let result_expr = result.map(|result| Box::new(build_exprs(result, scope, inference)));
             let result_type = result_expr
                 .as_ref()
                 .map(|expr| expr.typ.clone())

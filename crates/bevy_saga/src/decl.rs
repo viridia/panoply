@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use core::cell::RefCell;
 
 use bevy::utils::HashMap;
 
@@ -66,7 +66,7 @@ pub enum DeclKind {
 
 pub(crate) struct Scope<'a> {
     pub(crate) parent: Option<&'a Scope<'a>>,
-    pub(crate) decls: HashMap<Symbol, Decl>,
+    pub(crate) decls: HashMap<Symbol, Box<Decl>>,
 }
 
 impl<'a> Scope<'a> {
@@ -78,15 +78,15 @@ impl<'a> Scope<'a> {
     }
 
     pub(crate) fn get(&self, symbol: Symbol) -> Option<&Decl> {
-        self.decls.get(&symbol)
+        self.decls.get(&symbol).map(|d| &**d)
     }
 
     pub(crate) fn get_mut(&mut self, symbol: Symbol) -> Option<&mut Decl> {
-        self.decls.get_mut(&symbol)
+        self.decls.get_mut(&symbol).map(|d| &mut **d)
     }
 
     pub(crate) fn insert(&mut self, decl: Decl) {
-        self.decls.insert(decl.name, decl);
+        self.decls.insert(decl.name, Box::new(decl));
     }
 
     pub(crate) fn contains(&self, symbol: Symbol) -> bool {
