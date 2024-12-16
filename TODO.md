@@ -443,10 +443,11 @@ fn combat_interact() {
 
 # Scripting TODOs
 
-- arenas for: types? exprs? decls?
+- Function call
 - Streamline unit tests.
 - Risk: Closures in Components
 - Built-in coercions (intrinsic functions)
+- Allow intrinsics to be shared?
 - Function calls
 - Assert
 - String data model

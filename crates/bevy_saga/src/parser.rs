@@ -103,7 +103,7 @@ peg::parser! {
 
         rule binop() -> &'a ASTNode<'a> = precedence!{
             lhs:(@) _ "||" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::LogOr,
                     lhs,
@@ -112,7 +112,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "&&" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::LogAnd,
                     lhs,
@@ -121,7 +121,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "==" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Eq,
                     lhs,
@@ -129,7 +129,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "!=" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Ne,
                     lhs,
@@ -137,7 +137,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ ">" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Gt,
                     lhs,
@@ -145,7 +145,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ ">=" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Ge,
                     lhs,
@@ -153,7 +153,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "<" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Lt,
                     lhs,
@@ -161,7 +161,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "<=" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Le,
                     lhs,
@@ -170,7 +170,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "|" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::BitOr,
                     lhs,
@@ -179,7 +179,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "^" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::BitXor,
                     lhs,
@@ -188,7 +188,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "&" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::BitAnd,
                     lhs,
@@ -197,7 +197,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "<<" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Shl,
                     lhs,
@@ -205,7 +205,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ ">>" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Shr,
                     lhs,
@@ -214,7 +214,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "+" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Add,
                     lhs,
@@ -222,7 +222,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "-" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Sub,
                     lhs,
@@ -231,7 +231,7 @@ peg::parser! {
             }
             --
             lhs:(@) _ "*" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Mul,
                     lhs,
@@ -239,7 +239,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "/" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Div,
                     lhs,
@@ -247,7 +247,7 @@ peg::parser! {
                 }))
             }
             lhs:(@) _ "%" _ rhs:@ {
-                let location = lhs.location.union(&rhs.location);
+                let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
                     op: BinaryOp::Mod,
                     lhs,
@@ -256,7 +256,7 @@ peg::parser! {
             }
             --
             arg:(@) _ "as" _ typ:@ {
-                let location = arg.location.union(&typ.location);
+                let location = arg.location.union(typ.location);
                 arena.alloc(ASTNode::new(location, NodeKind::Cast {
                     arg,
                     typ,
@@ -281,13 +281,13 @@ peg::parser! {
                     arg,
                 }))
             }
-            func:(@) _ "(" _ args:(a: expr() ** (_ "," _) { a }) _ ")" {
-                let location = func.location.union(&args.last().unwrap().location);
+            func:(@) _ start:position!() "(" _ args:(a: expr() ** (_ "," _) { a }) _ ")" end:position!() {
+                let location = func.location.union((start, end));
                 arena.alloc(
                     ASTNode::new(location, NodeKind::Call(func, arena.alloc_slice_copy(args.as_slice()))))
             }
             base:(@) _ "." _ start:position!() field:name() end:position!() {
-                let location = base.location.union(&TokenLocation::new(start, end));
+                let location = base.location.union((start, end));
                 arena.alloc(
                     ASTNode::new(location, NodeKind::Field(base, field)))
             }

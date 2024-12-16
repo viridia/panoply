@@ -23,6 +23,10 @@ pub enum CompilationError {
     MismatchedTypes(TokenLocation, Type, Type),
     #[error("Cannot convert type from {2} to {1}")]
     InvalidCast(TokenLocation, Type, Type),
+    #[error("Call expression requires function")]
+    NotCallable(TokenLocation),
+    #[error("Function expects {1} arguments, got {2}")]
+    IncorrectNumberOfArguments(TokenLocation, usize, usize),
     #[error("Recursive type: {1}")]
     RecursiveType(TokenLocation, Type),
     #[error("Unknown type: {1}")]
@@ -42,6 +46,8 @@ impl CompilationError {
             | CompilationError::Expected(loc, _)
             | CompilationError::MismatchedTypes(loc, _, _)
             | CompilationError::InvalidCast(loc, _, _)
+            | CompilationError::NotCallable(loc)
+            | CompilationError::IncorrectNumberOfArguments(loc, _, _)
             | CompilationError::RecursiveType(loc, _)
             | CompilationError::UnknownType(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)

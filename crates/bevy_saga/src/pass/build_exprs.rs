@@ -1,6 +1,8 @@
 use core::result;
 use std::sync::Arc;
 
+use bevy::render::render_graph::Node;
+
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::CompilationError,
@@ -210,9 +212,10 @@ pub(crate) fn build_exprs<'a>(
             Some(sym) => {
                 let decl = decls_table.get(sym);
                 match &decl.kind {
-                    // decl::DeclKind::Function { .. } => {
-                    //     Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(Type::Function)
-                    // }
+                    decl::DeclKind::Function { typ, .. } => {
+                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym))
+                            .with_type(Type::Function(typ.clone())))
+                    }
                     decl::DeclKind::Const(typ, _) => {
                         Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
                     }
@@ -338,6 +341,44 @@ pub(crate) fn build_exprs<'a>(
                     arg_expr.typ.clone(),
                 ))
             }
+        }
+
+        NodeKind::Call(func, args) => {
+            let func_expr = build_exprs(func, symbols, scope, decls_table, inference)?;
+            let mut arg_exprs = Vec::new();
+            for arg in args.iter() {
+                let arg_expr = build_exprs(arg, symbols, scope, decls_table, inference)?;
+                arg_exprs.push(arg_expr);
+            }
+
+            // let ret_type = inference.fresh_typevar();
+            let fty = match &func_expr.typ {
+                Type::Function(fty) => fty.clone(),
+                _ => {
+                    return Err(CompilationError::NotCallable(ast.location));
+                }
+            };
+
+            if fty.params.len() != arg_exprs.len() {
+                return Err(CompilationError::IncorrectNumberOfArguments(
+                    ast.location,
+                    fty.params.len(),
+                    arg_exprs.len(),
+                ));
+            }
+
+            for (param, arg) in fty.params.iter().zip(arg_exprs.iter()) {
+                inference.add_constraint(param.typ.clone(), arg.typ.clone(), arg.location);
+            }
+
+            // inference.add_constraint(ret_type.clone(), fty.ret.clone(), ast.location);
+            // inference.solve_constraints()?;
+            for arg in arg_exprs.iter_mut() {
+                assign_types(arg, decls_table, inference)?;
+            }
+
+            let call = ExprKind::Call(Box::new(func_expr), arg_exprs);
+            Ok(Expr::new(ast.location, call).with_type(fty.ret.clone()))
         }
 
         _ => {

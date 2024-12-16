@@ -1,6 +1,6 @@
 use core::result;
 
-use bevy::core::Name;
+use bevy::{core::Name, scene::ron::de, utils::HashMap};
 use wasm_encoder::{
     CodeSection, ExportKind, ExportSection, FieldType, Function, FunctionSection, IndirectNameMap,
     Instruction, NameMap, NameSection, RefType, StorageType, TypeSection, ValType,
@@ -10,7 +10,7 @@ use wasmtime::component::types::Field;
 use crate::{
     ast::{ASTNode, DeclKind, NodeKind},
     compiler::{CompilationError, CompilationUnit},
-    decl::{self, Scope},
+    decl::{self, DeclId, Scope},
     expr::{Expr, ExprKind},
     types::Type,
 };
@@ -25,6 +25,7 @@ pub struct CodeGenerator {
     function_names: NameMap,
     types: TypeSection,
     functions: FunctionSection,
+    function_indices: HashMap<DeclId, u32>,
     exports: ExportSection,
     codes: CodeSection,
     next_type_index: u32,
@@ -53,6 +54,7 @@ impl Default for CodeGenerator {
             function_names: NameMap::new(),
             types: TypeSection::new(),
             functions: FunctionSection::new(),
+            function_indices: HashMap::new(),
             exports: ExportSection::new(),
             codes: CodeSection::new(),
             next_type_index: 0,
@@ -80,6 +82,14 @@ pub(crate) fn gen_module(
 
     for (_, decl_id) in root_scope.decls.iter() {
         let decl = unit.decls.get(*decl_id);
+        if let decl::DeclKind::Function { .. } = decl.kind {
+            let function_index = generator.next_function_index();
+            generator.function_indices.insert(*decl_id, function_index);
+        }
+    }
+
+    for (_, decl_id) in root_scope.decls.iter() {
+        let decl = unit.decls.get(*decl_id);
         match &decl.kind {
             decl::DeclKind::Const(_, _expr) => todo!(),
             decl::DeclKind::Let(_, _expr) => todo!(),
@@ -94,19 +104,21 @@ pub(crate) fn gen_module(
                     .collect::<Vec<_>>();
 
                 let type_index = generator.next_type_index();
-                let function_index = generator.next_function_index();
-                generator.function_names.append(function_index, &name_str);
+                let function_index = generator.function_indices.get(decl_id).unwrap();
+                generator.function_names.append(*function_index, &name_str);
                 generator
                     .type_names
                     .append(type_index, format!("{}.type", name_str).as_str());
                 generator.types.ty().function(param_types, vec![ret_type]);
                 generator.functions.function(type_index);
-                generator
-                    .exports
-                    .export(&name_str, ExportKind::Func, function_index);
+                if decl.visibility == decl::DeclVisibility::Public {
+                    generator
+                        .exports
+                        .export(&name_str, ExportKind::Func, *function_index);
+                }
                 let locals = vec![];
                 let mut f = Function::new(locals);
-                gen_expr(unit, body, &mut f)?;
+                gen_expr(&mut generator, body, &mut f)?;
                 if !body.typ.is_void() {
                     f.instruction(&Instruction::Return);
                 }
@@ -142,7 +154,8 @@ pub(crate) fn gen_module(
 }
 
 fn gen_expr<'a>(
-    unit: &'a CompilationUnit,
+    generator: &mut CodeGenerator,
+    // unit: &'a CompilationUnit,
     expr: &'a Expr,
     out: &mut wasm_encoder::Function,
 ) -> Result<(), CompilationError> {
@@ -171,8 +184,8 @@ fn gen_expr<'a>(
         ExprKind::ConstString(symbol) => todo!(),
         ExprKind::DeclRef(symbol) => todo!(),
         ExprKind::BinaryExpr { op, lhs, rhs } => {
-            gen_expr(unit, lhs, out)?;
-            gen_expr(unit, rhs, out)?;
+            gen_expr(generator, lhs, out)?;
+            gen_expr(generator, rhs, out)?;
             match op {
                 crate::oper::BinaryOp::Add => {
                     match expr.typ {
@@ -330,7 +343,7 @@ fn gen_expr<'a>(
         }
 
         ExprKind::Cast(arg) => {
-            gen_expr(unit, arg, out)?;
+            gen_expr(generator, arg, out)?;
             // Convert from arg.typ to expr.typ.
             match (&expr.typ, &arg.typ) {
                 (Type::Boolean, Type::I32) => {
@@ -386,16 +399,29 @@ fn gen_expr<'a>(
             }
         }
 
+        ExprKind::Call(func, args) => {
+            for arg in args {
+                gen_expr(generator, arg, out)?;
+            }
+            if let ExprKind::DeclRef(decl_id) = func.kind {
+                let function_index = generator.function_indices.get(&decl_id).unwrap();
+                out.instruction(&Instruction::Call(*function_index));
+            } else {
+                panic!("Invalid function reference: {:?}", func);
+            }
+        }
+
         ExprKind::Block(vec, expr) => {
             for stmt in vec {
-                gen_expr(unit, stmt, out)?;
+                gen_expr(generator, stmt, out)?;
                 if !stmt.typ.is_void() {
+                    // TODO: Drop based on type
                     out.instruction(&Instruction::Drop);
                 }
             }
 
             if let Some(expr) = expr {
-                gen_expr(unit, expr, out)?;
+                gen_expr(generator, expr, out)?;
             }
         }
     }

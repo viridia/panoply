@@ -25,8 +25,8 @@ pub(crate) fn assign_types(
         ExprKind::ConstBool(_) => {}
         ExprKind::ConstString(_symbol) => todo!(),
         ExprKind::DeclRef(decl_id) => {
-            let decl = decls_table.get(*decl_id);
-            todo!();
+            let _decl = decls_table.get(*decl_id);
+            // todo!();
         }
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             assign_types(lhs, decls_table, inference)?;
@@ -88,6 +88,12 @@ pub(crate) fn assign_types(
 
         // No need to traverse here, this has already been done.
         ExprKind::Cast(_arg) => {}
+        ExprKind::Call(func, args) => {
+            assign_types(func, decls_table, inference)?;
+            for arg in args.iter_mut() {
+                assign_types(arg, decls_table, inference)?;
+            }
+        }
 
         ExprKind::Block(ref mut stmts, ref mut result) => {
             for stmt in stmts.iter_mut() {

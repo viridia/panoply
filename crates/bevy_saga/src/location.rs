@@ -12,7 +12,8 @@ impl TokenLocation {
     }
 
     /// Union of two locations. Computes a span that covers both locations.
-    pub fn union(&self, other: &Self) -> Self {
+    pub fn union(&self, other: impl Into<Self>) -> Self {
+        let other: TokenLocation = other.into();
         Self {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
