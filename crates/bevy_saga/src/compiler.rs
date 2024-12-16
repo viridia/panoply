@@ -145,6 +145,13 @@ impl<'cu> CompilationUnit<'cu> {
             "bool",
             Type::Boolean,
         );
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "String",
+            Type::String,
+        );
 
         let mut root_scope = Scope::new(Some(&intrinsic_scope));
         pass::build_module_decls(&self.symbols, &mut root_scope, &mut self.decls, ast)?;

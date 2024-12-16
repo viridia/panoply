@@ -299,19 +299,6 @@ peg::parser! {
             arena.alloc(ASTNode::new((0, 0), NodeKind::Empty))
         }
 
-        rule builtin_type() -> &'a ASTNode<'a> =
-            start:position!()
-            t:(   "bool" { TypeKind::Boolean }
-                / "i32" { TypeKind::I32 }
-                / "i64" { TypeKind::I64 }
-                / "f32" { TypeKind::F32 }
-                / "f64" { TypeKind::F64 }
-            )
-            end:position!()
-            {
-                arena.alloc(ASTNode::new((start, end), NodeKind::Type(t)))
-            }
-
         rule type_name() -> &'a ASTNode<'a> =
             start:position!()
             n:(ident() ** (_ "::" _))
@@ -333,7 +320,7 @@ peg::parser! {
             arena.alloc(ASTNode::new((start, end), NodeKind::Type(TypeKind::Array(t))))
         }
 
-        pub rule type_expr() -> &'a ASTNode<'a> = builtin_type() / type_name() / array_type()
+        pub rule type_expr() -> &'a ASTNode<'a> = type_name() / array_type()
 
         rule stmt() -> &'a ASTNode<'a> =
             start:position!()
