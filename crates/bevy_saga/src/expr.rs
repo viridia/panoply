@@ -17,10 +17,7 @@ pub(crate) enum ExprKind {
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
-    Cast {
-        arg: Box<Expr>,
-        typ: Type,
-    },
+    Cast(Box<Expr>),
     Block(Vec<Expr>, Option<Box<Expr>>),
 }
 
@@ -76,10 +73,10 @@ impl Display for Expr {
                 }?;
                 rhs.fmt(f)
             }
-            ExprKind::Cast { ref arg, ref typ } => {
+            ExprKind::Cast(ref arg) => {
                 arg.fmt(f)?;
                 write!(f, " as ")?;
-                typ.fmt(f)
+                self.typ.fmt(f)
             }
             ExprKind::Block(ref stmts, ref result) => {
                 write!(f, "{{")?;

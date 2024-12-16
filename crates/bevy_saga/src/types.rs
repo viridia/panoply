@@ -52,6 +52,11 @@ impl Type {
     pub fn is_float(&self) -> bool {
         matches!(self, Type::F32 | Type::F64)
     }
+
+    /// Returns true if the type is a number.
+    pub fn is_number(&self) -> bool {
+        self.is_integer() || self.is_float()
+    }
 }
 
 impl Display for Type {

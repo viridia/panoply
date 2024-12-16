@@ -86,9 +86,8 @@ pub(crate) fn assign_types(
             }
         }
 
-        ExprKind::Cast { arg, typ } => {
-            todo!();
-        }
+        // No need to traverse here, this has already been done.
+        ExprKind::Cast(_arg) => {}
 
         ExprKind::Block(ref mut stmts, ref mut result) => {
             for stmt in stmts.iter_mut() {

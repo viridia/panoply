@@ -83,6 +83,7 @@ pub enum DeclVisibility {
 
 #[derive(Debug)]
 pub struct Decl {
+    #[allow(unused)]
     pub location: TokenLocation,
     pub visibility: DeclVisibility,
     pub name: Symbol,
@@ -97,6 +98,7 @@ pub enum DeclKind {
     Function { typ: Arc<FunctionType>, body: Expr },
     Struct(Type),
     Enum(Type),
+    Type(Type),
 }
 
 pub(crate) struct Scope<'a> {
@@ -105,22 +107,34 @@ pub(crate) struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    pub(crate) fn new(parent: Option<&'a Scope>) -> Self {
+    pub fn new(parent: Option<&'a Scope>) -> Self {
         Self {
             parent,
             decls: HashMap::new(),
         }
     }
 
-    pub(crate) fn get(&self, name: Symbol) -> Option<DeclId> {
+    pub fn lookup(&self, name: Symbol) -> Option<DeclId> {
+        if let Some(decl) = self.decls.get(&name) {
+            return Some(*decl);
+        }
+
+        if let Some(parent) = self.parent {
+            parent.lookup(name)
+        } else {
+            None
+        }
+    }
+
+    pub fn get(&self, name: Symbol) -> Option<DeclId> {
         self.decls.get(&name).copied()
     }
 
-    pub(crate) fn insert(&mut self, name: Symbol, decl: DeclId) {
+    pub fn insert(&mut self, name: Symbol, decl: DeclId) {
         self.decls.insert(name, decl);
     }
 
-    pub(crate) fn contains(&self, symbol: Symbol) -> bool {
+    pub fn contains(&self, symbol: Symbol) -> bool {
         self.decls.contains_key(&symbol)
     }
 }

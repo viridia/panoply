@@ -10,7 +10,7 @@ use wasmtime::component::types::Field;
 use crate::{
     ast::{ASTNode, DeclKind, NodeKind},
     compiler::{CompilationError, CompilationUnit},
-    decl,
+    decl::{self, Scope},
     expr::{Expr, ExprKind},
     types::Type,
 };
@@ -61,7 +61,10 @@ impl Default for CodeGenerator {
     }
 }
 
-pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
+pub(crate) fn gen_module(
+    unit: &mut CompilationUnit,
+    root_scope: &Scope,
+) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
     // generator.types.ty().struct_(vec![FieldType {
@@ -75,7 +78,7 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
     let s = generator.next_type_index();
     generator.type_names.append(s, "String");
 
-    for (_, decl_id) in unit.root_scope.decls.iter() {
+    for (_, decl_id) in root_scope.decls.iter() {
         let decl = unit.decls.get(*decl_id);
         match &decl.kind {
             decl::DeclKind::Const(_, _expr) => todo!(),
@@ -112,6 +115,7 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
             }
             decl::DeclKind::Struct(_) => todo!(),
             decl::DeclKind::Enum(_) => todo!(),
+            decl::DeclKind::Type(_) => todo!(),
         }
     }
 
@@ -122,9 +126,7 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
         names.types(&generator.type_names);
     }
 
-    // if !generator.names_local.is_empty() {
-    //     generator.names.locals(&generator.names_local);
-    // }
+    names.locals(&generator.local_names);
 
     if !generator.function_names.is_empty() {
         names.functions(&generator.function_names);
@@ -327,9 +329,61 @@ fn gen_expr<'a>(
             }
         }
 
-        ExprKind::Cast { arg, typ } => {
+        ExprKind::Cast(arg) => {
             gen_expr(unit, arg, out)?;
-            todo!();
+            // Convert from arg.typ to expr.typ.
+            match (&expr.typ, &arg.typ) {
+                (Type::Boolean, Type::I32) => {
+                    out.instruction(&Instruction::I32Eqz);
+                }
+                (Type::Boolean, Type::I64) => {
+                    out.instruction(&Instruction::I64Eqz);
+                    out.instruction(&Instruction::I32WrapI64);
+                }
+                (Type::I32, Type::Boolean) => {
+                    // Same type, do nothing.
+                }
+                (Type::I32, Type::I64) => {
+                    out.instruction(&Instruction::I32WrapI64);
+                }
+                (Type::I32, Type::F32) => {
+                    out.instruction(&Instruction::I32TruncF32S);
+                }
+                (Type::I32, Type::F64) => {
+                    out.instruction(&Instruction::I32TruncF64S);
+                }
+                (Type::I64, Type::Boolean) => {
+                    out.instruction(&Instruction::I64ExtendI32U);
+                }
+                (Type::I64, Type::I32) => {
+                    out.instruction(&Instruction::I64Extend32S);
+                }
+                (Type::I64, Type::F32) => {
+                    out.instruction(&Instruction::I64TruncF32S);
+                }
+                (Type::I64, Type::F64) => {
+                    out.instruction(&Instruction::I64TruncF64S);
+                }
+                (Type::F32, Type::I32) => {
+                    out.instruction(&Instruction::F32ConvertI32S);
+                }
+                (Type::F32, Type::I64) => {
+                    out.instruction(&Instruction::F32ConvertI64S);
+                }
+                (Type::F32, Type::F64) => {
+                    out.instruction(&Instruction::F32DemoteF64);
+                }
+                (Type::F64, Type::I32) => {
+                    out.instruction(&Instruction::F64ConvertI32S);
+                }
+                (Type::F64, Type::I64) => {
+                    out.instruction(&Instruction::F64ConvertI64S);
+                }
+                (Type::F64, Type::F32) => {
+                    out.instruction(&Instruction::F64PromoteF32);
+                }
+                _ => panic!("Invalid cast: {:?}", expr),
+            }
         }
 
         ExprKind::Block(vec, expr) => {

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    decl::{DeclsTable, Scope, SymbolTable},
+    decl::{Decl, DeclKind, DeclVisibility, DeclsTable, Scope, SymbolTable},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
@@ -21,8 +21,12 @@ pub enum CompilationError {
     Expected(TokenLocation, String),
     #[error("Cannot assign type {2} to {1}")]
     MismatchedTypes(TokenLocation, Type, Type),
+    #[error("Cannot convert type from {2} to {1}")]
+    InvalidCast(TokenLocation, Type, Type),
     #[error("Recursive type: {1}")]
     RecursiveType(TokenLocation, Type),
+    #[error("Unknown type: {1}")]
+    UnknownType(TokenLocation, String),
     #[error("Invalid type for binary operator {2} to {3}")]
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
     #[error("Function redefinition: {1}")]
@@ -37,7 +41,9 @@ impl CompilationError {
             | CompilationError::ExpectStatement(loc)
             | CompilationError::Expected(loc, _)
             | CompilationError::MismatchedTypes(loc, _, _)
+            | CompilationError::InvalidCast(loc, _, _)
             | CompilationError::RecursiveType(loc, _)
+            | CompilationError::UnknownType(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
             | CompilationError::FunctionRedefinition(loc, _) => *loc,
         }
@@ -48,12 +54,9 @@ impl CompilationError {
 pub struct CompilationUnit<'cu> {
     path: &'cu str,
     src: &'cu str,
-    // pub(crate) arena: Bump,
     pub(crate) symbols: SymbolTable,
     pub(crate) decls: DeclsTable,
-    pub(crate) root_scope: Scope<'cu>,
     pub(crate) module: wasm_encoder::Module,
-    // pub(crate) test: Rc<i32>,
 }
 
 impl<'cu> CompilationUnit<'cu> {
@@ -61,12 +64,9 @@ impl<'cu> CompilationUnit<'cu> {
         Self {
             path,
             src,
-            // arena: bumpalo::Bump::new(),
             symbols: SymbolTable::new(),
             decls: DeclsTable::new(),
-            root_scope: Scope::new(None),
             module: wasm_encoder::Module::new(),
-            // test: Rc::new(0),
         }
     }
 
@@ -92,10 +92,65 @@ impl<'cu> CompilationUnit<'cu> {
                 CompilationError::Expected(location, tokens)
             })?;
 
-        pass::build_module_decls(&self.symbols, &mut self.root_scope, &mut self.decls, ast)?;
+        let mut intrinsic_scope = Scope::new(None);
+        fn define_type(
+            symbols: &SymbolTable,
+            decls: &mut DeclsTable,
+            scope: &mut Scope,
+            name: &str,
+            ty: Type,
+        ) {
+            let sym = symbols.intern(name);
+            let decl = decls.insert(Decl {
+                name: sym,
+                kind: DeclKind::Type(ty),
+                location: (0, 0).into(),
+                visibility: DeclVisibility::Public,
+            });
+            scope.insert(sym, decl);
+        }
+
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "i32",
+            Type::I32,
+        );
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "i64",
+            Type::I64,
+        );
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "f32",
+            Type::F32,
+        );
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "f64",
+            Type::F64,
+        );
+        define_type(
+            &self.symbols,
+            &mut self.decls,
+            &mut intrinsic_scope,
+            "bool",
+            Type::Boolean,
+        );
+
+        let mut root_scope = Scope::new(Some(&intrinsic_scope));
+        pass::build_module_decls(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
         self.resolve_imports().await?;
-        pass::build_module_exprs(&mut self.root_scope, &mut self.decls, ast)?;
-        pass::gen_module(self)?;
+        pass::build_module_exprs(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
+        pass::gen_module(self, &root_scope)?;
         Ok(())
     }
 
@@ -104,11 +159,6 @@ impl<'cu> CompilationUnit<'cu> {
         // TODO: Implement
         Ok(())
     }
-
-    /// Emit the compiled module as a WebAssembly binary.
-    // pub fn emit_wasm(&mut self) -> Vec<u8> {
-    //     self.module.finish()
-    // }
 
     pub(crate) fn report_error(&self, err: &CompilationError) {
         let location = err.location();
@@ -146,7 +196,7 @@ mod tests {
     use crate::{
         ast::{self, FloatSuffix, IntegerSuffix},
         compiler::CompilationUnit,
-        decl::SymbolTable,
+        decl::{Scope, SymbolTable},
         oper,
         parser::saga_parser,
         pass::{self, assign_types},
@@ -165,7 +215,15 @@ mod tests {
             ast::NodeKind::LitInt(20, IntegerSuffix::Unsized)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
+        let root_scope = Scope::new(None);
+        let expr = pass::build_exprs(
+            node,
+            &unit.symbols,
+            &root_scope,
+            &mut unit.decls,
+            &mut inference,
+        )
+        .unwrap();
         assert_eq!(expr.to_string(), "20");
         inference.solve_constraints().unwrap();
         // let span = expr.location.as_span("20").unwrap();
@@ -185,7 +243,15 @@ mod tests {
             ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
+        let root_scope = Scope::new(None);
+        let expr = pass::build_exprs(
+            node,
+            &unit.symbols,
+            &root_scope,
+            &mut unit.decls,
+            &mut inference,
+        )
+        .unwrap();
         assert_eq!(expr.to_string(), "20.0");
         inference.solve_constraints().unwrap();
     }
@@ -211,7 +277,15 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let mut expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
+        let root_scope = Scope::new(None);
+        let mut expr = pass::build_exprs(
+            node,
+            &unit.symbols,
+            &root_scope,
+            &mut unit.decls,
+            &mut inference,
+        )
+        .unwrap();
         assert_eq!(expr.to_string(), "20.0 + 10.0");
         inference.solve_constraints().unwrap();
         assign_types(&mut expr, &unit.decls, &inference).unwrap();
@@ -250,7 +324,15 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
+        let root_scope = Scope::new(None);
+        let expr = pass::build_exprs(
+            node,
+            &unit.symbols,
+            &root_scope,
+            &mut unit.decls,
+            &mut inference,
+        )
+        .unwrap();
         assert_eq!(expr.to_string(), "20.0 + 10.0 * 0");
         let err = inference.solve_constraints().unwrap_err();
         assert_eq!(err.to_string(), "Cannot assign type i32 to f32");

@@ -67,6 +67,7 @@ pub(crate) fn build_module_decls<'ast>(
 }
 
 pub(crate) fn build_module_exprs<'ast>(
+    symbols: &decl::SymbolTable,
     scope: &mut decl::Scope,
     decls_table: &mut decl::DeclsTable,
     ast: &'ast ASTNode<'ast>,
@@ -85,26 +86,28 @@ pub(crate) fn build_module_exprs<'ast>(
                         let decl_id = scope.get(*name).unwrap();
                         let ret_type = match ret_ast.kind {
                             NodeKind::Empty => Type::Void,
-                            _ => resolve_types(scope, ret_ast),
+                            _ => resolve_types(symbols, scope, decls_table, ret_ast)?,
                         };
 
+                        let mut params_mapped: Vec<FunctionParam> =
+                            Vec::with_capacity(params.len());
+                        for p in params.iter() {
+                            let typ = resolve_types(symbols, scope, decls_table, p.typ)?;
+                            let decl = decls_table.insert(Decl {
+                                location: p.location,
+                                visibility: decl::DeclVisibility::Private,
+                                name: p.name,
+                                kind: decl::DeclKind::Param(typ.clone()),
+                            });
+                            params_mapped.push(FunctionParam {
+                                name: p.name,
+                                decl,
+                                typ,
+                            });
+                        }
+
                         let fty = FunctionType {
-                            params: params
-                                .iter()
-                                .map(|p| {
-                                    let typ = resolve_types(scope, p.typ);
-                                    FunctionParam {
-                                        name: p.name,
-                                        decl: decls_table.insert(Decl {
-                                            location: p.location,
-                                            visibility: decl::DeclVisibility::Private,
-                                            name: p.name,
-                                            kind: decl::DeclKind::Param(typ.clone()),
-                                        }),
-                                        typ,
-                                    }
-                                })
-                                .collect(),
+                            params: params_mapped,
                             ret: ret_type,
                         };
 
@@ -133,7 +136,8 @@ pub(crate) fn build_module_exprs<'ast>(
             {
                 let decl_id = scope.get(*name).unwrap();
                 let mut inference: TypeInference = Default::default();
-                let mut body_expr = build_exprs(body_ast, scope, decls_table, &mut inference);
+                let mut body_expr =
+                    build_exprs(body_ast, symbols, scope, decls_table, &mut inference)?;
                 let decl = decls_table.get_mut(decl_id);
                 let decl::DeclKind::Function { ref typ, .. } = decl.kind else {
                     unreachable!()
@@ -161,10 +165,11 @@ pub(crate) fn build_module_exprs<'ast>(
 
 pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
+    symbols: &decl::SymbolTable,
     scope: &decl::Scope,
     decls_table: &mut decl::DeclsTable,
     inference: &mut TypeInference,
-) -> Expr {
+) -> Result<Expr, CompilationError> {
     match &ast.kind {
         NodeKind::LitInt(value, suffix) => {
             let typ = match suffix {
@@ -180,7 +185,7 @@ pub(crate) fn build_exprs<'a>(
                 crate::ast::IntegerSuffix::I32 => Type::I32,
                 crate::ast::IntegerSuffix::I64 => Type::I64,
             };
-            Expr::new(ast.location, ExprKind::ConstInteger(*value)).with_type(typ)
+            Ok(Expr::new(ast.location, ExprKind::ConstInteger(*value)).with_type(typ))
         }
 
         NodeKind::LitFloat(value, suffix) => {
@@ -190,15 +195,15 @@ pub(crate) fn build_exprs<'a>(
                 crate::ast::FloatSuffix::F64 => Type::F64,
                 _ => unreachable!(),
             };
-            Expr::new(ast.location, ExprKind::ConstFloat(*value)).with_type(typ)
+            Ok(Expr::new(ast.location, ExprKind::ConstFloat(*value)).with_type(typ))
         }
 
         NodeKind::LitString(value) => {
-            Expr::new(ast.location, ExprKind::ConstString(*value)).with_type(Type::String)
+            Ok(Expr::new(ast.location, ExprKind::ConstString(*value)).with_type(Type::String))
         }
 
         NodeKind::LitBool(value) => {
-            Expr::new(ast.location, ExprKind::ConstBool(*value)).with_type(Type::Boolean)
+            Ok(Expr::new(ast.location, ExprKind::ConstBool(*value)).with_type(Type::Boolean))
         }
 
         NodeKind::Ident(symbol) => match scope.get(*symbol) {
@@ -209,10 +214,10 @@ pub(crate) fn build_exprs<'a>(
                     //     Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(Type::Function)
                     // }
                     decl::DeclKind::Const(typ, _) => {
-                        Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone())
+                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
                     }
                     decl::DeclKind::Let(typ, _) => {
-                        Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone())
+                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
                     }
                     // Struct (constructor)
                     // Enum (constructor)
@@ -223,8 +228,8 @@ pub(crate) fn build_exprs<'a>(
         },
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, scope, decls_table, inference);
-            let rhs_expr = build_exprs(rhs, scope, decls_table, inference);
+            let lhs_expr = build_exprs(lhs, symbols, scope, decls_table, inference)?;
+            let rhs_expr = build_exprs(rhs, symbols, scope, decls_table, inference)?;
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -272,7 +277,7 @@ pub(crate) fn build_exprs<'a>(
                 }
             };
 
-            Expr::new(
+            Ok(Expr::new(
                 ast.location,
                 ExprKind::BinaryExpr {
                     op: *op,
@@ -280,19 +285,27 @@ pub(crate) fn build_exprs<'a>(
                     rhs: Box::new(rhs_expr),
                 },
             )
-            .with_type(ty)
+            .with_type(ty))
         }
 
-        NodeKind::Empty => Expr::new(ast.location, ExprKind::Empty),
+        NodeKind::Empty => Ok(Expr::new(ast.location, ExprKind::Empty)),
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, scope, decls_table, inference);
+                let stmt_expr = build_exprs(stmt, symbols, scope, decls_table, inference)?;
                 stmt_exprs.push(stmt_expr);
             }
 
-            let result_expr =
-                result.map(|result| Box::new(build_exprs(result, scope, decls_table, inference)));
+            let result_expr = match result {
+                Some(result) => Some(Box::new(build_exprs(
+                    result,
+                    symbols,
+                    scope,
+                    decls_table,
+                    inference,
+                )?)),
+                None => None,
+            };
             let result_type = result_expr
                 .as_ref()
                 .map(|expr| expr.typ.clone())
@@ -301,7 +314,30 @@ pub(crate) fn build_exprs<'a>(
                 .as_ref()
                 .map(|expr| expr.location)
                 .unwrap_or(ast.location);
-            Expr::new(location, ExprKind::Block(stmt_exprs, result_expr)).with_type(result_type)
+            Ok(
+                Expr::new(location, ExprKind::Block(stmt_exprs, result_expr))
+                    .with_type(result_type),
+            )
+        }
+
+        NodeKind::Cast { arg, typ } => {
+            let mut infer = TypeInference::default();
+            let to_typ = resolve_types(symbols, scope, decls_table, typ)?;
+            let mut arg_expr = build_exprs(arg, symbols, scope, decls_table, &mut infer)?;
+            infer.solve_constraints()?;
+
+            if to_typ == arg_expr.typ {
+                Ok(arg_expr)
+            } else if to_typ.is_number() && arg_expr.typ.is_number() {
+                assign_types(&mut arg_expr, decls_table, &infer)?;
+                Ok(Expr::new(ast.location, ExprKind::Cast(Box::new(arg_expr))).with_type(to_typ))
+            } else {
+                Err(CompilationError::InvalidCast(
+                    ast.location,
+                    to_typ.clone(),
+                    arg_expr.typ.clone(),
+                ))
+            }
         }
 
         _ => {
