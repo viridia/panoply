@@ -2,6 +2,7 @@ use core::result;
 
 use crate::{
     compiler::CompilationError,
+    decl,
     expr::{Expr, ExprKind},
     types::Type,
 };
@@ -10,6 +11,7 @@ use super::type_inference::TypeInference;
 
 pub(crate) fn assign_types(
     expr: &mut Expr,
+    decls_table: &decl::DeclsTable,
     inference: &TypeInference,
 ) -> Result<(), CompilationError> {
     match &mut expr.kind {
@@ -22,10 +24,13 @@ pub(crate) fn assign_types(
         }
         ExprKind::ConstBool(_) => {}
         ExprKind::ConstString(_symbol) => todo!(),
-        ExprKind::Ident(_symbol) => todo!(),
+        ExprKind::DeclRef(decl_id) => {
+            let decl = decls_table.get(*decl_id);
+            todo!();
+        }
         ExprKind::BinaryExpr { op, lhs, rhs } => {
-            assign_types(lhs, inference)?;
-            assign_types(rhs, inference)?;
+            assign_types(lhs, decls_table, inference)?;
+            assign_types(rhs, decls_table, inference)?;
             match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -87,10 +92,10 @@ pub(crate) fn assign_types(
 
         ExprKind::Block(ref mut stmts, ref mut result) => {
             for stmt in stmts.iter_mut() {
-                assign_types(stmt, inference)?;
+                assign_types(stmt, decls_table, inference)?;
             }
             if let Some(ref mut result) = result {
-                assign_types(result.as_mut(), inference)?;
+                assign_types(result.as_mut(), decls_table, inference)?;
             }
         }
     }

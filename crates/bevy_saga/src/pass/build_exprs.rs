@@ -1,11 +1,12 @@
 use core::result;
+use std::sync::Arc;
 
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::CompilationError,
-    decl,
+    decl::{self, Decl},
     expr::{Expr, ExprKind},
-    types::Type,
+    types::{FunctionParam, FunctionType, Type},
 };
 
 use super::{
@@ -15,15 +16,14 @@ use super::{
 pub(crate) fn build_module_decls<'ast>(
     symbols: &decl::SymbolTable,
     scope: &mut decl::Scope,
+    decls_table: &mut decl::DeclsTable,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
     if let NodeKind::Program(decls) = &ast.kind {
         for decl in *decls {
             match &decl.kind {
                 NodeKind::Decl(d) => match d {
-                    crate::ast::DeclKind::Function {
-                        name, params, body, ..
-                    } => {
+                    crate::ast::DeclKind::Function { name, body, .. } => {
                         // Multiple declarations of the same function are not allowed.
                         if scope.contains(*name) {
                             let name_str = symbols.resolve(*name);
@@ -37,21 +37,13 @@ pub(crate) fn build_module_decls<'ast>(
                             loc: decl.location,
                             name: *name,
                             kind: decl::DeclKind::Function {
-                                name: *name,
-                                params: params
-                                    .iter()
-                                    .map(|p| decl::Decl {
-                                        loc: p.location,
-                                        name: p.name,
-                                        kind: decl::DeclKind::Param(Type::None),
-                                    })
-                                    .collect(),
-                                ret: Type::None,
+                                typ: Arc::new(FunctionType::default()),
                                 body: Expr::new(body.location, ExprKind::Empty),
                             },
                         };
 
-                        scope.insert(f);
+                        let id = decls_table.insert(f);
+                        scope.insert(*name, id);
                     }
                     crate::ast::DeclKind::Let { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Const { name, typ, value } => todo!(),
@@ -70,47 +62,50 @@ pub(crate) fn build_module_decls<'ast>(
 
 pub(crate) fn build_module_exprs<'ast>(
     scope: &mut decl::Scope,
+    decls_table: &mut decl::DeclsTable,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
+    // Resolve types for all declarations.
     if let NodeKind::Program(decls) = &ast.kind {
         for decl_ast in *decls {
             match &decl_ast.kind {
                 NodeKind::Decl(d) => match d {
                     crate::ast::DeclKind::Function {
                         name,
-                        body: body_ast,
+                        params,
                         ret: ret_ast,
                         ..
                     } => {
-                        let decl = scope.get(*name).unwrap();
-                        let decl::DeclKind::Function { ref params, .. } = decl.kind else {
-                            unreachable!()
-                        };
-                        let mut inference: TypeInference = Default::default();
-                        let mut body_expr = build_exprs(body_ast, scope, &mut inference);
+                        let decl_id = scope.get(*name).unwrap();
                         let ret_type = match ret_ast.kind {
                             NodeKind::Empty => Type::Void,
-                            _ => resolve_types(&scope, ret_ast),
+                            _ => resolve_types(scope, ret_ast),
                         };
-                        inference.add_constraint(
-                            ret_type.clone(),
-                            body_expr.typ.clone(),
-                            body_expr.location,
-                        );
-                        inference.solve_constraints()?;
-                        assign_types(&mut body_expr, &inference)?;
 
-                        let decl = scope.get_mut(*name).unwrap();
-                        let decl::DeclKind::Function {
-                            ref mut body,
-                            ref mut ret,
-                            ..
-                        } = decl.kind
-                        else {
+                        let fty = FunctionType {
+                            params: params
+                                .iter()
+                                .map(|p| {
+                                    let typ = resolve_types(scope, p.typ);
+                                    FunctionParam {
+                                        name: p.name,
+                                        decl: decls_table.insert(Decl {
+                                            loc: p.location,
+                                            name: p.name,
+                                            kind: decl::DeclKind::Param(typ.clone()),
+                                        }),
+                                        typ,
+                                    }
+                                })
+                                .collect(),
+                            ret: ret_type,
+                        };
+
+                        let decl = decls_table.get_mut(decl_id);
+                        let decl::DeclKind::Function { ref mut typ, .. } = decl.kind else {
                             unreachable!()
                         };
-                        *body = body_expr;
-                        *ret = ret_type;
+                        *typ = Arc::new(fty);
                     }
                     crate::ast::DeclKind::Let { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Const { name, typ, value } => todo!(),
@@ -118,6 +113,36 @@ pub(crate) fn build_module_exprs<'ast>(
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
                 _ => panic!("Invalid AST node for declaration: {:?}", decl_ast.kind),
+            }
+        }
+
+        // Build function body expressions.
+        for decl_ast in *decls {
+            if let NodeKind::Decl(crate::ast::DeclKind::Function {
+                name,
+                body: body_ast,
+                ..
+            }) = &decl_ast.kind
+            {
+                let decl_id = scope.get(*name).unwrap();
+                let mut inference: TypeInference = Default::default();
+                let mut body_expr = build_exprs(body_ast, scope, decls_table, &mut inference);
+                let decl = decls_table.get_mut(decl_id);
+                let decl::DeclKind::Function { ref typ, .. } = decl.kind else {
+                    unreachable!()
+                };
+                inference.add_constraint(
+                    typ.ret.clone(),
+                    body_expr.typ.clone(),
+                    body_expr.location,
+                );
+                inference.solve_constraints()?;
+                assign_types(&mut body_expr, decls_table, &inference)?;
+                let decl = decls_table.get_mut(decl_id);
+                let decl::DeclKind::Function { ref mut body, .. } = decl.kind else {
+                    unreachable!()
+                };
+                *body = body_expr;
             }
         }
 
@@ -130,6 +155,7 @@ pub(crate) fn build_module_exprs<'ast>(
 pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
     scope: &decl::Scope,
+    decls_table: &mut decl::DeclsTable,
     inference: &mut TypeInference,
 ) -> Expr {
     match &ast.kind {
@@ -169,13 +195,29 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Ident(symbol) => match scope.get(*symbol) {
-            Some(_) => todo!(),
+            Some(sym) => {
+                let decl = decls_table.get(sym);
+                match &decl.kind {
+                    // decl::DeclKind::Function { .. } => {
+                    //     Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(Type::Function)
+                    // }
+                    decl::DeclKind::Const(typ, _) => {
+                        Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone())
+                    }
+                    decl::DeclKind::Let(typ, _) => {
+                        Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone())
+                    }
+                    // Struct (constructor)
+                    // Enum (constructor)
+                    _ => todo!(),
+                }
+            }
             None => todo!(),
         },
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, scope, inference);
-            let rhs_expr = build_exprs(rhs, scope, inference);
+            let lhs_expr = build_exprs(lhs, scope, decls_table, inference);
+            let rhs_expr = build_exprs(rhs, scope, decls_table, inference);
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -238,11 +280,12 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, scope, inference);
+                let stmt_expr = build_exprs(stmt, scope, decls_table, inference);
                 stmt_exprs.push(stmt_expr);
             }
 
-            let result_expr = result.map(|result| Box::new(build_exprs(result, scope, inference)));
+            let result_expr =
+                result.map(|result| Box::new(build_exprs(result, scope, decls_table, inference)));
             let result_type = result_expr
                 .as_ref()
                 .map(|expr| expr.typ.clone())

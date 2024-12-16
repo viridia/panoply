@@ -1,6 +1,8 @@
 use core::fmt::Display;
 use std::sync::Arc;
 
+use crate::decl::{DeclId, Symbol};
+
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
 pub enum Type {
@@ -17,11 +19,22 @@ pub enum Type {
     String,
     Tuple(Arc<[Type]>),
     Array(Arc<Type>),
-    Function {
-        params: Vec<Arc<Type>>,
-        ret: Arc<Type>,
-    },
+    Function(Arc<FunctionType>),
     // TODO: Struct, Record, Option, Enum
+}
+
+/// Type data for a function
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct FunctionType {
+    pub params: Vec<FunctionParam>,
+    pub ret: Type,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct FunctionParam {
+    pub name: Symbol,
+    pub decl: DeclId,
+    pub typ: Type,
 }
 
 impl Type {
@@ -65,19 +78,19 @@ impl Display for Type {
                 write!(f, ")")
             }
             Type::Array(ty) => write!(f, "[{}]", ty),
-            Type::Function { params, ret } => {
+            Type::Function(ftype) => {
                 write!(f, "(")?;
-                for (i, ty) in params.iter().enumerate() {
+                for (i, param) in ftype.params.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    ty.fmt(f)?;
+                    param.typ.fmt(f)?;
                 }
-                if !matches!(ret.as_ref(), Type::None) {
-                    write!(f, ") -> {}", ret)?
+                if !matches!(ftype.ret, Type::None) {
+                    write!(f, ") -> {}", ftype.ret)?
                 }
                 Ok(())
-            } // Type::Error(err) => write!(f, "Error({})", err),
+            }
         }
     }
 }

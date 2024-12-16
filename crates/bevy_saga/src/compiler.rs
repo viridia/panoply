@@ -1,11 +1,12 @@
+use std::path::Path;
+
 use crate::{
-    decl::{Scope, SymbolTable},
+    decl::{DeclsTable, Scope, SymbolTable},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
     pass, Type,
 };
-use bumpalo::Bump;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -47,23 +48,30 @@ impl CompilationError {
 pub struct CompilationUnit<'cu> {
     path: &'cu str,
     src: &'cu str,
-    pub(crate) arena: Bump,
+    // pub(crate) arena: Bump,
     pub(crate) symbols: SymbolTable,
+    pub(crate) decls: DeclsTable,
     pub(crate) root_scope: Scope<'cu>,
-    pub(crate) module: walrus::Module,
+    pub(crate) module: wasm_encoder::Module,
+    // pub(crate) test: Rc<i32>,
 }
 
 impl<'cu> CompilationUnit<'cu> {
     pub fn new(path: &'cu str, src: &'cu str) -> Self {
-        let config = walrus::ModuleConfig::default();
         Self {
             path,
             src,
-            arena: bumpalo::Bump::new(),
+            // arena: bumpalo::Bump::new(),
             symbols: SymbolTable::new(),
+            decls: DeclsTable::new(),
             root_scope: Scope::new(None),
-            module: walrus::Module::with_config(config),
+            module: wasm_encoder::Module::new(),
+            // test: Rc::new(0),
         }
+    }
+
+    pub fn filename(&self) -> &'cu str {
+        Path::new(self.path).file_name().unwrap().to_str().unwrap()
     }
 
     /// Compile a script file.
@@ -84,9 +92,9 @@ impl<'cu> CompilationUnit<'cu> {
                 CompilationError::Expected(location, tokens)
             })?;
 
-        pass::build_module_decls(&self.symbols, &mut self.root_scope, ast)?;
+        pass::build_module_decls(&self.symbols, &mut self.root_scope, &mut self.decls, ast)?;
         self.resolve_imports().await?;
-        pass::build_module_exprs(&mut self.root_scope, ast)?;
+        pass::build_module_exprs(&mut self.root_scope, &mut self.decls, ast)?;
         pass::gen_module(self)?;
         Ok(())
     }
@@ -98,9 +106,9 @@ impl<'cu> CompilationUnit<'cu> {
     }
 
     /// Emit the compiled module as a WebAssembly binary.
-    pub fn emit_wasm(&mut self) -> Vec<u8> {
-        self.module.emit_wasm()
-    }
+    // pub fn emit_wasm(&mut self) -> Vec<u8> {
+    //     self.module.finish()
+    // }
 
     pub(crate) fn report_error(&self, err: &CompilationError) {
         let location = err.location();
@@ -145,20 +153,19 @@ mod tests {
         Type,
     };
     use futures_lite::future;
-    use walrus::ModuleConfig;
 
     #[test]
     fn parse_integer() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let unit = CompilationUnit::new("--str--", "20");
+        let mut unit = CompilationUnit::new("--str--", "20");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
             ast::NodeKind::LitInt(20, IntegerSuffix::Unsized)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
         assert_eq!(expr.to_string(), "20");
         inference.solve_constraints().unwrap();
         // let span = expr.location.as_span("20").unwrap();
@@ -171,14 +178,14 @@ mod tests {
     fn parse_float() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let unit = CompilationUnit::new("--str--", "20.0");
+        let mut unit = CompilationUnit::new("--str--", "20.0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
             node.kind,
             ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
         assert_eq!(expr.to_string(), "20.0");
         inference.solve_constraints().unwrap();
     }
@@ -187,7 +194,7 @@ mod tests {
     fn parse_binop_add() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let unit = CompilationUnit::new("--str--", "20.0 + 10.0");
+        let mut unit = CompilationUnit::new("--str--", "20.0 + 10.0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
             ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
@@ -204,10 +211,10 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let mut expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
+        let mut expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0");
         inference.solve_constraints().unwrap();
-        assign_types(&mut expr, &inference).unwrap();
+        assign_types(&mut expr, &unit.decls, &inference).unwrap();
         assert_eq!(expr.typ, Type::F32);
     }
 
@@ -215,7 +222,7 @@ mod tests {
     fn parse_binop_prec() {
         let arena = bumpalo::Bump::new();
         let symbols = SymbolTable::new();
-        let unit = CompilationUnit::new("--str--", "20.0 + 10.0 * 0");
+        let mut unit = CompilationUnit::new("--str--", "20.0 + 10.0 * 0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
             ast::NodeKind::BinaryExpr { op, lhs, rhs } => {
@@ -243,7 +250,7 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let expr = pass::build_exprs(node, &unit.root_scope, &mut inference);
+        let expr = pass::build_exprs(node, &unit.root_scope, &mut unit.decls, &mut inference);
         assert_eq!(expr.to_string(), "20.0 + 10.0 * 0");
         let err = inference.solve_constraints().unwrap_err();
         assert_eq!(err.to_string(), "Cannot assign type i32 to f32");
@@ -271,38 +278,13 @@ mod tests {
             }
             _ => panic!(),
         }
-        // let mut unit = CompilationUnit::new();
-        // let mut inference: pass::TypeInference = Default::default();
-        // let expr = pass::build_exprs(&mut unit, node, &mut inference);
-        // assert_eq!(expr.to_string(), "20");
-        // inference.solve_constraints().unwrap();
-        // let span = expr.location.as_span("20").unwrap();
-        // assert_eq!(span.start(), 0);
-        // assert_eq!(span.end(), 2);
-        // assert_eq!(span.lines().next(), Some("20"));
-        let config = ModuleConfig::default();
-        let mut module = walrus::Module::with_config(config);
-
-        let mut test_fn = walrus::FunctionBuilder::new(
-            &mut module.types,
-            &[walrus::ValType::I32],
-            &[walrus::ValType::I32],
-        );
-
-        test_fn
-            .func_body()
-            .i32_const(1)
-            .i32_const(2)
-            .binop(walrus::ir::BinaryOp::I32Add);
-        let test_fn = test_fn.finish(Vec::new(), &mut module.funcs);
-
-        // Export the `test` function.
-        module.exports.add("test", test_fn);
     }
 
     #[test]
     fn test_compiler() {
         let mut unit = CompilationUnit::new("--str--", "fn test() -> i32 { 1 + 2 }");
         future::block_on(unit.compile()).unwrap();
+
+        // (type $tup (struct i64 i64 i32))
     }
 }

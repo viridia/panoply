@@ -1,11 +1,19 @@
 use core::cell::RefCell;
+use std::sync::Arc;
 
 use bevy::utils::HashMap;
 
-use crate::{expr::Expr, location::TokenLocation, types::Type};
+use crate::{
+    expr::Expr,
+    location::TokenLocation,
+    types::{FunctionType, Type},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct Symbol(pub(crate) usize);
+pub struct Symbol(pub(crate) usize);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DeclId(pub(crate) usize);
 
 struct SymbolTableInner {
     symbols: HashMap<String, Symbol>,
@@ -42,6 +50,30 @@ impl SymbolTable {
     }
 }
 
+pub(crate) struct DeclsTable {
+    decls: Vec<Decl>,
+}
+
+impl DeclsTable {
+    pub fn new() -> Self {
+        Self { decls: Vec::new() }
+    }
+
+    pub fn insert(&mut self, decl: Decl) -> DeclId {
+        let id = DeclId(self.decls.len());
+        self.decls.push(decl);
+        id
+    }
+
+    pub fn get(&self, id: DeclId) -> &Decl {
+        &self.decls[id.0]
+    }
+
+    pub fn get_mut(&mut self, id: DeclId) -> &mut Decl {
+        &mut self.decls[id.0]
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Decl {
     pub(crate) loc: TokenLocation,
@@ -54,19 +86,14 @@ pub enum DeclKind {
     Const(Type, Expr),
     Let(Type, Expr),
     Param(Type),
-    Function {
-        name: Symbol,
-        params: Vec<Decl>,
-        ret: Type,
-        body: Expr,
-    },
+    Function { typ: Arc<FunctionType>, body: Expr },
     Struct(Type),
     Enum(Type),
 }
 
 pub(crate) struct Scope<'a> {
     pub(crate) parent: Option<&'a Scope<'a>>,
-    pub(crate) decls: HashMap<Symbol, Box<Decl>>,
+    pub(crate) decls: HashMap<Symbol, DeclId>,
 }
 
 impl<'a> Scope<'a> {
@@ -77,16 +104,12 @@ impl<'a> Scope<'a> {
         }
     }
 
-    pub(crate) fn get(&self, symbol: Symbol) -> Option<&Decl> {
-        self.decls.get(&symbol).map(|d| &**d)
+    pub(crate) fn get(&self, name: Symbol) -> Option<DeclId> {
+        self.decls.get(&name).copied()
     }
 
-    pub(crate) fn get_mut(&mut self, symbol: Symbol) -> Option<&mut Decl> {
-        self.decls.get_mut(&symbol).map(|d| &mut **d)
-    }
-
-    pub(crate) fn insert(&mut self, decl: Decl) {
-        self.decls.insert(decl.name, Box::new(decl));
+    pub(crate) fn insert(&mut self, name: Symbol, decl: DeclId) {
+        self.decls.insert(name, decl);
     }
 
     pub(crate) fn contains(&self, symbol: Symbol) -> bool {

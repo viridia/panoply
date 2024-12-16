@@ -1,5 +1,12 @@
 use core::result;
 
+use bevy::core::Name;
+use wasm_encoder::{
+    CodeSection, ExportKind, ExportSection, FieldType, Function, FunctionSection, IndirectNameMap,
+    Instruction, NameMap, NameSection, RefType, StorageType, TypeSection, ValType,
+};
+use wasmtime::component::types::Field;
+
 use crate::{
     ast::{ASTNode, DeclKind, NodeKind},
     compiler::{CompilationError, CompilationUnit},
@@ -12,213 +19,280 @@ use super::{
     assign_types::assign_types, resolve_types::resolve_types, type_inference::TypeInference,
 };
 
+pub struct CodeGenerator {
+    type_names: NameMap,
+    local_names: IndirectNameMap,
+    function_names: NameMap,
+    types: TypeSection,
+    functions: FunctionSection,
+    exports: ExportSection,
+    codes: CodeSection,
+    next_type_index: u32,
+    next_function_index: u32,
+}
+
+impl CodeGenerator {
+    pub fn next_type_index(&mut self) -> u32 {
+        let index = self.next_type_index;
+        self.next_type_index += 1;
+        index
+    }
+
+    pub fn next_function_index(&mut self) -> u32 {
+        let index = self.next_function_index;
+        self.next_function_index += 1;
+        index
+    }
+}
+
+impl Default for CodeGenerator {
+    fn default() -> Self {
+        Self {
+            type_names: NameMap::new(),
+            local_names: IndirectNameMap::new(),
+            function_names: NameMap::new(),
+            types: TypeSection::new(),
+            functions: FunctionSection::new(),
+            exports: ExportSection::new(),
+            codes: CodeSection::new(),
+            next_type_index: 0,
+            next_function_index: 0,
+        }
+    }
+}
+
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
-    for (_, decl) in unit.root_scope.decls.iter() {
+    let mut generator = CodeGenerator::default();
+
+    generator.types.ty().struct_(vec![FieldType {
+        element_type: StorageType::Val(ValType::I32),
+        mutable: false,
+    }]);
+    let s = generator.next_type_index();
+    generator.type_names.append(s, "String");
+
+    for (_, decl_id) in unit.root_scope.decls.iter() {
+        let decl = unit.decls.get(*decl_id);
         match &decl.kind {
-            decl::DeclKind::Const(_, expr) => todo!(),
-            decl::DeclKind::Let(_, expr) => todo!(),
+            decl::DeclKind::Const(_, _expr) => todo!(),
+            decl::DeclKind::Let(_, _expr) => todo!(),
             decl::DeclKind::Param(_) => todo!(),
-            decl::DeclKind::Function {
-                name,
-                params,
-                ret,
-                body,
-            } => {
-                let name_str = unit.symbols.resolve(*name);
-                let ret_type = gen_type(ret);
-                let param_types = params
+            decl::DeclKind::Function { typ, body } => {
+                let name_str = unit.symbols.resolve(decl.name);
+                let ret_type = gen_type(&typ.ret);
+                let param_types = typ
+                    .params
                     .iter()
-                    .map(|p| {
-                        if let decl::DeclKind::Param(param_type) = &p.kind {
-                            gen_type(param_type)
-                        } else {
-                            panic!("Invalid parameter declaration for function: {:?}", p);
-                        }
-                    })
+                    .map(|p| gen_type(&p.typ))
                     .collect::<Vec<_>>();
 
-                let mut fn_builder = walrus::FunctionBuilder::new(
-                    &mut unit.module.types,
-                    param_types.as_slice(),
-                    &[ret_type],
-                );
-
-                let mut instr_builder = fn_builder.func_body();
-                gen_expr(unit, body, &mut instr_builder)?;
+                let type_index = generator.next_type_index();
+                let function_index = generator.next_function_index();
+                generator.function_names.append(function_index, &name_str);
+                generator
+                    .type_names
+                    .append(type_index, format!("{}.type", name_str).as_str());
+                generator.types.ty().function(param_types, vec![ret_type]);
+                generator.functions.function(type_index);
+                generator
+                    .exports
+                    .export(&name_str, ExportKind::Func, function_index);
+                let locals = vec![];
+                let mut f = Function::new(locals);
+                gen_expr(unit, body, &mut f)?;
                 if !body.typ.is_void() {
-                    instr_builder.return_();
+                    f.instruction(&Instruction::Return);
                 }
-                let func = fn_builder.finish(Vec::new(), &mut unit.module.funcs);
-
-                // Export the function.
-                unit.module.exports.add(name_str.as_str(), func);
+                f.instruction(&Instruction::End);
+                generator.codes.function(&f);
             }
             decl::DeclKind::Struct(_) => todo!(),
             decl::DeclKind::Enum(_) => todo!(),
         }
     }
 
+    let mut names = NameSection::new();
+    names.module(unit.filename());
+
+    if !generator.type_names.is_empty() {
+        names.types(&generator.type_names);
+    }
+
+    // if !generator.names_local.is_empty() {
+    //     generator.names.locals(&generator.names_local);
+    // }
+
+    if !generator.function_names.is_empty() {
+        names.functions(&generator.function_names);
+    }
+
+    unit.module.section(&names);
+    unit.module.section(&generator.types);
+    unit.module.section(&generator.functions);
+    unit.module.section(&generator.exports);
+    unit.module.section(&generator.codes);
+    wasmparser::validate(unit.module.as_slice()).unwrap();
     Ok(())
 }
 
 fn gen_expr<'a>(
     unit: &'a CompilationUnit,
     expr: &'a Expr,
-    out: &mut walrus::InstrSeqBuilder,
+    out: &mut wasm_encoder::Function,
 ) -> Result<(), CompilationError> {
     match &expr.kind {
         ExprKind::Empty => todo!(),
         ExprKind::ConstBool(value) => {
             match value {
-                true => out.i32_const(1),
-                false => out.i32_const(0),
+                true => out.instruction(&Instruction::I32Const(1)),
+                false => out.instruction(&Instruction::I32Const(0)),
             };
         }
         ExprKind::ConstInteger(value) => {
             match expr.typ {
-                Type::I32 => out.i32_const(*value as i32),
-                Type::I64 => out.i64_const(*value),
+                Type::I32 => out.instruction(&Instruction::I32Const(*value as i32)),
+                Type::I64 => out.instruction(&Instruction::I64Const(*value)),
                 _ => panic!("Invalid integer type: {:?}", expr.typ),
             };
         }
         ExprKind::ConstFloat(value) => {
             match expr.typ {
-                Type::F32 => out.f32_const(*value as f32),
-                Type::F64 => out.f64_const(*value),
+                Type::F32 => out.instruction(&Instruction::F32Const(*value as f32)),
+                Type::F64 => out.instruction(&Instruction::F64Const(*value)),
                 _ => panic!("Invalid float type: {:?}", expr.typ),
             };
         }
         ExprKind::ConstString(symbol) => todo!(),
-        ExprKind::Ident(symbol) => todo!(),
+        ExprKind::DeclRef(symbol) => todo!(),
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             gen_expr(unit, lhs, out)?;
             gen_expr(unit, rhs, out)?;
             match op {
                 crate::oper::BinaryOp::Add => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Add),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Add),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Add),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Add),
+                        Type::I32 => out.instruction(&Instruction::I32Add),
+                        Type::I64 => out.instruction(&Instruction::I64Add),
+                        Type::F32 => out.instruction(&Instruction::F32Add),
+                        Type::F64 => out.instruction(&Instruction::F64Add),
                         _ => panic!("Invalid type for binary addition: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Sub => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Sub),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Sub),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Sub),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Sub),
+                        Type::I32 => out.instruction(&Instruction::I32Sub),
+                        Type::I64 => out.instruction(&Instruction::I64Sub),
+                        Type::F32 => out.instruction(&Instruction::F32Sub),
+                        Type::F64 => out.instruction(&Instruction::F64Sub),
                         _ => panic!("Invalid type for binary subtraction: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Mul => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Mul),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Mul),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Mul),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Mul),
+                        Type::I32 => out.instruction(&Instruction::I32Mul),
+                        Type::I64 => out.instruction(&Instruction::I64Mul),
+                        Type::F32 => out.instruction(&Instruction::F32Mul),
+                        Type::F64 => out.instruction(&Instruction::F64Mul),
                         _ => panic!("Invalid type for binary multiplication: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Div => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32DivS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64DivS),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Div),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Div),
+                        Type::I32 => out.instruction(&Instruction::I32DivS),
+                        Type::I64 => out.instruction(&Instruction::I64DivS),
+                        Type::F32 => out.instruction(&Instruction::F32Div),
+                        Type::F64 => out.instruction(&Instruction::F64Div),
                         _ => panic!("Invalid type for binary division: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Mod => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32RemS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64RemS),
+                        Type::I32 => out.instruction(&Instruction::I32RemS),
+                        Type::I64 => out.instruction(&Instruction::I64RemS),
                         _ => panic!("Invalid type for binary modulo: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::LogAnd => {
                     // TODO: Short-circuiting.
                     match expr.typ {
-                        Type::Boolean => out.binop(walrus::ir::BinaryOp::I32And),
+                        Type::Boolean => out.instruction(&Instruction::I32And),
                         _ => panic!("Invalid type for logical AND: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::LogOr => {
                     // TODO: Short-circuiting.
                     match expr.typ {
-                        Type::Boolean => out.binop(walrus::ir::BinaryOp::I32Or),
+                        Type::Boolean => out.instruction(&Instruction::I32Or),
                         _ => panic!("Invalid type for logical OR: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::BitAnd => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32And),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64And),
+                        Type::I32 => out.instruction(&Instruction::I32And),
+                        Type::I64 => out.instruction(&Instruction::I64And),
                         _ => panic!("Invalid type for bitwise AND: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::BitOr => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Or),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Or),
+                        Type::I32 => out.instruction(&Instruction::I32Or),
+                        Type::I64 => out.instruction(&Instruction::I64Or),
                         _ => panic!("Invalid type for bitwise OR: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::BitXor => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Xor),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Xor),
+                        Type::I32 => out.instruction(&Instruction::I32Xor),
+                        Type::I64 => out.instruction(&Instruction::I64Xor),
                         _ => panic!("Invalid type for bitwise XOR: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Shl => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Shl),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Shl),
+                        Type::I32 => out.instruction(&Instruction::I32Shl),
+                        Type::I64 => out.instruction(&Instruction::I64Shl),
                         _ => panic!("Invalid type for bitwise shift left: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Shr => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32ShrS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64ShrS),
+                        Type::I32 => out.instruction(&Instruction::I32ShrS),
+                        Type::I64 => out.instruction(&Instruction::I64ShrS),
                         _ => panic!("Invalid type for bitwise shift right: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Eq => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Eq),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Eq),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Eq),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Eq),
+                        Type::I32 => out.instruction(&Instruction::I32Eq),
+                        Type::I64 => out.instruction(&Instruction::I64Eq),
+                        Type::F32 => out.instruction(&Instruction::F32Eq),
+                        Type::F64 => out.instruction(&Instruction::F64Eq),
                         _ => panic!("Invalid type for equality comparison: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Ne => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32Ne),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64Ne),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Ne),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Ne),
+                        Type::I32 => out.instruction(&Instruction::I32Ne),
+                        Type::I64 => out.instruction(&Instruction::I64Ne),
+                        Type::F32 => out.instruction(&Instruction::F32Ne),
+                        Type::F64 => out.instruction(&Instruction::F64Ne),
                         _ => panic!("Invalid type for inequality comparison: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Lt => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32LtS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64LtS),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Lt),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Lt),
+                        Type::I32 => out.instruction(&Instruction::I32LtS),
+                        Type::I64 => out.instruction(&Instruction::I64LtS),
+                        Type::F32 => out.instruction(&Instruction::F32Lt),
+                        Type::F64 => out.instruction(&Instruction::F64Lt),
                         _ => panic!("Invalid type for less-than comparison: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Le => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32LeS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64LeS),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Le),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Le),
+                        Type::I32 => out.instruction(&Instruction::I32LeS),
+                        Type::I64 => out.instruction(&Instruction::I64LeS),
+                        Type::F32 => out.instruction(&Instruction::F32Le),
+                        Type::F64 => out.instruction(&Instruction::F64Le),
                         _ => panic!(
                             "Invalid type for less-than-or-equal comparison: {:?}",
                             expr.typ
@@ -227,19 +301,19 @@ fn gen_expr<'a>(
                 }
                 crate::oper::BinaryOp::Gt => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32GtS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64GtS),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Gt),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Gt),
+                        Type::I32 => out.instruction(&Instruction::I32GtS),
+                        Type::I64 => out.instruction(&Instruction::I64GtS),
+                        Type::F32 => out.instruction(&Instruction::F32Gt),
+                        Type::F64 => out.instruction(&Instruction::F64Gt),
                         _ => panic!("Invalid type for greater-than comparison: {:?}", expr.typ),
                     };
                 }
                 crate::oper::BinaryOp::Ge => {
                     match expr.typ {
-                        Type::I32 => out.binop(walrus::ir::BinaryOp::I32GeS),
-                        Type::I64 => out.binop(walrus::ir::BinaryOp::I64GeS),
-                        Type::F32 => out.binop(walrus::ir::BinaryOp::F32Ge),
-                        Type::F64 => out.binop(walrus::ir::BinaryOp::F64Ge),
+                        Type::I32 => out.instruction(&Instruction::I32GeS),
+                        Type::I64 => out.instruction(&Instruction::I64GeS),
+                        Type::F32 => out.instruction(&Instruction::F32Ge),
+                        Type::F64 => out.instruction(&Instruction::F64Ge),
                         _ => panic!(
                             "Invalid type for greater-than-or-equal comparison: {:?}",
                             expr.typ
@@ -258,7 +332,7 @@ fn gen_expr<'a>(
             for stmt in vec {
                 gen_expr(unit, stmt, out)?;
                 if !stmt.typ.is_void() {
-                    out.drop();
+                    out.instruction(&Instruction::Drop);
                 }
             }
 
@@ -271,17 +345,17 @@ fn gen_expr<'a>(
     Ok(())
 }
 
-fn gen_type(typ: &Type) -> walrus::ValType {
+fn gen_type(typ: &Type) -> ValType {
     match &typ {
-        Type::Boolean => walrus::ValType::I32,
-        Type::I32 => walrus::ValType::I32,
-        Type::I64 => walrus::ValType::I64,
-        Type::F32 => walrus::ValType::F32,
-        Type::F64 => walrus::ValType::F64,
-        Type::String => walrus::ValType::Ref(walrus::RefType::Externref),
-        Type::Tuple(arc) => todo!(),
-        Type::Array(arc) => todo!(),
-        Type::Function { params, ret } => todo!(),
+        Type::Boolean => ValType::I32,
+        Type::I32 => ValType::I32,
+        Type::I64 => ValType::I64,
+        Type::F32 => ValType::F32,
+        Type::F64 => ValType::F64,
+        Type::String => ValType::Ref(RefType::EXTERNREF),
+        Type::Tuple(members) => todo!(),
+        Type::Array(element) => todo!(),
+        Type::Function(ftype) => todo!(),
         _ => panic!("Invalid type for code generation: {:?}", typ),
     }
 }

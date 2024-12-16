@@ -6,7 +6,7 @@ use bevy::{
 use core::str;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use wasmtime::Module;
+use wasmtime::{Collector, Module};
 
 type StoreData = ();
 
@@ -103,10 +103,10 @@ impl AssetLoader for SagaLoader {
             unit.report_error(&err);
             return Err(SagaLoaderError::Compilation);
         }
-        let wasm = unit.module.emit_wasm();
-        println!("{}", wasmprinter::print_bytes(&wasm).unwrap());
+        let wasm = unit.module.as_slice();
+        println!("{}", wasmprinter::print_bytes(wasm).unwrap());
         let mut vm = self.vm.lock().unwrap();
-        let instance = vm.new_instance(&wasm)?;
+        let instance = vm.new_instance(wasm)?;
         Ok(ScriptAsset { instance })
     }
 
@@ -155,7 +155,11 @@ pub struct SagaPlugin;
 
 impl Plugin for SagaPlugin {
     fn build(&self, app: &mut App) {
-        let engine = wasmtime::Engine::default();
+        let mut config = wasmtime::Config::new();
+        // config.collector(Collector::Auto);
+        config.wasm_gc(true);
+        config.wasm_function_references(true);
+        let engine = wasmtime::Engine::new(&config).unwrap();
         let store = wasmtime::Store::<StoreData>::new(&engine, ());
         let linker = wasmtime::Linker::new(&engine);
         let vm = Arc::new(Mutex::new(Vm {
