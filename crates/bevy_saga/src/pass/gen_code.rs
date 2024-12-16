@@ -64,10 +64,14 @@ impl Default for CodeGenerator {
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
-    generator.types.ty().struct_(vec![FieldType {
-        element_type: StorageType::Val(ValType::I32),
-        mutable: false,
-    }]);
+    // generator.types.ty().struct_(vec![FieldType {
+    //     element_type: StorageType::Val(ValType::I32),
+    //     mutable: false,
+    // }]);
+    // let s = generator.next_type_index();
+    // generator.type_names.append(s, "String");
+
+    generator.types.ty().array(&StorageType::I8, false);
     let s = generator.next_type_index();
     generator.type_names.append(s, "String");
 

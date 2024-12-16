@@ -1,4 +1,4 @@
-fn hello() -> i32 {
+pub fn hello() -> i32 {
     //println("Hello from SAGA");
     1 + 2 + 3
 }

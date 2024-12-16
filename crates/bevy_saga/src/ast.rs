@@ -1,5 +1,5 @@
 use crate::{
-    decl::Symbol,
+    decl::{DeclVisibility, Symbol},
     location::TokenLocation,
     oper::{BinaryOp, UnaryOp},
 };
@@ -69,6 +69,7 @@ pub(crate) enum NodeKind<'a> {
 pub(crate) enum DeclKind<'a> {
     Function {
         name: Symbol,
+        visibility: DeclVisibility,
         params: &'a [&'a FunctionParam<'a>],
         ret: &'a ASTNode<'a>,
         body: &'a ASTNode<'a>,

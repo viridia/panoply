@@ -357,6 +357,9 @@ peg::parser! {
             arena.alloc(ASTNode::new(location, NodeKind::Block(stmts, f)))
         }
 
+        rule visiblity() -> decl::DeclVisibility =
+            "pub" { decl::DeclVisibility::Public } / { decl::DeclVisibility::Private }
+
         rule param_decl() -> &'a FunctionParam<'a> =
             start:position!()
             id:name() _ ":" _ ty:type_expr()
@@ -390,12 +393,14 @@ peg::parser! {
         rule func_body() -> &'a ASTNode<'a> = t:block() { t }
         rule func_defn() -> &'a ASTNode<'a> =
             start:position!()
+            vis:visiblity() _
             "fn" _ id:name() _ p:param_list() _ r:func_return()? _ b:func_body()
             end:position!()
         {
             let location = (start, end);
             arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(DeclKind::Function {
                 name: id,
+                visibility: vis,
                 params: p,
                 ret: r.unwrap_or_else(|| arena.alloc(ASTNode::new((0, 0), NodeKind::Empty))),
                 body: b,

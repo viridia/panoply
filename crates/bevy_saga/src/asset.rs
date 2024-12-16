@@ -6,7 +6,7 @@ use bevy::{
 use core::str;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use wasmtime::{Collector, Module};
+use wasmtime::Module;
 
 type StoreData = ();
 

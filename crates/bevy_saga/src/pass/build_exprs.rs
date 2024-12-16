@@ -23,7 +23,12 @@ pub(crate) fn build_module_decls<'ast>(
         for decl in *decls {
             match &decl.kind {
                 NodeKind::Decl(d) => match d {
-                    crate::ast::DeclKind::Function { name, body, .. } => {
+                    crate::ast::DeclKind::Function {
+                        name,
+                        body,
+                        visibility,
+                        ..
+                    } => {
                         // Multiple declarations of the same function are not allowed.
                         if scope.contains(*name) {
                             let name_str = symbols.resolve(*name);
@@ -34,7 +39,8 @@ pub(crate) fn build_module_decls<'ast>(
                         }
 
                         let f = decl::Decl {
-                            loc: decl.location,
+                            location: decl.location,
+                            visibility: *visibility,
                             name: *name,
                             kind: decl::DeclKind::Function {
                                 typ: Arc::new(FunctionType::default()),
@@ -90,7 +96,8 @@ pub(crate) fn build_module_exprs<'ast>(
                                     FunctionParam {
                                         name: p.name,
                                         decl: decls_table.insert(Decl {
-                                            loc: p.location,
+                                            location: p.location,
+                                            visibility: decl::DeclVisibility::Private,
                                             name: p.name,
                                             kind: decl::DeclKind::Param(typ.clone()),
                                         }),

@@ -74,11 +74,19 @@ impl DeclsTable {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum DeclVisibility {
+    Public,
+    #[default]
+    Private,
+}
+
 #[derive(Debug)]
-pub(crate) struct Decl {
-    pub(crate) loc: TokenLocation,
-    pub(crate) name: Symbol,
-    pub(crate) kind: DeclKind,
+pub struct Decl {
+    pub location: TokenLocation,
+    pub visibility: DeclVisibility,
+    pub name: Symbol,
+    pub kind: DeclKind,
 }
 
 #[derive(Debug)]
