@@ -174,7 +174,11 @@ pub(crate) fn build_module_exprs<'ast>(
                 );
                 inference.solve_constraints()?;
                 assign_types(&mut body_expr, &inference)?;
+                for local in locals_table.iter_mut() {
+                    local.typ = inference.substitute(&local.typ);
+                }
                 function.body = body_expr;
+                function.locals = locals_table;
             }
         }
 
@@ -235,12 +239,12 @@ pub(crate) fn build_exprs<'a>(
                         Ok(Expr::new(ast.location, ExprKind::FunctionRef(*findex))
                             .with_type(Type::Function(function.typ.clone())))
                     }
-                    decl::Decl::LocalRef(index) => {
+                    decl::Decl::Local(index) => {
                         Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
                             .with_type(locals[*index].typ.clone()))
                     }
                     decl::Decl::Param(typ, index) => {
-                        Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
+                        Ok(Expr::new(ast.location, ExprKind::ParamRef(*index))
                             .with_type(typ.clone()))
                     }
                     // Struct (constructor)
@@ -355,7 +359,7 @@ pub(crate) fn build_exprs<'a>(
                     index,
                 };
                 locals.push(local);
-                scope.insert(*name, decl::Decl::LocalRef(index));
+                scope.insert(*name, decl::Decl::Local(index));
                 Ok(
                     Expr::new(ast.location, ExprKind::LocalDecl(index, value_expr))
                         .with_type(Type::Void),

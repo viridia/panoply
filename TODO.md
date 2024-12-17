@@ -443,16 +443,13 @@ fn combat_interact() {
 
 # Scripting TODOs
 
-- Function call
+- Intrinsic Functions
+- String data model
 - Streamline unit tests.
 - Risk: Closures in Components
 - Built-in coercions (intrinsic functions)
 - Allow intrinsics to be shared?
-- Function calls
 - Assert
-- String data model
-- String escapes
-- Basic Blocks
 - If
 - Loop / Break / Continue
 - While

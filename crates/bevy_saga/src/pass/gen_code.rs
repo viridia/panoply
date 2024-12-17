@@ -28,7 +28,7 @@ pub struct CodeGenerator {
     exports: ExportSection,
     codes: CodeSection,
     next_type_index: u32,
-    next_local_index: u32,
+    local_offset: u32,
 }
 
 impl CodeGenerator {
@@ -50,7 +50,7 @@ impl Default for CodeGenerator {
             exports: ExportSection::new(),
             codes: CodeSection::new(),
             next_type_index: 0,
-            next_local_index: 0,
+            local_offset: 0,
         }
     }
 }
@@ -94,12 +94,12 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
             .append(type_index, format!("{}.type", name_str).as_str());
         generator.types.ty().function(param_types, vec![ret_type]);
         generator.functions.function(type_index);
+        generator.local_offset = fd.typ.params.len() as u32;
         if fd.visibility == decl::DeclVisibility::Public {
             generator
                 .exports
                 .export(&name_str, ExportKind::Func, index as u32);
         }
-        generator.next_local_index = 0;
         let mut locals = vec![];
         for local in &fd.locals {
             locals.push((1, gen_type(&local.typ)));
@@ -169,31 +169,23 @@ fn gen_expr<'a>(
             };
         }
         ExprKind::ConstString(symbol) => todo!(),
-        // ExprKind::DeclRef(decl_id) => {
-        //     let decl = unit.decls.get(*decl_id);
-        //     match decl.kind {
-        //         DeclKind::Const(_, _) => todo!(),
-        //         DeclKind::Let(_, _) => todo!(),
-        //         DeclKind::Param(ref param) => {
-        //             todo!("param")
-        //         }
-        //         DeclKind::Function { .. } => todo!("Function reference in expression"),
-        //         DeclKind::Struct(_) => todo!(),
-        //         DeclKind::Enum(_) => todo!(),
-        //         DeclKind::Type(_) => todo!(),
-        //     }
-        // }
         ExprKind::FunctionRef(index) => {
             panic!("Cannot codegen function reference: {:?}", index);
         }
-        ExprKind::LocalRef(index) => {
+        ExprKind::ParamRef(index) => {
             out.instruction(&Instruction::LocalGet(*index as u32));
-            // panic!("Cannot codegen function reference: {:?}", index);
+        }
+        ExprKind::LocalRef(index) => {
+            out.instruction(&Instruction::LocalGet(
+                *index as u32 + generator.local_offset,
+            ));
         }
         ExprKind::LocalDecl(index, init) => {
             if let Some(init) = init {
                 gen_expr(unit, generator, init, out)?;
-                out.instruction(&Instruction::LocalSet(*index as u32));
+                out.instruction(&Instruction::LocalSet(
+                    *index as u32 + generator.local_offset,
+                ));
             }
         }
         ExprKind::BinaryExpr { op, lhs, rhs } => {

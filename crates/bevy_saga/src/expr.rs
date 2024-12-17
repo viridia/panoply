@@ -12,6 +12,7 @@ pub(crate) enum ExprKind {
     ConstString(decl::Symbol),
     FunctionRef(usize),
     LocalDecl(usize, Option<Box<Expr>>),
+    ParamRef(usize),
     LocalRef(usize),
     Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
@@ -45,9 +46,9 @@ impl Display for Expr {
             }
             ExprKind::ConstBool(value) => value.fmt(f),
             ExprKind::ConstString(symbol) => write!(f, "String({})", symbol.0),
-            // ExprKind::DeclRef(symbol) => write!(f, "Ident({})", symbol.0),
             ExprKind::FunctionRef(id) => write!(f, "Function({})", id),
-            ExprKind::LocalRef(id) => write!(f, "Local({})", id),
+            ExprKind::LocalRef(id) => write!(f, "LocalRef({})", id),
+            ExprKind::ParamRef(id) => write!(f, "ParamRef({})", id),
             ExprKind::LocalDecl(id, ref init) => {
                 write!(f, "Local({}", id)?;
                 if let Some(init) = init {

@@ -24,7 +24,7 @@ pub(crate) fn assign_types(
         ExprKind::ConstBool(_) => {}
         ExprKind::ConstString(_symbol) => todo!(),
         ExprKind::FunctionRef(_) => {}
-        ExprKind::LocalRef(_) => {}
+        ExprKind::LocalRef(_) | ExprKind::ParamRef(_) => {}
         ExprKind::LocalDecl(_, ref mut init) => {
             if let Some(init) = init {
                 assign_types(init, inference)?;

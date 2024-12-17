@@ -56,7 +56,7 @@ pub enum DeclVisibility {
 
 #[derive(Debug)]
 pub enum Decl {
-    LocalRef(usize),
+    Local(usize),
     Param(Type, usize),
     Function(usize),
     Struct(usize),
