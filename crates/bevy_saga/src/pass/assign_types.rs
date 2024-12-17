@@ -22,7 +22,7 @@ pub(crate) fn assign_types(
             inference.replace_type_vars(&mut expr.typ);
         }
         ExprKind::ConstBool(_) => {}
-        ExprKind::ConstString(_symbol) => todo!(),
+        ExprKind::ConstString(_) => {}
         ExprKind::FunctionRef(_) => {}
         ExprKind::LocalRef(_) | ExprKind::ParamRef(_) => {}
         ExprKind::LocalDecl(_, ref mut init) => {

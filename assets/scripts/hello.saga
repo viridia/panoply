@@ -7,3 +7,7 @@ fn add(arg: i32) -> i32 {
     let c = 1;
     arg + c
 }
+
+fn name() -> String {
+    "Hello from SAGA"
+}

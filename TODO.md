@@ -444,6 +444,9 @@ fn combat_interact() {
 # Scripting TODOs
 
 - Intrinsic Functions
+  - How to return an error from a script?
+- Native functions
+- Imports
 - String data model
 - Streamline unit tests.
 - Risk: Closures in Components
@@ -456,3 +459,16 @@ fn combat_interact() {
 - For
 - Switch
 - Logical Operator Short-Circuiting
+- Relational operators
+- Global Let and Const
+- Structs:
+  - type definition
+  - constructor
+  - references
+  - field access
+  - newtype / tuple structs
+  - empty structs
+- Enums:
+  - type definition
+  - constructor
+  - variant access

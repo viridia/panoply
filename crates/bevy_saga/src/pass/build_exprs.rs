@@ -65,7 +65,11 @@ pub(crate) fn build_module_decls<'ast>(
                         typ,
                         value,
                         is_const,
-                    } => todo!(),
+                    } => {
+                        // Need to initialize the value as a constant. Which means we need
+                        // a compile-time evaluator (ick).
+                        todo!("Global let/const");
+                    }
                     crate::ast::DeclKind::Struct { name, fields } => todo!(),
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },

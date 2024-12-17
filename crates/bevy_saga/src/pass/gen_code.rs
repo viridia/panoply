@@ -2,9 +2,11 @@ use core::result;
 
 use bevy::{core::Name, scene::ron::de, utils::HashMap};
 use wasm_encoder::{
-    CodeSection, ExportKind, ExportSection, FieldType, Function, FunctionSection, IndirectNameMap,
-    Instruction, NameMap, NameSection, RefType, StorageType, TypeSection, ValType,
+    CodeSection, DataCountSection, DataSection, ExportKind, ExportSection, FieldType, Function,
+    FunctionSection, HeapType, IndirectNameMap, Instruction, NameMap, NameSection, RefType,
+    StorageType, TypeSection, ValType,
 };
+use wasmparser::Element;
 use wasmtime::component::types::Field;
 
 use crate::{
@@ -27,16 +29,12 @@ pub struct CodeGenerator {
     functions: FunctionSection,
     exports: ExportSection,
     codes: CodeSection,
+    data: DataSection,
+    // elements: ElementSection,
     next_type_index: u32,
+    next_data_index: u32,
     local_offset: u32,
-}
-
-impl CodeGenerator {
-    pub fn next_type_index(&mut self) -> u32 {
-        let index = self.next_type_index;
-        self.next_type_index += 1;
-        index
-    }
+    type_string: Option<u32>,
 }
 
 impl Default for CodeGenerator {
@@ -49,8 +47,56 @@ impl Default for CodeGenerator {
             functions: FunctionSection::new(),
             exports: ExportSection::new(),
             codes: CodeSection::new(),
+            data: DataSection::new(),
+            // elements: ElementSection::new(),
             next_type_index: 0,
+            next_data_index: 0,
             local_offset: 0,
+            type_string: None,
+        }
+    }
+}
+
+impl CodeGenerator {
+    pub fn next_type_index(&mut self) -> u32 {
+        let index = self.next_type_index;
+        self.next_type_index += 1;
+        index
+    }
+
+    pub fn next_data_index(&mut self) -> u32 {
+        let index = self.next_data_index;
+        self.next_data_index += 1;
+        index
+    }
+
+    fn gen_type(&mut self, typ: &Type) -> ValType {
+        match &typ {
+            Type::Boolean => ValType::I32,
+            Type::I32 => ValType::I32,
+            Type::I64 => ValType::I64,
+            Type::F32 => ValType::F32,
+            Type::F64 => ValType::F64,
+            Type::String => ValType::Ref(RefType {
+                nullable: false,
+                heap_type: HeapType::Concrete(self.get_string_type()),
+            }),
+            Type::Tuple(members) => todo!(),
+            Type::Array(element) => todo!(),
+            Type::Function(ftype) => todo!(),
+            _ => panic!("Invalid type for code generation: {:?}", typ),
+        }
+    }
+
+    pub fn get_string_type(&mut self) -> u32 {
+        if let Some(index) = self.type_string {
+            index
+        } else {
+            self.types.ty().array(&StorageType::I8, false);
+            let s = self.next_type_index();
+            self.type_names.append(s, "String");
+            self.type_string = Some(s);
+            s
         }
     }
 }
@@ -58,33 +104,14 @@ impl Default for CodeGenerator {
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
-    // generator.types.ty().struct_(vec![FieldType {
-    //     element_type: StorageType::Val(ValType::I32),
-    //     mutable: false,
-    // }]);
-    // let s = generator.next_type_index();
-    // generator.type_names.append(s, "String");
-
-    generator.types.ty().array(&StorageType::I8, false);
-    let s = generator.next_type_index();
-    generator.type_names.append(s, "String");
-
-    // for (_, decl_id) in root_scope.decls.iter() {
-    //     let decl = unit.decls.get(*decl_id);
-    //     if let decl::DeclKind::Function { .. } = decl.kind {
-    //         let function_index = generator.next_function_index();
-    //         generator.decl_indices.insert(*decl_id, function_index);
-    //     }
-    // }
-
     for (index, fd) in unit.decls.functions.iter().enumerate() {
         let name_str = unit.symbols.resolve(fd.name);
-        let ret_type = gen_type(&fd.typ.ret);
+        let ret_type = generator.gen_type(&fd.typ.ret);
         let param_types = fd
             .typ
             .params
             .iter()
-            .map(|p| gen_type(&p.typ))
+            .map(|p| generator.gen_type(&p.typ))
             .collect::<Vec<_>>();
 
         let type_index = generator.next_type_index();
@@ -102,7 +129,7 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
         }
         let mut locals = vec![];
         for local in &fd.locals {
-            locals.push((1, gen_type(&local.typ)));
+            locals.push((1, generator.gen_type(&local.typ)));
         }
         let mut f = Function::new(locals);
         gen_expr(unit, &mut generator, &fd.body, &mut f)?;
@@ -130,7 +157,15 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
     unit.module.section(&generator.types);
     unit.module.section(&generator.functions);
     unit.module.section(&generator.exports);
+    if generator.next_data_index > 0 {
+        unit.module.section(&DataCountSection {
+            count: generator.next_data_index,
+        });
+    }
     unit.module.section(&generator.codes);
+    if generator.next_data_index > 0 {
+        unit.module.section(&generator.data);
+    }
 
     println!(
         "{}",
@@ -168,7 +203,18 @@ fn gen_expr<'a>(
                 _ => panic!("Invalid float type: {:?}", expr.typ),
             };
         }
-        ExprKind::ConstString(symbol) => todo!(),
+        ExprKind::ConstString(symbol) => {
+            let string = unit.symbols.resolve(*symbol);
+            let bytes = string.as_bytes();
+            let array_data_index = generator.next_data_index();
+            generator.data.passive(bytes.iter().copied());
+            out.instruction(&Instruction::I32Const(0));
+            out.instruction(&Instruction::I32Const(bytes.len() as i32));
+            out.instruction(&Instruction::ArrayNewData {
+                array_type_index: generator.get_string_type(),
+                array_data_index,
+            });
+        }
         ExprKind::FunctionRef(index) => {
             panic!("Cannot codegen function reference: {:?}", index);
         }
@@ -433,19 +479,4 @@ fn gen_expr<'a>(
     }
 
     Ok(())
-}
-
-fn gen_type(typ: &Type) -> ValType {
-    match &typ {
-        Type::Boolean => ValType::I32,
-        Type::I32 => ValType::I32,
-        Type::I64 => ValType::I64,
-        Type::F32 => ValType::F32,
-        Type::F64 => ValType::F64,
-        Type::String => ValType::Ref(RefType::EXTERNREF),
-        Type::Tuple(members) => todo!(),
-        Type::Array(element) => todo!(),
-        Type::Function(ftype) => todo!(),
-        _ => panic!("Invalid type for code generation: {:?}", typ),
-    }
 }
