@@ -55,16 +55,8 @@ pub enum DeclVisibility {
 }
 
 #[derive(Debug)]
-pub struct Decl {
-    #[allow(unused)]
-    pub location: TokenLocation,
-    pub kind: DeclKind,
-}
-
-#[derive(Debug)]
-pub enum DeclKind {
-    Const(usize),
-    Let(usize),
+pub enum Decl {
+    LocalRef(usize),
     Param(Type, usize),
     Function(usize),
     Struct(usize),
@@ -90,6 +82,7 @@ pub struct LocalDecl {
     pub name: Symbol,
     pub typ: Type,
     pub index: usize,
+    pub is_const: bool,
 }
 
 /// Declaration for a function parameter
@@ -113,8 +106,10 @@ impl Decls {
         }
     }
 
-    pub fn add_function(&mut self, decl: FunctionDecl) {
+    pub fn add_function(&mut self, decl: FunctionDecl) -> usize {
+        let index = self.functions.len();
         self.functions.push(decl);
+        index
     }
 }
 

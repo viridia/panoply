@@ -11,6 +11,7 @@ pub(crate) enum ExprKind {
     ConstBool(bool),
     ConstString(decl::Symbol),
     FunctionRef(usize),
+    LocalDecl(usize, Option<Box<Expr>>),
     LocalRef(usize),
     Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
@@ -31,7 +32,7 @@ pub(crate) struct Expr {
 }
 
 impl Display for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self.kind {
             ExprKind::Empty => write!(f, ";"),
             ExprKind::ConstInteger(value) => value.fmt(f),
@@ -47,6 +48,14 @@ impl Display for Expr {
             // ExprKind::DeclRef(symbol) => write!(f, "Ident({})", symbol.0),
             ExprKind::FunctionRef(id) => write!(f, "Function({})", id),
             ExprKind::LocalRef(id) => write!(f, "Local({})", id),
+            ExprKind::LocalDecl(id, ref init) => {
+                write!(f, "Local({}", id)?;
+                if let Some(init) = init {
+                    write!(f, " = ")?;
+                    init.fmt(f)?;
+                }
+                write!(f, ")")
+            }
             ExprKind::BinaryExpr {
                 op,
                 ref lhs,

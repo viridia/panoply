@@ -4,5 +4,6 @@ pub fn hello() -> i32 {
 }
 
 fn add(arg: i32) -> i32 {
-    arg + 1
+    let c = 1;
+    arg + c
 }

@@ -10,7 +10,7 @@ use wasmtime::component::types::Field;
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::{CompilationError, CompilationUnit},
-    decl::{self, DeclKind, FunctionDecl, Scope},
+    decl::{self, FunctionDecl, Scope},
     expr::{Expr, ExprKind},
     types::Type,
 };
@@ -37,12 +37,6 @@ impl CodeGenerator {
         self.next_type_index += 1;
         index
     }
-
-    pub fn next_local_index(&mut self) -> u32 {
-        let index = self.next_local_index;
-        self.next_local_index += 1;
-        index
-    }
 }
 
 impl Default for CodeGenerator {
@@ -61,10 +55,7 @@ impl Default for CodeGenerator {
     }
 }
 
-pub(crate) fn gen_module(
-    unit: &mut CompilationUnit,
-    root_scope: &Scope,
-) -> Result<(), CompilationError> {
+pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
     // generator.types.ty().struct_(vec![FieldType {
@@ -109,7 +100,10 @@ pub(crate) fn gen_module(
                 .export(&name_str, ExportKind::Func, index as u32);
         }
         generator.next_local_index = 0;
-        let locals = vec![];
+        let mut locals = vec![];
+        for local in &fd.locals {
+            locals.push((1, gen_type(&local.typ)));
+        }
         let mut f = Function::new(locals);
         gen_expr(unit, &mut generator, &fd.body, &mut f)?;
         if !fd.body.typ.is_void() {
@@ -137,6 +131,11 @@ pub(crate) fn gen_module(
     unit.module.section(&generator.functions);
     unit.module.section(&generator.exports);
     unit.module.section(&generator.codes);
+
+    println!(
+        "{}",
+        wasmprinter::print_bytes(unit.module.as_slice()).unwrap()
+    );
     wasmparser::validate(unit.module.as_slice()).unwrap();
     Ok(())
 }
@@ -190,6 +189,12 @@ fn gen_expr<'a>(
         ExprKind::LocalRef(index) => {
             out.instruction(&Instruction::LocalGet(*index as u32));
             // panic!("Cannot codegen function reference: {:?}", index);
+        }
+        ExprKind::LocalDecl(index, init) => {
+            if let Some(init) = init {
+                gen_expr(unit, generator, init, out)?;
+                out.instruction(&Instruction::LocalSet(*index as u32));
+            }
         }
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             gen_expr(unit, generator, lhs, out)?;
@@ -421,9 +426,11 @@ fn gen_expr<'a>(
         ExprKind::Block(vec, expr) => {
             for stmt in vec {
                 gen_expr(unit, generator, stmt, out)?;
-                if !stmt.typ.is_void() {
-                    // TODO: Drop based on type
-                    out.instruction(&Instruction::Drop);
+                match stmt.typ {
+                    Type::Void | Type::None => {}
+                    _ => {
+                        out.instruction(&Instruction::Drop);
+                    }
                 }
             }
 

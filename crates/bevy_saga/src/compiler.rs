@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    decl::{Decl, DeclKind, Decls, FunctionDecl, InternedSymbols, Scope},
+    decl::{Decl, Decls, InternedSymbols, Scope},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
@@ -29,6 +29,8 @@ pub enum CompilationError {
     IncorrectNumberOfArguments(TokenLocation, usize, usize),
     #[error("Recursive type: {1}")]
     RecursiveType(TokenLocation, Type),
+    #[error("Cannot infer type for '{1}'")]
+    MissingType(TokenLocation, String),
     #[error("Unknown type: {1}")]
     UnknownType(TokenLocation, String),
     #[error("Can't find the name '{1}' in this scope")]
@@ -51,6 +53,7 @@ impl CompilationError {
             | CompilationError::NotCallable(loc)
             | CompilationError::IncorrectNumberOfArguments(loc, _, _)
             | CompilationError::RecursiveType(loc, _)
+            | CompilationError::MissingType(loc, _)
             | CompilationError::UnknownType(loc, _)
             | CompilationError::UnknownSymbol(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
@@ -108,13 +111,7 @@ impl<'cu> CompilationUnit<'cu> {
         let mut intrinsic_scope = Scope::new(None);
         fn define_type(symbols: &InternedSymbols, scope: &mut Scope, name: &str, ty: Type) {
             let sym = symbols.intern(name);
-            scope.insert(
-                sym,
-                Decl {
-                    kind: DeclKind::Type(ty),
-                    location: (0, 0).into(),
-                },
-            );
+            scope.insert(sym, Decl::Type(ty));
         }
 
         define_type(&self.symbols, &mut intrinsic_scope, "i32", Type::I32);
@@ -128,7 +125,7 @@ impl<'cu> CompilationUnit<'cu> {
         pass::build_module_decls(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
         self.resolve_imports().await?;
         pass::build_module_exprs(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
-        pass::gen_module(self, &root_scope)?;
+        pass::gen_module(self)?;
         Ok(())
     }
 
@@ -193,12 +190,12 @@ mod tests {
             ast::NodeKind::LitInt(20, IntegerSuffix::Unsized)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let root_scope = Scope::new(None);
+        let mut root_scope = Scope::new(None);
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
-            &root_scope,
+            &mut root_scope,
             &mut unit.decls.functions,
             &mut locals,
             &mut inference,
@@ -223,12 +220,12 @@ mod tests {
             ast::NodeKind::LitFloat(20.0, FloatSuffix::F32)
         ));
         let mut inference: pass::TypeInference = Default::default();
-        let root_scope = Scope::new(None);
+        let mut root_scope = Scope::new(None);
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
-            &root_scope,
+            &mut root_scope,
             &mut unit.decls.functions,
             &mut locals,
             &mut inference,
@@ -259,12 +256,12 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let root_scope = Scope::new(None);
+        let mut root_scope = Scope::new(None);
         let mut locals = Vec::<LocalDecl>::new();
         let mut expr = pass::build_exprs(
             node,
             &unit.symbols,
-            &root_scope,
+            &mut root_scope,
             &mut unit.decls.functions,
             &mut locals,
             &mut inference,
@@ -308,12 +305,12 @@ mod tests {
             _ => panic!(),
         }
         let mut inference: pass::TypeInference = Default::default();
-        let root_scope = Scope::new(None);
+        let mut root_scope = Scope::new(None);
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
-            &root_scope,
+            &mut root_scope,
             &mut unit.decls.functions,
             &mut locals,
             &mut inference,

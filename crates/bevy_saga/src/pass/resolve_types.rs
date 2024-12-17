@@ -1,6 +1,6 @@
 use crate::{
     ast::{self, ASTNode, NodeKind, TypeKind},
-    decl::{self, DeclKind, Scope},
+    decl::{self, Scope},
     CompilationError, Type,
 };
 
@@ -21,9 +21,9 @@ pub(crate) fn resolve_types<'s, 'a>(
                 let name = symbols.resolve(ident);
                 return Err(CompilationError::UnknownType(ast.location, name));
             };
-            match decl.kind {
-                DeclKind::Type(ref typ) => Ok(typ.clone()),
-                _ => panic!("Invalid type expression: {:?}", decl.kind),
+            match decl {
+                decl::Decl::Type(ref typ) => Ok(typ.clone()),
+                _ => panic!("Invalid type expression: {:?}", decl),
             }
         }
         NodeKind::Empty => Ok(Type::None),

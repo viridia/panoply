@@ -104,7 +104,7 @@ impl AssetLoader for SagaLoader {
             return Err(SagaLoaderError::Compilation);
         }
         let wasm = unit.module.as_slice();
-        println!("{}", wasmprinter::print_bytes(wasm).unwrap());
+        // println!("{}", wasmprinter::print_bytes(wasm).unwrap());
         let mut vm = self.vm.lock().unwrap();
         let instance = vm.new_instance(wasm)?;
         Ok(ScriptAsset { instance })

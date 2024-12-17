@@ -25,6 +25,11 @@ pub(crate) fn assign_types(
         ExprKind::ConstString(_symbol) => todo!(),
         ExprKind::FunctionRef(_) => {}
         ExprKind::LocalRef(_) => {}
+        ExprKind::LocalDecl(_, ref mut init) => {
+            if let Some(init) = init {
+                assign_types(init, inference)?;
+            }
+        }
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             assign_types(lhs, inference)?;
             assign_types(rhs, inference)?;

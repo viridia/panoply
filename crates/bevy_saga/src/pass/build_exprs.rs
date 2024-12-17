@@ -57,17 +57,15 @@ pub(crate) fn build_module_decls<'ast>(
                             locals: Vec::new(),
                         };
 
-                        scope.insert(
-                            *name,
-                            decl::Decl {
-                                location: ast_decl.location,
-                                kind: decl::DeclKind::Function(decls.functions.len()),
-                            },
-                        );
-                        decls.functions.push(fd);
+                        let findex = decls.add_function(fd);
+                        scope.insert(*name, decl::Decl::Function(findex));
                     }
-                    crate::ast::DeclKind::Let { name, typ, value } => todo!(),
-                    crate::ast::DeclKind::Const { name, typ, value } => todo!(),
+                    crate::ast::DeclKind::Let {
+                        name,
+                        typ,
+                        value,
+                        is_const,
+                    } => todo!(),
                     crate::ast::DeclKind::Struct { name, fields } => todo!(),
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
@@ -115,16 +113,20 @@ pub(crate) fn build_module_exprs<'ast>(
                             });
                         }
 
-                        let decl::DeclKind::Function(findex) = decl.kind else {
+                        let decl::Decl::Function(findex) = decl else {
                             unreachable!()
                         };
-                        decls.functions[findex as usize].typ = Arc::new(FunctionType {
+                        decls.functions[*findex].typ = Arc::new(FunctionType {
                             params: params_mapped,
                             ret: ret_type,
                         });
                     }
-                    crate::ast::DeclKind::Let { name, typ, value } => todo!(),
-                    crate::ast::DeclKind::Const { name, typ, value } => todo!(),
+                    crate::ast::DeclKind::Let {
+                        name,
+                        typ,
+                        value,
+                        is_const,
+                    } => todo!(),
                     crate::ast::DeclKind::Struct { name, fields } => todo!(),
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
@@ -141,32 +143,30 @@ pub(crate) fn build_module_exprs<'ast>(
             }) = &decl_ast.kind
             {
                 let decl = scope.get(*name).unwrap();
-                let decl::DeclKind::Function(findex) = decl.kind else {
+                let decl::Decl::Function(findex) = decl else {
                     unreachable!()
                 };
 
                 let mut inference: TypeInference = Default::default();
                 let mut param_scope = Scope::new(Some(scope));
-                let function = &mut decls.functions[findex as usize];
+                let function = &mut decls.functions[*findex];
                 for param in function.typ.params.iter() {
                     param_scope.insert(
                         param.name,
-                        decl::Decl {
-                            location: param.location,
-                            kind: decl::DeclKind::Param(param.typ.clone(), param.index),
-                        },
+                        decl::Decl::Param(param.typ.clone(), param.index),
                     );
                 }
+                let mut local_scope = Scope::new(Some(&param_scope));
                 let mut locals_table: Vec<LocalDecl> = Vec::new();
                 let mut body_expr = build_exprs(
                     body_ast,
                     symbols,
-                    &param_scope,
+                    &mut local_scope,
                     &mut decls.functions,
                     &mut locals_table,
                     &mut inference,
                 )?;
-                let function = &mut decls.functions[findex as usize];
+                let function = &mut decls.functions[*findex];
                 inference.add_constraint(
                     function.typ.ret.clone(),
                     body_expr.typ.clone(),
@@ -187,7 +187,7 @@ pub(crate) fn build_module_exprs<'ast>(
 pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
     symbols: &decl::InternedSymbols,
-    scope: &decl::Scope,
+    scope: &mut decl::Scope,
     functions: &mut Vec<decl::FunctionDecl>,
     locals: &mut Vec<decl::LocalDecl>,
     inference: &mut TypeInference,
@@ -215,7 +215,6 @@ pub(crate) fn build_exprs<'a>(
             let typ = match suffix {
                 crate::ast::FloatSuffix::F32 => Type::F32,
                 crate::ast::FloatSuffix::F64 => Type::F64,
-                _ => unreachable!(),
             };
             Ok(Expr::new(ast.location, ExprKind::ConstFloat(*value)).with_type(typ))
         }
@@ -230,25 +229,23 @@ pub(crate) fn build_exprs<'a>(
 
         NodeKind::Ident(symbol) => match scope.lookup(*symbol) {
             Some(decl) => {
-                match &decl.kind {
-                    decl::DeclKind::Function(findex) => {
+                match &decl {
+                    decl::Decl::Function(findex) => {
                         let function = &functions[*findex];
                         Ok(Expr::new(ast.location, ExprKind::FunctionRef(*findex))
                             .with_type(Type::Function(function.typ.clone())))
                     }
-                    // decl::DeclKind::Const(typ, _) => {
-                    //     Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
-                    // }
-                    // decl::DeclKind::Let(typ, _) => {
-                    //     Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
-                    // }
-                    decl::DeclKind::Param(typ, index) => {
+                    decl::Decl::LocalRef(index) => {
+                        Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
+                            .with_type(locals[*index].typ.clone()))
+                    }
+                    decl::Decl::Param(typ, index) => {
                         Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
                             .with_type(typ.clone()))
                     }
                     // Struct (constructor)
                     // Enum (constructor)
-                    _ => todo!("Ident: {:?}", decl.kind),
+                    _ => todo!("Ident: {:?}", decl),
                 }
             }
             None => {
@@ -319,6 +316,53 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Empty => Ok(Expr::new(ast.location, ExprKind::Empty)),
+        NodeKind::Decl(decl) => match decl {
+            crate::ast::DeclKind::Let {
+                name,
+                typ,
+                value,
+                is_const,
+            } => {
+                let name_str = symbols.resolve(*name);
+                let typ = match typ {
+                    Some(typ) => Some(resolve_types(symbols, scope, typ)?),
+                    None => None,
+                };
+                let value_expr = match value {
+                    Some(value) => Some(Box::new(build_exprs(
+                        value, symbols, scope, functions, locals, inference,
+                    )?)),
+                    None => None,
+                };
+                let ty = match (typ, &value_expr) {
+                    (Some(typ), Some(value)) => {
+                        inference.add_constraint(typ.clone(), value.typ.clone(), value.location);
+                        typ
+                    }
+                    (Some(typ), None) => typ,
+                    (None, Some(value)) => value.typ.clone(),
+                    (None, None) => {
+                        return Err(CompilationError::MissingType(ast.location, name_str))
+                    }
+                };
+
+                let index = locals.len();
+                let local = decl::LocalDecl {
+                    location: ast.location,
+                    name: *name,
+                    typ: ty.clone(),
+                    is_const: *is_const,
+                    index,
+                };
+                locals.push(local);
+                scope.insert(*name, decl::Decl::LocalRef(index));
+                Ok(
+                    Expr::new(ast.location, ExprKind::LocalDecl(index, value_expr))
+                        .with_type(Type::Void),
+                )
+            }
+            _ => todo!("Decl: {:?}", decl),
+        },
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {

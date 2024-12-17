@@ -76,13 +76,9 @@ pub(crate) enum DeclKind<'a> {
     },
     Let {
         name: Symbol,
-        typ: &'a ASTNode<'a>,
-        value: &'a ASTNode<'a>,
-    },
-    Const {
-        name: Symbol,
-        typ: &'a ASTNode<'a>,
-        value: &'a ASTNode<'a>,
+        is_const: bool,
+        typ: Option<&'a ASTNode<'a>>,
+        value: Option<&'a ASTNode<'a>>,
     },
     Struct {
         name: Symbol,

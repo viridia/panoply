@@ -321,10 +321,28 @@ peg::parser! {
 
         pub rule type_expr() -> &'a ASTNode<'a> = type_name() / array_type()
 
+        pub rule var_decl() -> &'a ASTNode<'a> =
+            start:position!()
+            is_const:("let" { false } / "const" { true })
+            _ id:name()
+            ty:(_ ":" _ ty:type_expr() { ty })?
+            init: (_ "=" _ e:expr() { e })?
+            _ ";" _
+            end:position!() {
+            let location = (start, end);
+            arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(DeclKind::Let {
+                name: id,
+                typ: ty,
+                value: init,
+                is_const
+            }))))
+        }
+
         rule stmt() -> &'a ASTNode<'a> =
             start:position!()
             s:(
                 s0: empty_stmt() { s0 }
+                / v: var_decl() { v }
                 / s:(expr()) _ ";" _ { s }
             )
             end:position!()
