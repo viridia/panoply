@@ -162,7 +162,7 @@ pub(crate) fn build_module_exprs<'ast>(
                     body_ast,
                     symbols,
                     &mut local_scope,
-                    &mut decls.functions,
+                    decls,
                     &mut locals_table,
                     &mut inference,
                 )?;
@@ -192,7 +192,7 @@ pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
     symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
-    functions: &mut Vec<decl::FunctionDecl>,
+    decls: &mut decl::Decls,
     locals: &mut Vec<decl::LocalDecl>,
     inference: &mut TypeInference,
 ) -> Result<Expr, CompilationError> {
@@ -235,7 +235,7 @@ pub(crate) fn build_exprs<'a>(
             Some(decl) => {
                 match &decl {
                     decl::Decl::Function(findex) => {
-                        let function = &functions[*findex];
+                        let function = &decls.functions[*findex];
                         Ok(Expr::new(ast.location, ExprKind::FunctionRef(*findex))
                             .with_type(Type::Function(function.typ.clone())))
                     }
@@ -259,8 +259,8 @@ pub(crate) fn build_exprs<'a>(
         },
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, symbols, scope, functions, locals, inference)?;
-            let rhs_expr = build_exprs(rhs, symbols, scope, functions, locals, inference)?;
+            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -334,7 +334,7 @@ pub(crate) fn build_exprs<'a>(
                 };
                 let value_expr = match value {
                     Some(value) => Some(Box::new(build_exprs(
-                        value, symbols, scope, functions, locals, inference,
+                        value, symbols, scope, decls, locals, inference,
                     )?)),
                     None => None,
                 };
@@ -370,13 +370,13 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, symbols, scope, functions, locals, inference)?;
+                let stmt_expr = build_exprs(stmt, symbols, scope, decls, locals, inference)?;
                 stmt_exprs.push(stmt_expr);
             }
 
             let result_expr = match result {
                 Some(result) => Some(Box::new(build_exprs(
-                    result, symbols, scope, functions, locals, inference,
+                    result, symbols, scope, decls, locals, inference,
                 )?)),
                 None => None,
             };
@@ -397,7 +397,7 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Cast { arg, typ } => {
             let mut infer = TypeInference::default();
             let to_typ = resolve_types(symbols, scope, typ)?;
-            let mut arg_expr = build_exprs(arg, symbols, scope, functions, locals, &mut infer)?;
+            let mut arg_expr = build_exprs(arg, symbols, scope, decls, locals, &mut infer)?;
             infer.solve_constraints()?;
 
             if to_typ == arg_expr.typ {
@@ -415,10 +415,10 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Call(func, args) => {
-            let func_expr = build_exprs(func, symbols, scope, functions, locals, inference)?;
+            let func_expr = build_exprs(func, symbols, scope, decls, locals, inference)?;
             let mut arg_exprs = Vec::new();
             for arg in args.iter() {
-                let arg_expr = build_exprs(arg, symbols, scope, functions, locals, inference)?;
+                let arg_expr = build_exprs(arg, symbols, scope, decls, locals, inference)?;
                 arg_exprs.push(arg_expr);
             }
 

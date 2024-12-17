@@ -196,7 +196,7 @@ mod tests {
             node,
             &unit.symbols,
             &mut root_scope,
-            &mut unit.decls.functions,
+            &mut unit.decls,
             &mut locals,
             &mut inference,
         )
@@ -226,7 +226,7 @@ mod tests {
             node,
             &unit.symbols,
             &mut root_scope,
-            &mut unit.decls.functions,
+            &mut unit.decls,
             &mut locals,
             &mut inference,
         )
@@ -262,7 +262,7 @@ mod tests {
             node,
             &unit.symbols,
             &mut root_scope,
-            &mut unit.decls.functions,
+            &mut unit.decls,
             &mut locals,
             &mut inference,
         )
@@ -311,7 +311,7 @@ mod tests {
             node,
             &unit.symbols,
             &mut root_scope,
-            &mut unit.decls.functions,
+            &mut unit.decls,
             &mut locals,
             &mut inference,
         )
