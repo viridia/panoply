@@ -1,4 +1,4 @@
-use crate::{decl::Scope, CompilationUnit};
+use crate::CompilationUnit;
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,

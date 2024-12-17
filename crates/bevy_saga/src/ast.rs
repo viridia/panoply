@@ -106,12 +106,6 @@ pub(crate) struct FunctionParam<'a> {
 /// Represents an AST for a type expression
 #[derive(Debug)]
 pub enum TypeKind<'a> {
-    Boolean,
-    I32,
-    I64,
-    F32,
-    F64,
-    String,
     Tuple(&'a [&'a ASTNode<'a>]),
     Array(&'a ASTNode<'a>),
     Function {

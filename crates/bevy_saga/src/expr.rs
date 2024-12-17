@@ -1,5 +1,3 @@
-use wasmtime::Func;
-
 use crate::{decl, location::TokenLocation, oper::BinaryOp, types::Type};
 use core::fmt::Display;
 
@@ -12,7 +10,8 @@ pub(crate) enum ExprKind {
     ConstFloat(f64),
     ConstBool(bool),
     ConstString(decl::Symbol),
-    DeclRef(decl::DeclId),
+    FunctionRef(usize),
+    LocalRef(usize),
     Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
         op: BinaryOp,
@@ -45,7 +44,9 @@ impl Display for Expr {
             }
             ExprKind::ConstBool(value) => value.fmt(f),
             ExprKind::ConstString(symbol) => write!(f, "String({})", symbol.0),
-            ExprKind::DeclRef(symbol) => write!(f, "Ident({})", symbol.0),
+            // ExprKind::DeclRef(symbol) => write!(f, "Ident({})", symbol.0),
+            ExprKind::FunctionRef(id) => write!(f, "Function({})", id),
+            ExprKind::LocalRef(id) => write!(f, "Local({})", id),
             ExprKind::BinaryExpr {
                 op,
                 ref lhs,

@@ -1,7 +1,7 @@
 use core::fmt::Display;
 use std::sync::Arc;
 
-use crate::decl::{DeclId, Symbol};
+use crate::decl::ParamDecl;
 
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -26,15 +26,8 @@ pub enum Type {
 /// Type data for a function
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct FunctionType {
-    pub params: Vec<FunctionParam>,
+    pub params: Vec<ParamDecl>,
     pub ret: Type,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct FunctionParam {
-    pub name: Symbol,
-    pub decl: DeclId,
-    pub typ: Type,
 }
 
 impl Type {

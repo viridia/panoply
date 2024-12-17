@@ -6,24 +6,32 @@ use bevy::render::render_graph::Node;
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::CompilationError,
-    decl::{self, Decl},
+    decl::{self, Decl, LocalDecl, ParamDecl, Scope},
     expr::{Expr, ExprKind},
-    types::{FunctionParam, FunctionType, Type},
+    types::{FunctionType, Type},
+    CompilationUnit,
 };
 
 use super::{
     assign_types::assign_types, resolve_types::resolve_types, type_inference::TypeInference,
 };
 
+// pub struct ExpressionBuilder<'cu, 'sym> {
+//     pub symbols: &'sym decl::InternedSymbols,
+//     pub functions: &'cu mut Vec<decl::FunctionDecl>,
+//     // locals: Vec<LocalDecl>,
+//     // inference: TypeInference,
+// }
+
 pub(crate) fn build_module_decls<'ast>(
-    symbols: &decl::SymbolTable,
+    symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
-    decls_table: &mut decl::DeclsTable,
+    decls: &mut decl::Decls,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
-    if let NodeKind::Program(decls) = &ast.kind {
-        for decl in *decls {
-            match &decl.kind {
+    if let NodeKind::Program(ast_decls) = &ast.kind {
+        for ast_decl in *ast_decls {
+            match &ast_decl.kind {
                 NodeKind::Decl(d) => match d {
                     crate::ast::DeclKind::Function {
                         name,
@@ -35,30 +43,35 @@ pub(crate) fn build_module_decls<'ast>(
                         if scope.contains(*name) {
                             let name_str = symbols.resolve(*name);
                             return Err(CompilationError::FunctionRedefinition(
-                                decl.location,
+                                ast_decl.location,
                                 name_str,
                             ));
                         }
 
-                        let f = decl::Decl {
-                            location: decl.location,
-                            visibility: *visibility,
+                        let fd = decl::FunctionDecl {
+                            location: ast_decl.location,
                             name: *name,
-                            kind: decl::DeclKind::Function {
-                                typ: Arc::new(FunctionType::default()),
-                                body: Expr::new(body.location, ExprKind::Empty),
-                            },
+                            visibility: *visibility,
+                            typ: Arc::new(FunctionType::default()),
+                            body: Expr::new(body.location, ExprKind::Empty),
+                            locals: Vec::new(),
                         };
 
-                        let id = decls_table.insert(f);
-                        scope.insert(*name, id);
+                        scope.insert(
+                            *name,
+                            decl::Decl {
+                                location: ast_decl.location,
+                                kind: decl::DeclKind::Function(decls.functions.len()),
+                            },
+                        );
+                        decls.functions.push(fd);
                     }
                     crate::ast::DeclKind::Let { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Const { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Struct { name, fields } => todo!(),
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
-                _ => panic!("Invalid AST node for declaration: {:?}", decl.kind),
+                _ => panic!("Invalid AST node for declaration: {:?}", ast_decl.kind),
             }
         }
 
@@ -69,15 +82,15 @@ pub(crate) fn build_module_decls<'ast>(
 }
 
 pub(crate) fn build_module_exprs<'ast>(
-    symbols: &decl::SymbolTable,
+    symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
-    decls_table: &mut decl::DeclsTable,
+    decls: &mut decl::Decls,
     ast: &'ast ASTNode<'ast>,
 ) -> Result<(), CompilationError> {
     // Resolve types for all declarations.
-    if let NodeKind::Program(decls) = &ast.kind {
-        for decl_ast in *decls {
-            match &decl_ast.kind {
+    if let NodeKind::Program(ast_decls) = &ast.kind {
+        for ast_decl in *ast_decls {
+            match &ast_decl.kind {
                 NodeKind::Decl(d) => match d {
                     crate::ast::DeclKind::Function {
                         name,
@@ -85,77 +98,83 @@ pub(crate) fn build_module_exprs<'ast>(
                         ret: ret_ast,
                         ..
                     } => {
-                        let decl_id = scope.get(*name).unwrap();
+                        let decl = scope.get(*name).unwrap();
                         let ret_type = match ret_ast.kind {
                             NodeKind::Empty => Type::Void,
-                            _ => resolve_types(symbols, scope, decls_table, ret_ast)?,
+                            _ => resolve_types(symbols, scope, ret_ast)?,
                         };
 
-                        let mut params_mapped: Vec<FunctionParam> =
-                            Vec::with_capacity(params.len());
-                        for p in params.iter() {
-                            let typ = resolve_types(symbols, scope, decls_table, p.typ)?;
-                            let decl = decls_table.insert(Decl {
+                        let mut params_mapped: Vec<ParamDecl> = Vec::with_capacity(params.len());
+                        for (i, p) in params.iter().enumerate() {
+                            let typ = resolve_types(symbols, scope, p.typ)?;
+                            params_mapped.push(ParamDecl {
                                 location: p.location,
-                                visibility: decl::DeclVisibility::Private,
                                 name: p.name,
-                                kind: decl::DeclKind::Param(typ.clone()),
-                            });
-                            params_mapped.push(FunctionParam {
-                                name: p.name,
-                                decl,
                                 typ,
+                                index: i,
                             });
                         }
 
-                        let fty = FunctionType {
-                            params: params_mapped,
-                            ret: ret_type,
-                        };
-
-                        let decl = decls_table.get_mut(decl_id);
-                        let decl::DeclKind::Function { ref mut typ, .. } = decl.kind else {
+                        let decl::DeclKind::Function(findex) = decl.kind else {
                             unreachable!()
                         };
-                        *typ = Arc::new(fty);
+                        decls.functions[findex as usize].typ = Arc::new(FunctionType {
+                            params: params_mapped,
+                            ret: ret_type,
+                        });
                     }
                     crate::ast::DeclKind::Let { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Const { name, typ, value } => todo!(),
                     crate::ast::DeclKind::Struct { name, fields } => todo!(),
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
-                _ => panic!("Invalid AST node for declaration: {:?}", decl_ast.kind),
+                _ => panic!("Invalid AST node for declaration: {:?}", ast_decl.kind),
             }
         }
 
         // Build function body expressions.
-        for decl_ast in *decls {
+        for decl_ast in *ast_decls {
             if let NodeKind::Decl(crate::ast::DeclKind::Function {
                 name,
                 body: body_ast,
                 ..
             }) = &decl_ast.kind
             {
-                let decl_id = scope.get(*name).unwrap();
-                let mut inference: TypeInference = Default::default();
-                let mut body_expr =
-                    build_exprs(body_ast, symbols, scope, decls_table, &mut inference)?;
-                let decl = decls_table.get_mut(decl_id);
-                let decl::DeclKind::Function { ref typ, .. } = decl.kind else {
+                let decl = scope.get(*name).unwrap();
+                let decl::DeclKind::Function(findex) = decl.kind else {
                     unreachable!()
                 };
+
+                let mut inference: TypeInference = Default::default();
+                let mut param_scope = Scope::new(Some(scope));
+                let function = &mut decls.functions[findex as usize];
+                for param in function.typ.params.iter() {
+                    param_scope.insert(
+                        param.name,
+                        decl::Decl {
+                            location: param.location,
+                            kind: decl::DeclKind::Param(param.typ.clone(), param.index),
+                        },
+                    );
+                }
+                let mut locals_table: Vec<LocalDecl> = Vec::new();
+                let mut body_expr = build_exprs(
+                    body_ast,
+                    symbols,
+                    &param_scope,
+                    &mut decls.functions,
+                    &mut locals_table,
+                    &mut inference,
+                )?;
+                let function = &mut decls.functions[findex as usize];
                 inference.add_constraint(
-                    typ.ret.clone(),
+                    function.typ.ret.clone(),
                     body_expr.typ.clone(),
                     body_expr.location,
                 );
                 inference.solve_constraints()?;
-                assign_types(&mut body_expr, decls_table, &inference)?;
-                let decl = decls_table.get_mut(decl_id);
-                let decl::DeclKind::Function { ref mut body, .. } = decl.kind else {
-                    unreachable!()
-                };
-                *body = body_expr;
+                assign_types(&mut body_expr, &inference)?;
+                function.body = body_expr;
             }
         }
 
@@ -167,9 +186,10 @@ pub(crate) fn build_module_exprs<'ast>(
 
 pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
-    symbols: &decl::SymbolTable,
+    symbols: &decl::InternedSymbols,
     scope: &decl::Scope,
-    decls_table: &mut decl::DeclsTable,
+    functions: &mut Vec<decl::FunctionDecl>,
+    locals: &mut Vec<decl::LocalDecl>,
     inference: &mut TypeInference,
 ) -> Result<Expr, CompilationError> {
     match &ast.kind {
@@ -208,31 +228,38 @@ pub(crate) fn build_exprs<'a>(
             Ok(Expr::new(ast.location, ExprKind::ConstBool(*value)).with_type(Type::Boolean))
         }
 
-        NodeKind::Ident(symbol) => match scope.get(*symbol) {
-            Some(sym) => {
-                let decl = decls_table.get(sym);
+        NodeKind::Ident(symbol) => match scope.lookup(*symbol) {
+            Some(decl) => {
                 match &decl.kind {
-                    decl::DeclKind::Function { typ, .. } => {
-                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym))
-                            .with_type(Type::Function(typ.clone())))
+                    decl::DeclKind::Function(findex) => {
+                        let function = &functions[*findex];
+                        Ok(Expr::new(ast.location, ExprKind::FunctionRef(*findex))
+                            .with_type(Type::Function(function.typ.clone())))
                     }
-                    decl::DeclKind::Const(typ, _) => {
-                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
-                    }
-                    decl::DeclKind::Let(typ, _) => {
-                        Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
+                    // decl::DeclKind::Const(typ, _) => {
+                    //     Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
+                    // }
+                    // decl::DeclKind::Let(typ, _) => {
+                    //     Ok(Expr::new(ast.location, ExprKind::DeclRef(sym)).with_type(typ.clone()))
+                    // }
+                    decl::DeclKind::Param(typ, index) => {
+                        Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
+                            .with_type(typ.clone()))
                     }
                     // Struct (constructor)
                     // Enum (constructor)
-                    _ => todo!(),
+                    _ => todo!("Ident: {:?}", decl.kind),
                 }
             }
-            None => todo!(),
+            None => {
+                let name = symbols.resolve(*symbol);
+                Err(CompilationError::UnknownSymbol(ast.location, name))
+            }
         },
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, symbols, scope, decls_table, inference)?;
-            let rhs_expr = build_exprs(rhs, symbols, scope, decls_table, inference)?;
+            let lhs_expr = build_exprs(lhs, symbols, scope, functions, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, symbols, scope, functions, locals, inference)?;
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -295,17 +322,13 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, symbols, scope, decls_table, inference)?;
+                let stmt_expr = build_exprs(stmt, symbols, scope, functions, locals, inference)?;
                 stmt_exprs.push(stmt_expr);
             }
 
             let result_expr = match result {
                 Some(result) => Some(Box::new(build_exprs(
-                    result,
-                    symbols,
-                    scope,
-                    decls_table,
-                    inference,
+                    result, symbols, scope, functions, locals, inference,
                 )?)),
                 None => None,
             };
@@ -325,14 +348,14 @@ pub(crate) fn build_exprs<'a>(
 
         NodeKind::Cast { arg, typ } => {
             let mut infer = TypeInference::default();
-            let to_typ = resolve_types(symbols, scope, decls_table, typ)?;
-            let mut arg_expr = build_exprs(arg, symbols, scope, decls_table, &mut infer)?;
+            let to_typ = resolve_types(symbols, scope, typ)?;
+            let mut arg_expr = build_exprs(arg, symbols, scope, functions, locals, &mut infer)?;
             infer.solve_constraints()?;
 
             if to_typ == arg_expr.typ {
                 Ok(arg_expr)
             } else if to_typ.is_number() && arg_expr.typ.is_number() {
-                assign_types(&mut arg_expr, decls_table, &infer)?;
+                assign_types(&mut arg_expr, &infer)?;
                 Ok(Expr::new(ast.location, ExprKind::Cast(Box::new(arg_expr))).with_type(to_typ))
             } else {
                 Err(CompilationError::InvalidCast(
@@ -344,10 +367,10 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Call(func, args) => {
-            let func_expr = build_exprs(func, symbols, scope, decls_table, inference)?;
+            let func_expr = build_exprs(func, symbols, scope, functions, locals, inference)?;
             let mut arg_exprs = Vec::new();
             for arg in args.iter() {
-                let arg_expr = build_exprs(arg, symbols, scope, decls_table, inference)?;
+                let arg_expr = build_exprs(arg, symbols, scope, functions, locals, inference)?;
                 arg_exprs.push(arg_expr);
             }
 
@@ -374,7 +397,7 @@ pub(crate) fn build_exprs<'a>(
             // inference.add_constraint(ret_type.clone(), fty.ret.clone(), ast.location);
             // inference.solve_constraints()?;
             for arg in arg_exprs.iter_mut() {
-                assign_types(arg, decls_table, inference)?;
+                assign_types(arg, inference)?;
             }
 
             let call = ExprKind::Call(Box::new(func_expr), arg_exprs);

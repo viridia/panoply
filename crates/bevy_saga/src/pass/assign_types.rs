@@ -11,7 +11,6 @@ use super::type_inference::TypeInference;
 
 pub(crate) fn assign_types(
     expr: &mut Expr,
-    decls_table: &decl::DeclsTable,
     inference: &TypeInference,
 ) -> Result<(), CompilationError> {
     match &mut expr.kind {
@@ -24,13 +23,11 @@ pub(crate) fn assign_types(
         }
         ExprKind::ConstBool(_) => {}
         ExprKind::ConstString(_symbol) => todo!(),
-        ExprKind::DeclRef(decl_id) => {
-            let _decl = decls_table.get(*decl_id);
-            // todo!();
-        }
+        ExprKind::FunctionRef(_) => {}
+        ExprKind::LocalRef(_) => {}
         ExprKind::BinaryExpr { op, lhs, rhs } => {
-            assign_types(lhs, decls_table, inference)?;
-            assign_types(rhs, decls_table, inference)?;
+            assign_types(lhs, inference)?;
+            assign_types(rhs, inference)?;
             match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -89,18 +86,18 @@ pub(crate) fn assign_types(
         // No need to traverse here, this has already been done.
         ExprKind::Cast(_arg) => {}
         ExprKind::Call(func, args) => {
-            assign_types(func, decls_table, inference)?;
+            assign_types(func, inference)?;
             for arg in args.iter_mut() {
-                assign_types(arg, decls_table, inference)?;
+                assign_types(arg, inference)?;
             }
         }
 
         ExprKind::Block(ref mut stmts, ref mut result) => {
             for stmt in stmts.iter_mut() {
-                assign_types(stmt, decls_table, inference)?;
+                assign_types(stmt, inference)?;
             }
             if let Some(ref mut result) = result {
-                assign_types(result.as_mut(), decls_table, inference)?;
+                assign_types(result.as_mut(), inference)?;
             }
         }
     }

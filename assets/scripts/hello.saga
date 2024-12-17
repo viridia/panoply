@@ -1,8 +1,8 @@
 pub fn hello() -> i32 {
     //println("Hello from SAGA");
-    one() + 2 + (3.0 as i32)
+    add(1) + 2 + (3.0 as i32)
 }
 
-fn one() -> i32 {
-    1
+fn add(arg: i32) -> i32 {
+    arg + 1
 }

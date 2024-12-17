@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    decl::{Decl, DeclKind, DeclVisibility, DeclsTable, Scope, SymbolTable},
+    decl::{Decl, DeclKind, Decls, FunctionDecl, InternedSymbols, Scope},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
@@ -31,6 +31,8 @@ pub enum CompilationError {
     RecursiveType(TokenLocation, Type),
     #[error("Unknown type: {1}")]
     UnknownType(TokenLocation, String),
+    #[error("Can't find the name '{1}' in this scope")]
+    UnknownSymbol(TokenLocation, String),
     #[error("Invalid type for binary operator {2} to {3}")]
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
     #[error("Function redefinition: {1}")]
@@ -50,6 +52,7 @@ impl CompilationError {
             | CompilationError::IncorrectNumberOfArguments(loc, _, _)
             | CompilationError::RecursiveType(loc, _)
             | CompilationError::UnknownType(loc, _)
+            | CompilationError::UnknownSymbol(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
             | CompilationError::FunctionRedefinition(loc, _) => *loc,
         }
@@ -60,8 +63,12 @@ impl CompilationError {
 pub struct CompilationUnit<'cu> {
     path: &'cu str,
     src: &'cu str,
-    pub(crate) symbols: SymbolTable,
-    pub(crate) decls: DeclsTable,
+
+    /// Interned symbols
+    pub(crate) symbols: InternedSymbols,
+
+    /// All declarations, both global and local.
+    pub(crate) decls: Decls,
     pub(crate) module: wasm_encoder::Module,
 }
 
@@ -70,8 +77,8 @@ impl<'cu> CompilationUnit<'cu> {
         Self {
             path,
             src,
-            symbols: SymbolTable::new(),
-            decls: DeclsTable::new(),
+            symbols: InternedSymbols::new(),
+            decls: Decls::new(),
             module: wasm_encoder::Module::new(),
         }
     }
@@ -99,65 +106,23 @@ impl<'cu> CompilationUnit<'cu> {
             })?;
 
         let mut intrinsic_scope = Scope::new(None);
-        fn define_type(
-            symbols: &SymbolTable,
-            decls: &mut DeclsTable,
-            scope: &mut Scope,
-            name: &str,
-            ty: Type,
-        ) {
+        fn define_type(symbols: &InternedSymbols, scope: &mut Scope, name: &str, ty: Type) {
             let sym = symbols.intern(name);
-            let decl = decls.insert(Decl {
-                name: sym,
-                kind: DeclKind::Type(ty),
-                location: (0, 0).into(),
-                visibility: DeclVisibility::Public,
-            });
-            scope.insert(sym, decl);
+            scope.insert(
+                sym,
+                Decl {
+                    kind: DeclKind::Type(ty),
+                    location: (0, 0).into(),
+                },
+            );
         }
 
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "i32",
-            Type::I32,
-        );
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "i64",
-            Type::I64,
-        );
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "f32",
-            Type::F32,
-        );
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "f64",
-            Type::F64,
-        );
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "bool",
-            Type::Boolean,
-        );
-        define_type(
-            &self.symbols,
-            &mut self.decls,
-            &mut intrinsic_scope,
-            "String",
-            Type::String,
-        );
+        define_type(&self.symbols, &mut intrinsic_scope, "i32", Type::I32);
+        define_type(&self.symbols, &mut intrinsic_scope, "i64", Type::I64);
+        define_type(&self.symbols, &mut intrinsic_scope, "f32", Type::F32);
+        define_type(&self.symbols, &mut intrinsic_scope, "f64", Type::F64);
+        define_type(&self.symbols, &mut intrinsic_scope, "bool", Type::Boolean);
+        define_type(&self.symbols, &mut intrinsic_scope, "String", Type::String);
 
         let mut root_scope = Scope::new(Some(&intrinsic_scope));
         pass::build_module_decls(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
@@ -209,7 +174,7 @@ mod tests {
     use crate::{
         ast::{self, FloatSuffix, IntegerSuffix},
         compiler::CompilationUnit,
-        decl::{Scope, SymbolTable},
+        decl::{InternedSymbols, LocalDecl, Scope},
         oper,
         parser::saga_parser,
         pass::{self, assign_types},
@@ -220,7 +185,7 @@ mod tests {
     #[test]
     fn parse_integer() {
         let arena = bumpalo::Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = InternedSymbols::new();
         let mut unit = CompilationUnit::new("--str--", "20");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
@@ -229,11 +194,13 @@ mod tests {
         ));
         let mut inference: pass::TypeInference = Default::default();
         let root_scope = Scope::new(None);
+        let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
             &root_scope,
-            &mut unit.decls,
+            &mut unit.decls.functions,
+            &mut locals,
             &mut inference,
         )
         .unwrap();
@@ -248,7 +215,7 @@ mod tests {
     #[test]
     fn parse_float() {
         let arena = bumpalo::Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = InternedSymbols::new();
         let mut unit = CompilationUnit::new("--str--", "20.0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         assert!(matches!(
@@ -257,11 +224,13 @@ mod tests {
         ));
         let mut inference: pass::TypeInference = Default::default();
         let root_scope = Scope::new(None);
+        let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
             &root_scope,
-            &mut unit.decls,
+            &mut unit.decls.functions,
+            &mut locals,
             &mut inference,
         )
         .unwrap();
@@ -272,7 +241,7 @@ mod tests {
     #[test]
     fn parse_binop_add() {
         let arena = bumpalo::Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = InternedSymbols::new();
         let mut unit = CompilationUnit::new("--str--", "20.0 + 10.0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
@@ -291,24 +260,26 @@ mod tests {
         }
         let mut inference: pass::TypeInference = Default::default();
         let root_scope = Scope::new(None);
+        let mut locals = Vec::<LocalDecl>::new();
         let mut expr = pass::build_exprs(
             node,
             &unit.symbols,
             &root_scope,
-            &mut unit.decls,
+            &mut unit.decls.functions,
+            &mut locals,
             &mut inference,
         )
         .unwrap();
         assert_eq!(expr.to_string(), "20.0 + 10.0");
         inference.solve_constraints().unwrap();
-        assign_types(&mut expr, &unit.decls, &inference).unwrap();
+        assign_types(&mut expr, &inference).unwrap();
         assert_eq!(expr.typ, Type::F32);
     }
 
     #[test]
     fn parse_binop_prec() {
         let arena = bumpalo::Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = InternedSymbols::new();
         let mut unit = CompilationUnit::new("--str--", "20.0 + 10.0 * 0");
         let node = saga_parser::expr(unit.src, &arena, &symbols).unwrap();
         match &node.kind {
@@ -338,11 +309,13 @@ mod tests {
         }
         let mut inference: pass::TypeInference = Default::default();
         let root_scope = Scope::new(None);
+        let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
             &unit.symbols,
             &root_scope,
-            &mut unit.decls,
+            &mut unit.decls.functions,
+            &mut locals,
             &mut inference,
         )
         .unwrap();
@@ -354,7 +327,7 @@ mod tests {
     #[test]
     fn parse_module() {
         let arena = bumpalo::Bump::new();
-        let symbols = SymbolTable::new();
+        let symbols = InternedSymbols::new();
         let node = saga_parser::compilation_unit(
             r#"
             fn test() -> i32 {

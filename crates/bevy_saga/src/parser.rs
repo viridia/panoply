@@ -2,12 +2,11 @@ use crate::ast::{
     ASTNode, DeclKind, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind, TypeKind,
 };
 use crate::decl;
-use crate::location::TokenLocation;
 use crate::oper::{BinaryOp, UnaryOp};
 use bumpalo::Bump;
 
 peg::parser! {
-    pub grammar saga_parser<'a, 's>(arena: &'a Bump, symbols: &'s decl::SymbolTable) for str {
+    pub grammar saga_parser<'a, 's>(arena: &'a Bump, symbols: &'s decl::InternedSymbols) for str {
         rule ws() = quiet!{[' ' | '\n' | '\t']}
         rule line_comment() = quiet!{("//" [^'\n']*)}
         rule _() = quiet!{(ws() / line_comment())*}
@@ -410,7 +409,7 @@ mod tests {
     #[test]
     pub fn literal_int() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -424,7 +423,7 @@ mod tests {
     #[test]
     pub fn literal_int_i32() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1i32", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -438,7 +437,7 @@ mod tests {
     #[test]
     pub fn literal_int_i64() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1i64", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -452,7 +451,7 @@ mod tests {
     #[test]
     pub fn literal_float() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1.0", &arena, &symbols);
         assert!(matches!(
             ast,
@@ -502,7 +501,7 @@ mod tests {
     #[test]
     pub fn literal_string() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("\"hello\"", &arena, &symbols).unwrap();
         match ast {
             ASTNode {
@@ -551,7 +550,7 @@ mod tests {
     #[test]
     pub fn binop_add() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1.0 + 5", &arena, &symbols);
         match ast {
             Ok(ASTNode {
@@ -578,7 +577,7 @@ mod tests {
     #[test]
     pub fn binop_err() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::expr("1.0 + +", &arena, &symbols).unwrap_err();
         println!("{:?}", ast);
         assert_eq!(ast.location.offset, 6);
@@ -588,7 +587,7 @@ mod tests {
     #[test]
     pub fn param_list() {
         let arena = Bump::new();
-        let symbols = decl::SymbolTable::new();
+        let symbols = decl::InternedSymbols::new();
         let ast = saga_parser::param_list("()", &arena, &symbols).unwrap();
         assert_eq!(ast.len(), 0);
 
