@@ -6,7 +6,7 @@ use bevy::{
 use core::str;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use wasmtime::Module;
+use wasmtime::{ArrayRef, Caller, Module, Rooted};
 
 type StoreData = ();
 
@@ -161,7 +161,25 @@ impl Plugin for SagaPlugin {
         config.wasm_function_references(true);
         let engine = wasmtime::Engine::new(&config).unwrap();
         let store = wasmtime::Store::<StoreData>::new(&engine, ());
-        let linker = wasmtime::Linker::new(&engine);
+        let mut linker = wasmtime::Linker::new(&engine);
+        linker
+            .func_wrap(
+                "host",
+                "debug",
+                |_caller: Caller<'_, StoreData>, param: Rooted<ArrayRef>| {
+                    println!("Called debug from WebAssembly");
+                },
+            )
+            .unwrap();
+        linker
+            .func_wrap(
+                "host",
+                "assert",
+                |_caller: Caller<'_, StoreData>, param: i32| {
+                    assert!(param != 0, "Script assertion failed");
+                },
+            )
+            .unwrap();
         let vm = Arc::new(Mutex::new(Vm {
             engine,
             store,

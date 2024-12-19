@@ -39,6 +39,10 @@ pub enum CompilationError {
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
     #[error("Function redefinition: {1}")]
     FunctionRedefinition(TokenLocation, String),
+    #[error("Native function may not have a body")]
+    NativeFunctionHasBody(TokenLocation),
+    #[error("Function without a body")]
+    MissingBody(TokenLocation),
 }
 
 impl CompilationError {
@@ -57,7 +61,9 @@ impl CompilationError {
             | CompilationError::UnknownType(loc, _)
             | CompilationError::UnknownSymbol(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
-            | CompilationError::FunctionRedefinition(loc, _) => *loc,
+            | CompilationError::FunctionRedefinition(loc, _)
+            | CompilationError::NativeFunctionHasBody(loc)
+            | CompilationError::MissingBody(loc) => *loc,
         }
     }
 }

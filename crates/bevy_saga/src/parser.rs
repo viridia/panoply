@@ -398,7 +398,12 @@ peg::parser! {
         rule func_defn() -> &'a ASTNode<'a> =
             start:position!()
             vis:visiblity() _
-            "fn" _ id:name() _ p:param_list() _ r:func_return()? _ b:func_body()
+            native:(("native" _ { true }) / { false })
+            "fn" _ id:name() _ p:param_list() _ ret:func_return()? _
+            body:(
+                b:func_body() { Some(b) }
+                / ";" { None }
+            )
             end:position!()
         {
             let location = (start, end);
@@ -406,8 +411,9 @@ peg::parser! {
                 name: id,
                 visibility: vis,
                 params: p,
-                ret: r.unwrap_or_else(|| arena.alloc(ASTNode::new((0, 0), NodeKind::Empty))),
-                body: b,
+                ret,
+                body,
+                is_native: native,
             }))))
         }
 

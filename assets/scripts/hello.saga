@@ -1,4 +1,5 @@
 pub fn hello() -> i32 {
+    assert(true);
     //println("Hello from SAGA");
     add(1) + 2 + (3.0 as i32)
 }
@@ -8,6 +9,9 @@ fn add(arg: i32) -> i32 {
     arg + c
 }
 
-fn name() -> String {
-    "Hello from SAGA"
+fn name() {
+//    debug("Hello from SAGA")
 }
+
+// native fn debug(s: String);
+native fn assert(condition: bool);

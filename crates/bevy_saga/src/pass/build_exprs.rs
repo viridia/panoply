@@ -35,8 +35,8 @@ pub(crate) fn build_module_decls<'ast>(
                 NodeKind::Decl(d) => match d {
                     crate::ast::DeclKind::Function {
                         name,
-                        body,
                         visibility,
+                        is_native,
                         ..
                     } => {
                         // Multiple declarations of the same function are not allowed.
@@ -53,8 +53,10 @@ pub(crate) fn build_module_decls<'ast>(
                             name: *name,
                             visibility: *visibility,
                             typ: Arc::new(FunctionType::default()),
-                            body: Expr::new(body.location, ExprKind::Empty),
+                            body: Expr::new(ast_decl.location, ExprKind::Empty),
                             locals: Vec::new(),
+                            is_native: *is_native,
+                            index: 0,
                         };
 
                         let findex = decls.add_function(fd);
@@ -74,6 +76,23 @@ pub(crate) fn build_module_decls<'ast>(
                     crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
                 },
                 _ => panic!("Invalid AST node for declaration: {:?}", ast_decl.kind),
+            }
+        }
+
+        // Assign indices to functions. Imported functions first.
+        let mut index = 0;
+        for fd in decls.functions.iter_mut() {
+            if fd.is_native {
+                fd.index = index;
+                index += 1;
+            }
+        }
+
+        // Then local functions.
+        for fd in decls.functions.iter_mut() {
+            if !fd.is_native {
+                fd.index = index;
+                index += 1;
             }
         }
 
@@ -101,9 +120,9 @@ pub(crate) fn build_module_exprs<'ast>(
                         ..
                     } => {
                         let decl = scope.get(*name).unwrap();
-                        let ret_type = match ret_ast.kind {
-                            NodeKind::Empty => Type::Void,
-                            _ => resolve_types(symbols, scope, ret_ast)?,
+                        let ret_type = match ret_ast {
+                            None => Type::Void,
+                            Some(ret_ast) => resolve_types(symbols, scope, ret_ast)?,
                         };
 
                         let mut params_mapped: Vec<ParamDecl> = Vec::with_capacity(params.len());
@@ -162,24 +181,36 @@ pub(crate) fn build_module_exprs<'ast>(
                 }
                 let mut local_scope = Scope::new(Some(&param_scope));
                 let mut locals_table: Vec<LocalDecl> = Vec::new();
-                let mut body_expr = build_exprs(
-                    body_ast,
-                    symbols,
-                    &mut local_scope,
-                    decls,
-                    &mut locals_table,
-                    &mut inference,
-                )?;
+                let mut body_expr = if let Some(body_ast) = body_ast {
+                    if function.is_native {
+                        return Err(CompilationError::NativeFunctionHasBody(function.location));
+                    }
+                    build_exprs(
+                        body_ast,
+                        symbols,
+                        &mut local_scope,
+                        decls,
+                        &mut locals_table,
+                        &mut inference,
+                    )?
+                } else {
+                    if !function.is_native {
+                        return Err(CompilationError::MissingBody(function.location));
+                    }
+                    Expr::new(decl_ast.location, ExprKind::Empty)
+                };
                 let function = &mut decls.functions[*findex];
-                inference.add_constraint(
-                    function.typ.ret.clone(),
-                    body_expr.typ.clone(),
-                    body_expr.location,
-                );
-                inference.solve_constraints()?;
-                assign_types(&mut body_expr, &inference)?;
-                for local in locals_table.iter_mut() {
-                    local.typ = inference.substitute(&local.typ);
+                if body_ast.is_some() {
+                    inference.add_constraint(
+                        function.typ.ret.clone(),
+                        body_expr.typ.clone(),
+                        body_expr.location,
+                    );
+                    inference.solve_constraints()?;
+                    assign_types(&mut body_expr, &inference)?;
+                    for local in locals_table.iter_mut() {
+                        local.typ = inference.substitute(&local.typ);
+                    }
                 }
                 function.body = body_expr;
                 function.locals = locals_table;
@@ -240,8 +271,11 @@ pub(crate) fn build_exprs<'a>(
                 match &decl {
                     decl::Decl::Function(findex) => {
                         let function = &decls.functions[*findex];
-                        Ok(Expr::new(ast.location, ExprKind::FunctionRef(*findex))
-                            .with_type(Type::Function(function.typ.clone())))
+                        // println!("Calling function: {:?}", function.index);
+                        Ok(
+                            Expr::new(ast.location, ExprKind::FunctionRef(function.index))
+                                .with_type(Type::Function(function.typ.clone())),
+                        )
                     }
                     decl::Decl::Local(index) => {
                         Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
@@ -387,7 +421,7 @@ pub(crate) fn build_exprs<'a>(
             let result_type = result_expr
                 .as_ref()
                 .map(|expr| expr.typ.clone())
-                .unwrap_or(Type::None);
+                .unwrap_or(Type::Void);
             let location = result_expr
                 .as_ref()
                 .map(|expr| expr.location)

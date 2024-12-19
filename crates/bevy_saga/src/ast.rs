@@ -71,8 +71,9 @@ pub(crate) enum DeclKind<'a> {
         name: Symbol,
         visibility: DeclVisibility,
         params: &'a [&'a FunctionParam<'a>],
-        ret: &'a ASTNode<'a>,
-        body: &'a ASTNode<'a>,
+        ret: Option<&'a ASTNode<'a>>,
+        body: Option<&'a ASTNode<'a>>,
+        is_native: bool,
     },
     Let {
         name: Symbol,

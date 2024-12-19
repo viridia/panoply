@@ -2,9 +2,9 @@ use core::result;
 
 use bevy::{core::Name, scene::ron::de, utils::HashMap};
 use wasm_encoder::{
-    CodeSection, DataCountSection, DataSection, ExportKind, ExportSection, FieldType, Function,
-    FunctionSection, HeapType, IndirectNameMap, Instruction, NameMap, NameSection, RefType,
-    StorageType, TypeSection, ValType,
+    CodeSection, DataCountSection, DataSection, EntityType, ExportKind, ExportSection, FieldType,
+    FuncType, Function, FunctionSection, GlobalType, HeapType, ImportSection, IndirectNameMap,
+    Instruction, NameMap, NameSection, RefType, StorageType, TypeSection, ValType,
 };
 use wasmparser::Element;
 use wasmtime::component::types::Field;
@@ -27,6 +27,7 @@ pub struct CodeGenerator {
     function_names: NameMap,
     types: TypeSection,
     functions: FunctionSection,
+    imports: ImportSection,
     exports: ExportSection,
     codes: CodeSection,
     data: DataSection,
@@ -45,6 +46,7 @@ impl Default for CodeGenerator {
             function_names: NameMap::new(),
             types: TypeSection::new(),
             functions: FunctionSection::new(),
+            imports: ImportSection::new(),
             exports: ExportSection::new(),
             codes: CodeSection::new(),
             data: DataSection::new(),
@@ -104,9 +106,14 @@ impl CodeGenerator {
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
-    for (index, fd) in unit.decls.functions.iter().enumerate() {
+    for fd in unit.decls.functions.iter() {
         let name_str = unit.symbols.resolve(fd.name);
-        let ret_type = generator.gen_type(&fd.typ.ret);
+        let ret_types = if !fd.typ.ret.is_void() {
+            vec![generator.gen_type(&fd.typ.ret)]
+        } else {
+            vec![]
+        };
+
         let param_types = fd
             .typ
             .params
@@ -115,29 +122,35 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
             .collect::<Vec<_>>();
 
         let type_index = generator.next_type_index();
-        generator.function_names.append(index as u32, &name_str);
+        generator.function_names.append(fd.index as u32, &name_str);
         generator
             .type_names
             .append(type_index, format!("{}.type", name_str).as_str());
-        generator.types.ty().function(param_types, vec![ret_type]);
-        generator.functions.function(type_index);
-        generator.local_offset = fd.typ.params.len() as u32;
-        if fd.visibility == decl::DeclVisibility::Public {
+        generator.types.ty().function(param_types, ret_types);
+        if fd.is_native {
             generator
-                .exports
-                .export(&name_str, ExportKind::Func, index as u32);
+                .imports
+                .import("host", &name_str, EntityType::Function(type_index));
+        } else {
+            generator.functions.function(type_index);
+            if fd.visibility == decl::DeclVisibility::Public {
+                generator
+                    .exports
+                    .export(&name_str, ExportKind::Func, fd.index as u32);
+            }
+            let mut locals = vec![];
+            for local in &fd.locals {
+                locals.push((1, generator.gen_type(&local.typ)));
+            }
+            let mut f = Function::new(locals);
+            generator.local_offset = fd.typ.params.len() as u32;
+            gen_expr(unit, &mut generator, &fd.body, &mut f)?;
+            if !fd.body.typ.is_void() {
+                f.instruction(&Instruction::Return);
+            }
+            f.instruction(&Instruction::End);
+            generator.codes.function(&f);
         }
-        let mut locals = vec![];
-        for local in &fd.locals {
-            locals.push((1, generator.gen_type(&local.typ)));
-        }
-        let mut f = Function::new(locals);
-        gen_expr(unit, &mut generator, &fd.body, &mut f)?;
-        if !fd.body.typ.is_void() {
-            f.instruction(&Instruction::Return);
-        }
-        f.instruction(&Instruction::End);
-        generator.codes.function(&f);
     }
 
     let mut names = NameSection::new();
@@ -155,6 +168,9 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
 
     unit.module.section(&names);
     unit.module.section(&generator.types);
+    if !generator.imports.is_empty() {
+        unit.module.section(&generator.imports);
+    }
     unit.module.section(&generator.functions);
     unit.module.section(&generator.exports);
     if generator.next_data_index > 0 {
@@ -455,6 +471,7 @@ fn gen_expr<'a>(
                 gen_expr(unit, generator, arg, out)?;
             }
             if let ExprKind::FunctionRef(index) = func.kind {
+                // println!("Call function: {}", index);
                 out.instruction(&Instruction::Call(index as u32));
             } else {
                 panic!("Invalid function reference: {:?}", func);

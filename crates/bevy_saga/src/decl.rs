@@ -72,6 +72,8 @@ pub struct FunctionDecl {
     pub typ: Arc<FunctionType>,
     pub body: Expr,
     pub locals: Vec<LocalDecl>,
+    pub is_native: bool,
+    pub index: usize,
     // TODO: basic blocks
 }
 
