@@ -27,3 +27,8 @@ fn name() {
 
 // native fn debug(s: String);
 native fn assert(condition: bool);
+
+fn empty_vec() -> Vec3 {
+    let self: Vec3;
+    self
+}

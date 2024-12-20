@@ -66,6 +66,44 @@ impl Type {
     pub fn is_number(&self) -> bool {
         self.is_integer() || self.is_float()
     }
+
+    /// Returns the number of WASM primitives needed to represent the type. This will always
+    /// be 1 for reference types. For tuples, this will be the sum of the number of primitives
+    /// needed to represent each element.
+    pub fn value_count(&self) -> usize {
+        match self {
+            Type::None | Type::Void => 0,
+            Type::Infer(_) => unreachable!("Infer type should be resolved"),
+            Type::Boolean
+            | Type::IUnsized
+            | Type::I32
+            | Type::I64
+            | Type::F32
+            | Type::F64
+            | Type::String => 1,
+            Type::Tuple(types) => types.iter().map(|ty| ty.value_count()).sum(),
+            Type::Array(_) => 1,
+            Type::Function(_) => 1,
+            Type::Struct(stype) => {
+                if stype.is_record {
+                    1
+                } else {
+                    stype
+                        .fields
+                        .iter()
+                        .map(|field| field.typ.value_count())
+                        .sum()
+                }
+            }
+            Type::TupleStruct(stype) => {
+                if stype.is_record {
+                    1
+                } else {
+                    stype.fields.iter().map(|field| field.value_count()).sum()
+                }
+            }
+        }
+    }
 }
 
 impl Display for Type {

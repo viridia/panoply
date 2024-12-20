@@ -123,7 +123,7 @@ impl<'cu> CompilationUnit<'cu> {
         let mut intrinsic_scope = Scope::new(None);
         fn define_type(symbols: &InternedSymbols, scope: &mut Scope, name: &str, ty: Type) {
             let sym = symbols.intern(name);
-            scope.insert(sym, Decl::Type(ty));
+            scope.insert(sym, Decl::TypeAlias(ty));
         }
 
         define_type(&self.symbols, &mut intrinsic_scope, "i32", Type::I32);

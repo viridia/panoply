@@ -49,7 +49,7 @@ pub(crate) fn build_module_decls<'ast>(
                             body: Expr::new(ast_decl.location, ExprKind::Empty),
                             locals: Vec::new(),
                             is_native: *is_native,
-                            index: 0,
+                            function_index: 0,
                         };
 
                         let findex = decls.add_function(fd);
@@ -118,7 +118,7 @@ pub(crate) fn build_module_decls<'ast>(
         let mut index = 0;
         for fd in decls.functions.iter_mut() {
             if fd.is_native {
-                fd.index = index;
+                fd.function_index = index;
                 index += 1;
             }
         }
@@ -126,7 +126,7 @@ pub(crate) fn build_module_decls<'ast>(
         // Then local functions.
         for fd in decls.functions.iter_mut() {
             if !fd.is_native {
-                fd.index = index;
+                fd.function_index = index;
                 index += 1;
             }
         }
@@ -157,17 +157,18 @@ pub(crate) fn build_module_exprs<'ast>(
                         let decl = scope.get(*name).unwrap();
                         let ret_type = match ret_ast {
                             None => Type::Void,
-                            Some(ret_ast) => resolve_types(symbols, scope, ret_ast)?,
+                            Some(ret_ast) => resolve_types(symbols, decls, scope, ret_ast)?,
                         };
 
                         let mut params_mapped: Vec<ParamDecl> = Vec::with_capacity(params.len());
                         for (i, p) in params.iter().enumerate() {
-                            let typ = resolve_types(symbols, scope, p.typ)?;
+                            let typ = resolve_types(symbols, decls, scope, p.typ)?;
                             params_mapped.push(ParamDecl {
                                 location: p.location,
                                 name: p.name,
                                 typ,
                                 index: i,
+                                local_index: 0,
                             });
                         }
 
@@ -197,7 +198,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         };
 
                         for (i, f) in fields.iter().enumerate() {
-                            let typ = resolve_types(symbols, scope, f.typ)?;
+                            let typ = resolve_types(symbols, decls, scope, f.typ)?;
                             stype.fields.push(decl::FieldDecl {
                                 location: f.location,
                                 name: f.name,
@@ -330,7 +331,7 @@ pub(crate) fn build_exprs<'a>(
                         let function = &decls.functions[*findex];
                         // println!("Calling function: {:?}", function.index);
                         Ok(
-                            Expr::new(ast.location, ExprKind::FunctionRef(function.index))
+                            Expr::new(ast.location, ExprKind::FunctionRef(function.function_index))
                                 .with_type(Type::Function(function.typ.clone())),
                         )
                     }
@@ -481,7 +482,7 @@ pub(crate) fn build_exprs<'a>(
             } => {
                 let name_str = symbols.resolve(*name);
                 let typ = match typ {
-                    Some(typ) => Some(resolve_types(symbols, scope, typ)?),
+                    Some(typ) => Some(resolve_types(symbols, decls, scope, typ)?),
                     None => None,
                 };
                 let value_expr = match value {
@@ -510,6 +511,7 @@ pub(crate) fn build_exprs<'a>(
                     typ: ty.clone(),
                     is_const: *is_const,
                     index,
+                    local_index: 0,
                 };
                 locals.push(local);
                 scope.insert(*name, decl::Decl::Local(index));
@@ -549,7 +551,7 @@ pub(crate) fn build_exprs<'a>(
 
         NodeKind::Cast { arg, typ } => {
             let mut infer = TypeInference::default();
-            let to_typ = resolve_types(symbols, scope, typ)?;
+            let to_typ = resolve_types(symbols, decls, scope, typ)?;
             let mut arg_expr = build_exprs(arg, symbols, scope, decls, locals, &mut infer)?;
             infer.solve_constraints()?;
 

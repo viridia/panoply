@@ -12,14 +12,12 @@ use wasmtime::component::types::Field;
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::{CompilationError, CompilationUnit},
-    decl::{self, FunctionDecl, Scope},
+    decl::{self, FunctionDecl, LocalDecl, ParamDecl, Scope},
     expr::{Expr, ExprKind},
     types::Type,
 };
 
-use super::{
-    assign_types::assign_types, resolve_types::resolve_types, type_inference::TypeInference,
-};
+use super::{assign_types::assign_types, type_inference::TypeInference};
 
 pub struct CodeGenerator {
     type_names: NameMap,
@@ -34,7 +32,8 @@ pub struct CodeGenerator {
     // elements: ElementSection,
     next_type_index: u32,
     next_data_index: u32,
-    local_offset: u32,
+    params: Vec<ParamDecl>,
+    locals: Vec<LocalDecl>,
     type_string: Option<u32>,
 }
 
@@ -53,7 +52,8 @@ impl Default for CodeGenerator {
             // elements: ElementSection::new(),
             next_type_index: 0,
             next_data_index: 0,
-            local_offset: 0,
+            params: Vec::new(),
+            locals: Vec::new(),
             type_string: None,
         }
     }
@@ -72,21 +72,71 @@ impl CodeGenerator {
         index
     }
 
-    fn gen_type(&mut self, typ: &Type) -> ValType {
+    fn gen_val_types(&mut self, typ: &Type, out: &mut Vec<ValType>) {
         match &typ {
-            Type::Boolean => ValType::I32,
-            Type::I32 => ValType::I32,
-            Type::I64 => ValType::I64,
-            Type::F32 => ValType::F32,
-            Type::F64 => ValType::F64,
-            Type::String => ValType::Ref(RefType {
-                nullable: false,
-                heap_type: HeapType::Concrete(self.get_string_type()),
-            }),
-            Type::Tuple(_members) => todo!(),
-            Type::Array(_element) => todo!(),
-            Type::Function(_ftype) => todo!(),
-            _ => panic!("Invalid type for code generation: {:?}", typ),
+            Type::None | Type::Void => {}
+            Type::IUnsized | Type::Infer(_) => unreachable!(),
+            Type::Boolean => {
+                out.push(ValType::I32);
+            }
+            Type::I32 => {
+                out.push(ValType::I32);
+            }
+            Type::I64 => {
+                out.push(ValType::I64);
+            }
+            Type::F32 => {
+                out.push(ValType::F32);
+            }
+            Type::F64 => {
+                out.push(ValType::F64);
+            }
+            Type::String => {
+                out.push(ValType::Ref(RefType {
+                    nullable: false,
+                    heap_type: HeapType::Concrete(self.get_string_type()),
+                }));
+            }
+            Type::Array(_element) => {
+                todo!();
+                // out.push(ValType::Ref(RefType {
+                //     nullable: false,
+                //     heap_type: HeapType::A,
+                // }));
+                // self.gen_val_types(element, out);
+            }
+            Type::Struct(stype) => {
+                if stype.is_record {
+                    out.push(ValType::I32);
+                } else {
+                    for field in &stype.fields {
+                        self.gen_val_types(&field.typ, out);
+                    }
+                }
+            }
+            Type::TupleStruct(stype) => {
+                if stype.is_record {
+                    out.push(ValType::I32);
+                } else {
+                    for typ in &stype.fields {
+                        self.gen_val_types(typ, out);
+                    }
+                }
+            }
+            Type::Tuple(members) => {
+                for member in members.iter() {
+                    self.gen_val_types(member, out);
+                }
+            }
+            Type::Function(_ftype) => {
+                todo!();
+                // for param in &ftype.params {
+                //     self.gen_val_types(param, out);
+                // }
+                // for ret in &ftype.ret {
+                //     self.gen_val_types(ret, out);
+                // }
+            }
         }
     }
 
@@ -106,42 +156,43 @@ impl CodeGenerator {
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
 
-    for _sd in unit.decls.structs.iter() {
-        // let name_str = unit.symbols.resolve(sd.name);
-        // let mut fields = vec![];
-        // for field in &sd.fields {
-        //     fields.push(FieldType {
-        //         typ: generator.gen_type(&field.typ),
-        //         mutable: field.mutable,
-        //     });
-        // }
-        // let type_index = generator.next_type_index();
-        // generator
-        //     .type_names
-        //     .append(type_index, format!("{}.type", name_str).as_str());
-        // generator.types.ty().struct_type(fields);
-        // generator
-        //     .imports
-        //     .import("host", &name_str, EntityType::Struct(type_index));
+    for sd in unit.decls.structs.iter() {
+        if sd.typ.is_record {
+            // let name_str = unit.symbols.resolve(sd.name);
+            // let mut fields = vec![];
+            // for field in &sd.fields {
+            //     fields.push(FieldType {
+            //         typ: generator.gen_type(&field.typ),
+            //         mutable: field.mutable,
+            //     });
+            // }
+            // let type_index = generator.next_type_index();
+            // generator
+            //     .type_names
+            //     .append(type_index, format!("{}.type", name_str).as_str());
+            // generator.types.ty().struct_type(fields);
+            // generator
+            //     .imports
+            //     .import("host", &name_str, EntityType::Struct(type_index));
+        }
     }
 
     for fd in unit.decls.functions.iter() {
         let name_str = unit.symbols.resolve(fd.name);
-        let ret_types = if !fd.typ.ret.is_void() {
-            vec![generator.gen_type(&fd.typ.ret)]
-        } else {
-            vec![]
+        let mut ret_types: Vec<ValType> = Vec::new();
+        if !fd.typ.ret.is_void() {
+            generator.gen_val_types(&fd.typ.ret, &mut ret_types);
         };
 
-        let param_types = fd
-            .typ
-            .params
-            .iter()
-            .map(|p| generator.gen_type(&p.typ))
-            .collect::<Vec<_>>();
+        let mut param_types: Vec<ValType> = Vec::new();
+        for param in &fd.typ.params {
+            generator.gen_val_types(&param.typ, &mut param_types);
+        }
 
         let type_index = generator.next_type_index();
-        generator.function_names.append(fd.index as u32, &name_str);
+        generator
+            .function_names
+            .append(fd.function_index as u32, &name_str);
         generator
             .type_names
             .append(type_index, format!("{}.type", name_str).as_str());
@@ -155,14 +206,39 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
             if fd.visibility == decl::DeclVisibility::Public {
                 generator
                     .exports
-                    .export(&name_str, ExportKind::Func, fd.index as u32);
+                    .export(&name_str, ExportKind::Func, fd.function_index as u32);
             }
-            let mut locals = vec![];
+            let mut locals: Vec<ValType> = vec![];
             for local in &fd.locals {
-                locals.push((1, generator.gen_type(&local.typ)));
+                generator.gen_val_types(&local.typ, &mut locals);
             }
-            let mut f = Function::new(locals);
-            generator.local_offset = fd.typ.params.len() as u32;
+            let mut locals_compressed: Vec<(u32, ValType)> = Vec::new();
+            if !locals.is_empty() {
+                let mut current_type = &locals[0];
+                let mut count = 1;
+                for local in locals.iter().skip(1) {
+                    if local == current_type {
+                        count += 1;
+                    } else {
+                        locals_compressed.push((count, *current_type));
+                        current_type = local;
+                        count = 1;
+                    }
+                }
+                locals_compressed.push((count, *current_type));
+            }
+            let mut f = Function::new(locals_compressed);
+            generator.params.clone_from(&fd.typ.params);
+            generator.locals.clone_from(&fd.locals);
+            let mut local_offset = 0;
+            for param in generator.params.iter_mut() {
+                param.index = local_offset;
+                local_offset += param.typ.value_count();
+            }
+            for local in generator.locals.iter_mut() {
+                local.index = local_offset;
+                local_offset += local.typ.value_count();
+            }
             gen_expr(unit, &mut generator, &fd.body, &mut f)?;
             if !fd.body.typ.is_void() {
                 f.instruction(&Instruction::Return);
@@ -254,12 +330,12 @@ fn gen_expr<'a>(
             panic!("Cannot codegen function reference: {:?}", index);
         }
         ExprKind::ParamRef(index) => {
-            out.instruction(&Instruction::LocalGet(*index as u32));
+            let local = &generator.params[*index];
+            local_get(local.local_index, &local.typ, out);
         }
         ExprKind::LocalRef(index) => {
-            out.instruction(&Instruction::LocalGet(
-                *index as u32 + generator.local_offset,
-            ));
+            let local = &generator.locals[*index];
+            local_get(local.local_index, &local.typ, out);
         }
         ExprKind::GlobalRef(index) => {
             out.instruction(&Instruction::GlobalGet(*index as u32));
@@ -267,9 +343,8 @@ fn gen_expr<'a>(
         ExprKind::LocalDecl(index, init) => {
             if let Some(init) = init {
                 gen_expr(unit, generator, init, out)?;
-                out.instruction(&Instruction::LocalSet(
-                    *index as u32 + generator.local_offset,
-                ));
+                let local = &generator.locals[*index];
+                local_set(local.local_index, &local.typ, out);
             }
         }
         ExprKind::BinaryExpr { op, lhs, rhs } => {
@@ -527,4 +602,94 @@ fn gen_expr<'a>(
     }
 
     Ok(())
+}
+
+fn local_get(mut local_index: usize, typ: &Type, out: &mut wasm_encoder::Function) {
+    match typ {
+        Type::None | Type::Void => {}
+        Type::IUnsized | Type::Infer(_) => unreachable!(),
+        Type::Boolean | Type::I32 | Type::I64 | Type::F32 | Type::F64 => {
+            out.instruction(&Instruction::LocalGet(local_index as u32));
+        }
+        Type::String => {
+            out.instruction(&Instruction::LocalGet(local_index as u32));
+        }
+        Type::Array(_element) => {
+            todo!();
+        }
+        Type::Struct(stype) => {
+            if stype.is_record {
+                out.instruction(&Instruction::LocalGet(local_index as u32));
+            } else {
+                for field in &stype.fields {
+                    local_get(local_index, &field.typ, out);
+                    local_index += field.typ.value_count();
+                }
+            }
+        }
+        Type::TupleStruct(stype) => {
+            if stype.is_record {
+                out.instruction(&Instruction::LocalGet(local_index as u32));
+            } else {
+                for typ in &stype.fields {
+                    local_get(local_index, typ, out);
+                    local_index += typ.value_count();
+                }
+            }
+        }
+        Type::Tuple(members) => {
+            for member in members.iter() {
+                local_get(local_index, member, out);
+                local_index += member.value_count();
+            }
+        }
+        Type::Function(_ftype) => {
+            todo!();
+        }
+    }
+}
+
+fn local_set(mut local_index: usize, typ: &Type, out: &mut wasm_encoder::Function) {
+    match typ {
+        Type::None | Type::Void => {}
+        Type::IUnsized | Type::Infer(_) => unreachable!(),
+        Type::Boolean | Type::I32 | Type::I64 | Type::F32 | Type::F64 => {
+            out.instruction(&Instruction::LocalSet(local_index as u32));
+        }
+        Type::String => {
+            out.instruction(&Instruction::LocalSet(local_index as u32));
+        }
+        Type::Array(_element) => {
+            todo!();
+        }
+        Type::Struct(stype) => {
+            if stype.is_record {
+                out.instruction(&Instruction::LocalSet(local_index as u32));
+            } else {
+                for field in stype.fields.iter().rev() {
+                    local_set(local_index, &field.typ, out);
+                    local_index += field.typ.value_count();
+                }
+            }
+        }
+        Type::TupleStruct(stype) => {
+            if stype.is_record {
+                out.instruction(&Instruction::LocalSet(local_index as u32));
+            } else {
+                for typ in stype.fields.iter().rev() {
+                    local_set(local_index, typ, out);
+                    local_index += typ.value_count();
+                }
+            }
+        }
+        Type::Tuple(members) => {
+            for member in members.iter().rev() {
+                local_set(local_index, member, out);
+                local_index += member.value_count();
+            }
+        }
+        Type::Function(_ftype) => {
+            todo!();
+        }
+    }
 }

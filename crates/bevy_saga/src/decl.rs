@@ -62,7 +62,7 @@ pub enum Decl {
     Function(usize),
     Struct(usize),
     // Enum(usize),
-    Type(Type),
+    TypeAlias(Type),
 }
 
 #[derive(Debug)]
@@ -74,11 +74,12 @@ pub struct FunctionDecl {
     pub body: Expr,
     pub locals: Vec<LocalDecl>,
     pub is_native: bool,
-    pub index: usize,
+    /// Index of this function in the module's functions table.
+    pub function_index: usize,
 }
 
 /// Declaration for a local variable or constant
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct LocalDecl {
     pub location: TokenLocation,
@@ -86,11 +87,14 @@ pub struct LocalDecl {
     pub name: Symbol,
     pub typ: Type,
     pub index: usize,
+    /// Index of this param in the function's local variables. This takes into account multi-value
+    /// params.
+    pub local_index: usize,
     pub is_const: bool,
 }
 
 /// Declaration for a local variable or constant
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct GlobalDecl {
     pub location: TokenLocation,
@@ -107,7 +111,13 @@ pub struct ParamDecl {
     pub location: TokenLocation,
     pub name: Symbol,
     pub typ: Type,
+
+    /// Index of this param in the params table.
     pub index: usize,
+
+    /// Index of this param in the function's local variables. This takes into account multi-value
+    /// params.
+    pub local_index: usize,
 }
 
 #[derive(Debug)]
