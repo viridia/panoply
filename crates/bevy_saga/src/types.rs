@@ -1,7 +1,7 @@
 use core::fmt::Display;
 use std::sync::Arc;
 
-use crate::decl::{FieldDecl, ParamDecl};
+use crate::decl::{FieldDecl, ParamDecl, Symbol};
 
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -33,8 +33,9 @@ pub struct FunctionType {
 }
 
 /// Type data for a struct or record
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub struct StructType {
+    pub name: Symbol,
     pub is_record: bool,
     pub fields: Vec<FieldDecl>,
 }

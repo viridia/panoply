@@ -1,7 +1,7 @@
 use core::result;
 use std::sync::Arc;
 
-use bevy::{render::render_graph::Node, scene::ron::de};
+use bevy::{render::render_graph::Node, scene::ron::de, utils::tracing::field};
 
 use crate::{
     ast::{ASTNode, NodeKind},
@@ -193,6 +193,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         };
 
                         let mut stype = StructType {
+                            name: *name,
                             is_record: *is_record,
                             fields: Vec::with_capacity(fields.len()),
                         };
@@ -446,26 +447,30 @@ pub(crate) fn build_exprs<'a>(
             .with_type(ty))
         }
 
-        NodeKind::FieldName(base, _name) => {
-            let _base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
-            // match &base_expr.typ {
-            //     Type::None => {
-            //         // TODO: Replace this later
-            //         panic!("Field access on None type");
-            //     }
-            //     // Type::Struct(fields) => {
-            //     //     todo!();
-            //     //     // let field = fields.get(*name).unwrap();
-            //     //     // field.typ.clone()
-            //     // }
-            //     _ => {
-            //         return Err(CompilationError::NoFields(
-            //             ast.location,
-            //             base_expr.typ.clone(),
-            //         ));
-            //     }
-            // };
-            todo!()
+        NodeKind::FieldName(base, fname) => {
+            let base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
+            match base_expr.typ.clone() {
+                Type::Struct(stype) => {
+                    let field = stype.fields.iter().find(|field| field.name == *fname);
+                    if let Some(field) = field {
+                        Ok(Expr::new(
+                            ast.location,
+                            ExprKind::Field(Box::new(base_expr), field.index),
+                        )
+                        .with_type(field.typ.clone()))
+                    } else {
+                        Err(CompilationError::UnknownField(
+                            ast.location,
+                            symbols.resolve(stype.name),
+                            symbols.resolve(*fname),
+                        ))
+                    }
+                }
+                _ => Err(CompilationError::NoFields(
+                    ast.location,
+                    base_expr.typ.clone(),
+                )),
+            }
         }
 
         NodeKind::FieldIndex(_base, _index) => todo!(),

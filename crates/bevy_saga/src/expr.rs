@@ -20,6 +20,8 @@ pub(crate) enum ExprKind {
     ParamRef(usize),
     LocalRef(usize),
     GlobalRef(usize),
+    Field(Box<Expr>, usize),
+    Index(Box<Expr>, usize),
     Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
         op: BinaryOp,
@@ -59,6 +61,14 @@ impl Display for Expr {
             ExprKind::FunctionRef(id) => write!(f, "Function({})", id),
             ExprKind::LocalRef(id) => write!(f, "LocalRef({})", id),
             ExprKind::GlobalRef(id) => write!(f, "GlobalRef({})", id),
+            ExprKind::Field(ref base, index) => {
+                base.fmt(f)?;
+                write!(f, ".{}", index)
+            }
+            ExprKind::Index(ref base, index) => {
+                base.fmt(f)?;
+                write!(f, ".{}", index)
+            }
             ExprKind::ParamRef(id) => write!(f, "ParamRef({})", id),
             ExprKind::LocalDecl(id, ref init) => {
                 write!(f, "Local({}", id)?;

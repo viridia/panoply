@@ -292,7 +292,7 @@ fn gen_expr<'a>(
     expr: &'a Expr,
     out: &mut wasm_encoder::Function,
 ) -> Result<(), CompilationError> {
-    match &expr.kind {
+    match expr.kind {
         ExprKind::Empty => todo!(),
         ExprKind::ConstBool(value) => {
             match value {
@@ -302,20 +302,20 @@ fn gen_expr<'a>(
         }
         ExprKind::ConstInteger(value) => {
             match expr.typ {
-                Type::I32 => out.instruction(&Instruction::I32Const(*value as i32)),
-                Type::I64 => out.instruction(&Instruction::I64Const(*value)),
+                Type::I32 => out.instruction(&Instruction::I32Const(value as i32)),
+                Type::I64 => out.instruction(&Instruction::I64Const(value)),
                 _ => panic!("Invalid integer type: {:?}", expr.typ),
             };
         }
         ExprKind::ConstFloat(value) => {
             match expr.typ {
-                Type::F32 => out.instruction(&Instruction::F32Const(*value as f32)),
-                Type::F64 => out.instruction(&Instruction::F64Const(*value)),
+                Type::F32 => out.instruction(&Instruction::F32Const(value as f32)),
+                Type::F64 => out.instruction(&Instruction::F64Const(value)),
                 _ => panic!("Invalid float type: {:?}", expr.typ),
             };
         }
         ExprKind::ConstString(symbol) => {
-            let string = unit.symbols.resolve(*symbol);
+            let string = unit.symbols.resolve(symbol);
             let bytes = string.as_bytes();
             let array_data_index = generator.next_data_index();
             generator.data.passive(bytes.iter().copied());
@@ -330,24 +330,46 @@ fn gen_expr<'a>(
             panic!("Cannot codegen function reference: {:?}", index);
         }
         ExprKind::ParamRef(index) => {
-            let local = &generator.params[*index];
+            let local = &generator.params[index];
             local_get(local.local_index, &local.typ, out);
         }
         ExprKind::LocalRef(index) => {
-            let local = &generator.locals[*index];
+            let local = &generator.locals[index];
             local_get(local.local_index, &local.typ, out);
         }
-        ExprKind::GlobalRef(index) => {
-            out.instruction(&Instruction::GlobalGet(*index as u32));
+        ExprKind::Field(ref base, field_index) => {
+            // gen_expr(unit, generator, base, out)?;
+            let field = match &base.typ {
+                Type::Struct(stype) => &stype.fields[field_index],
+                _ => panic!("Invalid field access: {:?}", base.typ),
+            };
+            match base.kind {
+                ExprKind::LocalRef(index) => {
+                    let local = &generator.locals[index];
+                    local_get(local.local_index + field.index, &field.typ, out);
+                }
+                _ => todo!(),
+            }
         }
-        ExprKind::LocalDecl(index, init) => {
+        ExprKind::Index(ref base, _field_index) => {
+            gen_expr(unit, generator, base, out)?;
+            todo!();
+        }
+        ExprKind::GlobalRef(index) => {
+            out.instruction(&Instruction::GlobalGet(index as u32));
+        }
+        ExprKind::LocalDecl(index, ref init) => {
             if let Some(init) = init {
                 gen_expr(unit, generator, init, out)?;
-                let local = &generator.locals[*index];
+                let local = &generator.locals[index];
                 local_set(local.local_index, &local.typ, out);
             }
         }
-        ExprKind::BinaryExpr { op, lhs, rhs } => {
+        ExprKind::BinaryExpr {
+            op,
+            ref lhs,
+            ref rhs,
+        } => {
             gen_expr(unit, generator, lhs, out)?;
             gen_expr(unit, generator, rhs, out)?;
             match op {
@@ -506,7 +528,7 @@ fn gen_expr<'a>(
             }
         }
 
-        ExprKind::UnaryExpr { op, arg } => {
+        ExprKind::UnaryExpr { op, ref arg } => {
             gen_expr(unit, generator, arg, out)?;
             match op {
                 crate::oper::UnaryOp::Not => todo!(),
@@ -515,7 +537,7 @@ fn gen_expr<'a>(
             }
         }
 
-        ExprKind::Cast(arg) => {
+        ExprKind::Cast(ref arg) => {
             gen_expr(unit, generator, arg, out)?;
             // Convert from arg.typ to expr.typ.
             match (&expr.typ, &arg.typ) {
@@ -572,7 +594,7 @@ fn gen_expr<'a>(
             }
         }
 
-        ExprKind::Call(func, args) => {
+        ExprKind::Call(ref func, ref args) => {
             for arg in args {
                 gen_expr(unit, generator, arg, out)?;
             }
@@ -584,7 +606,7 @@ fn gen_expr<'a>(
             }
         }
 
-        ExprKind::Block(vec, expr) => {
+        ExprKind::Block(ref vec, ref expr) => {
             for stmt in vec {
                 gen_expr(unit, generator, stmt, out)?;
                 match stmt.typ {

@@ -28,7 +28,7 @@ fn name() {
 // native fn debug(s: String);
 native fn assert(condition: bool);
 
-fn empty_vec() -> Vec3 {
+fn empty_vec() -> f32 {
     let self: Vec3;
-    self
+    self.x + self.y
 }

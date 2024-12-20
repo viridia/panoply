@@ -33,6 +33,8 @@ pub enum CompilationError {
     MissingType(TokenLocation, String),
     #[error("Unknown type: {1}")]
     UnknownType(TokenLocation, String),
+    #[error("Unknown field: {1}.{1}")]
+    UnknownField(TokenLocation, String, String),
     #[error("Type {1} does not have fields")]
     NoFields(TokenLocation, Type),
     #[error("Can't find the name '{1}' in this scope")]
@@ -65,6 +67,7 @@ impl CompilationError {
             | CompilationError::UnknownType(loc, _)
             | CompilationError::NoFields(loc, _)
             | CompilationError::UnknownSymbol(loc, _)
+            | CompilationError::UnknownField(loc, _, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
             | CompilationError::FunctionRedefinition(loc, _)
             | CompilationError::NameRedefinition(loc, _)

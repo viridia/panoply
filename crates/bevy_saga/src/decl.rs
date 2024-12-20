@@ -12,6 +12,12 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Symbol(pub(crate) usize);
 
+impl Default for Symbol {
+    fn default() -> Self {
+        Self(usize::MAX)
+    }
+}
+
 struct SymbolTableInner {
     symbols: HashMap<String, Symbol>,
     strings: Vec<String>,
