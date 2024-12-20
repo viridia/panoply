@@ -1,4 +1,9 @@
-use crate::{decl, location::TokenLocation, oper::BinaryOp, types::Type};
+use crate::{
+    decl,
+    location::TokenLocation,
+    oper::{BinaryOp, UnaryOp},
+    types::Type,
+};
 use core::fmt::Display;
 
 /// Content of an Expression node.
@@ -14,11 +19,16 @@ pub(crate) enum ExprKind {
     LocalDecl(usize, Option<Box<Expr>>),
     ParamRef(usize),
     LocalRef(usize),
+    GlobalRef(usize),
     Call(Box<Expr>, Vec<Expr>),
     BinaryExpr {
         op: BinaryOp,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
+    },
+    UnaryExpr {
+        op: UnaryOp,
+        arg: Box<Expr>,
     },
     Cast(Box<Expr>),
     Block(Vec<Expr>, Option<Box<Expr>>),
@@ -48,6 +58,7 @@ impl Display for Expr {
             ExprKind::ConstString(symbol) => write!(f, "String({})", symbol.0),
             ExprKind::FunctionRef(id) => write!(f, "Function({})", id),
             ExprKind::LocalRef(id) => write!(f, "LocalRef({})", id),
+            ExprKind::GlobalRef(id) => write!(f, "GlobalRef({})", id),
             ExprKind::ParamRef(id) => write!(f, "ParamRef({})", id),
             ExprKind::LocalDecl(id, ref init) => {
                 write!(f, "Local({}", id)?;
@@ -85,6 +96,10 @@ impl Display for Expr {
                     BinaryOp::Ge => write!(f, " >= "),
                 }?;
                 rhs.fmt(f)
+            }
+            ExprKind::UnaryExpr { op, ref arg } => {
+                write!(f, "{:?}", op)?;
+                arg.fmt(f)
             }
             ExprKind::Cast(ref arg) => {
                 arg.fmt(f)?;

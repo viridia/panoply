@@ -80,7 +80,7 @@ pub struct Parcel {
     /// Whether this parcel has water
     pub has_water: bool,
 
-    /// Terrain height field, including margins.
+    // / Terrain height field, including margins.
     // pub terrain_height: SquareArray<f32>,
 
     // Flora table for this parcel

@@ -83,9 +83,9 @@ impl CodeGenerator {
                 nullable: false,
                 heap_type: HeapType::Concrete(self.get_string_type()),
             }),
-            Type::Tuple(members) => todo!(),
-            Type::Array(element) => todo!(),
-            Type::Function(ftype) => todo!(),
+            Type::Tuple(_members) => todo!(),
+            Type::Array(_element) => todo!(),
+            Type::Function(_ftype) => todo!(),
             _ => panic!("Invalid type for code generation: {:?}", typ),
         }
     }
@@ -105,6 +105,25 @@ impl CodeGenerator {
 
 pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationError> {
     let mut generator = CodeGenerator::default();
+
+    for _sd in unit.decls.structs.iter() {
+        // let name_str = unit.symbols.resolve(sd.name);
+        // let mut fields = vec![];
+        // for field in &sd.fields {
+        //     fields.push(FieldType {
+        //         typ: generator.gen_type(&field.typ),
+        //         mutable: field.mutable,
+        //     });
+        // }
+        // let type_index = generator.next_type_index();
+        // generator
+        //     .type_names
+        //     .append(type_index, format!("{}.type", name_str).as_str());
+        // generator.types.ty().struct_type(fields);
+        // generator
+        //     .imports
+        //     .import("host", &name_str, EntityType::Struct(type_index));
+    }
 
     for fd in unit.decls.functions.iter() {
         let name_str = unit.symbols.resolve(fd.name);
@@ -241,6 +260,9 @@ fn gen_expr<'a>(
             out.instruction(&Instruction::LocalGet(
                 *index as u32 + generator.local_offset,
             ));
+        }
+        ExprKind::GlobalRef(index) => {
+            out.instruction(&Instruction::GlobalGet(*index as u32));
         }
         ExprKind::LocalDecl(index, init) => {
             if let Some(init) = init {
@@ -406,6 +428,15 @@ fn gen_expr<'a>(
                         ),
                     };
                 }
+            }
+        }
+
+        ExprKind::UnaryExpr { op, arg } => {
+            gen_expr(unit, generator, arg, out)?;
+            match op {
+                crate::oper::UnaryOp::Not => todo!(),
+                crate::oper::UnaryOp::Neg => todo!(),
+                crate::oper::UnaryOp::BitNot => todo!(),
             }
         }
 

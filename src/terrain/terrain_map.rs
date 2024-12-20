@@ -110,9 +110,8 @@ pub struct TerrainMap {
     /** Asset data for terrain map. */
     pub handle: Handle<TerrainMapAsset>,
 
-    /** Material to use when rendering terrain. */
+    // /** Material to use when rendering terrain. */
     // pub ground_material: Handle<GroundMaterial>,
-
     /** Flag indicating we need to rebuild the biome texture. */
     pub needs_rebuild_biomes: bool,
 }

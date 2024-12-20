@@ -24,7 +24,7 @@ pub(crate) fn assign_types(
         ExprKind::ConstBool(_) => {}
         ExprKind::ConstString(_) => {}
         ExprKind::FunctionRef(_) => {}
-        ExprKind::LocalRef(_) | ExprKind::ParamRef(_) => {}
+        ExprKind::LocalRef(_) | ExprKind::GlobalRef(_) | ExprKind::ParamRef(_) => {}
         ExprKind::LocalDecl(_, ref mut init) => {
             if let Some(init) = init {
                 assign_types(init, inference)?;
@@ -85,6 +85,15 @@ pub(crate) fn assign_types(
                 | crate::oper::BinaryOp::Le
                 | crate::oper::BinaryOp::Gt
                 | crate::oper::BinaryOp::Ge => todo!(),
+            }
+        }
+
+        ExprKind::UnaryExpr { op, arg } => {
+            assign_types(arg, inference)?;
+            match op {
+                crate::oper::UnaryOp::Not => todo!(),
+                crate::oper::UnaryOp::Neg => todo!(),
+                crate::oper::UnaryOp::BitNot => todo!(),
             }
         }
 

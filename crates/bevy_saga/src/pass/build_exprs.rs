@@ -1,27 +1,20 @@
 use core::result;
 use std::sync::Arc;
 
-use bevy::render::render_graph::Node;
+use bevy::{render::render_graph::Node, scene::ron::de};
 
 use crate::{
     ast::{ASTNode, NodeKind},
     compiler::CompilationError,
     decl::{self, Decl, LocalDecl, ParamDecl, Scope},
     expr::{Expr, ExprKind},
-    types::{FunctionType, Type},
+    types::{FunctionType, StructType, Type},
     CompilationUnit,
 };
 
 use super::{
     assign_types::assign_types, resolve_types::resolve_types, type_inference::TypeInference,
 };
-
-// pub struct ExpressionBuilder<'cu, 'sym> {
-//     pub symbols: &'sym decl::InternedSymbols,
-//     pub functions: &'cu mut Vec<decl::FunctionDecl>,
-//     // locals: Vec<LocalDecl>,
-//     // inference: TypeInference,
-// }
 
 pub(crate) fn build_module_decls<'ast>(
     symbols: &decl::InternedSymbols,
@@ -33,7 +26,7 @@ pub(crate) fn build_module_decls<'ast>(
         for ast_decl in *ast_decls {
             match &ast_decl.kind {
                 NodeKind::Decl(d) => match d {
-                    crate::ast::DeclKind::Function {
+                    crate::ast::ASTDecl::Function {
                         name,
                         visibility,
                         is_native,
@@ -62,18 +55,60 @@ pub(crate) fn build_module_decls<'ast>(
                         let findex = decls.add_function(fd);
                         scope.insert(*name, decl::Decl::Function(findex));
                     }
-                    crate::ast::DeclKind::Let {
+
+                    crate::ast::ASTDecl::Let {
                         name,
-                        typ,
-                        value,
+                        visibility,
                         is_const,
+                        ..
                     } => {
-                        // Need to initialize the value as a constant. Which means we need
-                        // a compile-time evaluator (ick).
-                        todo!("Global let/const");
+                        // Multiple declarations of the same function are not allowed.
+                        if scope.contains(*name) {
+                            let name_str = symbols.resolve(*name);
+                            return Err(CompilationError::NameRedefinition(
+                                ast_decl.location,
+                                name_str,
+                            ));
+                        }
+
+                        let index = decls.globals.len();
+                        let gd = decl::GlobalDecl {
+                            location: ast_decl.location,
+                            visibility: *visibility,
+                            name: *name,
+                            typ: Type::None,
+                            is_const: *is_const,
+                            index,
+                        };
+
+                        decls.globals.push(gd);
+                        scope.insert(*name, decl::Decl::Global(index));
                     }
-                    crate::ast::DeclKind::Struct { name, fields } => todo!(),
-                    crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
+
+                    crate::ast::ASTDecl::Struct {
+                        name, visibility, ..
+                    } => {
+                        // Multiple declarations of the same function are not allowed.
+                        if scope.contains(*name) {
+                            let name_str = symbols.resolve(*name);
+                            return Err(CompilationError::NameRedefinition(
+                                ast_decl.location,
+                                name_str,
+                            ));
+                        }
+
+                        let index = decls.structs.len();
+                        let sd = decl::StructDecl {
+                            location: ast_decl.location,
+                            name: *name,
+                            visibility: *visibility,
+                            typ: Arc::new(StructType::default()),
+                            index,
+                        };
+
+                        decls.structs.push(sd);
+                        scope.insert(*name, decl::Decl::Struct(index));
+                    } // crate::ast::ASTDecl::TypeAlias { .. } => todo!(),
                 },
                 _ => panic!("Invalid AST node for declaration: {:?}", ast_decl.kind),
             }
@@ -113,7 +148,7 @@ pub(crate) fn build_module_exprs<'ast>(
         for ast_decl in *ast_decls {
             match &ast_decl.kind {
                 NodeKind::Decl(d) => match d {
-                    crate::ast::DeclKind::Function {
+                    crate::ast::ASTDecl::Function {
                         name,
                         params,
                         ret: ret_ast,
@@ -144,14 +179,36 @@ pub(crate) fn build_module_exprs<'ast>(
                             ret: ret_type,
                         });
                     }
-                    crate::ast::DeclKind::Let {
+                    crate::ast::ASTDecl::Let { .. } => todo!(),
+                    crate::ast::ASTDecl::Struct {
                         name,
-                        typ,
-                        value,
-                        is_const,
-                    } => todo!(),
-                    crate::ast::DeclKind::Struct { name, fields } => todo!(),
-                    crate::ast::DeclKind::TypeAlias { name, typ } => todo!(),
+                        is_record,
+                        fields,
+                        ..
+                    } => {
+                        let decl = scope.get(*name).unwrap();
+                        let decl::Decl::Struct(sindex) = decl else {
+                            unreachable!()
+                        };
+
+                        let mut stype = StructType {
+                            is_record: *is_record,
+                            fields: Vec::with_capacity(fields.len()),
+                        };
+
+                        for (i, f) in fields.iter().enumerate() {
+                            let typ = resolve_types(symbols, scope, f.typ)?;
+                            stype.fields.push(decl::FieldDecl {
+                                location: f.location,
+                                name: f.name,
+                                typ,
+                                index: i,
+                            });
+                        }
+
+                        let sd = &mut decls.structs[*sindex];
+                        sd.typ = Arc::new(stype);
+                    } // crate::ast::ASTDecl::TypeAlias { .. } => todo!(),
                 },
                 _ => panic!("Invalid AST node for declaration: {:?}", ast_decl.kind),
             }
@@ -159,7 +216,7 @@ pub(crate) fn build_module_exprs<'ast>(
 
         // Build function body expressions.
         for decl_ast in *ast_decls {
-            if let NodeKind::Decl(crate::ast::DeclKind::Function {
+            if let NodeKind::Decl(crate::ast::ASTDecl::Function {
                 name,
                 body: body_ast,
                 ..
@@ -281,6 +338,10 @@ pub(crate) fn build_exprs<'a>(
                         Ok(Expr::new(ast.location, ExprKind::LocalRef(*index))
                             .with_type(locals[*index].typ.clone()))
                     }
+                    decl::Decl::Global(index) => {
+                        Ok(Expr::new(ast.location, ExprKind::GlobalRef(*index))
+                            .with_type(locals[*index].typ.clone()))
+                    }
                     decl::Decl::Param(typ, index) => {
                         Ok(Expr::new(ast.location, ExprKind::ParamRef(*index))
                             .with_type(typ.clone()))
@@ -295,6 +356,8 @@ pub(crate) fn build_exprs<'a>(
                 Err(CompilationError::UnknownSymbol(ast.location, name))
             }
         },
+
+        NodeKind::QName(_name) => panic!("Should already be resolved"),
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
             let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
@@ -357,13 +420,64 @@ pub(crate) fn build_exprs<'a>(
             .with_type(ty))
         }
 
+        NodeKind::UnaryExpr { op, arg } => {
+            let arg_expr = build_exprs(arg, symbols, scope, decls, locals, inference)?;
+            let ty = match op {
+                crate::oper::UnaryOp::Not => {
+                    inference.add_constraint(
+                        Type::Boolean,
+                        arg_expr.typ.clone(),
+                        arg_expr.location,
+                    );
+                    Type::Boolean
+                }
+                crate::oper::UnaryOp::Neg => arg_expr.typ.clone(),
+                crate::oper::UnaryOp::BitNot => arg_expr.typ.clone(),
+            };
+
+            Ok(Expr::new(
+                ast.location,
+                ExprKind::UnaryExpr {
+                    op: *op,
+                    arg: Box::new(arg_expr),
+                },
+            )
+            .with_type(ty))
+        }
+
+        NodeKind::FieldName(base, _name) => {
+            let _base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
+            // match &base_expr.typ {
+            //     Type::None => {
+            //         // TODO: Replace this later
+            //         panic!("Field access on None type");
+            //     }
+            //     // Type::Struct(fields) => {
+            //     //     todo!();
+            //     //     // let field = fields.get(*name).unwrap();
+            //     //     // field.typ.clone()
+            //     // }
+            //     _ => {
+            //         return Err(CompilationError::NoFields(
+            //             ast.location,
+            //             base_expr.typ.clone(),
+            //         ));
+            //     }
+            // };
+            todo!()
+        }
+
+        NodeKind::FieldIndex(_base, _index) => todo!(),
+
         NodeKind::Empty => Ok(Expr::new(ast.location, ExprKind::Empty)),
         NodeKind::Decl(decl) => match decl {
-            crate::ast::DeclKind::Let {
+            crate::ast::ASTDecl::Let {
                 name,
                 typ,
                 value,
                 is_const,
+                visibility,
+                ..
             } => {
                 let name_str = symbols.resolve(*name);
                 let typ = match typ {
@@ -391,6 +505,7 @@ pub(crate) fn build_exprs<'a>(
                 let index = locals.len();
                 let local = decl::LocalDecl {
                     location: ast.location,
+                    visibility: *visibility,
                     name: *name,
                     typ: ty.clone(),
                     is_const: *is_const,

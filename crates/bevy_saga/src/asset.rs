@@ -166,7 +166,7 @@ impl Plugin for SagaPlugin {
             .func_wrap(
                 "host",
                 "debug",
-                |_caller: Caller<'_, StoreData>, param: Rooted<ArrayRef>| {
+                |_caller: Caller<'_, StoreData>, _param: Rooted<ArrayRef>| {
                     println!("Called debug from WebAssembly");
                 },
             )

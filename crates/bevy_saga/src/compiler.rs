@@ -33,12 +33,16 @@ pub enum CompilationError {
     MissingType(TokenLocation, String),
     #[error("Unknown type: {1}")]
     UnknownType(TokenLocation, String),
+    #[error("Type {1} does not have fields")]
+    NoFields(TokenLocation, Type),
     #[error("Can't find the name '{1}' in this scope")]
     UnknownSymbol(TokenLocation, String),
     #[error("Invalid type for binary operator {2} to {3}")]
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
     #[error("Function redefinition: {1}")]
     FunctionRedefinition(TokenLocation, String),
+    #[error("Name redefinition: {1}")]
+    NameRedefinition(TokenLocation, String),
     #[error("Native function may not have a body")]
     NativeFunctionHasBody(TokenLocation),
     #[error("Function without a body")]
@@ -59,9 +63,11 @@ impl CompilationError {
             | CompilationError::RecursiveType(loc, _)
             | CompilationError::MissingType(loc, _)
             | CompilationError::UnknownType(loc, _)
+            | CompilationError::NoFields(loc, _)
             | CompilationError::UnknownSymbol(loc, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
             | CompilationError::FunctionRedefinition(loc, _)
+            | CompilationError::NameRedefinition(loc, _)
             | CompilationError::NativeFunctionHasBody(loc)
             | CompilationError::MissingBody(loc) => *loc,
         }

@@ -443,9 +443,9 @@ fn combat_interact() {
 
 # Scripting TODOs
 
+- Structs and Records
 - Intrinsic Functions
   - How to return an error from a script?
-- Native functions
 - Imports
 - String data model
 - Streamline unit tests.
@@ -462,12 +462,16 @@ fn combat_interact() {
 - Relational operators
 - Global Let and Const
 - Structs:
+  - constructor
+  - references
+  - field access
+- TupleStruct
   - type definition
   - constructor
   - references
   - field access
   - newtype / tuple structs
-  - empty structs
+- EmptyStruct (Struct with no members)
 - Enums:
   - type definition
   - constructor

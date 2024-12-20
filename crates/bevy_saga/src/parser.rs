@@ -1,5 +1,5 @@
 use crate::ast::{
-    ASTNode, DeclKind, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind, TypeKind,
+    ASTDecl, ASTNode, FloatSuffix, FunctionParam, IntegerSuffix, NodeKind, StructField,
 };
 use crate::decl;
 use crate::oper::{BinaryOp, UnaryOp};
@@ -34,13 +34,17 @@ peg::parser! {
 
         rule lit_int() -> &'a ASTNode<'a> =
             start:position!()
-            n:$(digits())
+            n:$digits()
             s:("i32" { IntegerSuffix::I32 } / "i64" { IntegerSuffix::I64 })?
             end:position!()
         {?
-            // let location = TokenLocation::new(start, end);
             let value = n.parse::<i64>().map_err(|_| "invalid integer literal")?;
             Ok(arena.alloc(ASTNode::new((start, end), NodeKind::LitInt(value, s.unwrap_or(IntegerSuffix::Unsized)))))
+        }
+
+        rule index() -> i64 = n:$digits()
+        {?
+            n.parse::<i64>().map_err(|_| "invalid integer literal")
         }
 
         rule lit_string() -> &'a ASTNode<'a> =
@@ -288,7 +292,12 @@ peg::parser! {
             base:(@) _ "." _ start:position!() field:name() end:position!() {
                 let location = base.location.union((start, end));
                 arena.alloc(
-                    ASTNode::new(location, NodeKind::Field(base, field)))
+                    ASTNode::new(location, NodeKind::FieldName(base, field)))
+            }
+            base:(@) _ "." _ start:position!() index:index() end:position!() {
+                let location = base.location.union((start, end));
+                arena.alloc(
+                    ASTNode::new(location, NodeKind::FieldIndex(base, index as usize)))
             }
             p:primary() { p }
         }
@@ -316,7 +325,7 @@ peg::parser! {
             "[" _ t:type_expr() _ "]"
             end:position!()
         {
-            arena.alloc(ASTNode::new((start, end), NodeKind::Type(TypeKind::Array(t))))
+            arena.alloc(ASTNode::new((start, end), NodeKind::ArrayType(t)))
         }
 
         pub rule type_expr() -> &'a ASTNode<'a> = type_name() / array_type()
@@ -330,8 +339,9 @@ peg::parser! {
             _ ";" _
             end:position!() {
             let location = (start, end);
-            arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(DeclKind::Let {
+            arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(ASTDecl::Let {
                 name: id,
+                visibility: decl::DeclVisibility::Private,
                 typ: ty,
                 value: init,
                 is_const
@@ -407,7 +417,7 @@ peg::parser! {
             end:position!()
         {
             let location = (start, end);
-            arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(DeclKind::Function {
+            arena.alloc(ASTNode::new(location, NodeKind::Decl(arena.alloc(ASTDecl::Function {
                 name: id,
                 visibility: vis,
                 params: p,
@@ -417,7 +427,48 @@ peg::parser! {
             }))))
         }
 
-        pub rule decl() -> &'a ASTNode<'a> = f:func_defn() { f } / expected!("declaration")
+        rule struct_field() -> &'a StructField<'a> =
+            start:position!()
+            id:name() _ ":" _ ty:type_expr()
+            end:position!()
+        {
+            let location = (start, end);
+            arena.alloc(StructField {
+                location: (start, end).into(),
+                name: id,
+                typ: ty,
+            })
+        }
+
+        pub rule struct_field_list() -> &'a[&'a StructField<'a>] =
+            "{" _
+            fields:(
+                p0:struct_field() _
+                p1:("," _ p: struct_field() _ { p })*
+                ("," _)?
+                {
+                    let mut fields = Vec::with_capacity(1 + p1.len());
+                    fields.push(p0);
+                    fields.extend(p1);
+                    arena.alloc_slice_copy(fields.as_slice())
+                }
+            )?
+            "}"
+            { fields.unwrap_or(arena.alloc_slice_copy(&[])) }
+
+        rule struct_defn() -> &'a ASTNode<'a> =
+            visibility:visiblity() _
+            is_record:("struct" { false } / "record" { true }) _ id:name() _
+            fields:struct_field_list()
+        {
+            let decl = arena.alloc(ASTDecl::Struct { name: id, visibility, is_record, fields });
+            arena.alloc(ASTNode::new((0, 0), NodeKind::Decl(decl)))
+        }
+
+        pub rule decl() -> &'a ASTNode<'a>
+            = f:func_defn() { f }
+            / s:struct_defn() { s }
+            / expected!("declaration")
         pub rule compilation_unit() -> &'a ASTNode<'a> = _ d:(d:decl() _ { d })* {
             let decls = arena.alloc_slice_copy(d.as_slice());
             arena.alloc(ASTNode::new((0, 0), NodeKind::Program(decls)))

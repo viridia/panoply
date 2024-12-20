@@ -6,7 +6,7 @@ use bevy::utils::HashMap;
 use crate::{
     expr::Expr,
     location::TokenLocation,
-    types::{FunctionType, Type},
+    types::{FunctionType, StructType, Type},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -57,10 +57,11 @@ pub enum DeclVisibility {
 #[derive(Debug)]
 pub enum Decl {
     Local(usize),
+    Global(usize),
     Param(Type, usize),
     Function(usize),
     Struct(usize),
-    Enum(usize),
+    // Enum(usize),
     Type(Type),
 }
 
@@ -74,13 +75,26 @@ pub struct FunctionDecl {
     pub locals: Vec<LocalDecl>,
     pub is_native: bool,
     pub index: usize,
-    // TODO: basic blocks
 }
 
 /// Declaration for a local variable or constant
 #[derive(Debug)]
+#[allow(unused)]
 pub struct LocalDecl {
     pub location: TokenLocation,
+    pub visibility: DeclVisibility,
+    pub name: Symbol,
+    pub typ: Type,
+    pub index: usize,
+    pub is_const: bool,
+}
+
+/// Declaration for a local variable or constant
+#[derive(Debug)]
+#[allow(unused)]
+pub struct GlobalDecl {
+    pub location: TokenLocation,
+    pub visibility: DeclVisibility,
     pub name: Symbol,
     pub typ: Type,
     pub index: usize,
@@ -97,13 +111,36 @@ pub struct ParamDecl {
 }
 
 #[derive(Debug)]
+#[allow(unused)]
+pub struct StructDecl {
+    pub location: TokenLocation,
+    pub name: Symbol,
+    pub visibility: DeclVisibility,
+    pub typ: Arc<StructType>,
+    pub index: usize,
+}
+
+/// Declaration for a function parameter
+#[derive(Debug, PartialEq, Clone)]
+pub struct FieldDecl {
+    pub location: TokenLocation,
+    pub name: Symbol,
+    pub typ: Type,
+    pub index: usize,
+}
+
+#[derive(Debug)]
 pub struct Decls {
+    pub structs: Vec<StructDecl>,
+    pub globals: Vec<GlobalDecl>,
     pub functions: Vec<FunctionDecl>,
 }
 
 impl Decls {
     pub fn new() -> Self {
         Self {
+            structs: Vec::new(),
+            globals: Vec::new(),
             functions: Vec::new(),
         }
     }

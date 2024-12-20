@@ -1,7 +1,7 @@
 use core::fmt::Display;
 use std::sync::Arc;
 
-use crate::decl::ParamDecl;
+use crate::decl::{FieldDecl, ParamDecl};
 
 /// Represents a SAGA data type.
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -20,6 +20,8 @@ pub enum Type {
     Tuple(Arc<[Type]>),
     Array(Arc<Type>),
     Function(Arc<FunctionType>),
+    Struct(Arc<StructType>),
+    TupleStruct(Arc<TupleStructType>),
     // TODO: Struct, Record, Option, Enum
 }
 
@@ -28,6 +30,20 @@ pub enum Type {
 pub struct FunctionType {
     pub params: Vec<ParamDecl>,
     pub ret: Type,
+}
+
+/// Type data for a struct or record
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct StructType {
+    pub is_record: bool,
+    pub fields: Vec<FieldDecl>,
+}
+
+/// Type data for a tuple struct or record
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct TupleStructType {
+    pub is_record: bool,
+    pub fields: Vec<Type>,
 }
 
 impl Type {
@@ -86,6 +102,22 @@ impl Display for Type {
                 }
                 if !matches!(ftype.ret, Type::None) {
                     write!(f, ") -> {}", ftype.ret)?
+                }
+                Ok(())
+            }
+            Type::Struct(stype) => {
+                if stype.is_record {
+                    write!(f, "record")?;
+                } else {
+                    write!(f, "struct")?;
+                }
+                Ok(())
+            }
+            Type::TupleStruct(stype) => {
+                if stype.is_record {
+                    write!(f, "tuple_record")?;
+                } else {
+                    write!(f, "tuple_struct")?;
                 }
                 Ok(())
             }

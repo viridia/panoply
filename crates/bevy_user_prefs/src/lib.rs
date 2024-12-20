@@ -160,7 +160,7 @@ impl PreferencesFile {
 pub struct PreferencesGroup<'a>(&'a toml::Table);
 pub struct PreferencesGroupMut<'a>(&'a mut toml::Table);
 
-impl<'a> PreferencesGroup<'a> {
+impl PreferencesGroup<'_> {
     /// Read a boolean property from the group, or `None` if the property does not exist or is not
     /// a boolean.
     pub fn get_bool(&self, key: &str) -> Option<bool> {
@@ -204,7 +204,7 @@ impl<'a> PreferencesGroup<'a> {
     }
 }
 
-impl<'a> PreferencesGroupMut<'a> {
+impl PreferencesGroupMut<'_> {
     /// Delete a key from the preferences group.
     pub fn remove(&mut self, key: &str) {
         self.0.remove(key);

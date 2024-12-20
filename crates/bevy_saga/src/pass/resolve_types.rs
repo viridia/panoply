@@ -1,5 +1,5 @@
 use crate::{
-    ast::{self, ASTNode, NodeKind, TypeKind},
+    ast::{self, ASTNode, NodeKind},
     decl::{self, Scope},
     CompilationError, Type,
 };
@@ -11,11 +11,7 @@ pub(crate) fn resolve_types<'s, 'a>(
     ast: &'a ASTNode<'a>,
 ) -> Result<Type, CompilationError> {
     match ast.kind {
-        NodeKind::Type(ref typ) => match typ {
-            TypeKind::Tuple(_members) => todo!(),
-            TypeKind::Array(_member) => todo!(),
-            TypeKind::Function { params, ret } => todo!(),
-        },
+        NodeKind::ArrayType(_member) => todo!(),
         NodeKind::Ident(ident) => {
             let Some(decl) = scope.lookup(ident) else {
                 let name = symbols.resolve(ident);

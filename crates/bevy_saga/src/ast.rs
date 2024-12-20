@@ -38,7 +38,7 @@ pub(crate) enum FloatSuffix {
 pub(crate) enum NodeKind<'a> {
     Program(&'a [&'a ASTNode<'a>]),
     Empty,
-    Decl(&'a DeclKind<'a>),
+    Decl(&'a ASTDecl<'a>),
     Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
     LitBool(bool),
     LitInt(i64, IntegerSuffix),
@@ -47,7 +47,8 @@ pub(crate) enum NodeKind<'a> {
     Ident(Symbol),
     QName(&'a [&'a ASTNode<'a>]),
     Call(&'a ASTNode<'a>, &'a [&'a ASTNode<'a>]),
-    Field(&'a ASTNode<'a>, Symbol),
+    FieldName(&'a ASTNode<'a>, Symbol),
+    FieldIndex(&'a ASTNode<'a>, usize),
     Cast {
         arg: &'a ASTNode<'a>,
         typ: &'a ASTNode<'a>,
@@ -61,12 +62,17 @@ pub(crate) enum NodeKind<'a> {
         lhs: &'a ASTNode<'a>,
         rhs: &'a ASTNode<'a>,
     },
-    Type(TypeKind<'a>),
+    ArrayType(&'a ASTNode<'a>),
+    // StructType
+    // TupleStructType
+    // EnumType
+    // FunctionType
+    // TypeAlias
 }
 
 // Content of an AST declaration.
 #[derive(Debug)]
-pub(crate) enum DeclKind<'a> {
+pub(crate) enum ASTDecl<'a> {
     Function {
         name: Symbol,
         visibility: DeclVisibility,
@@ -77,18 +83,23 @@ pub(crate) enum DeclKind<'a> {
     },
     Let {
         name: Symbol,
+        visibility: DeclVisibility,
         is_const: bool,
         typ: Option<&'a ASTNode<'a>>,
         value: Option<&'a ASTNode<'a>>,
     },
     Struct {
         name: Symbol,
-        fields: &'a [&'a ASTNode<'a>],
+        visibility: DeclVisibility,
+        is_record: bool,
+        fields: &'a [&'a StructField<'a>],
     },
-    TypeAlias {
-        name: Symbol,
-        typ: &'a ASTNode<'a>,
-    },
+    // TupleStruct
+    // TypeAlias {
+    //     name: Symbol,
+    //     visibility: DeclVisibility,
+    //     typ: &'a ASTNode<'a>,
+    // },
 }
 
 /// AST for a function parameter
@@ -100,14 +111,10 @@ pub(crate) struct FunctionParam<'a> {
     // pub(crate) value: &'a ASTNode<'a>,
 }
 
-/// Represents an AST for a type expression
+/// AST for a function parameter
 #[derive(Debug)]
-pub enum TypeKind<'a> {
-    Tuple(&'a [&'a ASTNode<'a>]),
-    Array(&'a ASTNode<'a>),
-    Function {
-        params: &'a [&'a ASTNode<'a>],
-        ret: &'a ASTNode<'a>,
-    },
-    // TODO: Struct, Record, Option, Enum
+pub(crate) struct StructField<'a> {
+    pub(crate) location: TokenLocation,
+    pub(crate) name: Symbol,
+    pub(crate) typ: &'a ASTNode<'a>,
 }
