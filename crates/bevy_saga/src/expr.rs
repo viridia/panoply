@@ -32,6 +32,15 @@ pub(crate) enum ExprKind {
         op: UnaryOp,
         arg: Box<Expr>,
     },
+    Assign {
+        lhs: Box<Expr>,
+        rhs: Box<Expr>,
+    },
+    AssignOp {
+        op: BinaryOp,
+        lhs: Box<Expr>,
+        rhs: Box<Expr>,
+    },
     Cast(Box<Expr>),
     Block(Vec<Expr>, Option<Box<Expr>>),
 }
@@ -85,31 +94,26 @@ impl Display for Expr {
             } => {
                 // TODO: Parens if necessary.
                 lhs.fmt(f)?;
-                match op {
-                    BinaryOp::Add => write!(f, " + "),
-                    BinaryOp::Sub => write!(f, " - "),
-                    BinaryOp::Mul => write!(f, " * "),
-                    BinaryOp::Div => write!(f, " / "),
-                    BinaryOp::Mod => write!(f, " % "),
-                    BinaryOp::LogAnd => write!(f, " && "),
-                    BinaryOp::LogOr => write!(f, " || "),
-                    BinaryOp::BitAnd => write!(f, " & "),
-                    BinaryOp::BitOr => write!(f, " | "),
-                    BinaryOp::BitXor => write!(f, " ^ "),
-                    BinaryOp::Shl => write!(f, " << "),
-                    BinaryOp::Shr => write!(f, " >> "),
-                    BinaryOp::Eq => write!(f, " == "),
-                    BinaryOp::Ne => write!(f, " != "),
-                    BinaryOp::Lt => write!(f, " < "),
-                    BinaryOp::Le => write!(f, " <= "),
-                    BinaryOp::Gt => write!(f, " > "),
-                    BinaryOp::Ge => write!(f, " >= "),
-                }?;
+                write!(f, " {} ", op)?;
                 rhs.fmt(f)
             }
             ExprKind::UnaryExpr { op, ref arg } => {
                 write!(f, "{:?}", op)?;
                 arg.fmt(f)
+            }
+            ExprKind::Assign { ref lhs, ref rhs } => {
+                lhs.fmt(f)?;
+                write!(f, " = ")?;
+                rhs.fmt(f)
+            }
+            ExprKind::AssignOp {
+                op,
+                ref lhs,
+                ref rhs,
+            } => {
+                lhs.fmt(f)?;
+                write!(f, " {:?}= ", op)?;
+                rhs.fmt(f)
             }
             ExprKind::Cast(ref arg) => {
                 arg.fmt(f)?;

@@ -14,6 +14,7 @@ use crate::{
     compiler::{CompilationError, CompilationUnit},
     decl::{self, FunctionDecl, LocalDecl, ParamDecl, Scope},
     expr::{Expr, ExprKind},
+    oper::BinaryOp,
     types::Type,
 };
 
@@ -232,11 +233,11 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
             generator.locals.clone_from(&fd.locals);
             let mut local_offset = 0;
             for param in generator.params.iter_mut() {
-                param.index = local_offset;
+                param.local_index = local_offset;
                 local_offset += param.typ.value_count();
             }
             for local in generator.locals.iter_mut() {
-                local.index = local_offset;
+                local.local_index = local_offset;
                 local_offset += local.typ.value_count();
             }
             gen_expr(unit, &mut generator, &fd.body, &mut f)?;
@@ -365,6 +366,7 @@ fn gen_expr<'a>(
                 local_set(local.local_index, &local.typ, out);
             }
         }
+
         ExprKind::BinaryExpr {
             op,
             ref lhs,
@@ -372,160 +374,21 @@ fn gen_expr<'a>(
         } => {
             gen_expr(unit, generator, lhs, out)?;
             gen_expr(unit, generator, rhs, out)?;
-            match op {
-                crate::oper::BinaryOp::Add => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Add),
-                        Type::I64 => out.instruction(&Instruction::I64Add),
-                        Type::F32 => out.instruction(&Instruction::F32Add),
-                        Type::F64 => out.instruction(&Instruction::F64Add),
-                        _ => panic!("Invalid type for binary addition: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Sub => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Sub),
-                        Type::I64 => out.instruction(&Instruction::I64Sub),
-                        Type::F32 => out.instruction(&Instruction::F32Sub),
-                        Type::F64 => out.instruction(&Instruction::F64Sub),
-                        _ => panic!("Invalid type for binary subtraction: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Mul => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Mul),
-                        Type::I64 => out.instruction(&Instruction::I64Mul),
-                        Type::F32 => out.instruction(&Instruction::F32Mul),
-                        Type::F64 => out.instruction(&Instruction::F64Mul),
-                        _ => panic!("Invalid type for binary multiplication: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Div => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32DivS),
-                        Type::I64 => out.instruction(&Instruction::I64DivS),
-                        Type::F32 => out.instruction(&Instruction::F32Div),
-                        Type::F64 => out.instruction(&Instruction::F64Div),
-                        _ => panic!("Invalid type for binary division: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Mod => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32RemS),
-                        Type::I64 => out.instruction(&Instruction::I64RemS),
-                        _ => panic!("Invalid type for binary modulo: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::LogAnd => {
-                    // TODO: Short-circuiting.
-                    match expr.typ {
-                        Type::Boolean => out.instruction(&Instruction::I32And),
-                        _ => panic!("Invalid type for logical AND: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::LogOr => {
-                    // TODO: Short-circuiting.
-                    match expr.typ {
-                        Type::Boolean => out.instruction(&Instruction::I32Or),
-                        _ => panic!("Invalid type for logical OR: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::BitAnd => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32And),
-                        Type::I64 => out.instruction(&Instruction::I64And),
-                        _ => panic!("Invalid type for bitwise AND: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::BitOr => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Or),
-                        Type::I64 => out.instruction(&Instruction::I64Or),
-                        _ => panic!("Invalid type for bitwise OR: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::BitXor => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Xor),
-                        Type::I64 => out.instruction(&Instruction::I64Xor),
-                        _ => panic!("Invalid type for bitwise XOR: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Shl => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Shl),
-                        Type::I64 => out.instruction(&Instruction::I64Shl),
-                        _ => panic!("Invalid type for bitwise shift left: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Shr => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32ShrS),
-                        Type::I64 => out.instruction(&Instruction::I64ShrS),
-                        _ => panic!("Invalid type for bitwise shift right: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Eq => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Eq),
-                        Type::I64 => out.instruction(&Instruction::I64Eq),
-                        Type::F32 => out.instruction(&Instruction::F32Eq),
-                        Type::F64 => out.instruction(&Instruction::F64Eq),
-                        _ => panic!("Invalid type for equality comparison: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Ne => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32Ne),
-                        Type::I64 => out.instruction(&Instruction::I64Ne),
-                        Type::F32 => out.instruction(&Instruction::F32Ne),
-                        Type::F64 => out.instruction(&Instruction::F64Ne),
-                        _ => panic!("Invalid type for inequality comparison: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Lt => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32LtS),
-                        Type::I64 => out.instruction(&Instruction::I64LtS),
-                        Type::F32 => out.instruction(&Instruction::F32Lt),
-                        Type::F64 => out.instruction(&Instruction::F64Lt),
-                        _ => panic!("Invalid type for less-than comparison: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Le => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32LeS),
-                        Type::I64 => out.instruction(&Instruction::I64LeS),
-                        Type::F32 => out.instruction(&Instruction::F32Le),
-                        Type::F64 => out.instruction(&Instruction::F64Le),
-                        _ => panic!(
-                            "Invalid type for less-than-or-equal comparison: {:?}",
-                            expr.typ
-                        ),
-                    };
-                }
-                crate::oper::BinaryOp::Gt => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32GtS),
-                        Type::I64 => out.instruction(&Instruction::I64GtS),
-                        Type::F32 => out.instruction(&Instruction::F32Gt),
-                        Type::F64 => out.instruction(&Instruction::F64Gt),
-                        _ => panic!("Invalid type for greater-than comparison: {:?}", expr.typ),
-                    };
-                }
-                crate::oper::BinaryOp::Ge => {
-                    match expr.typ {
-                        Type::I32 => out.instruction(&Instruction::I32GeS),
-                        Type::I64 => out.instruction(&Instruction::I64GeS),
-                        Type::F32 => out.instruction(&Instruction::F32Ge),
-                        Type::F64 => out.instruction(&Instruction::F64Ge),
-                        _ => panic!(
-                            "Invalid type for greater-than-or-equal comparison: {:?}",
-                            expr.typ
-                        ),
-                    };
-                }
-            }
+            gen_binop(&expr.typ, op, out);
+        }
+
+        ExprKind::Assign { ref lhs, ref rhs } => {
+            gen_expr(unit, generator, rhs, out)?;
+            gen_assign(generator, lhs, None, out)?;
+        }
+
+        ExprKind::AssignOp {
+            op,
+            ref lhs,
+            ref rhs,
+        } => {
+            gen_expr(unit, generator, rhs, out)?;
+            gen_assign(generator, lhs, Some(op), out)?;
         }
 
         ExprKind::UnaryExpr { op, ref arg } => {
@@ -712,6 +575,184 @@ fn local_set(mut local_index: usize, typ: &Type, out: &mut wasm_encoder::Functio
         }
         Type::Function(_ftype) => {
             todo!();
+        }
+    }
+}
+
+fn gen_assign(
+    generator: &mut CodeGenerator,
+    expr: &Expr,
+    op: Option<BinaryOp>,
+    out: &mut wasm_encoder::Function,
+) -> Result<(), CompilationError> {
+    match expr.kind {
+        ExprKind::LocalRef(index) => {
+            let local = &generator.locals[index];
+            if let Some(bop) = op {
+                local_get(local.local_index, &local.typ, out);
+                gen_binop(&local.typ, bop, out);
+            }
+            local_set(local.local_index, &local.typ, out);
+        }
+        ExprKind::GlobalRef(_index) => todo!(),
+        ExprKind::Field(ref _base, _field_index) => todo!(),
+        ExprKind::Index(ref _expr, _) => todo!(),
+        _ => return Err(CompilationError::InvalidAssignmentTarget(expr.location)),
+    }
+
+    Ok(())
+}
+
+fn gen_binop(typ: &Type, op: BinaryOp, out: &mut wasm_encoder::Function) {
+    match op {
+        crate::oper::BinaryOp::Add => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Add),
+                Type::I64 => out.instruction(&Instruction::I64Add),
+                Type::F32 => out.instruction(&Instruction::F32Add),
+                Type::F64 => out.instruction(&Instruction::F64Add),
+                _ => panic!("Invalid type for binary addition: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Sub => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Sub),
+                Type::I64 => out.instruction(&Instruction::I64Sub),
+                Type::F32 => out.instruction(&Instruction::F32Sub),
+                Type::F64 => out.instruction(&Instruction::F64Sub),
+                _ => panic!("Invalid type for binary subtraction: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Mul => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Mul),
+                Type::I64 => out.instruction(&Instruction::I64Mul),
+                Type::F32 => out.instruction(&Instruction::F32Mul),
+                Type::F64 => out.instruction(&Instruction::F64Mul),
+                _ => panic!("Invalid type for binary multiplication: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Div => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32DivS),
+                Type::I64 => out.instruction(&Instruction::I64DivS),
+                Type::F32 => out.instruction(&Instruction::F32Div),
+                Type::F64 => out.instruction(&Instruction::F64Div),
+                _ => panic!("Invalid type for binary division: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Mod => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32RemS),
+                Type::I64 => out.instruction(&Instruction::I64RemS),
+                _ => panic!("Invalid type for binary modulo: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::LogAnd => {
+            // TODO: Short-circuiting.
+            match typ {
+                Type::Boolean => out.instruction(&Instruction::I32And),
+                _ => panic!("Invalid type for logical AND: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::LogOr => {
+            // TODO: Short-circuiting.
+            match typ {
+                Type::Boolean => out.instruction(&Instruction::I32Or),
+                _ => panic!("Invalid type for logical OR: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::BitAnd => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32And),
+                Type::I64 => out.instruction(&Instruction::I64And),
+                _ => panic!("Invalid type for bitwise AND: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::BitOr => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Or),
+                Type::I64 => out.instruction(&Instruction::I64Or),
+                _ => panic!("Invalid type for bitwise OR: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::BitXor => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Xor),
+                Type::I64 => out.instruction(&Instruction::I64Xor),
+                _ => panic!("Invalid type for bitwise XOR: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Shl => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Shl),
+                Type::I64 => out.instruction(&Instruction::I64Shl),
+                _ => panic!("Invalid type for bitwise shift left: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Shr => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32ShrS),
+                Type::I64 => out.instruction(&Instruction::I64ShrS),
+                _ => panic!("Invalid type for bitwise shift right: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Eq => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Eq),
+                Type::I64 => out.instruction(&Instruction::I64Eq),
+                Type::F32 => out.instruction(&Instruction::F32Eq),
+                Type::F64 => out.instruction(&Instruction::F64Eq),
+                _ => panic!("Invalid type for equality comparison: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Ne => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32Ne),
+                Type::I64 => out.instruction(&Instruction::I64Ne),
+                Type::F32 => out.instruction(&Instruction::F32Ne),
+                Type::F64 => out.instruction(&Instruction::F64Ne),
+                _ => panic!("Invalid type for inequality comparison: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Lt => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32LtS),
+                Type::I64 => out.instruction(&Instruction::I64LtS),
+                Type::F32 => out.instruction(&Instruction::F32Lt),
+                Type::F64 => out.instruction(&Instruction::F64Lt),
+                _ => panic!("Invalid type for less-than comparison: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Le => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32LeS),
+                Type::I64 => out.instruction(&Instruction::I64LeS),
+                Type::F32 => out.instruction(&Instruction::F32Le),
+                Type::F64 => out.instruction(&Instruction::F64Le),
+                _ => panic!("Invalid type for less-than-or-equal comparison: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Gt => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32GtS),
+                Type::I64 => out.instruction(&Instruction::I64GtS),
+                Type::F32 => out.instruction(&Instruction::F32Gt),
+                Type::F64 => out.instruction(&Instruction::F64Gt),
+                _ => panic!("Invalid type for greater-than comparison: {:?}", typ),
+            };
+        }
+        crate::oper::BinaryOp::Ge => {
+            match typ {
+                Type::I32 => out.instruction(&Instruction::I32GeS),
+                Type::I64 => out.instruction(&Instruction::I64GeS),
+                Type::F32 => out.instruction(&Instruction::F32Ge),
+                Type::F64 => out.instruction(&Instruction::F64Ge),
+                _ => panic!(
+                    "Invalid type for greater-than-or-equal comparison: {:?}",
+                    typ
+                ),
+            };
         }
     }
 }

@@ -43,6 +43,7 @@ pub struct StructType {
 /// Type data for a tuple struct or record
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct TupleStructType {
+    pub name: Symbol,
     pub is_record: bool,
     pub fields: Vec<Type>,
 }

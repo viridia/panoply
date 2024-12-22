@@ -422,6 +422,72 @@ pub(crate) fn build_exprs<'a>(
             .with_type(ty))
         }
 
+        NodeKind::Assign { lhs, rhs } => {
+            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
+
+            inference.add_constraint(
+                lhs_expr.typ.clone(),
+                rhs_expr.typ.clone(),
+                lhs_expr.location,
+            );
+            Ok(Expr::new(
+                ast.location,
+                ExprKind::Assign {
+                    lhs: Box::new(lhs_expr),
+                    rhs: Box::new(rhs_expr),
+                },
+            )
+            .with_type(Type::Void)) // Don't support chained assignments.
+        }
+
+        NodeKind::AssignOp { op, lhs, rhs } => {
+            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
+            match op {
+                crate::oper::BinaryOp::Add
+                | crate::oper::BinaryOp::Sub
+                | crate::oper::BinaryOp::Mul
+                | crate::oper::BinaryOp::Div
+                | crate::oper::BinaryOp::Mod
+                | crate::oper::BinaryOp::BitAnd
+                | crate::oper::BinaryOp::BitOr
+                | crate::oper::BinaryOp::BitXor => {
+                    let ty = inference.fresh_typevar();
+                    // Both sides must be the same, which is also the result type.
+                    inference.add_constraint(ty.clone(), lhs_expr.typ.clone(), lhs_expr.location);
+                    inference.add_constraint(ty.clone(), rhs_expr.typ.clone(), rhs_expr.location);
+                }
+
+                // crate::oper::BinaryOp::LogAnd | crate::oper::BinaryOp::LogOr => {
+                //     // Both sides must be boolean.
+                //     inference.add_constraint(
+                //         Type::Boolean,
+                //         lhs_expr.typ.clone(),
+                //         lhs_expr.location,
+                //     );
+                //     inference.add_constraint(
+                //         Type::Boolean,
+                //         rhs_expr.typ.clone(),
+                //         rhs_expr.location,
+                //     );
+                // }
+                crate::oper::BinaryOp::Shl | crate::oper::BinaryOp::Shr => todo!(),
+
+                _ => panic!("Invalid augmented assignment operator: {:?}", op),
+            };
+
+            Ok(Expr::new(
+                ast.location,
+                ExprKind::AssignOp {
+                    op: *op,
+                    lhs: Box::new(lhs_expr),
+                    rhs: Box::new(rhs_expr),
+                },
+            )
+            .with_type(Type::Void)) // Don't support chained assignments.
+        }
+
         NodeKind::UnaryExpr { op, arg } => {
             let arg_expr = build_exprs(arg, symbols, scope, decls, locals, inference)?;
             let ty = match op {
@@ -473,7 +539,29 @@ pub(crate) fn build_exprs<'a>(
             }
         }
 
-        NodeKind::FieldIndex(_base, _index) => todo!(),
+        NodeKind::FieldIndex(base, index) => {
+            let base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
+            match base_expr.typ.clone() {
+                Type::TupleStruct(tstype) => {
+                    if *index >= tstype.fields.len() {
+                        return Err(CompilationError::InvalidIndex(
+                            ast.location,
+                            symbols.resolve(tstype.name),
+                            *index,
+                        ));
+                    }
+                    let field = tstype.fields[*index].clone();
+                    Ok(
+                        Expr::new(ast.location, ExprKind::Index(Box::new(base_expr), *index))
+                            .with_type(field),
+                    )
+                }
+                _ => Err(CompilationError::NoFields(
+                    ast.location,
+                    base_expr.typ.clone(),
+                )),
+            }
+        }
 
         NodeKind::Empty => Ok(Expr::new(ast.location, ExprKind::Empty)),
         NodeKind::Decl(decl) => match decl {

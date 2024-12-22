@@ -17,6 +17,8 @@ pub enum CompilationError {
     ExpectDeclaration(TokenLocation),
     #[error("Statement expected")]
     ExpectStatement(TokenLocation),
+    #[error("Semicolon expected")]
+    ExpectSemi(TokenLocation),
     #[error("Expected {1}")]
     Expected(TokenLocation, String),
     #[error("Cannot assign type {2} to {1}")]
@@ -33,14 +35,20 @@ pub enum CompilationError {
     MissingType(TokenLocation, String),
     #[error("Unknown type: {1}")]
     UnknownType(TokenLocation, String),
-    #[error("Unknown field: {1}.{1}")]
+    #[error("Unknown field: {1}.{2}")]
     UnknownField(TokenLocation, String, String),
+    #[error("Invalid element index: {1}.{2}")]
+    InvalidIndex(TokenLocation, String, usize),
     #[error("Type {1} does not have fields")]
     NoFields(TokenLocation, Type),
+    #[error("Type {1} does not have indexed elements")]
+    NoIndex(TokenLocation, Type),
     #[error("Can't find the name '{1}' in this scope")]
     UnknownSymbol(TokenLocation, String),
     #[error("Invalid type for binary operator {2} to {3}")]
     InvalidBinaryOpType(TokenLocation, BinaryOp, Type, Type),
+    #[error("Cannot assign to this expression")]
+    InvalidAssignmentTarget(TokenLocation),
     #[error("Function redefinition: {1}")]
     FunctionRedefinition(TokenLocation, String),
     #[error("Name redefinition: {1}")]
@@ -57,6 +65,7 @@ impl CompilationError {
             CompilationError::ExpectExpression(loc)
             | CompilationError::ExpectDeclaration(loc)
             | CompilationError::ExpectStatement(loc)
+            | CompilationError::ExpectSemi(loc)
             | CompilationError::Expected(loc, _)
             | CompilationError::MismatchedTypes(loc, _, _)
             | CompilationError::InvalidCast(loc, _, _)
@@ -66,9 +75,12 @@ impl CompilationError {
             | CompilationError::MissingType(loc, _)
             | CompilationError::UnknownType(loc, _)
             | CompilationError::NoFields(loc, _)
+            | CompilationError::NoIndex(loc, _)
             | CompilationError::UnknownSymbol(loc, _)
             | CompilationError::UnknownField(loc, _, _)
+            | CompilationError::InvalidIndex(loc, _, _)
             | CompilationError::InvalidBinaryOpType(loc, _, _, _)
+            | CompilationError::InvalidAssignmentTarget(loc)
             | CompilationError::FunctionRedefinition(loc, _)
             | CompilationError::NameRedefinition(loc, _)
             | CompilationError::NativeFunctionHasBody(loc)
@@ -116,6 +128,7 @@ impl<'cu> CompilationUnit<'cu> {
                         "expression" => return CompilationError::ExpectExpression(location),
                         "declaration" => return CompilationError::ExpectDeclaration(location),
                         "statement" => return CompilationError::ExpectStatement(location),
+                        "semicolon" => return CompilationError::ExpectSemi(location),
                         _ => {}
                     }
                 }

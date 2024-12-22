@@ -62,6 +62,15 @@ pub(crate) enum NodeKind<'a> {
         lhs: &'a ASTNode<'a>,
         rhs: &'a ASTNode<'a>,
     },
+    Assign {
+        lhs: &'a ASTNode<'a>,
+        rhs: &'a ASTNode<'a>,
+    },
+    AssignOp {
+        op: BinaryOp,
+        lhs: &'a ASTNode<'a>,
+        rhs: &'a ASTNode<'a>,
+    },
     ArrayType(&'a ASTNode<'a>),
     // StructType
     // TupleStructType

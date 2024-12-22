@@ -100,6 +100,69 @@ pub(crate) fn assign_types(
             }
         }
 
+        ExprKind::Assign { lhs, rhs } => {
+            assign_types(lhs, inference)?;
+            assign_types(rhs, inference)?;
+        }
+
+        ExprKind::AssignOp { op, lhs, rhs } => {
+            assign_types(lhs, inference)?;
+            assign_types(rhs, inference)?;
+            match op {
+                crate::oper::BinaryOp::Add
+                | crate::oper::BinaryOp::Sub
+                | crate::oper::BinaryOp::Mul
+                | crate::oper::BinaryOp::Div
+                | crate::oper::BinaryOp::Mod => {
+                    let ty = inference.substitute(&expr.typ);
+                    match ty {
+                        Type::I32 | Type::I64 | Type::F32 | Type::F64 => {
+                            expr.typ = ty;
+                        }
+
+                        _ => {
+                            return Err(CompilationError::InvalidBinaryOpType(
+                                expr.location,
+                                *op,
+                                lhs.typ.clone(),
+                                rhs.typ.clone(),
+                            ))
+                        }
+                    }
+                }
+
+                crate::oper::BinaryOp::LogAnd | crate::oper::BinaryOp::LogOr => todo!(),
+
+                crate::oper::BinaryOp::BitAnd
+                | crate::oper::BinaryOp::BitOr
+                | crate::oper::BinaryOp::BitXor => {
+                    let ty = inference.substitute(&expr.typ);
+                    match ty {
+                        Type::I32 | Type::I64 => {
+                            expr.typ = ty;
+                        }
+
+                        _ => {
+                            return Err(CompilationError::InvalidBinaryOpType(
+                                expr.location,
+                                *op,
+                                lhs.typ.clone(),
+                                rhs.typ.clone(),
+                            ))
+                        }
+                    }
+                }
+                crate::oper::BinaryOp::Shl | crate::oper::BinaryOp::Shr => todo!(),
+
+                crate::oper::BinaryOp::Eq | crate::oper::BinaryOp::Ne => todo!(),
+
+                crate::oper::BinaryOp::Lt
+                | crate::oper::BinaryOp::Le
+                | crate::oper::BinaryOp::Gt
+                | crate::oper::BinaryOp::Ge => todo!(),
+            }
+        }
+
         // No need to traverse here, this has already been done.
         ExprKind::Cast(_arg) => {}
         ExprKind::Call(func, args) => {

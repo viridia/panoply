@@ -105,6 +105,67 @@ peg::parser! {
         ) { e }
 
         rule binop() -> &'a ASTNode<'a> = precedence!{
+            lhs:(@) _ "=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::Assign { lhs, rhs, }))
+            }
+            lhs:(@) _ "+=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::Add,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "-=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::Sub,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "*=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::Mul,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "/=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::Div,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "%=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::Mod,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "|=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::BitOr,
+                    lhs,
+                    rhs,
+                }))
+            }
+            lhs:(@) _ "&=" _ rhs:@ {
+                let location = lhs.location.union(rhs.location);
+                arena.alloc(ASTNode::new(location, NodeKind::AssignOp {
+                    op: BinaryOp::BitAnd,
+                    lhs,
+                    rhs,
+                }))
+            }
+            --
             lhs:(@) _ "||" _ rhs:@ {
                 let location = lhs.location.union(rhs.location);
                 arena.alloc(ASTNode::new(location, NodeKind::BinaryExpr {
@@ -353,7 +414,7 @@ peg::parser! {
             s:(
                 s0: empty_stmt() { s0 }
                 / v: var_decl() { v }
-                / s:(expr()) _ ";" _ { s }
+                / s:(expr()) _ (";" / expected!("semicolon")) _ { s }
             )
             end:position!()
             { s } / expected!("statement")
