@@ -18,7 +18,7 @@ pub fn hello() -> i32 {
 
 fn add(arg: i32) -> i32 {
     let c = 1;
-    c = 2;
+    c -= 2;
     arg + c
 }
 
@@ -31,5 +31,6 @@ native fn assert(condition: bool);
 
 fn empty_vec() -> f32 {
     let self: Vec3;
+    self.y = 1.;
     self.x + self.y
 }

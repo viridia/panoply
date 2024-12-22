@@ -378,8 +378,8 @@ fn gen_expr<'a>(
         }
 
         ExprKind::Assign { ref lhs, ref rhs } => {
-            gen_expr(unit, generator, rhs, out)?;
-            gen_assign(generator, lhs, None, out)?;
+            // gen_expr(unit, generator, rhs, out)?;
+            gen_assign(unit, generator, lhs, rhs, None, out)?;
         }
 
         ExprKind::AssignOp {
@@ -387,8 +387,8 @@ fn gen_expr<'a>(
             ref lhs,
             ref rhs,
         } => {
-            gen_expr(unit, generator, rhs, out)?;
-            gen_assign(generator, lhs, Some(op), out)?;
+            // gen_expr(unit, generator, rhs, out)?;
+            gen_assign(unit, generator, lhs, rhs, Some(op), out)?;
         }
 
         ExprKind::UnaryExpr { op, ref arg } => {
@@ -580,27 +580,87 @@ fn local_set(mut local_index: usize, typ: &Type, out: &mut wasm_encoder::Functio
 }
 
 fn gen_assign(
+    unit: &CompilationUnit,
     generator: &mut CodeGenerator,
-    expr: &Expr,
+    lvalue: &Expr,
+    rvalue: &Expr,
     op: Option<BinaryOp>,
     out: &mut wasm_encoder::Function,
 ) -> Result<(), CompilationError> {
-    match expr.kind {
-        ExprKind::LocalRef(index) => {
-            let local = &generator.locals[index];
-            if let Some(bop) = op {
-                local_get(local.local_index, &local.typ, out);
-                gen_binop(&local.typ, bop, out);
+    match lvalue.kind {
+        ExprKind::ParamRef(_)
+        | ExprKind::LocalRef(_)
+        | ExprKind::GlobalRef(_)
+        | ExprKind::Field(_, _)
+        | ExprKind::Index(_, _) => {
+            let (lvalue, lvalue_type) = expr_to_lvalue(unit, generator, lvalue, out)?;
+            match lvalue {
+                LValue::Local(local_index) => {
+                    if op.is_some() {
+                        local_get(local_index, &lvalue_type, out);
+                    }
+                    gen_expr(unit, generator, rvalue, out)?;
+                    if let Some(bop) = op {
+                        gen_binop(&lvalue_type, bop, out);
+                    }
+                    local_set(local_index, &lvalue_type, out);
+                }
+                _ => todo!(),
             }
-            local_set(local.local_index, &local.typ, out);
         }
-        ExprKind::GlobalRef(_index) => todo!(),
-        ExprKind::Field(ref _base, _field_index) => todo!(),
-        ExprKind::Index(ref _expr, _) => todo!(),
-        _ => return Err(CompilationError::InvalidAssignmentTarget(expr.location)),
+        _ => return Err(CompilationError::InvalidAssignmentTarget(lvalue.location)),
     }
 
     Ok(())
+}
+
+enum LValue {
+    Local(usize),
+    #[allow(unused)]
+    Global(usize),
+    // Memory?
+    // Reference?
+}
+
+fn expr_to_lvalue(
+    unit: &CompilationUnit,
+    generator: &mut CodeGenerator,
+    expr: &Expr,
+    out: &mut wasm_encoder::Function,
+) -> Result<(LValue, Type), CompilationError> {
+    match expr.kind {
+        ExprKind::ParamRef(index) => {
+            let param = &generator.params[index];
+            Ok((LValue::Local(param.local_index), param.typ.clone()))
+        }
+        ExprKind::LocalRef(index) => {
+            let local = &generator.locals[index];
+            Ok((LValue::Local(local.local_index), local.typ.clone()))
+        }
+        ExprKind::GlobalRef(_index) => todo!(),
+        ExprKind::Field(ref base, field_index) => {
+            let (base_lvalue, base_type) = expr_to_lvalue(unit, generator, base, out)?;
+            match base_type {
+                Type::Struct(stype) => {
+                    if stype.is_record {
+                        gen_expr(unit, generator, base, out)?;
+                        todo!();
+                    } else {
+                        let field = &stype.fields[field_index];
+                        match base_lvalue {
+                            LValue::Local(local_index) => {
+                                Ok((LValue::Local(local_index + field.index), field.typ.clone()))
+                            }
+                            _ => todo!(),
+                        }
+                    }
+                }
+                _ => panic!("Invalid field access: {:?}", base_type),
+            }
+        }
+        ExprKind::Index(ref _expr, _) => todo!(),
+        _ => panic!("Invalid lvalue: {:?}", expr),
+    }
 }
 
 fn gen_binop(typ: &Type, op: BinaryOp, out: &mut wasm_encoder::Function) {

@@ -114,10 +114,10 @@ pub(crate) fn assign_types(
                 | crate::oper::BinaryOp::Mul
                 | crate::oper::BinaryOp::Div
                 | crate::oper::BinaryOp::Mod => {
-                    let ty = inference.substitute(&expr.typ);
+                    let ty = inference.substitute(&lhs.typ);
                     match ty {
                         Type::I32 | Type::I64 | Type::F32 | Type::F64 => {
-                            expr.typ = ty;
+                            // expr.typ = ty;
                         }
 
                         _ => {
