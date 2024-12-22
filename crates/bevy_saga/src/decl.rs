@@ -18,11 +18,13 @@ impl Default for Symbol {
     }
 }
 
+#[derive(Debug)]
 struct SymbolTableInner {
     symbols: HashMap<String, Symbol>,
     strings: Vec<String>,
 }
 
+#[derive(Debug)]
 pub(crate) struct InternedSymbols(RefCell<SymbolTableInner>);
 
 impl InternedSymbols {
@@ -147,6 +149,7 @@ pub struct FieldDecl {
 
 #[derive(Debug)]
 pub struct Decls {
+    pub symbols: InternedSymbols,
     pub structs: Vec<StructDecl>,
     pub globals: Vec<GlobalDecl>,
     pub functions: Vec<FunctionDecl>,
@@ -155,6 +158,7 @@ pub struct Decls {
 impl Decls {
     pub fn new() -> Self {
         Self {
+            symbols: InternedSymbols::new(),
             structs: Vec::new(),
             globals: Vec::new(),
             functions: Vec::new(),

@@ -449,6 +449,7 @@ fn combat_interact() {
 - Imports
 - String data model
 - Streamline unit tests.
+- Unit tests for assign
 - Risk: Closures in Components
 - Built-in coercions (intrinsic functions)
 - Allow intrinsics to be shared?

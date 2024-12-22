@@ -17,7 +17,6 @@ use super::{
 };
 
 pub(crate) fn build_module_decls<'ast>(
-    symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
     decls: &mut decl::Decls,
     ast: &'ast ASTNode<'ast>,
@@ -34,7 +33,7 @@ pub(crate) fn build_module_decls<'ast>(
                     } => {
                         // Multiple declarations of the same function are not allowed.
                         if scope.contains(*name) {
-                            let name_str = symbols.resolve(*name);
+                            let name_str = decls.symbols.resolve(*name);
                             return Err(CompilationError::FunctionRedefinition(
                                 ast_decl.location,
                                 name_str,
@@ -64,7 +63,7 @@ pub(crate) fn build_module_decls<'ast>(
                     } => {
                         // Multiple declarations of the same function are not allowed.
                         if scope.contains(*name) {
-                            let name_str = symbols.resolve(*name);
+                            let name_str = decls.symbols.resolve(*name);
                             return Err(CompilationError::NameRedefinition(
                                 ast_decl.location,
                                 name_str,
@@ -90,7 +89,7 @@ pub(crate) fn build_module_decls<'ast>(
                     } => {
                         // Multiple declarations of the same function are not allowed.
                         if scope.contains(*name) {
-                            let name_str = symbols.resolve(*name);
+                            let name_str = decls.symbols.resolve(*name);
                             return Err(CompilationError::NameRedefinition(
                                 ast_decl.location,
                                 name_str,
@@ -138,7 +137,6 @@ pub(crate) fn build_module_decls<'ast>(
 }
 
 pub(crate) fn build_module_exprs<'ast>(
-    symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
     decls: &mut decl::Decls,
     ast: &'ast ASTNode<'ast>,
@@ -157,12 +155,12 @@ pub(crate) fn build_module_exprs<'ast>(
                         let decl = scope.get(*name).unwrap();
                         let ret_type = match ret_ast {
                             None => Type::Void,
-                            Some(ret_ast) => resolve_types(symbols, decls, scope, ret_ast)?,
+                            Some(ret_ast) => resolve_types(decls, scope, ret_ast)?,
                         };
 
                         let mut params_mapped: Vec<ParamDecl> = Vec::with_capacity(params.len());
                         for (i, p) in params.iter().enumerate() {
-                            let typ = resolve_types(symbols, decls, scope, p.typ)?;
+                            let typ = resolve_types(decls, scope, p.typ)?;
                             params_mapped.push(ParamDecl {
                                 location: p.location,
                                 name: p.name,
@@ -199,7 +197,7 @@ pub(crate) fn build_module_exprs<'ast>(
                         };
 
                         for (i, f) in fields.iter().enumerate() {
-                            let typ = resolve_types(symbols, decls, scope, f.typ)?;
+                            let typ = resolve_types(decls, scope, f.typ)?;
                             stype.fields.push(decl::FieldDecl {
                                 location: f.location,
                                 name: f.name,
@@ -246,7 +244,6 @@ pub(crate) fn build_module_exprs<'ast>(
                     }
                     build_exprs(
                         body_ast,
-                        symbols,
                         &mut local_scope,
                         decls,
                         &mut locals_table,
@@ -284,7 +281,6 @@ pub(crate) fn build_module_exprs<'ast>(
 
 pub(crate) fn build_exprs<'a>(
     ast: &'a ASTNode<'a>,
-    symbols: &decl::InternedSymbols,
     scope: &mut decl::Scope,
     decls: &mut decl::Decls,
     locals: &mut Vec<decl::LocalDecl>,
@@ -354,7 +350,7 @@ pub(crate) fn build_exprs<'a>(
                 }
             }
             None => {
-                let name = symbols.resolve(*symbol);
+                let name = decls.symbols.resolve(*symbol);
                 Err(CompilationError::UnknownSymbol(ast.location, name))
             }
         },
@@ -362,8 +358,8 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::QName(_name) => panic!("Should already be resolved"),
 
         NodeKind::BinaryExpr { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
-            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
+            let lhs_expr = build_exprs(lhs, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, scope, decls, locals, inference)?;
             let ty = match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -423,8 +419,8 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Assign { lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
-            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
+            let lhs_expr = build_exprs(lhs, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, scope, decls, locals, inference)?;
 
             inference.add_constraint(
                 lhs_expr.typ.clone(),
@@ -442,8 +438,8 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::AssignOp { op, lhs, rhs } => {
-            let lhs_expr = build_exprs(lhs, symbols, scope, decls, locals, inference)?;
-            let rhs_expr = build_exprs(rhs, symbols, scope, decls, locals, inference)?;
+            let lhs_expr = build_exprs(lhs, scope, decls, locals, inference)?;
+            let rhs_expr = build_exprs(rhs, scope, decls, locals, inference)?;
             match op {
                 crate::oper::BinaryOp::Add
                 | crate::oper::BinaryOp::Sub
@@ -489,7 +485,7 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::UnaryExpr { op, arg } => {
-            let arg_expr = build_exprs(arg, symbols, scope, decls, locals, inference)?;
+            let arg_expr = build_exprs(arg, scope, decls, locals, inference)?;
             let ty = match op {
                 crate::oper::UnaryOp::Not => {
                     inference.add_constraint(
@@ -514,7 +510,7 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::FieldName(base, fname) => {
-            let base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
+            let base_expr = build_exprs(base, scope, decls, locals, inference)?;
             match base_expr.typ.clone() {
                 Type::Struct(stype) => {
                     let field = stype.fields.iter().find(|field| field.name == *fname);
@@ -527,8 +523,8 @@ pub(crate) fn build_exprs<'a>(
                     } else {
                         Err(CompilationError::UnknownField(
                             ast.location,
-                            symbols.resolve(stype.name),
-                            symbols.resolve(*fname),
+                            decls.symbols.resolve(stype.name),
+                            decls.symbols.resolve(*fname),
                         ))
                     }
                 }
@@ -540,13 +536,13 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::FieldIndex(base, index) => {
-            let base_expr = build_exprs(base, symbols, scope, decls, locals, inference)?;
+            let base_expr = build_exprs(base, scope, decls, locals, inference)?;
             match base_expr.typ.clone() {
                 Type::TupleStruct(tstype) => {
                     if *index >= tstype.fields.len() {
                         return Err(CompilationError::InvalidIndex(
                             ast.location,
-                            symbols.resolve(tstype.name),
+                            decls.symbols.resolve(tstype.name),
                             *index,
                         ));
                     }
@@ -573,14 +569,14 @@ pub(crate) fn build_exprs<'a>(
                 visibility,
                 ..
             } => {
-                let name_str = symbols.resolve(*name);
+                let name_str = decls.symbols.resolve(*name);
                 let typ = match typ {
-                    Some(typ) => Some(resolve_types(symbols, decls, scope, typ)?),
+                    Some(typ) => Some(resolve_types(decls, scope, typ)?),
                     None => None,
                 };
                 let value_expr = match value {
                     Some(value) => Some(Box::new(build_exprs(
-                        value, symbols, scope, decls, locals, inference,
+                        value, scope, decls, locals, inference,
                     )?)),
                     None => None,
                 };
@@ -618,13 +614,13 @@ pub(crate) fn build_exprs<'a>(
         NodeKind::Block(stmts, result) => {
             let mut stmt_exprs = Vec::new();
             for stmt in *stmts {
-                let stmt_expr = build_exprs(stmt, symbols, scope, decls, locals, inference)?;
+                let stmt_expr = build_exprs(stmt, scope, decls, locals, inference)?;
                 stmt_exprs.push(stmt_expr);
             }
 
             let result_expr = match result {
                 Some(result) => Some(Box::new(build_exprs(
-                    result, symbols, scope, decls, locals, inference,
+                    result, scope, decls, locals, inference,
                 )?)),
                 None => None,
             };
@@ -644,8 +640,8 @@ pub(crate) fn build_exprs<'a>(
 
         NodeKind::Cast { arg, typ } => {
             let mut infer = TypeInference::default();
-            let to_typ = resolve_types(symbols, decls, scope, typ)?;
-            let mut arg_expr = build_exprs(arg, symbols, scope, decls, locals, &mut infer)?;
+            let to_typ = resolve_types(decls, scope, typ)?;
+            let mut arg_expr = build_exprs(arg, scope, decls, locals, &mut infer)?;
             infer.solve_constraints()?;
 
             if to_typ == arg_expr.typ {
@@ -663,10 +659,10 @@ pub(crate) fn build_exprs<'a>(
         }
 
         NodeKind::Call(func, args) => {
-            let func_expr = build_exprs(func, symbols, scope, decls, locals, inference)?;
+            let func_expr = build_exprs(func, scope, decls, locals, inference)?;
             let mut arg_exprs = Vec::new();
             for arg in args.iter() {
-                let arg_expr = build_exprs(arg, symbols, scope, decls, locals, inference)?;
+                let arg_expr = build_exprs(arg, scope, decls, locals, inference)?;
                 arg_exprs.push(arg_expr);
             }
 

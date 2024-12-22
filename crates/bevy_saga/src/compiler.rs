@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    decl::{Decl, Decls, InternedSymbols, Scope},
+    decl::{Decl, Decls, Scope},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
@@ -94,9 +94,6 @@ pub struct CompilationUnit<'cu> {
     path: &'cu str,
     src: &'cu str,
 
-    /// Interned symbols
-    pub(crate) symbols: InternedSymbols,
-
     /// All declarations, both global and local.
     pub(crate) decls: Decls,
     pub(crate) module: wasm_encoder::Module,
@@ -107,7 +104,6 @@ impl<'cu> CompilationUnit<'cu> {
         Self {
             path,
             src,
-            symbols: InternedSymbols::new(),
             decls: Decls::new(),
             module: wasm_encoder::Module::new(),
         }
@@ -120,8 +116,8 @@ impl<'cu> CompilationUnit<'cu> {
     /// Compile a script file.
     pub async fn compile(&mut self) -> Result<(), CompilationError> {
         let arena = bumpalo::Bump::new();
-        let ast =
-            saga_parser::compilation_unit(self.src, &arena, &self.symbols).map_err(|err| {
+        let ast = saga_parser::compilation_unit(self.src, &arena, &self.decls.symbols).map_err(
+            |err| {
                 let location = TokenLocation::new(err.location.offset, err.location.offset + 1);
                 for token in err.expected.tokens() {
                     match token {
@@ -134,25 +130,26 @@ impl<'cu> CompilationUnit<'cu> {
                 }
                 let tokens = err.expected.to_string();
                 CompilationError::Expected(location, tokens)
-            })?;
+            },
+        )?;
 
         let mut intrinsic_scope = Scope::new(None);
-        fn define_type(symbols: &InternedSymbols, scope: &mut Scope, name: &str, ty: Type) {
-            let sym = symbols.intern(name);
+        fn define_type(decls: &Decls, scope: &mut Scope, name: &str, ty: Type) {
+            let sym = decls.symbols.intern(name);
             scope.insert(sym, Decl::TypeAlias(ty));
         }
 
-        define_type(&self.symbols, &mut intrinsic_scope, "i32", Type::I32);
-        define_type(&self.symbols, &mut intrinsic_scope, "i64", Type::I64);
-        define_type(&self.symbols, &mut intrinsic_scope, "f32", Type::F32);
-        define_type(&self.symbols, &mut intrinsic_scope, "f64", Type::F64);
-        define_type(&self.symbols, &mut intrinsic_scope, "bool", Type::Boolean);
-        define_type(&self.symbols, &mut intrinsic_scope, "String", Type::String);
+        define_type(&self.decls, &mut intrinsic_scope, "i32", Type::I32);
+        define_type(&self.decls, &mut intrinsic_scope, "i64", Type::I64);
+        define_type(&self.decls, &mut intrinsic_scope, "f32", Type::F32);
+        define_type(&self.decls, &mut intrinsic_scope, "f64", Type::F64);
+        define_type(&self.decls, &mut intrinsic_scope, "bool", Type::Boolean);
+        define_type(&self.decls, &mut intrinsic_scope, "String", Type::String);
 
         let mut root_scope = Scope::new(Some(&intrinsic_scope));
-        pass::build_module_decls(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
+        pass::build_module_decls(&mut root_scope, &mut self.decls, ast)?;
         self.resolve_imports().await?;
-        pass::build_module_exprs(&self.symbols, &mut root_scope, &mut self.decls, ast)?;
+        pass::build_module_exprs(&mut root_scope, &mut self.decls, ast)?;
         pass::gen_module(self)?;
         Ok(())
     }
@@ -222,7 +219,6 @@ mod tests {
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
-            &unit.symbols,
             &mut root_scope,
             &mut unit.decls,
             &mut locals,
@@ -252,7 +248,6 @@ mod tests {
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
-            &unit.symbols,
             &mut root_scope,
             &mut unit.decls,
             &mut locals,
@@ -288,7 +283,6 @@ mod tests {
         let mut locals = Vec::<LocalDecl>::new();
         let mut expr = pass::build_exprs(
             node,
-            &unit.symbols,
             &mut root_scope,
             &mut unit.decls,
             &mut locals,
@@ -337,7 +331,6 @@ mod tests {
         let mut locals = Vec::<LocalDecl>::new();
         let expr = pass::build_exprs(
             node,
-            &unit.symbols,
             &mut root_scope,
             &mut unit.decls,
             &mut locals,

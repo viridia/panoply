@@ -179,7 +179,7 @@ pub(crate) fn gen_module(unit: &mut CompilationUnit) -> Result<(), CompilationEr
     }
 
     for fd in unit.decls.functions.iter() {
-        let name_str = unit.symbols.resolve(fd.name);
+        let name_str = unit.decls.symbols.resolve(fd.name);
         let mut ret_types: Vec<ValType> = Vec::new();
         if !fd.typ.ret.is_void() {
             generator.gen_val_types(&fd.typ.ret, &mut ret_types);
@@ -316,7 +316,7 @@ fn gen_expr<'a>(
             };
         }
         ExprKind::ConstString(symbol) => {
-            let string = unit.symbols.resolve(symbol);
+            let string = unit.decls.symbols.resolve(symbol);
             let bytes = string.as_bytes();
             let array_data_index = generator.next_data_index();
             generator.data.passive(bytes.iter().copied());
