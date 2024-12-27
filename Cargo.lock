@@ -1348,18 +1348,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_mod_preferences"
-version = "0.1.0"
-dependencies = [
- "bevy 0.15.0",
- "directories",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "toml",
-]
-
-[[package]]
 name = "bevy_pbr"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
