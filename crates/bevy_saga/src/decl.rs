@@ -74,6 +74,14 @@ pub enum Decl {
 }
 
 #[derive(Debug)]
+#[allow(unused)]
+pub struct ImportDecl {
+    pub location: TokenLocation,
+    pub path: Symbol,
+    pub names: Vec<Symbol>,
+}
+
+#[derive(Debug)]
 pub struct FunctionDecl {
     pub location: TokenLocation,
     pub name: Symbol,
@@ -150,6 +158,7 @@ pub struct FieldDecl {
 #[derive(Debug)]
 pub struct Decls {
     pub symbols: InternedSymbols,
+    pub imports: Vec<ImportDecl>,
     pub structs: Vec<StructDecl>,
     pub globals: Vec<GlobalDecl>,
     pub functions: Vec<FunctionDecl>,
@@ -159,6 +168,7 @@ impl Decls {
     pub fn new() -> Self {
         Self {
             symbols: InternedSymbols::new(),
+            imports: Vec::new(),
             structs: Vec::new(),
             globals: Vec::new(),
             functions: Vec::new(),

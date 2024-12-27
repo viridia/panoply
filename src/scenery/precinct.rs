@@ -4,6 +4,7 @@ use crate::actors::{ActorInstance, ActorRebuildAspects};
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
+    floor_surface::FloorSurface,
     precinct_asset::{PrecinctAsset, SceneryInstanceId},
     rle::rle_decode,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
@@ -47,7 +48,7 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        floor_exemplars: &[Handle<Exemplar>],
+        floor_surfaces: &[Handle<FloorSurface>],
         query_floor_regions: &mut Query<(Entity, &mut FloorRegion)>,
     ) {
         // Sync tiers
@@ -73,7 +74,8 @@ impl Precinct {
 
             let mut j = 0;
             for floor in tier.pfloors.iter() {
-                let exemplar: Handle<Exemplar> = floor_exemplars[floor.surface_index].clone();
+                // let exemplar = floor_exemplars[floor.surface_index].clone();
+                let surface = floor_surfaces[floor.surface_index].clone();
                 if j < t.floor_regions.len() {
                     let floor_entity = t.floor_regions[j];
                     if let Ok((floor_entity, mut floor_region)) =
@@ -81,8 +83,8 @@ impl Precinct {
                     {
                         // Patch floor entity.
                         let mut changed = false;
-                        if floor_region.exemplar != exemplar {
-                            floor_region.exemplar = exemplar.clone();
+                        if floor_region.surface != surface {
+                            floor_region.surface = surface.clone();
                             changed = true;
                         }
                         if floor_region.poly != floor.poly || floor_region.holes != floor.holes {
@@ -99,7 +101,7 @@ impl Precinct {
                         commands.entity(floor_entity).insert((
                             FloorRegion {
                                 level: tier.level,
-                                exemplar,
+                                surface,
                                 poly: floor.poly.clone(),
                                 holes: floor.holes.clone(),
                             },
@@ -113,7 +115,7 @@ impl Precinct {
                             Name::new("FloorRegion"),
                             FloorRegion {
                                 level: tier.level,
-                                exemplar,
+                                surface,
                                 poly: floor.poly.clone(),
                                 holes: floor.holes.clone(),
                             },
@@ -355,8 +357,8 @@ pub fn read_precinct_data(
                     // TODO: Sync actors
 
                     let precinct_asset = assets.get(*id).unwrap();
-                    let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
-                        .floor_types
+                    let floor_surfaces: Vec<Handle<FloorSurface>> = precinct_asset
+                        .floor_surfaces
                         .iter()
                         .map(|s| asset_server.load(s))
                         .collect();
@@ -365,7 +367,7 @@ pub fn read_precinct_data(
                         &mut commands,
                         precinct_entity,
                         precinct_asset,
-                        &floor_exemplars,
+                        &floor_surfaces,
                         &mut q_floor_regions,
                     );
 

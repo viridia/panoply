@@ -4,7 +4,10 @@ use bevy::{
     prelude::*,
 };
 use core::str;
-use std::sync::{Arc, Mutex};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+};
 use thiserror::Error;
 use wasmtime::{ArrayRef, Caller, Module, Rooted};
 
@@ -63,6 +66,10 @@ pub enum SagaLoaderError {
     Io(#[from] std::io::Error),
     #[error("Could not decode Lua source from UTF-8: {0}")]
     DecodeUtf8(#[from] core::str::Utf8Error),
+    #[error("Invalid asset path: {0}")]
+    ParseAssetPath(#[from] bevy::asset::ParseAssetPathError),
+    #[error("Unable to read asset bytes: {0}")]
+    ReadAssetBytesError(#[from] bevy::asset::ReadAssetBytesError),
     #[error("{0:?}")]
     Wasm(#[from] wasmtime::Error),
     #[error("Compilation failed")]
@@ -95,10 +102,20 @@ impl AssetLoader for SagaLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let path = load_context.path().to_str().unwrap();
+        let path = load_context.path().to_str().unwrap().to_string();
         let src = str::from_utf8(&bytes)?;
-        let mut unit = CompilationUnit::new(path, src);
+        let mut unit = CompilationUnit::new(&path, src);
         let err = unit.compile().await;
+        for import in unit.decls.imports.iter() {
+            let import_path_str = unit.decls.symbols.resolve(import.path);
+            let import_path = Path::new(&import_path_str).with_extension("saga");
+            let path = load_context
+                .asset_path()
+                .resolve_embed(import_path.to_str().unwrap())?;
+            println!("Loading import: {}", path);
+            // let import_bytes = load_context.read_asset_bytes(path).await?;
+            // load_context.get_handle(import).await?;
+        }
         if let Err(err) = err {
             unit.report_error(&err);
             return Err(SagaLoaderError::Compilation);

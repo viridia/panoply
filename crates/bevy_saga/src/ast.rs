@@ -38,6 +38,7 @@ pub(crate) enum FloatSuffix {
 pub(crate) enum NodeKind<'a> {
     Program(&'a [&'a ASTNode<'a>]),
     Empty,
+    Import(&'a ASTNode<'a>, &'a [Symbol]),
     Decl(&'a ASTDecl<'a>),
     Block(&'a [&'a ASTNode<'a>], Option<&'a ASTNode<'a>>),
     LitBool(bool),

@@ -443,7 +443,9 @@ fn combat_interact() {
 
 # Scripting TODOs
 
-- Structs and Records
+- Records
+- Global Structs
+- Memory Structs
 - Intrinsic Functions
   - How to return an error from a script?
 - Imports
@@ -477,3 +479,21 @@ fn combat_interact() {
   - type definition
   - constructor
   - variant access
+
+# Scripted assets
+
+- We should make floors an asset rather than an aspect.
+
+2024-12-27T05:19:41.898533Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/ice-cavefloor.ron
+2024-12-27T05:19:41.964606Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/wood-dark-walnut.ron
+2024-12-27T05:19:41.964628Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/wood-walnut-planks.ron
+2024-12-27T05:19:41.964633Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/wood-dark-walnut-planks.ron
+2024-12-27T05:19:41.964664Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/dark-green-cobbles.ron
+2024-12-27T05:19:41.964670Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/dirty-stone.ron
+2024-12-27T05:19:41.964677Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/mossy-pavers-bordered.ron
+2024-12-27T05:19:41.964709Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/cavefloor.ron
+2024-12-27T05:19:41.964714Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/diamond-parquet.ron
+2024-12-27T05:19:41.964719Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/carpet-square-red.ron
+2024-12-27T05:19:41.964722Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/carpet-square-black.ron
+2024-12-27T05:19:41.964729Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/carpet-square-gold.ron
+2024-12-27T05:19:41.964733Z ERROR bevy_asset::server: Path not found: /Users/talin/Projects/games/panoply/assets/scenery/floors/grassy-stone.ron

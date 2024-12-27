@@ -20,15 +20,10 @@ use thiserror::Error;
 
 mod flame;
 mod floor_noisy;
-mod floor_std;
 mod outline;
 
 pub use flame::FlameMaterial;
-pub use floor_noisy::FloorNoisyMaterial;
-use floor_noisy::FloorNoisyMaterialLoader;
-pub use floor_noisy::FloorNoisyMaterialParams;
-use floor_std::FloorStdMaterialLoader;
-pub use floor_std::FloorStdMaterialParams;
+pub use floor_noisy::{FloorNoisyMaterial, FloorNoisyMaterialExt};
 pub use outline::{OutlineMaterial, OutlineMaterialExtension};
 
 #[derive(Debug, Clone, Resource, Default)]
@@ -50,8 +45,6 @@ impl Plugin for MaterialsPlugin {
         app.init_resource::<OutlineMaterialHandle>()
             .init_resource::<BlackMaterialHandle>()
             .init_resource::<FlameMaterialHandle>()
-            .init_asset_loader::<FloorStdMaterialLoader>()
-            .init_asset_loader::<FloorNoisyMaterialLoader>()
             .add_plugins(MaterialPlugin::<FloorNoisyMaterial>::default())
             .add_plugins(MaterialPlugin::<OutlineMaterial>::default())
             .add_plugins(MaterialPlugin::<FlameMaterial>::default())

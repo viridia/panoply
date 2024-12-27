@@ -1,4 +1,5 @@
 use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
+use floor_surface::{FloorSurface, FloorSurfaceLoader};
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
@@ -8,11 +9,9 @@ use crate::{
 };
 
 use self::{
-    floor_aspect::{FloorGeometry, FloorNav, NoiseFloorSurface, StdFloorSurface},
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
-    // floor_noise::FloorNoiseMaterial,
     precinct::read_precinct_data,
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
@@ -23,8 +22,8 @@ use self::{
     wall_aspect::WallSize,
 };
 
-pub mod floor_aspect;
 mod floor_mesh;
+mod floor_surface;
 // mod floor_noise;
 pub mod floor_region;
 pub mod precinct;
@@ -59,12 +58,10 @@ impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PrecinctCache::new())
             .init_asset_loader::<PrecinctAssetLoader>()
+            .init_asset_loader::<FloorSurfaceLoader>()
             .init_asset::<PrecinctAsset>()
+            .init_asset::<FloorSurface>()
             .init_resource::<FloorOutline>()
-            .register_type::<StdFloorSurface>()
-            .register_type::<NoiseFloorSurface>()
-            .register_type::<FloorGeometry>()
-            .register_type::<FloorNav>()
             .register_type::<SceneryModels>()
             .register_type::<SceneryColliders>()
             .register_type::<SceneryMarks>()

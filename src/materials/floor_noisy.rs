@@ -1,66 +1,11 @@
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
     color::LinearRgba,
     pbr::{ExtendedMaterial, MaterialExtension, StandardMaterial},
     prelude::*,
     render::render_resource::{AsBindGroup, ShaderRef},
 };
 
-use serde::{Deserialize, Serialize};
-
-use super::{InlineAssetError, InlineAssetParams};
-
 pub type FloorNoisyMaterial = ExtendedMaterial<StandardMaterial, FloorNoisyMaterialExt>;
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct FloorNoisyMaterialParams {
-    pub color: LinearRgba,
-    pub color_alt: LinearRgba,
-    pub roughness: f32,
-    pub roughness_alt: f32,
-}
-
-impl InlineAssetParams for FloorNoisyMaterialParams {}
-
-/// AssetLoader for floor materials.
-#[derive(Default)]
-pub struct FloorNoisyMaterialLoader;
-
-impl AssetLoader for FloorNoisyMaterialLoader {
-    type Asset = FloorNoisyMaterial;
-    type Settings = ();
-
-    type Error = InlineAssetError;
-
-    async fn load(
-        &self,
-        _reader: &mut dyn Reader,
-        _settings: &Self::Settings,
-        load_context: &mut LoadContext<'_>,
-    ) -> Result<Self::Asset, Self::Error> {
-        let path = load_context.path().file_stem().unwrap().to_str().unwrap();
-        let params = FloorNoisyMaterialParams::decode(path)?;
-        let std = StandardMaterial {
-            perceptual_roughness: params.roughness,
-            ..default()
-        };
-        let material = FloorNoisyMaterialExt {
-            color: params.color,
-            color_alt: params.color_alt,
-            roughness: params.roughness,
-            roughness_alt: params.roughness_alt,
-            noise: load_context.load("terrain/textures/noise.png"),
-        };
-        Ok(ExtendedMaterial {
-            base: std,
-            extension: material,
-        })
-    }
-
-    fn extensions(&self) -> &[&str] {
-        &["floor-noisy"]
-    }
-}
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct FloorNoisyMaterialExt {

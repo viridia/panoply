@@ -1,12 +1,14 @@
 use std::path::Path;
 
 use crate::{
+    ast::ASTNode,
     decl::{Decl, Decls, Scope},
     location::TokenLocation,
     oper::BinaryOp,
     parser::saga_parser,
     pass, Type,
 };
+use bumpalo::Bump;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -89,6 +91,31 @@ impl CompilationError {
     }
 }
 
+// pub struct Compiler<'c> {
+//     /// Interned symbol table.
+//     pub symbols: InternedSymbols,
+
+//     /// Scope for builtin symbols, like `f32`.
+//     pub(crate) intrinsic_scope: Scope<'c>,
+// }
+
+// impl Compiler<'_> {
+//     pub fn new() -> Self {
+//         let symbols = InternedSymbols::new();
+//         let mut intrinsic_scope = Scope::new(None);
+//         intrinsic_scope.insert(symbols.intern("i32"), Decl::TypeAlias(Type::I32));
+//         intrinsic_scope.insert(symbols.intern("i64"), Decl::TypeAlias(Type::I64));
+//         intrinsic_scope.insert(symbols.intern("f32"), Decl::TypeAlias(Type::F32));
+//         intrinsic_scope.insert(symbols.intern("f64"), Decl::TypeAlias(Type::F64));
+//         intrinsic_scope.insert(symbols.intern("bool"), Decl::TypeAlias(Type::Boolean));
+//         intrinsic_scope.insert(symbols.intern("String"), Decl::TypeAlias(Type::String));
+//         Self {
+//             symbols,
+//             intrinsic_scope,
+//         }
+//     }
+// }
+
 /// Contains all of the information needed to compile a single script file.
 pub struct CompilationUnit<'cu> {
     path: &'cu str,
@@ -96,6 +123,11 @@ pub struct CompilationUnit<'cu> {
 
     /// All declarations, both global and local.
     pub(crate) decls: Decls,
+
+    /// Scope for builtin symbols, like `f32`.
+    pub(crate) intrinsic_scope: Scope<'cu>,
+
+    /// Output module.
     pub(crate) module: wasm_encoder::Module,
 }
 
@@ -106,6 +138,7 @@ impl<'cu> CompilationUnit<'cu> {
             src,
             decls: Decls::new(),
             module: wasm_encoder::Module::new(),
+            intrinsic_scope: Scope::new(None),
         }
     }
 
@@ -115,9 +148,49 @@ impl<'cu> CompilationUnit<'cu> {
 
     /// Compile a script file.
     pub async fn compile(&mut self) -> Result<(), CompilationError> {
+        self.define_intrinsics();
+
         let arena = bumpalo::Bump::new();
-        let ast = saga_parser::compilation_unit(self.src, &arena, &self.decls.symbols).map_err(
-            |err| {
+        let ast = self.parse_file(self.src, &arena)?;
+
+        pass::define_imports(&mut self.decls, ast)?;
+        self.resolve_imports().await?;
+        let mut root_scope = Scope::new(Some(&self.intrinsic_scope));
+        pass::build_module_decls(&mut root_scope, &mut self.decls, ast)?;
+        pass::build_module_exprs(&mut root_scope, &mut self.decls, ast)?;
+        pass::gen_module(self)?;
+        Ok(())
+    }
+
+    pub fn add_imports(&mut self, src: &str) -> Result<(), CompilationError> {
+        let arena = bumpalo::Bump::new();
+        let ast = self.parse_file(src, &arena)?;
+
+        pass::define_imports(&mut self.decls, ast)?;
+        // let mut root_scope = Scope::new(Some(&self.intrinsic_scope));
+        // self.resolve_imports().await?;
+
+        Ok(())
+    }
+
+    pub(crate) fn define_intrinsics(&mut self) {
+        let symbols = &self.decls.symbols;
+        let intrinsic_scope = &mut self.intrinsic_scope;
+        intrinsic_scope.insert(symbols.intern("i32"), Decl::TypeAlias(Type::I32));
+        intrinsic_scope.insert(symbols.intern("i64"), Decl::TypeAlias(Type::I64));
+        intrinsic_scope.insert(symbols.intern("f32"), Decl::TypeAlias(Type::F32));
+        intrinsic_scope.insert(symbols.intern("f64"), Decl::TypeAlias(Type::F64));
+        intrinsic_scope.insert(symbols.intern("bool"), Decl::TypeAlias(Type::Boolean));
+        intrinsic_scope.insert(symbols.intern("String"), Decl::TypeAlias(Type::String));
+    }
+
+    fn parse_file<'ast>(
+        &mut self,
+        src: &str,
+        arena: &'ast Bump,
+    ) -> Result<&'ast ASTNode<'ast>, CompilationError> {
+        let ast =
+            saga_parser::compilation_unit(src, arena, &self.decls.symbols).map_err(|err| {
                 let location = TokenLocation::new(err.location.offset, err.location.offset + 1);
                 for token in err.expected.tokens() {
                     match token {
@@ -130,28 +203,9 @@ impl<'cu> CompilationUnit<'cu> {
                 }
                 let tokens = err.expected.to_string();
                 CompilationError::Expected(location, tokens)
-            },
-        )?;
+            })?;
 
-        let mut intrinsic_scope = Scope::new(None);
-        fn define_type(decls: &Decls, scope: &mut Scope, name: &str, ty: Type) {
-            let sym = decls.symbols.intern(name);
-            scope.insert(sym, Decl::TypeAlias(ty));
-        }
-
-        define_type(&self.decls, &mut intrinsic_scope, "i32", Type::I32);
-        define_type(&self.decls, &mut intrinsic_scope, "i64", Type::I64);
-        define_type(&self.decls, &mut intrinsic_scope, "f32", Type::F32);
-        define_type(&self.decls, &mut intrinsic_scope, "f64", Type::F64);
-        define_type(&self.decls, &mut intrinsic_scope, "bool", Type::Boolean);
-        define_type(&self.decls, &mut intrinsic_scope, "String", Type::String);
-
-        let mut root_scope = Scope::new(Some(&intrinsic_scope));
-        pass::build_module_decls(&mut root_scope, &mut self.decls, ast)?;
-        self.resolve_imports().await?;
-        pass::build_module_exprs(&mut root_scope, &mut self.decls, ast)?;
-        pass::gen_module(self)?;
-        Ok(())
+        Ok(ast)
     }
 
     /// Load and resolve imported symbols from other modules.

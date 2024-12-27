@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use bevy::{
-    asset::io::AssetSource,
     ecs::world::Command,
     image::ImageSampler,
     prelude::*,
@@ -36,15 +35,9 @@ mod window_settings;
 mod world;
 
 use crate::{
-    actors::ActorsPlugin,
-    diagnostics::ScreenDiagsPlugin,
-    materials::{InlineAssetReader, MaterialsPlugin},
-    portals::PortalPlugin,
-    reflect_types::ReflectTypesPlugin,
-    scenery::SceneryPlugin,
-    terrain::TerrainPlugin,
-    window_settings::update_window_settings,
-    world::WorldPlugin,
+    actors::ActorsPlugin, diagnostics::ScreenDiagsPlugin, materials::MaterialsPlugin,
+    portals::PortalPlugin, reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin,
+    terrain::TerrainPlugin, window_settings::update_window_settings, world::WorldPlugin,
 };
 
 #[derive(Resource)]
@@ -65,11 +58,11 @@ fn main() {
     load_window_settings(&mut prefs, &mut window);
 
     let mut app = App::new();
-    app.register_asset_source(
-        "inline",
-        AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
-    )
-    .add_plugins((
+    // app.register_asset_source(
+    //     "inline",
+    //     AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
+    // )
+    app.add_plugins((
         DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(window),
@@ -320,12 +313,11 @@ fn uv_debug_texture() -> Image {
 }
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {
-    for (entity, realm) in realms.iter() {
-        if realm.name == "overland" {
-            println!("Navigating to [overland]");
-            viewpoint.realm = Some(entity);
-            // viewpoint.set_camera_distance(10., 10.);
-        }
+    // let rname = "overland";
+    let rname = "playground";
+    if let Some(realm) = realms.iter().find(|r| r.1.name == rname) {
+        println!("Navigating to [{}]", realm.1.name);
+        viewpoint.realm = Some(realm.0);
     }
 }
 

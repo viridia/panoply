@@ -1,3 +1,7 @@
+import { assert } from "./host";
+
+// record Locked(bool);
+
 struct Vec3 {
     x: f32,
     y: f32,

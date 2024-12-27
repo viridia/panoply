@@ -526,8 +526,31 @@ peg::parser! {
             arena.alloc(ASTNode::new((0, 0), NodeKind::Decl(decl)))
         }
 
+        pub rule import_name_list() -> &'a[decl::Symbol] =
+            "{" _
+            names:(
+                n0:name() _
+                n1:("," _ p: name() _ { p })*
+                ("," _)?
+                {
+                    let mut names = Vec::with_capacity(1 + n1.len());
+                    names.push(n0);
+                    names.extend(n1);
+                    arena.alloc_slice_copy(names.as_slice())
+                }
+            )?
+            "}"
+            { names.unwrap_or(arena.alloc_slice_copy(&[])) }
+
+        rule import_decl() -> &'a ASTNode<'a> =
+            "import" _ id:import_name_list() _ "from" _ path:lit_string() _ ";" _
+        {
+            arena.alloc(ASTNode::new((0, 0), NodeKind::Import(path, id)))
+        }
+
         pub rule decl() -> &'a ASTNode<'a>
-            = f:func_defn() { f }
+            = i:import_decl() { i }
+            / f:func_defn() { f }
             / s:struct_defn() { s }
             / expected!("declaration")
         pub rule compilation_unit() -> &'a ASTNode<'a> = _ d:(d:decl() _ { d })* {

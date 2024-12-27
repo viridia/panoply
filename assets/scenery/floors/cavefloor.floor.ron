@@ -1,0 +1,9 @@
+FloorSurface(
+    material: Noise(
+        color: "#21222a",
+        color_alt: "#322b30",
+        roughness: 0.8,
+        roughness_alt: 0.6
+    ),
+    sides: false
+)

@@ -1,0 +1,5 @@
+FloorSurface(
+    material: Standard(
+        texture: Some("textures/mossy-pavers-bordered.png")
+    )
+)

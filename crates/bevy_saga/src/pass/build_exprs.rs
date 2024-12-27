@@ -24,6 +24,7 @@ pub(crate) fn build_module_decls<'ast>(
     if let NodeKind::Program(ast_decls) = &ast.kind {
         for ast_decl in *ast_decls {
             match &ast_decl.kind {
+                NodeKind::Import(_, _) => {}
                 NodeKind::Decl(d) => match d {
                     crate::ast::ASTDecl::Function {
                         name,
@@ -145,6 +146,7 @@ pub(crate) fn build_module_exprs<'ast>(
     if let NodeKind::Program(ast_decls) = &ast.kind {
         for ast_decl in *ast_decls {
             match &ast_decl.kind {
+                NodeKind::Import(_, _) => {}
                 NodeKind::Decl(d) => match d {
                     crate::ast::ASTDecl::Function {
                         name,

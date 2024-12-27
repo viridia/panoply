@@ -1,18 +1,20 @@
 use bevy::{asset::Handle, math::Vec2, prelude::*};
-use panoply_exemplar::Exemplar;
+// use panoply_exemplar::Exemplar;
 use serde::{
     de::{SeqAccess, Visitor},
     ser::SerializeSeq,
     Deserialize, Serialize,
 };
 
+use super::floor_surface::FloorSurface;
+
 #[derive(Component, Debug, Clone, Default)]
 pub struct FloorRegion {
     /// Floor level
     pub level: i32,
 
-    /// Schematic reference
-    pub exemplar: Handle<Exemplar>,
+    /// Surface appearance and properties
+    pub surface: Handle<FloorSurface>,
 
     /// Polygonal outline of floor
     pub poly: Vec<Vec2>,

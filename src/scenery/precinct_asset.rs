@@ -33,7 +33,8 @@ pub struct PrecinctAsset {
     pub(crate) scenery_types: Vec<String>,
 
     /// Table of floor archetypes used by this precinct.
-    pub(crate) floor_types: Vec<String>,
+    #[serde(default)]
+    pub(crate) floor_surfaces: Vec<String>,
 
     /// Table of terrain effect archetypes used by this precinct.
     #[serde(default)]
@@ -135,14 +136,14 @@ impl PrecinctAsset {
 
     /// Return the table index of the given floor type.
     pub fn floor_type_index(&self, floor_type: &str) -> Option<usize> {
-        self.floor_types.iter().position(|ft| ft == floor_type)
+        self.floor_surfaces.iter().position(|ft| ft == floor_type)
     }
 
     /// Add a new floor type to the precinct.
     pub fn add_floor_type(&mut self, floor_type: String) -> usize {
-        assert!(!self.floor_types.iter().any(|ft| ft == &floor_type));
-        let index = self.floor_types.len();
-        self.floor_types.push(floor_type);
+        assert!(!self.floor_surfaces.iter().any(|ft| ft == &floor_type));
+        let index = self.floor_surfaces.len();
+        self.floor_surfaces.push(floor_type);
         index
     }
 
@@ -362,7 +363,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
         enum Field {
             SceneryTypes,
             Scenery,
-            FloorTypes,
+            FloorSurfaces,
             TerrainFxTypes,
             TerrainFx,
             Tiers,
@@ -392,8 +393,8 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                         Field::SceneryTypes => {
                             precinct.scenery_types = map.next_value()?;
                         }
-                        Field::FloorTypes => {
-                            precinct.floor_types = map.next_value()?;
+                        Field::FloorSurfaces => {
+                            precinct.floor_surfaces = map.next_value()?;
                         }
                         Field::Scenery => {
                             precinct.scenery =

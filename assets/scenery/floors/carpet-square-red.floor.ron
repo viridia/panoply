@@ -1,0 +1,6 @@
+FloorSurface(
+    material: Standard(
+        texture: Some("textures/carpet-square-red.png")
+    ),
+    raise: 0.02
+)

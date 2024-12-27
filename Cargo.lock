@@ -5140,6 +5140,7 @@ dependencies = [
  "rapier3d",
  "regex",
  "rmp-serde",
+ "ron",
  "serde",
  "serde_bytes",
  "serde_derive",

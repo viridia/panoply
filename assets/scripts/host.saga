@@ -1,0 +1,1 @@
+pub native fn assert(condition: bool);

@@ -1,6 +1,6 @@
 use super::{
-    floor_aspect::{FloorGeometry, NoiseFloorSurface, StdFloorSurface},
     floor_region::{FloorRegion, RebuildFloorAspects},
+    floor_surface::FloorSurface,
     FloorOutline,
 };
 use crate::scenery::{
@@ -17,7 +17,6 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
-use panoply_exemplar::UpdateAspects;
 
 pub struct FloorMeshResult {
     mesh: Mesh,
@@ -55,16 +54,13 @@ pub fn update_floor_aspects(
 
     // Wait until exemplar loaded before updating aspects
     for (entity, floor_region) in query.iter_mut() {
-        let st = server.load_state(&floor_region.exemplar);
+        let st = server.load_state(&floor_region.surface);
         if st.is_loaded() {
             commands
                 .entity(entity)
                 .insert((MeshMaterial3d(material.clone()), Visibility::Hidden))
                 .remove::<RebuildFloorAspects>()
-                .queue(UpdateAspects {
-                    exemplar: floor_region.exemplar.clone(),
-                    finish: (RebuildFloorMaterials, RebuildFloorMesh),
-                });
+                .insert((RebuildFloorMaterials, RebuildFloorMesh));
         }
     }
 }
@@ -72,29 +68,31 @@ pub fn update_floor_aspects(
 /// Spawns a task for each parcel to compute the water mesh geometry.
 pub fn gen_floor_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &FloorRegion, Option<&FloorGeometry>), With<RebuildFloorMesh>>,
+    mut query: Query<(Entity, &FloorRegion), With<RebuildFloorMesh>>,
+    surfaces: Res<Assets<FloorSurface>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
-    for (entity, floor_region, floor_geometry) in query.iter_mut() {
+    for (entity, floor_region) in query.iter_mut() {
         let level = floor_region.level;
         let mut poly = floor_region.poly.clone();
         let holes = floor_region.holes.clone();
         if poly.last() == poly.first() {
             poly.pop();
         }
-        let geometry = match floor_geometry {
-            Some(g) => *g,
-            None => FloorGeometry::default(),
+        let Some(surface) = surfaces.get(&floor_region.surface) else {
+            return;
         };
+        let sides = surface.sides;
+        let raise = surface.raise;
         let task = pool.spawn(async move {
             compute_floor_mesh(FloorMeshParams {
                 level,
                 poly,
                 holes,
                 has_texture: true,
-                sides: geometry.sides.unwrap_or(true),
-                raise: geometry.raise.unwrap_or(0.),
+                sides,
+                raise,
             })
         });
 
@@ -139,41 +137,37 @@ pub(crate) fn insert_floor_meshes(
 #[allow(clippy::type_complexity)]
 pub(crate) fn rebuild_floor_materials(
     mut commands: Commands,
-    mut query: Query<
-        (Entity, Option<&StdFloorSurface>, Option<&NoiseFloorSurface>),
-        With<RebuildFloorMaterials>,
-    >,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut query: Query<(Entity, &FloorRegion), With<RebuildFloorMaterials>>,
+    mut std_materials: ResMut<Assets<StandardMaterial>>,
+    surfaces: Res<Assets<FloorSurface>>,
 ) {
-    for (entity, surf, nsurf) in query.iter_mut() {
-        if let Some(surf) = surf {
-            // Standard material surface.
-            // println!("Attaching material: {:?}", surf.material.path());
-            commands
-                .entity(entity)
-                .insert((MeshMaterial3d(surf.material.clone()), Visibility::Visible))
-                .remove::<RebuildFloorMaterials>();
-        } else if let Some(proc_surface) = nsurf {
-            // Procedural textured surface.
-            let material = proc_surface.material.clone();
-            commands
-                .entity(entity)
-                .remove::<MeshMaterial3d<StandardMaterial>>()
-                .insert((MeshMaterial3d(material), Visibility::Visible))
-                .remove::<RebuildFloorMaterials>();
-        } else {
-            // Debug surface.
-            commands
-                .entity(entity)
-                .insert((
-                    MeshMaterial3d(materials.add(StandardMaterial {
-                        base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
-                        unlit: true,
-                        ..Default::default()
-                    })),
-                    Visibility::Visible,
-                ))
-                .remove::<RebuildFloorMaterials>();
+    for (entity, region) in query.iter_mut() {
+        if let Some(surface) = surfaces.get(&region.surface) {
+            if let Some(ref std_material) = surface.material_std {
+                commands
+                    .entity(entity)
+                    .insert((MeshMaterial3d(std_material.clone()), Visibility::Visible))
+                    .remove::<RebuildFloorMaterials>();
+            } else if let Some(ref noisy_material) = surface.material_noisy {
+                commands
+                    .entity(entity)
+                    .remove::<MeshMaterial3d<StandardMaterial>>()
+                    .insert((MeshMaterial3d(noisy_material.clone()), Visibility::Visible))
+                    .remove::<RebuildFloorMaterials>();
+            } else {
+                // Debug surface.
+                commands
+                    .entity(entity)
+                    .insert((
+                        MeshMaterial3d(std_materials.add(StandardMaterial {
+                            base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
+                            unlit: true,
+                            ..Default::default()
+                        })),
+                        Visibility::Visible,
+                    ))
+                    .remove::<RebuildFloorMaterials>();
+            }
         }
     }
 }
