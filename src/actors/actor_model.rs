@@ -13,21 +13,19 @@ pub struct ActorModel {
 pub fn spawn_actor_models(
     mut commands: Commands,
     mut query: Query<(Entity, &Skin, &RenderLayers), With<ActorRebuildModels>>,
-    _server: Res<AssetServer>,
+    server: Res<AssetServer>,
 ) {
-    for (entity, skin, _layers) in query.iter_mut() {
-        // commands.entity(entity).clear_children();
+    for (entity, skin, layers) in query.iter_mut() {
         if let Some((fname, fragment)) = skin.0.split_once('#') {
-            info!("Loading actor model: [{}#{}]", fname, fragment);
-            // TODO: Re-enable this
-            // let handle: Handle<Gltf> = server.load(fname.to_owned());
-            // commands.entity(entity).insert((
-            //     ActorModel {
-            //         handle,
-            //         label: String::from(fragment),
-            //     },
-            //     layers.clone(),
-            // ));
+            // info!("Loading actor model: [{}#{}]", fname, fragment);
+            let handle: Handle<Gltf> = server.load(fname.to_owned());
+            commands.entity(entity).insert((
+                ActorModel {
+                    handle,
+                    label: String::from(fragment),
+                },
+                layers.clone(),
+            ));
         }
         commands.entity(entity).remove::<ActorRebuildModels>();
     }

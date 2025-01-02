@@ -189,6 +189,7 @@ pub fn spawn_parcels(
                             ));
                             let rigid_body = rb_builder.build();
                             let rb_handle = realm_physics.insert_body(rigid_body);
+                            // println!("Creating parcel {} {}; center shape {}", x, z, center.id);
                             let entity = commands.spawn((
                                 Parcel {
                                     realm: realm_id,

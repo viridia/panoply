@@ -20,8 +20,19 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
       let scene = doc.getRoot().getDefaultScene();
       if (scene) {
         doc.getRoot().setDefaultScene(null);
+        let armature = scene
+          .listChildren()
+          .find((c) => c.getName().includes("Armature"));
         for (let child of scene.listChildren()) {
-          doc.createScene(child.getName()).addChild(child);
+          if (child === armature) {
+            continue;
+          }
+          // console.log(child.getName());
+          let skin = child.getSkin();
+          let namedScene = doc.createScene(child.getName()).addChild(child);
+          if (armature && skin) {
+            namedScene.addChild(armature);
+          }
         }
       }
       for (let mat of doc.getRoot().listMaterials()) {

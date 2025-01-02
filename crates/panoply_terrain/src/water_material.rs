@@ -82,7 +82,6 @@ pub fn create_water_material(
             Srgba::rgb(0.6, 0.7, 1.0).into(),
         ],
         waves: asset_server.load("terrain/textures/water-waves-normal.png"),
-        // waves: asset_server.load("terrain/textures/water-waves-2.png"),
         sky: asset_server.load("terrain/textures/water-clouds.png"),
         foam: asset_server.load("terrain/textures/noise.png"),
     });

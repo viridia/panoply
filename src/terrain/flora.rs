@@ -89,6 +89,21 @@ pub fn gen_flora(
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let terrain_fx = parcel.terrain_fx;
         let flora_table = parcel.flora.clone();
+
+        let tree_count = flora_table.elts().iter().fold(0, |n, c| {
+            if *c == FloraType::RandomTree {
+                n + 1
+            } else {
+                n
+            }
+        });
+        println!(
+            "Generating flora for parcel {:?} {} count: {}",
+            parcel.coords,
+            parcel.center_shape().shape,
+            tree_count
+        );
+
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: HashMap::new(),
@@ -127,30 +142,34 @@ pub fn insert_flora(
     for (entity, mut parcel, mut task) in q_parcels.iter_mut() {
         if let Ok((realm, _terrain)) = q_realms.get(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
-                let mut existing_flora = HashMap::<UVec2, Entity>::new();
-                // Remove existing flora
-                if let Some(flora_entity) = parcel.flora_entity {
-                    // println!("Dropping flora {}", flora_entity);
-                    if let Ok(children) = q_children.get(flora_entity) {
-                        existing_flora.reserve(children.len());
-                        for child in children.iter() {
-                            if let Ok((flora, _)) = q_flora.get(*child) {
-                                existing_flora.insert(flora.coords, *child);
-                            }
-                        }
-                    }
-                }
-
                 // If there is flora
                 if let Some(mut flora_placement) = task_result {
-                    // Get or create flora entity.
+                    // Get or create flora entity. Also record existing flora instances.
+
+                    let mut existing_flora = HashMap::<UVec2, Entity>::new();
                     let flora_entity = match parcel.flora_entity {
-                        Some(flora_ent) => flora_ent,
+                        Some(flora_ent) => {
+                            // Remove existing flora
+                            // println!("Dropping flora {}", flora_entity);
+                            if let Ok(children) = q_children.get(flora_ent) {
+                                existing_flora.reserve(children.len());
+                                for child in children.iter() {
+                                    if let Ok((flora, _)) = q_flora.get(*child) {
+                                        existing_flora.insert(flora.coords, *child);
+                                    } else {
+                                        commands.entity(*child).despawn_recursive();
+                                    }
+                                }
+                            }
+                            println!("Old children: {}", existing_flora.len());
+
+                            flora_ent
+                        }
                         None => {
                             let child = commands
                                 .spawn((
                                     Transform::default(),
-                                    Visibility::default(),
+                                    Visibility::Inherited,
                                     ParcelFlora,
                                     Name::new("Flora"),
                                     realm.layer.clone(),
@@ -207,6 +226,8 @@ pub fn insert_flora(
                     }
 
                     // Replace children
+                    println!("Children to be deleted: {}", existing_flora.len());
+                    println!("New children: {}", children.len());
                     commands.entity(flora_entity).replace_children(&children);
 
                     // Despawn any remaining flora
