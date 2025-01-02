@@ -9,8 +9,8 @@ use bevy::{
         view::RenderLayers,
     },
 };
+use bevy_prefs_lite::{AutosavePrefsPlugin, Preferences, SavePreferences};
 use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
-use bevy_user_prefs::{AutosavePrefsPlugin, Preferences, SavePreferences};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};

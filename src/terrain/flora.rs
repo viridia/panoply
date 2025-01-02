@@ -90,20 +90,6 @@ pub fn gen_flora(
         let terrain_fx = parcel.terrain_fx;
         let flora_table = parcel.flora.clone();
 
-        let tree_count = flora_table.elts().iter().fold(0, |n, c| {
-            if *c == FloraType::RandomTree {
-                n + 1
-            } else {
-                n
-            }
-        });
-        println!(
-            "Generating flora for parcel {:?} {} count: {}",
-            parcel.coords,
-            parcel.center_shape().shape,
-            tree_count
-        );
-
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: HashMap::new(),
@@ -161,7 +147,6 @@ pub fn insert_flora(
                                     }
                                 }
                             }
-                            println!("Old children: {}", existing_flora.len());
 
                             flora_ent
                         }
@@ -226,8 +211,6 @@ pub fn insert_flora(
                     }
 
                     // Replace children
-                    println!("Children to be deleted: {}", existing_flora.len());
-                    println!("New children: {}", children.len());
                     commands.entity(flora_entity).replace_children(&children);
 
                     // Despawn any remaining flora
