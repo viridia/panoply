@@ -1,4 +1,5 @@
 pub mod layers;
+pub mod pan_rotate;
 pub mod random;
 pub mod realm;
 pub mod realm_physics;

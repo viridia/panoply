@@ -253,21 +253,16 @@ impl Precinct {
         // Iterate through the actor instances in the asset.
         for actor_data in asset.actors.iter() {
             let mut transform = Transform::from_translation(actor_data.position);
-            let facing = actor_data.facing * std::f32::consts::PI / 180.;
-            transform.rotate(Quat::from_rotation_y(facing));
-            // let _exemplar = asset_server.load::<Exemplar>(ai.exemplar.clone());
+            let facing = actor_data.facing;
+            // println!("Actor facing: {:?}", actor_data.facing);
+            transform.rotate(Quat::from_rotation_y(facing * std::f32::consts::PI / 180.));
             // Update the actor instance in place if the exemplar has not changed.
             if let Some(a_ent) = existing.remove(&actor_data.iid) {
                 if let Ok(mut actor) = q_actors.get_mut(a_ent) {
                     if actor.exemplar == actor_data.exemplar {
-                        if actor.position != actor_data.position {
+                        if actor.position != actor_data.position || actor.facing != facing {
                             actor.position = actor_data.position;
-                            transform.translation = actor_data.position;
-                            commands.entity(a_ent).insert(transform);
-                        }
-                        if actor.facing != facing {
                             actor.facing = facing;
-                            transform.rotation = Quat::from_rotation_y(facing);
                             commands.entity(a_ent).insert(transform);
                         }
                         continue;
@@ -279,7 +274,7 @@ impl Precinct {
                 }
             }
 
-            // Otherwise, spawn a new instance.
+            // Otherwise, spawn a new actor instance.
             commands.spawn((
                 Name::new("Actor"),
                 ActorInstance {
@@ -294,7 +289,6 @@ impl Precinct {
                 self.render_layer.clone(),
                 ActorRebuildAspects,
             ));
-            // .set_parent(realm);
         }
 
         // Despawn any remaining actors that were not found in the asset.

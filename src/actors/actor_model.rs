@@ -42,6 +42,7 @@ pub fn spawn_actor_model_instances(
         if result.is_loaded() {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
+                // info!("Available scenes: [{:?}]", gltf.named_meshes.keys());
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     info!("Spawning actor mesh: [{}]", mesh.label);
                     commands.entity(entity).insert((

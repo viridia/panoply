@@ -131,12 +131,10 @@ pub fn insert_flora(
                 // If there is flora
                 if let Some(mut flora_placement) = task_result {
                     // Get or create flora entity. Also record existing flora instances.
-
                     let mut existing_flora = HashMap::<UVec2, Entity>::new();
                     let flora_entity = match parcel.flora_entity {
                         Some(flora_ent) => {
                             // Remove existing flora
-                            // println!("Dropping flora {}", flora_entity);
                             if let Ok(children) = q_children.get(flora_ent) {
                                 existing_flora.reserve(children.len());
                                 for child in children.iter() {
@@ -237,7 +235,7 @@ pub fn spawn_flora_model_instances(
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
-                    commands.entity(entity).insert((
+                    commands.entity(entity).try_insert((
                         SceneRoot(scene_handle.clone()),
                         mesh.transform,
                         PropagateRenderLayers,
@@ -246,7 +244,6 @@ pub fn spawn_flora_model_instances(
                     error!("Model not found: [{}]", mesh.label);
                     info!("Available scenes: [{:?}]", gltf.named_scenes.keys());
                     commands.entity(entity).despawn();
-                    // panic!();
                 }
             }
         }

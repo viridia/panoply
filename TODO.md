@@ -2,16 +2,12 @@
 
 - Scripting
 - Biome data
-- Camera movement
 - Revive editor
-- Preferences
 
 # TODO
 
 - Better picking on tiers - disable terrain picks
-- Crash - inserting flora compute task on deleted entity.
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
-- separate crate for realms?
 - Quit confirm dialog
 - Text input
 - File unsaved indicator.

@@ -13,7 +13,9 @@ use bevy_prefs_lite::{AutosavePrefsPlugin, Preferences, SavePreferences};
 use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use models::ModelsPlugin;
-use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
+use panoply_core::{
+    pan_rotate::pan_rotate_viewpoint, HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint,
+};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::{load_window_settings, WindowSettingsPlugin};
@@ -94,7 +96,12 @@ fn main() {
     .add_systems(Startup, (setup, run_script))
     .add_systems(
         Update,
-        (rotate_shapes, update_window_settings, nav_to_center),
+        (
+            rotate_shapes,
+            update_window_settings,
+            nav_to_center,
+            pan_rotate_viewpoint,
+        ),
     )
     .add_systems(
         PostUpdate,
