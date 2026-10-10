@@ -1,8 +1,16 @@
-use bevy::{math::IRect, prelude::*};
+use bevy::{
+    camera::{
+        primitives::{Aabb, Frustum},
+        visibility::RenderLayers,
+    },
+    math::IRect,
+    prelude::*,
+};
 use panoply_terrain::{
     Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
     RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainContoursHandle,
-    TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT, CENTER_SHAPE,
+    TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
+    CENTER_SHAPE,
 };
 use rapier3d::{
     na::Vector3,
@@ -13,8 +21,20 @@ use panoply_core::{Realm, RealmPhysics, Viewpoint};
 
 use super::{
     terrain_map::{TerrainMap, TerrainMapAsset},
-    PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
+    PARCEL_HEIGHT_SCALE, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
 };
+
+/// Height allowance above the ground for what stands on a parcel: the tallest flora model
+/// (4.45 m) at its largest scale (0.8), rounded up.
+const PARCEL_CONTENT_HEIGHT: f32 = 4.0;
+
+/// Slack around each parcel's bounds, covering ground blended toward neighboring contours at
+/// the edges and a camera that moved since the frustum was last computed.
+const SHOW_MARGIN: f32 = 2.0;
+
+/// Shadows from a sun lower than this (sine of elevation) are treated as cast from this height,
+/// so a grazing sun does not stretch a parcel's shadow reach across the whole map.
+const MIN_SUN_SINE: f32 = 0.25;
 
 #[derive(Resource)]
 pub struct ParcelCache {
@@ -84,6 +104,8 @@ pub fn spawn_parcels(
     mut parcel_cache: ResMut<ParcelCache>,
     mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>, &mut Visibility)>,
     mut q_realms: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
+    q_cameras: Query<(&Camera, &Frustum, &RenderLayers)>,
+    q_lights: Query<(&DirectionalLight, &GlobalTransform, &RenderLayers)>,
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     r_contours_handle: Res<TerrainContoursHandle>,
     r_contours_assets: Res<Assets<TerrainContoursTableAsset>>,
@@ -272,11 +294,37 @@ pub fn spawn_parcels(
 
     fetch_parcels(realm_id, query_rect);
 
-    // Hide parcels outside the view, so their ground, water and flora skip rendering work.
+    // Loaded parcels are shown only if they, or the shadows they cast, can be in view of a
+    // camera that renders their realm: the primary camera, or a portal camera looking into
+    // another realm. The rest stay loaded, ready for scrolling, but skip all rendering work.
+    let cameras: Vec<_> = q_cameras
+        .iter()
+        .filter(|(camera, ..)| camera.is_active)
+        .map(|(_, frustum, layers)| (frustum, layers))
+        .collect();
+    // Every shadow-casting light (sun, moon) widens the bounds by its own shadow direction.
+    let lights: Vec<_> = q_lights
+        .iter()
+        .filter(|(light, ..)| light.shadow_maps_enabled)
+        .map(|(_, transform, layers)| (shadow_reach(transform.forward().as_vec3()), layers))
+        .collect();
     q_parcels
         .iter_mut()
-        .for_each(|(parcel, _, mut visibility)| {
-            visibility.set_if_neq(if parcel.visible {
+        .for_each(|(parcel, thumbnail, mut visibility)| {
+            let shown = parcel.visible
+                && (thumbnail.is_some()
+                    || q_realms.get(parcel.realm).is_ok_and(|(realm, ..)| {
+                        let reaches = lights
+                            .iter()
+                            .filter(|(_, layers)| layers.intersects(&realm.layer))
+                            .map(|(reach, _)| *reach);
+                        let bounds = parcel_show_bounds(&parcel, &contours_table, reaches);
+                        cameras.iter().any(|(frustum, layers)| {
+                            layers.intersects(&realm.layer)
+                                && frustum.intersects_obb_identity(&bounds)
+                        })
+                    }));
+            visibility.set_if_neq(if shown {
                 Visibility::Inherited
             } else {
                 Visibility::Hidden
@@ -298,6 +346,45 @@ pub fn spawn_parcels(
         }
         cache.pop_lru();
     }
+}
+
+/// Horizontal distance a shadow travels per meter of caster height, along the light's direction.
+fn shadow_reach(light_direction: Vec3) -> Vec2 {
+    let sine = (-light_direction.y).max(MIN_SUN_SINE);
+    light_direction.xz() / sine
+}
+
+/// World-space bounds of everything a parcel can put on screen: its ground and what stands on
+/// it, plus the ground its shadows can fall on, for each light's shadow reach.
+fn parcel_show_bounds(
+    parcel: &Parcel,
+    contours_table: &TerrainContoursTable,
+    shadow_reaches: impl Iterator<Item = Vec2>,
+) -> Aabb {
+    let heights = contours_table
+        .get(parcel.contours[CENTER_SHAPE].shape as usize)
+        .height
+        .elts();
+    let lowest = heights.iter().copied().min().unwrap_or(0) as f32 * PARCEL_HEIGHT_SCALE;
+    let highest = heights.iter().copied().max().unwrap_or(0) as f32 * PARCEL_HEIGHT_SCALE;
+    let origin = parcel.coords.as_vec2() * PARCEL_SIZE_F;
+    let mut min = Vec3::new(origin.x, lowest, origin.y) - SHOW_MARGIN;
+    let mut max = Vec3::new(
+        origin.x + PARCEL_SIZE_F,
+        highest + PARCEL_CONTENT_HEIGHT,
+        origin.y + PARCEL_SIZE_F,
+    ) + SHOW_MARGIN;
+    // The tallest caster's shadow lands this far away, on ground as low as the parcel's.
+    let span = max.y - min.y;
+    let (ground_min, ground_max) = (min, max);
+    for reach in shadow_reaches {
+        let shadow = reach * span;
+        min.x = min.x.min(ground_min.x + shadow.x);
+        min.z = min.z.min(ground_min.z + shadow.y);
+        max.x = max.x.max(ground_max.x + shadow.x);
+        max.z = max.z.max(ground_max.z + shadow.y);
+    }
+    Aabb::from_min_max(min, max)
 }
 
 pub(crate) fn cleanup_parcel_physics(world: &mut World) {

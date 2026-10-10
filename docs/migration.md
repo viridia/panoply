@@ -20,20 +20,35 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `2ac5f1b` | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
 | `a3ef8f2` | Perf plans; dedicated `OutlineMaterial` on child entities; isolated plan settings.      |
 | `143a84d` | Hemisphere ambient light; shadow cascades fitted to camera distance; 2x2 filter.        |
-| (pending) | Parcels outside the view are hidden (D19); `plans/parcels.py`.                          |
+| `5139647` | Parcels outside the view are hidden (D19); `plans/parcels.py`.                          |
+| (pending) | Parcel show set (D20); random flora Y rotation, restored from the three.js version.     |
 
 ## Next
 
-1. Merge flora into per-parcel combined meshes: once the GLTFs load, bake each placement's
-   transform into its meshes (`Mesh::transformed_by`) and concatenate by material
-   (`Mesh::merge`), one entity per (parcel, material) plus `OutlineMaterial` children for trunks.
-   Drops flora's `PropagateRenderLayers` use (X4). Aim: forest spot at distance 20 under about
-   5 ms, leaving scenery room. Hiding off-view parcels (D19) did not move frame time (Notes), so
-   the cost is the in-view flora entities.
-2. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
+1. Decide whether to merge flora into per-parcel meshes now or defer it. Flora costs about
+   1.5 ms at distance 20 and about 5 ms at 40 (Notes); hiding and the show set (D19, D20) cut
+   little, so the cost is the shown flora entities. Plan if done: cache each model once as a
+   template (part meshes, transforms, material key) in an `Arc`; `gen_flora`'s async task bakes
+   placements (`Mesh::transformed_by`) and merges (`Mesh::merge`), like ground meshes. Trunks
+   (solid color, no UVs) merge into one vertex-colored mesh per parcel with one outline child;
+   leaves group by texture; herbs get their own mesh with per-cell vertex ranges (X14). Flora
+   outlines need their own `OutlineMaterial`, width times the mean flora scale (0.65), since
+   the shader extrudes in mesh-local space. Drop a hidden parcel's merged meshes, rebuild on
+   show (about 2-3 MB per parcel). Removes about 5,000 transform-only scene entities and
+   flora's `PropagateRenderLayers` use (X4).
+2. Migrate physics from `rapier3d` (0.22, used directly, not through `bevy_rapier`) to `avian3d`.
+   Integration is still small: `panoply_core::realm_physics` (`RealmPhysics`, one rapier world
+   per realm), a fixed rigid body per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground
+   colliders (`ground_mesh.rs`, `Parcel::terrain_collider`); also the editor's terrain
+   thumbnail. Cheaper now than after actors (movement, collision) are restored. Structural (new
+   dependency, replaces a subsystem): propose the realm-to-avian mapping first, since avian has
+   one physics world per app, where `RealmPhysics` keeps one per realm.
+3. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
    it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
-3. `actors`, `portals`.
-4. `editor` (see X3).
+4. `actors`, `portals`. Portals: `spawn_parcels` loads parcels only around the main viewpoint
+   (its "including portals" TODO); add a load rectangle per portal view. Showing already
+   handles portal cameras (D20).
+5. `editor` (see X3).
 
 When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`, `release_parcel_terrain_fx`) and
@@ -110,6 +125,13 @@ catalogs without aspects can load, since the aspect types are registered by thos
   about as many entities at distance 20 as at 40. `spawn_parcels` now hides them
   (`Visibility::Hidden` from `Parcel::visible`), and parcel children (ground, water, flora) use
   `Visibility::Inherited`, never `Visible`, which would ignore the parent.
+- **D20** Loaded is not shown. The load rectangle stays generous (prefetch for scrolling), but a
+  loaded parcel is shown only if its bounds intersect the frustum of an active camera whose
+  render layers include the parcel's realm, so portal cameras count without special cases.
+  Bounds: the parcel's 16 m square, its contour's height range plus 4 m for flora (tallest
+  model 4.45 m at scale 0.8), 2 m slack, swept along each shadow-casting directional light in
+  the realm (sun, moon) by the shadow length, clamped for a sun below about 15 degrees.
+  `parcel_cache::parcel_show_bounds`. Scenery taller than 4 m will need its own allowance.
 
 ## Deferred
 
@@ -143,12 +165,21 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - **X12** Art direction for lighting: painterly (pre-Raphaelite, art nouveau); shadows currently
   too dark (tune sun vs. hemisphere brightness), and since D18's sharper shadows the sunlight
   reads brighter and harsher. Underground realms a little more gothic, still
-  painterly (`RealmLighting::Interior`). *Gate:* scenery restored, for whole scenes to judge.
+  painterly (`RealmLighting::Interior`). Day/night cycle: sun shadows fade out in the evening
+  before they grow long; the moon casts shadows only at night. Night uses the cinematic blue
+  filter: red and green illumination reduced, blue brighter (artistic, not realistic).
+  *Gate:* scenery restored, for whole scenes to judge.
 - **X13** Sweep the old JavaScript/three.js engine (`../faery`) for design elements worth
   carrying over. It was far more complete than this version; it was abandoned for jankiness,
   not design. About 300k lines (TypeScript, GLSL) in 14 packages (`game`, `los-game`,
   `los-editor`, `genmap-cli`, `server`, `game-ui`, ...) plus `design/` docs. Needs its own
   session or several; produce a written catalog, not code. *Gate:* the Bevy 0.20 port is done.
+- **X14** Herb picking: picking a herb hides that instance for a while, then it regrows. Pick by
+  grid cell (at most one herb per 1 m cell; a ray hit gives the cell), not by entity. Picked
+  cells live in a per-realm resource keyed by world cell with a regrow time, outside the parcel
+  so eviction does not regrow them (and in the save game if they must survive a reload). Flora
+  placement skips picked cells. With merged flora (Next 1), hide an instance by collapsing its
+  vertex range in the parcel's herb mesh. *Gate:* `bevy_picking` (X3) and gameplay input.
 
 ## Notes
 
@@ -164,6 +195,14 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - Hiding off-view parcels (D19), same spot and plan: 6.8 ms before, 6.7 after (noise); 8,717
   entities either way. `plans/parcels.py` found 64 of 94 cached parcels out of view there, left
   over from the start location; they cost little, so per-entity cost is in view.
+- Flora culling there (scratch probe of `ViewVisibility`, which counts shadow views too): about
+  195 of 1,179 trees on screen, but before D20 all 2,194 flora meshes in shown parcels were
+  drawn into the shadow map, since Bevy bounds the cascade with a sphere that covered the whole
+  loaded area. D20 shows 16 of 30 loaded parcels (1,620 flora meshes): 6.7 to 6.6 ms at
+  distance 20, 10.7 to 10.3 ms at 40. Flora costs 1.5 ms at 20 and about 5 ms at 40. Of 8,717
+  entities only 3,534 have meshes; most of the rest are flora scene roots and glTF nodes that
+  only carry transforms. Flora Y rotation uses noise seed 8; the three.js version used 6, which
+  here picks the biome along z.
 - CPU profile there (samply, 2026-10-10): no `panoply` system is significant. The floor is Bevy's
   per-entity work over about 8,700 entities, run on the compute pool (about 9.6 ms CPU per frame
   across 4 threads): sun shadow visibility culling, camera culling, material specialization

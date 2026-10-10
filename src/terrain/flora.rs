@@ -329,7 +329,8 @@ fn compute_flora_placement(
             // };
 
             let translation = Vec3::new(tx, ty, tz);
-            let rotation = Quat::IDENTITY;
+            // Seed 8: the three.js version used 6, which here picks the biome along z.
+            let rotation = Quat::from_rotation_y(noise3(gx, gz, 8) * std::f32::consts::TAU);
             // let mut scale = Vec3::new(1., 1., 1.);
             if let Some(entry) = feature_model {
                 if let Some(ref model) = entry.proto {
