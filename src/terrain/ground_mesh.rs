@@ -121,7 +121,7 @@ pub fn insert_ground_meshes(
                             commands.entity(ground_entity).insert((
                                 Mesh3d(mesh),
                                 MeshMaterial3d(material),
-                                Visibility::Visible,
+                                Visibility::Inherited,
                             ));
                         }
                         None => {
@@ -131,7 +131,7 @@ pub fn insert_ground_meshes(
                                     .spawn((
                                         Mesh3d(mesh),
                                         MeshMaterial3d(material),
-                                        Visibility::Visible,
+                                        Visibility::Inherited,
                                         realm.layer.clone(),
                                         // Meshes are pickable by default with bevy_picking.
                                         // TODO: Might want to pick on physics colliders instead.

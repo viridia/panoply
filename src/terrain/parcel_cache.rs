@@ -82,7 +82,7 @@ pub fn spawn_parcels(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
     mut parcel_cache: ResMut<ParcelCache>,
-    mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>)>,
+    mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>, &mut Visibility)>,
     mut q_realms: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
     terrain_map_assets: Res<Assets<TerrainMapAsset>>,
     r_contours_handle: Res<TerrainContoursHandle>,
@@ -114,7 +114,7 @@ pub fn spawn_parcels(
     // ONLY if terrain maps haven't changed?
 
     // Reset the visibility bits for all parcels.
-    q_parcels.iter_mut().for_each(|(mut parcel, thumbnail)| {
+    q_parcels.iter_mut().for_each(|(mut parcel, thumbnail, _)| {
         if thumbnail.is_none() {
             parcel.visible = false;
         }
@@ -148,7 +148,7 @@ pub fn spawn_parcels(
                     match entity {
                         Some(entity) => {
                             // Update existing parcel
-                            if let Ok((mut parcel, _)) = q_parcels.get_mut(*entity) {
+                            if let Ok((mut parcel, _, _)) = q_parcels.get_mut(*entity) {
                                 if parcel.contours != contours
                                     || parcel.biomes != biomes
                                     || parcel.has_terrain != center.has_terrain
@@ -215,7 +215,7 @@ pub fn spawn_parcels(
                                     0.,
                                     z as f32 * PARCEL_SIZE_F,
                                 ),
-                                Visibility::Visible,
+                                Visibility::Inherited,
                                 RebuildParcelGroundMesh,
                                 ParcelWaterChanged,
                                 ParcelFloraChanged,
@@ -272,12 +272,23 @@ pub fn spawn_parcels(
 
     fetch_parcels(realm_id, query_rect);
 
+    // Hide parcels outside the view, so their ground, water and flora skip rendering work.
+    q_parcels
+        .iter_mut()
+        .for_each(|(parcel, _, mut visibility)| {
+            visibility.set_if_neq(if parcel.visible {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            });
+        });
+
     let size = parcel_cache.size;
     let cache = &mut parcel_cache.parcels;
     while cache.len() > size {
         let entry = cache.peek_lru();
         if let Some((_, entity)) = entry {
-            if let Ok((parcel, thumbnail)) = q_parcels.get_mut(*entity) {
+            if let Ok((parcel, thumbnail, _)) = q_parcels.get_mut(*entity) {
                 if parcel.visible || thumbnail.is_some() {
                     break;
                 } else {

@@ -20,12 +20,16 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `2ac5f1b` | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
 | `a3ef8f2` | Perf plans; dedicated `OutlineMaterial` on child entities; isolated plan settings.      |
 | `143a84d` | Hemisphere ambient light; shadow cascades fitted to camera distance; 2x2 filter.        |
+| (pending) | Parcels outside the view are hidden (D19); `plans/parcels.py`.                          |
 
 ## Next
 
-1. Performance follow-ups from the CPU profile (Notes): merge flora into per-parcel combined
-   meshes, and check the parcel cache's view radius (it loads about as many entities at
-   distance 20 as at 40). Aim: forest spot at distance 20 under about 5 ms, leaving scenery room.
+1. Merge flora into per-parcel combined meshes: once the GLTFs load, bake each placement's
+   transform into its meshes (`Mesh::transformed_by`) and concatenate by material
+   (`Mesh::merge`), one entity per (parcel, material) plus `OutlineMaterial` children for trunks.
+   Drops flora's `PropagateRenderLayers` use (X4). Aim: forest spot at distance 20 under about
+   5 ms, leaving scenery room. Hiding off-view parcels (D19) did not move frame time (Notes), so
+   the cost is the in-view flora entities.
 2. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
    it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
 3. `actors`, `portals`.
@@ -102,6 +106,10 @@ catalogs without aspects can load, since the aspect types are registered by thos
   Crisper shadows, as the painterly style wants, and 1.7 ms cheaper than Bevy's default four
   cascades with Gaussian filtering. A depth prepass costs 0.5 ms more, so rendering stays plain
   forward.
+- **D19** The parcel cache (LRU, 128 parcels) keeps parcels outside the view alive, so it holds
+  about as many entities at distance 20 as at 40. `spawn_parcels` now hides them
+  (`Visibility::Hidden` from `Parcel::visible`), and parcel children (ground, water, flora) use
+  `Visibility::Inherited`, never `Visible`, which would ignore the parent.
 
 ## Deferred
 
@@ -153,6 +161,9 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - At distance 20, playground (110, 150), `plans/ablate.py` (2026-10-10): 8.4 ms before D18,
   6.7 ms after. Camera off (CPU floor): 3.3 ms. Flora 2.5, quarter pixels 2.2, ground 1.7, water
   1.4, MSAA 1.1.
+- Hiding off-view parcels (D19), same spot and plan: 6.8 ms before, 6.7 after (noise); 8,717
+  entities either way. `plans/parcels.py` found 64 of 94 cached parcels out of view there, left
+  over from the start location; they cost little, so per-entity cost is in view.
 - CPU profile there (samply, 2026-10-10): no `panoply` system is significant. The floor is Bevy's
   per-entity work over about 8,700 entities, run on the compute pool (about 9.6 ms CPU per frame
   across 4 threads): sun shadow visibility culling, camera culling, material specialization
