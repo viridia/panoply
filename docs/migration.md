@@ -85,6 +85,19 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - **D15** Under the remote driver (`BEVY_REMOTE_DRIVER_PORT` set), the game uses its own settings
   (`org.viridia.panoply.driven`), so plans never change the developer's saved settings. Plans that
   measure set the camera distance through `GotoLocation::camera_distance`.
+- **D16** Ambient light is a hemisphere light (`panoply_terrain::HemisphereLight`: sky color,
+  ground color, brightness), as in the three.js version, not a camera-wide `EnvironmentMapLight`
+  (about 4 ms a frame at any cubemap size). The ground shader applies it per pixel in place of
+  Bevy's ambient term; other materials get `GlobalAmbientLight` at the average color. It is
+  reflected, so it can be tuned live over BRP.
+- **D17** Normal camera distance is about 20 (not final): close enough to read characters and
+  NPCs, far enough to navigate. Performance targets assume it: a rock-solid 120 fps, with terrain
+  leaving room for scenery and actors. Measured at playground (110, 150), a forest/shore spot.
+- **D18** Shadows: one cascade fitted to the camera distance, 0.4x to 2.5x (8-50 m at 20), refitted
+  on zoom (`panoply_core::viewpoint::fit_shadow_cascades`); `ShadowFilteringMethod::Hardware2x2`.
+  Crisper shadows, as the painterly style wants, and 1.7 ms cheaper than Bevy's default four
+  cascades with Gaussian filtering. A depth prepass costs 0.5 ms more, so rendering stays plain
+  forward.
 
 ## Deferred
 
@@ -110,6 +123,20 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - **X9** Finish splitting terrain and scenery into crates: move the parcel systems from
   `src/terrain` into `panoply_terrain`, and scenery into its own `panoply_scenery`. Flora's only
   tie to the app is `models::PropagateRenderLayers` (see X4). *Gate:* scenery restored.
+- **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
+  `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
+  camera. *Gate:* scenery or actors with shiny materials restored.
+- **X11** Water: apply the hemisphere light, or tie water's sky colors to it. *Gate:* author's
+  direction.
+- **X12** Art direction for lighting: painterly (pre-Raphaelite, art nouveau); shadows currently
+  too dark (tune sun vs. hemisphere brightness), and since D18's sharper shadows the sunlight
+  reads brighter and harsher. Underground realms a little more gothic, still
+  painterly (`RealmLighting::Interior`). *Gate:* scenery restored, for whole scenes to judge.
+- **X13** Sweep the old JavaScript/three.js engine (`../faery`) for design elements worth
+  carrying over. It was far more complete than this version; it was abandoned for jankiness,
+  not design. About 300k lines (TypeScript, GLSL) in 14 packages (`game`, `los-game`,
+  `los-editor`, `genmap-cli`, `server`, `game-ui`, ...) plus `design/` docs. Needs its own
+  session or several; produce a written catalog, not code. *Gate:* the Bevy 0.20 port is done.
 
 ## Notes
 
@@ -119,6 +146,14 @@ catalogs without aspects can load, since the aspect types are registered by thos
   3.3 ms, so about 10.4 ms is rendering. A quarter of the pixels saves 5.6 ms, so over half the
   rendering cost is per-pixel. Hiding ground saves 4.5 ms,
   flora 4.3, water 2.8. Water's fragment-wave loop is only about 0.6 ms.
+- At distance 20, playground (110, 150), `plans/ablate.py` (2026-10-10): 8.4 ms before D18,
+  6.7 ms after. Camera off (CPU floor): 3.3 ms. Flora 2.5, quarter pixels 2.2, ground 1.7, water
+  1.4, MSAA 1.1. Next: profile the CPU floor.
+- Lighting costs at the same spot (`ABLATE=... plans/ablate.py`): image-based lighting (the
+  camera's `EnvironmentMapLight`) about 4 ms, independent of cubemap size; MSAA 4x 3.4 ms; Gaussian
+  vs 2x2 shadow filtering 1.3 ms. `GeneratedEnvironmentMapLight` re-filters every frame (35 ms).
+  `skybox_diffuse.ktx2` was 1024x1024x6 with no mips; `skybox_diffuse_32.ktx2` is a 32x32 box
+  filter of it, visually identical, 0.6 ms cheaper.
 - Measure frame time by counting frames over wall time without polling: the driver's
   diagnostics return the latest single frame, and polling every 5 ms disturbs the app.
 - Bevy 0.20 issues seen: (1) switching `DirectionalLight::shadow_maps_enabled` off at runtime
@@ -128,6 +163,8 @@ catalogs without aspects can load, since the aspect types are registered by thos
   `models` now puts outlines on a child entity instead; (3) `RenderDiagnosticsPlugin` records
   only CPU pass times on Metal.
 
+- The water shows a fine square grid (visible before and after D16): waves texture tiling or
+  mesh seams; not investigated.
 - `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics.
 - `assets/shaders/outline.wgsl` is an unused duplicate of `src/materials/outline.wesl`.
 - With `dynamic_linking`, run via `cargo run`; the bare binary can't find `libstd`.

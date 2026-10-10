@@ -130,6 +130,11 @@ pub struct GroundMaterial {
 
     #[uniform(22)]
     pub biome_surface: [BiomeSurfaceAttrs; 8],
+
+    /// Hemisphere light: sky color, then ground color, brightness folded in. Kept up to date by
+    /// `sync_hemisphere_light`.
+    #[uniform(23)]
+    pub hemisphere: [LinearRgba; 2],
 }
 
 impl GroundMaterial {
@@ -297,6 +302,7 @@ impl GroundMaterialCache {
                     water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
                     biome_weight,
                     biome_surface,
+                    hemisphere: [LinearRgba::NONE; 2],
                 })
             })
             .clone()

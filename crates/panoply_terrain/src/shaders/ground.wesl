@@ -73,8 +73,9 @@ var<uniform> biome_weight: mat4x4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(22)
 var<uniform> biome_surface: array<BiomeSurfaceAttrs, 4>;
 
-// @group(constants::MATERIAL_BIND_GROUP) @binding(23)
-// var<uniform> realm_offset: vec2<f32>;
+// Hemisphere light: [0] from the sky, [1] from the ground, brightness folded in.
+@group(constants::MATERIAL_BIND_GROUP) @binding(23)
+var<uniform> hemisphere: array<vec4<f32>, 2>;
 
 const NUM_GROUND_TYPES = 9u;
 const GT_ROCK = 0u;
@@ -359,6 +360,13 @@ fn fragment(
     pbr_input.is_orthographic = false;
     pbr_input.N = normalize(pbr_input.world_normal);
     pbr_input.V = fns::calculate_view(mesh.world_position, pbr_input.is_orthographic);
+    // Bevy's own ambient term is a single color; the hemisphere light below replaces it.
+    pbr_input.diffuse_occlusion = vec3<f32>(0.0);
 
-    return tone_mapping(fns::apply_pbr_lighting(pbr_input), view.color_grading);
+    var color = fns::apply_pbr_lighting(pbr_input);
+    let sky_weight = 0.5 + 0.5 * pbr_input.N.y;
+    let ambient = mix(hemisphere[1].rgb, hemisphere[0].rgb, sky_weight);
+    color = vec4<f32>(color.rgb + diffuse_color.rgb * ambient * view.exposure, color.a);
+
+    return tone_mapping(color, view.color_grading);
 }

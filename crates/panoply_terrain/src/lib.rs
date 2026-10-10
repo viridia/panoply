@@ -1,5 +1,6 @@
 mod biome;
 mod ground_material;
+mod hemisphere;
 pub mod metrics;
 mod parcel;
 mod plugin;
@@ -12,6 +13,7 @@ mod water_material;
 
 pub use biome::*;
 pub use ground_material::{GroundMaterial, GroundMaterialCache};
+pub use hemisphere::HemisphereLight;
 pub use metrics::*;
 pub use parcel::*;
 pub use rotator::*;

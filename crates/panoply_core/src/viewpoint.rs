@@ -1,6 +1,7 @@
 use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
 use bevy::camera::visibility::RenderLayers;
+use bevy::light::{CascadeShadowConfig, CascadeShadowConfigBuilder};
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -281,3 +282,27 @@ pub fn update_camera_pos(
 // }
 
 // export const VIEWPOINT_KEY = createSystemKey<Viewpoint>('Viewpoint');
+
+/// Fits the sun's shadow cascades to what the camera can see. The camera looks down from
+/// `camera_distance` away, so visible ground lies roughly between 0.4x and 2.5x that distance;
+/// one cascade over that range is sharper and cheaper than Bevy's default four, whose near
+/// cascades cover nothing on screen. Refits when the distance changes (editor zoom).
+pub fn fit_shadow_cascades(
+    viewpoint: Res<Viewpoint>,
+    mut lights: Query<&mut CascadeShadowConfig, With<DirectionalLight>>,
+) {
+    let distance = viewpoint.camera_distance();
+    let wanted = CascadeShadowConfigBuilder {
+        num_cascades: 1,
+        minimum_distance: distance * 0.4,
+        maximum_distance: distance * 2.5,
+        first_cascade_far_bound: distance * 2.5,
+        overlap_proportion: 0.2,
+    }
+    .build();
+    for mut config in lights.iter_mut() {
+        if config.bounds != wanted.bounds || config.minimum_distance != wanted.minimum_distance {
+            *config = wanted.clone();
+        }
+    }
+}

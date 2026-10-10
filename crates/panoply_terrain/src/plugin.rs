@@ -51,11 +51,13 @@ impl Plugin for PanoplyTerrainPlugin {
             .init_resource::<GroundMaterialCache>()
             // .init_resource::<TerrainMapsHandleResource>()
             .init_resource::<WaterMaterialResource>()
+            .init_resource::<crate::HemisphereLight>()
             .add_plugins((
                 MaterialPlugin::<GroundMaterial>::default(),
                 MaterialPlugin::<WaterMaterial>::default(),
             ))
             .add_systems(Startup, create_water_material)
+            .add_systems(PostUpdate, crate::hemisphere::sync_hemisphere_light)
             // .add_systems(Startup, (cleanup_parcel_physics))
             // .add_systems(
             //     Update,
