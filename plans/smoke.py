@@ -27,8 +27,8 @@ def run(driver):
     driver.key("ArrowRight", hold=30)
     driver.screenshot("turned")
 
-    # Zoom in two steps and back out, leaving the saved zoom level where it was (unless it was
-    # already at a limit, where a step clamps).
+    # Zoom in two steps and back out. (Plans run with their own settings, so this never touches
+    # the developer's saved zoom.)
     driver.key("Equal")
     driver.key("Equal")
     driver.seconds(0.4)

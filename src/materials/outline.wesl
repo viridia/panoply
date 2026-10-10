@@ -1,43 +1,39 @@
-import bevy_pbr::render::mesh_functions as mfns;
+// Outline by normal extrusion (inverted hull). The mesh is drawn again, pushed out along its
+// normals; the material culls front faces, so only the expanded back faces show, as a rim.
+import bevy_pbr::render::{
+    mesh_functions,
+    skinning,
+    forward_io::{Vertex, decompress_vertex},
+    view_transformations::position_world_to_clip,
+};
 
-@group(constants::MATERIAL_BIND_GROUP) @binding(100)
+@group(constants::MATERIAL_BIND_GROUP) @binding(0)
+var<uniform> color: vec4<f32>;
+
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var<uniform> width: f32;
 
-struct Vertex {
-    @location(0) position: vec3<f32>,
-    @location(1) normal: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) position: vec4<f32>,
-    @location(0) world_position: vec4<f32>,
-    @location(1) world_normal: vec3<f32>,
-};
-
 @vertex
-fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
-    var out: VertexOutput;
-    var wposition = mfns::mesh_position_local_to_world(
-        mfns::get_world_from_local(instance_index),
-        vec4<f32>(vertex.position, 1.0)
-    );
-    wposition += vec4<f32>(vertex.normal * width, 0.0);
+fn vertex(vertex_in: Vertex) -> @builtin(position) vec4<f32> {
+    // Bevy's own vertex input path, so compressed vertex formats decode correctly.
+    let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
 
-    out.world_position = wposition;
-    out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal, instance_index);
-    out.position = mfns::mesh_position_local_to_clip(
-        mfns::get_world_from_local(instance_index),
-        vec4<f32>(vertex.position + vertex.normal * width, 1.0)
-    );
+    var world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
+    @if(SKINNED) {
+        world_from_local = skinning::skin_model(
+            vertex.joint_indices,
+            vertex.joint_weights,
+            vertex_in.instance_index,
+        );
+    }
 
-    return out;
+    // Extrude in the mesh's local space, as before, so line weight scales with the model.
+    let local_position = vec4<f32>(vertex.position + vertex.normal * width, 1.0);
+    let world_position = mesh_functions::mesh_position_local_to_world(world_from_local, local_position);
+    return position_world_to_clip(world_position.xyz);
 }
 
 @fragment
-fn fragment(
-    @builtin(front_facing) is_front: bool,
-    mesh: VertexOutput,
-) -> @location(0) vec4<f32> {
-  // Solid black
-  return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+fn fragment() -> @location(0) vec4<f32> {
+    return color;
 }

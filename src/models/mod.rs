@@ -1,8 +1,9 @@
 // mod model_loader;
 
 use bevy::{
-    camera::visibility::RenderLayers, gltf::GltfMaterialExtras, platform::collections::HashMap,
-    prelude::*, world_serialization::WorldInstanceReady,
+    camera::visibility::RenderLayers, gltf::GltfMaterialExtras, light::NotShadowCaster,
+    mesh::skinning::SkinnedMesh, platform::collections::HashMap, prelude::*,
+    world_serialization::WorldInstanceReady,
 };
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
@@ -69,23 +70,42 @@ fn process_material_extras(
     q_materials: Query<
         (
             Entity,
-            &mut MeshMaterial3d<StandardMaterial>,
+            &Mesh3d,
+            Option<&SkinnedMesh>,
+            Option<&RenderLayers>,
             &GltfMaterialExtras,
         ),
-        Added<GltfMaterialExtras>,
+        (
+            With<MeshMaterial3d<StandardMaterial>>,
+            Added<GltfMaterialExtras>,
+        ),
     >,
 ) {
-    for (entity, _material, extras) in q_materials.iter() {
+    for (entity, mesh, skin, layers, extras) in q_materials.iter() {
         // println!("material extras: {:?}", extras);
         let options = serde_json::from_str::<MaterialOptions>(&extras.value);
         // println!("material options: {:?}", options);
         if let Ok(options) = options {
             if options.outline.is_some() {
-                // println!("outline material");
-                // Add outline material, but keep existing material as well.
-                commands
-                    .entity(entity)
-                    .insert(MeshMaterial3d(r_outline.0.clone()));
+                // The outline is an inverted hull drawn over the same mesh. It is a child entity
+                // rather than a second material on this one: an entity with two materials breaks
+                // batching in the shadow and prepass pipelines (a wgpu validation error).
+                let mut outline = commands.spawn((
+                    Name::new("Outline"),
+                    Mesh3d(mesh.0.clone()),
+                    MeshMaterial3d(r_outline.0.clone()),
+                    NotShadowCaster,
+                    ChildOf(entity),
+                ));
+                // If the model's layers were already copied down, copy them here too; otherwise
+                // `copy_model_render_layers` reaches this child along with the rest.
+                if let Some(layers) = layers {
+                    outline.insert(layers.clone());
+                }
+                // A skinned mesh's pipeline expects joint bindings, so the hull needs the skin too.
+                if let Some(skin) = skin {
+                    outline.insert(skin.clone());
+                }
             } else if options.black.unwrap_or(false) || options.unlit.unwrap_or(false) {
                 commands
                     .entity(entity)

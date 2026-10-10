@@ -66,7 +66,13 @@ fn main() {
                 ..default()
             })
             .set(AssetPlugin::default()),
-        SettingsPlugin::new("org.viridia.panoply"),
+        // Under the remote driver, test plans get settings of their own, so a plan run never
+        // changes the developer's saved window position or zoom.
+        SettingsPlugin::new(if std::env::var_os("BEVY_REMOTE_DRIVER_PORT").is_some() {
+            "org.viridia.panoply.driven"
+        } else {
+            "org.viridia.panoply"
+        }),
         // Must come after SettingsPlugin.
         WindowSettingsPlugin,
         // Adds FrameTimeDiagnosticsPlugin, so must come before RemoteDriverPlugin.
@@ -236,6 +242,7 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
 fn spawn_material_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut outline_materials: ResMut<Assets<materials::OutlineMaterial>>,
     mut noisy_materials: ResMut<Assets<materials::FloorNoisyMaterial>>,
     flame: Res<materials::FlameMaterialHandle>,
@@ -254,17 +261,20 @@ fn spawn_material_test(
     commands.spawn((
         Name::new("TestOutline"),
         Mesh3d(cube.clone()),
-        MeshMaterial3d(outline_materials.add(ExtendedMaterial {
-            base: StandardMaterial {
-                base_color: Color::BLACK,
-                unlit: true,
-                cull_mode: Some(bevy::render::render_resource::Face::Front),
-                ..default()
-            },
-            extension: materials::OutlineMaterialExtension { width: 0.05 },
-        })),
+        MeshMaterial3d(
+            standard_materials.add(StandardMaterial::from_color(Srgba::rgb(0.8, 0.7, 0.5))),
+        ),
         Transform::from_xyz(-4., 1., 4.),
         all_layers.clone(),
+        children![(
+            Name::new("Outline"),
+            Mesh3d(cube.clone()),
+            MeshMaterial3d(outline_materials.add(materials::OutlineMaterial {
+                width: 0.05,
+                ..default()
+            })),
+            all_layers.clone(),
+        )],
     ));
     commands.spawn((
         Name::new("TestFloorNoisy"),

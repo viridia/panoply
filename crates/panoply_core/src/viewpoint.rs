@@ -89,10 +89,19 @@ pub struct GotoLocation {
     pub realm: String,
     /// Position in the realm, in meters.
     pub position: Vec3,
+    /// If set, the camera distance to use there, so a test can measure at a known zoom.
+    pub camera_distance: Option<f32>,
 }
 
-pub fn goto_location(mut messages: MessageReader<GotoLocation>, mut commands: Commands) {
+pub fn goto_location(
+    mut messages: MessageReader<GotoLocation>,
+    mut viewpoint: ResMut<Viewpoint>,
+    mut commands: Commands,
+) {
     for goto in messages.read() {
+        if let Some(distance) = goto.camera_distance {
+            viewpoint.set_camera_distance(distance, 0.);
+        }
         commands.queue(SetViewpointCmd {
             position: goto.position,
             realm: goto.realm.clone(),

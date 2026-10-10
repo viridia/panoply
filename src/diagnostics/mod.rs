@@ -21,10 +21,16 @@ impl Plugin for ScreenDiagsPlugin {
             .add_systems(Startup, spawn_text)
             .add_systems(Update, update);
 
-        // The location readout is a development aid, so it ships only with the editor.
+        // The location readout and profiling diagnostics are development aids, so they ship only
+        // with the editor. Render diagnostics record CPU time per render pass (GPU time needs
+        // Vulkan or DX12); test plans read both through the remote driver.
         #[cfg(feature = "editor")]
-        app.add_systems(Startup, spawn_location_text)
-            .add_systems(Update, update_location_text);
+        app.add_plugins((
+            bevy::render::diagnostic::RenderDiagnosticsPlugin,
+            bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
+        ))
+        .add_systems(Startup, spawn_location_text)
+        .add_systems(Update, update_location_text);
     }
 }
 

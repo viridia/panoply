@@ -16,12 +16,14 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `c46a218` | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
 | `c46a218` | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
 | `cd25a24` | `panoply_exemplar`; `plans/exemplars.py` checks loading and `extends`.                  |
-| (pending) | Terrain: `panoply_terrain` + `src/terrain`, shaders to WESL; `plans/terrain.py`.        |
-| (pending) | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
+| `2ac5f1b` | Terrain: `panoply_terrain` + `src/terrain`, shaders to WESL; `plans/terrain.py`.        |
+| `2ac5f1b` | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
+| (pending) | Perf plans; dedicated `OutlineMaterial` on child entities; isolated plan settings.      |
 
 ## Next
 
-1. `scenery` (see D11). Port `assets/shaders/lib/*` to WESL if anything still imports it.
+1. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
+   it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
 2. `actors`, `portals`.
 3. `editor` (see X3).
 
@@ -75,6 +77,14 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - **D13** The map editor and its aids are development-only, behind the `editor` Cargo feature
   (on by default, not shipped). Zoom and the location overlay are editor-only; in the game the
   camera distance is fixed (`CAMERA_DISTANCE` in `main.rs`).
+- **D14** Outlines are central to the art style (art nouveau, specifically Mucha). They use
+  normal extrusion (an inverted hull), not jump flooding; this is an aesthetic choice. Terrain
+  contours have no outlines; actors and scenery do. Flora is a special case: leaf textures have
+  outlines baked in, and trunks use the outline material. Each outline is a child entity that
+  shares the mesh, with a dedicated `OutlineMaterial`. Details in [outlines.md](outlines.md).
+- **D15** Under the remote driver (`BEVY_REMOTE_DRIVER_PORT` set), the game uses its own settings
+  (`org.viridia.panoply.driven`), so plans never change the developer's saved settings. Plans that
+  measure set the camera distance through `GotoLocation::camera_distance`.
 
 ## Deferred
 
@@ -102,6 +112,21 @@ catalogs without aspects can load, since the aspect types are registered by thos
   tie to the app is `models::PropagateRenderLayers` (see X4). *Gate:* scenery restored.
 
 ## Notes
+
+- Performance at playground (80, 80), camera distance 40, M1 Pro, from `plans/ablate.py`
+  (2026-10-10), in the developer's window: 13.7 ms/frame. (Plans now run in the default window
+  size, where the same spot measures 15.6 ms; compare runs only with each other.) Camera off:
+  3.3 ms, so about 10.4 ms is rendering. A quarter of the pixels saves 5.6 ms, so over half the
+  rendering cost is per-pixel. Hiding ground saves 4.5 ms,
+  flora 4.3, water 2.8. Water's fragment-wave loop is only about 0.6 ms.
+- Measure frame time by counting frames over wall time without polling: the driver's
+  diagnostics return the latest single frame, and polling every 5 ms disturbs the app.
+- Bevy 0.20 issues seen: (1) switching `DirectionalLight::shadow_maps_enabled` off at runtime
+  panics the render thread ("Failed to get directional light visible entities for cascade",
+  `bevy_pbr` `render/light.rs`); (2) an entity with two `MeshMaterial3d` components (e.g. an
+  extended material alongside `StandardMaterial`) fails wgpu validation in the shadow pass;
+  `models` now puts outlines on a child entity instead; (3) `RenderDiagnosticsPlugin` records
+  only CPU pass times on Metal.
 
 - `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics.
 - `assets/shaders/outline.wgsl` is an unused duplicate of `src/materials/outline.wesl`.

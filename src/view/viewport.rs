@@ -6,7 +6,9 @@ use panoply_core::PrimaryCamera;
 const DEFAULT_FOV: f32 = 0.69; // 40 degrees
 
 /// Used to create margins around the viewport so that side panels don't overwrite the 3d scene.
-#[derive(Default, Resource, PartialEq)]
+/// Reflected so that test plans can shrink the 3D view over BRP.
+#[derive(Default, Resource, PartialEq, Reflect)]
+#[reflect(Resource)]
 pub struct ViewportInset {
     pub left: f32,
     pub right: f32,
@@ -63,10 +65,12 @@ pub fn update_viewport_inset(
     q_windows: Query<&Window, With<PrimaryWindow>>,
     q_viewport: Query<(&ComputedNode, &GlobalTransform), With<ViewportInsetElement>>,
     mut viewport_inset: ResMut<ViewportInset>,
+    mut had_panel: Local<bool>,
 ) {
     let mut inset = ViewportInset::default();
     match q_viewport.single() {
         Ok((node, transform)) => {
+            *had_panel = true;
             let position = transform.translation();
             let ui_position = position.truncate();
             let extents = node.size() / 2.0;
@@ -88,6 +92,10 @@ pub fn update_viewport_inset(
         Err(_) => {
             if q_viewport.iter().count() > 1 {
                 error!("Multiple ViewportInsetControllers!");
+            } else if !std::mem::take(&mut *had_panel) {
+                // With no panel, leave the inset alone, so that it can be set directly (test
+                // plans do, over BRP). It is reset once, when a panel goes away.
+                return;
             }
         }
     }

@@ -1,6 +1,4 @@
-use bevy::{
-    asset::embedded_asset, pbr::ExtendedMaterial, prelude::*, render::render_resource::Face,
-};
+use bevy::{asset::embedded_asset, prelude::*};
 
 mod flame;
 mod floor_noisy;
@@ -8,7 +6,7 @@ mod outline;
 
 pub use flame::FlameMaterial;
 pub use floor_noisy::{FloorNoisyMaterial, FloorNoisyMaterialExt};
-pub use outline::{OutlineMaterial, OutlineMaterialExtension};
+pub use outline::OutlineMaterial;
 
 #[derive(Debug, Clone, Resource, Default)]
 pub struct OutlineMaterialHandle(pub Handle<OutlineMaterial>);
@@ -47,15 +45,7 @@ fn create_outline_material(
     mut materials: ResMut<Assets<OutlineMaterial>>,
     mut r_outline: ResMut<OutlineMaterialHandle>,
 ) {
-    r_outline.0 = materials.add(ExtendedMaterial {
-        base: StandardMaterial {
-            base_color: Color::BLACK,
-            unlit: true,
-            cull_mode: Some(Face::Front),
-            ..Default::default()
-        },
-        extension: OutlineMaterialExtension { width: 0.015 },
-    });
+    r_outline.0 = materials.add(OutlineMaterial::default());
 }
 
 fn create_black_material(
