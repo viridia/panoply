@@ -1,9 +1,9 @@
 // mod model_loader;
 
 use bevy::{
-    gltf::GltfMaterialExtras, prelude::*, render::view::RenderLayers, scene::SceneInstance,
+    camera::visibility::RenderLayers, gltf::GltfMaterialExtras,
+    platform::collections::HashMap, prelude::*, world_serialization::WorldInstanceReady,
 };
-use hashbrown::HashMap;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
@@ -17,39 +17,24 @@ pub struct ModelsPlugin;
 
 impl Plugin for ModelsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
-        app.add_systems(Update, (copy_model_render_layers, process_material_extras));
+        app.add_observer(copy_model_render_layers)
+            .add_systems(Update, process_material_extras);
     }
 }
 
+/// When a model's world instance has finished spawning, copy its render layers to all
+/// descendants.
 pub fn copy_model_render_layers(
+    ready: On<WorldInstanceReady>,
     mut commands: Commands,
-    q_models_added: Query<(Entity, &RenderLayers, &PropagateRenderLayers), Added<SceneInstance>>,
+    q_models: Query<&RenderLayers, With<PropagateRenderLayers>>,
     q_children: Query<&Children>,
 ) {
-    for (entity, layers, _) in q_models_added.iter() {
-        for descendant in q_children.iter_descendants(entity) {
-            commands.queue(SafeInsert::new(layers.clone(), descendant));
-        }
-    }
-}
-
-pub struct SafeInsert<C: Component> {
-    component: C,
-    target: Entity,
-}
-
-impl<C: Component> SafeInsert<C> {
-    pub fn new(component: C, target: Entity) -> Self {
-        Self { component, target }
-    }
-}
-
-impl<C: Component> Command for SafeInsert<C> {
-    fn apply(self, world: &mut World) {
-        // Check if entity exists.
-        if let Ok(mut entity) = world.get_entity_mut(self.target) {
-            entity.insert(self.component);
-        }
+    let Ok(layers) = q_models.get(ready.entity) else {
+        return;
+    };
+    for descendant in q_children.iter_descendants(ready.entity) {
+        commands.entity(descendant).try_insert(layers.clone());
     }
 }
 
@@ -119,7 +104,7 @@ fn process_material_extras(
     }
 }
 
-// Because Blender is inconsistent about how it exports booleans (changed in recent blender version).
+// Because Blender is inconsistent about how it exports booleans: true, "true" or 1.
 fn deserialize_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
 where
     D: Deserializer<'de>,
@@ -132,6 +117,7 @@ where
             "false" => Ok(Some(false)),
             _ => Err(serde::de::Error::custom("Invalid string for boolean")),
         },
+        Value::Number(n) => Ok(Some(n.as_f64() != Some(0.))),
         Value::Null => Ok(None),
         _ => Err(serde::de::Error::custom("Invalid type for boolean")),
     }

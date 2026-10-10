@@ -1,35 +1,31 @@
-#import bevy_pbr::{
-    pbr_fragment::pbr_input_from_standard_material,
-}
-#import "shaders/lib/snoise.wgsl"::snoise_2d
+import bevy_pbr::render::pbr_fragment::pbr_input_from_standard_material;
 
-#ifdef PREPASS_PIPELINE
-#import bevy_pbr::{
-    prepass_io::{VertexOutput, FragmentOutput},
-    pbr_deferred_functions::deferred_output,
-}
-#else
-#import bevy_pbr::{
+@if(PREPASS_PIPELINE)
+import bevy_pbr::{
+    prepass::io::{VertexOutput, FragmentOutput},
+    deferred::functions::deferred_output,
+};
+@else
+import bevy_pbr::render::{
     forward_io::{VertexOutput, FragmentOutput},
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-}
-#endif
+};
 
-@group(2) @binding(100)
+@group(constants::MATERIAL_BIND_GROUP) @binding(100)
 var<uniform> color: vec4<f32>;
 
-@group(2) @binding(101)
+@group(constants::MATERIAL_BIND_GROUP) @binding(101)
 var<uniform> color_alt: vec4<f32>;
 
-@group(2) @binding(102)
+@group(constants::MATERIAL_BIND_GROUP) @binding(102)
 var<uniform> roughness: f32;
 
-@group(2) @binding(103)
+@group(constants::MATERIAL_BIND_GROUP) @binding(103)
 var<uniform> roughness_alt: f32;
 
-@group(2) @binding(104)
+@group(constants::MATERIAL_BIND_GROUP) @binding(104)
 var noise: texture_2d<f32>;
-@group(2) @binding(105)
+@group(constants::MATERIAL_BIND_GROUP) @binding(105)
 var noise_sampler: sampler;
 
 const UV_ROT = mat2x2<f32>(
@@ -51,13 +47,13 @@ fn fragment(
 	pbr_input.material.base_color = mix(color, color_alt, material_select);
 	pbr_input.material.perceptual_roughness = mix(roughness, roughness_alt, material_select);
 
-#ifdef PREPASS_PIPELINE
-    let out = deferred_output(in, pbr_input);
-#else
     var out: FragmentOutput;
+@if(PREPASS_PIPELINE) {
+    out = deferred_output(in, pbr_input);
+} @else {
     out.color = apply_pbr_lighting(pbr_input);
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
-#endif
+}
 
     return out;
 }

@@ -1,11 +1,11 @@
-#import bevy_pbr::{
+import bevy_pbr::render::{
     mesh_functions as mfns,
     mesh_view_bindings::globals,
-}
+};
 
-@group(2) @binding(100)
+@group(constants::MATERIAL_BIND_GROUP) @binding(100)
 var noise: texture_2d<f32>;
-@group(2) @binding(101)
+@group(constants::MATERIAL_BIND_GROUP) @binding(101)
 var noise_sampler: sampler;
 
 struct Vertex {

@@ -1,7 +1,8 @@
 use bevy::{
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::AsBindGroup,
+    shader::ShaderRef,
 };
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
@@ -12,11 +13,11 @@ pub struct OutlineMaterialExtension {
 
 impl MaterialExtension for OutlineMaterialExtension {
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/outline.wgsl".into()
+        "embedded://panoply/materials/outline.wesl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/outline.wgsl".into()
+        "embedded://panoply/materials/outline.wesl".into()
     }
 }
 

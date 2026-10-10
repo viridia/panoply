@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::AsBindGroup,
+    shader::ShaderRef,
 };
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
@@ -12,19 +13,19 @@ pub struct FlameMaterial {
 
 impl Material for FlameMaterial {
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame.wgsl".into()
+        "embedded://panoply/materials/flame.wesl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame.wgsl".into()
+        "embedded://panoply/materials/flame.wesl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame_prepass.wgsl".into()
+        "embedded://panoply/materials/flame_prepass.wesl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame_prepass.wgsl".into()
+        "embedded://panoply/materials/flame_prepass.wesl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {
@@ -32,9 +33,9 @@ impl Material for FlameMaterial {
     }
 
     fn specialize(
-        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        _pipeline: &bevy::pbr::MaterialPipeline,
         descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
-        layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        layout: &bevy::mesh::MeshVertexBufferLayoutRef,
         _key: bevy::pbr::MaterialPipelineKey<Self>,
     ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
         let vertex_layout = layout.0.get_layout(&[

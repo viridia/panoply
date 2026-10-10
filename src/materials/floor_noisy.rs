@@ -2,7 +2,8 @@ use bevy::{
     color::LinearRgba,
     pbr::{ExtendedMaterial, MaterialExtension, StandardMaterial},
     prelude::*,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::AsBindGroup,
+    shader::ShaderRef,
 };
 
 pub type FloorNoisyMaterial = ExtendedMaterial<StandardMaterial, FloorNoisyMaterialExt>;
@@ -28,6 +29,6 @@ pub struct FloorNoisyMaterialExt {
 
 impl MaterialExtension for FloorNoisyMaterialExt {
     fn fragment_shader() -> ShaderRef {
-        "shaders/floor_noise.wgsl".into()
+        "shaders/floor_noise.wesl".into()
     }
 }

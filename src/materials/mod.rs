@@ -1,22 +1,6 @@
-use std::io::Cursor;
-
-use base64::{
-    alphabet,
-    engine::{general_purpose::NO_PAD, GeneralPurpose},
-    DecodeError, Engine,
-};
 use bevy::{
-    asset::{
-        embedded_asset,
-        io::{AssetReader, AsyncSeekForward},
-    },
-    pbr::ExtendedMaterial,
-    prelude::*,
-    render::render_resource::Face,
+    asset::embedded_asset, pbr::ExtendedMaterial, prelude::*, render::render_resource::Face,
 };
-use futures_lite::{AsyncRead, AsyncSeek};
-use serde::{de::DeserializeOwned, Serialize};
-use thiserror::Error;
 
 mod flame;
 mod floor_noisy;
@@ -39,9 +23,9 @@ pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {
-        embedded_asset!(app, "flame.wgsl");
-        embedded_asset!(app, "flame_prepass.wgsl");
-        embedded_asset!(app, "outline.wgsl");
+        embedded_asset!(app, "flame.wesl");
+        embedded_asset!(app, "flame_prepass.wesl");
+        embedded_asset!(app, "outline.wesl");
         app.init_resource::<OutlineMaterialHandle>()
             .init_resource::<BlackMaterialHandle>()
             .init_resource::<FlameMaterialHandle>()
@@ -56,105 +40,6 @@ impl Plugin for MaterialsPlugin {
                     create_flame_material,
                 ),
             );
-    }
-}
-
-pub const URL_SAFE_NO_PAD: GeneralPurpose = GeneralPurpose::new(&alphabet::URL_SAFE, NO_PAD);
-
-/// An asset reader that doesn't actually read anything, merely passes through the asset path
-/// as the asset data.
-pub struct InlineAssetReader;
-
-/// An AsyncReader that always returns EOF.
-struct NullReader;
-
-impl AsyncRead for NullReader {
-    fn poll_read(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-        _buf: &mut [u8],
-    ) -> std::task::Poll<std::io::Result<usize>> {
-        std::task::Poll::Ready(Ok(0))
-    }
-}
-
-impl AsyncSeek for NullReader {
-    fn poll_seek(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-        _pos: std::io::SeekFrom,
-    ) -> std::task::Poll<std::io::Result<u64>> {
-        std::task::Poll::Ready(Ok(0))
-    }
-}
-
-impl AsyncSeekForward for NullReader {
-    fn poll_seek_forward(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-        _offset: u64,
-    ) -> std::task::Poll<std::io::Result<u64>> {
-        std::task::Poll::Ready(Ok(0))
-    }
-}
-
-impl bevy::asset::io::Reader for NullReader {}
-
-impl AssetReader for InlineAssetReader {
-    async fn read<'a>(
-        &'a self,
-        _path: &'a std::path::Path,
-    ) -> Result<impl bevy::asset::io::Reader + 'a, bevy::asset::io::AssetReaderError> {
-        Ok(NullReader)
-    }
-
-    async fn read_meta<'a>(
-        &'a self,
-        path: &'a std::path::Path,
-    ) -> Result<impl bevy::asset::io::Reader + 'a, bevy::asset::io::AssetReaderError> {
-        Result::<NullReader, bevy::asset::io::AssetReaderError>::Err(
-            bevy::asset::io::AssetReaderError::NotFound(path.to_path_buf()),
-        )
-    }
-
-    async fn read_directory<'a>(
-        &'a self,
-        _path: &'a std::path::Path,
-    ) -> Result<Box<bevy::asset::io::PathStream>, bevy::asset::io::AssetReaderError> {
-        unreachable!("Reading directories is not supported by ComputedAssetReader.")
-    }
-
-    async fn is_directory<'a>(
-        &'a self,
-        _path: &'a std::path::Path,
-    ) -> Result<bool, bevy::asset::io::AssetReaderError> {
-        Ok(false)
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum InlineAssetError {
-    #[error("Could not decode inline asset: {0}")]
-    DecodeMsgpack(#[from] rmp_serde::decode::Error),
-    #[error("Could not decode base64: {0}")]
-    DecodeBase64(#[from] DecodeError),
-    #[error("Could not encode inline asset: {0}")]
-    EncodeMsgpack(#[from] rmp_serde::encode::Error),
-}
-
-pub trait InlineAssetParams
-where
-    Self: Sized + Serialize + DeserializeOwned,
-{
-    fn encode(&self) -> Result<String, InlineAssetError> {
-        let bytes = rmp_serde::to_vec(self)?;
-        Ok(URL_SAFE_NO_PAD.encode(bytes))
-    }
-
-    fn decode(encoded: &str) -> Result<Self, InlineAssetError> {
-        let bytes = URL_SAFE_NO_PAD.decode(encoded)?;
-        Ok(rmp_serde::from_read(Cursor::new(bytes))?)
     }
 }
 

@@ -1,8 +1,6 @@
-#import bevy_pbr::{
-    mesh_functions as mfns,
-}
+import bevy_pbr::render::mesh_functions as mfns;
 
-@group(2) @binding(100)
+@group(constants::MATERIAL_BIND_GROUP) @binding(100)
 var<uniform> width: f32;
 
 struct Vertex {

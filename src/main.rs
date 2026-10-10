@@ -2,6 +2,7 @@
 use bevy::{
     asset::RenderAssetUsages,
     camera::visibility::RenderLayers,
+    dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridPlugin},
     image::ImageSampler,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -11,7 +12,6 @@ use bevy::{
 // TODO(bevy-0.20): restore
 // use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-// use models::ModelsPlugin;
 // use panoply_exemplar::ExemplarPlugin;
 use panoply_core::{
     pan_rotate::pan_rotate_viewpoint, HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint,
@@ -23,24 +23,27 @@ use window_settings::WindowSettingsPlugin;
 // #[cfg(feature = "editor")]
 // mod editor;
 // mod actors;
-// mod materials;
-// mod models;
 // mod portals;
-// mod reflect_types;
 // mod scenery;
 // mod scripting;
 // mod terrain;
 
 mod diagnostics;
+mod materials;
+mod models;
+mod reflect_types;
 mod view;
 mod window_settings;
 mod world;
 
-use crate::{diagnostics::ScreenDiagsPlugin, world::WorldPlugin};
+use crate::{
+    diagnostics::ScreenDiagsPlugin, materials::MaterialsPlugin, models::ModelsPlugin,
+    reflect_types::ReflectTypesPlugin, world::WorldPlugin,
+};
 // TODO(bevy-0.20): restore
 // use crate::{
-//     actors::ActorsPlugin, materials::MaterialsPlugin, portals::PortalPlugin,
-//     reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin, terrain::TerrainPlugin,
+//     actors::ActorsPlugin, portals::PortalPlugin, scenery::SceneryPlugin,
+//     terrain::TerrainPlugin,
 // };
 
 // TODO(bevy-0.20): restore with editor
@@ -55,10 +58,6 @@ use crate::{diagnostics::ScreenDiagsPlugin, world::WorldPlugin};
 
 fn main() {
     let mut app = App::new();
-    // app.register_asset_source(
-    //     "inline",
-    //     AssetSource::build().with_reader(|| Box::new(InlineAssetReader)),
-    // )
     app.add_plugins((
         DefaultPlugins
             .set(WindowPlugin {
@@ -75,6 +74,7 @@ fn main() {
         // Must come after SettingsPlugin.
         WindowSettingsPlugin,
         ScreenDiagsPlugin,
+        InfiniteGridPlugin,
     ))
     .init_resource::<view::viewport::ViewportInset>()
     // .insert_resource(RaycastBackendSettings {
@@ -95,7 +95,7 @@ fn main() {
     // .init_resource::<TestScriptHandle>()
     // .add_systems(Startup, run_script)
     // .add_systems(Update, receive_script_assets)
-    .add_systems(Startup, setup)
+    .add_systems(Startup, (setup, spawn_material_test))
     .add_systems(Update, (rotate_shapes, nav_to_center, pan_rotate_viewpoint))
     .add_systems(
         PostUpdate,
@@ -106,16 +106,16 @@ fn main() {
     )
     .add_systems(Update, close_on_esc)
     .add_plugins((
+        ReflectTypesPlugin,
+        MaterialsPlugin,
         WorldPlugin,
+        ModelsPlugin,
         // TODO(bevy-0.20): restore
-        // ReflectTypesPlugin,
         // ExemplarPlugin,
-        // MaterialsPlugin,
         // TerrainPlugin,
         // SceneryPlugin,
         // ActorsPlugin,
         // PortalPlugin,
-        // ModelsPlugin,
         // SagaPlugin,
         // WorldInspectorPlugin::new(),
     ));
@@ -183,6 +183,13 @@ fn setup(
     //     }
     //     .into(),
     // });
+
+    // Debug grid on the ground plane, visible in every realm.
+    commands.spawn((
+        Name::new("InfiniteGrid"),
+        InfiniteGrid,
+        RenderLayers::from_layers(&(0..16).collect::<Vec<_>>()),
+    ));
 
     // TODO: Move to 'view' module
     // Ui Camera
@@ -279,6 +286,79 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
 //         }
 //     }
 // }
+
+/// TEMP(bevy-0.20): Spawns one object per custom material plus two GLTF models with material
+/// extras, so that shader compilation errors show up at runtime. Remove once scenery and
+/// actors are restored.
+fn spawn_material_test(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut outline_materials: ResMut<Assets<materials::OutlineMaterial>>,
+    mut noisy_materials: ResMut<Assets<materials::FloorNoisyMaterial>>,
+    flame: Res<materials::FlameMaterialHandle>,
+    assets: Res<AssetServer>,
+) {
+    use bevy::{gltf::GltfAssetLabel, pbr::ExtendedMaterial, world_serialization::WorldAssetRoot};
+
+    let all_layers = RenderLayers::from_layers(&(0..16).collect::<Vec<_>>());
+    let cube = Mesh::from(Cuboid::default());
+    let vertex_count = cube.count_vertices();
+    let flame_cube = cube
+        .clone()
+        .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0., 0.5, 0., 1.]; vertex_count]);
+    let cube = meshes.add(cube);
+
+    commands.spawn((
+        Name::new("TestOutline"),
+        Mesh3d(cube.clone()),
+        MeshMaterial3d(outline_materials.add(ExtendedMaterial {
+            base: StandardMaterial {
+                base_color: Color::BLACK,
+                unlit: true,
+                cull_mode: Some(bevy::render::render_resource::Face::Front),
+                ..default()
+            },
+            extension: materials::OutlineMaterialExtension { width: 0.05 },
+        })),
+        Transform::from_xyz(-4., 1., 4.),
+        all_layers.clone(),
+    ));
+    commands.spawn((
+        Name::new("TestFloorNoisy"),
+        Mesh3d(cube),
+        MeshMaterial3d(noisy_materials.add(ExtendedMaterial {
+            base: StandardMaterial::default(),
+            extension: materials::FloorNoisyMaterialExt {
+                color: Srgba::rgb(0.6, 0.4, 0.2).into(),
+                color_alt: Srgba::rgb(0.3, 0.3, 0.3).into(),
+                roughness: 0.8,
+                roughness_alt: 0.3,
+                noise: assets.load("textures/noise_1.png"),
+            },
+        })),
+        Transform::from_xyz(-4., 1., 0.),
+        all_layers.clone(),
+    ));
+    commands.spawn((
+        Name::new("TestFlame"),
+        Mesh3d(meshes.add(flame_cube)),
+        MeshMaterial3d(flame.0.clone()),
+        Transform::from_xyz(-4., 1., -4.),
+        all_layers.clone(),
+    ));
+    for (name, path, x) in [
+        ("TestCamping", "scenery/models/camping.glb", 4.),
+        ("TestHumanoid", "characters/humanoid-male.glb", 8.),
+    ] {
+        commands.spawn((
+            Name::new(name),
+            WorldAssetRoot(assets.load(GltfAssetLabel::Scene(0).from_asset(path))),
+            Transform::from_xyz(x, 0., 0.),
+            all_layers.clone(),
+            models::PropagateRenderLayers,
+        ));
+    }
+}
 
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
