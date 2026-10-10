@@ -10,7 +10,7 @@ editor = []          # Enable editor features
 [workspace]
 members = ["crates/panoply_core"]
 # TODO(bevy-0.20): restore these crates to the workspace as they are ported.
-exclude = ["crates/bevy_saga", "crates/panoply_exemplar", "crates/panoply_terrain"]
+exclude = ["crates/panoply_exemplar", "crates/panoply_terrain"]
 
 [workspace.dependencies]
 bevy = { version = "0.20.0", features = [
@@ -27,7 +27,6 @@ lru = "0.11.0"
 panoply_core = { path = "crates/panoply_core" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
 panoply_terrain = { path = "crates/panoply_terrain" }
-bevy_saga = { path = "crates/bevy_saga" }
 rapier3d = { version = "0.22.0" }
 rmp-serde = "1.1.2"
 ron = "0.8.1"
@@ -46,7 +45,6 @@ thiserror = { workspace = true }
 
 # TODO(bevy-0.20): restore these dependencies along with the modules that use them.
 # base64 = "0.22.0"
-# bevy_saga = { workspace = true }                   # scripting
 # bevy-inspector-egui = "0.28.1"                     # pins bevy 0.15; replace or bump
 # bitflags = { workspace = true }
 # earcutr = "0.4.3"                                  # scenery

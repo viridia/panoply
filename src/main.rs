@@ -10,7 +10,6 @@ use bevy::{
     window::ExitCondition,
 };
 // TODO(bevy-0.20): restore
-// use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 // use panoply_exemplar::ExemplarPlugin;
 use panoply_core::{
@@ -25,7 +24,6 @@ use window_settings::WindowSettingsPlugin;
 // mod actors;
 // mod portals;
 // mod scenery;
-// mod scripting;
 // mod terrain;
 
 mod diagnostics;
@@ -91,10 +89,6 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
-    // TODO(bevy-0.20): restore with scripting
-    // .init_resource::<TestScriptHandle>()
-    // .add_systems(Startup, run_script)
-    // .add_systems(Update, receive_script_assets)
     .add_systems(Startup, (setup, spawn_material_test))
     .add_systems(Update, (rotate_shapes, nav_to_center, pan_rotate_viewpoint))
     .add_systems(
@@ -116,7 +110,6 @@ fn main() {
         // SceneryPlugin,
         // ActorsPlugin,
         // PortalPlugin,
-        // SagaPlugin,
         // WorldInspectorPlugin::new(),
     ));
 
@@ -232,60 +225,6 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
         transform.rotate_y(time.delta_secs() / 2.);
     }
 }
-
-// TODO(bevy-0.20): restore with scripting
-// #[derive(Debug, Resource, Default)]
-// struct TestScriptHandle(Handle<ScriptAsset>);
-//
-// fn run_script(server: Res<AssetServer>, mut handle: ResMut<TestScriptHandle>) {
-//     let script = server.load::<ScriptAsset>("scripts/hello.saga");
-//     handle.0 = script;
-// }
-//
-// /** React when precinct assets change and update the scenery. */
-// pub fn receive_script_assets(
-//     // mut commands: Commands,
-//     mut ev_asset: EventReader<AssetEvent<ScriptAsset>>,
-//     assets: ResMut<Assets<ScriptAsset>>,
-//     // asset_server: Res<AssetServer>,
-//     r_vm: Res<SagaVmResource>,
-// ) {
-//     for ev in ev_asset.read() {
-//         match ev {
-//             AssetEvent::Added { id } => {
-//                 info!("Script asset added: {:?}", id);
-//                 let script = assets.get(*id).unwrap();
-//                 let mut vm = r_vm.0.lock().unwrap();
-//                 let result = script.call::<(), i32>(&mut vm, "hello", ()).unwrap();
-//                 info!("Script result: {:?}", result);
-//             }
-//
-//             AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
-//                 info!("Script asset loaded: {:?}", id);
-//
-//                 // if let Some((precinct_entity, mut precinct, precinct_children)) =
-//                 //     q_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
-//                 // {
-//                 //     // TODO: Sync cutaway rects
-//                 //     // TODO: Sync nav mesh, physics, light sources, particles, etc.
-//                 //     // TODO: Sync actors
-//
-//                 //     let precinct_asset = assets.get(*id).unwrap();
-//                 //     let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
-//                 //         .floor_types
-//                 //         .iter()
-//                 //         .map(|s| asset_server.load(s))
-//                 //         .collect();
-//
-//                 // }
-//             }
-//
-//             AssetEvent::Removed { id: _ } => {}
-//
-//             AssetEvent::Unused { id: _ } => {}
-//         }
-//     }
-// }
 
 /// TEMP(bevy-0.20): Spawns one object per custom material plus two GLTF models with material
 /// extras, so that shader compilation errors show up at runtime. Remove once scenery and
