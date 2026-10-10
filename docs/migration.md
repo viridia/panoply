@@ -13,8 +13,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `6a04afa` | Minimal core on 0.20: `panoply_core`, `world`, `view`, `diagnostics`, window settings.  |
 | `0f32a52` | `reflect_types`, `materials`, `models`; shaders ported to WESL; infinite grid.          |
 | `dd242ce` | This ledger and `AGENTS.md`; removed `bevy_saga`.                                       |
-| (pending) | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
-| (pending) | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
+| `c46a218` | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
+| `c46a218` | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
 
 ## Next
 

@@ -10,8 +10,9 @@ Panoply is a semi-procedural RPG on Bevy, currently mid-migration to Bevy 0.20.
 
 ## Rules
 
-- Never commit, push, or stage. The author reviews and commits; draft the commit message in the
-  repo's style (`feat:` / `fix:` / `refactor:` / `chore:` clauses on one line).
+- Never commit, push, or stage. The author reviews and commits; draft the commit message: a
+  short subject line (`feat:` / `fix:` / `refactor:` / `chore:` / `docs:` prefix, under about 72
+  characters), a blank line, then a body of bullets, one per change, wrapped at 72 columns.
 - One chunk per session: one module group restored or one focused change. Update the ledger in
   the same chunk (Landed row, Next, new decisions or deferrals).
 - Every open item goes in the ledger: in Next, or in Deferred with a gate.
