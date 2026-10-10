@@ -22,6 +22,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `143a84d` | Hemisphere ambient light; shadow cascades fitted to camera distance; 2x2 filter.        |
 | `5139647` | Parcels outside the view are hidden (D19); `plans/parcels.py`.                          |
 | (pending) | Parcel show set (D20); random flora Y rotation, restored from the three.js version.     |
+| (pending) | Physics stays on rapier (D22, X16); `docs/faery.md`, a map of the three.js engine.      |
 
 ## Next
 
@@ -29,14 +30,18 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
    The playground has little scenery compared with the old engine, so judging performance with
    scenery (X15) needs a richer test map.
-2. Migrate physics from `rapier3d` (0.22, used directly, not through `bevy_rapier`) to `avian3d`.
-   Integration is still small: `panoply_core::realm_physics` (`RealmPhysics`, one rapier world
-   per realm), a fixed rigid body per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground
-   colliders (`ground_mesh.rs`, `Parcel::terrain_collider`); also the editor's terrain
-   thumbnail. Cheaper now than after actors (movement, collision) are restored. Structural (new
-   dependency, replaces a subsystem): propose the realm-to-avian mapping first, since avian has
-   one physics world per app, where `RealmPhysics` keeps one per realm.
-3. `actors`.
+2. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
+   `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
+   `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
+   per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
+   `Parcel::terrain_collider`); also the editor's terrain thumbnail. Cheaper now than after
+   actors are restored, and picks up any parry fixes before actors depend on them.
+3. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
+   colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
+   cover only edges within one shape, not between colliders. Write a plan that walks an actor
+   across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
+   overlap parcel colliders by a cell, enable CCD, and cast with a skin. Actors also need
+   navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
 4. `portals`: a rewrite, not a restoration (D21).
 5. `editor` (see X3).
 
@@ -130,6 +135,19 @@ catalogs without aspects can load, since the aspect types are registered by thos
   D20 shows only what can be seen through the opening. `spawn_parcels` loads only around the
   main viewpoint (its "including portals" TODO); a portal view needs its own load region, the
   ground under that small frustum out to a distance cap.
+- **D22** Physics stays on `rapier3d`, not `avian3d`. Realms need separate physics worlds (one
+  per realm, `RealmPhysics`), all within one Bevy ECS world, so actors can cross portals without
+  duplicating resources. Avian has one physics world per app; multiple worlds is open as avian
+  issue #935 (needs design; an unmerged prototype gave each world its own `Collisions` and
+  `SpatialQueryPipeline` as components). See X16. The three.js version's physics, read in full,
+  is summarized in [faery.md](faery.md).
+- **D23** Panoply's modules were written before a full grasp of ECS, and the three.js version
+  was not ECS at all, so parts may be mis-architected. When restoring a module, first review it
+  for ECS fit (state in resources or caches that belongs on entities, objects passed between
+  systems that should be components, hand-kept hierarchies that relationships now cover,
+  polling where observers or change detection fit) and recommend keeping or restructuring it;
+  restructuring is proposed before code. From the three.js version take the design, not the
+  structure.
 
 ## Deferred
 
@@ -172,6 +190,8 @@ catalogs without aspects can load, since the aspect types are registered by thos
   not design. About 300k lines (TypeScript, GLSL) in 14 packages (`game`, `los-game`,
   `los-editor`, `genmap-cli`, `server`, `game-ui`, ...) plus `design/` docs. Needs its own
   session or several; produce a written catalog, not code. *Gate:* the Bevy 0.20 port is done.
+  A first-pass map, with pointers per Next item, is [faery.md](faery.md); read the relevant
+  section before restoring a module, and add to it rather than rescanning.
 - **X14** Herb picking: picking a herb hides that instance for a while, then it regrows. Pick by
   grid cell (at most one herb per 1 m cell; a ray hit gives the cell), not by entity. Picked
   cells live in a per-realm resource keyed by world cell with a regrow time, outside the parcel
@@ -190,6 +210,15 @@ catalogs without aspects can load, since the aspect types are registered by thos
   parcel). Removes about 5,000 transform-only scene entities and flora's
   `PropagateRenderLayers` use (X4). *Gate:* scenery restored and a full scene measured, to see
   whether the headroom is needed.
+- **X16** Revisit `avian3d` (D22). *Gate:* avian merges multiple physics worlds (issue #935)
+  with game entities kept in one ECS world, per-world spatial queries, and moving a body
+  between worlds (an actor crossing a portal); and a release supports the Bevy in use.
+- **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`)
+  move to ECS and BSN assets: each goal's hierarchy of elements becomes a hierarchy of entities
+  and components. Most reactions pair a condition with an effect. Conditions are reactive
+  formulas; an effect is usually a Rust type with parameters, but can be a formula. So SAGA
+  (X7) needs a way to embed formulas in assets. *Gate:* BSN assets with shared (singleton, non-instanced) scenes, as for X1,
+  and SAGA formulas in assets.
 
 ## Notes
 
