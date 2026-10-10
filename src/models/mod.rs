@@ -1,9 +1,9 @@
 // mod model_loader;
 
 use bevy::{
-    ecs::world::Command, gltf::GltfMaterialExtras, prelude::*, render::view::RenderLayers,
-    scene::SceneInstance, utils::HashMap,
+    gltf::GltfMaterialExtras, prelude::*, render::view::RenderLayers, scene::SceneInstance,
 };
+use hashbrown::HashMap;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 

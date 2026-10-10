@@ -1,7 +1,7 @@
 use core::result;
 use std::sync::Arc;
 
-use bevy::{render::render_graph::Node, scene::ron::de, utils::tracing::field};
+use bevy::{render::render_graph::Node, scene::ron::de};
 
 use crate::{
     ast::{ASTNode, NodeKind},

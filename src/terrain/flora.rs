@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use crate::models::PropagateRenderLayers;
+use hashbrown::HashMap;
 use panoply_core::{
     random::{noise3, WeightedChoice},
     Realm,
@@ -17,7 +18,6 @@ use super::{
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
-    utils::HashMap,
 };
 use futures_lite::future;
 
@@ -138,10 +138,10 @@ pub fn insert_flora(
                             if let Ok(children) = q_children.get(flora_ent) {
                                 existing_flora.reserve(children.len());
                                 for child in children.iter() {
-                                    if let Ok((flora, _)) = q_flora.get(*child) {
-                                        existing_flora.insert(flora.coords, *child);
+                                    if let Ok((flora, _)) = q_flora.get(child) {
+                                        existing_flora.insert(flora.coords, child);
                                     } else {
-                                        commands.entity(*child).despawn_recursive();
+                                        commands.entity(child).despawn();
                                     }
                                 }
                             }
@@ -209,11 +209,14 @@ pub fn insert_flora(
                     }
 
                     // Replace children
-                    commands.entity(flora_entity).replace_children(&children);
+                    commands.entity(flora_entity).remove::<Children>();
+                    commands
+                        .entity(flora_entity)
+                        .add_related::<ChildOf>(&children);
 
                     // Despawn any remaining flora
                     for (_, child_entity) in existing_flora.iter() {
-                        commands.entity(*child_entity).despawn_recursive();
+                        commands.entity(*child_entity).despawn();
                     }
                 }
 

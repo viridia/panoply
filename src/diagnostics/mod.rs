@@ -15,7 +15,7 @@ const STRING_MISSING: &str = "FPS: ???";
 
 impl Plugin for ScreenDiagsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(FrameTimeDiagnosticsPlugin)
+        app.add_plugins(FrameTimeDiagnosticsPlugin::default())
             .add_systems(Startup, spawn_text)
             .add_systems(Update, update);
     }

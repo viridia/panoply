@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use bevy::{
-    ecs::world::Command,
     image::ImageSampler,
     prelude::*,
     render::{

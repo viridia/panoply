@@ -9,10 +9,10 @@ use bevy::{
         render_resource::PrimitiveTopology,
     },
     tasks::{AsyncComputeTaskPool, Task},
-    utils::HashMap,
 };
 use futures_lite::future;
 
+use hashbrown::HashMap;
 use panoply_core::Realm;
 use panoply_terrain::{
     Parcel, ParcelWaterChanged, ShapeRef, SquareArray, TerrainContoursHandle, TerrainContoursTable,
@@ -99,8 +99,8 @@ pub fn insert_water_meshes(
                                         Name::new("Water"),
                                         NotShadowCaster,
                                         realm.layer.clone(),
+                                        ChildOf(entity),
                                     ))
-                                    .set_parent(entity)
                                     .id(),
                             );
                         }
@@ -118,7 +118,7 @@ pub fn insert_water_meshes(
                         "Despawning water mesh for parcel {}:{}:{:?}",
                         realm.name, realm.layer_index, parcel.coords
                     );
-                    commands.entity(ent).despawn_recursive();
+                    commands.entity(ent).despawn();
                     parcel.water_entity = None;
                 }
                 commands.entity(entity).remove::<ComputeWaterMeshTask>();

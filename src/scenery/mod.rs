@@ -1,5 +1,6 @@
-use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face, utils::HashMap};
+use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
+use hashbrown::HashMap;
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 

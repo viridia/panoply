@@ -1,6 +1,6 @@
 use core::result;
 
-use bevy::{core::Name, scene::ron::de, utils::HashMap};
+use bevy::scene::ron::de;
 use wasm_encoder::{
     CodeSection, DataCountSection, DataSection, EntityType, ExportKind, ExportSection, FieldType,
     FuncType, Function, FunctionSection, GlobalType, HeapType, ImportSection, IndirectNameMap,

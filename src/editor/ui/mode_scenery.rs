@@ -700,7 +700,7 @@ fn update(
     if !show_wall && r_drag_state.cursor_model.is_some() {
         commands
             .entity(r_drag_state.cursor_model.unwrap())
-            .despawn_recursive();
+            .despawn();
         r_drag_state.cursor_model = None;
     }
 }

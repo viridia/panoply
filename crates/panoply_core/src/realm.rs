@@ -191,12 +191,12 @@ pub fn load_realms(
                     if comp.name == realm_name {
                         r_layers.release(comp.layer_index);
                         layers_to_remove = layers_to_remove.with(comp.layer_index);
-                        commands.entity(entity).despawn_recursive();
+                        commands.entity(entity).despawn();
                     }
                 }
                 for (entity, layers) in q_lights.iter() {
                     if layers.intersects(&layers_to_remove) {
-                        commands.entity(entity).despawn_recursive();
+                        commands.entity(entity).despawn();
                     }
                 }
             }

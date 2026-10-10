@@ -1,3 +1,4 @@
+use hashbrown::HashMap;
 use panoply_exemplar::*;
 
 use crate::actors::{ActorInstance, ActorRebuildAspects};
@@ -11,7 +12,7 @@ use super::{
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
     PRECINCT_SIZE_F,
 };
-use bevy::{prelude::*, render::view::RenderLayers, utils::hashbrown::HashMap};
+use bevy::{prelude::*, render::view::RenderLayers};
 
 #[derive(Eq, PartialEq, Hash)]
 pub struct PrecinctKey {
@@ -121,8 +122,8 @@ impl Precinct {
                             },
                             self.render_layer.clone(),
                             RebuildFloorAspects,
+                            ChildOf(entity),
                         ))
-                        .set_parent(entity)
                         .id();
                     t.floor_regions.push(floor_entity);
                 }
@@ -133,8 +134,8 @@ impl Precinct {
             while t.floor_regions.len() > j {
                 println!("Removing floor region.");
                 let e = t.floor_regions.pop().unwrap();
-                commands.entity(e).remove_parent();
-                commands.entity(e).despawn_recursive();
+                commands.entity(e).remove::<ChildOf>();
+                commands.entity(e).despawn();
             }
         }
 
@@ -157,8 +158,8 @@ impl Precinct {
         let mut existing = HashMap::<SceneryInstanceId, Entity>::with_capacity(128);
         if let Some(children) = children {
             for child in children.iter() {
-                if let Ok(scenery_element) = q_scenery_elements.get_mut(*child) {
-                    existing.insert(scenery_element.iid.clone(), *child);
+                if let Ok(scenery_element) = q_scenery_elements.get_mut(child) {
+                    existing.insert(scenery_element.iid.clone(), child);
                 }
             }
         }
@@ -186,34 +187,33 @@ impl Precinct {
                     }
 
                     // Remove the old scenery instance.
-                    commands.entity(se_ent).remove_parent();
-                    commands.entity(se_ent).despawn_recursive();
+                    commands.entity(se_ent).remove::<ChildOf>();
+                    commands.entity(se_ent).despawn();
                 }
             }
 
             // Otherwise, spawn a new instance.
-            commands
-                .spawn((
-                    Name::new("SceneryElement"),
-                    SceneryElement {
-                        iid: sid.iid.clone(),
-                        exemplar: scenery_exemplars[sid.id].clone(),
-                        facing,
-                        position: sid.position,
-                    },
-                    sid.aspects.clone(),
-                    transform,
-                    Visibility::Visible,
-                    self.render_layer.clone(),
-                    SceneryElementRebuildAspects,
-                ))
-                .set_parent(entity);
+            commands.spawn((
+                Name::new("SceneryElement"),
+                SceneryElement {
+                    iid: sid.iid.clone(),
+                    exemplar: scenery_exemplars[sid.id].clone(),
+                    facing,
+                    position: sid.position,
+                },
+                sid.aspects.clone(),
+                transform,
+                Visibility::Visible,
+                self.render_layer.clone(),
+                SceneryElementRebuildAspects,
+                ChildOf(entity),
+            ));
         }
 
         // Despawn any remaining scenery elements that were not found in the asset.
         for se_ent in existing.values() {
-            commands.entity(*se_ent).remove_parent();
-            commands.entity(*se_ent).despawn_recursive();
+            commands.entity(*se_ent).remove::<ChildOf>();
+            commands.entity(*se_ent).despawn();
         }
     }
 
@@ -269,8 +269,8 @@ impl Precinct {
                     }
 
                     // Remove the old actor instance.
-                    commands.entity(a_ent).remove_parent();
-                    commands.entity(a_ent).despawn_recursive();
+                    commands.entity(a_ent).remove::<ChildOf>();
+                    commands.entity(a_ent).despawn();
                 }
             }
 
@@ -293,8 +293,8 @@ impl Precinct {
 
         // Despawn any remaining actors that were not found in the asset.
         for a_ent in existing.values() {
-            commands.entity(*a_ent).remove_parent();
-            commands.entity(*a_ent).despawn_recursive();
+            commands.entity(*a_ent).remove::<ChildOf>();
+            commands.entity(*a_ent).despawn();
         }
     }
 }

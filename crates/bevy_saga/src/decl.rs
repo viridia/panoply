@@ -1,7 +1,6 @@
 use core::cell::RefCell;
+use hashbrown::HashMap;
 use std::sync::Arc;
-
-use bevy::utils::HashMap;
 
 use crate::{
     expr::Expr,

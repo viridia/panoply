@@ -281,7 +281,7 @@ pub fn spawn_parcels(
                 if parcel.visible || thumbnail.is_some() {
                     break;
                 } else {
-                    commands.entity(*entity).despawn_recursive();
+                    commands.entity(*entity).despawn();
                 }
             }
         }
@@ -292,8 +292,8 @@ pub fn spawn_parcels(
 pub(crate) fn cleanup_parcel_physics(world: &mut World) {
     world
         .register_component_hooks::<Parcel>()
-        .on_remove(|mut world, entity, _component| {
-            let parcel = world.get::<Parcel>(entity).unwrap();
+        .on_remove(|mut world, hook| {
+            let parcel = world.get::<Parcel>(hook.entity).unwrap();
             let rb_handle = parcel.physics;
             let Some(mut realm_physics) = world.get_mut::<RealmPhysics>(parcel.realm) else {
                 return;

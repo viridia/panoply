@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bevy::utils::HashMap;
+use hashbrown::HashMap;
 
 use crate::{location::TokenLocation, types::TypeVarId, CompilationError, Type};
 

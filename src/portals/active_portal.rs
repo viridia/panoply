@@ -2,7 +2,7 @@ use bevy::{
     color::palettes,
     prelude::*,
     render::{
-        camera::RenderTarget,
+        camera::{ImageRenderTarget, RenderTarget},
         primitives::{Frustum, Sphere},
         render_resource::{
             Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -180,8 +180,8 @@ pub(crate) fn spawn_portals(
                     MeshMaterial3d(material.clone()),
                     transform,
                     layers.clone(),
+                    ChildOf(entity),
                 ))
-                .set_parent(entity)
                 .id();
 
             let camera = commands
@@ -190,7 +190,7 @@ pub(crate) fn spawn_portals(
                     Camera {
                         order: -1,
                         clear_color: ClearColorConfig::Custom(Color::BLACK),
-                        target: RenderTarget::Image(image_handle.clone()),
+                        target: RenderTarget::Image(ImageRenderTarget::from(image_handle.clone())),
                         ..default()
                     },
                     Transform::from_translation(Vec3::new(0., 0., 0.)),

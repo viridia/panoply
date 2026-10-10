@@ -117,7 +117,7 @@ pub(crate) fn insert_floor_meshes(
                 .entity(entity)
                 .insert(Mesh3d(mesh.clone()))
                 .remove::<ComputeFloorMeshTask>()
-                .despawn_descendants();
+                .despawn_related::<Children>();
             if let Some(outline_mesh) = task_result.outline {
                 let outline_mesh = meshes.add(outline_mesh);
                 let outline = commands

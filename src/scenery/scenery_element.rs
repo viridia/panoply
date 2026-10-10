@@ -58,20 +58,19 @@ pub fn spawn_se_models(
     server: Res<AssetServer>,
 ) {
     for (entity, models, layers) in query.iter_mut() {
-        commands.entity(entity).clear_children();
+        commands.entity(entity).despawn_related::<Children>();
         for model in models.0.iter() {
             if let Some((fname, fragment)) = model.asset.split_once('#') {
                 let handle: Handle<Gltf> = server.load(fname.to_owned());
-                commands
-                    .spawn((
-                        SceneryElementMesh {
-                            handle,
-                            label: String::from(fragment),
-                            placement: model.clone(),
-                        },
-                        layers.clone(),
-                    ))
-                    .set_parent(entity);
+                commands.spawn((
+                    SceneryElementMesh {
+                        handle,
+                        label: String::from(fragment),
+                        placement: model.clone(),
+                    },
+                    layers.clone(),
+                    ChildOf(entity),
+                ));
             }
         }
         commands

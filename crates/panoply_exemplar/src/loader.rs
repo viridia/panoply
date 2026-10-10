@@ -2,8 +2,8 @@ use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
-    utils::hashbrown::HashMap,
 };
+use hashbrown::HashMap;
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -148,7 +148,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
             })?;
             let aliases = sdata.alias.clone();
             let exemplar = Arc::new(sdata);
-            let handle = lc.finish(Exemplar(exemplar.clone()), None);
+            let handle = lc.finish(Exemplar(exemplar.clone()));
             let handle = self
                 .load_context
                 .add_loaded_labeled_asset(key.clone(), handle);

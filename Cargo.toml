@@ -11,7 +11,13 @@ editor = []          # Enable editor features
 members = ["crates/*"]
 
 [workspace.dependencies]
-bevy = { version = "0.15", features = [
+# bevy = { version = "0.15", features = [
+#   "bevy_animation",
+#   "dynamic_linking",
+#   "file_watcher",
+#   "serialize",
+# ] }
+bevy = { git = "https://github.com/bevyengine/bevy.git", features = [
   "bevy_animation",
   "dynamic_linking",
   "file_watcher",
@@ -19,6 +25,7 @@ bevy = { version = "0.15", features = [
 ] }
 bitflags = "2.4.2"
 bevy_prefs_lite = { git = "https://github.com/viridia/bevy_prefs_lite.git", version = "0.1.0" }
+hashbrown = "0.15.2"
 lru = "0.11.0"
 panoply_core = { path = "crates/panoply_core" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
@@ -42,6 +49,7 @@ bevy-inspector-egui = "0.28.1"
 bitflags = { workspace = true }
 earcutr = "0.4.3"
 futures-lite = "2.2.0"
+hashbrown = { workspace = true }
 i_overlay = "1.4.2"
 lru = { workspace = true }
 panoply_core = { workspace = true }
@@ -69,3 +77,6 @@ opt-level = 3
 [lints.clippy]
 type_complexity = "allow"
 too_many_arguments = "allow"
+
+[patch.'https://github.com/viridia/bevy_prefs_lite']
+bevy = { git = "https://github.com/bevyengine/bevy.git" }

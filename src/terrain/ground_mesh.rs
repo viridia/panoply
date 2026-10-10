@@ -140,8 +140,8 @@ pub fn insert_ground_meshes(
                                         // TODO: Might want to pick on physics colliders instead.
                                         RayCastPickable,
                                         Name::new("Ground"),
+                                        ChildOf(entity),
                                     ))
-                                    .set_parent(entity)
                                     .id(),
                             );
                         }
@@ -151,7 +151,7 @@ pub fn insert_ground_meshes(
                         realm_physics.insert_collider(parcel.physics, ground_result.collider);
                 } else if let Some(ground_mesh_ent) = parcel.ground_entity {
                     // Remove mesh entity
-                    commands.entity(ground_mesh_ent).despawn_recursive();
+                    commands.entity(ground_mesh_ent).despawn();
                     parcel.ground_entity = None;
                     realm_physics.remove_collider(parcel.terrain_collider);
                 }

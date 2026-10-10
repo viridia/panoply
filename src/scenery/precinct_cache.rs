@@ -139,7 +139,7 @@ pub fn spawn_precincts(
                         "Despawning precinct {:#?} {} {}.",
                         precinct.realm, precinct.coords.x, precinct.coords.y
                     );
-                    commands.entity(*entity).despawn_recursive();
+                    commands.entity(*entity).despawn();
                 }
             }
         }
