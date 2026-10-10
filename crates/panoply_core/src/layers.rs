@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::{camera::visibility::RenderLayers, prelude::*};
 
 #[derive(Default, Resource)]
 pub struct ReservedLayers(RenderLayers);

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, reflect::Reflect, render::camera::Viewport, window::PrimaryWindow};
+use bevy::{camera::Viewport, prelude::*, reflect::Reflect, window::PrimaryWindow};
 use panoply_core::PrimaryCamera;
 
 // use crate::guise::{Controller, ViewElement};
@@ -21,7 +21,7 @@ pub fn update_camera_viewport(
     windows: Query<&Window, With<PrimaryWindow>>,
     mut camera_query: Query<(&mut Camera, &mut Projection), With<PrimaryCamera>>,
 ) {
-    let Ok(window) = windows.get_single() else {
+    let Ok(window) = windows.single() else {
         return;
     };
     let ww = window.resolution.physical_width() as f32;
@@ -34,7 +34,9 @@ pub fn update_camera_viewport(
     let vw = (ww - left - right).max(1.);
     let vh = (wh - top - bottom).max(1.);
 
-    let (mut camera, mut projection) = camera_query.single_mut();
+    let Ok((mut camera, mut projection)) = camera_query.single_mut() else {
+        return;
+    };
     camera.viewport = Some(Viewport {
         physical_position: UVec2::new(left as u32, top as u32),
         physical_size: UVec2::new(vw as u32, vh as u32),
@@ -63,7 +65,7 @@ pub fn update_viewport_inset(
     mut viewport_inset: ResMut<ViewportInset>,
 ) {
     let mut inset = ViewportInset::default();
-    match q_viewport.get_single() {
+    match q_viewport.single() {
         Ok((node, transform)) => {
             let position = transform.translation();
             let ui_position = position.truncate();
@@ -71,7 +73,9 @@ pub fn update_viewport_inset(
             let min = ui_position - extents;
             let max = ui_position + extents;
 
-            let window = q_windows.single();
+            let Ok(window) = q_windows.single() else {
+                return;
+            };
             let ww = window.resolution.physical_width() as f32;
             let wh = window.resolution.physical_height() as f32;
             let sf = window.resolution.scale_factor();

@@ -1,5 +1,6 @@
 use bevy::{
-    math::{Curve, VectorSpace},
+    curve::Curve,
+    math::VectorSpace,
     prelude::{EaseFunction, EasingCurve},
 };
 
@@ -13,7 +14,7 @@ pub struct Transition<T> {
     ease: EaseFunction,
 }
 
-impl<T: Clone + Copy + VectorSpace> Transition<T> {
+impl<T: Clone + Copy + VectorSpace<Scalar = f32>> Transition<T> {
     pub fn new(start: T, end: T, duration: f32, ease: EaseFunction) -> Self {
         Self {
             start,

@@ -1,63 +1,59 @@
 #![allow(dead_code)]
 use bevy::{
+    asset::RenderAssetUsages,
+    camera::visibility::RenderLayers,
     image::ImageSampler,
     prelude::*,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-        view::RenderLayers,
-    },
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+    settings::{SaveSettingsSync, SettingsPlugin},
+    window::ExitCondition,
 };
-use bevy_prefs_lite::{AutosavePrefsPlugin, Preferences, SavePreferences};
-use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
+// TODO(bevy-0.20): restore
+// use bevy_saga::{SagaPlugin, SagaVmResource, ScriptAsset};
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use models::ModelsPlugin;
+// use models::ModelsPlugin;
+// use panoply_exemplar::ExemplarPlugin;
 use panoply_core::{
     pan_rotate::pan_rotate_viewpoint, HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint,
 };
-use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
-use window_settings::{load_window_settings, WindowSettingsPlugin};
+use window_settings::WindowSettingsPlugin;
 
+// TODO(bevy-0.20): restore
 // #[cfg(feature = "editor")]
 // mod editor;
+// mod actors;
+// mod materials;
+// mod models;
+// mod portals;
+// mod reflect_types;
+// mod scenery;
+// mod scripting;
+// mod terrain;
 
-mod actors;
 mod diagnostics;
-mod materials;
-mod models;
-mod portals;
-mod reflect_types;
-mod scenery;
-mod scripting;
-mod terrain;
 mod view;
 mod window_settings;
 mod world;
 
-use crate::{
-    actors::ActorsPlugin, diagnostics::ScreenDiagsPlugin, materials::MaterialsPlugin,
-    portals::PortalPlugin, reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin,
-    terrain::TerrainPlugin, window_settings::update_window_settings, world::WorldPlugin,
-};
+use crate::{diagnostics::ScreenDiagsPlugin, world::WorldPlugin};
+// TODO(bevy-0.20): restore
+// use crate::{
+//     actors::ActorsPlugin, materials::MaterialsPlugin, portals::PortalPlugin,
+//     reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin, terrain::TerrainPlugin,
+// };
 
-#[derive(Resource)]
-struct EditorImages {
-    world: Handle<Image>,
-    terrain: Handle<Image>,
-    building: Handle<Image>,
-    quest: Handle<Image>,
-    play: Handle<Image>,
-}
+// TODO(bevy-0.20): restore with editor
+// #[derive(Resource)]
+// struct EditorImages {
+//     world: Handle<Image>,
+//     terrain: Handle<Image>,
+//     building: Handle<Image>,
+//     quest: Handle<Image>,
+//     play: Handle<Image>,
+// }
 
 fn main() {
-    let mut prefs = Preferences::new("org.viridia.panoply");
-    let mut window = Window {
-        title: "Untitled Bevy Game".into(),
-        ..default()
-    };
-    load_window_settings(&mut prefs, &mut window);
-
     let mut app = App::new();
     // app.register_asset_source(
     //     "inline",
@@ -66,16 +62,20 @@ fn main() {
     app.add_plugins((
         DefaultPlugins
             .set(WindowPlugin {
-                primary_window: Some(window),
+                primary_window: Some(Window {
+                    title: "Untitled Bevy Game".into(),
+                    ..default()
+                }),
+                // Intercept exit so that settings can be saved.
+                exit_condition: ExitCondition::DontExit,
                 ..default()
             })
             .set(AssetPlugin::default()),
-        ScreenDiagsPlugin,
-        AutosavePrefsPlugin,
+        SettingsPlugin::new("org.viridia.panoply"),
+        // Must come after SettingsPlugin.
         WindowSettingsPlugin,
-        // PreferencesPlugin::new("panoply"),
+        ScreenDiagsPlugin,
     ))
-    .insert_resource(prefs)
     .init_resource::<view::viewport::ViewportInset>()
     // .insert_resource(RaycastBackendSettings {
     //     require_markers: true,
@@ -91,17 +91,12 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
-    .init_resource::<TestScriptHandle>()
-    .add_systems(Startup, (setup, run_script))
-    .add_systems(
-        Update,
-        (
-            rotate_shapes,
-            update_window_settings,
-            nav_to_center,
-            pan_rotate_viewpoint,
-        ),
-    )
+    // TODO(bevy-0.20): restore with scripting
+    // .init_resource::<TestScriptHandle>()
+    // .add_systems(Startup, run_script)
+    // .add_systems(Update, receive_script_assets)
+    .add_systems(Startup, setup)
+    .add_systems(Update, (rotate_shapes, nav_to_center, pan_rotate_viewpoint))
     .add_systems(
         PostUpdate,
         (
@@ -110,20 +105,18 @@ fn main() {
         ),
     )
     .add_systems(Update, close_on_esc)
-    .add_systems(Update, receive_script_assets)
-    // .add_systems(Update, watch_prefs_changes)
     .add_plugins((
-        ReflectTypesPlugin,
-        ExemplarPlugin,
-        MaterialsPlugin,
         WorldPlugin,
-        TerrainPlugin,
-        SceneryPlugin,
-        ActorsPlugin,
-        PortalPlugin,
-        ModelsPlugin,
-        // ScriptsPlugin,
-        SagaPlugin,
+        // TODO(bevy-0.20): restore
+        // ReflectTypesPlugin,
+        // ExemplarPlugin,
+        // MaterialsPlugin,
+        // TerrainPlugin,
+        // SceneryPlugin,
+        // ActorsPlugin,
+        // PortalPlugin,
+        // ModelsPlugin,
+        // SagaPlugin,
         // WorldInspectorPlugin::new(),
     ));
 
@@ -224,7 +217,6 @@ fn setup(
         },
         RenderLayers::none(),
         PrimaryCamera,
-        RayCastPickable,
     ));
 }
 
@@ -234,58 +226,59 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
     }
 }
 
-#[derive(Debug, Resource, Default)]
-struct TestScriptHandle(Handle<ScriptAsset>);
-
-fn run_script(server: Res<AssetServer>, mut handle: ResMut<TestScriptHandle>) {
-    let script = server.load::<ScriptAsset>("scripts/hello.saga");
-    handle.0 = script;
-}
-
-/** React when precinct assets change and update the scenery. */
-pub fn receive_script_assets(
-    // mut commands: Commands,
-    mut ev_asset: EventReader<AssetEvent<ScriptAsset>>,
-    assets: ResMut<Assets<ScriptAsset>>,
-    // asset_server: Res<AssetServer>,
-    r_vm: Res<SagaVmResource>,
-) {
-    for ev in ev_asset.read() {
-        match ev {
-            AssetEvent::Added { id } => {
-                info!("Script asset added: {:?}", id);
-                let script = assets.get(*id).unwrap();
-                let mut vm = r_vm.0.lock().unwrap();
-                let result = script.call::<(), i32>(&mut vm, "hello", ()).unwrap();
-                info!("Script result: {:?}", result);
-            }
-
-            AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
-                info!("Script asset loaded: {:?}", id);
-
-                // if let Some((precinct_entity, mut precinct, precinct_children)) =
-                //     q_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
-                // {
-                //     // TODO: Sync cutaway rects
-                //     // TODO: Sync nav mesh, physics, light sources, particles, etc.
-                //     // TODO: Sync actors
-
-                //     let precinct_asset = assets.get(*id).unwrap();
-                //     let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
-                //         .floor_types
-                //         .iter()
-                //         .map(|s| asset_server.load(s))
-                //         .collect();
-
-                // }
-            }
-
-            AssetEvent::Removed { id: _ } => {}
-
-            AssetEvent::Unused { id: _ } => {}
-        }
-    }
-}
+// TODO(bevy-0.20): restore with scripting
+// #[derive(Debug, Resource, Default)]
+// struct TestScriptHandle(Handle<ScriptAsset>);
+//
+// fn run_script(server: Res<AssetServer>, mut handle: ResMut<TestScriptHandle>) {
+//     let script = server.load::<ScriptAsset>("scripts/hello.saga");
+//     handle.0 = script;
+// }
+//
+// /** React when precinct assets change and update the scenery. */
+// pub fn receive_script_assets(
+//     // mut commands: Commands,
+//     mut ev_asset: EventReader<AssetEvent<ScriptAsset>>,
+//     assets: ResMut<Assets<ScriptAsset>>,
+//     // asset_server: Res<AssetServer>,
+//     r_vm: Res<SagaVmResource>,
+// ) {
+//     for ev in ev_asset.read() {
+//         match ev {
+//             AssetEvent::Added { id } => {
+//                 info!("Script asset added: {:?}", id);
+//                 let script = assets.get(*id).unwrap();
+//                 let mut vm = r_vm.0.lock().unwrap();
+//                 let result = script.call::<(), i32>(&mut vm, "hello", ()).unwrap();
+//                 info!("Script result: {:?}", result);
+//             }
+//
+//             AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
+//                 info!("Script asset loaded: {:?}", id);
+//
+//                 // if let Some((precinct_entity, mut precinct, precinct_children)) =
+//                 //     q_precincts.iter_mut().find(|r| r.1.asset.id() == *id)
+//                 // {
+//                 //     // TODO: Sync cutaway rects
+//                 //     // TODO: Sync nav mesh, physics, light sources, particles, etc.
+//                 //     // TODO: Sync actors
+//
+//                 //     let precinct_asset = assets.get(*id).unwrap();
+//                 //     let floor_exemplars: Vec<Handle<Exemplar>> = precinct_asset
+//                 //         .floor_types
+//                 //         .iter()
+//                 //         .map(|s| asset_server.load(s))
+//                 //         .collect();
+//
+//                 // }
+//             }
+//
+//             AssetEvent::Removed { id: _ } => {}
+//
+//             AssetEvent::Unused { id: _ } => {}
+//         }
+//     }
+// }
 
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
@@ -329,15 +322,7 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
 
 pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     if input.just_pressed(KeyCode::Escape) {
-        commands.queue(SavePreferences::IfChanged);
-        commands.queue(AppExitCmd);
-    }
-}
-
-pub struct AppExitCmd;
-
-impl Command for AppExitCmd {
-    fn apply(self, world: &mut World) {
-        world.send_event(AppExit::Success);
+        commands.queue(SaveSettingsSync::IfChanged);
+        commands.write_message(AppExit::Success);
     }
 }

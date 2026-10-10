@@ -8,24 +8,19 @@ default = ["editor"]
 editor = []          # Enable editor features
 
 [workspace]
-members = ["crates/*"]
+members = ["crates/panoply_core"]
+# TODO(bevy-0.20): restore these crates to the workspace as they are ported.
+exclude = ["crates/bevy_saga", "crates/panoply_exemplar", "crates/panoply_terrain"]
 
 [workspace.dependencies]
-# bevy = { version = "0.15", features = [
-#   "bevy_animation",
-#   "dynamic_linking",
-#   "file_watcher",
-#   "serialize",
-# ] }
-bevy = { git = "https://github.com/bevyengine/bevy.git", features = [
+bevy = { version = "0.20.0", features = [
   "bevy_animation",
+  "bevy_settings",
   "dynamic_linking",
   "file_watcher",
   "serialize",
 ] }
 bitflags = "2.4.2"
-bevy_prefs_lite = { git = "https://github.com/viridia/bevy_prefs_lite.git", version = "0.1.0" }
-hashbrown = "0.15.2"
 lru = "0.11.0"
 panoply_core = { path = "crates/panoply_core" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
@@ -41,30 +36,30 @@ serde_bytes = "0.11.12"
 thiserror = "1.0.57"
 
 [dependencies]
-base64 = "0.22.0"
 bevy = { workspace = true }
-bevy_prefs_lite = { workspace = true }
-bevy_saga = { workspace = true }
-bevy-inspector-egui = "0.28.1"
-bitflags = { workspace = true }
-earcutr = "0.4.3"
-futures-lite = "2.2.0"
-hashbrown = { workspace = true }
-i_overlay = "1.4.2"
-lru = { workspace = true }
 panoply_core = { workspace = true }
-panoply_exemplar = { workspace = true }
-panoply_terrain = { workspace = true }
-rapier3d = { workspace = true }
-regex = "1.10.6"
-rmp-serde = { workspace = true }
 serde = { workspace = true }
-serde_bytes = { workspace = true }
-serde_derive = "1.0.171"
 serde_json = { workspace = true }
-serde_repr = { workspace = true }
 thiserror = { workspace = true }
-ron = { workspace = true }
+
+# TODO(bevy-0.20): restore these dependencies along with the modules that use them.
+# base64 = "0.22.0"
+# bevy_saga = { workspace = true }                   # scripting
+# bevy-inspector-egui = "0.28.1"                     # pins bevy 0.15; replace or bump
+# bitflags = { workspace = true }
+# earcutr = "0.4.3"                                  # scenery
+# futures-lite = "2.2.0"
+# i_overlay = "1.4.2"                                # scenery
+# lru = { workspace = true }                         # terrain, scenery
+# panoply_exemplar = { workspace = true }
+# panoply_terrain = { workspace = true }
+# rapier3d = { workspace = true }                    # terrain, scenery colliders
+# regex = "1.10.6"
+# rmp-serde = { workspace = true }
+# serde_bytes = { workspace = true }
+# serde_derive = "1.0.171"
+# serde_repr = { workspace = true }
+# ron = { workspace = true }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -77,6 +72,3 @@ opt-level = 3
 [lints.clippy]
 type_complexity = "allow"
 too_many_arguments = "allow"
-
-[patch.'https://github.com/viridia/bevy_prefs_lite']
-bevy = { git = "https://github.com/bevyengine/bevy.git" }

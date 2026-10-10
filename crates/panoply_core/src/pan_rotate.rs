@@ -15,7 +15,7 @@ fn movement(flag: bool) -> f32 {
 
 pub fn pan_rotate_viewpoint(
     button_input: Res<ButtonInput<KeyCode>>,
-    mut scroll_events: EventReader<MouseWheel>,
+    mut scroll_events: MessageReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
 ) {

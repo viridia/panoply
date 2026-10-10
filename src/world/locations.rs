@@ -44,7 +44,7 @@ pub enum WorldLocationsLoaderError {
     Io(#[from] std::io::Error),
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct WorldLocationsLoader;
 
 impl AssetLoader for WorldLocationsLoader {

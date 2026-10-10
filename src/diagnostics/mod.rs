@@ -54,8 +54,8 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn((
             Text::new(STRING_INITIAL),
             TextFont {
-                font,
-                font_size: FONT_SIZE,
+                font: FontSource::Handle(font),
+                font_size: FontSize::Px(FONT_SIZE),
                 ..default()
             },
             TextColor(FONT_COLOR.into()),

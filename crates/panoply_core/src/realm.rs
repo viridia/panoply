@@ -2,10 +2,10 @@ use std::f32::consts::PI;
 
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
-use bevy::pbr::CascadeShadowConfigBuilder;
+use bevy::light::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use bevy::render::view::RenderLayers;
+use bevy::camera::visibility::RenderLayers;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -70,7 +70,7 @@ pub enum RealmsLoaderError {
     Io(#[from] std::io::Error),
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct RealmsLoader;
 
 impl AssetLoader for RealmsLoader {
@@ -112,7 +112,7 @@ pub fn load_realms(
     mut q_realms: Query<(Entity, &mut Realm)>,
     q_lights: Query<(Entity, &RenderLayers), With<DirectionalLight>>,
     mut r_layers: ResMut<ReservedLayers>,
-    mut ev_asset: EventReader<AssetEvent<RealmData>>,
+    mut ev_asset: MessageReader<AssetEvent<RealmData>>,
 ) {
     for ev in ev_asset.read() {
         match ev {
@@ -150,7 +150,7 @@ pub fn load_realms(
                     // Light for realm
                     commands.spawn((
                         DirectionalLight {
-                            shadows_enabled: true,
+                            shadow_maps_enabled: true,
                             color: Srgba::WHITE.into(),
                             illuminance: 3000.,
                             ..default()

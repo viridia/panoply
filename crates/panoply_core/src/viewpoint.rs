@@ -1,7 +1,7 @@
 use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
+use bevy::camera::visibility::RenderLayers;
 use std::f32::consts::PI;
 
 /// Represents the focal point of attention, typically the coordinates of the player
@@ -88,6 +88,8 @@ pub struct SetViewpointCmd {
 }
 
 impl Command for SetViewpointCmd {
+    type Out = ();
+
     fn apply(self, world: &mut World) {
         println!("Go to {} {}", self.realm, self.position);
         let mut realms = world.query::<(Entity, &Realm)>();
@@ -109,7 +111,9 @@ pub fn update_camera_pos(
     mut q_camera: Query<(&mut Transform, &mut RenderLayers), With<PrimaryCamera>>,
     q_realms: Query<&Realm>,
 ) {
-    let (mut transform, mut layers) = q_camera.single_mut();
+    let Ok((mut transform, mut layers)) = q_camera.single_mut() else {
+        return;
+    };
 
     // Update the camera transform
     viewpoint.get_camera_transform(&mut transform);

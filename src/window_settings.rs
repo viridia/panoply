@@ -1,78 +1,108 @@
-use bevy::{
-    prelude::*,
-    window::{PrimaryWindow, WindowMode},
-};
-use bevy_prefs_lite::{Preferences, StartAutosaveTimer};
+use std::time::Duration;
 
-#[derive(Default, Debug)]
+use bevy::{
+    ecs::system::NonSendMarker,
+    prelude::*,
+    settings::{ReflectSettingsGroup, SaveSettingsDeferred, SaveSettingsSync, SettingsGroup},
+    window::{PrimaryWindow, WindowCloseRequested, WindowMode, WindowResized, WindowResolution},
+    winit::WINIT_WINDOWS,
+};
+
+/// Settings group which remembers the window position, size and fullscreen state.
+#[derive(Resource, SettingsGroup, Reflect, Default, Clone, PartialEq, Debug)]
+#[reflect(Resource, SettingsGroup, Default)]
+#[settings_group(group = "window")]
 pub struct WindowSettings {
     pub fullscreen: bool,
-    pub position: IVec2,
-    pub size: UVec2,
+    pub position: Option<IVec2>,
+    pub size: Option<UVec2>,
 }
 
-/// System which keeps the window settings up to date when the user resizes or moves the window.
-/// Also writes the settings when the window is closed.
-pub fn update_window_settings(
-    mut move_events: EventReader<WindowMoved>,
-    windows: Query<&mut Window, With<PrimaryWindow>>,
-    mut preferences: ResMut<Preferences>,
-    mut commands: Commands,
-) {
-    let Ok(window) = windows.get_single() else {
-        return;
-    };
-
-    let mut window_moved = false;
-    for _event in move_events.read() {
-        window_moved = true;
-    }
-
-    if window_moved {
-        if let Some(app_prefs) = preferences.get_mut("prefs") {
-            let mut window_prefs = app_prefs.get_group_mut("window").unwrap();
-            window_prefs.set("fullscreen", window.mode != WindowMode::Windowed);
-            match window.position {
-                WindowPosition::At(pos) => {
-                    window_prefs.set("position", pos);
-                }
-                _ => {
-                    window_prefs.remove("position");
-                }
-            }
-            window_prefs.set(
-                "size",
-                Vec2::new(window.resolution.width(), window.resolution.height()),
-            );
-            commands.queue(StartAutosaveTimer);
-        }
-    }
-}
-
+/// Restores window settings at startup and keeps them up to date afterwards. Must be added
+/// after `SettingsPlugin`, which loads the `WindowSettings` resource.
 pub struct WindowSettingsPlugin;
 
 impl Plugin for WindowSettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_window_settings);
+        init_window_settings(app);
+        app.add_systems(Update, (update_window_settings, save_on_window_close));
     }
 }
 
-pub fn load_window_settings(prefs: &mut Preferences, window: &mut Window) {
-    if let Some(app_prefs) = prefs.get("prefs") {
-        if let Some(window_prefs) = app_prefs.get_group("window") {
-            if let Some(fullscreen) = window_prefs.get::<bool>("fullscreen") {
-                window.mode = if fullscreen {
-                    WindowMode::SizedFullscreen(MonitorSelection::Current)
-                } else {
-                    WindowMode::Windowed
-                };
-            }
-            if let Some(pos) = window_prefs.get::<IVec2>("position") {
-                window.position = WindowPosition::new(pos);
-            }
-            if let Some(size) = window_prefs.get::<Vec2>("size") {
-                window.resolution = (size.x, size.y).into();
-            }
-        }
+/// Copy the loaded settings to the primary window.
+fn init_window_settings(app: &mut App) {
+    let world = app.world_mut();
+    let Some(settings) = world.get_resource::<WindowSettings>().cloned() else {
+        return;
+    };
+
+    let Ok(mut window) = world
+        .query_filtered::<&mut Window, With<PrimaryWindow>>()
+        .single_mut(world)
+    else {
+        warn!("Primary window not found");
+        return;
+    };
+
+    if let Some(pos) = settings.position {
+        window.position = WindowPosition::new(pos);
+    }
+    if let Some(size) = settings.size {
+        window.resolution = WindowResolution::new(size.x, size.y);
+    }
+    window.mode = if settings.fullscreen {
+        WindowMode::BorderlessFullscreen(MonitorSelection::Current)
+    } else {
+        WindowMode::Windowed
+    };
+}
+
+/// System which keeps the window settings up to date when the user resizes or moves the window.
+/// Runs on the main thread (`NonSendMarker`) because it reads from `WINIT_WINDOWS`.
+fn update_window_settings(
+    mut move_events: MessageReader<WindowMoved>,
+    mut resize_events: MessageReader<WindowResized>,
+    windows: Query<(Entity, &Window), With<PrimaryWindow>>,
+    mut settings: ResMut<WindowSettings>,
+    mut commands: Commands,
+    _main_thread: NonSendMarker,
+) {
+    // Drain both readers (no short-circuit) so stale messages don't carry over.
+    let moved = move_events.read().count() > 0;
+    let resized = resize_events.read().count() > 0;
+    if !moved && !resized {
+        return;
+    }
+    let Ok((entity, window)) = windows.single() else {
+        return;
+    };
+
+    let changed = settings.set_if_neq(WindowSettings {
+        fullscreen: window.mode != WindowMode::Windowed,
+        position: match window.position {
+            WindowPosition::At(pos) => Some(pos),
+            // A window that has never been moved is still `Centered`/`Automatic`, so ask winit
+            // where it actually is. Otherwise a resize-only session would forget the position.
+            _ => WINIT_WINDOWS.with_borrow(|winit_windows| {
+                let pos = winit_windows.get_window(entity)?.outer_position().ok()?;
+                Some(IVec2::new(pos.x, pos.y))
+            }),
+        },
+        size: Some(UVec2::new(
+            window.resolution.width() as u32,
+            window.resolution.height() as u32,
+        )),
+    });
+    if changed {
+        commands.queue(SaveSettingsDeferred(Duration::from_secs_f32(0.5)));
+    }
+}
+
+/// Save settings and exit when the window is closed. Requires
+/// `WindowPlugin::exit_condition` to be `ExitCondition::DontExit`.
+fn save_on_window_close(mut close: MessageReader<WindowCloseRequested>, mut commands: Commands) {
+    if close.read().next().is_some() {
+        commands.queue(SaveSettingsSync::IfChanged);
+        commands.write_message(AppExit::Success);
     }
 }
