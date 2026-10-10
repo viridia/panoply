@@ -1,9 +1,9 @@
+use bevy::platform::collections::HashMap;
 use bevy::{
     asset::LoadContext,
     prelude::*,
     reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry},
 };
-use hashbrown::HashMap;
 use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
 use std::{
     any::TypeId,

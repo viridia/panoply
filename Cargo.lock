@@ -4716,6 +4716,7 @@ dependencies = [
  "bevy_action_map",
  "bevy_remote_driver",
  "panoply_core",
+ "panoply_exemplar",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -4729,6 +4730,18 @@ dependencies = [
  "rapier3d",
  "serde",
  "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_exemplar"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "futures-lite",
+ "serde",
+ "serde_json",
+ "smallvec",
  "thiserror 1.0.69",
 ]
 

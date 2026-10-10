@@ -3,8 +3,8 @@ use std::{any::TypeId, sync::Arc};
 use super::{Aspect, Exemplar, InstanceAspects};
 use crate::aspect;
 use aspect::{DetachAspect, OwnedAspects};
+use bevy::platform::collections::HashMap;
 use bevy::{ecs::system::EntityCommand, prelude::*};
-use hashbrown::HashMap;
 use smallvec::SmallVec;
 
 /// Custom command that updates an entity's components guided by a exemplar.
@@ -17,20 +17,16 @@ pub struct UpdateAspects<B: Bundle> {
 }
 
 impl<B: Bundle> EntityCommand for UpdateAspects<B> {
+    type Out = ();
+
     fn apply(self, mut entity: EntityWorldMut) {
         let exemplar_assets = entity.get_resource::<Assets<Exemplar>>().unwrap();
         let mut exemplars: SmallVec<[Arc<crate::exemplar::ExemplarData>; 8]> = SmallVec::new();
-        let mut shandle = &self.exemplar;
-        loop {
-            let Some(exemplar) = exemplar_assets.get(shandle) else {
-                break;
-            };
+        // Walk the inheritance chain, nearest first.
+        let mut next = Some(&self.exemplar);
+        while let Some(exemplar) = next.and_then(|handle| exemplar_assets.get(handle)) {
             exemplars.push(exemplar.0.clone());
-            if let Some(ref next) = exemplar.0.extends {
-                shandle = next;
-            } else {
-                break;
-            }
+            next = exemplar.0.extends.as_ref();
         }
 
         // Get the set of aspects currently owned.

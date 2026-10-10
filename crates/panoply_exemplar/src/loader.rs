@@ -1,9 +1,9 @@
+use bevy::platform::collections::HashMap;
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use hashbrown::HashMap;
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -89,9 +89,9 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                     let extends = map.next_value::<String>()?;
                     let extends_path = self
                         .load_context
-                        .asset_path()
-                        .resolve_embed(&extends)
-                        .unwrap();
+                        .path()
+                        .resolve_embed_str(&extends)
+                        .map_err(de::Error::custom)?;
                     result.extends = Some(self.load_context.load::<Exemplar>(extends_path));
                 }
             }
@@ -184,6 +184,7 @@ impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
 }
 
 /// AssetLoader for Exemplars.
+#[derive(TypePath)]
 pub struct ExemplarLoader {
     type_registry: TypeRegistryArc,
 }

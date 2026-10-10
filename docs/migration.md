@@ -15,17 +15,19 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `dd242ce` | This ledger and `AGENTS.md`; removed `bevy_saga`.                                       |
 | `c46a218` | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
 | `c46a218` | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
+| (pending) | `panoply_exemplar`; `plans/exemplars.py` checks loading and `extends`.                  |
 
 ## Next
 
-1. `panoply_exemplar` (port as-is; see D4).
-2. `panoply_terrain` + `src/terrain` + `scenery`: first break the `scenery` <-> `terrain` cycle,
+1. `panoply_terrain` + `src/terrain` + `scenery`: first break the `scenery` <-> `terrain` cycle,
    and consolidate code duplicated between the crate and `src/terrain` (`water_mesh`,
    `terrain_map`, ground material). Port `assets/shaders/lib/*` and terrain shaders to WESL.
-3. `actors`, `portals`.
-4. `editor` (see X3).
+2. `actors`, `portals`.
+3. `editor` (see X3).
 
-When `scenery` and `actors` are back, remove `spawn_material_test` from `main.rs`.
+When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` checks from `main.rs`
+(`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until then, only exemplar
+catalogs without aspects can load, since the aspect types are registered by those modules.
 
 ## Decisions
 
@@ -84,5 +86,6 @@ When `scenery` and `actors` are back, remove `spawn_material_test` from `main.rs
 
 ## Notes
 
+- `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics.
 - `assets/shaders/outline.wgsl` is an unused duplicate of `src/materials/outline.wesl`.
 - With `dynamic_linking`, run via `cargo run`; the bare binary can't find `libstd`.

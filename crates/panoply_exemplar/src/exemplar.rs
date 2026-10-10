@@ -1,5 +1,5 @@
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use hashbrown::HashMap;
 use serde::Serialize;
 use std::sync::Arc;
 
