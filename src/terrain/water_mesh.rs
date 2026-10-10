@@ -1,18 +1,15 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    pbr::NotShadowCaster,
+    asset::RenderAssetUsages,
+    light::NotShadowCaster,
+    mesh::{Indices, PrimitiveTopology},
     prelude::*,
-    render::{
-        mesh::{Indices, MeshAabb},
-        render_asset::RenderAssetUsages,
-        render_resource::PrimitiveTopology,
-    },
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
 
-use hashbrown::HashMap;
+use bevy::platform::collections::HashMap;
 use panoply_core::Realm;
 use panoply_terrain::{
     Parcel, ParcelWaterChanged, ShapeRef, SquareArray, TerrainContoursHandle, TerrainContoursTable,
@@ -198,6 +195,5 @@ fn compute_water_mesh(
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_attribute(ATTRIBUTE_DEPTH_MOTION, depth_motion);
     mesh.insert_indices(Indices::U32(indices));
-    mesh.compute_aabb();
     Some(mesh)
 }

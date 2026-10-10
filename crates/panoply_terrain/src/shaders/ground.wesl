@@ -1,12 +1,12 @@
-#import bevy_core_pipeline::tonemapping::tone_mapping
-#import bevy_pbr::{
+import bevy_core_pipeline::tonemapping::tone_mapping;
+import bevy_pbr::render::{
     mesh_view_bindings::view,
     mesh_functions as mfns,
     mesh_bindings::mesh,
     mesh_types::MESH_FLAGS_SHADOW_RECEIVER_BIT,
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
-}
+};
 
 struct BiomeSurfaceAttrs {
     roughness: f32,
@@ -24,56 +24,56 @@ struct BiomeSurfaceAttrs {
     edge_tint: vec4<f32>,
 };
 
-@group(2) @binding(1)
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var noise: texture_2d<f32>;
-@group(2) @binding(2)
+@group(constants::MATERIAL_BIND_GROUP) @binding(2)
 var noise_sampler: sampler;
 
-@group(2) @binding(3)
+@group(constants::MATERIAL_BIND_GROUP) @binding(3)
 var dirt: texture_2d<f32>;
-@group(2) @binding(4)
+@group(constants::MATERIAL_BIND_GROUP) @binding(4)
 var dirt_sampler: sampler;
 
-@group(2) @binding(5)
+@group(constants::MATERIAL_BIND_GROUP) @binding(5)
 var cobbles: texture_2d<f32>;
-@group(2) @binding(6)
+@group(constants::MATERIAL_BIND_GROUP) @binding(6)
 var cobbles_sampler: sampler;
 
-@group(2) @binding(7)
+@group(constants::MATERIAL_BIND_GROUP) @binding(7)
 var surface0: texture_2d<f32>;
-@group(2) @binding(8)
+@group(constants::MATERIAL_BIND_GROUP) @binding(8)
 var surface0_sampler: sampler;
 
-@group(2) @binding(9)
+@group(constants::MATERIAL_BIND_GROUP) @binding(9)
 var surface1: texture_2d<f32>;
-@group(2) @binding(10)
+@group(constants::MATERIAL_BIND_GROUP) @binding(10)
 var surface1_sampler: sampler;
 
-@group(2) @binding(11)
+@group(constants::MATERIAL_BIND_GROUP) @binding(11)
 var surface2: texture_2d<f32>;
-@group(2) @binding(12)
+@group(constants::MATERIAL_BIND_GROUP) @binding(12)
 var surface2_sampler: sampler;
 
-@group(2) @binding(13)
+@group(constants::MATERIAL_BIND_GROUP) @binding(13)
 var surface3: texture_2d<f32>;
-@group(2) @binding(14)
+@group(constants::MATERIAL_BIND_GROUP) @binding(14)
 var surface3_sampler: sampler;
 
-// @group(2) @binding(7)
+// @group(constants::MATERIAL_BIND_GROUP) @binding(7)
 // var moss: texture_2d<f32>;
-// @group(2) @binding(8)
+// @group(constants::MATERIAL_BIND_GROUP) @binding(8)
 // var moss_sampler: sampler;
 
-@group(2) @binding(20)
+@group(constants::MATERIAL_BIND_GROUP) @binding(20)
 var<uniform> water_color: vec4<f32>;
 
-@group(2) @binding(21)
+@group(constants::MATERIAL_BIND_GROUP) @binding(21)
 var<uniform> biome_weight: mat4x4<f32>;
 
-@group(2) @binding(22)
+@group(constants::MATERIAL_BIND_GROUP) @binding(22)
 var<uniform> biome_surface: array<BiomeSurfaceAttrs, 4>;
 
-// @group(2) @binding(23)
+// @group(constants::MATERIAL_BIND_GROUP) @binding(23)
 // var<uniform> realm_offset: vec2<f32>;
 
 const NUM_GROUND_TYPES = 9u;

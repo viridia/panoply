@@ -1,14 +1,13 @@
 use bevy::{
+    mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
     pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
     reflect::TypePath,
-    render::{
-        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
-        render_resource::{
-            AsBindGroup, RenderPipelineDescriptor, ShaderRef, ShaderType,
-            SpecializedMeshPipelineError, VertexFormat,
-        },
+    render::render_resource::{
+        AsBindGroup, RenderPipelineDescriptor, ShaderType, SpecializedMeshPipelineError,
+        VertexFormat,
     },
+    shader::ShaderRef,
 };
 
 use crate::{BiomeSurfaceType, BiomesTable, ParcelBiomes};
@@ -140,19 +139,19 @@ impl GroundMaterial {
 
 impl Material for GroundMaterial {
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply_terrain/shaders/ground.wgsl".into()
+        "embedded://panoply_terrain/shaders/ground.wesl".into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply_terrain/shaders/ground.wgsl".into()
+        "embedded://panoply_terrain/shaders/ground.wesl".into()
     }
 
     // fn prepass_vertex_shader() -> ShaderRef {
-    //     "terrain/shaders/ground.wgsl".into()
+    //     "terrain/shaders/ground.wesl".into()
     // }
 
     fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
+        _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,

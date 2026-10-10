@@ -3,6 +3,8 @@ use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
+use panoply_core::{metrics::PRECINCT_SIZE_F, Realm, Viewpoint};
+use panoply_terrain::PARCEL_SIZE_F;
 
 pub struct ScreenDiagsPlugin;
 
@@ -18,6 +20,11 @@ impl Plugin for ScreenDiagsPlugin {
         app.add_plugins(FrameTimeDiagnosticsPlugin::default())
             .add_systems(Startup, spawn_text)
             .add_systems(Update, update);
+
+        // The location readout is a development aid, so it ships only with the editor.
+        #[cfg(feature = "editor")]
+        app.add_systems(Startup, spawn_location_text)
+            .add_systems(Update, update_location_text);
     }
 }
 
@@ -68,4 +75,60 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
         ))
         .insert(ScreenDiagsText);
+}
+
+/// The marker on the text showing where the view is centered.
+#[derive(Component)]
+pub struct LocationText;
+
+fn spawn_location_text(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        Name::new("LocationText"),
+        LocationText,
+        Text::new(""),
+        TextFont {
+            font: FontSource::Handle(asset_server.load("fonts/Rubik/Rubik-VariableFont_wght.ttf")),
+            font_size: FontSize::Px(FONT_SIZE),
+            ..default()
+        },
+        TextColor(palettes::basic::YELLOW.into()),
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(10.0),
+            top: Val::Px(10.0),
+            ..default()
+        },
+    ));
+}
+
+/// Shows the realm and view center, and the parcel and precinct it falls in, so that a problem
+/// spotted on screen can be located in the map.
+fn update_location_text(
+    viewpoint: Res<Viewpoint>,
+    q_realms: Query<&Realm>,
+    mut q_text: Query<&mut Text, With<LocationText>>,
+) {
+    let Ok(mut text) = q_text.single_mut() else {
+        return;
+    };
+    let realm = viewpoint
+        .realm
+        .and_then(|e| q_realms.get(e).ok())
+        .map_or("(none)", |r| r.name.as_str());
+    let p = viewpoint.position;
+    let parcel = (p.xz() / PARCEL_SIZE_F).floor();
+    let precinct = (p.xz() / PRECINCT_SIZE_F).floor();
+    let value = format!(
+        "{realm}  x {:.1}  z {:.1}\nparcel {} {}  precinct {} {}\nzoom {:.0}",
+        p.x,
+        p.z,
+        parcel.x,
+        parcel.y,
+        precinct.x,
+        precinct.y,
+        viewpoint.camera_distance(),
+    );
+    if text.0 != value {
+        text.0 = value;
+    }
 }

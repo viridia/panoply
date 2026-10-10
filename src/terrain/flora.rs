@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use crate::models::PropagateRenderLayers;
-use hashbrown::HashMap;
+use bevy::platform::collections::HashMap;
 use panoply_core::{
     random::{noise3, WeightedChoice},
     Realm,
@@ -18,6 +18,7 @@ use super::{
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
+    world_serialization::WorldAssetRoot,
 };
 use futures_lite::future;
 
@@ -181,7 +182,7 @@ pub fn insert_flora(
                                             // Replace flora model
                                             flora_cmp.handle = handle.clone();
                                             flora_cmp.label = fragment.to_string();
-                                            commands.entity(flora).remove::<SceneRoot>();
+                                            commands.entity(flora).remove::<WorldAssetRoot>();
                                         }
                                         if *transform_cmp != transform {
                                             *transform_cmp = transform;
@@ -228,7 +229,7 @@ pub fn insert_flora(
 
 pub fn spawn_flora_model_instances(
     mut commands: Commands,
-    mut q_flora_instance: Query<(Entity, &FloraInstance), Without<SceneRoot>>,
+    mut q_flora_instance: Query<(Entity, &FloraInstance), Without<WorldAssetRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
@@ -239,7 +240,7 @@ pub fn spawn_flora_model_instances(
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     commands.entity(entity).try_insert((
-                        SceneRoot(scene_handle.clone()),
+                        WorldAssetRoot(scene_handle.clone()),
                         mesh.transform,
                         PropagateRenderLayers,
                     ));

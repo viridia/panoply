@@ -1,14 +1,12 @@
 use bevy::{
+    mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
     pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
     reflect::TypePath,
-    render::{
-        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
-        render_resource::{
-            AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
-            VertexFormat,
-        },
+    render::render_resource::{
+        AsBindGroup, RenderPipelineDescriptor, SpecializedMeshPipelineError, VertexFormat,
     },
+    shader::ShaderRef,
 };
 
 pub const ATTRIBUTE_DEPTH_MOTION: MeshVertexAttribute =
@@ -38,11 +36,11 @@ pub struct WaterMaterial {
 
 impl Material for WaterMaterial {
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply_terrain/shaders/water.wgsl".into()
+        "embedded://panoply_terrain/shaders/water.wesl".into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply_terrain/shaders/water.wgsl".into()
+        "embedded://panoply_terrain/shaders/water.wesl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {
@@ -50,7 +48,7 @@ impl Material for WaterMaterial {
     }
 
     fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
+        _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,

@@ -80,6 +80,26 @@ pub fn viewpoint_transitions(time: Res<Time>, mut viewpoint: ResMut<Viewpoint>) 
     }
 }
 
+/// Request to move the viewpoint to a position in a named realm. Written by the editor's quick
+/// navigation, or over the Bevy Remote Protocol with `world.write_message` by test plans.
+#[derive(Message, Reflect, Clone, Debug)]
+#[reflect(Message)]
+pub struct GotoLocation {
+    /// Name of the realm, such as `"playground"`.
+    pub realm: String,
+    /// Position in the realm, in meters.
+    pub position: Vec3,
+}
+
+pub fn goto_location(mut messages: MessageReader<GotoLocation>, mut commands: Commands) {
+    for goto in messages.read() {
+        commands.queue(SetViewpointCmd {
+            position: goto.position,
+            realm: goto.realm.clone(),
+        });
+    }
+}
+
 /// Command which directly sets the viewpoint to a new position, used in editor.
 /// For gameplay, the viewpoint follows the "active entity".
 pub struct SetViewpointCmd {

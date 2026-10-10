@@ -1,4 +1,4 @@
-"""Smoke test: the game starts, the viewpoint moves and strafes, and Escape quits.
+"""Smoke test: the game starts, the viewpoint moves, strafes and zooms, and Escape quits.
 
     python3 crates/bevy_remote_driver/client/run.py plans/smoke.py
 
@@ -26,5 +26,14 @@ def run(driver):
 
     driver.key("ArrowRight", hold=30)
     driver.screenshot("turned")
+
+    # Zoom in two steps and back out, leaving the saved zoom level where it was (unless it was
+    # already at a limit, where a step clamps).
+    driver.key("Equal")
+    driver.key("Equal")
+    driver.seconds(0.4)
+    driver.screenshot("zoomed")
+    driver.key("Minus")
+    driver.key("Minus")
 
     driver.exits("Escape")

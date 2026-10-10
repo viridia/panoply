@@ -216,7 +216,7 @@ pub enum TerrainContoursLoaderError {
     Io(#[from] std::io::Error),
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct TerrainContoursTableLoader;
 
 impl AssetLoader for TerrainContoursTableLoader {
@@ -255,6 +255,7 @@ impl AssetLoader for TerrainContoursTableLoader {
     }
 }
 
+#[derive(Default, TypePath)]
 pub struct TerrainContoursTableSaver;
 
 #[non_exhaustive]
@@ -287,8 +288,9 @@ impl AssetSaver for TerrainContoursTableSaver {
     async fn save(
         &self,
         writer: &mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        asset: bevy::asset::saver::SavedAsset<'_, '_, Self::Asset>,
         _settings: &Self::Settings,
+        _asset_path: bevy::asset::AssetPath<'_>,
     ) -> Result<(), Self::Error> {
         let v = self.encode(&asset)?;
         writer.write_all(&v).await?;

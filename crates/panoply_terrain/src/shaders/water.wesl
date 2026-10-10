@@ -1,13 +1,5 @@
-#define FRAGMENT_WAVES 1
-// #define FRAGMENT_WAVES_2 1
-#define VERTEX_WAVES 1
-#define FOAM 1
-#define SKY 1
-#define STANDARD_MATERIAL_CLEARCOAT 1
-
-#import bevy_core_pipeline::tonemapping::tone_mapping
-#import bevy_pbr::{
-    lighting,
+import bevy_core_pipeline::tonemapping::tone_mapping;
+import bevy_pbr::render::{
     mesh_bindings::mesh,
     mesh_functions as mfns,
     mesh_view_bindings::globals,
@@ -18,27 +10,35 @@
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
     shadows,
-}
+};
 
-@group(2) @binding(1)
+// Feature toggles. These were `#define`s under naga_oil; WESL has no in-file defines, so they
+// are constants, and the branches on them are folded at compile time.
+const ENABLE_FRAGMENT_WAVES: bool = true;
+const ENABLE_FRAGMENT_WAVES_2: bool = false;
+const ENABLE_VERTEX_WAVES: bool = true;
+const ENABLE_FOAM: bool = true;
+const ENABLE_SKY: bool = true;
+
+@group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var<uniform> water_color: vec4<f32>;
 
-@group(2) @binding(2)
+@group(constants::MATERIAL_BIND_GROUP) @binding(2)
 var<uniform> sky_color: array<vec4<f32>, 2>;
 
-@group(2) @binding(3)
+@group(constants::MATERIAL_BIND_GROUP) @binding(3)
 var waves: texture_2d<f32>;
-@group(2) @binding(4)
+@group(constants::MATERIAL_BIND_GROUP) @binding(4)
 var waves_sampler: sampler;
 
-@group(2) @binding(5)
+@group(constants::MATERIAL_BIND_GROUP) @binding(5)
 var sky: texture_2d<f32>;
-@group(2) @binding(6)
+@group(constants::MATERIAL_BIND_GROUP) @binding(6)
 var sky_sampler: sampler;
 
-@group(2) @binding(7)
+@group(constants::MATERIAL_BIND_GROUP) @binding(7)
 var foam: texture_2d<f32>;
-@group(2) @binding(8)
+@group(constants::MATERIAL_BIND_GROUP) @binding(8)
 var foam_sampler: sampler;
 
 struct Vertex {
@@ -89,12 +89,12 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
 
     var wave: WaveAccum;
     // freq, wavelength, strength, position, direction
-#ifdef VERTEX_WAVES
-    add_wave(1., .05, vec2(5.0, 5.0), uv, &wave);
-    add_wave(1.5, .05, vec2(3.0, 7.0), uv, &wave);
-    add_wave(2.7, .05, vec2(0.0, 10.3), uv, &wave);
-    add_wave(2.3, .05, vec2(7.5, 3.0), uv, &wave);
-#endif
+    if ENABLE_VERTEX_WAVES {
+        add_wave(1., .05, vec2(5.0, 5.0), uv, &wave);
+        add_wave(1.5, .05, vec2(3.0, 7.0), uv, &wave);
+        add_wave(2.7, .05, vec2(0.0, 10.3), uv, &wave);
+        add_wave(2.3, .05, vec2(7.5, 3.0), uv, &wave);
+    }
 
     position.y += wave.amplitude;
     normal = normalize(vec3(wave.tangent.x * 0.5, 1.0, wave.tangent.y * 0.5));
@@ -147,49 +147,49 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var normal = mesh.world_normal;
     var chop = vec3<f32>(0.);
 
-#ifdef FRAGMENT_WAVES
-    var motion = vec2(0., 0.);
-    var time_mult = 0.7;
-    var weight = 0.0;
-    for (var i = 0u; i < 12u; i++) {
-        let direction = FRAGMENT_WAVES[i].direction;
-        let frequency = FRAGMENT_WAVES[i].freq;
-        var strength = FRAGMENT_WAVES[i].strength;
-        // if direction.x < 0.1 {
-        //     strength *= 0.1;
-        // }
+    if ENABLE_FRAGMENT_WAVES {
+        var motion = vec2(0., 0.);
+        var time_mult = 0.7;
+        var weight = 0.0;
+        for (var i = 0u; i < 12u; i++) {
+            let direction = FRAGMENT_WAVES[i].direction;
+            let frequency = FRAGMENT_WAVES[i].freq;
+            var strength = FRAGMENT_WAVES[i].strength;
+            // if direction.x < 0.1 {
+            //     strength *= 0.1;
+            // }
 
-        let m = mat2x2(direction.x, direction.y, -direction.y, direction.x);
-        let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
-        let d = textureSample(waves, waves_sampler, fract(p)).rgb - 0.25;
-        chop += vec3f(d.x, 0.0, d.y) * strength;
-        weight += strength;
+            let m = mat2x2(direction.x, direction.y, -direction.y, direction.x);
+            let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
+            let d = textureSample(waves, waves_sampler, fract(p)).rgb - 0.25;
+            chop += vec3f(d.x, 0.0, d.y) * strength;
+            weight += strength;
+        }
+        normal = normalize(normal + chop / weight * 0.5);
     }
-    normal = normalize(normal + chop / weight * 0.5);
-#endif
 
-#ifdef FRAGMENT_WAVES_2
-    // var d = 1. - min(1., length(uv) / 16.);
-    // var motion = vec2(0., 0.);
-    var iter: f32 = 0.1;
-    var frequency = 2.;
-    var weight = .1;
-    var speed = 1.0;
-    for (var i = 0; i < 12; i++) {
-        let s = sin(iter);
-        let c = cos(iter);
-        let direction = vec2(c, s);
-        let phi = dot(uv, direction) * frequency + speed * globals.time;
-        let s1 = sin(phi);
-        chop.x += direction.x * s1 * 0.01;
-        chop.z += direction.y * s1 * 0.01;
-        frequency *= 1.123;
-        speed *= 1.07;
-        // weight *= 0.82;
-        iter += 1232.399963;
+    if ENABLE_FRAGMENT_WAVES_2 {
+        // var d = 1. - min(1., length(uv) / 16.);
+        // var motion = vec2(0., 0.);
+        var iter: f32 = 0.1;
+        var frequency = 2.;
+        var weight = .1;
+        var speed = 1.0;
+        for (var i = 0; i < 12; i++) {
+            let s = sin(iter);
+            let c = cos(iter);
+            let direction = vec2(c, s);
+            let phi = dot(uv, direction) * frequency + speed * globals.time;
+            let s1 = sin(phi);
+            chop.x += direction.x * s1 * 0.01;
+            chop.z += direction.y * s1 * 0.01;
+            frequency *= 1.123;
+            speed *= 1.07;
+            // weight *= 0.82;
+            iter += 1232.399963;
+        }
+        normal = normalize(normal + chop);
     }
-    normal = normalize(normal + chop);
-#endif
 
     let view_vector = normalize(view.world_position - mesh.world_position.xyz);
     var reflect_vector = reflect(view_vector, normal);
@@ -197,25 +197,24 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let angle = dot(view_vector, mesh.world_normal);
     let opacity = 0.2 + 1.6 * pow(1.0 - angle, 2.);
 
-#ifdef SKY
-    let sky_color = mix(
-        sky_color[0],
-        sky_color[1],
-        textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
-#else
-    let sky_color = sky_color[0];
-#endif
-    var color = mix(vec4(water_color.rgb, 1.0), sky_color * 0.5, opacity * 0.5 - 0.1);
+    var reflected_sky = sky_color[0];
+    if ENABLE_SKY {
+        reflected_sky = mix(
+            sky_color[0],
+            sky_color[1],
+            textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
+    }
+    var color = mix(vec4(water_color.rgb, 1.0), reflected_sky * 0.5, opacity * 0.5 - 0.1);
 
-#ifdef FOAM
-    let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
-    let n2 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(-0.01, 0.03))).g;
-    let n3 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.03, -0.02))).g;
-    var foam_level = 0.8 - pow(water_depth * 2.0 + 0.3, 0.6) + (n1 + n2 + n3) * 0.3; // + (n1 + n2 + n3 + n4 + n5);
-    foam_level = smoothstep(.3, .9, foam_level);
+    if ENABLE_FOAM {
+        let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
+        let n2 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(-0.01, 0.03))).g;
+        let n3 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.03, -0.02))).g;
+        var foam_level = 0.8 - pow(water_depth * 2.0 + 0.3, 0.6) + (n1 + n2 + n3) * 0.3; // + (n1 + n2 + n3 + n4 + n5);
+        foam_level = smoothstep(.3, .9, foam_level);
 
-    color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
-#endif
+        color = mix(color, vec4(.8, .9, 1., 0.6), foam_level);
+    }
 
     let view_z = dot(vec4<f32>(
         view.view_from_world[0].z,
@@ -229,14 +228,13 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     for (var i: u32 = 0u; i < n_directional_lights; i = i + 1u) {
         // check if this light should be skipped, which occurs if this light does not intersect with the view
         // note point and spot lights aren't skippable, as the relevant lights are filtered in `assign_lights_to_clusters`
+        // Bevy no longer uploads a `skip` flag; lights outside the view's render layers are
+        // filtered out before they reach the shader.
         let light = &lights.directional_lights[i];
-        if (*light).skip != 0u {
-            continue;
-        }
 
         var shadow: f32 = 1.0;
         if ((lights.directional_lights[i].flags & mesh_view_types::DIRECTIONAL_LIGHT_FLAGS_SHADOWS_ENABLED_BIT) != 0u) {
-            shadow = shadows::fetch_directional_shadow(i, mesh.world_position, normal, view_z);
+            shadow = shadows::fetch_directional_shadow(i, mesh.world_position, normal, view_z, mesh.position.xy);
         }
 
         let L = (*light).direction_to_light.xyz;

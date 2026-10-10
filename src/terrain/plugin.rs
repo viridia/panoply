@@ -47,14 +47,14 @@ impl Plugin for TerrainPlugin {
 pub fn config_textures_modes(
     server: Res<AssetServer>,
     mut assets: ResMut<Assets<Image>>,
-    mut ev_image: EventReader<AssetEvent<Image>>,
+    mut ev_image: MessageReader<AssetEvent<Image>>,
 ) {
     for ev in ev_image.read() {
         if let AssetEvent::Added { id } = ev {
             if let Some(asset_path) = server.get_path(*id) {
                 let path = asset_path.path();
                 if path.parent().expect("path").to_str().expect("path") == "textures" {
-                    if let Some(image) = assets.get_mut(*id) {
+                    if let Some(mut image) = assets.get_mut(*id) {
                         image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                             label: Some("Terrain textures".to_string()),
                             address_mode_u: ImageAddressMode::Repeat,

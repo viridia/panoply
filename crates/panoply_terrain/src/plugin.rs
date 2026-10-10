@@ -34,8 +34,8 @@ pub struct PanoplyTerrainPlugin;
 
 impl Plugin for PanoplyTerrainPlugin {
     fn build(&self, app: &mut App) {
-        embedded_asset!(app, "shaders/ground.wgsl");
-        embedded_asset!(app, "shaders/water.wgsl");
+        embedded_asset!(app, "shaders/ground.wesl");
+        embedded_asset!(app, "shaders/water.wesl");
 
         app
         // .insert_resource(ParcelCache::new())

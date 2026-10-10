@@ -12,17 +12,13 @@ use panoply_terrain::{
 
 use super::PARCEL_MESH_SCALE_U;
 use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexFormat},
     prelude::*,
-    render::{
-        mesh::{Indices, MeshAabb, MeshVertexAttribute},
-        render_asset::RenderAssetUsages,
-        render_resource::{PrimitiveTopology, VertexFormat},
-    },
     tasks::{AsyncComputeTaskPool, Task},
 };
-use panoply_terrain::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
-// use bevy_mod_picking::backends::raycast::RaycastPickable;
 use futures_lite::future;
+use panoply_terrain::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
 use rapier3d::{
     math::Point,
     prelude::{Collider, ColliderBuilder},
@@ -137,8 +133,8 @@ pub fn insert_ground_meshes(
                                         MeshMaterial3d(material),
                                         Visibility::Visible,
                                         realm.layer.clone(),
+                                        // Meshes are pickable by default with bevy_picking.
                                         // TODO: Might want to pick on physics colliders instead.
-                                        RayCastPickable,
                                         Name::new("Ground"),
                                         ChildOf(entity),
                                     ))
@@ -407,7 +403,6 @@ fn compute_ground_mesh(
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_attribute(GroundMaterial::ATTRIBUTE_TERRAIN_STYLE, terrain_style);
     mesh.insert_indices(Indices::U32(indices));
-    mesh.compute_aabb();
 
     let collider = collider_builder.build();
     Some(GroundMeshResult { mesh, collider })

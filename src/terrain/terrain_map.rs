@@ -14,8 +14,7 @@ use panoply_terrain::{ShapeRef, ADJACENT_COUNT};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::scenery::PRECINCT_SIZE;
-use panoply_core::Realm;
+use panoply_core::{metrics::PRECINCT_SIZE, Realm};
 
 use super::PARCEL_SIZE;
 
@@ -128,7 +127,7 @@ pub enum TerrainMapLoaderError {
     Io(#[from] std::io::Error),
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct TerrainMapLoader;
 
 impl AssetLoader for TerrainMapLoader {
@@ -157,7 +156,7 @@ impl AssetLoader for TerrainMapLoader {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct TerrainMapSaver;
 
 #[non_exhaustive]
@@ -181,8 +180,9 @@ impl AssetSaver for TerrainMapSaver {
     async fn save(
         &self,
         writer: &mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        asset: bevy::asset::saver::SavedAsset<'_, '_, Self::Asset>,
         _settings: &Self::Settings,
+        _asset_path: bevy::asset::AssetPath<'_>,
     ) -> Result<(), TerrainMapSaverError> {
         let v = rmps::encode::to_vec_named(&*asset)?;
         writer.write_all(&v).await?;
@@ -248,7 +248,7 @@ pub fn update_terrain_maps(
     mut commands: Commands,
     server: Res<AssetServer>,
     mut query: Query<(Entity, &mut Realm, Option<&mut TerrainMap>)>,
-    mut ev_asset: EventReader<AssetEvent<TerrainMapAsset>>,
+    mut ev_asset: MessageReader<AssetEvent<TerrainMapAsset>>,
     // mut materials: ResMut<Assets<GroundMaterial>>,
     // mut images: ResMut<Assets<Image>>,
     tm_assets: Res<Assets<TerrainMapAsset>>,

@@ -2,8 +2,6 @@ mod biome;
 mod ground_material;
 pub mod metrics;
 mod parcel;
-// mod parcel_cache;
-// mod compute_mesh;
 mod plugin;
 mod rotator;
 mod square;
@@ -11,8 +9,6 @@ mod terrain_contours;
 mod terrain_fx;
 mod terrain_groups;
 mod water_material;
-// mod water_mesh;
-// mod terrain_map;
 
 pub use biome::*;
 pub use ground_material::{GroundMaterial, GroundMaterialCache};

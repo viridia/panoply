@@ -15,18 +15,19 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `dd242ce` | This ledger and `AGENTS.md`; removed `bevy_saga`.                                       |
 | `c46a218` | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
 | `c46a218` | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
-| (pending) | `panoply_exemplar`; `plans/exemplars.py` checks loading and `extends`.                  |
+| `cd25a24` | `panoply_exemplar`; `plans/exemplars.py` checks loading and `extends`.                  |
+| (pending) | Terrain: `panoply_terrain` + `src/terrain`, shaders to WESL; `plans/terrain.py`.        |
+| (pending) | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
 
 ## Next
 
-1. `panoply_terrain` + `src/terrain` + `scenery`: first break the `scenery` <-> `terrain` cycle,
-   and consolidate code duplicated between the crate and `src/terrain` (`water_mesh`,
-   `terrain_map`, ground material). Port `assets/shaders/lib/*` and terrain shaders to WESL.
+1. `scenery` (see D11). Port `assets/shaders/lib/*` to WESL if anything still imports it.
 2. `actors`, `portals`.
 3. `editor` (see X3).
 
-When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` checks from `main.rs`
-(`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until then, only exemplar
+When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` items from `main.rs`
+(`spawn_material_test`, `ExemplarCheck`, `release_parcel_terrain_fx`) and
+`plans/exemplars.py`. Until then, only exemplar
 catalogs without aspects can load, since the aspect types are registered by those modules.
 
 ## Decisions
@@ -60,7 +61,20 @@ catalogs without aspects can load, since the aspect types are registered by thos
   `bevy_action_map` at `f641559` (where it lives only for convenience of development). The plugin
   is inert unless `BEVY_REMOTE_DRIVER_PORT` is set. Plans live in `plans/`, and run with
   `python3 crates/bevy_remote_driver/client/run.py plans/<plan>.py`. Fork changes: the client
-  can launch a binary (`BIN`), not only an example, and has an `exits` step for a key that quits.
+  can launch a binary (`BIN`), not only an example; an `exits` step for a key that quits; and a
+  `message` step that writes any reflected message, e.g. `panoply_core::GotoLocation` to
+  teleport the viewpoint.
+- **D11** Layering: `panoply_core` (realm, both grid sizes) <- `panoply_terrain` <- scenery.
+  `PRECINCT_SIZE` lives in `panoply_core::metrics`, which removed terrain's only import from
+  scenery. Scenery pushes terrain effects into parcels through `ParcelTerrainFx`, defined in
+  `panoply_terrain`. At runtime, ground meshes and flora still wait for scenery: a parcel spawns
+  with `RebuildParcelTerrainFx`, and only scenery's `terrain_fx_map` clears it, once the
+  precinct's effects are written. This is deliberate (no ground before its roads and holes).
+- **D12** WESL has no in-file `#define`. Shader-local feature toggles (`water.wesl`) are `const`
+  bools with `if` branches, which fold at compile time.
+- **D13** The map editor and its aids are development-only, behind the `editor` Cargo feature
+  (on by default, not shipped). Zoom and the location overlay are editor-only; in the game the
+  camera distance is fixed (`CAMERA_DISTANCE` in `main.rs`).
 
 ## Deferred
 
@@ -83,6 +97,9 @@ catalogs without aspects can load, since the aspect types are registered by thos
   Animated Graphic Adventures"). *Gate:* the `bevy_reactor` SAGA prototype is ready to integrate.
 - **X8** Horizontal trackpad scroll rotates the viewpoint through a bespoke `MouseWheel` reader
   (`input::scroll_rotate_viewpoint`). *Gate:* `bevy_action_map` supports scroll input.
+- **X9** Finish splitting terrain and scenery into crates: move the parcel systems from
+  `src/terrain` into `panoply_terrain`, and scenery into its own `panoply_scenery`. Flora's only
+  tie to the app is `models::PropagateRenderLayers` (see X4). *Gate:* scenery restored.
 
 ## Notes
 

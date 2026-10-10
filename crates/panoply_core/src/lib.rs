@@ -1,4 +1,5 @@
 pub mod layers;
+pub mod metrics;
 pub mod random;
 pub mod realm;
 pub mod realm_physics;
@@ -15,8 +16,8 @@ pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
 use realm_physics::realm_physics_system;
 pub use realm_physics::RealmPhysics;
-use viewpoint::viewpoint_transitions;
-pub use viewpoint::Viewpoint;
+use viewpoint::{goto_location, viewpoint_transitions};
+pub use viewpoint::{GotoLocation, Viewpoint};
 
 /// Marker which identifies the primary camera.
 #[derive(Component)]
@@ -33,7 +34,8 @@ impl Plugin for PanoplyCorePlugin {
         app.register_asset_loader(RealmsLoader)
             .init_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
-            .add_systems(Update, (load_realms, viewpoint_transitions))
+            .add_message::<GotoLocation>()
+            .add_systems(Update, (load_realms, viewpoint_transitions, goto_location))
             .add_systems(PostUpdate, viewpoint::update_camera_pos)
             .add_systems(FixedUpdate, realm_physics_system);
     }

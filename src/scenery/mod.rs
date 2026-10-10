@@ -38,8 +38,7 @@ mod terrain_fx_aspect;
 mod terrain_fx_map;
 mod wall_aspect;
 
-pub const PRECINCT_SIZE: i32 = 64;
-pub const PRECINCT_SIZE_F: f32 = PRECINCT_SIZE as f32;
+pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders

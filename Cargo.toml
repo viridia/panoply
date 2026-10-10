@@ -8,9 +8,12 @@ default = ["editor"]
 editor = []          # Enable editor features
 
 [workspace]
-members = ["crates/bevy_remote_driver", "crates/panoply_core", "crates/panoply_exemplar"]
-# TODO(bevy-0.20): restore these crates to the workspace as they are ported.
-exclude = ["crates/panoply_terrain"]
+members = [
+  "crates/bevy_remote_driver",
+  "crates/panoply_core",
+  "crates/panoply_exemplar",
+  "crates/panoply_terrain",
+]
 
 [workspace.dependencies]
 bevy = { version = "0.20.0", features = [
@@ -41,8 +44,13 @@ bevy = { workspace = true }
 bevy_action_map = "0.1.2"
 # Inert unless BEVY_REMOTE_DRIVER_PORT is set; see crates/bevy_remote_driver.
 bevy_remote_driver = { path = "crates/bevy_remote_driver" }
-panoply_exemplar = { workspace = true }
+futures-lite = "2.2.0"
+lru = { workspace = true }
 panoply_core = { workspace = true }
+panoply_exemplar = { workspace = true }
+panoply_terrain = { workspace = true }
+rapier3d = { workspace = true }
+rmp-serde = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -52,13 +60,8 @@ thiserror = { workspace = true }
 # bevy-inspector-egui = "0.28.1"                     # pins bevy 0.15; replace or bump
 # bitflags = { workspace = true }
 # earcutr = "0.4.3"                                  # scenery
-# futures-lite = "2.2.0"
 # i_overlay = "1.4.2"                                # scenery
-# lru = { workspace = true }                         # terrain, scenery
-# panoply_terrain = { workspace = true }
-# rapier3d = { workspace = true }                    # terrain, scenery colliders
 # regex = "1.10.6"
-# rmp-serde = { workspace = true }
 # serde_bytes = { workspace = true }
 # serde_derive = "1.0.171"
 # serde_repr = { workspace = true }

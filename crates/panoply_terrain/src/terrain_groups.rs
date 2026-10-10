@@ -24,7 +24,7 @@ pub struct TerrainGroupsTable(pub Vec<TerrainGroup>);
 #[derive(TypePath, Asset, Default)]
 pub struct TerrainGroupsAsset(pub Arc<RwLock<TerrainGroupsTable>>);
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct TerrainGroupsLoader;
 
 #[non_exhaustive]

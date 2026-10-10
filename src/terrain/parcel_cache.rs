@@ -35,7 +35,7 @@ impl ParcelCache {
     }
 
     /// Query all parcels within a given rectangle.
-    pub fn query(&self, realm: Entity, rect: IRect) -> ParcelRectIterator {
+    pub fn query(&self, realm: Entity, rect: IRect) -> ParcelRectIterator<'_> {
         ParcelRectIterator {
             cache: self,
             realm,

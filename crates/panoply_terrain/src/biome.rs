@@ -64,7 +64,7 @@ impl BiomesTable {
 #[derive(TypePath, Asset)]
 pub struct BiomesAsset(pub Arc<Mutex<BiomesTable>>);
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct BiomesLoader;
 
 #[non_exhaustive]

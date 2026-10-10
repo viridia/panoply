@@ -23,26 +23,24 @@ use window_settings::WindowSettingsPlugin;
 // mod actors;
 // mod portals;
 // mod scenery;
-// mod terrain;
 
 mod diagnostics;
 mod input;
 mod materials;
 mod models;
 mod reflect_types;
+mod terrain;
 mod view;
 mod window_settings;
 mod world;
 
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
-    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, world::WorldPlugin,
+    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, terrain::TerrainPlugin,
+    world::WorldPlugin,
 };
 // TODO(bevy-0.20): restore
-// use crate::{
-//     actors::ActorsPlugin, portals::PortalPlugin, scenery::SceneryPlugin,
-//     terrain::TerrainPlugin,
-// };
+// use crate::{actors::ActorsPlugin, portals::PortalPlugin, scenery::SceneryPlugin};
 
 // TODO(bevy-0.20): restore with editor
 // #[derive(Resource)]
@@ -87,13 +85,13 @@ fn main() {
     .insert_resource(Viewpoint {
         position: Vec3::new(0., 0., 0.),
         azimuth: 0.,
-        camera_distance: 60.,
+        camera_distance: CAMERA_DISTANCE,
         elevation: PI * 0.25,
         ..default()
     })
     .init_resource::<ReservedLayers>()
     .add_systems(Startup, (setup, spawn_material_test, load_exemplar_check))
-    .add_systems(Update, run_exemplar_check)
+    .add_systems(Update, (run_exemplar_check, release_parcel_terrain_fx))
     .add_systems(Update, (rotate_shapes, nav_to_center))
     .add_systems(
         PostUpdate,
@@ -108,8 +106,8 @@ fn main() {
         MaterialsPlugin,
         WorldPlugin,
         ModelsPlugin,
+        TerrainPlugin,
         // TODO(bevy-0.20): restore
-        // TerrainPlugin,
         // SceneryPlugin,
         // ActorsPlugin,
         // PortalPlugin,
@@ -123,6 +121,9 @@ fn main() {
 
     println!("Exited!")
 }
+
+/// Distance from the camera to the view center. Fixed in the game; the editor can zoom.
+const CAMERA_DISTANCE: f32 = 20.;
 
 /// A marker component for our shapes so we can query them separately from the ground plane
 #[derive(Component)]
@@ -351,6 +352,20 @@ fn run_exemplar_check(
         commands.spawn(Name::new("ExemplarCheckPassed"));
     }
     commands.remove_resource::<ExemplarCheck>();
+}
+
+/// TEMP(bevy-0.20): Stands in for scenery, which normally writes each precinct's terrain effects
+/// into its parcels and then clears `RebuildParcelTerrainFx`. Ground meshes and flora wait for
+/// that marker to go, so without scenery they never appear. Remove when scenery is restored.
+fn release_parcel_terrain_fx(
+    mut commands: Commands,
+    q_parcels: Query<Entity, With<panoply_terrain::RebuildParcelTerrainFx>>,
+) {
+    for parcel in &q_parcels {
+        commands
+            .entity(parcel)
+            .remove::<panoply_terrain::RebuildParcelTerrainFx>();
+    }
 }
 
 /// Creates a colorful test pattern

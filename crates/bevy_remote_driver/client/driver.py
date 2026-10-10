@@ -178,6 +178,11 @@ class Driver:
         self._key(code, "Released", logical_key, text)
 
     @step
+    def message(self, type_path, value):
+        """Writes one reflected message of the app's own, such as a teleport, on its own frame."""
+        self._send(type_path, value)
+
+    @step
     def exits(self, code, seconds=10):
         """Presses a key that should quit the app, and waits until the app stops answering.
 
