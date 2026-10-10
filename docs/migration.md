@@ -18,14 +18,18 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `cd25a24` | `panoply_exemplar`; `plans/exemplars.py` checks loading and `extends`.                  |
 | `2ac5f1b` | Terrain: `panoply_terrain` + `src/terrain`, shaders to WESL; `plans/terrain.py`.        |
 | `2ac5f1b` | Editor-only location overlay and zoom; `GotoLocation` message; `plans/perf.py`.         |
-| (pending) | Perf plans; dedicated `OutlineMaterial` on child entities; isolated plan settings.      |
+| `a3ef8f2` | Perf plans; dedicated `OutlineMaterial` on child entities; isolated plan settings.      |
+| `143a84d` | Hemisphere ambient light; shadow cascades fitted to camera distance; 2x2 filter.        |
 
 ## Next
 
-1. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
+1. Performance follow-ups from the CPU profile (Notes): merge flora into per-parcel combined
+   meshes, and check the parcel cache's view radius (it loads about as many entities at
+   distance 20 as at 40). Aim: forest spot at distance 20 under about 5 ms, leaving scenery room.
+2. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
    it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
-2. `actors`, `portals`.
-3. `editor` (see X3).
+3. `actors`, `portals`.
+4. `editor` (see X3).
 
 When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`, `release_parcel_terrain_fx`) and
@@ -148,7 +152,18 @@ catalogs without aspects can load, since the aspect types are registered by thos
   flora 4.3, water 2.8. Water's fragment-wave loop is only about 0.6 ms.
 - At distance 20, playground (110, 150), `plans/ablate.py` (2026-10-10): 8.4 ms before D18,
   6.7 ms after. Camera off (CPU floor): 3.3 ms. Flora 2.5, quarter pixels 2.2, ground 1.7, water
-  1.4, MSAA 1.1. Next: profile the CPU floor.
+  1.4, MSAA 1.1.
+- CPU profile there (samply, 2026-10-10): no `panoply` system is significant. The floor is Bevy's
+  per-entity work over about 8,700 entities, run on the compute pool (about 9.6 ms CPU per frame
+  across 4 threads): sun shadow visibility culling, camera culling, material specialization
+  checks, instance batching, light/cluster preparation, transform propagation, and executor
+  overhead. Render thread about 2.2 ms per frame, mostly command submission. Fewer entities is
+  the lever; flora (several mesh entities per tree, plus outline children) dominates.
+- Profiling recipe: run the game under `samply record --save-only --unstable-presymbolicate` with
+  the driver's environment (`BEVY_REMOTE_DRIVER_PORT`, `CARGO_MANIFEST_DIR`,
+  `DYLD_FALLBACK_LIBRARY_PATH` = `rustc --print target-libdir` plus `target/debug/deps`), drive it
+  with the client's `Driver` class to the spot, and weight samples by `threadCPUDelta`, skipping
+  stacks whose leaf is a wait call.
 - Lighting costs at the same spot (`ABLATE=... plans/ablate.py`): image-based lighting (the
   camera's `EnvironmentMapLight`) about 4 ms, independent of cubemap size; MSAA 4x 3.4 ms; Gaussian
   vs 2x2 shadow filtering 1.3 ms. `GeneratedEnvironmentMapLight` re-filters every frame (35 ms).
