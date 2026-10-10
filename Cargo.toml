@@ -8,7 +8,7 @@ default = ["editor"]
 editor = []          # Enable editor features
 
 [workspace]
-members = ["crates/panoply_core"]
+members = ["crates/bevy_remote_driver", "crates/panoply_core"]
 # TODO(bevy-0.20): restore these crates to the workspace as they are ported.
 exclude = ["crates/panoply_exemplar", "crates/panoply_terrain"]
 
@@ -38,6 +38,9 @@ thiserror = "1.0.57"
 
 [dependencies]
 bevy = { workspace = true }
+bevy_action_map = "0.1.2"
+# Inert unless BEVY_REMOTE_DRIVER_PORT is set; see crates/bevy_remote_driver.
+bevy_remote_driver = { path = "crates/bevy_remote_driver" }
 panoply_core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

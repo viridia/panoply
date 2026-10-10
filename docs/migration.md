@@ -12,17 +12,18 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `6f0a2db` | Checkpoint of the abandoned 0.16-dev WIP port.                                          |
 | `6a04afa` | Minimal core on 0.20: `panoply_core`, `world`, `view`, `diagnostics`, window settings.  |
 | `0f32a52` | `reflect_types`, `materials`, `models`; shaders ported to WESL; infinite grid.          |
+| `dd242ce` | This ledger and `AGENTS.md`; removed `bevy_saga`.                                       |
+| (pending) | Input via `bevy_action_map` (`src/input.rs`); removed `panoply_core::pan_rotate`.       |
+| (pending) | `bevy_remote_driver` forked in; `plans/smoke.py`.                                       |
 
 ## Next
 
-1. Input: replace bespoke handling (`panoply_core::pan_rotate`, `close_on_esc`) with
-   `bevy_action_map`.
-2. `panoply_exemplar` (port as-is; see D4).
-3. `panoply_terrain` + `src/terrain` + `scenery`: first break the `scenery` <-> `terrain` cycle,
+1. `panoply_exemplar` (port as-is; see D4).
+2. `panoply_terrain` + `src/terrain` + `scenery`: first break the `scenery` <-> `terrain` cycle,
    and consolidate code duplicated between the crate and `src/terrain` (`water_mesh`,
    `terrain_map`, ground material). Port `assets/shaders/lib/*` and terrain shaders to WESL.
-4. `actors`, `portals`.
-5. `editor` (see X3).
+3. `actors`, `portals`.
+4. `editor` (see X3).
 
 When `scenery` and `actors` are back, remove `spawn_material_test` from `main.rs`.
 
@@ -46,10 +47,18 @@ When `scenery` and `actors` are back, remove `spawn_material_test` from `main.rs
   this pipeline needs. In watch mode (`npm run build:watch`), overrun notices Blender exports,
   writes the processed output into `assets/`, and Bevy hot-reloads it.
 - **D8** `crates/bevy_saga` was a failed experiment, never integrated into the game, and has
-  been removed (along with `assets/scripts/` and `src/scripting.rs`). Compiling to wasmtime is a dead end: its support for garbage-collected
-  types is too immature to use. Scripting and modding will build on the SAGA prototypes in
-  `bevy_reactor` instead, a bytecode VM interpreter with a possible later move to something like
-  Cranelift (see X7).
+  been removed (along with `assets/scripts/` and `src/scripting.rs`). Compiling to wasmtime is a
+  dead end: its support for garbage-collected types is too immature to use. Scripting and
+  modding will build on the SAGA prototypes in `bevy_reactor` instead, a bytecode VM interpreter
+  with a possible later move to something like Cranelift (see X7).
+- **D9** Input goes through `bevy_action_map` (actions and contexts in `src/input.rs`).
+  `panoply_core` exposes the `Viewpoint` API (`rotate`, `move_local`) and has no input
+  dependency.
+- **D10** Automated runtime checks use `crates/bevy_remote_driver`, forked from
+  `bevy_action_map` at `f641559` (where it lives only for convenience of development). The plugin
+  is inert unless `BEVY_REMOTE_DRIVER_PORT` is set. Plans live in `plans/`, and run with
+  `python3 crates/bevy_remote_driver/client/run.py plans/<plan>.py`. Fork changes: the client
+  can launch a binary (`BIN`), not only an example, and has an `exits` step for a key that quits.
 
 ## Deferred
 
@@ -70,6 +79,8 @@ When `scenery` and `actors` are back, remove `spawn_material_test` from `main.rs
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding using the SAGA language from `bevy_reactor` (SAGA: "Scripts for
   Animated Graphic Adventures"). *Gate:* the `bevy_reactor` SAGA prototype is ready to integrate.
+- **X8** Horizontal trackpad scroll rotates the viewpoint through a bespoke `MouseWheel` reader
+  (`input::scroll_rotate_viewpoint`). *Gate:* `bevy_action_map` supports scroll input.
 
 ## Notes
 

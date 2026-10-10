@@ -2,10 +2,10 @@ use std::f32::consts::PI;
 
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
+use bevy::camera::visibility::RenderLayers;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use bevy::camera::visibility::RenderLayers;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

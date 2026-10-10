@@ -1,8 +1,4 @@
-use bevy::{
-    prelude::*,
-    render::render_resource::AsBindGroup,
-    shader::ShaderRef,
-};
+use bevy::{prelude::*, render::render_resource::AsBindGroup, shader::ShaderRef};
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
 pub struct FlameMaterial {

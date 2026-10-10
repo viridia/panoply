@@ -1,0 +1,22 @@
+# Forked from bevy_action_map's `crates/bevy_remote_driver` at f641559.
+[package]
+name = "bevy_remote_driver"
+description = "Drive a running Bevy app from outside for automated tests, over the Bevy Remote Protocol"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# Subcrates rather than the umbrella: the server methods are candidates for upstream.
+[dependencies]
+bevy_app = "0.20.0"
+bevy_camera = "0.20.0"
+bevy_diagnostic = "0.20.0"
+bevy_ecs = "0.20.0"
+bevy_reflect = "0.20.0"
+bevy_remote = { version = "0.20.0", default-features = false, features = ["http"] }
+bevy_scene = "0.20.0"
+bevy_ui = "0.20.0"
+bevy_window = "0.20.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

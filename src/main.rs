@@ -6,15 +6,14 @@ use bevy::{
     image::ImageSampler,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-    settings::{SaveSettingsSync, SettingsPlugin},
+    settings::SettingsPlugin,
     window::ExitCondition,
 };
 // TODO(bevy-0.20): restore
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 // use panoply_exemplar::ExemplarPlugin;
-use panoply_core::{
-    pan_rotate::pan_rotate_viewpoint, HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint,
-};
+use bevy_remote_driver::RemoteDriverPlugin;
+use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
@@ -27,6 +26,7 @@ use window_settings::WindowSettingsPlugin;
 // mod terrain;
 
 mod diagnostics;
+mod input;
 mod materials;
 mod models;
 mod reflect_types;
@@ -35,8 +35,8 @@ mod window_settings;
 mod world;
 
 use crate::{
-    diagnostics::ScreenDiagsPlugin, materials::MaterialsPlugin, models::ModelsPlugin,
-    reflect_types::ReflectTypesPlugin, world::WorldPlugin,
+    diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
+    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, world::WorldPlugin,
 };
 // TODO(bevy-0.20): restore
 // use crate::{
@@ -71,8 +71,11 @@ fn main() {
         SettingsPlugin::new("org.viridia.panoply"),
         // Must come after SettingsPlugin.
         WindowSettingsPlugin,
+        // Adds FrameTimeDiagnosticsPlugin, so must come before RemoteDriverPlugin.
         ScreenDiagsPlugin,
+        RemoteDriverPlugin,
         InfiniteGridPlugin,
+        InputPlugin,
     ))
     .init_resource::<view::viewport::ViewportInset>()
     // .insert_resource(RaycastBackendSettings {
@@ -90,7 +93,7 @@ fn main() {
     })
     .init_resource::<ReservedLayers>()
     .add_systems(Startup, (setup, spawn_material_test))
-    .add_systems(Update, (rotate_shapes, nav_to_center, pan_rotate_viewpoint))
+    .add_systems(Update, (rotate_shapes, nav_to_center))
     .add_systems(
         PostUpdate,
         (
@@ -98,7 +101,6 @@ fn main() {
             view::viewport::update_camera_viewport.after(view::viewport::update_viewport_inset),
         ),
     )
-    .add_systems(Update, close_on_esc)
     .add_plugins((
         ReflectTypesPlugin,
         MaterialsPlugin,
@@ -336,12 +338,5 @@ fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm
     if let Some(realm) = realms.iter().find(|r| r.1.name == rname) {
         println!("Navigating to [{}]", realm.1.name);
         viewpoint.realm = Some(realm.0);
-    }
-}
-
-pub fn close_on_esc(input: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
-    if input.just_pressed(KeyCode::Escape) {
-        commands.queue(SaveSettingsSync::IfChanged);
-        commands.write_message(AppExit::Success);
     }
 }

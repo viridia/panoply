@@ -1,7 +1,7 @@
 use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
-use bevy::prelude::*;
 use bevy::camera::visibility::RenderLayers;
+use bevy::prelude::*;
 use std::f32::consts::PI;
 
 /// Represents the focal point of attention, typically the coordinates of the player

@@ -1,8 +1,8 @@
 // mod model_loader;
 
 use bevy::{
-    camera::visibility::RenderLayers, gltf::GltfMaterialExtras,
-    platform::collections::HashMap, prelude::*, world_serialization::WorldInstanceReady,
+    camera::visibility::RenderLayers, gltf::GltfMaterialExtras, platform::collections::HashMap,
+    prelude::*, world_serialization::WorldInstanceReady,
 };
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;

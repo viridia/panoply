@@ -253,6 +253,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.104"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -477,6 +483,39 @@ dependencies = [
  "bevy_ecs",
  "bevy_reflect",
  "serde",
+]
+
+[[package]]
+name = "bevy_action_map"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01129118eea32541bfe1789bac17cb8dcd334c16546c8e943ec18a6188e1bdb7"
+dependencies = [
+ "bevy_action_map_macros",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_input",
+ "bevy_math",
+ "bevy_platform",
+ "bevy_reflect",
+ "bevy_state",
+ "bevy_time",
+ "bevy_utils",
+ "fixedbitset",
+ "log",
+ "serde",
+ "smallvec",
+]
+
+[[package]]
+name = "bevy_action_map_macros"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0932afdaa9c5f0230c715e40a78bb07b5b18bfe0e880ef91548edaa6c997fe46"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -803,9 +842,12 @@ dependencies = [
  "bevy_ui",
  "bevy_ui_render",
  "bevy_ui_widgets",
+ "bevy_utils",
  "bevy_window",
  "bevy_world_serialization",
+ "ron",
  "serde",
+ "thiserror 2.0.21",
  "tracing",
 ]
 
@@ -1430,6 +1472,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "000bc467d1b344b6609fcf217a9b08d349d49c8e85dc4179fb7656f2b6e3db47"
 dependencies = [
+ "async-io",
  "bytemuck",
  "critical-section",
  "foldhash 0.2.0",
@@ -1521,6 +1564,49 @@ dependencies = [
  "quote",
  "syn 2.0.119",
  "uuid",
+]
+
+[[package]]
+name = "bevy_remote"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "913a440cfd2b7ca59b4d35c3611fe26f698e725a580900de62b16db46a72d7a9"
+dependencies = [
+ "anyhow",
+ "async-channel",
+ "async-io",
+ "bevy_app",
+ "bevy_color",
+ "bevy_derive",
+ "bevy_dev_tools",
+ "bevy_ecs",
+ "bevy_log",
+ "bevy_platform",
+ "bevy_reflect",
+ "bevy_tasks",
+ "bevy_utils",
+ "http-body-util",
+ "hyper",
+ "serde",
+ "serde_json",
+ "smol-hyper",
+]
+
+[[package]]
+name = "bevy_remote_driver"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_camera",
+ "bevy_diagnostic",
+ "bevy_ecs",
+ "bevy_reflect",
+ "bevy_remote",
+ "bevy_scene",
+ "bevy_ui",
+ "bevy_window",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3196,6 +3282,70 @@ dependencies = [
 ]
 
 [[package]]
+name = "http"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0"
+dependencies = [
+ "bytes",
+ "itoa",
+]
+
+[[package]]
+name = "http-body"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca2a8f2913ee65f60facd6a5905613afaa448497a0230cc41ce022d93290bc2c"
+dependencies = [
+ "bytes",
+ "http",
+]
+
+[[package]]
+name = "http-body-util"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "http",
+ "http-body",
+ "pin-project-lite",
+]
+
+[[package]]
+name = "httparse"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
+
+[[package]]
+name = "httpdate"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
+
+[[package]]
+name = "hyper"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c3e324da4c95177d6291d4c8730197c0d1822f8a9766814a4a44fa5ab797c9c"
+dependencies = [
+ "atomic-waker",
+ "bytes",
+ "futures-core",
+ "http",
+ "http-body",
+ "httparse",
+ "httpdate",
+ "itoa",
+ "pin-project-lite",
+ "smallvec",
+ "tokio",
+]
+
+[[package]]
 name = "icu_collections"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4563,6 +4713,8 @@ name = "panoply"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_action_map",
+ "bevy_remote_driver",
  "panoply_core",
  "serde",
  "serde_json",
@@ -5340,6 +5492,19 @@ dependencies = [
  "wayland-protocols-wlr",
  "wayland-scanner",
  "xkeysym",
+]
+
+[[package]]
+name = "smol-hyper"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7428a49d323867702cd12b97b08a6b0104f39ec13b49117911f101271321bc1a"
+dependencies = [
+ "async-executor",
+ "async-io",
+ "futures-io",
+ "hyper",
+ "pin-project-lite",
 ]
 
 [[package]]
