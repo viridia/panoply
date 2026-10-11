@@ -78,7 +78,7 @@ pub enum FloorSurfaceError {
     RonError(#[from] ron::error::SpannedError),
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct FloorSurfaceLoader;
 
 impl AssetLoader for FloorSurfaceLoader {
@@ -105,7 +105,7 @@ impl AssetLoader for FloorSurfaceLoader {
             } => {
                 let texture: Option<Handle<Image>> = texture.as_ref().map(|t| {
                     load_context
-                        .loader()
+                        .load_builder()
                         .with_settings(|settings: &mut ImageLoaderSettings| {
                             settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                                 label: Some("Floor Region".to_string()),

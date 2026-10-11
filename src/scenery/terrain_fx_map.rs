@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use panoply_core::Realm;
 use panoply_terrain::{
     Parcel, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
     TerrainFxVertexAttr, TerrainOptions,
@@ -51,11 +52,12 @@ pub fn rebuild_terrain_fx_vertex_attrs(
     server: Res<AssetServer>,
 ) {
     for (entity, precinct, mut terrain_fx) in query.iter_mut() {
-        let all_loaded = terrain_fx
-            .exemplars
-            .iter()
-            .all(|s| server.load_state(s).is_loaded());
-        if !all_loaded {
+        // Wait for the exemplars; one that failed to load becomes "no effect".
+        let any_loading = terrain_fx.exemplars.iter().any(|s| {
+            let state = server.load_state(s);
+            !state.is_loaded() && !state.is_failed()
+        });
+        if any_loading {
             continue;
         }
 
@@ -66,8 +68,10 @@ pub fn rebuild_terrain_fx_vertex_attrs(
                 // Note that we're accessing the exemplar directly in this case instead
                 // of applying the aspects to an entity, since the individual effects are
                 // not associated with a single entity but with vertex attributes.
-                let s = exemplar_assets.get(s).unwrap();
                 let mut vxt_attr = TerrainFxVertexAttr::default();
+                let Some(s) = exemplar_assets.get(s) else {
+                    return vxt_attr;
+                };
                 for aspect in s.0.aspects.iter() {
                     // TODO: Extends - require async resolution of the exemplar.
 
@@ -118,11 +122,17 @@ pub fn rebuild_terrain_fx_vertex_attrs(
     }
 }
 
+/// Copies each marked parcel's terrain effects out of its precinct's map, then lets the parcel
+/// build its ground and flora. A parcel waits while its precinct is still loading, so ground is
+/// never built without its roads and holes (D11); it goes ahead without effects if it lies
+/// outside the realm's precincts or its precinct failed to load (most have no file).
 pub fn rebuild_parcel_terrain_fx(
     mut commands: Commands,
     mut q_parcels: Query<(Entity, &mut Parcel), With<RebuildParcelTerrainFx>>,
-    q_precincts: Query<(&Precinct, &TerrainFxMap)>,
+    q_precincts: Query<(&Precinct, Option<&TerrainFxMap>, Has<RebuildTerrainFxVertexAttrs>)>,
+    q_realms: Query<&Realm>,
     mut precinct_cache: ResMut<PrecinctCache>,
+    server: Res<AssetServer>,
 ) {
     for (entity, mut parcel) in q_parcels.iter_mut() {
         let mut terrain_fx: [TerrainFxVertexAttr; PARCEL_TERRAIN_FX_AREA] =
@@ -132,14 +142,36 @@ pub fn rebuild_parcel_terrain_fx(
             x: (parcel.coords.x * PARCEL_SIZE).div_euclid(PRECINCT_SIZE),
             z: (parcel.coords.y * PARCEL_SIZE).div_euclid(PRECINCT_SIZE),
         };
-        let Some(precinct_entity) = precinct_cache.get(&precinct_key) else {
-            // println!("No precinct entity for parcel {:?}", parcel.coords);
-            commands.entity(entity).remove::<RebuildParcelTerrainFx>();
-            continue;
+        let precinct = precinct_cache
+            .get(&precinct_key)
+            .and_then(|precinct_entity| q_precincts.get(precinct_entity).ok());
+        let terrain_fx_map = match precinct {
+            Some((precinct, Some(terrain_fx_map), false)) => Some((precinct, terrain_fx_map)),
+            Some((precinct, ..)) if !server.load_state(&precinct.asset).is_failed() => {
+                // Still loading, or its effects are being rebuilt.
+                continue;
+            }
+            Some(_) => None,
+            None => {
+                // As in `spawn_precincts`, the bounds' max is exclusive.
+                let in_bounds = q_realms.get(parcel.realm).is_ok_and(|realm| {
+                    let bounds = realm.precinct_bounds;
+                    (bounds.min.x..bounds.max.x).contains(&precinct_key.x)
+                        && (bounds.min.y..bounds.max.y).contains(&precinct_key.z)
+                });
+                if in_bounds {
+                    // `spawn_precincts` has not spawned it yet.
+                    continue;
+                }
+                None
+            }
         };
-        let Ok((precinct, terrain_fx_map)) = q_precincts.get(precinct_entity) else {
-            // println!("No precinct for parcel {:?}", parcel.coords);
-            commands.entity(entity).remove::<RebuildParcelTerrainFx>();
+        let Some((precinct, terrain_fx_map)) = terrain_fx_map else {
+            parcel.terrain_fx = ParcelTerrainFx(terrain_fx);
+            commands
+                .entity(entity)
+                .insert((RebuildParcelGroundMesh, ParcelFloraChanged))
+                .remove::<RebuildParcelTerrainFx>();
             continue;
         };
         let x_offset = parcel.coords.x * PARCEL_SIZE - precinct.coords.x * PRECINCT_SIZE;

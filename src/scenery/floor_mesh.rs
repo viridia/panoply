@@ -3,17 +3,18 @@ use super::{
     floor_surface::FloorSurface,
     FloorOutline,
 };
-use crate::scenery::{
-    floor_region::{RebuildFloorMaterials, RebuildFloorMesh},
-    FLOOR_THICKNESS, TIER_OFFSET,
+use crate::{
+    materials::FloorNoisyMaterial,
+    scenery::{
+        floor_region::{RebuildFloorMaterials, RebuildFloorMesh},
+        FLOOR_THICKNESS, TIER_OFFSET,
+    },
 };
 use bevy::{
+    asset::RenderAssetUsages,
+    camera::visibility::RenderLayers,
+    mesh::{Indices, PrimitiveTopology},
     prelude::*,
-    render::{
-        mesh::{Indices, MeshAabb, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-        view::RenderLayers,
-    },
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
@@ -36,44 +37,35 @@ pub struct FloorMeshParams {
 #[derive(Component)]
 pub(crate) struct ComputeFloorMeshTask(Task<Option<FloorMeshResult>>);
 
+/// Waits for a floor region's surface to load, then starts building its mesh and material. A
+/// floor draws once it has both.
 pub fn update_floor_aspects(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut FloorRegion), With<RebuildFloorAspects>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(Entity, &FloorRegion), With<RebuildFloorAspects>>,
     server: Res<AssetServer>,
 ) {
-    if query.iter().count() == 0 {
-        return;
-    }
-
-    // Placeholder material.
-    let material = materials.add(StandardMaterial {
-        base_color: Color::NONE,
-        ..Default::default()
-    });
-
-    // Wait until exemplar loaded before updating aspects
-    for (entity, floor_region) in query.iter_mut() {
+    for (entity, floor_region) in query.iter() {
         let st = server.load_state(&floor_region.surface);
         if st.is_loaded() {
             commands
                 .entity(entity)
-                .insert((MeshMaterial3d(material.clone()), Visibility::Hidden))
                 .remove::<RebuildFloorAspects>()
                 .insert((RebuildFloorMaterials, RebuildFloorMesh));
+        } else if st.is_failed() {
+            commands.entity(entity).remove::<RebuildFloorAspects>();
         }
     }
 }
 
-/// Spawns a task for each parcel to compute the water mesh geometry.
+/// Spawns a task for each floor region to compute its mesh geometry.
 pub fn gen_floor_meshes(
     mut commands: Commands,
-    mut query: Query<(Entity, &FloorRegion), With<RebuildFloorMesh>>,
+    query: Query<(Entity, &FloorRegion), With<RebuildFloorMesh>>,
     surfaces: Res<Assets<FloorSurface>>,
 ) {
     let pool = AsyncComputeTaskPool::get();
 
-    for (entity, floor_region) in query.iter_mut() {
+    for (entity, floor_region) in query.iter() {
         let level = floor_region.level;
         let mut poly = floor_region.poly.clone();
         let holes = floor_region.holes.clone();
@@ -81,7 +73,7 @@ pub fn gen_floor_meshes(
             poly.pop();
         }
         let Some(surface) = surfaces.get(&floor_region.surface) else {
-            return;
+            continue;
         };
         let sides = surface.sides;
         let raise = surface.raise;
@@ -108,66 +100,65 @@ pub(crate) fn insert_floor_meshes(
     mut commands: Commands,
     mut q_floors: Query<(Entity, &mut ComputeFloorMeshTask, &RenderLayers)>,
     mut meshes: ResMut<Assets<Mesh>>,
-    outline_material: ResMut<FloorOutline>,
+    outline_material: Res<FloorOutline>,
 ) {
     for (entity, mut task, layers) in q_floors.iter_mut() {
-        if let Some(Some(task_result)) = future::block_on(future::poll_once(&mut task.0)) {
-            let mesh = meshes.add(task_result.mesh);
-            commands
-                .entity(entity)
-                .insert(Mesh3d(mesh.clone()))
-                .remove::<ComputeFloorMeshTask>()
-                .despawn_related::<Children>();
-            if let Some(outline_mesh) = task_result.outline {
-                let outline_mesh = meshes.add(outline_mesh);
-                let outline = commands
-                    .spawn((
-                        MeshMaterial3d(outline_material.0.clone()),
-                        Mesh3d(outline_mesh.clone()),
-                        Visibility::Hidden,
-                        layers.clone(),
-                    ))
-                    .id();
-                commands.entity(entity).add_child(outline);
-            }
+        let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) else {
+            continue;
+        };
+        let mut floor = commands.entity(entity);
+        floor
+            .remove::<ComputeFloorMeshTask>()
+            .despawn_related::<Children>();
+        // An outline that cannot be triangulated yields no mesh.
+        let Some(task_result) = task_result else {
+            floor.remove::<Mesh3d>();
+            continue;
+        };
+        floor.insert(Mesh3d(meshes.add(task_result.mesh)));
+        if let Some(outline_mesh) = task_result.outline {
+            // The outline is a child sharing the floor's position (D14). Its mesh is its own,
+            // with normals mitered at the corners, since the floor's sides have split normals.
+            floor.with_child((
+                Name::new("FloorOutline"),
+                MeshMaterial3d(outline_material.0.clone()),
+                Mesh3d(meshes.add(outline_mesh)),
+                Visibility::Inherited,
+                layers.clone(),
+            ));
         }
     }
 }
 
-#[allow(clippy::type_complexity)]
 pub(crate) fn rebuild_floor_materials(
     mut commands: Commands,
-    mut query: Query<(Entity, &FloorRegion), With<RebuildFloorMaterials>>,
+    query: Query<(Entity, &FloorRegion), With<RebuildFloorMaterials>>,
     mut std_materials: ResMut<Assets<StandardMaterial>>,
     surfaces: Res<Assets<FloorSurface>>,
 ) {
-    for (entity, region) in query.iter_mut() {
-        if let Some(surface) = surfaces.get(&region.surface) {
-            if let Some(ref std_material) = surface.material_std {
-                commands
-                    .entity(entity)
-                    .insert((MeshMaterial3d(std_material.clone()), Visibility::Visible))
-                    .remove::<RebuildFloorMaterials>();
-            } else if let Some(ref noisy_material) = surface.material_noisy {
-                commands
-                    .entity(entity)
-                    .remove::<MeshMaterial3d<StandardMaterial>>()
-                    .insert((MeshMaterial3d(noisy_material.clone()), Visibility::Visible))
-                    .remove::<RebuildFloorMaterials>();
-            } else {
+    for (entity, region) in query.iter() {
+        let Some(surface) = surfaces.get(&region.surface) else {
+            continue;
+        };
+        let mut floor = commands.entity(entity);
+        floor.remove::<RebuildFloorMaterials>();
+        // An entity must not carry two materials (Notes, Bevy 0.20 issues), so remove the other.
+        if let Some(ref noisy_material) = surface.material_noisy {
+            floor
+                .remove::<MeshMaterial3d<StandardMaterial>>()
+                .insert(MeshMaterial3d(noisy_material.clone()));
+        } else {
+            let std_material = surface.material_std.clone().unwrap_or_else(|| {
                 // Debug surface.
-                commands
-                    .entity(entity)
-                    .insert((
-                        MeshMaterial3d(std_materials.add(StandardMaterial {
-                            base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
-                            unlit: true,
-                            ..Default::default()
-                        })),
-                        Visibility::Visible,
-                    ))
-                    .remove::<RebuildFloorMaterials>();
-            }
+                std_materials.add(StandardMaterial {
+                    base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
+                    unlit: true,
+                    ..Default::default()
+                })
+            });
+            floor
+                .remove::<MeshMaterial3d<FloorNoisyMaterial>>()
+                .insert(MeshMaterial3d(std_material));
         }
     }
 }
@@ -336,7 +327,6 @@ fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, tex_coords);
     mesh.insert_indices(Indices::U32(indices));
-    mesh.compute_aabb();
     mesh
 }
 
@@ -398,7 +388,6 @@ fn compute_outline_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Me
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_indices(Indices::U32(indices));
-    mesh.compute_aabb();
     mesh
 }
 

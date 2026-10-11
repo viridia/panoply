@@ -91,7 +91,7 @@ pub fn spawn_precincts(
                     }
 
                     None => {
-                        println!("Creating precinct {} {} {}.", realm.name, x, z);
+                        debug!("Creating precinct {} {} {}.", realm.name, x, z);
                         let asset_path = format!(
                             "scenery/precincts/{}/{}-{}.msgpack",
                             realm.name,
@@ -106,16 +106,14 @@ pub fn spawn_precincts(
                                 coords: IVec2::new(x, z),
                                 visible: true,
                                 asset,
-                                tiers: Vec::new(),
                                 render_layer: realm.layer.clone(),
-                                actors: Vec::new(),
                             },
                             Transform::from_xyz(
                                 x as f32 * PRECINCT_SIZE_F,
                                 0.,
                                 z as f32 * PRECINCT_SIZE_F,
                             ),
-                            Visibility::Visible,
+                            Visibility::Inherited,
                         ));
                         precinct_cache.precincts.put(key, entity.id());
                     }
@@ -135,16 +133,22 @@ pub fn spawn_precincts(
                 if precinct.visible {
                     break;
                 } else {
-                    println!(
-                        "Despawning precinct {:#?} {} {}.",
-                        precinct.realm, precinct.coords.x, precinct.coords.y
-                    );
-                    commands.entity(*entity).despawn();
+                    evict_precinct(&mut commands, *entity, &precinct);
                 }
             }
         }
         cache.pop_lru();
     }
+}
+
+/// Removes a precinct that has left the cache, with everything it owns. When save games arrive
+/// (X18), this is where the precinct's changed state is collected and written first.
+fn evict_precinct(commands: &mut Commands, entity: Entity, precinct: &Precinct) {
+    debug!(
+        "Despawning precinct {:?} {} {}.",
+        precinct.realm, precinct.coords.x, precinct.coords.y
+    );
+    commands.entity(entity).despawn();
 }
 
 fn precinct_coord(n: i32) -> String {

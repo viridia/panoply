@@ -2,8 +2,7 @@
 
     python3 crates/bevy_remote_driver/client/run.py plans/terrain.py
 
-Until scenery is restored, ground meshes rely on the temporary `release_parcel_terrain_fx` in
-main.rs, and have no terrain effects (roads, holes).
+Ground meshes wait for their precinct's terrain effects (roads, holes) from scenery (D11).
 """
 
 BIN = "panoply"

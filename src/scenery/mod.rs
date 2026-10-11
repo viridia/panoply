@@ -1,13 +1,9 @@
-use bevy::{pbr::ExtendedMaterial, prelude::*, render::render_resource::Face};
+use bevy::{platform::collections::HashMap, prelude::*};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
-use hashbrown::HashMap;
 use panoply_exemplar::InstanceType;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
-use crate::{
-    actors::{spawn_actor_model_instances, spawn_actor_models, update_actor_aspects},
-    materials::{OutlineMaterial, OutlineMaterialExtension},
-};
+use crate::materials::OutlineMaterial;
 
 use self::{
     floor_mesh::{
@@ -25,7 +21,6 @@ use self::{
 
 mod floor_mesh;
 mod floor_surface;
-// mod floor_noise;
 pub mod floor_region;
 pub mod precinct;
 pub mod precinct_asset;
@@ -79,9 +74,6 @@ impl Plugin for SceneryPlugin {
             .register_type::<Option<Vec3>>()
             .register_type::<HashMap<String, Vec<Vec3>>>()
             .register_type::<HashMap<String, String>>()
-            // .add_plugins(MaterialPlugin::<
-            //     ExtendedMaterial<StandardMaterial, FloorNoiseMaterial>,
-            // >::default())
             .add_systems(Startup, init_outline)
             .add_systems(
                 Update,
@@ -94,33 +86,27 @@ impl Plugin for SceneryPlugin {
                     // Wall and fixture processing
                     update_se_aspects.after(read_precinct_data),
                     spawn_se_models.after(update_se_aspects),
-                    // Actor processing
-                    update_actor_aspects.after(read_precinct_data),
-                    spawn_actor_models.after(update_actor_aspects),
+                    // TODO(bevy-0.20): actor processing, restored with actors (D24).
                     // TerrainFx processing
                     rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
-                    rebuild_parcel_terrain_fx.after(rebuild_terrain_fx_vertex_attrs),
+                    rebuild_parcel_terrain_fx
+                        .after(rebuild_terrain_fx_vertex_attrs)
+                        .after(spawn_precincts),
                     // These poll resource handles so won't run in the same frame anyway
                     insert_floor_meshes,
                     rebuild_floor_materials,
                     spawn_se_model_instances,
-                    spawn_actor_model_instances,
                 ),
             );
     }
 }
 
 fn init_outline(
-    mut materials: ResMut<Assets<ExtendedMaterial<StandardMaterial, OutlineMaterialExtension>>>,
+    mut materials: ResMut<Assets<OutlineMaterial>>,
     mut floor_outline: ResMut<FloorOutline>,
 ) {
-    floor_outline.0 = materials.add(ExtendedMaterial {
-        base: StandardMaterial {
-            base_color: Color::BLACK,
-            unlit: true,
-            cull_mode: Some(Face::Front),
-            ..Default::default()
-        },
-        extension: OutlineMaterialExtension { width: 0.015 },
+    floor_outline.0 = materials.add(OutlineMaterial {
+        width: 0.015,
+        ..default()
     });
 }

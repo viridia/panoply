@@ -68,6 +68,14 @@ X1), `artwork/`.
   `ComputedModelGroups`, `ComputedTerrainEffects`. The pattern (each element yields render
   models, nav obstacles and colliders) may shape the scenery restoration.
 - Not yet in Panoply: cutaways, sensors, precinct point lights, tiers and layers.
+- Cutaways (read in full): `engine/src/player/CutawayController.ts` picks cutaways each frame
+  from the authored rects of the player's precinct. For each tier from the player's
+  (`floor(y - TIER_OFFSET + 1.7)`) upward, it takes the rect hit by a vertical ray from the
+  player, else by the ray toward the camera, each projected to that tier's height; then it adds
+  every rect on those tiers that overlaps one already chosen, until nothing changes. The chosen
+  rects' 3D volumes go to `world/scenery/Cutaways.ts`, which only stores them (with an optional
+  instance-type mask) and signals a change; each scenery element and actor then hides itself if
+  its position or bounding box is inside a cutaway volume.
 - `design/gridless.md`: walls, floors, portals and tiers without a grid.
 
 ## Actors and navigation (for Next: `actors`)

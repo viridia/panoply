@@ -20,8 +20,6 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::actors::{ActorInstanceData, ActorInstanceListDeserializer};
-
 use super::floor_region::FloorRegionSer;
 
 extern crate rmp_serde as rmps;
@@ -47,8 +45,8 @@ pub struct PrecinctAsset {
     /// Packed terrain effect table
     pub(crate) terrain_fx: Option<Vec<i16>>,
 
-    #[serde(default)]
-    pub(crate) actors: Vec<ActorInstanceData>,
+    // TODO(bevy-0.20): `actors: Vec<ActorInstanceData>`, restored with actors (D24). Until then
+    // the loader skips the field, and saving a precinct would drop its actors.
 
     /// Table of scenery instances.
     #[serde(default)]
@@ -260,13 +258,14 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
             Ok(Some(iid)) => result.iid = iid,
             _ => return Err(serde::de::Error::invalid_length(3, &self)),
         }
-        match seq.next_element_seed(AspectListDeserializer {
+        // The aspects are optional, but an error in them must not be swallowed: the rest of the
+        // tuple would be left unread, and the next instance would parse from the wrong place.
+        if let Some(aspects) = seq.next_element_seed(AspectListDeserializer {
             type_registry: self.type_registry,
             load_context: self.load_context,
             label_prefix: self.parent_label,
-        }) {
-            Ok(Some(aspects)) => result.aspects = InstanceAspects(aspects),
-            _ => return Ok(result),
+        })? {
+            result.aspects = InstanceAspects(aspects);
         }
 
         Ok(result)
@@ -414,15 +413,12 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                             precinct.tiers = map.next_value()?;
                         }
                         Field::Actors => {
-                            precinct.actors =
-                                map.next_value_seed(ActorInstanceListDeserializer {
-                                    type_registry: self.type_registry,
-                                    load_context: self.load_context,
-                                    parent_label: "actors",
-                                })?;
+                            // TODO(bevy-0.20): read with `ActorInstanceListDeserializer`.
+                            map.next_value::<serde::de::IgnoredAny>()?;
                         }
                         Field::Layers => {
                             // TODO
+                            map.next_value::<serde::de::IgnoredAny>()?;
                         }
                     }
                 }
@@ -437,6 +433,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
     }
 }
 
+#[derive(TypePath)]
 pub struct PrecinctAssetLoader {
     type_registry: TypeRegistryArc,
 }
@@ -496,6 +493,7 @@ pub enum PrecinctAssetSaverError {
     Commit(#[from] AssetWriterError),
 }
 
+#[derive(TypePath)]
 pub struct PrecinctAssetSaver {
     type_registry: TypeRegistryArc,
 }
@@ -515,8 +513,9 @@ impl AssetSaver for PrecinctAssetSaver {
     async fn save(
         &self,
         writer: &mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'_, Self::Asset>,
+        asset: bevy::asset::saver::SavedAsset<'_, '_, Self::Asset>,
         _settings: &Self::Settings,
+        _asset_path: bevy::asset::AssetPath<'_>,
     ) -> Result<(), Self::Error> {
         // TODO: Optimize precinct - remove unused types. Should be done in serializer.
         // rmps::encode::write(writer, &*asset)?; // Doesn't work with async writer

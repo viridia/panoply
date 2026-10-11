@@ -1,4 +1,4 @@
-use bevy::{asset::LoadContext, reflect::TypeRegistry};
+use bevy::{asset::LoadContext, log::warn, reflect::TypeRegistry};
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserializer,
@@ -29,10 +29,16 @@ impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
     {
         let mut result: Vec<Box<dyn Aspect>> = Vec::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
-            let type_registration = self
-                .type_registry
-                .get_with_short_type_path(&key)
-                .ok_or_else(|| de::Error::custom(format!("Unknown aspect type: {}", key)))?;
+            // An aspect type no plugin has registered is skipped rather than failing the whole
+            // asset, so modules can be restored one at a time. Saving the asset drops it.
+            let Some(type_registration) = self.type_registry.get_with_short_type_path(&key) else {
+                warn!(
+                    "Skipping unknown aspect type {key} in {}",
+                    self.load_context.path()
+                );
+                map.next_value::<de::IgnoredAny>()?;
+                continue;
+            };
             let mut aspect = map.next_value_seed(AspectDeserializer {
                 type_registration,
                 type_registry: self.type_registry,

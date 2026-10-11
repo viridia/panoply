@@ -22,13 +22,13 @@ use window_settings::WindowSettingsPlugin;
 // mod editor;
 // mod actors;
 // mod portals;
-// mod scenery;
 
 mod diagnostics;
 mod input;
 mod materials;
 mod models;
 mod reflect_types;
+mod scenery;
 mod terrain;
 mod view;
 mod window_settings;
@@ -36,11 +36,11 @@ mod world;
 
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
-    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, terrain::TerrainPlugin,
-    world::WorldPlugin,
+    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin,
+    terrain::TerrainPlugin, world::WorldPlugin,
 };
 // TODO(bevy-0.20): restore
-// use crate::{actors::ActorsPlugin, portals::PortalPlugin, scenery::SceneryPlugin};
+// use crate::{actors::ActorsPlugin, portals::PortalPlugin};
 
 // TODO(bevy-0.20): restore with editor
 // #[derive(Resource)]
@@ -97,7 +97,7 @@ fn main() {
     })
     .init_resource::<ReservedLayers>()
     .add_systems(Startup, (setup, spawn_material_test, load_exemplar_check))
-    .add_systems(Update, (run_exemplar_check, release_parcel_terrain_fx))
+    .add_systems(Update, run_exemplar_check)
     .add_systems(Update, (rotate_shapes, nav_to_center))
     .add_systems(
         PostUpdate,
@@ -113,8 +113,8 @@ fn main() {
         WorldPlugin,
         ModelsPlugin,
         TerrainPlugin,
+        SceneryPlugin,
         // TODO(bevy-0.20): restore
-        // SceneryPlugin,
         // ActorsPlugin,
         // PortalPlugin,
         // WorldInspectorPlugin::new(),
@@ -360,20 +360,6 @@ fn run_exemplar_check(
         commands.spawn(Name::new("ExemplarCheckPassed"));
     }
     commands.remove_resource::<ExemplarCheck>();
-}
-
-/// TEMP(bevy-0.20): Stands in for scenery, which normally writes each precinct's terrain effects
-/// into its parcels and then clears `RebuildParcelTerrainFx`. Ground meshes and flora wait for
-/// that marker to go, so without scenery they never appear. Remove when scenery is restored.
-fn release_parcel_terrain_fx(
-    mut commands: Commands,
-    q_parcels: Query<Entity, With<panoply_terrain::RebuildParcelTerrainFx>>,
-) {
-    for parcel in &q_parcels {
-        commands
-            .entity(parcel)
-            .remove::<panoply_terrain::RebuildParcelTerrainFx>();
-    }
 }
 
 /// Creates a colorful test pattern

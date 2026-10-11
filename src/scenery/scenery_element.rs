@@ -1,4 +1,6 @@
-use bevy::{gltf::Gltf, prelude::*, render::view::RenderLayers};
+use bevy::{
+    camera::visibility::RenderLayers, gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot,
+};
 
 use panoply_exemplar::*;
 
@@ -81,7 +83,7 @@ pub fn spawn_se_models(
 
 pub fn spawn_se_model_instances(
     mut commands: Commands,
-    mut query: Query<(Entity, &SceneryElementMesh), Without<SceneRoot>>,
+    mut query: Query<(Entity, &SceneryElementMesh), Without<WorldAssetRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
@@ -93,8 +95,8 @@ pub fn spawn_se_model_instances(
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
-                    commands.entity(entity).insert((
-                        SceneRoot(scene_handle.clone()),
+                    commands.entity(entity).try_insert((
+                        WorldAssetRoot(scene_handle.clone()),
                         transform,
                         PropagateRenderLayers,
                     ));

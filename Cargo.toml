@@ -51,6 +51,8 @@ panoply_exemplar = { workspace = true }
 panoply_terrain = { workspace = true }
 rapier3d = { workspace = true }
 rmp-serde = { workspace = true }
+earcutr = "0.4.3"
+ron = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -59,13 +61,11 @@ thiserror = { workspace = true }
 # base64 = "0.22.0"
 # bevy-inspector-egui = "0.28.1"                     # pins bevy 0.15; replace or bump
 # bitflags = { workspace = true }
-# earcutr = "0.4.3"                                  # scenery
-# i_overlay = "1.4.2"                                # scenery
+# i_overlay = "1.4.2"                                # editor
 # regex = "1.10.6"
 # serde_bytes = { workspace = true }
 # serde_derive = "1.0.171"
 # serde_repr = { workspace = true }
-# ron = { workspace = true }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

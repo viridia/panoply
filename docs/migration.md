@@ -23,13 +23,15 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | `5139647` | Parcels outside the view are hidden (D19); `plans/parcels.py`.                          |
 | (pending) | Parcel show set (D20); random flora Y rotation, restored from the three.js version.     |
 | (pending) | Physics stays on rapier (D22, X16); `docs/faery.md`, a map of the three.js engine.      |
+| (pending) | `scenery` without actors (D24): tier entities, D11 wait, floor outlines; `plans/scenery.py`. |
 
 ## Next
 
-1. `scenery` (see D11). Its `FloorOutline` still builds the old extended outline material; switch
-   it to `OutlineMaterial`. Port `assets/shaders/lib/*` to WESL if anything still imports it.
-   The playground has little scenery compared with the old engine, so judging performance with
-   scenery (X15) needs a richer test map.
+1. Exemplar catalogs load once per label. Bevy 0.20 starts a separate load of the whole file
+   for each `file#Label` requested before the file has loaded (`bevy_asset` `load_internal`,
+   `HandleLoadingMode::Force`; Bevy issue #10549). The playground's first precinct loads
+   `wall-tiles.exem.json` 128 times and `furnishings` 34. Fix in `panoply_exemplar`: load each
+   catalog root first, then take the labeled handles once it has loaded.
 2. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
@@ -42,13 +44,15 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
    overlap parcel colliders by a cell, enable CCD, and cast with a skin. Actors also need
    navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
+   Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
+   `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
+   a home-precinct relationship whose despawn is linked (D24), not from scenery.
 4. `portals`: a rewrite, not a restoration (D21).
 5. `editor` (see X3).
 
-When `scenery` and `actors` are back, remove the `TEMP(bevy-0.20)` items from `main.rs`
-(`spawn_material_test`, `ExemplarCheck`, `release_parcel_terrain_fx`) and
-`plans/exemplars.py`. Until then, only exemplar
-catalogs without aspects can load, since the aspect types are registered by those modules.
+When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
+(`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that
+register them are restored, unknown aspect types are skipped with a warning (D25).
 
 ## Decisions
 
@@ -148,6 +152,21 @@ catalogs without aspects can load, since the aspect types are registered by thos
   polling where observers or change detection fit) and recommend keeping or restructuring it;
   restructuring is proposed before code. From the three.js version take the design, not the
   structure.
+- **D24** A precinct is the unit of authored content: one asset holds all of a 64 m area's
+  scenery, floors, terrain effects and actors (everything but terrain). The goal is open worlds
+  larger than fit in memory, built by a solo creator: walls, floors and fixtures are placed on a
+  grid (an homage to isometric tile games, with perspective and looser quantization), and
+  floors are extruded polygons that the editor stamps and merges like tiles, with free vertex
+  editing when wanted. So actors are owned by their home precinct and despawn when it leaves
+  the cache; most NPCs stay near their spawn point. Followers (global asset) and random
+  monsters (transient, per encounter) are the exceptions. Ownership is a relationship whose
+  despawn is linked, replacing `Precinct.actors`. Within a precinct, each tier (a floor level
+  with its own cutaways) is an entity, a child of the precinct, with its floor regions as its
+  children. Persisted play state follows the same unit (X18).
+- **D25** An aspect type no plugin has registered is skipped with a warning
+  (`panoply_exemplar::aspect_list`), not an error that fails the whole catalog or precinct, so
+  modules can be restored one at a time (the wall-tile catalog uses portals' `Portal`). Saving
+  such an asset drops the skipped aspects; see X20.
 
 ## Deferred
 
@@ -184,6 +203,10 @@ catalogs without aspects can load, since the aspect types are registered by thos
   painterly (`RealmLighting::Interior`). Day/night cycle: sun shadows fade out in the evening
   before they grow long; the moon casts shadows only at night. Night uses the cinematic blue
   filter: red and green illumination reduced, blue brighter (artistic, not realistic).
+  Outlines read a little thinner than in the old engine, and the dark shadows make them hard
+  to see; compare the old engine's extrusion (units, any distance scaling) with
+  `outline.wesl` when tuning. Some models still put `outline` on objects instead of materials,
+  which the game ignores; the author is moving it in Blender.
   *Gate:* scenery restored, for whole scenes to judge.
 - **X13** Sweep the old JavaScript/three.js engine (`../faery`) for design elements worth
   carrying over. It was far more complete than this version; it was abandoned for jankiness,
@@ -219,6 +242,22 @@ catalogs without aspects can load, since the aspect types are registered by thos
   formulas; an effect is usually a Rust type with parameters, but can be a formula. So SAGA
   (X7) needs a way to embed formulas in assets. *Gate:* BSN assets with shared (singleton, non-instanced) scenes, as for X1,
   and SAGA formulas in assets.
+- **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
+  eviction; a save is only a root index of chunk versions. Design and what it asks of the
+  engine in [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk.
+  *Gate:* actors restored (the first content with real mutable state).
+- **X19** Cutaways: when the player is under a ceiling, scenery above them is hidden, including
+  actors on those floors. Rects are authored per tier (`TierSer.cutaways`); choosing them and the
+  3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
+  Scenery). Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
+  `Visibility::Hidden` so descendants inherit it (D19). *Gate:* scenery and actors restored.
+- **X20** Keep unknown aspects lossless (D25): hold each as an opaque value that saves back
+  unchanged, so the editor cannot drop data a disabled module owns. *Gate:* editor restored.
+- **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller
+  than D20's 4 m allowance also needs its own); `LightSource` point lights per precinct
+  (registered, not yet acted on; candles in the old engine); hot reload of `FloorSurface`
+  assets (floors do not rebuild when one changes); `SceneryColliders` into rapier (with item 2
+  of Next, or actors). *Gate:* scenery restored; take each when it is needed.
 
 ## Notes
 
@@ -270,5 +309,8 @@ catalogs without aspects can load, since the aspect types are registered by thos
 - The water shows a fine square grid (visible before and after D16): waves texture tiling or
   mesh seams; not investigated.
 - `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics.
-- `assets/shaders/outline.wgsl` is an unused duplicate of `src/materials/outline.wesl`.
+- Scenery content: playground `p000-p000` holds 1,048 scenery instances, 13 actors and 6 tiers,
+  a usable test map for scenery performance (X15); the other playground precincts hold less.
+  Overland has one precinct here; the old engine's overland rooms were not migrated.
+- Floor regions have identity transforms: their outlines are in precinct coordinates.
 - With `dynamic_linking`, run via `cargo run`; the bare binary can't find `libstd`.
