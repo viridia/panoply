@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 default = ["editor"]
-editor = []          # Enable editor features
+editor = ["bevy/embedded_watcher"] # Enable editor features; hot reload of embedded shaders
 
 [workspace]
 members = [

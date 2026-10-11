@@ -29,6 +29,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Removed the no-op `draco()` pass from `pipeline.ts` (D28).                              |
 | (pending) | Lighting as in the three.js version (D30): linear tone mapping, `Sunlight`; `plans/lighting.py`. |
 | (pending) | Water, first steps (D31): colors as three.js displayed them, alpha, seabed under layer and tint. |
+| (pending) | Embedded shaders hot-reload in editor builds (`embedded_watcher`, D32).                  |
 
 ## Next
 
@@ -278,7 +279,9 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   defines its bindings. Terrain's shaders were asset files (`assets/terrain/shaders/`) until
   terrain moved into `panoply_terrain` (`3e29f50`). Textures are still loaded from the app's
   `assets/` by path, so `panoply_terrain` relies on the app to provide `terrain/textures/`.
-  Hot reload of embedded shaders needs Bevy's `embedded_watcher` feature (not enabled).
+  Embedded shaders hot-reload in editor builds: the `editor` feature turns on Bevy's
+  `embedded_watcher`, which watches each embedded file's source path, so saving a `.wesl`
+  recompiles it in the running game. Shipped builds (no `editor`) do not watch.
 
 ## Deferred
 
@@ -287,9 +290,36 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `faery` repo (the earlier TypeScript/three.js engine), to emit BSN.
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them.
   Consider deterministic `AssetId`s from hashed params instead of a fake asset source.
-- **X3** Editor UI toolkit: `bevy_ui_widgets` / `bevy_feathers`, or `bevy_reactor` as a git
-  dependency (not on crates.io; prototype). *Gate:* editor restoration. Also replace
-  `bevy_mod_picking` with `bevy_picking`, `@PreferencesGroup` with `SettingsGroup`.
+- **X3** Editor restoration and its UI. Widgets: `bevy_feathers` (on `bevy_ui_widgets`).
+  Reactivity is undecided: Quill is dead; `bevy_reactor` (the author's; last on 0.17 and
+  Cart's `next-gen-scenes` branch, so a fork means porting off a BSN prototype) is
+  experimental; `bevy_immediate` (0.9 targets Bevy 0.20, integrates feathers and
+  `bevy_scene`) gives widgets an immediate-mode API. Recommended: `bevy_immediate` for the
+  editor (dev-only forms, inspectors, palettes), tried first as a spike on X26's water
+  sliders; reactivity for game UI decided separately. Much of the editor's design can be
+  taken from faery's editor (`packages/editor`; see [faery.md](faery.md), Editor, and
+  `design/Editor.md`): read it before designing modes and tools. Design, from the author:
+  - The editor is its own crate, enabled by the `editor` feature (today `src/editor`, D13).
+  - Layout: a side panel on the left (300 px default) with a splitter; the game fills the
+    rest. A key toggles the panel. Bevy main has a splitter (`bevy_ui_widgets`
+    `split_pane.rs`, after 0.20): fork it or write one.
+  - Modes: realm, terrain, scenery, catalogs, play (icons in the old repo).
+  - The editor layout is a BSN scene with a slot for the game scene; without `editor`, the
+    game scene is the root. The game view is the camera's viewport, following a UI node:
+    `src/view/viewport.rs` already does this (`ViewportInsetElement` -> `ViewportInset` ->
+    camera `Viewport`), but `update_viewport_inset` queries `GlobalTransform`, which 0.20 UI
+    nodes lack (they have `UiGlobalTransform`), and mixes units (`ComputedNode::size` is
+    physical pixels; `left`/`top` are not divided by the scale factor). Fix when the panel
+    returns.
+  - All editor state is saved in `bevy_settings` (mode, selections, panel width, view), so a
+    restart returns to where work stopped; the edit-run loop restarts often. Under the
+    remote driver, settings are already separate (D15); plans should also start from
+    defaults (not load saved settings), so runs do not depend on the previous run.
+  - Editor and game keys use separate `bevy_action_map` contexts; picking keeps panel clicks
+    from the game. Driver plans run with `editor` on, so they should hide the panel (key or
+    setting) to keep screenshots and frame times comparable.
+  Also replace `bevy_mod_picking` with `bevy_picking`, `@PreferencesGroup` with
+  `SettingsGroup`. *Gate:* editor restoration.
 - **X4** Replace `PropagateRenderLayers` with Bevy's `Propagate<RenderLayers>`. *Gate:* scenery,
   actors and flora restored (they are the callers).
 - **X5** `bevy-inspector-egui` (pinned bevy 0.15). *Gate:* a compatible release is needed.
@@ -322,7 +352,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   zero, so it looks flat. Confirmed by turning `ENABLE_SKY` off (blotches gone). Neither a
   lower lookup frequency (`* 0.1`) nor clamping `reflect_vector /= y` toward the horizon
   helped. Next try a soft (blurred) cloud texture, then raise the sky weight; then foam; then
-  the glint. Faster with shader hot reload (`embedded_watcher`, D32). Optionally tie the sky colors to `HemisphereLight` so water dims at
+  the glint. Shaders now hot-reload in editor builds (D32). Optionally tie the sky colors to `HemisphereLight` so water dims at
   night and in interiors (X12). Blur the seabed with depth (`textureSampleBias`) once textures
   have mips (Next). Water is always at sea level (the ground's underwater tint depends on it),
   so reflections of scenery could use one mirrored camera (planar reflection), if their cost
@@ -433,9 +463,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   source of current vectors in the terrain data).
 - **X26** Live tuning of surface looks: a reflected resource (like `Sunlight` and
   `HemisphereLight`) holding the water's look (water and sky colors, sky scale and weight,
-  alpha, chop, glint) and the seabed tint, copied into the materials on change, with editor
-  sliders. Tuning water (X11) one rebuild and screenshot at a time was slow. *Gate:* the
-  choice of UI widgets (X3).
+  alpha, chop, glint) and the seabed tint, copied into the materials on change, with sliders
+  in the editor panel, in a sub-mode (e.g. of terrain or realm). Tuning water (X11) one
+  rebuild and screenshot at a time was slow; shaders now hot-reload (D32), but uniforms set
+  from Rust do not. *Gate:* the editor panel and the choice of UI reactivity (X3).
 
 ## Notes
 
