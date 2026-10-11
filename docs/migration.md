@@ -30,27 +30,11 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Lighting as in the three.js version (D30): linear tone mapping, `Sunlight`; `plans/lighting.py`. |
 | (pending) | Water, first steps (D31): colors as three.js displayed them, alpha, seabed under layer and tint. |
 | (pending) | Embedded shaders hot-reload in editor builds (`embedded_watcher`, D32).                  |
+| (pending) | Terrain textures as KTX2 with mipmaps from `pipeline.ts`; tiling samplers, no `fract` (D33). |
 
 ## Next
 
-1. Mipmaps for terrain textures, generated in `pipeline.ts` (D7). No texture has mips now,
-   so distant ground shimmers and the seabed cannot be blurred by depth (X11). Overrun reads
-   PNG sources from `artwork/` (the ground and water textures now live directly in
-   `assets/terrain/textures`; move their sources) and writes `.ktx2` with a full mip chain:
-   `sharp` to downsample, in linear light so mips do not darken, and `ktx-parse` to write the
-   container, uncompressed RGBA8 (sRGB for color, linear for the water normal map and noise)
-   with zstd supercompression; no native CLI (`toktx` is not installed). Bevy's asset
-   processor (`CompressedImageSaver`) was the alternative: it would run a second processor
-   beside overrun, and its block compression is lossy on painted textures. Bevy's
-   `MipGenerationJobs` is for render targets and has no sRGB formats. Also replace `fract(uv)`
-   in `ground.wesl` and `water.wesl` with `AddressMode::Repeat` samplers (set in loader
-   settings): with mips, `fract` makes seam lines where UVs jump. This replaces the disabled
-   `config_textures_modes` (`src/terrain/plugin.rs`, and a commented copy in
-   `panoply_terrain`), which set `Repeat` on U only and matched a `textures` parent folder that
-   `terrain/textures/...` never has, so it likely never applied. Check with
-   `plans/lighting.py` and a distance shot. Textures inside glTFs (flora leaves, scenery) are a
-   later step: gltf-transform embedding KTX2 (`KHR_texture_basisu`).
-2. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
+1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
    per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
@@ -60,7 +44,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
    from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
    would freeze).
-3. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
+2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
    across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
@@ -78,8 +62,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    The three.js version's actor assembly is `engine/src/world/actors/SkinnedModel.ts` (faery).
    The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
    [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
-4. `portals`: a rewrite, not a restoration (D21).
-5. `editor` (see X3).
+3. `portals`: a rewrite, not a restoration (D21).
+4. `editor` (see X3).
 
 When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that
@@ -281,7 +265,27 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `assets/` by path, so `panoply_terrain` relies on the app to provide `terrain/textures/`.
   Embedded shaders hot-reload in editor builds: the `editor` feature turns on Bevy's
   `embedded_watcher`, which watches each embedded file's source path, so saving a `.wesl`
-  recompiles it in the running game. Shipped builds (no `editor`) do not watch.
+  recompiles it in the running game. Shipped builds (no `editor`) do not watch. One
+  exception: `FloorNoisyMaterialExt` loads `assets/shaders/floor_noise.wesl` as an asset (the
+  app, not a crate, so it hot-reloads through `file_watcher`).
+- **D33** Terrain textures have mipmaps, made by `pipeline.ts` (D7). The PNGs exported from
+  Krita live in `artwork/terrain/textures/` beside their `.kra` sources; the
+  `terrain-textures` target writes `assets/terrain/textures/*.ktx2`: RGBA8, a full mip chain
+  averaged with a 2x2 box filter in linear light (so mips do not darken; edges wrap, since
+  the textures tile), zlib supercompression (Node's built-in `zlib`; Bevy's `zlib` feature).
+  Converter: `pngjs` and `ktx-parse`, written into `pipeline.ts` itself, because overrun runs
+  that one file in a VM and cannot import local modules. Every texture is stored as sRGB,
+  since Bevy loaded the PNGs as sRGB and the shaders were tuned against that, including the
+  water normal map's `- 0.25` (X11); Bevy takes sRGB-ness from `ImageLoaderSettings::is_srgb`,
+  not the file. Loaders use `panoply_terrain::load_tiling_texture` (or `tiling_sampler` in an
+  asset loader): repeat on every axis, linear mip filtering. The shaders no longer wrap UVs
+  with `fract`, which with mips would draw seams where UVs jump; this replaced the disabled
+  `config_textures_modes`, which set `Repeat` on U only and matched a folder no texture was
+  in. Alternatives: Bevy's asset processor (`CompressedImageSaver`) would run a second
+  processor beside overrun, and its block compression is lossy on painted textures; Bevy's
+  `MipGenerationJobs` is for render targets and has no sRGB formats; `sharp` needs native
+  libvips; zstd needs another npm package on Node 18. Size: 6.7 MB of KTX2 for 4.3 MB of PNG.
+  Textures inside glTFs (flora leaves, scenery) still lack mips (X27).
 
 ## Deferred
 
@@ -353,8 +357,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   lower lookup frequency (`* 0.1`) nor clamping `reflect_vector /= y` toward the horizon
   helped. Next try a soft (blurred) cloud texture, then raise the sky weight; then foam; then
   the glint. Shaders now hot-reload in editor builds (D32). Optionally tie the sky colors to `HemisphereLight` so water dims at
-  night and in interiors (X12). Blur the seabed with depth (`textureSampleBias`) once textures
-  have mips (Next). Water is always at sea level (the ground's underwater tint depends on it),
+  night and in interiors (X12). Blur the seabed with depth (`textureSampleBias`), now that
+  textures have mips (D33). Water is always at sea level (the ground's underwater tint depends on it),
   so reflections of scenery could use one mirrored camera (planar reflection), if their cost
   fits the budget; Bevy's SSR needs deferred rendering and does not reach blended surfaces
   (see Notes). Texture noise in place of `snoise` was a deliberate performance change; keep
@@ -467,6 +471,13 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   in the editor panel, in a sub-mode (e.g. of terrain or realm). Tuning water (X11) one
   rebuild and screenshot at a time was slow; shaders now hot-reload (D32), but uniforms set
   from Rust do not. *Gate:* the editor panel and the choice of UI reactivity (X3).
+- **X27** Mipmaps for textures inside glTFs (flora leaves, scenery), which D33 does not
+  cover: Bevy's glTF loader generates none. glTF carries KTX2 through `KHR_texture_basisu`,
+  which requires Basis Universal compression (lossy), not D33's plain RGBA8; check first
+  whether Bevy's glTF loader accepts other KTX2, or keep the images in separate `.ktx2` files
+  bound by material. Alpha-masked leaves need care: averaged alpha thins cutouts at distance
+  (preserve coverage per mip). *Gate:* flora shimmer or scenery texture aliasing worth fixing,
+  judged once actors make whole scenes (X12).
 
 ## Notes
 

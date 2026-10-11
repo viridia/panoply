@@ -4,6 +4,23 @@ import { NodeIO, Document, Logger } from "@gltf-transform/core";
 import { resample, dedup } from "@gltf-transform/functions";
 import { KHRMaterialsUnlit, Unlit } from "@gltf-transform/extensions";
 import path from "path";
+import zlib from "zlib";
+import { PNG } from "pngjs";
+import {
+  createDefaultContainer,
+  write as writeKtx2,
+  KHR_DF_CHANNEL_RGBSDA_ALPHA,
+  KHR_DF_CHANNEL_RGBSDA_BLUE,
+  KHR_DF_CHANNEL_RGBSDA_GREEN,
+  KHR_DF_CHANNEL_RGBSDA_RED,
+  KHR_DF_FLAG_ALPHA_STRAIGHT,
+  KHR_DF_MODEL_RGBSDA,
+  KHR_DF_PRIMARIES_BT709,
+  KHR_DF_SAMPLE_DATATYPE_LINEAR,
+  KHR_DF_TRANSFER_SRGB,
+  KHR_SUPERCOMPRESSION_ZLIB,
+  VK_FORMAT_R8G8B8A8_SRGB,
+} from "ktx-parse";
 
 const srcRoot = path.resolve(__dirname, "../../artwork");
 const dstRoot = path.resolve(__dirname, "../../assets");
@@ -143,6 +160,135 @@ trees("desert");
 flora("flora-shrubs", "flora/shrubs", "terrain/models/shrubs.glb");
 flora("flora-crops", "flora/crops", "terrain/models/crops.glb");
 flora("flora-bushes", "flora/bushes", "terrain/models/bushes.glb");
+
+// Texture conversion: PNG to KTX2 with mipmaps.
+const SRGB_TO_LINEAR = new Float32Array(256);
+for (let i = 0; i < 256; i++) {
+  const c = i / 255;
+  SRGB_TO_LINEAR[i] =
+    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function linearToSrgb8(c: number): number {
+  const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return Math.max(0, Math.min(255, Math.round(s * 255)));
+}
+
+interface MipLevel {
+  width: number;
+  height: number;
+  /** RGB in linear light, alpha as stored; four floats per texel. */
+  texels: Float32Array;
+}
+
+/** Halve a level with a 2x2 box filter. Wraps at the edges, since the textures tile. */
+function downsample(level: MipLevel): MipLevel {
+  const width = Math.max(1, level.width >> 1);
+  const height = Math.max(1, level.height >> 1);
+  const texels = new Float32Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      for (let c = 0; c < 4; c++) {
+        let sum = 0;
+        for (let dy = 0; dy < 2; dy++) {
+          for (let dx = 0; dx < 2; dx++) {
+            const sx = (x * 2 + dx) % level.width;
+            const sy = (y * 2 + dy) % level.height;
+            sum += level.texels[(sy * level.width + sx) * 4 + c];
+          }
+        }
+        texels[(y * width + x) * 4 + c] = sum / 4;
+      }
+    }
+  }
+  return { width, height, texels };
+}
+
+function encodeMipLevel(level: MipLevel): Uint8Array {
+  const bytes = new Uint8Array(level.width * level.height * 4);
+  for (let i = 0; i < bytes.length; i += 4) {
+    bytes[i] = linearToSrgb8(level.texels[i]);
+    bytes[i + 1] = linearToSrgb8(level.texels[i + 1]);
+    bytes[i + 2] = linearToSrgb8(level.texels[i + 2]);
+    bytes[i + 3] = Math.round(level.texels[i + 3] * 255);
+  }
+  return bytes;
+}
+
+/** Convert a PNG to a KTX2 texture, RGBA8 sRGB with a full mip chain and zlib supercompression.
+    Mips are averaged in linear light, so they do not darken. Every texture is stored as sRGB,
+    since Bevy loads PNGs as sRGB by default and the shaders were tuned against that. */
+const pngToKtx2 = async (src: Buffer): Promise<Buffer> => {
+  const png = PNG.sync.read(src);
+  const { width, height } = png;
+  const base = new Float32Array(width * height * 4);
+  for (let i = 0; i < base.length; i += 4) {
+    base[i] = SRGB_TO_LINEAR[png.data[i]];
+    base[i + 1] = SRGB_TO_LINEAR[png.data[i + 1]];
+    base[i + 2] = SRGB_TO_LINEAR[png.data[i + 2]];
+    base[i + 3] = png.data[i + 3] / 255;
+  }
+
+  const levels: MipLevel[] = [{ width, height, texels: base }];
+  while (
+    levels[levels.length - 1].width > 1 ||
+    levels[levels.length - 1].height > 1
+  ) {
+    levels.push(downsample(levels[levels.length - 1]));
+  }
+
+  const container = createDefaultContainer();
+  container.vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+  container.typeSize = 1;
+  container.pixelWidth = width;
+  container.pixelHeight = height;
+  container.levelCount = levels.length;
+  container.supercompressionScheme = KHR_SUPERCOMPRESSION_ZLIB;
+  container.levels = levels.map((level) => {
+    const bytes = encodeMipLevel(level);
+    const levelData = new Uint8Array(zlib.deflateSync(bytes));
+    return { levelData, uncompressedByteLength: bytes.length };
+  });
+  const channels = [
+    KHR_DF_CHANNEL_RGBSDA_RED,
+    KHR_DF_CHANNEL_RGBSDA_GREEN,
+    KHR_DF_CHANNEL_RGBSDA_BLUE,
+    // Alpha is not sRGB-encoded.
+    KHR_DF_CHANNEL_RGBSDA_ALPHA | KHR_DF_SAMPLE_DATATYPE_LINEAR,
+  ];
+  container.dataFormatDescriptor = [
+    {
+      ...container.dataFormatDescriptor[0],
+      colorModel: KHR_DF_MODEL_RGBSDA,
+      colorPrimaries: KHR_DF_PRIMARIES_BT709,
+      transferFunction: KHR_DF_TRANSFER_SRGB,
+      flags: KHR_DF_FLAG_ALPHA_STRAIGHT,
+      texelBlockDimension: [0, 0, 0, 0],
+      bytesPlane: [4, 0, 0, 0, 0, 0, 0, 0],
+      samples: channels.map((channelType, index) => ({
+        bitOffset: index * 8,
+        bitLength: 7,
+        channelType,
+        samplePosition: [0, 0, 0, 0],
+        sampleLower: 0,
+        sampleUpper: 255,
+      })),
+    },
+  ];
+  return Buffer.from(writeKtx2(container));
+};
+
+// Terrain textures (exported from Krita as PNG): KTX2 with mipmaps.
+target(
+  "terrain-textures",
+  directory(srcRoot, "terrain/textures")
+    .match("*.png")
+    .map((src) =>
+      src
+        .transform(pngToKtx2)
+        .dest((p) => p.withRoot(dstRoot).withExtension(".ktx2"))
+    )
+);
 
 // // Textures
 // target(

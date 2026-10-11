@@ -230,14 +230,14 @@ fn fragment(
 	// let fx_path = mesh.terrain_style.w;
 
     let slope = 1.0 - pow(mesh.slope, 2.);
-    let dirt_color = textureSample(dirt, dirt_sampler, fract(uv * 0.1));
+    let dirt_color = textureSample(dirt, dirt_sampler, uv * 0.1);
 
     var sfc: SurfaceAccum;
     sfc.color = dirt_color;
-    sfc.terrain_noise = textureSample(noise, noise_sampler, fract(uv * 0.04)).x;
+    sfc.terrain_noise = textureSample(noise, noise_sampler, uv * 0.04).x;
     sfc.under_darken = 0.;
     sfc.under_mix = 0.;
-    sfc.under_noise = textureSample(noise, noise_sampler, fract(uv * 0.3)).x;
+    sfc.under_noise = textureSample(noise, noise_sampler, uv * 0.3).x;
 
     let under_roughness = 0.9 - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
   //   // let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
@@ -281,7 +281,7 @@ fn fragment(
 
 	// Cobblestone effects.
     if fx_cobbles > 0. {
-        let cobbles_color = textureSample(cobbles, cobbles_sampler, fract(uv * UV_ROT * 0.45));
+        let cobbles_color = textureSample(cobbles, cobbles_sampler, uv * UV_ROT * 0.45);
     		let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
         let fx_blend: f32 = smoothstep(0.9, 1.2, fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9);
     		let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
@@ -307,7 +307,7 @@ fn fragment(
         let color = textureSample(
             surface0,
             surface0_sampler,
-            fract(uv * UV_ROT * biome_surface[0].tx_scale));
+            uv * UV_ROT * biome_surface[0].tx_scale);
         blend_biome(&sfc, biome_surface[0], s0_weight, color.rgb);
     }
 
@@ -316,7 +316,7 @@ fn fragment(
         let color = textureSample(
             surface1,
             surface1_sampler,
-            fract(uv * UV_ROT * biome_surface[1].tx_scale));
+            uv * UV_ROT * biome_surface[1].tx_scale);
         blend_biome(&sfc, biome_surface[1], s1_weight, color.rgb);
     }
 
@@ -325,7 +325,7 @@ fn fragment(
         let color = textureSample(
             surface2,
             surface2_sampler,
-            fract(uv * UV_ROT * biome_surface[2].tx_scale));
+            uv * UV_ROT * biome_surface[2].tx_scale);
         blend_biome(&sfc, biome_surface[2], s2_weight, color.rgb);
     }
 
@@ -334,7 +334,7 @@ fn fragment(
         let color = textureSample(
             surface3,
             surface3_sampler,
-            fract(uv * UV_ROT * biome_surface[3].tx_scale));
+            uv * UV_ROT * biome_surface[3].tx_scale);
         blend_biome(&sfc, biome_surface[3], s3_weight, color.rgb);
     }
 

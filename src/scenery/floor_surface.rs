@@ -144,7 +144,12 @@ impl AssetLoader for FloorSurfaceLoader {
                 roughness,
                 roughness_alt,
             } => {
-                let texture: Handle<Image> = load_context.load("terrain/textures/noise.png");
+                let texture: Handle<Image> = load_context
+                    .load_builder()
+                    .with_settings(|settings: &mut ImageLoaderSettings| {
+                        settings.sampler = panoply_terrain::tiling_sampler();
+                    })
+                    .load("terrain/textures/noise.ktx2");
                 let material = ExtendedMaterial {
                     base: StandardMaterial {
                         base_color: color.into(),

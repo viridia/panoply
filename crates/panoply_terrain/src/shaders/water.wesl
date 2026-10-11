@@ -161,7 +161,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
             let m = mat2x2(direction.x, direction.y, -direction.y, direction.x);
             let p: vec2<f32> = (uv * m + vec2(time_mult * globals.time, 0.)) * frequency;
-            let d = textureSample(waves, waves_sampler, fract(p)).rgb - 0.25;
+            let d = textureSample(waves, waves_sampler, p).rgb - 0.25;
             chop += vec3f(d.x, 0.0, d.y) * strength;
             weight += strength;
         }
@@ -202,14 +202,14 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
         reflected_sky = mix(
             sky_color[0],
             sky_color[1],
-            textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
+            textureSample(sky, sky_sampler, reflect_vector.xz * 0.5).g);
     }
     var color = mix(vec4(water_color.rgb, 1.0), reflected_sky * 0.5, opacity * 0.5);
 
     if ENABLE_FOAM {
-        let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
-        let n2 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(-0.01, 0.03))).g;
-        let n3 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.03, -0.02))).g;
+        let n1 = textureSample(foam, foam_sampler, uv * 0.15 + globals.time * vec2(0.02, 0.02)).g;
+        let n2 = textureSample(foam, foam_sampler, uv * 0.15 + globals.time * vec2(-0.01, 0.03)).g;
+        let n3 = textureSample(foam, foam_sampler, uv * 0.15 + globals.time * vec2(0.03, -0.02)).g;
         var foam_level = 0.8 - pow(water_depth * 2.0 + 0.3, 0.6) + (n1 + n2 + n3) * 0.3; // + (n1 + n2 + n3 + n4 + n5);
         foam_level = smoothstep(.3, .9, foam_level);
 

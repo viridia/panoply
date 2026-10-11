@@ -38,8 +38,8 @@ fn fragment(
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
 	let uv: vec2<f32> = in.uv * UV_ROT;
-	let n = textureSample(noise, noise_sampler, fract(uv * 0.07)).x;
-	let n2 = textureSample(noise, noise_sampler, fract(uv * 0.07 * 2.)).x;
+	let n = textureSample(noise, noise_sampler, uv * 0.07).x;
+	let n2 = textureSample(noise, noise_sampler, uv * 0.07 * 2.).x;
 
 	// generate a PbrInput struct from the StandardMaterial bindings
 	var pbr_input = pbr_input_from_standard_material(in, is_front);

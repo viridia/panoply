@@ -9,6 +9,8 @@ use bevy::{
     shader::ShaderRef,
 };
 
+use crate::load_tiling_texture;
+
 pub const ATTRIBUTE_DEPTH_MOTION: MeshVertexAttribute =
     MeshVertexAttribute::new("depth_motion", 0x1000, VertexFormat::Float32x3);
 
@@ -87,8 +89,8 @@ pub fn create_water_material(
             as_displayed_by_threejs(Srgba::rgb(0.7, 0.8, 0.9)),
             as_displayed_by_threejs(Srgba::rgb(0.6, 0.7, 0.9)),
         ],
-        waves: asset_server.load("terrain/textures/water-waves-normal.png"),
-        sky: asset_server.load("terrain/textures/water-clouds.png"),
-        foam: asset_server.load("terrain/textures/noise.png"),
+        waves: load_tiling_texture(&asset_server, "terrain/textures/water-waves-normal.ktx2"),
+        sky: load_tiling_texture(&asset_server, "terrain/textures/water-clouds.ktx2"),
+        foam: load_tiling_texture(&asset_server, "terrain/textures/noise.ktx2"),
     });
 }

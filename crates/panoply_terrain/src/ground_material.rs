@@ -10,7 +10,7 @@ use bevy::{
     shader::ShaderRef,
 };
 
-use crate::{BiomeSurfaceType, BiomesTable, ParcelBiomes};
+use crate::{load_tiling_texture, BiomeSurfaceType, BiomesTable, ParcelBiomes};
 
 #[derive(ShaderType, Debug, Clone, Copy)]
 pub struct BiomeSurfaceAttrs {
@@ -194,16 +194,16 @@ pub struct GroundMaterialCache {
 
 impl FromWorld for GroundMaterialCache {
     fn from_world(world: &mut World) -> Self {
-        let assets = world.resource_mut::<AssetServer>();
+        let assets = world.resource::<AssetServer>();
         GroundMaterialCache {
-            noise: assets.load("terrain/textures/noise.png"),
-            dirt: assets.load("terrain/textures/dirt.png"),
-            cobbles: assets.load("terrain/textures/cobbles.png"),
-            grass: assets.load("terrain/textures/grass.png"),
-            moss: assets.load("terrain/textures/moss.png"),
-            sand: assets.load("terrain/textures/sand.png"),
-            snow: assets.load("terrain/textures/snow.png"),
-            taiga: assets.load("terrain/textures/taiga2.png"),
+            noise: load_tiling_texture(assets, "terrain/textures/noise.ktx2"),
+            dirt: load_tiling_texture(assets, "terrain/textures/dirt.ktx2"),
+            cobbles: load_tiling_texture(assets, "terrain/textures/cobbles.ktx2"),
+            grass: load_tiling_texture(assets, "terrain/textures/grass.ktx2"),
+            moss: load_tiling_texture(assets, "terrain/textures/moss.ktx2"),
+            sand: load_tiling_texture(assets, "terrain/textures/sand.ktx2"),
+            snow: load_tiling_texture(assets, "terrain/textures/snow.ktx2"),
+            taiga: load_tiling_texture(assets, "terrain/textures/taiga2.ktx2"),
             material: None,
             // sand: assets.load("textures/sand.png"),
             // snow: assets.load("textures/snow.png"),

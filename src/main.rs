@@ -289,7 +289,7 @@ fn spawn_material_test(
                 color_alt: Srgba::rgb(0.3, 0.3, 0.3).into(),
                 roughness: 0.8,
                 roughness_alt: 0.3,
-                noise: assets.load("textures/noise_1.png"),
+                noise: panoply_terrain::load_tiling_texture(&assets, "textures/noise_1.png"),
             },
         })),
         Transform::from_xyz(-4., 1., 0.),

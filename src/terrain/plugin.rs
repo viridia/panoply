@@ -9,10 +9,7 @@ use super::{
     water_mesh::{gen_water_meshes, insert_water_meshes},
     ParcelCache,
 };
-use bevy::{
-    image::{ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor},
-    prelude::*,
-};
+use bevy::prelude::*;
 use panoply_terrain::PanoplyTerrainPlugin;
 
 pub struct TerrainPlugin;
@@ -37,37 +34,8 @@ impl Plugin for TerrainPlugin {
                     insert_flora,
                     insert_terrain_maps,
                     update_terrain_maps,
-                    // config_textures_modes,
                     spawn_flora_model_instances,
                 ),
             );
-    }
-}
-
-pub fn config_textures_modes(
-    server: Res<AssetServer>,
-    mut assets: ResMut<Assets<Image>>,
-    mut ev_image: MessageReader<AssetEvent<Image>>,
-) {
-    for ev in ev_image.read() {
-        if let AssetEvent::Added { id } = ev {
-            if let Some(asset_path) = server.get_path(*id) {
-                let path = asset_path.path();
-                if path.parent().expect("path").to_str().expect("path") == "textures" {
-                    if let Some(mut image) = assets.get_mut(*id) {
-                        image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                            label: Some("Terrain textures".to_string()),
-                            address_mode_u: ImageAddressMode::Repeat,
-                            address_mode_v: ImageAddressMode::ClampToEdge,
-                            address_mode_w: ImageAddressMode::ClampToEdge,
-                            mag_filter: ImageFilterMode::Linear,
-                            min_filter: ImageFilterMode::Linear,
-                            mipmap_filter: ImageFilterMode::Linear,
-                            ..default()
-                        });
-                    }
-                }
-            }
-        }
     }
 }

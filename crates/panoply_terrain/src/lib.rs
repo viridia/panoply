@@ -9,6 +9,7 @@ mod square;
 mod terrain_contours;
 mod terrain_fx;
 mod terrain_groups;
+mod textures;
 mod water_material;
 
 pub use biome::*;
@@ -21,6 +22,7 @@ pub use square::*;
 pub use terrain_contours::*;
 pub use terrain_fx::*;
 pub use terrain_groups::*;
+pub use textures::{load_tiling_texture, tiling_sampler};
 pub use water_material::{WaterMaterial, WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION};
 
 pub use plugin::PanoplyTerrainPlugin;
