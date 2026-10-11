@@ -27,6 +27,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Scroll hitches: pipeline warm-up, scene budgets (D26); hitch log; `plans/scroll.py`.     |
 | (pending) | Exemplar catalogs load once per file (D27): `ExemplarServer`; same-file `extends`.       |
 | (pending) | Removed the no-op `draco()` pass from `pipeline.ts` (D28).                              |
+| (pending) | Lighting as in the three.js version (D30): linear tone mapping, `Sunlight`; `plans/lighting.py`. |
 
 ## Next
 
@@ -230,6 +231,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   projection vanishes. Shading: first try `StandardMaterial` anisotropy (no shader); if it
   reads too realistic for the art style (D14, X12), an `ExtendedMaterial` with Kajiya-Kay in
   WESL.
+- **D30** Lighting follows the three.js version, so painted textures read as painted. The camera
+  uses `Tonemapping::Linear` (identity, like three.js's default; `None` would also turn off
+  deband dithering), not TonyMcMapface, which desaturated the palette. Ambient outweighs the
+  sun, as there (hemisphere 0.5, sun 0.4): sky `#c8d1d8`, ground `#b97a20`. Three.js 0.152
+  used legacy light units (intensities scaled by π), so at Bevy's default exposure (about
+  1/1000) the sun is 0.4 · π · 1000 ≈ 1250 lux and the hemisphere 0.5 · 1000 = 500; the
+  defaults are 1.4 times both (1750, 700), which matched the old screenshots better. The sun's
+  color and illuminance are `panoply_core::Sunlight`, reflected like `HemisphereLight`, applied
+  to each realm's `RealmSun` light. Values are a starting point for tuning by eye (X12).
 
 ## Deferred
 
@@ -258,11 +268,23 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. *Gate:* scenery or actors with shiny materials restored.
-- **X11** Water: apply the hemisphere light, or tie water's sky colors to it. *Gate:* author's
-  direction.
-- **X12** Art direction for lighting: painterly (pre-Raphaelite, art nouveau); shadows currently
-  too dark (tune sun vs. hemisphere brightness), and since D18's sharper shadows the sunlight
-  reads brighter and harsher. Underground realms a little more gothic, still
+- **X11** Water: apply the hemisphere light, or tie water's sky colors to it. The port reads as
+  a pond, not an ocean (compare `plans/lighting.py`'s `bluff` spot with the three.js version's
+  `LakeMaterial.ts`). Texture noise in place of `snoise` was a deliberate performance change;
+  keep it. What differs, all free: `water_color` is green (0, 0.3, 0.1), was teal (0, 0.3,
+  0.3); sky colors are a saturated blue, were pale (0.7, 0.8, 0.9) and (0.6, 0.7, 0.9); the
+  port halves the sky and its blend weight (`mix(water, sky * 0.5, opacity * 0.5 - 0.1)`; was
+  `mix(water, sky, opacity)`, fully sky at grazing angles); alpha straight down is about 0.2,
+  was about 0.45, so the seabed's grass texture shows through. Water is always at sea level
+  (the ground's underwater tint depends on it), so reflections of scenery could use one
+  mirrored camera (planar reflection), if their cost fits the budget; Bevy's SSR needs deferred
+  rendering and does not reach blended surfaces (see Notes). *Gate:* author's direction.
+- **X12** Art direction for lighting: painterly (pre-Raphaelite, art nouveau). D30 restored the
+  three.js balance (no tone mapping, ambient over sun); tune `Sunlight` and `HemisphereLight`
+  by eye with `plans/lighting.py` (`SUN=`, `AMBIENT=`, `SHOTS=`), then repaint textures in
+  Krita where they still don't fit (grass and cobbles may be too high-frequency). The editor's
+  terrain thumbnail (`terrain_thumbnail.rs`) still has its own 3000 lux light and default tone
+  mapping. Underground realms a little more gothic, still
   painterly (`RealmLighting::Interior`). Day/night cycle: sun shadows fade out in the evening
   before they grow long; the moon casts shadows only at night. Night uses the cinematic blue
   filter: red and green illumination reduced, blue brighter (artistic, not realistic).
@@ -398,8 +420,14 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `models` now puts outlines on a child entity instead; (3) `RenderDiagnosticsPlugin` records
   only CPU pass times on Metal.
 
-- The water shows a fine square grid (visible before and after D16): waves texture tiling or
-  mesh seams; not investigated.
+- The water shows a fine square grid (visible before and after D16). Almost certainly the debug
+  `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues past
+  the map edge in `lighting_bluff.png`. Not yet confirmed by hiding the grid.
+- Bevy 0.20's SSR (`ScreenSpaceReflections`) works only with deferred rendering
+  (`DeferredPrepass`), and reflects onto opaque G-buffer surfaces only, so it would not reach
+  the water (`AlphaMode::Blend`, custom forward material) without switching the renderer to
+  deferred and reworking the water. Its cost was not measured. From the game's high camera,
+  most reflected rays leave the screen (sky), so it could only reflect the far banks.
 - `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics.
 - Scenery content: playground `p000-p000` holds 1,048 scenery instances, 13 actors and 6 tiers,
   a usable test map for scenery performance (X15); the other playground precincts hold less.

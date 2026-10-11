@@ -19,12 +19,16 @@ pub struct HemisphereLight {
     pub brightness: f32,
 }
 
+/// Defaults are the three.js version's: a grey-blue sky, a warm amber ground, and intensity 0.5,
+/// which is 0.5 / exposure here (ambient light has no 1/π to cancel three.js's π scaling, unlike
+/// `Sunlight`); about 500 at Bevy's default exposure. The default is 1.4 times that, matching
+/// `Sunlight`. The ambient light outweighs the sun.
 impl Default for HemisphereLight {
     fn default() -> Self {
         Self {
-            sky_color: Srgba::rgb(0.75, 0.85, 1.0).into(),
-            ground_color: Srgba::rgb(0.5, 0.45, 0.35).into(),
-            brightness: 200.,
+            sky_color: Srgba::rgb_u8(0xc8, 0xd1, 0xd8).into(),
+            ground_color: Srgba::rgb_u8(0xb9, 0x7a, 0x20).into(),
+            brightness: 700.,
         }
     }
 }

@@ -3,6 +3,7 @@ pub mod metrics;
 pub mod random;
 pub mod realm;
 pub mod realm_physics;
+pub mod sunlight;
 pub mod transition;
 pub mod viewpoint;
 
@@ -16,6 +17,7 @@ pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
 use realm_physics::realm_physics_system;
 pub use realm_physics::RealmPhysics;
+pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
 pub use viewpoint::{GotoLocation, Viewpoint};
 
@@ -34,11 +36,16 @@ impl Plugin for PanoplyCorePlugin {
         app.register_asset_loader(RealmsLoader)
             .init_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
+            .init_resource::<Sunlight>()
             .add_message::<GotoLocation>()
             .add_systems(Update, (load_realms, viewpoint_transitions, goto_location))
             .add_systems(
                 PostUpdate,
-                (viewpoint::update_camera_pos, fit_shadow_cascades),
+                (
+                    viewpoint::update_camera_pos,
+                    fit_shadow_cascades,
+                    sunlight::sync_sunlight,
+                ),
             )
             .add_systems(FixedUpdate, realm_physics_system);
     }

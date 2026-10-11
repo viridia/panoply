@@ -223,6 +223,11 @@ fn setup(
         // should get `LightProbe` volumes instead.
         RenderLayers::none(),
         PrimaryCamera,
+        // Textures are painted to be seen as they are, as in the three.js version (which had no
+        // tone mapping). Bevy's default, TonyMcMapface, desaturates the palette. Lighting is kept
+        // low enough (`Sunlight`, `HemisphereLight`) that little clips. Linear rather than None,
+        // which is the same mapping but turns off deband dithering.
+        bevy::render::view::Tonemapping::Linear,
         // Sharper shadow edges than the default Gaussian filter, and cheaper (about 0.5 ms).
         bevy::light::ShadowFilteringMethod::Hardware2x2,
     ));

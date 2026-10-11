@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use crate::layers::ReservedLayers;
 use crate::realm_physics::RealmPhysics;
+use crate::sunlight::RealmSun;
 
 // use crate::view::layers::ReservedLayers;
 
@@ -147,14 +148,13 @@ pub fn load_realms(
                         RealmPhysics::default(),
                     ));
 
-                    // Light for realm
+                    // Light for realm; `sync_sunlight` sets its color and illuminance.
                     commands.spawn((
                         DirectionalLight {
                             shadow_maps_enabled: true,
-                            color: Srgba::WHITE.into(),
-                            illuminance: 3000.,
                             ..default()
                         },
+                        RealmSun,
                         Transform {
                             translation: Vec3::new(0.0, 2.0, 0.0),
                             rotation: Quat::from_rotation_x(-PI / 3.),
