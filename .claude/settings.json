@@ -7,12 +7,15 @@
       "Bash(git -C /Users/talin/Projects/games/panoply grep *)",
       "Bash(git -C /Users/talin/Projects/games/panoply show *)",
       "Bash(git -C /Users/talin/Projects/games/panoply stash list)",
+      "Bash(git -C /Users/talin/Projects/games/* diff *)",
+      "Bash(git -C /Users/talin/Projects/games/* status *)",
       "Bash(cargo clippy)",
       "Bash(cargo clippy *)",
       "Bash(cargo check)",
       "Bash(cargo check *)",
       "Bash(cargo fmt --check *)",
       "Read(~/.cargo/registry/**)",
+      "Read(~/.cargo/git/**)",
       "Read(//Users/talin/Projects/games/**)"
     ]
   }
