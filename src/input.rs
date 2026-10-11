@@ -103,7 +103,8 @@ fn move_viewpoint(
 }
 
 /// Horizontal trackpad scroll rotates the viewpoint.
-// TODO: Move to bevy_action_map once it supports scroll input (ledger X8).
+// TODO: Observe `PointerScroll` on the game view instead, so scrolls over UI go to the UI
+// (ledger X8).
 fn scroll_rotate_viewpoint(
     mut scroll_events: MessageReader<MouseWheel>,
     mut viewpoint: ResMut<Viewpoint>,

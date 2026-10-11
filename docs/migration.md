@@ -34,6 +34,33 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 
 ## Next
 
+0. Move to Bevy main instead of 0.20 (supersedes D1 once done). Panoply will not ship before
+   0.21 (BSN assets), and main has what the editor needs: split pane, tabs, tree view, the
+   `bevy_inspector` crate (may close X5), and `BEVY_SETTINGS_DIR`, which lets driver plans
+   start from a fresh settings directory (may retire D15's separate identity).
+   - **How Bevy is named.** Every repo in the family names it exactly
+     `git = "https://github.com/bevyengine/bevy.git", branch = "main"`. Cargo treats a
+     `branch` and a `rev` as different sources even at the same commit, so a `rev` here would
+     build a second Bevy beside the dependencies'. Each workspace's `Cargo.lock` holds the
+     commit; bump with `cargo update` deliberately, one chunk per bump, all repos together.
+   - **Dependencies, done (2026-10-11).** `bevy_action_map`: `main` is on Bevy main (chunk 196),
+     0.1.x stays on `release/0.1` (tag `v0.1.2`). `bevy_immediate` (X3): fork
+     `viridia/bevy_immediate`, branch `bevy-main` (`57d724e`), whose `main` mirrors upstream;
+     breaks were `NumberInputValue` (now `bevy_ui_widgets::NumericValue`) and
+     `SystemParam::init_access` (no world argument; returns a `Result`). Keep the branch to
+     those changes and rebase it on upstream; offer it upstream; drop it at 0.21.
+   - **Order.** (a) Extract `bevy_remote_driver` into its own repo: Panoply and
+     `bevy_action_map` each have a copy and they have drifted (`Cargo.toml`, `driver.py`,
+     `run.py`, `locate.rs`, the design doc; only `bevy_action_map`'s has `examples` and `plans`).
+     Merge them, then depend on it by git. (b) A shared VS Code multi-root workspace (panoply,
+     arbor_day, bevy_action_map, bevy_immediate, bevy_remote_driver, seedling for reference),
+     with `rust-analyzer.linkedProjects` per `Cargo.toml` and `../bevy` not linked. Consider
+     a shared `CARGO_TARGET_DIR`. (c) The `arbor_day` shell (X28), as X3's `bevy_immediate`
+     spike. (d) This item in Panoply.
+   - **In Panoply.** Expect breakage from WESL 0.6, the window event split, `DisplayTarget` on
+     `Window`, and the observer `Trigger` and `SystemParam` changes. Update AGENTS.md (API
+     source becomes `../bevy` at the locked commit, not the registry) and add a decision
+     replacing D1.
 1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
@@ -295,7 +322,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them.
   Consider deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X3** Editor restoration and its UI. Widgets: `bevy_feathers` (on `bevy_ui_widgets`).
-  Reactivity is undecided: Quill is dead; `bevy_reactor` (the author's; last on 0.17 and
+  Update 2026-10-11: going with `bevy_immediate` on the fork (Next item 0), tried first in the
+  `arbor_day` shell (X28) rather than on X26's sliders. Earlier notes: reactivity was undecided: Quill is dead; `bevy_reactor` (the author's; last on 0.17 and
   Cart's `next-gen-scenes` branch, so a fork means porting off a BSN prototype) is
   experimental; `bevy_immediate` (0.9 targets Bevy 0.20, integrates feathers and
   `bevy_scene`) gives widgets an immediate-mode API. Recommended: `bevy_immediate` for the
@@ -333,8 +361,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding using the SAGA language from `bevy_reactor` (SAGA: "Scripts for
   Animated Graphic Adventures"). *Gate:* the `bevy_reactor` SAGA prototype is ready to integrate.
-- **X8** Horizontal trackpad scroll rotates the viewpoint through a bespoke `MouseWheel` reader
-  (`input::scroll_rotate_viewpoint`). *Gate:* `bevy_action_map` supports scroll input.
+- **X8** Horizontal trackpad scroll rotates the viewpoint through a global `MouseWheel` reader
+  (`input::scroll_rotate_viewpoint`), so once the editor panel returns, scrolling the panel
+  would rotate the camera too. Route it through picking instead: observe `PointerScroll`,
+  which goes to the entity under the pointer and bubbles up. Without `editor`, observe it on
+  the window entity (the window backend hits the window when nothing else is under the
+  pointer); with `editor`, on the viewport slot node, so the panel's widgets get their own
+  scrolls. Once world entities are pickable, scrolls over them must bubble to the view or not
+  block it. Scroll input in `bevy_action_map` is for handling a wheel globally, which this is
+  not. *Gate:* the editor panel (X3).
 - **X9** Finish splitting terrain and scenery into crates: move the parcel systems from
   `src/terrain` into `panoply_terrain`, and scenery into its own `panoply_scenery`. Flora's only
   tie to the app is `models::PropagateRenderLayers` (see X4). *Gate:* scenery restored.
@@ -478,6 +513,16 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   bound by material. Alpha-masked leaves need care: averaged alpha thins cutouts at distance
   (preserve coverage per mip). *Gate:* flora shimmer or scenery texture aliasing worth fixing,
   judged once actors make whole scenes (X12).
+- **X28** `arbor_day`: port the tree generator (`../seedling`, TypeScript) to Rust, in its own
+  workspace, with a new growth model; no backward compatibility. All 48 flora models come from
+  seedling. Requirements, the algorithm survey to do first, and open questions in
+  [arbor-day.md](arbor-day.md). Its output should let X15 merge flora and X27 mip leaf
+  textures without pipeline patching. Its own repo and workspace, on Bevy main like Panoply
+  (Next item 0). Its authoring app shares X3's UI architecture. The shell comes first, with a
+  stub generator (a tapered cylinder and a few cards): split pane and parameter panel in
+  `bevy_immediate`, a 3D view in a viewport following a UI node, `bevy_settings`, action-map
+  keys, a remote-driver plan. It serves as X3's `bevy_immediate` spike, replacing the water
+  sliders. *Gate for the generator:* the growth-model survey and a recommendation.
 
 ## Notes
 

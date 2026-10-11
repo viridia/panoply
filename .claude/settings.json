@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/talin/Projects/games/panoply diff *)",
+      "Bash(git -C /Users/talin/Projects/games/panoply log *)",
+      "Bash(git -C /Users/talin/Projects/games/panoply status *)",
+      "Bash(git -C /Users/talin/Projects/games/panoply grep *)",
+      "Bash(git -C /Users/talin/Projects/games/panoply show *)",
+      "Bash(git -C /Users/talin/Projects/games/panoply stash list)",
+      "Bash(cargo clippy)",
+      "Bash(cargo clippy *)",
+      "Bash(cargo check)",
+      "Bash(cargo check *)",
+      "Bash(cargo fmt --check *)",
+      "Read(~/.cargo/registry/**)",
+      "Read(//Users/talin/Projects/games/**)"
+    ]
+  }
+}
