@@ -1,7 +1,7 @@
 /// <reference types="overrun/overrun" />
 import { directory, target, DirectoryTask, source } from "overrun";
 import { NodeIO, Document, Logger } from "@gltf-transform/core";
-import { resample, dedup, draco } from "@gltf-transform/functions";
+import { resample, dedup } from "@gltf-transform/functions";
 import { KHRMaterialsUnlit, Unlit } from "@gltf-transform/extensions";
 import path from "path";
 
@@ -47,8 +47,7 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
       return doc;
     },
     resample(),
-    dedup(),
-    draco()
+    dedup()
   );
   return Buffer.from(await io.writeBinary(gltf));
 };

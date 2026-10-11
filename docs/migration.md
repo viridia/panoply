@@ -26,6 +26,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `scenery` without actors (D24): tier entities, D11 wait, floor outlines; `plans/scenery.py`. |
 | (pending) | Scroll hitches: pipeline warm-up, scene budgets (D26); hitch log; `plans/scroll.py`.     |
 | (pending) | Exemplar catalogs load once per file (D27): `ExemplarServer`; same-file `extends`.       |
+| (pending) | Removed the no-op `draco()` pass from `pipeline.ts` (D28).                              |
 
 ## Next
 
@@ -51,7 +52,12 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    movement, AI and physics go in `FixedUpdate`; their rendered transforms (and the camera
    following them) must interpolate between fixed ticks, or they judder at 120 fps against
    64 Hz ticks. Check whether Bevy 0.20 has transform interpolation built in before adding any.
-   Load actor exemplars through `ExemplarServer` (D27), not `AssetServer::load`.
+   Load actor exemplars through `ExemplarServer` (D27), not `AssetServer::load`. Models per
+   D28: one skeleton per actor, features bound to its joints, colors by cached material clones.
+   Hair (materials with extras `material: hair`) needs strand tangents and a hair shader (D29).
+   The three.js version's actor assembly is `engine/src/world/actors/SkinnedModel.ts` (faery).
+   The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
+   [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
 3. `portals`: a rewrite, not a restoration (D21).
 4. `editor` (see X3).
 
@@ -193,6 +199,37 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   loader, `extends` within the same catalog uses `LoadContext::get_label_handle`, since a load
   by path would reload the file being loaded; a missing target is a warning. Checked with a
   temporary log in the loader: `plans/scenery.py` loads each of ten catalogs once.
+- **D28** Actor models stay one glTF per species as authored (`humanoid-male.glb` holds every
+  male body and feature; `humanoid-armature.glb` the shared clips), with no split transform.
+  Bevy always loads a glTF whole, labels included, and uploads all its meshes; the files are
+  small (humanoid male about 1.3 MB of mesh data, 40 clips about 0.5 MB, all characters about
+  8.5 MB on disk, almost no textures), so keeping a species resident costs little, and one file
+  warms in one pass (D26). Load the root `Gltf` and look up `named_scenes`: loading
+  `file.glb#Scene` by label hits Bevy issue #10549 as exemplars did (D27). Clips bind by bone
+  name path (`AnimationTargetId`), so shared clips drive any file's armature with matching
+  bones. Assembly, as in the three.js `SkinnedModel.ts`: one skeleton per actor (the body
+  scene's armature and one `AnimationPlayer`); each selected feature (hair, hat, beard) spawns
+  only its mesh, with a `SkinnedMesh` whose joints are the body's joint entities matched by
+  `Name`. `modelOpt` adds the armature to every skinned scene, so spawning features as whole
+  scenes would duplicate the skeleton. Color slots are material names; an actor's `Colors`
+  replace a slot material's base color with a clone cached by (material, color). Exemplar hex
+  colors are sRGB (`Srgba::hex`); glTF `baseColorFactor` is linear. Colors for slots a mesh
+  lacks are ignored. Expect little sharing: nearly every actor has its own colors (see X23).
+  *Revisit* (with X6) if actors gain real textures, or a character file passes about 10 MB.
+  `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder was never
+  registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output was
+  unchanged.
+- **D29** Hair shine uses Kajiya-Kay (specular from strand direction T: `sin(T, H)^shininess`,
+  a band across the strands), likely with Scheuermann's two lobes (a bright primary, a
+  hair-tinted secondary). The three.js `HairMaterial` approximated a band with
+  `pow(sin(dot(R, V) * PI), shininess)`, which follows the surface, not the strands, and shows
+  in close-ups. Hair UVs are auto-unwrapped, so T comes from a procedural comb in `pipeline.ts`,
+  written as each hair mesh's `TANGENT` attribute (Bevy skins tangents): for scalp hair, the
+  direction from a crown point (top of the mesh bounds, a little back) projected onto the
+  surface; for facial hair, model-space down projected onto the surface; a fallback where the
+  projection vanishes. Shading: first try `StandardMaterial` anisotropy (no shader); if it
+  reads too realistic for the art style (D14, X12), an `ExtendedMaterial` with Kajiya-Kay in
+  WESL.
 
 ## Deferred
 
@@ -284,6 +321,26 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   (registered, not yet acted on; candles in the old engine); hot reload of `FloorSurface`
   assets (floors do not rebuild when one changes); `SceneryColliders` into rapier (with item 2
   of Next, or actors). *Gate:* scenery restored; take each when it is needed.
+- **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
+  viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
+  the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
+  are instantiated (D26 budgets spread them over frames), and the shown parcels have ground and
+  flora; later, actors too. A teleport (`GotoLocation`, portals) could reuse it. Low priority;
+  the loading aesthetics come much later, but a placeholder (a plain loading indicator over a
+  black screen) is fine before then. *Gate:* a game-entry flow (title screen or save loading)
+  to put it in front of.
+- **X23** Actor palette merge: join each actor mesh's primitives into one, with a per-vertex
+  color-slot index, so an actor draws as one primitive (and one outline) with one material
+  holding its palette. An actor is now about 10 primitives plus an outline child each, and
+  per-entity work is the CPU floor (Notes); a crowd like the three.js test lineup (20-odd
+  actors, nearly all colored differently) is about 600 skinned draws before shadows. Needs a
+  gltf-transform step and a small shader; slot names must stay consistent per file (D28).
+  *Gate:* actors restored, and a crowd scene measured.
+- **X24** Realms without terrain. `underworld` (in `world.locations.json`) is floors only, with
+  black everywhere else; the three.js version needed a placeholder terrain map for it (a 3x3
+  stub, which `convert_realm_maps.mts` writes; deleted here). Check that a realm with no
+  `.terrain` file spawns no parcels and no errors, and that parcels' wait for precinct effects
+  (D11) does not hang; make a stub map only if it must. *Gate:* portals (the way in).
 
 ## Notes
 

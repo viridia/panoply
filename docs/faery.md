@@ -24,7 +24,7 @@ An npm workspace (last touched 2024). Main packages under `packages/`:
 - `los-data`: realm maps (`realms/*.msgpack`), per-realm scenery, `world.json`.
 
 Also `design/` (notes), `scripts/convert_*.mts` (the converters that produce Panoply's data; see
-X1), `artwork/`.
+Migration scripts below, and X1), `artwork/`.
 
 ## Physics (*read*)
 
@@ -118,3 +118,55 @@ X1), `artwork/`.
   `scripting/predicates.md`, `Particles.md`, `UI.md`, `Bootstrapping.md`, `missing.md`;
   `archive/SAGA.md` (see X7).
 - `TODO.md` at the root (21 KB): the old engine's own open items.
+
+## Migration scripts (*read*, *run* 2026-10-10)
+
+`scripts/convert_*.mts` turn `packages/los-data` into Panoply assets, writing straight into
+`../panoply/assets`. Paths are relative to the faery root, so run from there:
+`npx tsx scripts/<name>.mts`. (From a Panoply session the shell cannot leave the repo; a
+throwaway shell script that `cd`s to faery and runs them works.)
+
+| Script                       | Reads (`los-data/`)        | Writes (`assets/`)                     |
+| ---------------------------- | -------------------------- | -------------------------------------- |
+| `convert_archetypes.mts`     | `meta/archetypes/*.json`   | `exemplars/*.exem.json`                |
+| `convert_precincts.mts`      | `scenery/<realm>/*.msgpack`| `scenery/precincts/<realm>/*.msgpack`  |
+| `convert_realm_maps.mts`     | `realms/*.msgpack`         | `terrain/maps/*.terrain`               |
+| `convert_terrain_groups.mts` | `world.json`               | `terrain/terrain.groups.json`          |
+
+Re-running overwrites any edit made in Panoply. On 2026-10-10 exemplars, precincts and the
+five realm maps came out byte-identical (unedited since conversion), but
+`terrain.groups.json` had been hand-edited (per-group `color`, `test` hidden) and was restored
+from git. It also writes `terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js
+version needed for a floors-only realm; it was deleted (see X24). Once the editor (X3) saves content, these scripts are
+one-way history. X1 needs the archetype converter (or a successor) to emit BSN.
+
+Conversions baked into Panoply's data: facings from quarter turns to degrees (`* 90`); tier
+`level -= 2` and floor type index `-= 1`; instances without an `iid` numbered in sequence;
+terrain effect `road` renamed `cobbles`; model paths rewritten (`a:b` to `a.glb#b`, folders
+moved, `Boulder1` to `Boulder.1` and similar); floor types become
+`scenery/floors/<kebab-case>.floor.ron` (the `.floor.ron` files are not made by these scripts;
+`floor-tiles.json` is skipped).
+
+Dropped (the scripts log most of them), by the module that would want them. Some are features
+Panoply will not carry over because it has a better way; which is which is undecided per item.
+
+- Actor archetypes: `actionMap`, `equipSlots`, `skills`, `gender`, `scale`,
+  `imposterHeight`/`imposterRadius`, `portraitHeight`/`portraitOffset`. Aspects: `combatant`
+  (some with `healthMax`, `attackPower`), `enemy` (with `loot` tables, e.g. `loot:Wolf`),
+  `conversant`, `shopkeeper`, `follower`, `aggressive`, `territorial`.
+- Actor instances in precincts: only `combatant` is kept. Dropped: `enemy`, `territorial`, and
+  script hooks (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...).
+- Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): only `type`
+  is kept; model, icon, weapon stats, document content and quest hooks, weight, price, stack
+  size and sounds are dropped, so item catalogs are shells.
+- Wall and fixture aspects: `door`, `stairs`, `ladder`, `toggleButton`, `pushButton`,
+  `pressurePlate`, `controlledOpenable`, `wall:autoDoor`, `container` (`openDelay`,
+  `containerType`), `sign` (`frame`), `book`, `soundSource` (`sound`, distances), `particles`
+  (effects, damage), `music`, `encounter:encounter`, `waymark`, `waypoints`, editor markers
+  (`circle`, `rect`), `fixture:waterFx`. Kept: `Portal`, `LightSource`, models, colliders,
+  marks, wall size.
+- Scenery instance props: `Group` and `PortalTarget` are kept (Panoply registers neither yet);
+  per-instance aspects (`triggerGroup`, `wall:directDoor`, `wall:flipFlopDoor`,
+  `playground:spearTrap2`, `playground:proximityDoor`), `inventory` and per-instance `facing`
+  are dropped.
+- Terrain effects: `TerrainBlocked` (`blocked`). Precincts: `layers`.
