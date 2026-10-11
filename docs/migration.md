@@ -28,10 +28,28 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Exemplar catalogs load once per file (D27): `ExemplarServer`; same-file `extends`.       |
 | (pending) | Removed the no-op `draco()` pass from `pipeline.ts` (D28).                              |
 | (pending) | Lighting as in the three.js version (D30): linear tone mapping, `Sunlight`; `plans/lighting.py`. |
+| (pending) | Water, first steps (D31): colors as three.js displayed them, alpha, seabed under layer and tint. |
 
 ## Next
 
-1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
+1. Mipmaps for terrain textures, generated in `pipeline.ts` (D7). No texture has mips now,
+   so distant ground shimmers and the seabed cannot be blurred by depth (X11). Overrun reads
+   PNG sources from `artwork/` (the ground and water textures now live directly in
+   `assets/terrain/textures`; move their sources) and writes `.ktx2` with a full mip chain:
+   `sharp` to downsample, in linear light so mips do not darken, and `ktx-parse` to write the
+   container, uncompressed RGBA8 (sRGB for color, linear for the water normal map and noise)
+   with zstd supercompression; no native CLI (`toktx` is not installed). Bevy's asset
+   processor (`CompressedImageSaver`) was the alternative: it would run a second processor
+   beside overrun, and its block compression is lossy on painted textures. Bevy's
+   `MipGenerationJobs` is for render targets and has no sRGB formats. Also replace `fract(uv)`
+   in `ground.wesl` and `water.wesl` with `AddressMode::Repeat` samplers (set in loader
+   settings): with mips, `fract` makes seam lines where UVs jump. This replaces the disabled
+   `config_textures_modes` (`src/terrain/plugin.rs`, and a commented copy in
+   `panoply_terrain`), which set `Repeat` on U only and matched a `textures` parent folder that
+   `terrain/textures/...` never has, so it likely never applied. Check with
+   `plans/lighting.py` and a distance shot. Textures inside glTFs (flora leaves, scenery) are a
+   later step: gltf-transform embedding KTX2 (`KHR_texture_basisu`).
+2. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
    per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
@@ -41,7 +59,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
    from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
    would freeze).
-2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
+3. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
    across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
@@ -59,8 +77,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    The three.js version's actor assembly is `engine/src/world/actors/SkinnedModel.ts` (faery).
    The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
    [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
-3. `portals`: a rewrite, not a restoration (D21).
-4. `editor` (see X3).
+4. `portals`: a rewrite, not a restoration (D21).
+5. `editor` (see X3).
 
 When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that
@@ -240,6 +258,27 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   defaults are 1.4 times both (1750, 700), which matched the old screenshots better. The sun's
   color and illuminance are `panoply_core::Sunlight`, reflected like `HemisphereLight`, applied
   to each realm's `RealmSun` light. Values are a starting point for tuning by eye (X12).
+- **D31** Water and seabed follow the three.js version, adopted in small steps judged by eye.
+  The three.js `LakeMaterial` was unlit (`lights: false`, its lighting result discarded). It
+  converted its colors to linear but never encoded its output (no `encodings_fragment` in
+  three.js 0.152), so linear values reached the sRGB canvas unconverted, darker and more
+  saturated than its numbers. Panoply uses the colors as shown
+  (`water_material::as_displayed_by_threejs`): water teal (0, 0.3, 0.3), sky (0.7, 0.8, 0.9)
+  and (0.6, 0.7, 0.9). Water alpha is three.js's `mix(0.4, 1.0, opacity)` (about 0.5 straight
+  down; was `opacity`, about 0.2). Underwater ground shows only its under layer (dirt), as in
+  the three.js `TerrainMaterial` ("No top coats underwater"): `under_mix` rises to 1 by 0.33 m
+  below sea level. The port had kept the grass top coat, whose high-frequency detail made the
+  water read as clear. Departures, by eye: brown dirt under the water looked gray and dark, so
+  the seabed tint is blue-green, `Srgba(0.0, 0.25, 0.3)` (three.js: dark blue (0, 0.1, 0.3)),
+  up to 0.8 (three.js 0.7); and the water's sky weight is `opacity * 0.5` (was `- 0.1`).
+- **D32** Shaders are embedded (`embedded_asset!`, `embedded://<crate>/...`), in the app and in
+  every crate under `crates/`. Crates are split out to cut compile times, and a crate cannot
+  have its own asset folder: Bevy has no mechanism for one, and a crate that found a path to
+  its own folder could not be distributed. Embedding keeps each shader with the crate that
+  defines its bindings. Terrain's shaders were asset files (`assets/terrain/shaders/`) until
+  terrain moved into `panoply_terrain` (`3e29f50`). Textures are still loaded from the app's
+  `assets/` by path, so `panoply_terrain` relies on the app to provide `terrain/textures/`.
+  Hot reload of embedded shaders needs Bevy's `embedded_watcher` feature (not enabled).
 
 ## Deferred
 
@@ -268,17 +307,32 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. *Gate:* scenery or actors with shiny materials restored.
-- **X11** Water: apply the hemisphere light, or tie water's sky colors to it. The port reads as
-  a pond, not an ocean (compare `plans/lighting.py`'s `bluff` spot with the three.js version's
-  `LakeMaterial.ts`). Texture noise in place of `snoise` was a deliberate performance change;
-  keep it. What differs, all free: `water_color` is green (0, 0.3, 0.1), was teal (0, 0.3,
-  0.3); sky colors are a saturated blue, were pale (0.7, 0.8, 0.9) and (0.6, 0.7, 0.9); the
-  port halves the sky and its blend weight (`mix(water, sky * 0.5, opacity * 0.5 - 0.1)`; was
-  `mix(water, sky, opacity)`, fully sky at grazing angles); alpha straight down is about 0.2,
-  was about 0.45, so the seabed's grass texture shows through. Water is always at sea level
-  (the ground's underwater tint depends on it), so reflections of scenery could use one
-  mirrored camera (planar reflection), if their cost fits the budget; Bevy's SSR needs deferred
-  rendering and does not reach blended surfaces (see Notes). *Gate:* author's direction.
+- **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
+  `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
+  weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about
+  0.1-0.3; three.js had `mix(water, sky, opacity)`, fully sky at grazing angles); tune further
+  by eye. Compared with the three.js version, the water lacks its large, soft, pale sky
+  reflections over deep indigo (most of what made it read as water), is teal-gray rather than
+  blue (its blue came from the sky term), and has narrower, dimmer foam without the ragged
+  breakup at the seaward edge; our sun glint is new (three.js water was unlit) and large. Use
+  `plans/lighting.py`'s `ocean` spot (189, 62, open water only). The sky term is the blocker:
+  `water-clouds.png` is nearly binary, and the lookup follows the rippled reflection, which
+  jumps between neighboring far pixels (no mips), so where the sky weight is high (grazing
+  angles, far water) it reads as hard-edged blotches; near water it is weighted almost to
+  zero, so it looks flat. Confirmed by turning `ENABLE_SKY` off (blotches gone). Neither a
+  lower lookup frequency (`* 0.1`) nor clamping `reflect_vector /= y` toward the horizon
+  helped. Next try a soft (blurred) cloud texture, then raise the sky weight; then foam; then
+  the glint. Faster with shader hot reload (`embedded_watcher`, D32). Optionally tie the sky colors to `HemisphereLight` so water dims at
+  night and in interiors (X12). Blur the seabed with depth (`textureSampleBias`) once textures
+  have mips (Next). Water is always at sea level (the ground's underwater tint depends on it),
+  so reflections of scenery could use one mirrored camera (planar reflection), if their cost
+  fits the budget; Bevy's SSR needs deferred rendering and does not reach blended surfaces
+  (see Notes). Texture noise in place of `snoise` was a deliberate performance change; keep
+  it. Findings from a reverted attempt: restoring the old blend at full sky weight made the
+  cloud texture read as fractal discoloration; replacing the clouds with a smooth elevation
+  gradient lost the look of fluid. The ripple normal map loads as sRGB, offset by an
+  empirical `- 0.25`; decoding it properly changes the ripples' strength and bias.
+  *Gate:* author's direction.
 - **X12** Art direction for lighting: painterly (pre-Raphaelite, art nouveau). D30 restored the
   three.js balance (no tone mapping, ambient over sun); tune `Sunlight` and `HemisphereLight`
   by eye with `plans/lighting.py` (`SUN=`, `AMBIENT=`, `SHOTS=`), then repaint textures in
@@ -363,6 +417,25 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   stub, which `convert_realm_maps.mts` writes; deleted here). Check that a realm with no
   `.terrain` file spawns no parcels and no errors, and that parcels' wait for precinct effects
   (D11) does not hang; make a stub map only if it must. *Gate:* portals (the way in).
+- **X25** Water currents, for rivers; partly built. Flow cannot move vertices, which would
+  stretch or compress where a current meets still water. Instead the fragment shader mixes
+  noise layers, each scrolling in its own direction (`FRAGMENT_WAVES` in `water.wesl`: four
+  directions, +x, +z, -x, -z, three frequencies each), and the current vector varies each
+  layer's amplitude: still water weights all directions equally (standing chop), and a current
+  boosts the layers that agree with it, e.g. a base weight plus `max(0, dot(direction,
+  current))`. Normalizing by the total weight, as the loop already does, keeps ripple strength
+  even across the boundary. The current is meant to be the water mesh's `depth_motion.yz`
+  (written as zero in `water_mesh.rs`; `.x` is depth); the unused `motion` variable and the
+  commented strength gate in the loop are the start. With four axis directions, a diagonal
+  current may read as two crossing patterns; six or eight directions would cover angles
+  better, at more texture samples (now 12). The ripples are the only carrier of flow, so
+  water shading changes (X11) must keep them readable as moving bumps. *Gate:* rivers (a
+  source of current vectors in the terrain data).
+- **X26** Live tuning of surface looks: a reflected resource (like `Sunlight` and
+  `HemisphereLight`) holding the water's look (water and sky colors, sky scale and weight,
+  alpha, chop, glint) and the seabed tint, copied into the materials on change, with editor
+  sliders. Tuning water (X11) one rebuild and screenshot at a time was slow. *Gate:* the
+  choice of UI widgets (X3).
 
 ## Notes
 

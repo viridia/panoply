@@ -3,8 +3,8 @@
     python3 crates/bevy_remote_driver/client/run.py plans/lighting.py
 
 Saves lighting_village.png (playground 48.5, 54.8: buildings, props, cobbles),
-lighting_shore.png (110, 150: water, trees) and lighting_bluff.png (197, 9, facing +x+z: waves
-breaking on a bluff). Environment variables try other values without a rebuild, through the
+lighting_shore.png (110, 150: water, trees), lighting_bluff.png (197, 9, facing +x+z: waves
+breaking on a bluff) and lighting_ocean.png (189, 62: open water only). Environment variables try other values without a rebuild, through the
 reflected resources:
 
     SUN=1500        Sunlight::illuminance (lux)
@@ -27,6 +27,7 @@ SPOTS = {
     "village": ([48.5, 0.0, 54.8], None),
     "shore": ([110.0, 0.0, 150.0], None),
     "bluff": ([197.0, 0.0, 9.0], math.pi / 4),
+    "ocean": ([189.0, 0.0, 62.0], None),
 }
 
 

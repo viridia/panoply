@@ -204,7 +204,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
             sky_color[1],
             textureSample(sky, sky_sampler, fract(reflect_vector.xz * 0.5)).g);
     }
-    var color = mix(vec4(water_color.rgb, 1.0), reflected_sky * 0.5, opacity * 0.5 - 0.1);
+    var color = mix(vec4(water_color.rgb, 1.0), reflected_sky * 0.5, opacity * 0.5);
 
     if ENABLE_FOAM {
         let n1 = textureSample(foam, foam_sampler, fract(uv * 0.15 + globals.time * vec2(0.02, 0.02))).g;
@@ -262,7 +262,8 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
     // color = fns::apply_pbr_lighting(pbr_input);
 
-    color.a = opacity * clamp(water_depth * 40. + 6.1, 0., 1.);
+    // Alpha as in the three.js `LakeMaterial`: 0.4 for the water, rising to 1 with the sky.
+    color.a = mix(0.4, 1.0, opacity) * clamp(water_depth * 40. + 6.1, 0., 1.);
     return tone_mapping(color, view.color_grading);
 }
 

@@ -68,16 +68,24 @@ pub struct WaterMaterialResource {
     pub handle: Handle<WaterMaterial>,
 }
 
+/// The color the three.js `LakeMaterial` showed for `color`. It converted its uniforms to
+/// linear but never encoded its output (no `encodings_fragment`), so the linear values reached
+/// the sRGB canvas unconverted: the shown color is the linear values read as sRGB.
+fn as_displayed_by_threejs(color: Srgba) -> LinearRgba {
+    let linear = LinearRgba::from(color);
+    Srgba::rgb(linear.red, linear.green, linear.blue).into()
+}
+
 pub fn create_water_material(
     mut materials: ResMut<Assets<WaterMaterial>>,
     mut resource: ResMut<WaterMaterialResource>,
     asset_server: Res<AssetServer>,
 ) {
     resource.handle = materials.add(WaterMaterial {
-        water_color: Srgba::rgb(0.0, 0.3, 0.1).into(),
+        water_color: as_displayed_by_threejs(Srgba::rgb(0.0, 0.3, 0.3)),
         sky_color: [
-            Srgba::rgb(0.3, 0.4, 0.8).into(),
-            Srgba::rgb(0.6, 0.7, 1.0).into(),
+            as_displayed_by_threejs(Srgba::rgb(0.7, 0.8, 0.9)),
+            as_displayed_by_threejs(Srgba::rgb(0.6, 0.7, 0.9)),
         ],
         waves: asset_server.load("terrain/textures/water-waves-normal.png"),
         sky: asset_server.load("terrain/textures/water-clouds.png"),

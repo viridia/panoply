@@ -299,7 +299,7 @@ impl GroundMaterialCache {
                     texture1: biome_textures[1].clone(),
                     texture2: biome_textures[2].clone(),
                     texture3: biome_textures[3].clone(),
-                    water_color: Srgba::rgb(0.0, 0.1, 0.3).into(),
+                    water_color: Srgba::rgb(0.0, 0.25, 0.3).into(),
                     biome_weight,
                     biome_surface,
                     hemisphere: [LinearRgba::NONE; 2],

@@ -338,13 +338,16 @@ fn fragment(
         blend_biome(&sfc, biome_surface[3], s3_weight, color.rgb);
     }
 
+    // No top coats underwater: the seabed is the under layer, as in the three.js version.
+    sfc.under_mix = min(max(sfc.under_mix, -mesh.world_position.y * 3.), 1.);
+
     // Mix top layer and under layer.
     let combined = mix(sfc.color, vec4<f32>(under_color, under_roughness), sfc.under_mix);
     var diffuse_color = vec4<f32>(combined.xyz, 1.0);
     let roughness = combined.w;
 
-    // If underwater, then mix in dark blue
-    diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.7));
+    // If underwater, then mix in blue-green
+    diffuse_color = mix(diffuse_color, water_color, clamp(-0.2 - mesh.world_position.y, 0., 0.8));
 
     var pbr_input: PbrInput = pbr_input_new();
     pbr_input.material.base_color = diffuse_color;
