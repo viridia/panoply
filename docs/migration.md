@@ -49,10 +49,11 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
      breaks were `NumberInputValue` (now `bevy_ui_widgets::NumericValue`) and
      `SystemParam::init_access` (no world argument; returns a `Result`). Keep the branch to
      those changes and rebase it on upstream; offer it upstream; drop it at 0.21.
-   - **Order.** (a) Extract `bevy_remote_driver` into its own repo: Panoply and
-     `bevy_action_map` each have a copy and they have drifted (`Cargo.toml`, `driver.py`,
-     `run.py`, `locate.rs`, the design doc; only `bevy_action_map`'s has `examples` and `plans`).
-     Merge them, then depend on it by git. (b) A shared VS Code multi-root workspace (panoply,
+   - **Order.** (a) Extract `bevy_remote_driver` into its own repo: done 2026-10-11 as
+     `../bevy_remote_driver` (`viridia/bevy_remote_driver`), the union of both copies, with its
+     own ledger. `bevy_action_map` keeps its copy (it is published, and others may run its tests).
+     Panoply keeps `crates/bevy_remote_driver` until (d), then depends on the repo by git and
+     runs plans as `python3 ../bevy_remote_driver/client/run.py plans/smoke.py`. (b) A shared VS Code multi-root workspace (panoply,
      arbor_day, bevy_action_map, bevy_immediate, bevy_remote_driver, seedling for reference),
      with `rust-analyzer.linkedProjects` per `Cargo.toml` and `../bevy` not linked. Consider
      a shared `CARGO_TARGET_DIR`. (c) The `arbor_day` shell (X28), as X3's `bevy_immediate`
