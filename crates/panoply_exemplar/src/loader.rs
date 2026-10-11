@@ -92,7 +92,14 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                         .path()
                         .resolve_embed_str(&extends)
                         .map_err(de::Error::custom)?;
-                    result.extends = Some(self.load_context.load::<Exemplar>(extends_path));
+                    // An exemplar in this catalog: loading it by path would start another load
+                    // of this file (Bevy issue #10549).
+                    result.extends = Some(match extends_path.label() {
+                        Some(label) if extends_path.without_label() == *self.load_context.path() => {
+                            self.load_context.get_label_handle::<Exemplar>(label.to_owned())
+                        }
+                        _ => self.load_context.load::<Exemplar>(extends_path),
+                    });
                 }
             }
         }
@@ -139,6 +146,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
     {
         let mut entries: HashMap<String, Handle<Exemplar>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
+        let mut local_extends: Vec<(String, String)> = Vec::new();
         while let Some(key) = map.next_key::<String>()? {
             let mut lc = self.load_context.begin_labeled_asset();
             let sdata = map.next_value_seed(ExemplarDeserializer {
@@ -146,18 +154,40 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
                 load_context: &mut lc,
                 exemplar_name: &key,
             })?;
+            if let Some(label) = sdata
+                .extends
+                .as_ref()
+                .and_then(|h| h.path())
+                .filter(|p| p.without_label() == *self.load_context.path())
+                .and_then(|p| p.label())
+            {
+                local_extends.push((key.clone(), label.to_owned()));
+            }
             let aliases = sdata.alias.clone();
             let exemplar = Arc::new(sdata);
             let handle = lc.finish(Exemplar(exemplar.clone()));
             let handle = self
                 .load_context
                 .add_loaded_labeled_asset(key.clone(), handle);
-            for alias in &aliases {
-                self.load_context
+            // The catalog holds every handle, so labels stay loaded while it is.
+            for alias in aliases {
+                let alias_handle = self
+                    .load_context
                     .add_labeled_asset(alias.clone(), Exemplar(exemplar.clone()));
+                entries.insert(alias, alias_handle);
             }
 
             entries.insert(key, handle);
+        }
+
+        // An `extends` naming a label this catalog lacks never loads; the chain stops there.
+        for (key, label) in local_extends {
+            if !entries.contains_key(&label) {
+                warn!(
+                    "Exemplar {}#{key} extends #{label}, which is not in the catalog",
+                    self.load_context.path()
+                );
+            }
         }
 
         Ok(ExemplarCatalog { entries })

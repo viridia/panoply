@@ -5,6 +5,7 @@
 
 mod aspect;
 mod aspect_list;
+mod catalogs;
 mod command;
 mod exemplar;
 mod instance_type;
@@ -20,6 +21,7 @@ use bevy::{
 pub use aspect::*;
 pub use aspect_list::AspectList;
 pub use aspect_list::AspectListDeserializer;
+pub use catalogs::{ExemplarCatalogs, ExemplarServer};
 pub use command::UpdateAspects;
 pub use exemplar::Exemplar;
 use exemplar::ExemplarCatalog;
@@ -30,7 +32,8 @@ pub struct ExemplarPlugin;
 
 impl Plugin for ExemplarPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset::<ExemplarCatalog>()
+        app.init_resource::<ExemplarCatalogs>()
+            .init_asset::<ExemplarCatalog>()
             .init_asset::<Exemplar>()
             .init_asset_loader::<loader::ExemplarLoader>();
     }

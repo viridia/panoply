@@ -9,7 +9,7 @@ use self::{
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
-    precinct::read_precinct_data,
+    precinct::{mark_precinct_data, read_precinct_data},
     precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{ColliderDesc, ColliderShape, ColliderType},
@@ -79,7 +79,8 @@ impl Plugin for SceneryPlugin {
                 Update,
                 (
                     spawn_precincts,
-                    read_precinct_data,
+                    mark_precinct_data,
+                    read_precinct_data.after(mark_precinct_data),
                     // Floor processing
                     update_floor_aspects.after(read_precinct_data),
                     gen_floor_meshes.after(update_floor_aspects),

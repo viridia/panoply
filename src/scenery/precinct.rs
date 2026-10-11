@@ -242,29 +242,51 @@ impl Precinct {
     }
 }
 
-/** React when precinct assets change and update the scenery. */
-pub fn read_precinct_data(
+/// Marks a precinct whose asset loaded or changed, until its scenery is rebuilt.
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct ReadPrecinctData;
+
+/** React when precinct assets change: mark the precinct for `read_precinct_data`. */
+pub fn mark_precinct_data(
     mut commands: Commands,
-    q_precincts: Query<(Entity, &Precinct, Option<&Children>)>,
-    q_tiers: Query<(&PrecinctTier, Option<&Children>)>,
-    mut q_floor_regions: Query<&mut FloorRegion>,
-    mut q_scenery_elements: Query<&mut SceneryElement>,
+    q_precincts: Query<(Entity, &Precinct)>,
     mut ev_asset: MessageReader<AssetEvent<PrecinctAsset>>,
-    assets: Res<Assets<PrecinctAsset>>,
-    asset_server: Res<AssetServer>,
 ) {
     for ev in ev_asset.read() {
         let (AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id }) = ev else {
             continue;
         };
-        let Some((precinct_entity, precinct, precinct_children)) =
-            q_precincts.iter().find(|r| r.1.asset.id() == *id)
+        if let Some((precinct_entity, _)) = q_precincts.iter().find(|r| r.1.asset.id() == *id) {
+            commands.entity(precinct_entity).insert(ReadPrecinctData);
+        }
+    }
+}
+
+/** Update a marked precinct's scenery from its asset, once its exemplar catalogs have loaded. */
+pub fn read_precinct_data(
+    mut commands: Commands,
+    q_precincts: Query<(Entity, &Precinct, Option<&Children>), With<ReadPrecinctData>>,
+    q_tiers: Query<(&PrecinctTier, Option<&Children>)>,
+    mut q_floor_regions: Query<&mut FloorRegion>,
+    mut q_scenery_elements: Query<&mut SceneryElement>,
+    assets: Res<Assets<PrecinctAsset>>,
+    asset_server: Res<AssetServer>,
+    mut exemplars: ExemplarServer,
+) {
+    for (precinct_entity, precinct, precinct_children) in q_precincts.iter() {
+        let Some(precinct_asset) = assets.get(&precinct.asset) else {
+            continue;
+        };
+
+        // Both lists are requested before either is waited on, so their catalogs load together.
+        let scenery_exemplars = exemplars.get_all(&precinct_asset.scenery_types);
+        let fx_exemplars = exemplars.get_all(&precinct_asset.terrain_fx_types);
+        let (Some(scenery_exemplars), Some(fx_exemplars)) = (scenery_exemplars, fx_exemplars)
         else {
             continue;
         };
-        let Some(precinct_asset) = assets.get(*id) else {
-            continue;
-        };
+        commands.entity(precinct_entity).remove::<ReadPrecinctData>();
 
         // TODO: Sync nav mesh, physics, light sources, particles, etc.
         // TODO(bevy-0.20): Sync actors, restored with actors (D24).
@@ -285,12 +307,6 @@ pub fn read_precinct_data(
             &mut q_floor_regions,
         );
 
-        let scenery_exemplars: Vec<Handle<Exemplar>> = precinct_asset
-            .scenery_types
-            .iter()
-            .map(|s| asset_server.load(s))
-            .collect();
-
         precinct.rebuild_scenery_elements(
             &mut commands,
             precinct_entity,
@@ -299,12 +315,6 @@ pub fn read_precinct_data(
             &scenery_exemplars,
             &mut q_scenery_elements,
         );
-
-        let fx_exemplars: Vec<Handle<Exemplar>> = precinct_asset
-            .terrain_fx_types
-            .iter()
-            .map(|s| asset_server.load(s))
-            .collect();
 
         precinct.rebuild_terrain_fx(&mut commands, precinct_entity, precinct_asset, fx_exemplars);
     }

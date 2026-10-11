@@ -25,15 +25,11 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Physics stays on rapier (D22, X16); `docs/faery.md`, a map of the three.js engine.      |
 | (pending) | `scenery` without actors (D24): tier entities, D11 wait, floor outlines; `plans/scenery.py`. |
 | (pending) | Scroll hitches: pipeline warm-up, scene budgets (D26); hitch log; `plans/scroll.py`.     |
+| (pending) | Exemplar catalogs load once per file (D27): `ExemplarServer`; same-file `extends`.       |
 
 ## Next
 
-1. Exemplar catalogs load once per label. Bevy 0.20 starts a separate load of the whole file
-   for each `file#Label` requested before the file has loaded (`bevy_asset` `load_internal`,
-   `HandleLoadingMode::Force`; Bevy issue #10549). The playground's first precinct loads
-   `wall-tiles.exem.json` 128 times and `furnishings` 34. Fix in `panoply_exemplar`: load each
-   catalog root first, then take the labeled handles once it has loaded.
-2. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
+1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
    per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
@@ -43,7 +39,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
    from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
    would freeze).
-3. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
+2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
    across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
@@ -55,8 +51,9 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    movement, AI and physics go in `FixedUpdate`; their rendered transforms (and the camera
    following them) must interpolate between fixed ticks, or they judder at 120 fps against
    64 Hz ticks. Check whether Bevy 0.20 has transform interpolation built in before adding any.
-4. `portals`: a rewrite, not a restoration (D21).
-5. `editor` (see X3).
+   Load actor exemplars through `ExemplarServer` (D27), not `AssetServer::load`.
+3. `portals`: a rewrite, not a restoration (D21).
+4. `editor` (see X3).
 
 When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that
@@ -184,6 +181,18 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   (`FLORA_SCENES_PER_FRAME`, `SCENERY_SCENES_PER_FRAME`): parcels' flora and a precinct's
   scenery otherwise arrive as 300-500 scenes in one frame. `plans/scroll.py` fails if a
   pipeline is created during its cold walk.
+- **D27** Exemplars are loaded by path through `panoply_exemplar::ExemplarServer`, never
+  `AssetServer::load("file#Label")`. Bevy 0.20 starts a separate load of the whole file for each
+  `file#Label` requested before the file has loaded (`bevy_asset` `load_internal`,
+  `HandleLoadingMode::Force`; Bevy issue #10549): the playground's first precinct read
+  `wall-tiles.exem.json` 128 times. `ExemplarServer::get` loads the catalog root, held in the
+  `ExemplarCatalogs` resource, and returns `None` until it has loaded, then the labeled handle
+  (labels are registered before the root counts as loaded). The catalog holds every label's
+  handle, aliases included, so labels stay loaded. Precincts wait for their catalogs
+  (`ReadPrecinctData`), and a parcel's ground waits for the precinct as before (D11). In the
+  loader, `extends` within the same catalog uses `LoadContext::get_label_handle`, since a load
+  by path would reload the file being loaded; a missing target is a warning. Checked with a
+  temporary log in the loader: `plans/scenery.py` loads each of ten catalogs once.
 
 ## Deferred
 
