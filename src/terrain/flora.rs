@@ -227,18 +227,27 @@ pub fn insert_flora(
     }
 }
 
+/// Flora scenes instantiated per frame. Several parcels' placements often finish together, and
+/// instantiating all their scenes at once (hundreds, with thousands of entities) stalls a frame.
+const FLORA_SCENES_PER_FRAME: usize = 64;
+
 pub fn spawn_flora_model_instances(
     mut commands: Commands,
     mut q_flora_instance: Query<(Entity, &FloraInstance), Without<WorldAssetRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
+    let mut budget = FLORA_SCENES_PER_FRAME;
     for (entity, mesh) in q_flora_instance.iter_mut() {
+        if budget == 0 {
+            break;
+        }
         let result = server.load_state(&mesh.handle);
         if result.is_loaded() {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
+                    budget -= 1;
                     commands.entity(entity).try_insert((
                         WorldAssetRoot(scene_handle.clone()),
                         mesh.transform,

@@ -81,18 +81,27 @@ pub fn spawn_se_models(
     }
 }
 
+/// Scenery scenes instantiated per frame. A precinct holds hundreds of elements; instantiating
+/// all their models in one frame stalls it.
+const SCENERY_SCENES_PER_FRAME: usize = 64;
+
 pub fn spawn_se_model_instances(
     mut commands: Commands,
     mut query: Query<(Entity, &SceneryElementMesh), Without<WorldAssetRoot>>,
     assets_gltf: Res<Assets<Gltf>>,
     server: Res<AssetServer>,
 ) {
+    let mut budget = SCENERY_SCENES_PER_FRAME;
     for (entity, mesh) in query.iter_mut() {
+        if budget == 0 {
+            break;
+        }
         let result = server.load_state(&mesh.handle);
         if result.is_loaded() {
             let asset = assets_gltf.get(&mesh.handle);
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
+                    budget -= 1;
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
                     commands.entity(entity).try_insert((

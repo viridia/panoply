@@ -83,8 +83,9 @@ pub fn viewpoint_transitions(time: Res<Time>, mut viewpoint: ResMut<Viewpoint>) 
 
 /// Request to move the viewpoint to a position in a named realm. Written by the editor's quick
 /// navigation, or over the Bevy Remote Protocol with `world.write_message` by test plans.
-#[derive(Message, Reflect, Clone, Debug)]
-#[reflect(Message)]
+/// Fields left out over BRP take their defaults, so the optional ones can be omitted.
+#[derive(Message, Reflect, Clone, Debug, Default)]
+#[reflect(Message, Default)]
 pub struct GotoLocation {
     /// Name of the realm, such as `"playground"`.
     pub realm: String,
@@ -92,6 +93,8 @@ pub struct GotoLocation {
     pub position: Vec3,
     /// If set, the camera distance to use there, so a test can measure at a known zoom.
     pub camera_distance: Option<f32>,
+    /// If set, the heading to face there, in radians; 0 faces +z, PI/2 faces +x.
+    pub azimuth: Option<f32>,
 }
 
 pub fn goto_location(
@@ -102,6 +105,9 @@ pub fn goto_location(
     for goto in messages.read() {
         if let Some(distance) = goto.camera_distance {
             viewpoint.set_camera_distance(distance, 0.);
+        }
+        if let Some(azimuth) = goto.azimuth {
+            viewpoint.azimuth = azimuth.rem_euclid(PI * 2.);
         }
         commands.queue(SetViewpointCmd {
             position: goto.position,

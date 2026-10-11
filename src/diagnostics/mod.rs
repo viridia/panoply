@@ -6,6 +6,9 @@ use bevy::{
 use panoply_core::{metrics::PRECINCT_SIZE_F, Realm, Viewpoint};
 use panoply_terrain::PARCEL_SIZE_F;
 
+#[cfg(feature = "editor")]
+mod hitch;
+
 pub struct ScreenDiagsPlugin;
 
 const FONT_SIZE: f32 = 16.0;
@@ -28,6 +31,7 @@ impl Plugin for ScreenDiagsPlugin {
         app.add_plugins((
             bevy::render::diagnostic::RenderDiagnosticsPlugin,
             bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
+            hitch::HitchLogPlugin,
         ))
         .add_systems(Startup, spawn_location_text)
         .add_systems(Update, update_location_text);

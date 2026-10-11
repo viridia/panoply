@@ -1,4 +1,5 @@
 // mod model_loader;
+mod warmup;
 
 use bevy::{
     camera::visibility::RenderLayers, gltf::GltfMaterialExtras, light::NotShadowCaster,
@@ -18,7 +19,8 @@ pub struct ModelsPlugin;
 
 impl Plugin for ModelsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
-        app.add_observer(copy_model_render_layers)
+        app.add_plugins(warmup::WarmupPlugin)
+            .add_observer(copy_model_render_layers)
             .add_systems(Update, process_material_extras);
     }
 }

@@ -24,6 +24,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Parcel show set (D20); random flora Y rotation, restored from the three.js version.     |
 | (pending) | Physics stays on rapier (D22, X16); `docs/faery.md`, a map of the three.js engine.      |
 | (pending) | `scenery` without actors (D24): tier entities, D11 wait, floor outlines; `plans/scenery.py`. |
+| (pending) | Scroll hitches: pipeline warm-up, scene budgets (D26); hitch log; `plans/scroll.py`.     |
 
 ## Next
 
@@ -37,7 +38,11 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
    per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
    `Parcel::terrain_collider`); also the editor's terrain thumbnail. Cheaper now than after
-   actors are restored, and picks up any parry fixes before actors depend on them.
+   actors are restored, and picks up any parry fixes before actors depend on them. Also fix:
+   `realm_physics_system` runs in `FixedUpdate` (64 Hz by default) but rapier's default
+   `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
+   from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
+   would freeze).
 3. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
@@ -46,7 +51,10 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
    Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
    `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
-   a home-precinct relationship whose despawn is linked (D24), not from scenery.
+   a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
+   movement, AI and physics go in `FixedUpdate`; their rendered transforms (and the camera
+   following them) must interpolate between fixed ticks, or they judder at 120 fps against
+   64 Hz ticks. Check whether Bevy 0.20 has transform interpolation built in before adding any.
 4. `portals`: a rewrite, not a restoration (D21).
 5. `editor` (see X3).
 
@@ -167,6 +175,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   (`panoply_exemplar::aspect_list`), not an error that fails the whole catalog or precinct, so
   modules can be restored one at a time (the wall-tile catalog uses portals' `Portal`). Saving
   such an asset drops the skipped aspects; see X20.
+- **D26** No pipeline compiles while scrolling. Bevy 0.20 creates render pipelines
+  synchronously on macOS (`bevy_render` `create_pipeline_task`), about 35 ms each, the first
+  time a material and mesh-layout combination is drawn. `models::warmup` loads the model folders
+  (`terrain/models`, `scenery/models`) at startup and draws every scene of each glTF once, tiny
+  and below the ground at the view center, then despawns it; any glTF loaded later is warmed
+  the same way. Instantiating scenes is budgeted too, 64 per frame for flora and for scenery
+  (`FLORA_SCENES_PER_FRAME`, `SCENERY_SCENES_PER_FRAME`): parcels' flora and a precinct's
+  scenery otherwise arrive as 300-500 scenes in one frame. `plans/scroll.py` fails if a
+  pipeline is created during its cold walk.
 
 ## Deferred
 
@@ -297,6 +314,14 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   vs 2x2 shadow filtering 1.3 ms. `GeneratedEnvironmentMapLight` re-filters every frame (35 ms).
   `skybox_diffuse.ktx2` was 1024x1024x6 with no mips; `skybox_diffuse_32.ktx2` is a 32x32 box
   filter of it, visually identical, 0.6 ms cheaper.
+- Hitch log (`diagnostics::hitch`, editor builds): logs each frame over 14 ms after startup,
+  with what the three frames before it spawned (precincts, parcels, parcels shown, scenery,
+  scenes, meshes, images, pipelines, physics steps, colliders), and each pipeline created after
+  startup with its shader defs. On by default in `cargo run`; grep the output for `Hitch:`.
+  Before D26, a cold walk (`plans/scroll.py`) showed 40-45 ms frames from pipeline creation and
+  17-32 ms frames from scene bursts; after, neither. Frames of 15-24 ms with nothing counted
+  remain, at the same rate in cold and warm passes, so not load-related; possibly the driver's
+  polling. Screenshots stall a frame by 350-480 ms (the window comes to the front).
 - Measure frame time by counting frames over wall time without polling: the driver's
   diagnostics return the latest single frame, and polling every 5 ms disturbs the app.
 - Bevy 0.20 issues seen: (1) switching `DirectionalLight::shadow_maps_enabled` off at runtime

@@ -60,6 +60,11 @@ impl RealmPhysics {
         );
     }
 
+    /// Number of colliders in this realm's physics world.
+    pub fn collider_count(&self) -> usize {
+        self.collider_set.len()
+    }
+
     pub fn insert_body(&mut self, body: RigidBody) -> RigidBodyHandle {
         self.rigid_body_set.insert(body)
     }
