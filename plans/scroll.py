@@ -16,6 +16,8 @@ import time
 
 BIN = "panoply"
 FEATURES = ["bevy/trace_chrome"] if os.environ.get("TRACE") else None
+# The game inherits the runner's environment; the hitch log is opt-in, and this plan reads it.
+os.environ["PANOPLY_HITCH_LOG"] = "1"
 GOTO = "panoply_core::viewpoint::GotoLocation"
 DISTANCE = 20.0
 START = [8.0, 0.0, 8.0]

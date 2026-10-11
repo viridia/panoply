@@ -28,13 +28,18 @@ impl Plugin for ScreenDiagsPlugin {
         // with the editor. Render diagnostics record CPU time per render pass (GPU time needs
         // Vulkan or DX12); test plans read both through the remote driver.
         #[cfg(feature = "editor")]
-        app.add_plugins((
-            bevy::render::diagnostic::RenderDiagnosticsPlugin,
-            bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
-            hitch::HitchLogPlugin,
-        ))
-        .add_systems(Startup, spawn_location_text)
-        .add_systems(Update, update_location_text);
+        {
+            app.add_plugins((
+                bevy::render::diagnostic::RenderDiagnosticsPlugin,
+                bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
+            ))
+            .add_systems(Startup, spawn_location_text)
+            .add_systems(Update, update_location_text);
+            // The hitch log is opt-in: `PANOPLY_HITCH_LOG=1`.
+            if std::env::var_os("PANOPLY_HITCH_LOG").is_some() {
+                app.add_plugins(hitch::HitchLogPlugin);
+            }
+        }
     }
 }
 

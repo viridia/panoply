@@ -317,7 +317,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - Hitch log (`diagnostics::hitch`, editor builds): logs each frame over 14 ms after startup,
   with what the three frames before it spawned (precincts, parcels, parcels shown, scenery,
   scenes, meshes, images, pipelines, physics steps, colliders), and each pipeline created after
-  startup with its shader defs. On by default in `cargo run`; grep the output for `Hitch:`.
+  startup with its shader defs. Opt-in: `PANOPLY_HITCH_LOG=1 cargo run`, then grep the output
+  for `Hitch:`; `plans/scroll.py` turns it on for its own run.
   Before D26, a cold walk (`plans/scroll.py`) showed 40-45 ms frames from pipeline creation and
   17-32 ms frames from scene bursts; after, neither. Frames of 15-24 ms with nothing counted
   remain, at the same rate in cold and warm passes, so not load-related; possibly the driver's
