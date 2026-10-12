@@ -31,6 +31,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Water, first steps (D31): colors as three.js displayed them, alpha, seabed under layer and tint. |
 | (pending) | Embedded shaders hot-reload in editor builds (`embedded_watcher`, D32).                  |
 | (pending) | Terrain textures as KTX2 with mipmaps from `pipeline.ts`; tiling samplers, no `fract` (D33). |
+| (pending) | `docs/arbor-day.md` moved to the `arbor_day` repo as `docs/requirements.md` (X28).      |
 
 ## Next
 
@@ -514,16 +515,19 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   bound by material. Alpha-masked leaves need care: averaged alpha thins cutouts at distance
   (preserve coverage per mip). *Gate:* flora shimmer or scenery texture aliasing worth fixing,
   judged once actors make whole scenes (X12).
-- **X28** `arbor_day`: port the tree generator (`../seedling`, TypeScript) to Rust, in its own
-  workspace, with a new growth model; no backward compatibility. All 48 flora models come from
-  seedling. Requirements, the algorithm survey to do first, and open questions in
-  [arbor-day.md](arbor-day.md). Its output should let X15 merge flora and X27 mip leaf
-  textures without pipeline patching. Its own repo and workspace, on Bevy main like Panoply
-  (Next item 0). Its authoring app shares X3's UI architecture. The shell comes first, with a
-  stub generator (a tapered cylinder and a few cards): split pane and parameter panel in
-  `bevy_immediate`, a 3D view in a viewport following a UI node, `bevy_settings`, action-map
-  keys, a remote-driver plan. It serves as X3's `bevy_immediate` spike, replacing the water
-  sliders. *Gate for the generator:* the growth-model survey and a recommendation.
+- **X28** `arbor_day` (`../arbor_day`): port the tree generator (`../seedling`, TypeScript) to
+  Rust, in its own workspace, with a new growth model; no backward compatibility. All 48 flora
+  models come from seedling. Requirements, the algorithm survey to do first, and open questions
+  are in its `docs/requirements.md` (moved from here 2026-10-11); its progress in its
+  `docs/ledger.md`. Its output should let X15 merge flora and X27 mip leaf textures without
+  pipeline patching. On Bevy main like Panoply (Next item 0). Its authoring app shares X3's UI
+  architecture, and its shell, built first, serves as X3's `bevy_immediate` spike, replacing
+  the water sliders. *Gate for the generator:* the growth-model survey and a recommendation.
+- **X29** Restore a maximized window as maximized. `window_settings.rs` saves the size and
+  position a maximized window has, so a restart gives a window of that size that the OS does not
+  treat as maximized (the macOS green button does not restore it). Save the state too (winit's
+  `is_maximized`) and restore it with `Window::set_maximized`. *Gate:* the author finds it worth
+  doing; `arbor_day`'s `src/settings.rs` has the same code.
 
 ## Notes
 
