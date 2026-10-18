@@ -32,6 +32,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Embedded shaders hot-reload in editor builds (`embedded_watcher`, D32).                  |
 | (pending) | Terrain textures as KTX2 with mipmaps from `pipeline.ts`; tiling samplers, no `fract` (D33). |
 | (pending) | `docs/arbor-day.md` moved to the `arbor_day` repo as `docs/requirements.md` (X28).      |
+| (pending) | `pipeline.ts` target `trees-new`: arbor_day `.gltf` files merged into `terrain/models/new.glb`, leaves as embedded KTX2 (X27, X28). |
 
 ## Next
 
@@ -46,9 +47,10 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
      commit; bump with `cargo update` deliberately, one chunk per bump, all repos together.
    - **Dependencies, done (2026-10-11).** `bevy_action_map`: `main` is on Bevy main (chunk 196),
      0.1.x stays on `release/0.1` (tag `v0.1.2`). `bevy_immediate` (X3): fork
-     `viridia/bevy_immediate`, branch `bevy-main` (`57d724e`), whose `main` mirrors upstream;
-     breaks were `NumberInputValue` (now `bevy_ui_widgets::NumericValue`) and
-     `SystemParam::init_access` (no world argument; returns a `Result`). Keep the branch to
+     `viridia/bevy_immediate`, branch `bevy-main` (`55a841d`), whose `main` mirrors upstream;
+     breaks were `NumberInputValue` (now `bevy_ui_widgets::NumericValue`),
+     `SystemParam::init_access` (no world argument; returns a `Result`), and the `ghost_nodes`
+     feature, removed upstream (bevy#25653). Keep the branch to
      those changes and rebase it on upstream; offer it upstream; drop it at 0.21.
    - **Order.** (a) Extract `bevy_remote_driver` into its own repo: done 2026-10-11 as
      `../bevy_remote_driver` (`viridia/bevy_remote_driver`), the union of both copies, with its
@@ -509,12 +511,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   rebuild and screenshot at a time was slow; shaders now hot-reload (D32), but uniforms set
   from Rust do not. *Gate:* the editor panel and the choice of UI reactivity (X3).
 - **X27** Mipmaps for textures inside glTFs (flora leaves, scenery), which D33 does not
-  cover: Bevy's glTF loader generates none. glTF carries KTX2 through `KHR_texture_basisu`,
-  which requires Basis Universal compression (lossy), not D33's plain RGBA8; check first
-  whether Bevy's glTF loader accepts other KTX2, or keep the images in separate `.ktx2` files
-  bound by material. Alpha-masked leaves need care: averaged alpha thins cutouts at distance
-  (preserve coverage per mip). *Gate:* flora shimmer or scenery texture aliasing worth fixing,
-  judged once actors make whole scenes (X12).
+  cover: Bevy's glTF loader generates none. Bevy 0.20's loader takes D33's plain KTX2 either
+  way, without `KHR_texture_basisu`: an image URI loads through the asset server by extension,
+  and an embedded image decodes by its `mimeType` (`image/ktx2`); `gltf-json` does not check
+  MIME types. `trees-new` embeds its leaf textures this way, through `pngToKtx2`, and they
+  render. Embedded is the choice: arbor_day textures are unique per tree, so a separate file
+  gains no sharing. Left: the other flora and scenery; alpha coverage per mip (averaged alpha
+  thins cutouts at distance); and clamping, not wrapping, at the edges when downsampling
+  non-tiling textures. *Gate:* flora shimmer or scenery texture aliasing worth fixing, judged
+  once actors make whole scenes (X12).
 - **X28** `arbor_day` (`../arbor_day`): port the tree generator (`../seedling`, TypeScript) to
   Rust, in its own workspace, with a new growth model; no backward compatibility. All 48 flora
   models come from seedling. Requirements, the algorithm survey to do first, and open questions

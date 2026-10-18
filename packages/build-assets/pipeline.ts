@@ -1,7 +1,7 @@
 /// <reference types="overrun/overrun" />
 import { directory, target, DirectoryTask, source } from "overrun";
 import { NodeIO, Document, Logger } from "@gltf-transform/core";
-import { resample, dedup } from "@gltf-transform/functions";
+import { resample, dedup, unpartition } from "@gltf-transform/functions";
 import { KHRMaterialsUnlit, Unlit } from "@gltf-transform/extensions";
 import path from "path";
 import zlib from "zlib";
@@ -160,6 +160,33 @@ trees("desert");
 flora("flora-shrubs", "flora/shrubs", "terrain/models/shrubs.glb");
 flora("flora-crops", "flora/crops", "terrain/models/crops.glb");
 flora("flora-bushes", "flora/bushes", "terrain/models/bushes.glb");
+
+// arbor_day trees: merges .gltf files (each with its .bin and leaf .png) into one .glb, with
+// the leaf textures embedded. arbor_day writes materials as the game reads them, so unlike
+// flora() nothing is patched.
+target(
+  "trees-new",
+  directory(srcRoot, "flora/trees-new")
+    .match("*.gltf")
+    .reduce(new Document(), async (doc, next) =>
+      // Read by path, not buffer, so the .bin and .png the .gltf references resolve.
+      doc.merge(await io.read(next.path.full))
+    )
+    .transform(async (doc) => {
+      await doc.transform(unpartition(), dedup());
+      // Leaf textures embedded as KTX2 with mipmaps; Bevy decodes them by MIME type (X27).
+      for (const texture of doc.getRoot().listTextures()) {
+        const image = texture.getImage();
+        if (image && texture.getMimeType() === "image/png") {
+          texture
+            .setImage(new Uint8Array(await pngToKtx2(Buffer.from(image))))
+            .setMimeType("image/ktx2");
+        }
+      }
+      return Buffer.from(await io.writeBinary(doc));
+    })
+    .dest(dstRoot, "terrain/models/new.glb")
+);
 
 // Texture conversion: PNG to KTX2 with mipmaps.
 const SRGB_TO_LINEAR = new Float32Array(256);
