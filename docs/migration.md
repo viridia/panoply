@@ -58,8 +58,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
      Panoply keeps `crates/bevy_remote_driver` until (d), then depends on the repo by git and
      runs plans as `python3 ../bevy_remote_driver/client/run.py plans/smoke.py`. (b) A shared VS Code multi-root workspace (panoply,
      arbor_day, bevy_action_map, bevy_immediate, bevy_remote_driver, seedling for reference),
-     with `rust-analyzer.linkedProjects` per `Cargo.toml` and `../bevy` not linked. Consider
-     a shared `CARGO_TARGET_DIR`. (c) The `arbor_day` shell (X28), as X3's `bevy_immediate`
+     with `rust-analyzer.linkedProjects` per `Cargo.toml` and `../bevy` not linked. One target directory, `games/target`, is shared by every workspace
+     under `games/`, set in `games/.cargo/config.toml` (outside any repo; 2026-10-20). (c) The `arbor_day` shell (X28), as X3's `bevy_immediate`
      spike. (d) This item in Panoply.
    - **In Panoply.** Expect breakage from WESL 0.6, the window event split, `DisplayTarget` on
      `Window`, and the observer `Trigger` and `SystemParam` changes. Update AGENTS.md (API
@@ -533,6 +533,11 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   treat as maximized (the macOS green button does not restore it). Save the state too (winit's
   `is_maximized`) and restore it with `Window::set_maximized`. *Gate:* the author finds it worth
   doing; `arbor_day`'s `src/settings.rs` has the same code.
+- **X30** A scale range per entry in `terrain.biomes.json`, in place of the fixed 0.5 to 0.8 in
+  `flora.rs`, which stays the default so seedling plants are unchanged and species migrate to
+  arbor_day one at a time. arbor_day sizes a plant itself (its C111), so its entries take a range
+  around 1, for variety only. Placement scale also scales outline width, which is in the mesh's
+  local units. *Gate:* the first arbor_day species to replace a seedling one.
 
 ## Notes
 
