@@ -161,32 +161,37 @@ flora("flora-shrubs", "flora/shrubs", "terrain/models/shrubs.glb");
 flora("flora-crops", "flora/crops", "terrain/models/crops.glb");
 flora("flora-bushes", "flora/bushes", "terrain/models/bushes.glb");
 
-// arbor_day trees: merges .gltf files (each with its .bin and leaf .png) into one .glb, with
+// arbor_day flora: merges .gltf files (each with its .bin and leaf .png) into one .glb, with
 // the leaf textures embedded. arbor_day writes materials as the game reads them, so unlike
-// flora() nothing is patched.
-target(
-  "trees-new",
-  directory(srcRoot, "flora/trees-new")
-    .match("*.gltf")
-    .reduce(new Document(), async (doc, next) =>
-      // Read by path, not buffer, so the .bin and .png the .gltf references resolve.
-      doc.merge(await io.read(next.path.full))
-    )
-    .transform(async (doc) => {
-      await doc.transform(unpartition(), dedup());
-      // Leaf textures embedded as KTX2 with mipmaps; Bevy decodes them by MIME type (X27).
-      for (const texture of doc.getRoot().listTextures()) {
-        const image = texture.getImage();
-        if (image && texture.getMimeType() === "image/png") {
-          texture
-            .setImage(new Uint8Array(await pngToKtx2(Buffer.from(image))))
-            .setMimeType("image/ktx2");
+// flora() nothing is patched. flora-new and models-new mirror flora and models, so a biome
+// entry switches between the two by its path.
+function arborDayTrees(group: string) {
+  target(
+    `trees-new-${group}`,
+    directory(srcRoot, `flora-new/trees-${group}`)
+      .match("*.gltf")
+      .reduce(new Document(), async (doc, next) =>
+        // Read by path, not buffer, so the .bin and .png the .gltf references resolve.
+        doc.merge(await io.read(next.path.full))
+      )
+      .transform(async (doc) => {
+        await doc.transform(unpartition(), dedup());
+        // Leaf textures embedded as KTX2 with mipmaps; Bevy decodes them by MIME type (X27).
+        for (const texture of doc.getRoot().listTextures()) {
+          const image = texture.getImage();
+          if (image && texture.getMimeType() === "image/png") {
+            texture
+              .setImage(new Uint8Array(await pngToKtx2(Buffer.from(image))))
+              .setMimeType("image/ktx2");
+          }
         }
-      }
-      return Buffer.from(await io.writeBinary(doc));
-    })
-    .dest(dstRoot, "terrain/models/new.glb")
-);
+        return Buffer.from(await io.writeBinary(doc));
+      })
+      .dest(dstRoot, `terrain/models-new/${group}.glb`)
+  );
+}
+
+arborDayTrees("temperate");
 
 // Texture conversion: PNG to KTX2 with mipmaps.
 const SRGB_TO_LINEAR = new Float32Array(256);

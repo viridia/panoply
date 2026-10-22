@@ -4,47 +4,56 @@
     "trees": [
       {
         "probability": 5,
-        "proto": "terrain/models/temperate.glb#poplar-green"
+        "proto": "terrain/models/temperate.glb#poplar-green",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-green2"
+        "proto": "terrain/models/temperate.glb#poplar-green2",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-orange"
+        "proto": "terrain/models-new/temperate.glb#poplar-orange"
       },
       {
         "probability": 0.5,
-        "proto": "terrain/models/temperate.glb#poplar-yellow"
+        "proto": "terrain/models/temperate.glb#poplar-yellow",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#leechgrass"
+        "proto": "terrain/models/shrubs.glb#leechgrass",
+        "scale": 0.65
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#buckberry"
+        "proto": "terrain/models/shrubs.glb#buckberry",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#eldenthorn"
+        "proto": "terrain/models/shrubs.glb#eldenthorn",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#dreamsage"
+        "proto": "terrain/models/shrubs.glb#dreamsage",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#whitespear"
+        "proto": "terrain/models/shrubs.glb#whitespear",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#wracknettle"
+        "proto": "terrain/models/shrubs.glb#wracknettle",
+        "scale": 0.65
       }
     ],
     "surface": 2
@@ -64,7 +73,8 @@
       },
       {
         "probability": 1,
-        "proto": "terrain/models/desert.glb#desert1"
+        "proto": "terrain/models/desert.glb#desert1",
+        "scale": 0.65
       }
     ],
     "shrubs": [
@@ -73,7 +83,8 @@
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#scragbush"
+        "proto": "terrain/models/shrubs.glb#scragbush",
+        "scale": 0.65
       }
     ],
     "herbs": [
@@ -82,11 +93,13 @@
       },
       {
         "probability": 2,
-        "proto": "terrain/models/shrubs.glb#whitespear"
+        "proto": "terrain/models/shrubs.glb#whitespear",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#fireweed"
+        "proto": "terrain/models/shrubs.glb#fireweed",
+        "scale": 0.65
       }
     ],
     "surface": 5
@@ -96,25 +109,30 @@
     "trees": [
       {
         "probability": 2,
-        "proto": "terrain/models/arctic.glb#pine-arctic1"
+        "proto": "terrain/models/arctic.glb#pine-arctic1",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/arctic.glb#pine-arctic2"
+        "proto": "terrain/models/arctic.glb#pine-arctic2",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/arctic.glb#pine-arctic3"
+        "proto": "terrain/models/arctic.glb#pine-arctic3",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#scrubthistle"
+        "proto": "terrain/models/shrubs.glb#scrubthistle",
+        "scale": 0.65
       },
       {
         "probability": 2,
-        "proto": "terrain/models/shrubs.glb#rimeslip"
+        "proto": "terrain/models/shrubs.glb#rimeslip",
+        "scale": 0.65
       }
     ],
     "herbs": [],
@@ -125,21 +143,25 @@
     "trees": [
       {
         "probability": 2,
-        "proto": "terrain/models/coniferous.glb#pine-fluffy"
+        "proto": "terrain/models/coniferous.glb#pine-fluffy",
+        "scale": 0.65
       },
       {
         "probability": 2,
-        "proto": "terrain/models/coniferous.glb#pine-drooping"
+        "proto": "terrain/models/coniferous.glb#pine-drooping",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 3,
-        "proto": "terrain/models/shrubs.glb#scrubthistle"
+        "proto": "terrain/models/shrubs.glb#scrubthistle",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#rimeslip"
+        "proto": "terrain/models/shrubs.glb#rimeslip",
+        "scale": 0.65
       }
     ],
     "herbs": [],
@@ -150,17 +172,20 @@
     "trees": [
       {
         "probability": 2,
-        "proto": "terrain/models/coniferous.glb#pine-fluffy"
+        "proto": "terrain/models/coniferous.glb#pine-fluffy",
+        "scale": 0.65
       },
       {
         "probability": 2,
-        "proto": "terrain/models/coniferous.glb#pine-drooping"
+        "proto": "terrain/models/coniferous.glb#pine-drooping",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#scrubthistle"
+        "proto": "terrain/models/shrubs.glb#scrubthistle",
+        "scale": 0.65
       }
     ],
     "herbs": [],
@@ -171,19 +196,23 @@
     "trees": [
       {
         "probability": 2,
-        "proto": "terrain/models/dead.glb#dead1"
+        "proto": "terrain/models/dead.glb#dead1",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/dead.glb#dead2"
+        "proto": "terrain/models/dead.glb#dead2",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/dead.glb#dead3"
+        "proto": "terrain/models/dead.glb#dead3",
+        "scale": 0.65
       },
       {
         "probability": 0.5,
-        "proto": "terrain/models/dead.glb#dead4"
+        "proto": "terrain/models/dead.glb#dead4",
+        "scale": 0.65
       }
     ],
     "shrubs": [
@@ -192,7 +221,8 @@
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#scragbush"
+        "proto": "terrain/models/shrubs.glb#scragbush",
+        "scale": 0.65
       }
     ],
     "herbs": [],
@@ -203,25 +233,30 @@
     "trees": [
       {
         "probability": 2,
-        "proto": "terrain/models/temperate.glb#hemlock1"
+        "proto": "terrain/models/temperate.glb#hemlock1",
+        "scale": 0.65
       },
       {
         "probability": 2,
-        "proto": "terrain/models/temperate.glb#hemlock2"
+        "proto": "terrain/models/temperate.glb#hemlock2",
+        "scale": 0.65
       },
       {
         "probability": 3,
-        "proto": "terrain/models/temperate.glb#hemlock3"
+        "proto": "terrain/models/temperate.glb#hemlock3",
+        "scale": 0.65
       },
       {
         "probability": 3,
-        "proto": "terrain/models/temperate.glb#hemlock4"
+        "proto": "terrain/models/temperate.glb#hemlock4",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#leechgrass"
+        "proto": "terrain/models/shrubs.glb#leechgrass",
+        "scale": 0.65
       }
     ],
     "herbs": [],
@@ -232,47 +267,57 @@
     "trees": [
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-ivory"
+        "proto": "terrain/models/temperate.glb#poplar-ivory",
+        "scale": 0.65
       },
       {
         "probability": 0.5,
-        "proto": "terrain/models/temperate.glb#poplar-green2"
+        "proto": "terrain/models/temperate.glb#poplar-green2",
+        "scale": 0.65
       },
       {
         "probability": 3,
-        "proto": "terrain/models/temperate.glb#poplar-orange"
+        "proto": "terrain/models/temperate.glb#poplar-orange",
+        "scale": 0.65
       },
       {
         "probability": 4,
-        "proto": "terrain/models/temperate.glb#poplar-yellow"
+        "proto": "terrain/models/temperate.glb#poplar-yellow",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#leechgrass"
+        "proto": "terrain/models/shrubs.glb#leechgrass",
+        "scale": 0.65
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#buckberry"
+        "proto": "terrain/models/shrubs.glb#buckberry",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#eldenthorn"
+        "proto": "terrain/models/shrubs.glb#eldenthorn",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#dreamsage"
+        "proto": "terrain/models/shrubs.glb#dreamsage",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#whitespear"
+        "proto": "terrain/models/shrubs.glb#whitespear",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#wracknettle"
+        "proto": "terrain/models/shrubs.glb#wracknettle",
+        "scale": 0.65
       }
     ],
     "surface": 2
@@ -282,47 +327,57 @@
     "trees": [
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-green"
+        "proto": "terrain/models/temperate.glb#poplar-green",
+        "scale": 0.65
       },
       {
         "probability": 0.5,
-        "proto": "terrain/models/temperate.glb#poplar-green2"
+        "proto": "terrain/models/temperate.glb#poplar-green2",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-green3"
+        "proto": "terrain/models/temperate.glb#poplar-green3",
+        "scale": 0.65
       },
       {
         "probability": 0.5,
-        "proto": "terrain/models/temperate.glb#hemlock1"
+        "proto": "terrain/models/temperate.glb#hemlock1",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#leechgrass"
+        "proto": "terrain/models/shrubs.glb#leechgrass",
+        "scale": 0.65
       }
     ],
     "herbs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#buckberry"
+        "proto": "terrain/models/shrubs.glb#buckberry",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#eldenthorn"
+        "proto": "terrain/models/shrubs.glb#eldenthorn",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#dreamsage"
+        "proto": "terrain/models/shrubs.glb#dreamsage",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#whitespear"
+        "proto": "terrain/models/shrubs.glb#whitespear",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#wracknettle"
+        "proto": "terrain/models/shrubs.glb#wracknettle",
+        "scale": 0.65
       }
     ],
     "surface": 2
@@ -332,25 +387,30 @@
     "trees": [
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-green"
+        "proto": "terrain/models/temperate.glb#poplar-green",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/temperate.glb#poplar-green2"
+        "proto": "terrain/models/temperate.glb#poplar-green2",
+        "scale": 0.65
       },
       {
         "probability": 3,
-        "proto": "terrain/models/temperate.glb#poplar-orange"
+        "proto": "terrain/models/temperate.glb#poplar-orange",
+        "scale": 0.65
       },
       {
         "probability": 5,
-        "proto": "terrain/models/temperate.glb#poplar-yellow"
+        "proto": "terrain/models/temperate.glb#poplar-yellow",
+        "scale": 0.65
       }
     ],
     "shrubs": [
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#sticklebrush"
+        "proto": "terrain/models/shrubs.glb#sticklebrush",
+        "scale": 0.65
       }
     ],
     "herbs": [
@@ -359,19 +419,23 @@
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#eldenthorn"
+        "proto": "terrain/models/shrubs.glb#eldenthorn",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#dreamsage"
+        "proto": "terrain/models/shrubs.glb#dreamsage",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#whitespear"
+        "proto": "terrain/models/shrubs.glb#whitespear",
+        "scale": 0.65
       },
       {
         "probability": 1,
-        "proto": "terrain/models/shrubs.glb#wracknettle"
+        "proto": "terrain/models/shrubs.glb#wracknettle",
+        "scale": 0.65
       }
     ],
     "surface": 8

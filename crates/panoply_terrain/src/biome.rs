@@ -30,6 +30,20 @@ pub enum BiomeSurfaceType {
 pub struct FloraTableEntry {
     pub proto: Option<String>,
     probability: f32,
+    /// Mean placement scale.
+    #[serde(default = "default_flora_scale")]
+    pub scale: f32,
+    /// Each instance's scale is within this much of `scale`, either way.
+    #[serde(default = "default_flora_scale_variation")]
+    pub scale_variation: f32,
+}
+
+fn default_flora_scale() -> f32 {
+    1.0
+}
+
+fn default_flora_scale_variation() -> f32 {
+    0.15
 }
 
 impl Choice for FloraTableEntry {

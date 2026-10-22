@@ -32,7 +32,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Embedded shaders hot-reload in editor builds (`embedded_watcher`, D32).                  |
 | (pending) | Terrain textures as KTX2 with mipmaps from `pipeline.ts`; tiling samplers, no `fract` (D33). |
 | (pending) | `docs/arbor-day.md` moved to the `arbor_day` repo as `docs/requirements.md` (X28).      |
-| (pending) | `pipeline.ts` target `trees-new`: arbor_day `.gltf` files merged into `terrain/models/new.glb`, leaves as embedded KTX2 (X27, X28). |
+| (pending) | `pipeline.ts` `arborDayTrees`: arbor_day `.gltf` files in `artwork/flora-new/trees-<group>` merged into `terrain/models-new/<group>.glb`, mirroring `flora` and `models` for A/B swaps; leaves as embedded KTX2 (X27, X28). |
+| (pending) | Flora `scale` and `scale_variation` per biome entry (defaults 1 ± 0.15); seedling entries set 0.65. |
 
 ## Next
 
@@ -440,8 +441,9 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   merges (`Mesh::merge`), like ground meshes. Trunks (solid color, no UVs) merge into one
   vertex-colored mesh per parcel with one outline child; leaves group by texture; herbs get
   their own mesh with per-cell vertex ranges (X14). Flora outlines need their own
-  `OutlineMaterial`, width times the mean flora scale (0.65), since the shader extrudes in
-  mesh-local space. Drop a hidden parcel's merged meshes and rebuild on show (about 2-3 MB per
+  `OutlineMaterial`, width times the entry's mean scale, since the shader extrudes in
+  mesh-local space (until then, trunk outlines are thicker on arbor_day models, placed near
+  scale 1, than on seedling ones, near 0.65). Drop a hidden parcel's merged meshes and rebuild on show (about 2-3 MB per
   parcel). Removes about 5,000 transform-only scene entities and flora's
   `PropagateRenderLayers` use (X4). *Gate:* scenery restored and a full scene measured, to see
   whether the headroom is needed.
@@ -514,7 +516,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   cover: Bevy's glTF loader generates none. Bevy 0.20's loader takes D33's plain KTX2 either
   way, without `KHR_texture_basisu`: an image URI loads through the asset server by extension,
   and an embedded image decodes by its `mimeType` (`image/ktx2`); `gltf-json` does not check
-  MIME types. `trees-new` embeds its leaf textures this way, through `pngToKtx2`, and they
+  MIME types. `arborDayTrees` embeds its leaf textures this way, through `pngToKtx2`, and they
   render. Embedded is the choice: arbor_day textures are unique per tree, so a separate file
   gains no sharing. Left: the other flora and scenery; alpha coverage per mip (averaged alpha
   thins cutouts at distance); and clamping, not wrapping, at the edges when downsampling
@@ -533,11 +535,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   treat as maximized (the macOS green button does not restore it). Save the state too (winit's
   `is_maximized`) and restore it with `Window::set_maximized`. *Gate:* the author finds it worth
   doing; `arbor_day`'s `src/settings.rs` has the same code.
-- **X30** A scale range per entry in `terrain.biomes.json`, in place of the fixed 0.5 to 0.8 in
-  `flora.rs`, which stays the default so seedling plants are unchanged and species migrate to
-  arbor_day one at a time. arbor_day sizes a plant itself (its C111), so its entries take a range
-  around 1, for variety only. Placement scale also scales outline width, which is in the mesh's
-  local units. *Gate:* the first arbor_day species to replace a seedling one.
+- **X31** A hot-reloaded texture keeps its old mips (bevy#26225): when the size, format and mip
+  count are unchanged, Bevy rewrites only mip 0, so a re-exported arbor_day leaf color shows
+  only up close. Restart the game to see it. The fix was tested in arbor_day on 2026-10-22 (its
+  X48). *Gate:* the fix lands on Bevy main and Panoply is on main (Next item 0).
 
 ## Notes
 
