@@ -539,6 +539,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   count are unchanged, Bevy rewrites only mip 0, so a re-exported arbor_day leaf color shows
   only up close. Restart the game to see it. The fix was tested in arbor_day on 2026-10-22 (its
   X48). *Gate:* the fix lands on Bevy main and Panoply is on main (Next item 0).
+- **X32** Outline widths from the model: `models::process_material_extras` reads only whether a
+  material has the `"outline"` extra, so every outline is drawn at `OutlineMaterial`'s default
+  width (0.015) and the width arbor_day exports has no effect. One outline material per distinct
+  width, cached by a key built from the material's parameters, as faery did: its
+  `ModelCatalog.getMaterial` (`packages/engine/src/models/ModelCatalog.ts`, over `MaterialPool`)
+  keyed each generated material by kind and parameters (`outline_<width>`,
+  `color_<color>_<map>`, `billboard_<map>`, `flame_…`), the outline width read from the node, its
+  parent or the material and rounded to 0.001 first, so near-equal widths share one material.
+  The same cache would serve Panoply's other generated materials. *Gate:* the first arbor_day species placed in the game.
 
 ## Notes
 
