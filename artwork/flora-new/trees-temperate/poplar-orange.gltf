@@ -2,69 +2,69 @@
   "accessors": [
     {
       "bufferView": 0,
-      "count": 547,
+      "count": 776,
       "componentType": 5126,
       "type": "VEC3",
       "min": [
-        -0.8609910607337952,
-        -0.07999999821186066,
-        -0.821608304977417
+        -0.5951070785522461,
+        -0.05999999865889549,
+        -0.5707096457481384
       ],
       "max": [
-        0.8925386667251587,
-        2.7899999618530273,
-        0.911982536315918
+        0.6033945679664612,
+        2.7100000381469727,
+        0.6067218780517578
       ]
     },
     {
       "bufferView": 1,
-      "count": 547,
+      "count": 776,
       "componentType": 5126,
       "type": "VEC3"
     },
     {
       "bufferView": 2,
-      "count": 547,
+      "count": 776,
       "componentType": 5126,
       "type": "VEC3"
     },
     {
       "bufferView": 3,
-      "count": 2160,
+      "count": 3060,
       "componentType": 5125,
       "type": "SCALAR"
     },
     {
       "bufferView": 4,
-      "count": 1104,
+      "count": 1568,
       "componentType": 5126,
       "type": "VEC3",
       "min": [
-        -1.0942089557647705,
-        0.8727816343307495,
-        -1.059699535369873
+        -0.7271621227264404,
+        0.8024659156799316,
+        -0.7005478143692017
       ],
       "max": [
-        1.1619517803192139,
-        3.0596060752868652,
-        1.221687912940979
+        0.7379557490348816,
+        2.825000524520874,
+        0.759412407875061
       ]
     },
     {
       "bufferView": 5,
-      "count": 1104,
+      "count": 1568,
       "componentType": 5126,
       "type": "VEC3"
     },
     {
       "bufferView": 6,
-      "count": 1104,
+      "count": 1568,
       "componentType": 5126,
       "type": "VEC2"
     },
     {
       "bufferView": 7,
-      "count": 1656,
+      "count": 2352,
       "componentType": 5125,
       "type": "SCALAR"
     }
@@ -74,57 +74,57 @@
   },
   "buffers": [
     {
-      "byteLength": 70284,
+      "byteLength": 99760,
       "uri": "poplar-orange.bin"
     }
   ],
   "bufferViews": [
     {
       "buffer": 0,
-      "byteLength": 6564,
+      "byteLength": 9312,
       "byteOffset": 0,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 6564,
-      "byteOffset": 6564,
+      "byteLength": 9312,
+      "byteOffset": 9312,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 6564,
-      "byteOffset": 13128,
+      "byteLength": 9312,
+      "byteOffset": 18624,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 8640,
-      "byteOffset": 19692,
+      "byteLength": 12240,
+      "byteOffset": 27936,
       "target": 34963
     },
     {
       "buffer": 0,
-      "byteLength": 13248,
-      "byteOffset": 28332,
+      "byteLength": 18816,
+      "byteOffset": 40176,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 13248,
-      "byteOffset": 41580,
+      "byteLength": 18816,
+      "byteOffset": 58992,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 8832,
-      "byteOffset": 54828,
+      "byteLength": 12544,
+      "byteOffset": 77808,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 6624,
-      "byteOffset": 63660,
+      "byteLength": 9408,
+      "byteOffset": 90352,
       "target": 34963
     }
   ],
@@ -233,7 +233,7 @@
   ],
   "scenes": [
     {
-      "extras": {"arbor_day":{"bark_color":{"Srgba":{"alpha":1.0,"blue":0.22745098,"green":0.4509804,"red":0.5058824}},"bark_outline":0.01,"crown":{"base":0.24,"profile":"Cone","radius":1.1,"top":1.15},"detail":0.02,"generator":1,"leaf_outline":4.0,"limbs":[{"angle":{"center":0.84997535,"shape":"Uniform","spread":0.050614547},"bias":{"aim":0.41,"leaves":0.0,"size":0.63},"density":13.2,"end":0.85,"facing":"Around","per_node":1.0,"radius":0.5,"reach":{"center":0.9,"shape":"Bell","spread":0.1},"sides":4,"skew":0.38048178,"start":0.0},{"angle":{"center":0.63529986,"shape":"Uniform","spread":0.2443461},"bias":{"aim":0.0,"leaves":0.0,"size":1.0},"density":1.3,"end":0.85,"facing":"Sides","per_node":2.0,"radius":0.5,"reach":{"center":0.6,"shape":"Bell","spread":0.1},"rise":{"amount":0.3},"sides":3,"skew":0.0,"start":0.41}],"ornaments":{"tip_leaves":{"axial_droop":0.12915437,"lateral_droop":-0.41015238,"leaf":{"base_taper":0.0,"base_width":0.37,"gradient":"Axial","inner_color":{"Hsla":{"alpha":1.0,"hue":40.408165,"lightness":0.50972825,"saturation":0.9245283}},"jitter":0.0,"outer_color":{"Hsla":{"alpha":1.0,"hue":14.705886,"lightness":0.36853966,"saturation":0.8487767}},"rake":0.0,"segments":1,"serration":0.0,"tip_taper":0.1,"tip_width":0.2,"variation":0.09},"size":0.69,"sprig":{"angle":{"center":1.8308504,"spread":0.57072264},"fan":2,"outer_size":0.72,"pairs":4,"spacing":{"center":0.37,"spread":0.14}},"upright":"Single"}},"outline":true,"seed":1,"taper":0.97,"trunk":{"height":2.79,"radius":0.08,"sides":6}}},
+      "extras": {"arbor_day":{"bark_color":{"Srgba":{"alpha":1.0,"blue":0.22745098,"green":0.4509804,"red":0.5058824}},"bark_outline":0.01,"crown":{"base":0.24,"profile":"Cone","radius":0.7,"top":1.15},"detail":0.02,"generator":1,"leaf_outline":5.4,"limbs":[{"angle":{"center":0.84997535,"shape":"Uniform","spread":0.050614547},"bias":{"aim":0.41,"leaves":0.31,"size":0.63},"density":13.2,"end":0.97,"facing":"Around","per_node":1.0,"radius":0.5,"reach":{"center":0.9,"shape":"Bell","spread":0.1},"sides":4,"skew":0.38048178,"start":0.0},{"angle":{"center":0.63529986,"shape":"Uniform","spread":0.2443461},"bias":{"aim":0.0,"leaves":0.0,"size":1.0},"density":1.3,"end":0.85,"facing":"Sides","per_node":2.0,"radius":0.5,"reach":{"center":0.6,"shape":"Bell","spread":0.1},"rise":{"amount":0.3},"sides":3,"skew":0.0,"start":0.41}],"ornaments":{"tip_leaves":{"axial_droop":0.12915437,"lateral_droop":-0.41015238,"leaf":{"base_taper":0.0,"base_width":0.37,"gradient":"Axial","inner_color":{"Hsla":{"alpha":1.0,"hue":40.408165,"lightness":0.50972825,"saturation":0.9245283}},"jitter":0.0,"outer_color":{"Hsla":{"alpha":1.0,"hue":14.705886,"lightness":0.36853966,"saturation":0.8487767}},"rake":0.0,"segments":1,"serration":0.0,"tip_taper":0.1,"tip_width":0.2,"variation":0.09},"size":0.2,"smallest":0.5,"softness":0.44,"sprig":{"angle":{"center":1.8308504,"spread":0.57072264},"fan":2,"outer_size":0.72,"pairs":4,"spacing":{"center":0.37,"spread":0.14}},"upright":"Single"}},"outline":true,"seed":1,"taper":0.97,"trunk":{"height":2.71,"radius":0.06,"sides":6}}},
       "name": "poplar-orange",
       "nodes": [
         0,
