@@ -537,8 +537,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   doing; `arbor_day`'s `src/settings.rs` has the same code.
 - **X31** A hot-reloaded texture keeps its old mips (bevy#26225): when the size, format and mip
   count are unchanged, Bevy rewrites only mip 0, so a re-exported arbor_day leaf color shows
-  only up close. Restart the game to see it. The fix was tested in arbor_day on 2026-10-22 (its
-  X48). *Gate:* the fix lands on Bevy main and Panoply is on main (Next item 0).
+  only up close. Restart the game to see it. The fix merged on Bevy main as bevy#26320
+  (`4e2eb9911`; arbor_day's X48). *Gate:* Panoply on main (Next item 0), past that commit.
 - **X32** Outline widths from the model: `models::process_material_extras` reads only whether a
   material has the `"outline"` extra, so every outline is drawn at `OutlineMaterial`'s default
   width (0.015) and the width arbor_day exports has no effect. One outline material per distinct
