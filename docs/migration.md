@@ -82,6 +82,11 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
    overlap parcel colliders by a cell, enable CCD, and cast with a skin. Actors also need
    navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
+   Plans for the player's controls: keyboard play (WASD or arrows to move, E to interact with
+   what the player faces) works with the driver's keys today; clicking an actor or fixture needs
+   clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
+   a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
+   through X9.
    Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
    `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
    a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
