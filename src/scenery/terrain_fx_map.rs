@@ -129,7 +129,11 @@ pub fn rebuild_terrain_fx_vertex_attrs(
 pub fn rebuild_parcel_terrain_fx(
     mut commands: Commands,
     mut q_parcels: Query<(Entity, &mut Parcel), With<RebuildParcelTerrainFx>>,
-    q_precincts: Query<(&Precinct, Option<&TerrainFxMap>, Has<RebuildTerrainFxVertexAttrs>)>,
+    q_precincts: Query<(
+        &Precinct,
+        Option<&TerrainFxMap>,
+        Has<RebuildTerrainFxVertexAttrs>,
+    )>,
     q_realms: Query<&Realm>,
     mut precinct_cache: ResMut<PrecinctCache>,
     server: Res<AssetServer>,

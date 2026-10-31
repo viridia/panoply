@@ -18,15 +18,15 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
+use panoply_core::realm_physics::collision_groups;
 use panoply_terrain::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
-use rapier3d::{
-    math::Point,
-    prelude::{Collider, ColliderBuilder},
+use rapier3d::prelude::{
+    Collider, ColliderBuilder, ColliderHandle, Group, InteractionGroups, InteractionTestMode,
 };
 
 pub struct GroundMeshResult {
     mesh: Mesh,
-    collider: Collider,
+    collider: Option<Collider>,
 }
 
 #[derive(Component)]
@@ -143,8 +143,13 @@ pub fn insert_ground_meshes(
                         }
                     }
                     realm_physics.remove_collider(parcel.terrain_collider);
-                    parcel.terrain_collider =
-                        realm_physics.insert_collider(parcel.physics, ground_result.collider);
+                    parcel.terrain_collider = match ground_result.collider {
+                        Some(mut collider) => {
+                            collider.user_data = entity.to_bits() as u128;
+                            realm_physics.insert_collider(parcel.physics, collider)
+                        }
+                        None => ColliderHandle::default(),
+                    };
                 } else if let Some(ground_mesh_ent) = parcel.ground_entity {
                     // Remove mesh entity
                     commands.entity(ground_mesh_ent).despawn();
@@ -391,20 +396,27 @@ fn compute_ground_mesh(
     assert_eq!(position.len(), normal.len());
     assert_eq!(position.len(), terrain_style.len());
 
-    let collider_builder = ColliderBuilder::trimesh(
-        position
-            .iter()
-            .map(|vtx| Point::<f32>::new(vtx[0], vtx[1], vtx[2]))
-            .collect(),
+    // Fails only if every cell is a hole; the parcel then has ground to draw but none to stand on.
+    let collider = ColliderBuilder::trimesh(
+        position.iter().map(|&vtx| Vec3::from_array(vtx)).collect(),
         collider_indices,
-    );
+    )
+    .ok()
+    .map(|builder| {
+        builder
+            .collision_groups(InteractionGroups::new(
+                collision_groups::TERRAIN,
+                Group::ALL,
+                InteractionTestMode::And,
+            ))
+            .build()
+    });
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, position);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normal);
     mesh.insert_attribute(GroundMaterial::ATTRIBUTE_TERRAIN_STYLE, terrain_style);
     mesh.insert_indices(Indices::U32(indices));
 
-    let collider = collider_builder.build();
     Some(GroundMeshResult { mesh, collider })
 }
 

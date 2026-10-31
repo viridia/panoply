@@ -37,34 +37,17 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `docs/goals.md`; "Up in Arms" as Next item 5; faery.md records how far faery got.  |
 | (pending) | Bevy main at `784b85d` and `bevy_action_map` main (D34); warm-up loads `terrain/models-new`. |
 | (pending) | Plans on the `bevy-remote-driver` package (D10); `plans/_panoply_driver.py`; D15 retired. |
+| (pending) | `rapier3d` 0.36 (D35): `PhysicsWorld`, `dt` from the fixed timestep; physics debug views, F3; `plans/physics.py`. |
 
 ## Next
 
-1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
-   `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
-   `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
-   per parcel (`parcel_cache.rs`, `Parcel::physics`), and ground colliders (`ground_mesh.rs`,
-   `Parcel::terrain_collider`); also the editor's terrain thumbnail. Cheaper now than after
-   actors are restored, and picks up any parry fixes before actors depend on them. Also fix:
-   `realm_physics_system` runs in `FixedUpdate` (64 Hz by default) but rapier's default
-   `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
-   from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
-   would freeze). Nothing reads physics yet, so the chunk adds what verifies it, in the editor
-   build only (D13):
-   - Rapier's debug render, through a `DebugRenderBackend` that draws with gizmos, so the
-     developer can study a scene and move around it in a normal run.
-   - A `DebugViews` resource, reflected and saved with `bevy_settings`: physics on or off, and
-     a mask of collision groups to draw, applied in the backend's `filter_object`. Dense scenes
-     draw too many lines to read, so filters are by class of collider. Groups are defined as
-     each kind of collider arrives, after faery's (see [faery.md](faery.md), Physics): Terrain
-     now, on the ground colliders. No distance filter: it would be confusing.
-   - A shortcut, F3 through `bevy_action_map`, toggling physics drawing; it stays once the
-     editor's Show menu exists (item 4).
-   - A plan that turns it on with `set_resource`, screenshots a spot, and checks one ray cast
-     against the ground through the current query API (newer releases build the query pipeline
-     on demand rather than keeping the `QueryPipeline` `realm_physics.rs` stores; confirm in
-     the changelog). The `dt` fix stays unobserved until something
-     moves.
+1. The editor's first slice (see X3): the shell, as in `arbor_day`'s `main.rs` (feathers'
+   `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a splitter, a key to
+   show or hide it, its width saved in settings, and X3's viewport inset fix so the game fills
+   the other pane. Its only content: a Show menu (feathers `menu`) with Physics and one checkbox
+   per collision group, bound to `DebugViews` (D35). F3 stays as a shortcut. faery's other debug
+   views (listed in [faery.md](faery.md), Editor) join the menu with the features they show,
+   not before.
 2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
@@ -89,13 +72,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
    [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
 3. `portals`: a rewrite, not a restoration (D21).
-4. `editor` (see X3). The first slice comes right after item 1: the shell, as in `arbor_day`'s
-   `main.rs` (feathers' `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a
-   splitter, a key to show or hide it, its width saved in settings, and X3's viewport inset fix
-   so the game fills the other pane. Its only content: a Show menu (feathers `menu`) with
-   Physics and one checkbox per collision group, bound to item 1's `DebugViews`. faery's other
-   debug views (listed in [faery.md](faery.md), Editor) join the menu with the features they
-   show, not before.
+4. `editor`, beyond item 1's shell (see X3).
 5. After the migration, the first playable: the "Up in Arms" quest, end to end. Its steps and
    what each needs are in [goals.md](goals.md).
 
@@ -332,6 +309,24 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   driver's testbed. `bevy_action_map` is its git `main` too (0.2.0-dev). Bump all repos together,
   one chunk per bump, with `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update`
   takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md.
+- **D35** `rapier3d` 0.36, used directly (D22), not through `bevy_rapier`, so not tied to a Bevy
+  version. Its math is glam, the same release as Bevy's (0.33), so `Vec3` passes without
+  conversion. `RealmPhysics` wraps rapier's `PhysicsWorld`, which bundles the sets; queries go
+  through `RealmPhysics::world()`, whose query pipeline is built on demand from the broad
+  phase (no stored `QueryPipeline`). Each step's `dt` is `Time<Fixed>`'s timestep: rapier's
+  default 1/60 s against 64 Hz ticks ran physics about 7% fast. Only the viewpoint's realm is
+  stepped (a realm seen through a portal would freeze). Ground colliders stay the smoothed
+  render mesh, holes and terrain-effect elevation included, not the coarser contour grid: some
+  effects flatten the ground, and only the smoothed mesh has them. Collision groups are
+  `panoply_core::realm_physics::collision_groups`, defined as each kind of collider arrives,
+  after faery's ([faery.md](faery.md), Physics); Terrain so far. Editor builds (D13) have debug
+  views (`src/debug_views.rs`): `DebugViews`, saved with `bevy_settings`, holds physics on or
+  off and a mask of groups to draw; F3 toggles physics. Rapier's debug render draws through a
+  gizmo backend, only for colliders of shown parcels (D20), matched by the parcel entity in
+  each collider's `user_data`: a trimesh is three lines per triangle, about 25k a parcel, so
+  all 128 cached parcels would be about 3M lines a frame. Even so, drawing halves the frame
+  rate, which is accepted for a debug view. `GroundProbe` holds where a ray cast
+  down at the view center hits, drawn as a sphere; `plans/physics.py` checks it.
 
 ## Deferred
 
@@ -584,6 +579,12 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   which faery's `Structure.ts` filled as a terrain effect when it appeared among a precinct's
   floor types; `convert_precincts.mts` made it a floor surface path. *Gate:* the editor creates
   precincts (X3), or the errors hide a real one.
+- **X35** Tunnels and cave entrances, which must be navigable: the ground can have holes
+  (`TerrainHole`, per 1 m cell, in the mesh and the collider), but `TerrainOptions::Flatten`
+  is declared and never set or read, here or in faery (`TerrainEffect.ts`, commented out), and
+  nothing builds flat passageways with near-vertical side walls; that is outside the height
+  field. Decide whether they are terrain or scenery (floor regions and wall pieces in a hole).
+  *Gate:* the first cave or mine entrance in a map.
 
 ## Notes
 

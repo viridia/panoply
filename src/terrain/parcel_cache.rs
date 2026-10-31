@@ -12,10 +12,7 @@ use panoply_terrain::{
     TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
     CENTER_SHAPE,
 };
-use rapier3d::{
-    na::Vector3,
-    prelude::{ColliderHandle, RigidBodyBuilder},
-};
+use rapier3d::prelude::{ColliderHandle, RigidBodyBuilder};
 
 use panoply_core::{Realm, RealmPhysics, Viewpoint};
 
@@ -204,7 +201,7 @@ pub fn spawn_parcels(
                         None => {
                             // println!("Creating parcel {} {}; biomes: {:?}.", x, z, biomes);
                             // Insert new parcel
-                            let rb_builder = RigidBodyBuilder::fixed().translation(Vector3::new(
+                            let rb_builder = RigidBodyBuilder::fixed().translation(Vec3::new(
                                 x as f32 * PARCEL_SIZE_F,
                                 0.,
                                 z as f32 * PARCEL_SIZE_F,

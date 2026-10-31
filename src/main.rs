@@ -22,6 +22,8 @@ use window_settings::WindowSettingsPlugin;
 // mod actors;
 // mod portals;
 
+#[cfg(feature = "editor")]
+mod debug_views;
 mod diagnostics;
 mod input;
 mod materials;
@@ -116,6 +118,8 @@ fn main() {
         // WorldInspectorPlugin::new(),
     ));
 
+    #[cfg(feature = "editor")]
+    app.add_plugins(debug_views::DebugViewsPlugin);
     // #[cfg(feature = "editor")]
     // app.add_plugins(editor::EditorPlugin);
 

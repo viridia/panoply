@@ -20,8 +20,8 @@ use self::{
 };
 
 mod floor_mesh;
-mod floor_surface;
 pub mod floor_region;
+mod floor_surface;
 pub mod precinct;
 pub mod precinct_asset;
 mod precinct_cache;

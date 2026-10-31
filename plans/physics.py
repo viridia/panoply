@@ -1,0 +1,36 @@
+"""Physics debug views: F3 draws the colliders, and a ray cast down at the view center hits the
+ground.
+
+    bevy-remote-driver plans/physics.py
+
+Settings start empty, so physics drawing starts off and F3 turns it on. `GroundProbe` holds
+where the ray hit, drawn as a white sphere.
+"""
+
+from _panoply_driver import PanoplyDriver
+
+BIN = "panoply"
+DRIVER = PanoplyDriver
+VIEWS = "panoply::debug_views::DebugViews"
+PROBE = "panoply::debug_views::GroundProbe"
+SPOT = [110.0, 0.0, 150.0]
+
+
+def run(driver):
+    driver.present("PrimaryCamera")
+    driver.goto(SPOT, 20.0)
+    driver.frames(120)
+    assert driver.get_resource(VIEWS, at="physics") is False, "physics drawing on at start"
+    assert driver.get_resource(PROBE, at="hit") is None, "probe set while drawing is off"
+
+    driver.key("F3")
+    driver.frames(10)
+    assert driver.get_resource(VIEWS, at="physics") is True, "F3 did not turn physics on"
+    hit = driver.get_resource(PROBE, at="hit")
+    print(f"ground under the view center: {hit}")
+    assert hit is not None, "the ray hit nothing"
+    x, y, z = hit
+    assert abs(x - SPOT[0]) < 0.01 and abs(z - SPOT[2]) < 0.01, f"hit off the view center: {hit}"
+    assert -20.0 < y < 40.0, f"hit at an unlikely height: {y}"
+    driver.screenshot("colliders")
+    driver.exits("Escape")

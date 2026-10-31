@@ -177,8 +177,8 @@ impl Precinct {
         // Iterate through the scenery instances in the asset.
         for sid in asset.scenery.iter() {
             let facing = sid.facing * std::f32::consts::PI / 180.;
-            let transform =
-                Transform::from_translation(sid.position).with_rotation(Quat::from_rotation_y(facing));
+            let transform = Transform::from_translation(sid.position)
+                .with_rotation(Quat::from_rotation_y(facing));
             // Update the scenery instance in place if the exemplar has not changed.
             if let Some(se_ent) = existing.remove(&sid.iid) {
                 let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
@@ -286,7 +286,9 @@ pub fn read_precinct_data(
         else {
             continue;
         };
-        commands.entity(precinct_entity).remove::<ReadPrecinctData>();
+        commands
+            .entity(precinct_entity)
+            .remove::<ReadPrecinctData>();
 
         // TODO: Sync nav mesh, physics, light sources, particles, etc.
         // TODO(bevy-0.20): Sync actors, restored with actors (D24).

@@ -343,8 +343,7 @@ fn compute_flora_placement(
             // let mut scale = Vec3::new(1., 1., 1.);
             if let Some(entry) = feature_model {
                 if let Some(ref model) = entry.proto {
-                    let scale = entry.scale
-                        + (noise3(gx, gz, 7) * 2. - 1.) * entry.scale_variation;
+                    let scale = entry.scale + (noise3(gx, gz, 7) * 2. - 1.) * entry.scale_variation;
                     // println!("Biome: {gx} {gz} {}", model);
                     let entry = out
                         .models

@@ -95,8 +95,11 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                     // An exemplar in this catalog: loading it by path would start another load
                     // of this file (Bevy issue #10549).
                     result.extends = Some(match extends_path.label() {
-                        Some(label) if extends_path.without_label() == *self.load_context.path() => {
-                            self.load_context.get_label_handle::<Exemplar>(label.to_owned())
+                        Some(label)
+                            if extends_path.without_label() == *self.load_context.path() =>
+                        {
+                            self.load_context
+                                .get_label_handle::<Exemplar>(label.to_owned())
                         }
                         _ => self.load_context.load::<Exemplar>(extends_path),
                     });

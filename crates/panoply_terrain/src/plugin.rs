@@ -4,10 +4,7 @@ use crate::{
     BiomesAsset, BiomesHandle, BiomesLoader, TerrainContoursHandle, TerrainContoursTableAsset,
     TerrainContoursTableLoader, TerrainTypes, WaterMaterial,
 };
-use bevy::{
-    asset::embedded_asset,
-    prelude::*,
-};
+use bevy::{asset::embedded_asset, prelude::*};
 
 // use super::{
 //     cleanup_parcel_physics,

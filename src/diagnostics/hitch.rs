@@ -70,7 +70,9 @@ fn count_pipelines(
             let (label, defs) = match &pipeline.descriptor {
                 PipelineDescriptor::RenderPipelineDescriptor(d) => (
                     d.label.as_deref(),
-                    d.fragment.as_ref().map_or(&d.vertex.shader_defs, |f| &f.shader_defs),
+                    d.fragment
+                        .as_ref()
+                        .map_or(&d.vertex.shader_defs, |f| &f.shader_defs),
                 ),
                 PipelineDescriptor::ComputePipelineDescriptor(d) => {
                     (d.label.as_deref(), &d.shader_defs)
@@ -140,7 +142,10 @@ fn count_spawns(
     pipeline_total: Res<PipelineTotal>,
 ) {
     log.frame += 1;
-    let colliders = physics.iter().map(RealmPhysics::collider_count).sum::<usize>();
+    let colliders = physics
+        .iter()
+        .map(RealmPhysics::collider_count)
+        .sum::<usize>();
     let pipelines = pipeline_total.0.load(Ordering::Relaxed);
     let spawns = Spawns {
         frame: log.frame,

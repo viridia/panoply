@@ -54,7 +54,10 @@ struct ModelWarmup {
 
 fn load_model_folders(mut commands: Commands, server: Res<AssetServer>) {
     commands.insert_resource(ModelFolders(
-        FOLDERS.iter().map(|path| server.load_folder(*path)).collect(),
+        FOLDERS
+            .iter()
+            .map(|path| server.load_folder(*path))
+            .collect(),
     ));
 }
 

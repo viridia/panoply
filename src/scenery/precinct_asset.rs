@@ -47,7 +47,6 @@ pub struct PrecinctAsset {
 
     // TODO(bevy-0.20): `actors: Vec<ActorInstanceData>`, restored with actors (D24). Until then
     // the loader skips the field, and saving a precinct would drop its actors.
-
     /// Table of scenery instances.
     #[serde(default)]
     pub(crate) scenery: Vec<SceneryInstanceData>,
