@@ -5,6 +5,7 @@ Panoply is a semi-procedural RPG on Bevy, currently mid-migration to Bevy 0.20.
 ## Orient
 
 1. Read `docs/migration.md` (the ledger): what has landed, what is next, decisions, deferrals.
+   `docs/goals.md` says what the game is for.
 2. Check `git log --oneline -5`.
 3. `grep -rn "TODO(bevy-0.20)"` shows disabled code awaiting restoration.
 

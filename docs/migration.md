@@ -34,6 +34,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `docs/arbor-day.md` moved to the `arbor_day` repo as `docs/requirements.md` (X28).      |
 | (pending) | `pipeline.ts` `arborDayTrees`: arbor_day `.gltf` files in `artwork/flora-new/trees-<group>` merged into `terrain/models-new/<group>.glb`, mirroring `flora` and `models` for A/B swaps; leaves as embedded KTX2 (X27, X28). |
 | (pending) | Flora `scale` and `scale_variation` per biome entry (defaults 1 ± 0.15); seedling entries set 0.65. |
+| (pending) | `docs/goals.md`; "Up in Arms" as Next item 5; faery.md records how far faery got.  |
 
 ## Next
 
@@ -101,6 +102,8 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
 3. `portals`: a rewrite, not a restoration (D21).
 4. `editor` (see X3).
+5. After the migration, the first playable: the "Up in Arms" quest, end to end. Its steps and
+   what each needs are in [goals.md](goals.md).
 
 When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that

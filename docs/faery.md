@@ -119,6 +119,57 @@ Migration scripts below, and X1), `artwork/`.
   `archive/SAGA.md` (see X7).
 - `TODO.md` at the root (21 KB): the old engine's own open items.
 
+## How far faery got
+
+From the author's notes (2026-10-30), not from reading the code.
+
+Combat:
+
+- The game design was very incomplete. The concept: a deck-building game without the deck. Before
+  an encounter you curate your skills into a smaller set. Which of those are available in a
+  given round is partly random and partly situational.
+- Timing mixes real time and turns. In combat mode the game runs in real time while you keep
+  acting. If you pause, the monsters eventually run out of action points and pause too.
+- Combat skills were a sketch, and skill trees were very incomplete.
+- Ranged weapons, physical and magical, were not done. Missiles (arrows, fireballs) need
+  rethinking: they can't just be particles.
+- Monster types needed their own combat strategies and behaviors. Enemy swarming was buggy:
+  opponents piled up trying to reach the player.
+- No game balancing.
+
+World and movement:
+
+- Navigation maps and pathfinding were mostly done, but navigation was a bit janky.
+- Ladders and vertical travel were not done, neither pathfinding nor physics.
+- Portals were buggy.
+- Water currents and drowning were not done.
+- Vehicles were undecided. The original Faery had a raft, a turtle and a golden swan to ride.
+- Random encounters were incomplete.
+
+Traps and puzzles were partly done. The aim was to build more and more elaborate puzzles out of
+combinations of stock elements, wired together with reactive formulas.
+
+- Done: push buttons, toggle buttons, trip plates, automatic doors, spears that slide up from
+  the floor (the converter drops their aspects; see Migration scripts).
+- Not done: sliding blocks, stones you push into place, for example in front of a fireball
+  emitter to block its missile.
+- Other mechanics were still to be researched.
+
+Story and content:
+
+- Quests worked. Dialogues mostly worked. Signs and placards worked.
+- Phasing (scenery and characters change with the active quest stage) was started, but editing
+  support was poor.
+- Situational music was partly done.
+
+UI and art:
+
+- No save games.
+- Shopkeeper and bargaining UI not done, but the artwork exists.
+- Close-up portraits looked bad (the art, not the code).
+
+Scripting and modding were all JavaScript, so nothing carries over to Bevy.
+
 ## Migration scripts (*read*, *run* 2026-10-10)
 
 `scripts/convert_*.mts` turn `packages/los-data` into Panoply assets, writing straight into
