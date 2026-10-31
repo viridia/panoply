@@ -1,13 +1,15 @@
 """Parcel cache: parcels outside the view are hidden, and so are their ground meshes.
 
-    python3 crates/bevy_remote_driver/client/run.py plans/parcels.py
+    bevy-remote-driver plans/parcels.py
 
 Teleports to the ablation spot, counts parcels (cached, hidden) and visible ground meshes, then
 teleports far away and checks that the first spot's parcels went hidden but stayed cached.
 """
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
-GOTO = "panoply_core::viewpoint::GotoLocation"
+DRIVER = PanoplyDriver
 NAME = "bevy_ecs::name::Name"
 VISIBILITY = "bevy_camera::visibility::Visibility"
 INHERITED = "bevy_camera::visibility::InheritedVisibility"
@@ -17,7 +19,7 @@ SECOND = [400.0, 0.0, 400.0]
 
 
 def named(driver, components):
-    rows = driver._call(
+    rows = driver.call(
         "world.query",
         {"data": {"components": [NAME] + components}, "filter": {"with": [NAME]}},
     )
@@ -53,14 +55,14 @@ def report(driver, label):
 
 def run(driver):
     driver.present("PrimaryCamera")
-    driver.message(GOTO, {"realm": "playground", "position": FIRST, "camera_distance": DISTANCE})
+    driver.goto(FIRST, DISTANCE)
     driver.frames(120)
     first = report(driver, "first spot")
     in_view = {name for name, v in first.items() if v != "Hidden"}
     assert in_view, "no parcels in view"
     driver.screenshot("first")
 
-    driver.message(GOTO, {"realm": "playground", "position": SECOND, "camera_distance": DISTANCE})
+    driver.goto(SECOND, DISTANCE)
     driver.frames(120)
     second = report(driver, "second spot")
     stale = [name for name in in_view if name in second]

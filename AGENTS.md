@@ -28,9 +28,10 @@ Panoply is a semi-procedural RPG on Bevy, currently mid-migration from Bevy 0.15
 ## Verify
 
 - `cargo clippy`: no errors, no new warnings.
-- Runtime: shader and pipeline errors only appear at runtime. Run a plan with the remote driver,
-  `python3 crates/bevy_remote_driver/client/run.py plans/smoke.py`, which launches the game, sends
-  input, saves screenshots to `target/remote-driver/`, and quits. Write a new plan in `plans/` for
-  behaviour a chunk adds. Screenshots bring the game window to the front. To write a plan, read
-  `../bevy_remote_driver/docs/writing-plans.md`, and for the steps, `class Driver` in
-  `crates/bevy_remote_driver/client/driver.py`.
+- Runtime: shader and pipeline errors only appear at runtime. Run plans with the remote driver,
+  `bevy-remote-driver plans` (all) or `bevy-remote-driver plans/smoke.py` (one), which launches
+  the game, sends input, saves screenshots under `remote-driver/` in Cargo's target directory,
+  and quits. Write a new plan in `plans/` for behaviour a chunk adds. Screenshots bring the game
+  window to the front. To write a plan, read `../bevy_remote_driver/docs/writing-plans.md`; for
+  the steps, `class Driver` in `../bevy_remote_driver/src/bevy_remote_driver/driver.py`, and
+  Panoply's own (`goto`, `camera`) in `plans/_panoply_driver.py`.

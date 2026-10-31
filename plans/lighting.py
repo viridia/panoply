@@ -1,6 +1,6 @@
 """Lighting: stills at a village spot and the forest/shore spot, for judging art direction (X12).
 
-    python3 crates/bevy_remote_driver/client/run.py plans/lighting.py
+    bevy-remote-driver plans/lighting.py
 
 Saves lighting_village.png (playground 48.5, 54.8: buildings, props, cobbles),
 lighting_shore.png (110, 150: water, trees), lighting_bluff.png (197, 9, facing +x+z: waves
@@ -17,8 +17,10 @@ other values without a rebuild, through the reflected resources:
 import math
 import os
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
-GOTO = "panoply_core::viewpoint::GotoLocation"
+DRIVER = PanoplyDriver
 SUNLIGHT = "panoply_core::sunlight::Sunlight"
 HEMISPHERE = "panoply_terrain::hemisphere::HemisphereLight"
 TONEMAPPING = "bevy_render::view::Tonemapping"
@@ -38,7 +40,7 @@ def name(n):
 
 
 def mutate(driver, resource, path, value):
-    driver._call("world.mutate_resources", {"resource": resource, "path": path, "value": value})
+    driver.call("world.mutate_resources", {"resource": resource, "path": path, "value": value})
 
 
 def run(driver):
@@ -48,16 +50,13 @@ def run(driver):
     if "AMBIENT" in os.environ:
         mutate(driver, HEMISPHERE, ".brightness", float(os.environ["AMBIENT"]))
     if "TONEMAP" in os.environ:
-        camera = driver._select("PrimaryCamera")[0]["entity"]
-        driver._call(
+        camera = driver.camera()
+        driver.call(
             "world.insert_components",
             {"entity": camera, "components": {TONEMAPPING: os.environ["TONEMAP"]}},
         )
     for spot, (position, azimuth, distance) in SPOTS.items():
-        goto = {"realm": "playground", "position": position, "camera_distance": distance}
-        if azimuth is not None:
-            goto["azimuth"] = azimuth
-        driver.message(GOTO, goto)
+        driver.goto(position, distance, azimuth)
         # Room for parcels and scenery to spawn and pipelines to compile.
         driver.frames(120)
         driver.screenshot(name(f"lighting_{spot}"))

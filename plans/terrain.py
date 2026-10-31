@@ -1,11 +1,14 @@
 """Terrain: parcels spawn ground and water meshes for the playground realm.
 
-    python3 crates/bevy_remote_driver/client/run.py plans/terrain.py
+    bevy-remote-driver plans/terrain.py
 
 Ground meshes wait for their precinct's terrain effects (roads, holes) from scenery (D11).
 """
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
+DRIVER = PanoplyDriver
 
 
 def run(driver):

@@ -1212,6 +1212,7 @@ dependencies = [
  "bevy_post_process",
  "bevy_ptr",
  "bevy_reflect",
+ "bevy_remote",
  "bevy_render",
  "bevy_scene",
  "bevy_shader",
@@ -1542,6 +1543,7 @@ dependencies = [
  "async-io",
  "bevy_annotations",
  "bevy_app",
+ "bevy_asset",
  "bevy_color",
  "bevy_derive",
  "bevy_dev_tools",
@@ -1552,6 +1554,7 @@ dependencies = [
  "bevy_math",
  "bevy_platform",
  "bevy_reflect",
+ "bevy_render",
  "bevy_tasks",
  "bevy_utils",
  "bevy_window",
@@ -1560,23 +1563,6 @@ dependencies = [
  "serde",
  "serde_json",
  "smol-hyper",
-]
-
-[[package]]
-name = "bevy_remote_driver"
-version = "0.1.0"
-dependencies = [
- "bevy_app",
- "bevy_camera",
- "bevy_diagnostic",
- "bevy_ecs",
- "bevy_reflect",
- "bevy_remote",
- "bevy_scene",
- "bevy_ui",
- "bevy_window",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -4674,7 +4660,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_action_map",
- "bevy_remote_driver",
  "earcutr",
  "futures-lite",
  "lru",

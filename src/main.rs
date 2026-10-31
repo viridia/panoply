@@ -11,7 +11,6 @@ use bevy::{
 };
 // TODO(bevy-0.20): restore
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_remote_driver::RemoteDriverPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
@@ -28,6 +27,7 @@ mod input;
 mod materials;
 mod models;
 mod reflect_types;
+mod remote_driver;
 mod scenery;
 mod terrain;
 mod view;
@@ -36,8 +36,8 @@ mod world;
 
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
-    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, scenery::SceneryPlugin,
-    terrain::TerrainPlugin, world::WorldPlugin,
+    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, remote_driver::RemoteDriverPlugin,
+    scenery::SceneryPlugin, terrain::TerrainPlugin, world::WorldPlugin,
 };
 // TODO(bevy-0.20): restore
 // use crate::{actors::ActorsPlugin, portals::PortalPlugin};
@@ -66,13 +66,9 @@ fn main() {
                 ..default()
             })
             .set(AssetPlugin::default()),
-        // Under the remote driver, test plans get settings of their own, so a plan run never
+        // Plans run with `BEVY_SETTINGS_DIR` set to a directory of their own, so a plan run never
         // changes the developer's saved window position or zoom.
-        SettingsPlugin::new(if std::env::var_os("BEVY_REMOTE_DRIVER_PORT").is_some() {
-            "org.viridia.panoply.driven"
-        } else {
-            "org.viridia.panoply"
-        }),
+        SettingsPlugin::new("org.viridia.panoply"),
         // Must come after SettingsPlugin.
         WindowSettingsPlugin,
         // Adds FrameTimeDiagnosticsPlugin, so must come before RemoteDriverPlugin.

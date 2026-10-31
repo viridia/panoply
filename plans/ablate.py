@@ -1,13 +1,13 @@
 """Performance ablation: where does frame time go at the playground's slowest spot?
 
-    python3 crates/bevy_remote_driver/client/run.py plans/ablate.py
+    bevy-remote-driver plans/ablate.py
 
 At one location, at camera distance DIST (default 20), with vsync off, measures the frame time with everything on, then with one
 thing switched off at a time over BRP: water, flora, ground, three quarters of the pixels
 (viewport inset), and all rendering (camera inactive). A large drop names the cost; no drop rules it out. Also prints the
 render passes' CPU times and the entity count. The window must stay in front for the whole run.
 
-    ABLATE=msaa,environment python3 crates/bevy_remote_driver/client/run.py plans/ablate.py
+    ABLATE=msaa,environment bevy-remote-driver plans/ablate.py
 
 runs only the experiments whose names contain one of the given words.
 """
@@ -15,8 +15,10 @@ runs only the experiments whose names contain one of the given words.
 import os
 import time
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
-GOTO = "panoply_core::viewpoint::GotoLocation"
+DRIVER = PanoplyDriver
 WINDOW = "bevy_window::window::Window"
 LIGHT = "bevy_light::directional_light::DirectionalLight"
 VISIBILITY = "bevy_camera::visibility::Visibility"
@@ -29,7 +31,7 @@ LOCATION = ("playground", [110.0, 0.0, 150.0])
 
 
 def mutate(driver, entity, component, path, value):
-    driver._call(
+    driver.call(
         "world.mutate_components",
         {"entity": entity, "component": component, "path": path, "value": value},
     )
@@ -49,12 +51,12 @@ def frame_time(driver, seconds=1.5):
 
 
 def set_visible(driver, name, visible):
-    for match in driver._select(name):
-        mutate(driver, match["entity"], VISIBILITY, "", "Inherited" if visible else "Hidden")
+    for entity in driver.select(name):
+        mutate(driver, entity, VISIBILITY, "", "Inherited" if visible else "Hidden")
 
 
 def lights(driver):
-    rows = driver._call("world.query", {"data": {"components": []}, "filter": {"with": [LIGHT]}})
+    rows = driver.call("world.query", {"data": {"components": []}, "filter": {"with": [LIGHT]}})
     return [row["entity"] for row in rows]
 
 
@@ -71,13 +73,13 @@ INSET = "panoply::view::viewport::ViewportInset"
 
 def set_inset(driver, fraction):
     """Insets the 3D view by `fraction` of the window's logical size, from the right and bottom."""
-    window = driver._call(
+    window = driver.call(
         "world.get_components", {"entity": driver.window, "components": [WINDOW]}
     )["components"][WINDOW]["resolution"]
     scale = window.get("scale_factor", 2.0)
     width = window["physical_width"] / scale
     height = window["physical_height"] / scale
-    driver._call(
+    driver.call(
         "world.mutate_resources",
         {"resource": INSET, "path": "", "value": {
             "left": 0.0, "top": 0.0, "right": width * fraction, "bottom": height * fraction,
@@ -85,12 +87,8 @@ def set_inset(driver, fraction):
     )
 
 
-def camera(driver):
-    return driver._select("PrimaryCamera")[0]["entity"]
-
-
 def insert(driver, entity, components):
-    driver._call("world.insert_components", {"entity": entity, "components": components})
+    driver.call("world.insert_components", {"entity": entity, "components": components})
 
 
 MSAA = "bevy_render::view::Msaa"
@@ -103,7 +101,7 @@ GENERATED_ENV_MAP = "bevy_light::probe::GeneratedEnvironmentMapLight"
 
 def get_cascades(driver):
     light = lights(driver)[0]
-    return driver._call(
+    return driver.call(
         "world.get_components", {"entity": light, "components": [CASCADES]}
     )["components"][CASCADES]
 
@@ -119,16 +117,15 @@ def cascades(bounds, minimum_distance=8.0):
 
 def set_depth_prepass(driver, on):
     if on:
-        insert(driver, camera(driver), {DEPTH_PREPASS: {}})
+        insert(driver, driver.camera(), {DEPTH_PREPASS: {}})
     else:
-        driver._call(
-            "world.remove_components", {"entity": camera(driver), "components": [DEPTH_PREPASS]}
+        driver.call(
+            "world.remove_components", {"entity": driver.camera(), "components": [DEPTH_PREPASS]}
         )
 
 
 def set_camera_active(driver, active):
-    for match in driver._select("PrimaryCamera"):
-        mutate(driver, match["entity"], CAMERA, ".is_active", active)
+    mutate(driver, driver.camera(), CAMERA, ".is_active", active)
 
 
 def run(driver):
@@ -137,16 +134,20 @@ def run(driver):
     driver.frames(30)
     driver.screenshot("focus")
     realm, position = LOCATION
-    driver.message(GOTO, {"realm": realm, "position": position, "camera_distance": DISTANCE})
+    driver.goto(position, DISTANCE, realm=realm)
     base = frame_time(driver)
     original_cascades = get_cascades(driver)
     print(f"camera distance {DISTANCE}; default cascades: {original_cascades['bounds']}")
     print(f"cascades: {original_cascades}")
     driver.screenshot("location")
 
-    diagnostics = driver._call("driver.diagnostics")
+    diagnostics = {
+        d["path"]: d["value"]
+        for d in driver.call("diagnostics.get", {})["diagnostics"]
+        if d["value"] is not None
+    }
     print(f"entities: {diagnostics.get('entity_count', 0):.0f}")
-    print(f"outlines: {len(driver._select('Outline'))}")
+    print(f"outlines: {len(driver.select('Outline'))}")
     passes = sorted(
         ((k, v) for k, v in diagnostics.items() if k.startswith("render/") and k.endswith("elapsed_cpu")),
         key=lambda kv: -kv[1],
@@ -168,14 +169,14 @@ def run(driver):
         # separate frames, which wgpu rejects; the scale-factor override has no effect.)
         ("quarter pixels", lambda: set_inset(driver, 0.5), lambda: set_inset(driver, 0.0)),
         # Per-pixel lighting costs, switched on the camera.
-        ("msaa off", lambda: insert(driver, camera(driver), {MSAA: "Off"}), lambda: insert(driver, camera(driver), {MSAA: "Sample4"})),
+        ("msaa off", lambda: insert(driver, driver.camera(), {MSAA: "Off"}), lambda: insert(driver, driver.camera(), {MSAA: "Sample4"})),
         # Shadow cascades fitted to what the camera sees at distance 20 (ground about 14-45 m
         # away), instead of realm.rs's 4 cascades at about 4/11/30/130 m.
         ("cascades 1 [50]", lambda: set_cascades(driver, cascades([50.0])), lambda: set_cascades(driver, original_cascades)),
         ("cascades 2 [25,50]", lambda: set_cascades(driver, cascades([25.0, 50.0])), lambda: set_cascades(driver, original_cascades)),
         ("cascades 3 [18,30,50]", lambda: set_cascades(driver, cascades([18.0, 30.0, 50.0])), lambda: set_cascades(driver, original_cascades)),
         ("depth prepass", lambda: set_depth_prepass(driver, True), lambda: set_depth_prepass(driver, False)),
-        ("2x2 shadow filter", lambda: insert(driver, camera(driver), {SHADOW_FILTER: "Hardware2x2"}), lambda: insert(driver, camera(driver), {SHADOW_FILTER: "Gaussian"})),
+        ("2x2 shadow filter", lambda: insert(driver, driver.camera(), {SHADOW_FILTER: "Hardware2x2"}), lambda: insert(driver, driver.camera(), {SHADOW_FILTER: "Gaussian"})),
         # Nothing rendered at all: what remains is the main world's own systems.
         ("camera inactive", lambda: set_camera_active(driver, False), lambda: set_camera_active(driver, True)),
     ]
@@ -199,7 +200,7 @@ def run(driver):
     # last and is not undone.
     for component in [ENV_MAP, GENERATED_ENV_MAP]:
         try:
-            driver._call("world.remove_components", {"entity": camera(driver), "components": [component]})
+            driver.call("world.remove_components", {"entity": driver.camera(), "components": [component]})
         except Exception:
             pass
     t = frame_time(driver)

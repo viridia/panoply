@@ -1,12 +1,15 @@
 """Smoke test: the game starts, the viewpoint moves, strafes and zooms, and Escape quits.
 
-    python3 crates/bevy_remote_driver/client/run.py plans/smoke.py
+    bevy-remote-driver plans/smoke.py
 
 Screenshots land in target/remote-driver/panoply/smoke/. Movement is checked by comparing them,
 since the viewpoint is a resource rather than a component a step can `expect`.
 """
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
+DRIVER = PanoplyDriver
 
 
 def run(driver):
@@ -15,7 +18,11 @@ def run(driver):
     driver.frames(60)
     driver.screenshot("start")
 
-    driver.key("ArrowUp", hold=60)
+    # Press, wait, release: `key(hold=...)` returns before the release, and a screenshot is not
+    # input, so it would not wait for it.
+    driver.press("ArrowUp")
+    driver.frames(60)
+    driver.release("ArrowUp")
     driver.screenshot("forward")
 
     # Shift+Arrow strafes rather than turns.
@@ -24,7 +31,9 @@ def run(driver):
     driver.release("ShiftLeft")
     driver.screenshot("strafed")
 
-    driver.key("ArrowRight", hold=30)
+    driver.press("ArrowRight")
+    driver.frames(30)
+    driver.release("ArrowRight")
     driver.screenshot("turned")
 
     # Zoom in two steps and back out. (Plans run with their own settings, so this never touches

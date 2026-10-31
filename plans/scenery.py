@@ -1,6 +1,6 @@
 """Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
 
-    python3 crates/bevy_remote_driver/client/run.py plans/scenery.py
+    bevy-remote-driver plans/scenery.py
 
 Waits for scenery to load, counts each kind of scenery entity, then takes a screenshot at a
 scenery element (walls, and the road from terrain effects) and at the origin (the tiered dungeon
@@ -8,8 +8,10 @@ floors of precinct 0,0). Also checks that ground still builds now that it waits 
 terrain effects (D11).
 """
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
-GOTO = "panoply_core::viewpoint::GotoLocation"
+DRIVER = PanoplyDriver
 NAME = "bevy_ecs::name::Name"
 GLOBAL = "bevy_transform::components::global_transform::GlobalTransform"
 MESH = "bevy_mesh::components::Mesh3d"
@@ -19,7 +21,7 @@ WAIT = {"frames": 900, "seconds": 45}
 
 
 def rows(driver, components, with_=()):
-    return driver._call(
+    return driver.call(
         "world.query",
         {
             "data": {"components": [NAME], "option": components},
@@ -68,10 +70,7 @@ def run(driver):
     spots = [("element", position(elements[0])), ("floors", [0.0, 0.0, 0.0])]
     for label, (x, _, z) in spots:
         print(f"{label} at ({x:.1f}, {z:.1f})")
-        driver.message(
-            GOTO,
-            {"realm": "playground", "position": [x, 0.0, z], "camera_distance": DISTANCE},
-        )
+        driver.goto([x, 0.0, z], DISTANCE)
         driver.frames(240)
         driver.screenshot(label)
     driver.exits("Escape")

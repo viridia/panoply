@@ -36,18 +36,10 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Flora `scale` and `scale_variation` per biome entry (defaults 1 ± 0.15); seedling entries set 0.65. |
 | (pending) | `docs/goals.md`; "Up in Arms" as Next item 5; faery.md records how far faery got.  |
 | (pending) | Bevy main at `784b85d` and `bevy_action_map` main (D34); warm-up loads `terrain/models-new`. |
+| (pending) | Plans on the `bevy-remote-driver` package (D10); `plans/_panoply_driver.py`; D15 retired. |
 
 ## Next
 
-0. Plans on the `bevy-remote-driver` package (the driver's Next item 32), as `arbor_day` did:
-   the game enables BRP itself with the driver README's setup lines, `crates/bevy_remote_driver`
-   is deleted, and plans run with `bevy-remote-driver plans/`. The package has none of the
-   in-tree crate's server methods (all went upstream), so plans change: `driver._call` and
-   `driver._select` uses (seven plans), and `ablate.py`'s `driver.diagnostics`, which becomes
-   `diagnostics.get` with a different result shape. Repeated code (the `GotoLocation` message
-   in eleven plans, the camera's entity in five) moves to a `plans/panoply_driver.py` subclass of
-   `Driver`, once the driver lets a plan name its class (the driver's chunk 35). The package's
-   per-plan settings may retire D15's separate identity.
 1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
@@ -117,13 +109,15 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **D9** Input goes through `bevy_action_map` (actions and contexts in `src/input.rs`).
   `panoply_core` exposes the `Viewpoint` API (`rotate`, `move_local`) and has no input
   dependency.
-- **D10** Automated runtime checks use `crates/bevy_remote_driver`, forked from
-  `bevy_action_map` at `f641559` (where it lives only for convenience of development). The plugin
-  is inert unless `BEVY_REMOTE_DRIVER_PORT` is set. Plans live in `plans/`, and run with
-  `python3 crates/bevy_remote_driver/client/run.py plans/<plan>.py`. Fork changes: the client
-  can launch a binary (`BIN`), not only an example; an `exits` step for a key that quits; and a
-  `message` step that writes any reflected message, e.g. `panoply_core::GotoLocation` to
-  teleport the viewpoint.
+- **D10** Automated runtime checks use the `bevy-remote-driver` package (`../bevy_remote_driver`,
+  installed with `uv tool install git+…`), as AGENTS.md says. The game enables BRP itself in
+  `src/remote_driver.rs`, only when `BEVY_REMOTE_DRIVER_PORT` is set, with Bevy's `bevy_remote`
+  feature. Plans live in `plans/` and set `DRIVER = PanoplyDriver`, whose steps
+  (`plans/_panoply_driver.py`) hold what plans repeat: `goto` writes `GotoLocation`, `camera`
+  finds the primary camera. `key(hold=…)` returns at the press, before the release, so a step
+  that is not input (a screenshot, a timing) runs during the hold: a plan that needs the hold
+  over presses, waits `frames`, and releases (`smoke.py`, `scroll.py`). Replaced the in-tree
+  fork, `crates/bevy_remote_driver`, whose server methods all went upstream.
 - **D11** Layering: `panoply_core` (realm, both grid sizes) <- `panoply_terrain` <- scenery.
   `PRECINCT_SIZE` lives in `panoply_core::metrics`, which removed terrain's only import from
   scenery. Scenery pushes terrain effects into parcels through `ParcelTerrainFx`, defined in
@@ -140,9 +134,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   contours have no outlines; actors and scenery do. Flora is a special case: leaf textures have
   outlines baked in, and trunks use the outline material. Each outline is a child entity that
   shares the mesh, with a dedicated `OutlineMaterial`. Details in [outlines.md](outlines.md).
-- **D15** Under the remote driver (`BEVY_REMOTE_DRIVER_PORT` set), the game uses its own settings
-  (`org.viridia.panoply.driven`), so plans never change the developer's saved settings. Plans that
-  measure set the camera distance through `GotoLocation::camera_distance`.
+- **D15** Retired with D10's package, which runs each plan with `BEVY_SETTINGS_DIR` set to its own
+  `settings/`, so plans never change the developer's saved settings without a separate identity
+  (was `org.viridia.panoply.driven`; that folder in `~/Library/Preferences` is now unused). Plans
+  that measure set the camera distance through `goto`.
 - **D16** Ambient light is a hemisphere light (`panoply_terrain::HemisphereLight`: sky color,
   ground color, brightness), as in the three.js version, not a camera-wide `EnvironmentMapLight`
   (about 4 ms a frame at any cubemap size). The ground shader applies it per pixel in place of
@@ -315,8 +310,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   commit, `784b85d`, the same as `arbor_day`, `bevy_action_map`, `bevy_immediate` and the
   driver's testbed. `bevy_action_map` is its git `main` too (0.2.0-dev). Bump all repos together,
   one chunk per bump, with `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update`
-  takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md. The in-tree
-  driver crate stays, on main too, until Next item 0.
+  takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md.
 
 ## Deferred
 
@@ -350,9 +344,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
     physical pixels; `left`/`top` are not divided by the scale factor). Fix when the panel
     returns.
   - All editor state is saved in `bevy_settings` (mode, selections, panel width, view), so a
-    restart returns to where work stopped; the edit-run loop restarts often. Under the
-    remote driver, settings are already separate (D15); plans should also start from
-    defaults (not load saved settings), so runs do not depend on the previous run.
+    restart returns to where work stopped; the edit-run loop restarts often. Plans start
+    from empty settings already (D15), so runs do not depend on the previous run.
   - Editor and game keys use separate `bevy_action_map` contexts; picking keeps panel clicks
     from the game. Driver plans run with `editor` on, so they should hide the panel (key or
     setting) to keep screenshots and frame times comparable.

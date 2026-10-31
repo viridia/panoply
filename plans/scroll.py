@@ -2,8 +2,8 @@
 playground twice along the same line, first over ground never loaded, then again with everything
 cached, to separate load hitches from steady cost.
 
-    python3 crates/bevy_remote_driver/client/run.py plans/scroll.py
-    TRACE=1 python3 crates/bevy_remote_driver/client/run.py plans/scroll.py
+    bevy-remote-driver plans/scroll.py
+    TRACE=1 bevy-remote-driver plans/scroll.py
 
 Prints the average frame time of each pass. With `TRACE=1` the game is built with Bevy's
 `trace_chrome` feature and writes `trace-*.json` (system spans per frame) in the package
@@ -14,11 +14,13 @@ import math
 import os
 import time
 
+from _panoply_driver import PanoplyDriver
+
 BIN = "panoply"
+DRIVER = PanoplyDriver
 FEATURES = ["bevy/trace_chrome"] if os.environ.get("TRACE") else None
 # The game inherits the runner's environment; the hitch log is opt-in, and this plan reads it.
 os.environ["PANOPLY_HITCH_LOG"] = "1"
-GOTO = "panoply_core::viewpoint::GotoLocation"
 DISTANCE = 20.0
 START = [8.0, 0.0, 8.0]
 # Facing +x and +z. W walks at 10 m/s: about 100 m in 10 s, 70 m along each axis.
@@ -33,19 +35,14 @@ def log_lines(driver, marker):
 
 
 def scroll(driver, label):
-    driver.message(
-        GOTO,
-        {
-            "realm": "playground",
-            "position": START,
-            "camera_distance": DISTANCE,
-            "azimuth": AZIMUTH,
-        },
-    )
+    driver.goto(START, DISTANCE, AZIMUTH)
     # Let loading around the start settle before moving.
     driver.seconds(1)
     start_frame, start_time = driver.frame(), time.monotonic()
-    driver.key("KeyW", hold=FRAMES)
+    # Not `key(hold=...)`, which returns before the release.
+    driver.press("KeyW")
+    driver.frames(FRAMES)
+    driver.release("KeyW")
     elapsed = time.monotonic() - start_time
     frames = driver.frame() - start_frame
     print(f"{label}: {frames} frames in {elapsed:.2f} s, {1000 * elapsed / frames:.1f} ms/frame")
