@@ -49,7 +49,22 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    `realm_physics_system` runs in `FixedUpdate` (64 Hz by default) but rapier's default
    `IntegrationParameters` step 1/60 s, so physics would run about 7% fast; set rapier's `dt`
    from `Time<Fixed>`. Only the viewpoint's realm is stepped (a realm seen through a portal
-   would freeze).
+   would freeze). Nothing reads physics yet, so the chunk adds what verifies it, in the editor
+   build only (D13):
+   - Rapier's debug render, through a `DebugRenderBackend` that draws with gizmos, so the
+     developer can study a scene and move around it in a normal run.
+   - A `DebugViews` resource, reflected and saved with `bevy_settings`: physics on or off, and
+     a mask of collision groups to draw, applied in the backend's `filter_object`. Dense scenes
+     draw too many lines to read, so filters are by class of collider. Groups are defined as
+     each kind of collider arrives, after faery's (see [faery.md](faery.md), Physics): Terrain
+     now, on the ground colliders. No distance filter: it would be confusing.
+   - A shortcut, F3 through `bevy_action_map`, toggling physics drawing; it stays once the
+     editor's Show menu exists (item 4).
+   - A plan that turns it on with `set_resource`, screenshots a spot, and checks one ray cast
+     against the ground through the current query API (newer releases build the query pipeline
+     on demand rather than keeping the `QueryPipeline` `realm_physics.rs` stores; confirm in
+     the changelog). The `dt` fix stays unobserved until something
+     moves.
 2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
    colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
    cover only edges within one shape, not between colliders. Write a plan that walks an actor
@@ -74,7 +89,13 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
    [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
 3. `portals`: a rewrite, not a restoration (D21).
-4. `editor` (see X3).
+4. `editor` (see X3). The first slice comes right after item 1: the shell, as in `arbor_day`'s
+   `main.rs` (feathers' `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a
+   splitter, a key to show or hide it, its width saved in settings, and X3's viewport inset fix
+   so the game fills the other pane. Its only content: a Show menu (feathers `menu`) with
+   Physics and one checkbox per collision group, bound to item 1's `DebugViews`. faery's other
+   debug views (listed in [faery.md](faery.md), Editor) join the menu with the features they
+   show, not before.
 5. After the migration, the first playable: the "Up in Arms" quest, end to end. Its steps and
    what each needs are in [goals.md](goals.md).
 

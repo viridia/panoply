@@ -113,6 +113,11 @@ Migration scripts below, and X1), `artwork/`.
 - `editor/src/`: `builders`, `controls`, `view`, `helpers`, `reflex-ui-three`,
   `reflex-ui-faery`.
 - `design/Editor.md`: tool organization, map mode, mods and add-ons.
+- Debug views: a "Show" menu in the editor panel (`editor/src/ControlPalette.tsx`), each a flag
+  saved in `lib/UIPrefs.ts`: Smoothed Terrain Grid, Scenery Bounds, Structure Grid, Colliders
+  (shapes from archetypes' collider descriptors), Debug Physics (rapier's debug render,
+  `engine/src/overlays/DebugPhysicsOverlay.ts`), Cutaway Rects, Portals, Marks, Instance IDs,
+  Navigation Mesh, Pathfind Routes, and Expanded Edit Panel.
 
 ## Game rules (later)
 
