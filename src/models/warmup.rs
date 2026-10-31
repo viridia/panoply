@@ -16,7 +16,7 @@ use panoply_core::{Realm, Viewpoint};
 use super::PropagateRenderLayers;
 
 /// Model folders loaded at startup so that their pipelines are warmed before play.
-const FOLDERS: [&str; 2] = ["terrain/models", "scenery/models"];
+const FOLDERS: [&str; 3] = ["terrain/models", "terrain/models-new", "scenery/models"];
 /// Scenes spawned per frame, to keep warm-up itself from stalling a frame.
 const SCENES_PER_FRAME: usize = 32;
 /// Frames a warm-up instance stays after spawning: rendering runs a frame behind, and both the

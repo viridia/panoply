@@ -1,6 +1,6 @@
 # Agent instructions
 
-Panoply is a semi-procedural RPG on Bevy, currently mid-migration to Bevy 0.20.
+Panoply is a semi-procedural RPG on Bevy, currently mid-migration from Bevy 0.15 to Bevy main.
 
 ## Orient
 
@@ -20,8 +20,10 @@ Panoply is a semi-procedural RPG on Bevy, currently mid-migration to Bevy 0.20.
 - Propose structural changes (new dependencies, replacing a subsystem) with a recommendation
   before writing code.
 - Prefer Bevy's built-in replacements over third-party crates where one exists. Check the
-  registry source (`~/.cargo/registry/src/*/bevy_*-0.20.0`) and the migration guides in
-  `bevy-0.20.0/_release-content/migration-guides/` rather than guessing APIs.
+  source Panoply builds, Cargo's checkout of the commit in `Cargo.lock`
+  (`~/.cargo/git/checkouts/bevy-*/<short commit>/`), and its migration guides in
+  `_release-content/migration-guides/`, rather than guessing APIs. `../bevy` is the author's
+  working checkout, often on a branch.
 
 ## Verify
 
@@ -31,4 +33,4 @@ Panoply is a semi-procedural RPG on Bevy, currently mid-migration to Bevy 0.20.
   input, saves screenshots to `target/remote-driver/`, and quits. Write a new plan in `plans/` for
   behaviour a chunk adds. Screenshots bring the game window to the front. To write a plan, read
   `../bevy_remote_driver/docs/writing-plans.md`, and for the steps, `class Driver` in
-  `../bevy_remote_driver/client/driver.py`.
+  `crates/bevy_remote_driver/client/driver.py`.

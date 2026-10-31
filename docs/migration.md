@@ -35,38 +35,19 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `pipeline.ts` `arborDayTrees`: arbor_day `.gltf` files in `artwork/flora-new/trees-<group>` merged into `terrain/models-new/<group>.glb`, mirroring `flora` and `models` for A/B swaps; leaves as embedded KTX2 (X27, X28). |
 | (pending) | Flora `scale` and `scale_variation` per biome entry (defaults 1 ± 0.15); seedling entries set 0.65. |
 | (pending) | `docs/goals.md`; "Up in Arms" as Next item 5; faery.md records how far faery got.  |
+| (pending) | Bevy main at `784b85d` and `bevy_action_map` main (D34); warm-up loads `terrain/models-new`. |
 
 ## Next
 
-0. Move to Bevy main instead of 0.20 (supersedes D1 once done). Panoply will not ship before
-   0.21 (BSN assets), and main has what the editor needs: split pane, tabs, tree view, the
-   `bevy_inspector` crate (may close X5), and `BEVY_SETTINGS_DIR`, which lets driver plans
-   start from a fresh settings directory (may retire D15's separate identity).
-   - **How Bevy is named.** Every repo in the family names it exactly
-     `git = "https://github.com/bevyengine/bevy.git", branch = "main"`. Cargo treats a
-     `branch` and a `rev` as different sources even at the same commit, so a `rev` here would
-     build a second Bevy beside the dependencies'. Each workspace's `Cargo.lock` holds the
-     commit; bump with `cargo update` deliberately, one chunk per bump, all repos together.
-   - **Dependencies, done (2026-10-11).** `bevy_action_map`: `main` is on Bevy main (chunk 196),
-     0.1.x stays on `release/0.1` (tag `v0.1.2`). `bevy_immediate` (X3): fork
-     `viridia/bevy_immediate`, branch `bevy-main` (`55a841d`), whose `main` mirrors upstream;
-     breaks were `NumberInputValue` (now `bevy_ui_widgets::NumericValue`),
-     `SystemParam::init_access` (no world argument; returns a `Result`), and the `ghost_nodes`
-     feature, removed upstream (bevy#25653). Keep the branch to
-     those changes and rebase it on upstream; offer it upstream; drop it at 0.21.
-   - **Order.** (a) Extract `bevy_remote_driver` into its own repo: done 2026-10-11 as
-     `../bevy_remote_driver` (`viridia/bevy_remote_driver`), the union of both copies, with its
-     own ledger. `bevy_action_map` keeps its copy (it is published, and others may run its tests).
-     Panoply keeps `crates/bevy_remote_driver` until (d), then depends on the repo by git and
-     runs plans as `python3 ../bevy_remote_driver/client/run.py plans/smoke.py`. (b) A shared VS Code multi-root workspace (panoply,
-     arbor_day, bevy_action_map, bevy_immediate, bevy_remote_driver, seedling for reference),
-     with `rust-analyzer.linkedProjects` per `Cargo.toml` and `../bevy` not linked. One target directory, `games/target`, is shared by every workspace
-     under `games/`, set in `games/.cargo/config.toml` (outside any repo; 2026-10-20). (c) The `arbor_day` shell (X28), as X3's `bevy_immediate`
-     spike. (d) This item in Panoply.
-   - **In Panoply.** Expect breakage from WESL 0.6, the window event split, `DisplayTarget` on
-     `Window`, and the observer `Trigger` and `SystemParam` changes. Update AGENTS.md (API
-     source becomes `../bevy` at the locked commit, not the registry) and add a decision
-     replacing D1.
+0. Plans on the `bevy-remote-driver` package (the driver's Next item 32), as `arbor_day` did:
+   the game enables BRP itself with the driver README's setup lines, `crates/bevy_remote_driver`
+   is deleted, and plans run with `bevy-remote-driver plans/`. The package has none of the
+   in-tree crate's server methods (all went upstream), so plans change: `driver._call` and
+   `driver._select` uses (seven plans), and `ablate.py`'s `driver.diagnostics`, which becomes
+   `diagnostics.get` with a different result shape. Repeated code (the `GotoLocation` message
+   in eleven plans, the camera's entity in five) moves to a `plans/panoply_driver.py` subclass of
+   `Driver`, once the driver lets a plan name its class (the driver's chunk 35). The package's
+   per-plan settings may retire D15's separate identity.
 1. Upgrade `rapier3d` from 0.22 to the current release (D22). Used directly, not through
    `bevy_rapier`, so not tied to a Bevy version. Integration is still small:
    `panoply_core::realm_physics` (`RealmPhysics`, one rapier world per realm), a fixed rigid body
@@ -87,7 +68,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
    what the player faces) works with the driver's keys today; clicking an actor or fixture needs
    clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
    a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
-   through X9.
+   through X9. An actor gets physics only where the colliders under it are built (X33).
    Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
    `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
    a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
@@ -111,7 +92,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 
 ## Decisions
 
-- **D1** Build against crates.io Bevy releases, not git main.
+- **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
   `bevy_prefs_lite` and `bevy_basic_prefs` are abandoned. Window position falls back to winit's
   `outer_position()` via `bevy::winit::WINIT_WINDOWS` (a stopgap API, Bevy issue #17667).
@@ -326,6 +307,16 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `MipGenerationJobs` is for render targets and has no sRGB formats; `sharp` needs native
   libvips; zstd needs another npm package on Node 18. Size: 6.7 MB of KTX2 for 4.3 MB of PNG.
   Textures inside glTFs (flora leaves, scenery) still lack mips (X27).
+- **D34** Bevy is git main, not releases (supersedes D1): Panoply will not ship before 0.21 (BSN
+  assets), and main has what the editor needs (split pane, tabs, tree view, `bevy_inspector`).
+  Every repo in the family names it exactly `git = "https://github.com/bevyengine/bevy.git",
+  branch = "main"`: Cargo treats a `branch` and a `rev` as different sources even at the same
+  commit, so a `rev` would build a second Bevy beside the dependencies'. `Cargo.lock` holds the
+  commit, `784b85d`, the same as `arbor_day`, `bevy_action_map`, `bevy_immediate` and the
+  driver's testbed. `bevy_action_map` is its git `main` too (0.2.0-dev). Bump all repos together,
+  one chunk per bump, with `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update`
+  takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md. The in-tree
+  driver crate stays, on main too, until Next item 0.
 
 ## Deferred
 
@@ -335,7 +326,9 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them.
   Consider deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X3** Editor restoration and its UI. Widgets: `bevy_feathers` (on `bevy_ui_widgets`).
-  Update 2026-10-11: going with `bevy_immediate` on the fork (Next item 0), tried first in the
+  Update 2026-10-11: going with `bevy_immediate` on the fork (`viridia/bevy_immediate`, branch
+  `bevy-main`: only its Bevy-main fixes, rebased on upstream, offered upstream, dropped at
+  0.21), tried first in the
   `arbor_day` shell (X28) rather than on X26's sliders. Earlier notes: reactivity was undecided: Quill is dead; `bevy_reactor` (the author's; last on 0.17 and
   Cart's `next-gen-scenes` branch, so a fork means porting off a BSN prototype) is
   experimental; `bevy_immediate` (0.9 targets Bevy 0.20, integrates feathers and
@@ -367,7 +360,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `SettingsGroup`. *Gate:* editor restoration.
 - **X4** Replace `PropagateRenderLayers` with Bevy's `Propagate<RenderLayers>`. *Gate:* scenery,
   actors and flora restored (they are the callers).
-- **X5** `bevy-inspector-egui` (pinned bevy 0.15). *Gate:* a compatible release is needed.
+- **X5** `bevy-inspector-egui` (pinned bevy 0.15). Bevy main's `bevy_inspector` crate may
+  replace it. *Gate:* a compatible release is needed.
 - **X6** Revisit asset bundling. The GLTF layout carries three.js-era assumptions, made to cut
   HTTP requests: small models (e.g. flora) are combined into one file, and large Blender
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
@@ -535,7 +529,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   models come from seedling. Requirements, the algorithm survey to do first, and open questions
   are in its `docs/requirements.md` (moved from here 2026-10-11); its progress in its
   `docs/ledger.md`. Its output should let X15 merge flora and X27 mip leaf textures without
-  pipeline patching. On Bevy main like Panoply (Next item 0). Its authoring app shares X3's UI
+  pipeline patching. On Bevy main like Panoply (D34). Its authoring app shares X3's UI
   architecture, and its shell, built first, serves as X3's `bevy_immediate` spike, replacing
   the water sliders. *Gate for the generator:* the growth-model survey and a recommendation.
 - **X29** Restore a maximized window as maximized. `window_settings.rs` saves the size and
@@ -546,7 +540,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X31** A hot-reloaded texture keeps its old mips (bevy#26225): when the size, format and mip
   count are unchanged, Bevy rewrites only mip 0, so a re-exported arbor_day leaf color shows
   only up close. Restart the game to see it. The fix merged on Bevy main as bevy#26320
-  (`4e2eb9911`; arbor_day's X48). *Gate:* Panoply on main (Next item 0), past that commit.
+  (`4e2eb9911`; arbor_day's X48), which D34's commit includes. *Gate:* met; delete once a
+  re-exported leaf color shows at every distance without a restart.
 - **X32** Outline widths from the model: `models::process_material_extras` reads only whether a
   material has the `"outline"` extra, so every outline is drawn at `OutlineMaterial`'s default
   width (0.015) and the width arbor_day exports has no effect. One outline material per distinct
@@ -556,6 +551,25 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `color_<color>_<map>`, `billboard_<map>`, `flame_…`), the outline width read from the node, its
   parent or the material and rounded to 0.001 first, so near-equal widths share one material.
   The same cache would serve Panoply's other generated materials. *Gate:* the first arbor_day species placed in the game.
+- **X33** Region readiness: one query, given an area, that is true when no part of it overlaps a
+  parcel or precinct still being built. Actors pass their footprint: an actor gets a physics
+  body only where the colliders under it are built. Plans pass a point (the viewpoint) or the
+  camera's estimated view (the parcel show set, D20, already computes one), for a `goto` step
+  that waits until the area has loaded, replacing the fixed `driver.frames(120)` after each
+  move. A loading screen after a portal would use it too. Render readiness may need its own
+  check, beside physics. faery's version is in [faery.md](faery.md), Actors and navigation.
+  *Gate:* `actors` (Next item 2), or `goto` for plans, whichever comes first.
+- **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and
+  others): the game loads every precinct position near the view, but only some exist. It needs
+  to know which do, by a directory scan or a catalog file. A catalog works in packaged and web
+  builds, where folder loading may not. It could be a `pipeline.ts` target that lists
+  `assets/scenery/precincts/<realm>/` into a catalog: unusual in reading from `assets/` rather
+  than `artwork/`, but rerun by overrun whenever the editor saves a precinct. Two floor types are missing too. `slate.floor.ron` was never written; faery's `Slate`
+  is textured (`slate-grid.png`, already in `assets/textures/`). `terrain-fx.earth.floor.ron`
+  is not a floor: faery's `TerrainFx.Earth` aliases the `Road` terrain effect (`cobbles` here),
+  which faery's `Structure.ts` filled as a terrain effect when it appeared among a precinct's
+  floor types; `convert_precincts.mts` made it a floor surface path. *Gate:* the editor creates
+  precincts (X3), or the errors hide a real one.
 
 ## Notes
 

@@ -89,6 +89,13 @@ Migration scripts below, and X1), `artwork/`.
   `NavTract*`), route tasks (`NavRouteTask`, `findReachableSpot`), `NavigationController`, and a
   worker. Obstacles come from scenery (the `Computed*Obstacles` files) and terrain
   (`world/terrain/ComputedNavHeightMap`). Panoply has no nav yet.
+- Physics readiness (read in full; see X33): `TerrainController.isPhysicsReady(realm, position,
+  radius)` grows the point by the radius into a rectangle and is true when every parcel and
+  precinct it overlaps is ready. A parcel must be cached with `isPhysicsOk`. A precinct must be
+  cached, simulated (near the camera) and `isPhysicsReady`, which `world/structures/Structure.ts`
+  memoizes as: fixture colliders built, and every tier's physics up to date and enabled. Each
+  frame, `ActorController` activates the physics of a simulated actor in the active realm where
+  its area is ready and deactivates it elsewhere; the actor keeps updating either way.
 - `engine/src/player/`: `PlayerActionController`, `CutawayController`, `GameUiState`.
 - `engine/src/animation/AnimationDriver.ts`.
 
