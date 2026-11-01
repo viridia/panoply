@@ -34,47 +34,74 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `docs/arbor-day.md` moved to the `arbor_day` repo as `docs/requirements.md` (X28).      |
 | (pending) | `pipeline.ts` `arborDayTrees`: arbor_day `.gltf` files in `artwork/flora-new/trees-<group>` merged into `terrain/models-new/<group>.glb`, mirroring `flora` and `models` for A/B swaps; leaves as embedded KTX2 (X27, X28). |
 | (pending) | Flora `scale` and `scale_variation` per biome entry (defaults 1 ± 0.15); seedling entries set 0.65. |
-| (pending) | `docs/goals.md`; "Up in Arms" as Next item 5; faery.md records how far faery got.  |
+| (pending) | `docs/goals.md`; "Up in Arms" in Next (PAN6); faery.md records how far faery got.  |
 | (pending) | Bevy main at `784b85d` and `bevy_action_map` main (D34); warm-up loads `terrain/models-new`. |
 | (pending) | Plans on the `bevy-remote-driver` package (D10); `plans/_panoply_driver.py`; D15 retired. |
 | (pending) | `rapier3d` 0.36 (D35): `PhysicsWorld`, `dt` from the fixed timestep; physics debug views, F3; `plans/physics.py`. |
 
 ## Next
 
-1. The editor's first slice (see X3): the shell, as in `arbor_day`'s `main.rs` (feathers'
-   `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a splitter, a key to
-   show or hide it, its width saved in settings, and X3's viewport inset fix so the game fills
-   the other pane. Its only content: a Show menu (feathers `menu`) with Physics and one checkbox
-   per collision group, bound to `DebugViews` (D35). F3 stays as a shortcut. faery's other debug
-   views (listed in [faery.md](faery.md), Editor) join the menu with the features they show,
-   not before.
-2. `actors`. Risk: in the three.js version actors fell through seams between parcel ground
-   colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
-   cover only edges within one shape, not between colliders. Write a plan that walks an actor
-   across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
-   overlap parcel colliders by a cell, enable CCD, and cast with a skin. Actors also need
-   navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
-   Plans for the player's controls: keyboard play (WASD or arrows to move, E to interact with
-   what the player faces) works with the driver's keys today; clicking an actor or fixture needs
-   clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
-   a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
-   through X9. An actor gets physics only where the colliders under it are built (X33).
-   Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
-   `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
-   a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
-   movement, AI and physics go in `FixedUpdate`; their rendered transforms (and the camera
-   following them) must interpolate between fixed ticks, or they judder at 120 fps against
-   64 Hz ticks. Check whether Bevy 0.20 has transform interpolation built in before adding any.
-   Load actor exemplars through `ExemplarServer` (D27), not `AssetServer::load`. Models per
-   D28: one skeleton per actor, features bound to its joints, colors by cached material clones.
-   Hair (materials with extras `material: hair`) needs strand tangents and a hair shader (D29).
-   The three.js version's actor assembly is `engine/src/world/actors/SkinnedModel.ts` (faery).
-   The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
-   [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
-3. `portals`: a rewrite, not a restoration (D21).
-4. `editor`, beyond item 1's shell (see X3).
-5. After the migration, the first playable: the "Up in Arms" quest, end to end. Its steps and
-   what each needs are in [goals.md](goals.md).
+In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
+never reused; a new item takes the next unused number.
+
+- **PAN1 Editor shell.** The editor's first slice (see X3), as in `arbor_day`'s `main.rs`
+  (feathers' `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a splitter,
+  a key to show or hide it, its width saved in settings, and X3's viewport inset fix so the
+  game fills the other pane. Its only content: a Show menu (feathers `menu`) with Physics and
+  one checkbox per collision group, bound to `DebugViews` (D35). F3 stays as a shortcut.
+  faery's other debug views (listed in [faery.md](faery.md), Editor) join the menu with the
+  features they show, not before.
+- **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
+  floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
+  faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
+  solid and walkable `box`, `rbox`, `cylinder`, `ellipsoid` (convex hull) and `ramp` (convex
+  mesh), each exemplar's shapes built once as `SharedShape`s and shared by its instances. Floor
+  regions are split into convex pieces and extruded by `PHYSICS_FLOOR_THICKNESS`, as faery's
+  `PhysicsFloor.ts` did. One fixed body per tier (D24). Each kind gets its own collision group,
+  so the F3 view filters it (D35). Left for when actors need them: doors (a kinematic body
+  following the glTF node the descriptor's `animation` names, moved by the model's own
+  animation, with no separate animation data), sensors, ladders, `hint` and `marker`
+  colliders, flora capsules, and faery's slab under the world.
+- **PAN3 Actors.** First slice: the player's actor loads from a precinct, gets its model,
+  stands on the ground with the controller, walks by WASD (R29), and plays clips chosen from
+  its velocity; no goals, pathfinder or click to move yet. The slice may read the keys
+  directly; a later slice moves player movement onto `bevy_action_map`. Later slices layer on
+  by time scale (existence, goals, planning, body, presentation), each talking through
+  components, with readiness as components and every layer restartable from saved state
+  (R104). Risk: in the three.js version actors fell through seams between parcel ground
+  colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely
+  cover only edges within one shape, not between colliders. Write a plan that walks an actor
+  across parcel edges and corners. If it falls: make shared edge vertices bit-identical,
+  overlap parcel colliders by a cell, enable CCD, and cast with a skin. Actors also need
+  navigation, which Panoply lacks; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
+  Character controller: first candidate (D36) is `rapier3d`'s `KinematicCharacterController`,
+  which has slope limits, ground snapping and depenetration (stairs are ramps, so its autostep
+  is not needed); test it against [actor-requirements.md](actor-requirements.md) (R24 to R28).
+  Plans for the player's controls: keyboard play (WASD or arrows to move, E to interact with
+  what the player faces) works with the driver's keys today; clicking an actor or fixture needs
+  clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
+  a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
+  through X9. An actor gets physics only where the colliders under it are built (X33).
+  Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
+  `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
+  a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
+  movement, AI and physics go in `FixedUpdate`; their rendered transforms (and the camera
+  following them) must interpolate between fixed ticks, or they judder at 120 fps against
+  64 Hz ticks. Check whether Bevy 0.20 has transform interpolation built in before adding any.
+  Load actor exemplars through `ExemplarServer` (D27), not `AssetServer::load`. Models per
+  D28: one skeleton per actor, features bound to its joints, colors by cached material clones.
+  Hair (materials with extras `material: hair`) needs strand tangents and a hair shader (D29).
+  The three.js version's actor assembly is `engine/src/world/actors/SkinnedModel.ts` (faery).
+  The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
+  [faery.md](faery.md), Migration scripts, and decide per field: port, or replace.
+  Requirements, from faery's actor module: [actor-requirements.md](actor-requirements.md)
+  (draft, for the author to edit). Crowd and follower behavior (R86, R87) needs test scenarios:
+  driver plans that stage, for example, eight skeletons rushing the player, or two followers
+  through a doorway.
+- **PAN4 Portals**: a rewrite, not a restoration (D21).
+- **PAN5 Editor**, beyond PAN1's shell (see X3).
+- **PAN6 Up in Arms.** After the migration, the first playable: the "Up in Arms" quest, end to
+  end. Its steps and what each needs are in [goals.md](goals.md).
 
 When `actors` is back, remove the `TEMP(bevy-0.20)` items from `main.rs`
 (`spawn_material_test`, `ExemplarCheck`) and `plans/exemplars.py`. Until the modules that
@@ -327,6 +354,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   all 128 cached parcels would be about 3M lines a frame. Even so, drawing halves the frame
   rate, which is accepted for a debug view. `GroundProbe` holds where a ray cast
   down at the view center hits, drawn as a sphere; `plans/physics.py` checks it.
+- **D36** As few dependencies as possible. A crate that depends on Bevy has to be forked to
+  follow Bevy main (D34), so each one (character controller, particle engine, navigation mesh
+  generator) is a fork to maintain. A crate with no Bevy dependency, such as `rapier3d` (D35),
+  needs no fork. Prefer, in order: Bevy's own, a crate without Bevy, our own code, a Bevy crate.
 
 ## Deferred
 
@@ -481,8 +512,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller
   than D20's 4 m allowance also needs its own); `LightSource` point lights per precinct
   (registered, not yet acted on; candles in the old engine); hot reload of `FloorSurface`
-  assets (floors do not rebuild when one changes); `SceneryColliders` into rapier (with item 2
-  of Next, or actors). *Gate:* scenery restored; take each when it is needed.
+  assets (floors do not rebuild when one changes). `SceneryColliders` into rapier is now
+  PAN2. *Gate:* scenery restored; take each when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
@@ -567,7 +598,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   that waits until the area has loaded, replacing the fixed `driver.frames(120)` after each
   move. A loading screen after a portal would use it too. Render readiness may need its own
   check, beside physics. faery's version is in [faery.md](faery.md), Actors and navigation.
-  *Gate:* `actors` (Next item 2), or `goto` for plans, whichever comes first.
+  *Gate:* actors (PAN3), or `goto` for plans, whichever comes first.
 - **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and
   others): the game loads every precinct position near the view, but only some exist. It needs
   to know which do, by a directory scan or a catalog file. A catalog works in packaged and web
@@ -585,6 +616,27 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   nothing builds flat passageways with near-vertical side walls; that is outside the height
   field. Decide whether they are terrain or scenery (floor regions and wall pieces in a hole).
   *Gate:* the first cave or mine entrance in a map.
+- **X36** Colliders authored in the glTF, beside the exemplar descriptors (PAN2): a
+  model that carries its own colliders uses them, and any other keeps its `SceneryColliders`,
+  so old content needs no rework, new models can be authored in Blender, and an old one moves
+  when next touched. Moving all of them would mean re-authoring every scenery model. Carrier
+  undecided: Skein components (untried here) or specially named collision meshes read by
+  `pipeline.ts`. Descriptors and Skein both become components once exemplars are BSN (X1).
+  Placing descriptors by hand was workable in faery; how well it goes here depends on the
+  editor's property grid (translation and scale of standard shapes, X3) with the F3 view
+  live. *Gate:* the author tries Skein, or the first model whose colliders are authored in
+  Blender.
+- **X37** End of the migration. Once the restorations land (PAN1 to PAN5), this ledger becomes
+  the regular roadmap: work moves from the `migration` branch back to `main`, and the ledger is
+  restructured with `../ldd_template`'s tools. PAN6 and anything else never built before the
+  migration belongs to the roadmap. *Gate:* PAN1 to PAN5 landed.
+- **X38** Particles and missiles. faery's particles interacted with the world: they despawned
+  on collision, could be light and sound sources, and spawned other particles (a fireball or
+  cannonball trailing smoke). Third-party Bevy particle engines lack these, and a port of
+  faery's could not do them on the GPU either. So effects split in two: particles, instanced
+  and GPU-driven, purely visual; and missiles, entities without automatic instancing that
+  collide, light, sound and emit particles. The particle engine is undecided. *Gate:* the first
+  effect: snoring (R36 in [actor-requirements.md](actor-requirements.md)) or a missile.
 
 ## Notes
 
