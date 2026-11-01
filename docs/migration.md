@@ -45,6 +45,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN7c: location overlay, hitch log and profiling diagnostics into `panoply_editor::diagnostics`. |
 | (pending) | PAN9: `goto` waits for `ViewReady` (D10); each engine crate reports its pending work; model-less scenery elements no longer stay marked. |
 | (pending) | PAN10: readiness survey, BRP method `panoply.readiness` (`panoply_editor::diagnostics::survey`); `readiness_grid` in plans; in `goto`'s timeout report; checked in `plans/parcels.py`. |
+| (pending) | Warm-up instances follow the view center (D26); a teleport during startup left outlines unwarmed, failing `plans/scroll.py`. |
 
 ## Next
 
@@ -243,7 +244,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   time a material and mesh-layout combination is drawn. `panoply_render`'s warm-up loads the model folders
   (`terrain/models`, `scenery/models`) at startup and draws every scene of each glTF once, tiny
   and below the ground at the view center, then despawns it; any glTF loaded later is warmed
-  the same way. Instantiating scenes is budgeted too, 64 per frame for flora and for scenery
+  the same way. Instances follow the view center while they live: one left behind by a
+  teleport is culled and warms nothing (outlines, added a frame after their scene, most often). Instantiating scenes is budgeted too, 64 per frame for flora and for scenery
   (`FLORA_SCENES_PER_FRAME`, `SCENERY_SCENES_PER_FRAME`): parcels' flora and a precinct's
   scenery otherwise arrive as 300-500 scenes in one frame. `plans/scroll.py` fails if a
   pipeline is created during its cold walk.
@@ -541,7 +543,9 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
   are instantiated (D26 budgets spread them over frames), and the shown parcels have ground and
-  flora; later, actors too. A teleport (`GotoLocation`, portals) could reuse it. Low priority;
+  flora; later, actors too. A teleport (`GotoLocation`, portals) could reuse it. Startup's
+  pipeline warm-up (D26) moves behind the title screen or lobby (new game, continue, load),
+  which covers it, instead of running under the first view. Low priority;
   the loading aesthetics come much later, but a placeholder (a plain loading indicator over a
   black screen) is fine before then. *Gate:* a game-entry flow (title screen or save loading)
   to put it in front of.

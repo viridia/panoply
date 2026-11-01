@@ -34,7 +34,15 @@ impl Plugin for WarmupPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WarmupQueue>()
             .add_systems(Startup, load_model_folders)
-            .add_systems(Update, (queue_loaded_models, spawn_warmups, expire_warmups))
+            .add_systems(
+                Update,
+                (
+                    queue_loaded_models,
+                    spawn_warmups,
+                    follow_viewpoint,
+                    expire_warmups,
+                ),
+            )
             .add_observer(start_warmup_countdown);
     }
 }
@@ -142,6 +150,22 @@ impl ModelsPending<'_, '_> {
             Some("scene instances")
         } else {
             None
+        }
+    }
+}
+
+/// Keeps warm-up instances under the view center while they live. Each is placed there at spawn,
+/// but the view can move before it is drawn (a teleport during startup's warm-up), and an
+/// instance left behind is culled and never warms anything. Outlines are most at risk: they are
+/// added a frame after their scene.
+fn follow_viewpoint(
+    viewpoint: Res<Viewpoint>,
+    mut warmups: Query<&mut Transform, With<ModelWarmup>>,
+) {
+    let translation = viewpoint.position - Vec3::Y * DEPTH;
+    for mut transform in &mut warmups {
+        if transform.translation != translation {
+            transform.translation = translation;
         }
     }
 }
