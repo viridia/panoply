@@ -1,12 +1,13 @@
-//! Development diagnostics: the location readout, view readiness, and profiling diagnostics.
-//! Render diagnostics record CPU time per render pass (GPU time needs Vulkan or DX12); test plans
-//! read them, and view readiness, through the remote driver.
+//! Development diagnostics: the location readout, view readiness and its survey, and profiling
+//! diagnostics. Render diagnostics record CPU time per render pass (GPU time needs Vulkan or
+//! DX12); test plans read them, view readiness and the survey through the remote driver.
 
 use bevy::{color::palettes, prelude::*};
 use panoply_core::{metrics::PRECINCT_SIZE_F, Realm, ViewOverlay, Viewpoint};
 use panoply_terrain::PARCEL_SIZE_F;
 
 mod hitch;
+mod survey;
 mod view_ready;
 
 pub use view_ready::ViewReady;
@@ -22,7 +23,7 @@ impl Plugin for EditorDiagnosticsPlugin {
             bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
         ))
         .init_resource::<ViewReady>()
-        .add_systems(Startup, spawn_location_text)
+        .add_systems(Startup, (spawn_location_text, survey::register))
         .add_systems(Update, update_location_text)
         .add_systems(Last, view_ready::update_view_ready);
         // The hitch log is opt-in: `PANOPLY_HITCH_LOG=1`.

@@ -12,6 +12,7 @@ panoply_render = { workspace = true }
 panoply_scenery = { workspace = true }
 panoply_terrain = { workspace = true }
 rapier3d = { workspace = true }
+serde_json = { workspace = true }
 
 [lints.clippy]
 type_complexity = "allow"

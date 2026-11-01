@@ -5,6 +5,10 @@ from bevy_remote_driver import Driver, step
 
 GOTO = "panoply_core::viewpoint::GotoLocation"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
+READINESS = "panoply.readiness"
+
+# Grid cells for a parcel's first pending stage; a ready parcel is `o` when shown, `.` when hidden.
+STAGE_CELLS = {"fx": "f", "ground": "g", "water": "w", "flora": "l", "flora-scenes": "s"}
 
 # A cold start loads and warms every model before the first view is ready.
 READY_TIMEOUT = {"seconds": 60}
@@ -36,11 +40,49 @@ class PanoplyDriver(Driver):
                 and all(abs(a - b) < 1e-3 for a, b in zip(ready["position"], position))
                 and (distance is None or abs(ready["camera_distance"] - distance) < 1e-3)
             )
-            return here and ready["ready"], ready
+            # On failure, the report adds the survey, to show what is stuck where.
+            return here and ready["ready"], lambda: f"{ready}\n{readiness_grid(self.readiness())}"
 
         self.wait(check, f"the view at {realm} {list(position)} to load", READY_TIMEOUT)
         self._until(self.frame() + RENDER_FRAMES)
 
+    def readiness(self):
+        """The readiness survey (`panoply.readiness`): the viewpoint, `ready` and `waiting_on`
+        as `ViewReady` has them, and each loaded parcel and precinct with what it still waits
+        on. `readiness_grid` prints it."""
+        return self.call(READINESS)
+
     def camera(self):
         """The primary camera's entity."""
         return self.select("PrimaryCamera")[0]
+
+
+def readiness_grid(survey):
+    """The survey as text: the viewpoint's realm's parcels as a grid, rows by z (north at the
+    top is -z), one cell per parcel (`STAGE_CELLS`), then each precinct still waiting."""
+    realm = survey["viewpoint"]["realm"]
+    cells = {}
+    for parcel in survey["parcels"]:
+        if parcel["realm"] != realm:
+            continue
+        pending = [code.split(":")[0] for code in parcel["pending"]]
+        cell = STAGE_CELLS.get(pending[0], "?") if pending else "o" if parcel["shown"] else "."
+        cells[(parcel["x"], parcel["z"])] = cell
+    lines = [
+        f"{realm} at {survey['viewpoint']['position']}: ready {survey['ready']}, "
+        f"waiting on {survey['waiting_on']!r}, models {survey['models']!r}"
+    ]
+    if cells:
+        xs = [x for x, _ in cells]
+        zs = [z for _, z in cells]
+        lines.append(f"parcels x {min(xs)}..{max(xs)}, z {min(zs)}..{max(zs)}:")
+        for z in range(min(zs), max(zs) + 1):
+            row = "".join(cells.get((x, z), " ") for x in range(min(xs), max(xs) + 1))
+            lines.append(f"  {z:4} {row}")
+    for precinct in survey["precincts"]:
+        if precinct["pending"] and precinct["realm"] == realm:
+            lines.append(
+                f"precinct {precinct['x']} {precinct['z']} ({precinct['asset']}): "
+                f"{', '.join(precinct['pending'])}"
+            )
+    return "\n".join(lines)

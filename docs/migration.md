@@ -44,22 +44,13 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN7b: `materials` and `models` into `panoply_render`; `src/scenery` into `panoply_scenery`; `HexColor` into `panoply_core`. |
 | (pending) | PAN7c: location overlay, hitch log and profiling diagnostics into `panoply_editor::diagnostics`. |
 | (pending) | PAN9: `goto` waits for `ViewReady` (D10); each engine crate reports its pending work; model-less scenery elements no longer stay marked. |
+| (pending) | PAN10: readiness survey, BRP method `panoply.readiness` (`panoply_editor::diagnostics::survey`); `readiness_grid` in plans; in `goto`'s timeout report; checked in `plans/parcels.py`. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN10 Readiness survey**, for debugging loading and tuning load distances. A custom BRP
-  method (e.g. `panoply.readiness`), computed only when called: the viewpoint, then each loaded
-  parcel and precinct, sorted by coordinates, with whether it is shown (D20) and the stages
-  still pending as short codes (`fx`, `ground`, `water`, `flora`, `flora-scenes`); precincts add
-  their asset load state and counts of elements and floors pending, by marker. Each `*Pending`
-  param (PAN9) gains a per-entity form of `waiting_on`, so each crate still owns its markers;
-  the editor provides the handler and the app registers it with `RemotePlugin::with_method`
-  (`src/remote_driver.rs`). `goto` puts the survey in its failure report on timeout. A plan
-  can print it as a grid, as faery's readiness visualizer showed it. An on-screen overlay joins
-  the Show menu only when a feature needs it (PAN5).
 - **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
   floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
   faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
@@ -111,6 +102,9 @@ never reused; a new item takes the next unused number.
 - **PAN4 Portals**: a rewrite, not a restoration (D21).
 - **PAN5 Editor**, beyond PAN1's shell (see X3). faery's other debug views (listed in
   [faery.md](faery.md), Editor) join the Show menu with the features they show, not before.
+  Among them, faery's parcel and precinct readiness grid, drawn from the survey's data
+  (`TerrainPending::survey`, `SceneryPending::survey`, PAN10) when tuning load distances needs
+  it on screen.
 - **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of
   each plan what it checks that no other does, and whether that is worth its time and the focus
   it takes. Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py` and

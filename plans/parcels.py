@@ -2,11 +2,12 @@
 
     bevy-remote-driver plans/parcels.py
 
-Teleports to the ablation spot, counts parcels (cached, hidden) and visible ground meshes, then
-teleports far away and checks that the first spot's parcels went hidden but stayed cached.
+Teleports to the ablation spot, counts parcels (cached, hidden) and visible ground meshes, and
+prints the readiness survey's grid, which must show nothing pending; then teleports far away
+and checks that the first spot's parcels went hidden but stayed cached.
 """
 
-from _panoply_driver import PanoplyDriver
+from _panoply_driver import PanoplyDriver, readiness_grid
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
@@ -59,6 +60,14 @@ def run(driver):
     first = report(driver, "first spot")
     in_view = {name for name, v in first.items() if v != "Hidden"}
     assert in_view, "no parcels in view"
+    # Once `goto` has waited for the view, the survey shows nothing left to do, and the same
+    # parcels shown as the query above.
+    survey = driver.readiness()
+    print(readiness_grid(survey))
+    stuck = [p for p in survey["parcels"] + survey["precincts"] if p["pending"]]
+    assert survey["ready"] and not stuck, f"still pending after goto: {stuck[:5]}"
+    shown = sum(1 for p in survey["parcels"] if p["shown"])
+    assert shown == len(in_view), f"survey shows {shown} parcels, the query {len(in_view)}"
     driver.screenshot("first")
 
     driver.goto(SECOND, DISTANCE)

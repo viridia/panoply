@@ -25,7 +25,7 @@ pub use hemisphere::HemisphereLight;
 pub use metrics::*;
 pub use parcel::*;
 pub use parcel_cache::*;
-pub use pending::TerrainPending;
+pub use pending::{ParcelStatus, TerrainPending};
 pub use rotator::*;
 pub use square::*;
 pub use terrain_contours::*;

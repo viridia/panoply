@@ -4800,6 +4800,7 @@ dependencies = [
  "panoply_scenery",
  "panoply_terrain",
  "rapier3d",
+ "serde_json",
 ]
 
 [[package]]
