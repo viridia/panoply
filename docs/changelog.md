@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN13** Ledger tools: `scripts/verify.sh`, `xref.py`, `show.py` and `devfmt.py`, allowlisted.
 - **PAN12** The migration ledger is split into separate ledgers and this changelog.
 
 ## Port to Bevy main, 2026-10-09 to 2026-11-01

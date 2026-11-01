@@ -10,8 +10,24 @@ Panoply is a semi-procedural RPG on Bevy main.
 3. Read `docs/issues.md`: findings not yet routed.
 
 The other ledgers, read by entry when cited: `docs/decisions.md` (`D<n>`, why things are as they
-are), `docs/deferred.md` (`X<n>`, work put off, each with its gate), `docs/notes.md`
-(measurements, Bevy's observed behaviour, recipes) and `docs/changelog.md` (what has landed).
+are), `docs/deferred.md` (`X<n>`, work put off, each with its gate), `docs/actor-requirements.md`
+(`R<n>`), `docs/notes.md` (measurements, Bevy's observed behaviour, recipes) and `docs/changelog.md`
+(what has landed). Print an entry by its id rather than reading the file: `scripts/show.py D24 PAN3`
+(`--toc D` lists one prefix's entries).
+
+## Tools
+
+The scripts in `scripts/` are allowlisted in `.claude/settings.json` by absolute path, so call them
+as `/Users/talin/Projects/games/panoply/scripts/<name>`, never through `python3` or a relative path,
+which would prompt. A new tool lands with its allow rule in the same chunk: every tool that only
+reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatter).
+
+- `verify.sh`: the verification recipe below, in one call.
+- `xref.py`: every cited id resolves, counters are current, changelog entries keep to one line.
+- `show.py`: prints ledger entries by id.
+- `devfmt.py --diff`: rewraps changed Markdown paragraphs to 100 columns (`--preview` to read
+  first). Markdown only: the source trees are exempt, since Rust here still holds commented-out
+  code. After editing `devfmt.py`, run `python3 <absolute path>/scripts/test_devfmt.py`.
 
 ## Rules
 
@@ -34,7 +50,8 @@ are), `docs/deferred.md` (`X<n>`, work put off, each with its gate), `docs/notes
 
 ## Verify
 
-- `cargo clippy`: no errors, no new warnings.
+- `scripts/verify.sh`: cross-references, Markdown wrapping of changed paragraphs, and
+  `cargo clippy --workspace`. A warning is a failure.
 - Runtime: shader and pipeline errors only appear at runtime. Run plans with the remote driver,
   `bevy-remote-driver plans` (all) or `bevy-remote-driver plans/smoke.py` (one), which launches
   the game, sends input, saves screenshots under `remote-driver/` in Cargo's target directory,

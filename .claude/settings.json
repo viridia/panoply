@@ -18,6 +18,12 @@
       "Bash(cargo check)",
       "Bash(cargo check *)",
       "Bash(cargo fmt --check *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/verify.sh)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/xref.py)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/xref.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/show.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/devfmt.py *)",
+      "Bash(python3 /Users/talin/Projects/games/panoply/scripts/test_devfmt.py)",
       "Read(~/.cargo/registry/**)",
       "Read(~/.cargo/git/**)",
       "Read(//Users/talin/Projects/games/**)"
