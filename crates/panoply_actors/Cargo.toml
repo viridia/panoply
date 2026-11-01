@@ -8,3 +8,7 @@ bevy = { workspace = true }
 panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
 serde = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

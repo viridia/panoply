@@ -2,10 +2,14 @@ use bevy::{app::Propagate, prelude::*};
 use panoply_core::Realm;
 use panoply_exemplar::{Exemplar, ExemplarServer, InstanceType, UpdateAspects};
 
+mod actor_animation;
 mod actor_aspect;
 mod actor_model;
 
+pub use actor_animation::ActorArmature;
 pub use actor_model::*;
+
+use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
 
 use self::actor_aspect::{Armature, ColorSlots, Colors, FeatureSlots, Features, Skin};
 
@@ -45,9 +49,11 @@ impl Plugin for ActorsPlugin {
                     update_actor_aspects,
                     spawn_actor_bodies,
                     spawn_actor_body_scenes,
+                    play_actor_idle,
                 )
                     .chain(),
-            );
+            )
+            .add_observer(bind_actor_skeleton);
     }
 }
 

@@ -21,11 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3b Play a clip.** One idle clip from `humanoid-armature.glb` drives the body's armature,
-  bound by `AnimationTargetId`, through one `AnimationPlayer` per actor. First, since binding across
-  files is D28's riskiest assumption. The plan takes a close-up mid-clip: the outlines came for free
-  (D14), and this checks that they follow the pose. Outline widths from the model stay with X32
-  unless the thin-lined materials (shirt, hood: 0.003) look wrong at the default.
 - **PAN3d Colors.** The `Colors` aspect replaces slot materials with clones cached by (material,
   color), per D28.
 - **PAN3e Features.** Hair, hats and beards spawn as meshes only, each with a `SkinnedMesh` bound to

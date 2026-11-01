@@ -1,6 +1,10 @@
 use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot};
 
-use super::{actor_aspect::Skin, ActorRebuildModels};
+use super::{
+    actor_animation::ArmatureSource,
+    actor_aspect::{Armature, Skin},
+    ActorRebuildModels,
+};
 
 /// An actor's body, a child of the actor: one named scene of a character glTF, holding the body
 /// mesh and its skeleton (D28). Waits for the file to load, then spawns the scene.
@@ -8,16 +12,18 @@ use super::{actor_aspect::Skin, ActorRebuildModels};
 pub struct ActorBody {
     gltf: Handle<Gltf>,
     scene: String,
+    /// The skeleton to animate; `None` for an actor without an `Armature`.
+    pub(crate) armature: Option<ArmatureSource>,
 }
 
 /// Replaces the body of each actor whose aspects changed. The root `Gltf` is loaded, not the
 /// scene by label, which would load the whole file again for each actor (D28).
 pub fn spawn_actor_bodies(
     mut commands: Commands,
-    query: Query<(Entity, Option<&Skin>), With<ActorRebuildModels>>,
+    query: Query<(Entity, Option<&Skin>, Option<&Armature>), With<ActorRebuildModels>>,
     server: Res<AssetServer>,
 ) {
-    for (entity, skin) in query.iter() {
+    for (entity, skin, armature) in query.iter() {
         commands
             .entity(entity)
             .despawn_related::<Children>()
@@ -26,11 +32,25 @@ pub fn spawn_actor_bodies(
             warn!("Actor {entity} has no skin");
             continue;
         };
+        // Clips come from the armature's own file when the species has no shared one.
+        let armature = armature.and_then(|armature| {
+            let (file, node) = armature.armature.split_once('#')?;
+            let clips = armature
+                .animations
+                .as_deref()
+                .and_then(|path| path.split_once('#'))
+                .map_or(file, |(clips, _)| clips);
+            Some(ArmatureSource {
+                node: node.to_owned(),
+                clips: server.load(clips.to_owned()),
+            })
+        });
         commands.spawn((
             Name::new("ActorBody"),
             ActorBody {
                 gltf: server.load(file.to_owned()),
                 scene: scene.to_owned(),
+                armature,
             },
             ChildOf(entity),
         ));
