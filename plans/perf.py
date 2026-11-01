@@ -15,6 +15,8 @@ from _panoply_driver import PanoplyDriver
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
+# A measurement, not a check: a directory run leaves it out.
+TAGS = ["manual"]
 REALM = "playground"
 STOPS = [(16, 16), (48, 48), (80, 80), (112, 112), (128, 128)]
 

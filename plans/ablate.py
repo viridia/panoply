@@ -19,6 +19,8 @@ from _panoply_driver import PanoplyDriver
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
+# A measurement, not a check: a directory run leaves it out.
+TAGS = ["manual"]
 WINDOW = "bevy_window::window::Window"
 LIGHT = "bevy_light::directional_light::DirectionalLight"
 VISIBILITY = "bevy_camera::visibility::Visibility"

@@ -39,6 +39,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Plans on the `bevy-remote-driver` package (D10); `plans/_panoply_driver.py`; D15 retired. |
 | (pending) | `rapier3d` 0.36 (D35): `PhysicsWorld`, `dt` from the fixed timestep; physics debug views, F3; `plans/physics.py`. |
 | (pending) | PAN1 Editor shell: `panoply_editor` crate (D37); panel, splitter, T; Show menu; `plans/physics.py`. |
+| (pending) | `ablate.py` and `perf.py` tagged `manual` (the driver's chunk 38): a directory run leaves the measurements out. |
 
 ## Next
 
@@ -105,6 +106,10 @@ never reused; a new item takes the next unused number.
 - **PAN4 Portals**: a rewrite, not a restoration (D21).
 - **PAN5 Editor**, beyond PAN1's shell (see X3). faery's other debug views (listed in
   [faery.md](faery.md), Editor) join the Show menu with the features they show, not before.
+- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of
+  each plan what it checks that no other does, and whether that is worth its time and the focus
+  it takes. Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py` and
+  `outlines.py`, stills that could be shots in `lighting.py`. Measurements stay, tagged `manual`.
 - **PAN6 Up in Arms.** After the migration, the first playable: the "Up in Arms" quest, end to
   end. Its steps and what each needs are in [goals.md](goals.md).
 
