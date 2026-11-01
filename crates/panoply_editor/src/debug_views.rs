@@ -9,7 +9,7 @@ use bevy::{
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
 use bevy_action_map::prelude::*;
-use panoply_core::{RealmPhysics, Viewpoint};
+use panoply_core::{realm_physics::collision_groups, RealmPhysics, Viewpoint};
 use panoply_terrain::Parcel;
 use rapier3d::{
     pipeline::{DebugColor, DebugRenderBackend, DebugRenderMode, DebugRenderObject},
@@ -36,12 +36,14 @@ impl Default for DebugViews {
     }
 }
 
-/// Where a ray cast straight down at the view center hits a collider, while physics drawing is
-/// on; `None` if nothing is under it. Drawn as a marker, and read by `plans/physics.py`.
+/// What a ray cast straight down at the view center hits, while physics drawing is on; `None`
+/// if nothing is under it. Drawn as a marker, and read by `plans/physics.py`.
 #[derive(Resource, Reflect, Default, Debug)]
 #[reflect(Resource)]
 pub struct GroundProbe {
     pub hit: Option<Vec3>,
+    /// Collision groups (`collision_groups`) the hit collider belongs to, as bits; 0 for no hit.
+    pub groups: u32,
 }
 
 /// Gizmos for physics drawing, on every realm's layer.
@@ -102,8 +104,8 @@ fn toggle_physics(
     }
 }
 
-/// Draws the colliders of the viewpoint's realm that belong to shown parcels (D20), so the
-/// lines match what is on screen; all of them would be millions of lines.
+/// Draws the colliders of the viewpoint's realm: ground only for shown parcels (D20), since all
+/// of it would be millions of lines, and every scenery collider.
 fn draw_physics(
     views: Res<DebugViews>,
     viewpoint: Res<Viewpoint>,
@@ -118,7 +120,7 @@ fn draw_physics(
         .then(|| viewpoint.realm.and_then(|realm| q_realms.get(realm).ok()))
         .flatten();
     let Some(physics) = physics else {
-        probe.hit = None;
+        *probe = GroundProbe::default();
         return;
     };
 
@@ -136,10 +138,13 @@ fn draw_physics(
 
     let origin = viewpoint.position + Vec3::Y * 1000.;
     let ray = Ray::new(origin, Vec3::NEG_Y);
-    probe.hit = physics
+    let hit = physics
         .world()
-        .cast_ray(&ray, 2000., true, QueryFilter::default())
-        .map(|(_, distance)| ray.point_at(distance));
+        .cast_ray(&ray, 2000., true, QueryFilter::default());
+    probe.hit = hit.map(|(_, distance)| ray.point_at(distance));
+    probe.groups = hit
+        .and_then(|(handle, _)| physics.world().colliders.get(handle))
+        .map_or(0, |collider| collider.collision_groups().memberships.bits());
     if let Some(hit) = probe.hit {
         gizmos.sphere(Isometry3d::from_translation(hit), 0.25, Color::WHITE);
     }
@@ -156,11 +161,11 @@ impl DebugRenderBackend for GizmoBackend<'_, '_, '_> {
     fn filter_object(&self, object: DebugRenderObject) -> bool {
         match object {
             DebugRenderObject::Collider(_, collider) => {
-                collider
-                    .collision_groups()
-                    .memberships
-                    .intersects(self.groups)
-                    && self.shown_parcels.contains(&collider.user_data)
+                let memberships = collider.collision_groups().memberships;
+                // Scenery colliders are a few lines each, so all of them are drawn.
+                memberships.intersects(self.groups)
+                    && (!memberships.contains(collision_groups::TERRAIN)
+                        || self.shown_parcels.contains(&collider.user_data))
             }
             _ => true,
         }

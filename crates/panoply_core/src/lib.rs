@@ -20,7 +20,7 @@ pub use layers::ReservedLayers;
 pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
 use realm_physics::realm_physics_system;
-pub use realm_physics::RealmPhysics;
+pub use realm_physics::{OwnedColliders, RealmPhysics};
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
 pub use viewpoint::{GotoLocation, Viewpoint};

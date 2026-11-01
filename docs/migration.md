@@ -46,23 +46,27 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN9: `goto` waits for `ViewReady` (D10); each engine crate reports its pending work; model-less scenery elements no longer stay marked. |
 | (pending) | PAN10: readiness survey, BRP method `panoply.readiness` (`panoply_editor::diagnostics::survey`); `readiness_grid` in plans; in `goto`'s timeout report; checked in `plans/parcels.py`. |
 | (pending) | Warm-up instances follow the view center (D26); a teleport during startup left outlines unwarmed, failing `plans/scroll.py`. |
+| (pending) | PAN2: static scenery colliders (D38): walls, fixtures, floor trimeshes; Floor, Wall, Fixture groups; `GroundProbe.groups`; checked in `plans/physics.py`. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
-  floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
-  faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
-  solid and walkable `box`, `rbox`, `cylinder`, `ellipsoid` (convex hull) and `ramp` (convex
-  mesh), each exemplar's shapes built once as `SharedShape`s and shared by its instances. Floor
-  regions are split into convex pieces and extruded by `PHYSICS_FLOOR_THICKNESS`, as faery's
-  `PhysicsFloor.ts` did. One fixed body per tier (D24). Each kind gets its own collision group,
-  so the F3 view filters it (D35). Left for when actors need them: doors (a kinematic body
-  following the glTF node the descriptor's `animation` names, moved by the model's own
-  animation, with no separate animation data), sensors, ladders, `hint` and `marker`
-  colliders, flora capsules, and faery's slab under the world.
+- **PAN11 Tree colliders.** A capsule per tree trunk to block walking (radius per biome tree
+  entry, scaled with it, with a default; shrubs and herbs get none), and a canopy so an actor
+  dropped onto a forest cannot fall between trunks into a pocket it cannot leave (trunks can be
+  0.4 m apart; actors are 0.6 m wide). The canopy is quantized to the terrain grid: it covers
+  each tree cell, and each empty cell that a flood fill from the parcel's border through empty
+  cells does not reach (enclosed clearings), read across the border from neighbouring parcels,
+  since placement is deterministic. It is one trimesh per parcel over the covered cells, each
+  corner at the terrain height plus 2 m: continuous, so no holes or steps between trees on a
+  slope. Overhead, it never blocks walking, so covering more than needed costs nothing; no
+  generated tree shares a cell with a building, so it never cuts through a floor. Trees placed
+  as fixtures are authored, get their descriptors' colliders (D38) and no canopy; a pocket
+  among them is an authoring error. Its own collision group
+  touches actors only, so picking and sight rays pass through. Groups Flora and Canopy join the
+  Show menu; `plans/physics.py` probes both.
 - **PAN3 Actors.** First slice: the player's actor loads from a precinct, gets its model,
   stands on the ground with the controller, walks by WASD (R29), and plays clips chosen from
   its velocity; no goals, pathfinder or click to move yet. The slice may read the keys
@@ -83,7 +87,11 @@ never reused; a new item takes the next unused number.
   clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
   a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
   through X9. The game's click handling runs only while the game has the pointer (X3, editor
-  tools). An actor gets physics only where the colliders under it are built (X33).
+  tools). An actor gets physics only where the colliders under it are built (X33). Stuck
+  rescue, the backstop for traps PAN11's canopy does not cover (trees against walls, canopy
+  bowls too steep to climb): an actor that is not grounded, or makes no progress against its
+  intent, for some seconds moves to the nearest free spot; before navigation, the nearest cell
+  outside the canopy cover.
   Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
   `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
   a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
@@ -363,7 +371,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   render mesh, holes and terrain-effect elevation included, not the coarser contour grid: some
   effects flatten the ground, and only the smoothed mesh has them. Collision groups are
   `panoply_core::realm_physics::collision_groups`, defined as each kind of collider arrives,
-  after faery's ([faery.md](faery.md), Physics); Terrain so far. Editor builds (D13) have debug
+  after faery's ([faery.md](faery.md), Physics); Terrain, Floor, Wall and Fixture so far (D38). Editor builds (D13) have debug
   views (`panoply_editor::debug_views`, D37): `DebugViews`, saved with `bevy_settings`, holds physics on or
   off and a mask of groups to draw; F3 toggles physics. Rapier's debug render draws through a
   gizmo backend, only for colliders of shown parcels (D20), matched by the parcel entity in
@@ -388,6 +396,26 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   left alone, so plans can set it. HUD nodes marked `ViewOverlay` move into the view pane. The
   Show menu's popup holds checkboxes, not menu items: picking an item closes a menu, and a
   checkbox takes the focus without closing it, so several views toggle in one visit.
+- **D38** Static scenery colliders come from the exemplars' `SceneryColliders` descriptors, not
+  the glTFs (X36). Each precinct has one fixed body at its origin (`Precinct::physics`, removed
+  with the precinct); not one per tier, since elements are the precinct's children and
+  cutaways (X19) test each element anyway. Each element and floor region owns its colliders
+  through `panoply_core::OwnedColliders`, an immutable component whose discard hook removes
+  them, so a moved or replaced element rebuilds alone (`SceneryElementRebuildColliders`).
+  `ColliderDesc::shape` places shapes exactly as faery's `createCollider.ts` did, since the
+  content was authored against it: `size` is half-extents, `offset` the bottom center, shapes
+  other than ellipsoids are raised by their half-height, and only ramps turn by `facing`.
+  Ellipsoids and ramps are convex hulls. Only static solids are built (walkable or not);
+  shapes are built per instance, not cached per exemplar, since only hulls cost anything and
+  3 of 580 descriptors are ellipsoids. A floor region is one closed trimesh with
+  `FIX_INTERNAL_EDGES`, built in its mesh task: `PHYSICS_FLOOR_THICKNESS` thick under the drawn
+  top (`level + raise + TIER_OFFSET`), holes included, faces oriented in code whatever the
+  rings' winding (unit test in `floor_mesh.rs`). One shape per region leaves no seams on its
+  top for the controller to catch on; faery's convex pieces did, and dropped holes. Floor
+  depressions (planned, for sliding-block puzzles: a property of the floor surface) move the
+  top, so the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's
+  `meta_type`). Colliders' `user_data` is the owning entity, for picking later; the F3 view
+  draws every scenery collider, and ground only for shown parcels.
 
 ## Deferred
 
@@ -537,8 +565,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller
   than D20's 4 m allowance also needs its own); `LightSource` point lights per precinct
   (registered, not yet acted on; candles in the old engine); hot reload of `FloorSurface`
-  assets (floors do not rebuild when one changes). `SceneryColliders` into rapier is now
-  PAN2. *Gate:* scenery restored; take each when it is needed.
+  assets (floors do not rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
@@ -648,7 +675,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   nothing builds flat passageways with near-vertical side walls; that is outside the height
   field. Decide whether they are terrain or scenery (floor regions and wall pieces in a hole).
   *Gate:* the first cave or mine entrance in a map.
-- **X36** Colliders authored in the glTF, beside the exemplar descriptors (PAN2): a
+- **X36** Colliders authored in the glTF, beside the exemplar descriptors (D38): a
   model that carries its own colliders uses them, and any other keeps its `SceneryColliders`,
   so old content needs no rework, new models can be authored in Blender, and an old one moves
   when next touched. Moving all of them would mean re-authoring every scenery model. Carrier
@@ -669,6 +696,11 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   and GPU-driven, purely visual; and missiles, entities without automatic instancing that
   collide, light, sound and emit particles. The particle engine is undecided. *Gate:* the first
   effect: snoring (R36 in [actor-requirements.md](actor-requirements.md)) or a missile.
+- **X39** Scenery colliders beyond D38's static solids: doors (a kinematic body following the
+  glTF node the descriptor's `animation` names, moved by the model's own animation, with no
+  separate animation data), sensors, ladders, `hint` and `marker` colliders (the editor's
+  picking proxies), portal volumes, and faery's slab under the world. Trees are PAN11.
+  *Gate:* the actor feature or editor tool that uses each (PAN3, X3).
 
 ## Notes
 

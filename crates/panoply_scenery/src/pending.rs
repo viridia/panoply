@@ -8,7 +8,8 @@ use crate::{
     floor_region::{RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
     precinct::{Precinct, ReadPrecinctData},
     scenery_element::{
-        SceneryElementMesh, SceneryElementRebuildAspects, SceneryElementRebuildModels,
+        SceneryElementMesh, SceneryElementRebuildAspects, SceneryElementRebuildColliders,
+        SceneryElementRebuildModels,
     },
     terrain_fx_map::RebuildTerrainFxVertexAttrs,
 };
@@ -24,7 +25,15 @@ pub struct SceneryPending<'w, 's> {
     read: Query<'w, 's, Entity, With<ReadPrecinctData>>,
     fx: Query<'w, 's, Entity, With<RebuildTerrainFxVertexAttrs>>,
     aspects: Query<'w, 's, Entity, With<SceneryElementRebuildAspects>>,
-    models: Query<'w, 's, Entity, With<SceneryElementRebuildModels>>,
+    models: Query<
+        'w,
+        's,
+        Entity,
+        Or<(
+            With<SceneryElementRebuildModels>,
+            With<SceneryElementRebuildColliders>,
+        )>,
+    >,
     #[allow(clippy::type_complexity)]
     floors: Query<
         'w,
@@ -48,7 +57,8 @@ pub struct PrecinctStatus {
     /// The asset's load state, as `Debug` prints it (`Loaded`, `Failed(..)`, ...).
     pub asset: String,
     /// What is still to do: `read` and `fx` on the precinct itself, then counts of what under it
-    /// waits: `aspects:<n>` and `models:<n>` (elements), `floors:<n>`, `scenes:<n>`.
+    /// waits: `aspects:<n>` and `models:<n>` (elements' models or colliders), `floors:<n>`,
+    /// `scenes:<n>`.
     pub pending: Vec<String>,
 }
 

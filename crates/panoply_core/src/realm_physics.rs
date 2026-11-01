@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
+    prelude::*,
+};
 use rapier3d::prelude::*;
 
 use crate::{Realm, Viewpoint};
@@ -11,8 +14,43 @@ pub mod collision_groups {
     /// Parcel ground.
     pub const TERRAIN: Group = Group::GROUP_1;
 
+    /// Precinct floor regions.
+    pub const FLOOR: Group = Group::GROUP_2;
+
+    /// Wall tiles.
+    pub const WALL: Group = Group::GROUP_3;
+
+    /// Fixtures.
+    pub const FIXTURE: Group = Group::GROUP_4;
+
     /// Every group, with its caption in the editor's Show menu.
-    pub const CAPTIONED: &[(&str, Group)] = &[("Terrain", TERRAIN)];
+    pub const CAPTIONED: &[(&str, Group)] = &[
+        ("Terrain", TERRAIN),
+        ("Floors", FLOOR),
+        ("Walls", WALL),
+        ("Fixtures", FIXTURE),
+    ];
+}
+
+/// Colliders an entity owns in its realm's physics world, removed from it when this component
+/// is replaced or removed, or the entity despawns. Immutable, so every change goes through
+/// insertion and the hook.
+#[derive(Component, Debug)]
+#[component(immutable, on_discard = discard_owned_colliders)]
+pub struct OwnedColliders {
+    pub realm: Entity,
+    pub handles: Vec<ColliderHandle>,
+}
+
+fn discard_owned_colliders(mut world: DeferredWorld, context: HookContext) {
+    let owned = world.get::<OwnedColliders>(context.entity).unwrap();
+    let (realm, handles) = (owned.realm, owned.handles.clone());
+    // Handles are generational: one already removed with its body is skipped.
+    if let Some(mut physics) = world.get_mut::<RealmPhysics>(realm) {
+        for handle in handles {
+            physics.remove_collider(handle);
+        }
+    }
 }
 
 /// One rapier world per realm, so realms seen through portals never collide with each other.

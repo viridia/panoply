@@ -1,12 +1,21 @@
-use bevy::{camera::visibility::RenderLayers, platform::collections::HashMap, prelude::*};
+use bevy::{
+    camera::visibility::RenderLayers,
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
+    platform::collections::HashMap,
+    prelude::*,
+};
+use panoply_core::RealmPhysics;
 use panoply_exemplar::*;
+use rapier3d::prelude::RigidBodyHandle;
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
     floor_surface::FloorSurface,
     precinct_asset::{PrecinctAsset, SceneryInstanceId},
     rle::rle_decode,
-    scenery_element::{SceneryElement, SceneryElementRebuildAspects},
+    scenery_element::{
+        SceneryElement, SceneryElementRebuildAspects, SceneryElementRebuildColliders,
+    },
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
     PRECINCT_SIZE_F,
 };
@@ -25,12 +34,23 @@ pub struct PrecinctKey {
 ///
 /// Children: one [`PrecinctTier`] per floor level, and the scenery elements (walls, fixtures).
 #[derive(Component, Debug)]
+#[component(on_remove = remove_precinct_body)]
 pub struct Precinct {
     pub realm: Entity,
     pub render_layer: RenderLayers,
     pub coords: IVec2,
     pub visible: bool,
     pub asset: Handle<PrecinctAsset>,
+    /// Fixed body at the precinct's origin, holding the colliders of its elements and floors.
+    pub physics: RigidBodyHandle,
+}
+
+fn remove_precinct_body(mut world: DeferredWorld, context: HookContext) {
+    let precinct = world.get::<Precinct>(context.entity).unwrap();
+    let (realm, body) = (precinct.realm, precinct.physics);
+    if let Some(mut physics) = world.get_mut::<RealmPhysics>(realm) {
+        physics.remove_body(body);
+    }
 }
 
 /// One floor level of a precinct (D24): a child of the precinct, with its floor regions as its
@@ -187,7 +207,9 @@ impl Precinct {
                     {
                         scenery_element.position = sid.position;
                         scenery_element.facing = facing;
-                        commands.entity(se_ent).insert(transform);
+                        commands
+                            .entity(se_ent)
+                            .insert((transform, SceneryElementRebuildColliders));
                     }
                     continue;
                 }
@@ -290,7 +312,7 @@ pub fn read_precinct_data(
             .entity(precinct_entity)
             .remove::<ReadPrecinctData>();
 
-        // TODO: Sync nav mesh, physics, light sources, particles, etc.
+        // TODO: Sync nav mesh, light sources, particles, etc.
         // TODO(bevy-0.20): Sync actors, restored with actors (D24).
 
         let floor_surfaces: Vec<Handle<FloorSurface>> = precinct_asset

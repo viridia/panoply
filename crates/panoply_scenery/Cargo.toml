@@ -12,6 +12,7 @@ panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
 panoply_render = { workspace = true }
 panoply_terrain = { workspace = true }
+rapier3d = { workspace = true }
 rmp-serde = { workspace = true }
 ron = { workspace = true }
 serde = { workspace = true }

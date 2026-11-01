@@ -26,6 +26,11 @@ pub struct SceneryElementRebuildAspects;
 #[component(storage = "SparseSet")]
 pub struct SceneryElementRebuildModels;
 
+/// Marks an element whose colliders need building: its aspects were applied, or it moved.
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct SceneryElementRebuildColliders;
+
 #[derive(Debug, Component, Default)]
 pub struct SceneryElementMesh {
     pub handle: Handle<Gltf>,
@@ -45,7 +50,7 @@ pub fn update_se_aspects(
                 .entity(entity)
                 .queue(UpdateAspects {
                     exemplar: scenery_element.exemplar.clone(),
-                    finish: SceneryElementRebuildModels,
+                    finish: (SceneryElementRebuildModels, SceneryElementRebuildColliders),
                 })
                 .remove::<SceneryElementRebuildAspects>();
         }

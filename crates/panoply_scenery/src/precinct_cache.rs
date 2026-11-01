@@ -1,6 +1,7 @@
 use bevy::{math::IRect, prelude::*};
 
-use panoply_core::{Realm, Viewpoint};
+use panoply_core::{Realm, RealmPhysics, Viewpoint};
+use rapier3d::prelude::RigidBodyBuilder;
 
 use super::{
     precinct::{Precinct, PrecinctKey},
@@ -39,7 +40,7 @@ pub fn spawn_precincts(
     viewpoint: Res<Viewpoint>,
     mut precinct_cache: ResMut<PrecinctCache>,
     mut query: Query<&mut Precinct>,
-    realm_query: Query<&Realm>,
+    mut realm_query: Query<(&Realm, &mut RealmPhysics)>,
     server: Res<AssetServer>,
 ) {
     if viewpoint.realm.is_none() {
@@ -70,7 +71,7 @@ pub fn spawn_precincts(
 
     // Function to add precincts to the cache based on a view rect.
     let mut fetch_precincts = |rect: &QueryRect| {
-        let Ok(realm) = realm_query.get(rect.realm) else {
+        let Ok((realm, mut realm_physics)) = realm_query.get_mut(rect.realm) else {
             return;
         };
         // Only query scenery within the precinct bounds of the realm.
@@ -100,6 +101,10 @@ pub fn spawn_precincts(
                             precinct_coord(z)
                         );
                         let asset = server.load(asset_path);
+                        let origin =
+                            Vec3::new(x as f32 * PRECINCT_SIZE_F, 0., z as f32 * PRECINCT_SIZE_F);
+                        let physics = realm_physics
+                            .insert_body(RigidBodyBuilder::fixed().translation(origin).build());
                         let entity = commands.spawn((
                             Name::new(format!("Precinct:{}:{}:{}", realm.name, x, z)),
                             Precinct {
@@ -108,12 +113,9 @@ pub fn spawn_precincts(
                                 visible: true,
                                 asset,
                                 render_layer: realm.layer.clone(),
+                                physics,
                             },
-                            Transform::from_xyz(
-                                x as f32 * PRECINCT_SIZE_F,
-                                0.,
-                                z as f32 * PRECINCT_SIZE_F,
-                            ),
+                            Transform::from_translation(origin),
                             Visibility::Inherited,
                         ));
                         precinct_cache.precincts.put(key, entity.id());

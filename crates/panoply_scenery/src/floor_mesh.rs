@@ -1,7 +1,8 @@
 use crate::{
     floor_region::{FloorRegion, RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
     floor_surface::FloorSurface,
-    FloorOutline, FLOOR_THICKNESS, TIER_OFFSET,
+    precinct::Precinct,
+    FloorOutline, FLOOR_THICKNESS, PHYSICS_FLOOR_THICKNESS, TIER_OFFSET,
 };
 use bevy::{
     asset::RenderAssetUsages,
@@ -11,11 +12,16 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
+use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics};
 use panoply_render::FloorNoisyMaterial;
+use rapier3d::prelude::{
+    ColliderBuilder, Group, InteractionGroups, InteractionTestMode, SharedShape, TriMeshFlags,
+};
 
 pub struct FloorMeshResult {
     mesh: Mesh,
     outline: Option<Mesh>,
+    collider: Option<SharedShape>,
 }
 
 #[derive(Debug)]
@@ -89,14 +95,18 @@ pub fn gen_floor_meshes(
     }
 }
 
-/// Consumes the output of the compute task and creates a mesh component for the floor geometry.
+/// Consumes the output of the compute task: the floor's mesh, its outline, and its collider on
+/// the precinct's body (the floor region is a child of a tier, a child of the precinct).
 pub(crate) fn insert_floor_meshes(
     mut commands: Commands,
-    mut q_floors: Query<(Entity, &mut ComputeFloorMeshTask, &RenderLayers)>,
+    mut q_floors: Query<(Entity, &mut ComputeFloorMeshTask, &RenderLayers, &ChildOf)>,
+    q_parents: Query<&ChildOf>,
+    q_precincts: Query<&Precinct>,
+    mut q_realms: Query<&mut RealmPhysics>,
     mut meshes: ResMut<Assets<Mesh>>,
     outline_material: Res<FloorOutline>,
 ) {
-    for (entity, mut task, layers) in q_floors.iter_mut() {
+    for (entity, mut task, layers, tier) in q_floors.iter_mut() {
         let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) else {
             continue;
         };
@@ -106,9 +116,33 @@ pub(crate) fn insert_floor_meshes(
             .despawn_related::<Children>();
         // An outline that cannot be triangulated yields no mesh.
         let Some(task_result) = task_result else {
-            floor.remove::<Mesh3d>();
+            floor.remove::<(Mesh3d, OwnedColliders)>();
             continue;
         };
+        let precinct = q_parents
+            .get(tier.parent())
+            .and_then(|precinct| q_precincts.get(precinct.parent()));
+        match (precinct, task_result.collider) {
+            (Ok(precinct), Some(shape)) => {
+                if let Ok(mut physics) = q_realms.get_mut(precinct.realm) {
+                    let collider = ColliderBuilder::new(shape)
+                        .collision_groups(InteractionGroups::new(
+                            collision_groups::FLOOR,
+                            Group::ALL,
+                            InteractionTestMode::And,
+                        ))
+                        .user_data(entity.to_bits() as u128)
+                        .build();
+                    floor.insert(OwnedColliders {
+                        realm: precinct.realm,
+                        handles: vec![physics.insert_collider(precinct.physics, collider)],
+                    });
+                }
+            }
+            _ => {
+                floor.remove::<OwnedColliders>();
+            }
+        }
         floor.insert(Mesh3d(meshes.add(task_result.mesh)));
         if let Some(outline_mesh) = task_result.outline {
             // The outline is a child sharing the floor's position (D14). Its mesh is its own,
@@ -187,7 +221,74 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
     } else {
         None
     };
-    Some(FloorMeshResult { mesh, outline })
+    let collider = compute_floor_collider(&params, &triangles);
+    Some(FloorMeshResult {
+        mesh,
+        outline,
+        collider,
+    })
+}
+
+/// The floor as a closed trimesh, `PHYSICS_FLOOR_THICKNESS` thick under the drawn top surface
+/// (which follows the surface's `raise`), holes included. One shape per region, so the internal
+/// edges of its top are fixed up and leave no seams to catch on. Triangles and walls are
+/// oriented here, outward, whatever the winding of the rings and of earcut's output.
+fn compute_floor_collider(params: &FloorMeshParams, triangles: &[usize]) -> Option<SharedShape> {
+    let (vertices, indices) = floor_collider_mesh(params, triangles);
+    SharedShape::trimesh_with_flags(vertices, indices, TriMeshFlags::FIX_INTERNAL_EDGES).ok()
+}
+
+fn floor_collider_mesh(
+    params: &FloorMeshParams,
+    triangles: &[usize],
+) -> (Vec<Vec3>, Vec<[u32; 3]>) {
+    let y_top = params.level as f32 + params.raise + TIER_OFFSET;
+    let y_bottom = y_top - PHYSICS_FLOOR_THICKNESS;
+    let rings: Vec<&[Vec2]> = std::iter::once(params.poly.as_slice())
+        .chain(params.holes.iter().map(Vec::as_slice))
+        .collect();
+    let points: Vec<Vec2> = rings.iter().flat_map(|ring| ring.iter().copied()).collect();
+    let count = points.len() as u32;
+    let mut vertices: Vec<Vec3> = Vec::with_capacity(points.len() * 2);
+    vertices.extend(points.iter().map(|p| Vec3::new(p.x, y_top, p.y)));
+    vertices.extend(points.iter().map(|p| Vec3::new(p.x, y_bottom, p.y)));
+
+    // In (x, z), a positive signed area turns away from +y, so the top wants negative areas.
+    let area = |a: Vec2, b: Vec2, c: Vec2| (b - a).perp_dot(c - a);
+    let mut indices: Vec<[u32; 3]> = Vec::with_capacity(triangles.len() * 2 / 3 + points.len() * 2);
+    for &[i, j, k] in triangles.as_chunks::<3>().0 {
+        let [a, b, c] = [i as u32, j as u32, k as u32];
+        let down = area(points[i], points[j], points[k]) > 0.;
+        let (top, bottom) = if down {
+            ([a, c, b], [a + count, b + count, c + count])
+        } else {
+            ([a, b, c], [a + count, c + count, b + count])
+        };
+        indices.push(top);
+        indices.push(bottom);
+    }
+
+    // A wall from `l` to `v` faces (dz, -dx), out of a ring of positive area; the outline should
+    // face out of the floor, and a hole into the hole.
+    let mut base = 0u32;
+    for (ring_index, ring) in rings.iter().enumerate() {
+        let n = ring.len() as u32;
+        let ring_area: f32 = (0..ring.len())
+            .map(|i| ring[i].perp_dot(ring[(i + 1) % ring.len()]))
+            .sum();
+        let flip = (ring_area > 0.) == (ring_index > 0);
+        for i in 0..n {
+            let (l, v) = (base + (i + n - 1) % n, base + i);
+            let (lb, vb) = (l + count, v + count);
+            if flip {
+                indices.extend([[l, lb, v], [lb, vb, v]]);
+            } else {
+                indices.extend([[l, v, lb], [lb, v, vb]]);
+            }
+        }
+        base += n;
+    }
+    (vertices, indices)
 }
 
 fn compute_floor_geometry(params: &FloorMeshParams, triangles: &[usize]) -> Mesh {
@@ -469,5 +570,66 @@ fn compute_outline_sides(
 
         last_vtx = *vtx;
         v_dir2 = v_dir;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn square(min: f32, max: f32) -> Vec<Vec2> {
+        vec![
+            Vec2::new(min, min),
+            Vec2::new(max, min),
+            Vec2::new(max, max),
+            Vec2::new(min, max),
+        ]
+    }
+
+    /// Signed volume of the collider mesh: positive only if every face points out.
+    fn collider_volume(poly: Vec<Vec2>, holes: Vec<Vec<Vec2>>) -> f32 {
+        let mut flat: Vec<f64> = poly.iter().flat_map(|v| [v.x as f64, v.y as f64]).collect();
+        let mut hole_starts = Vec::new();
+        for hole in &holes {
+            hole_starts.push(flat.len() / 2);
+            flat.extend(hole.iter().flat_map(|v| [v.x as f64, v.y as f64]));
+        }
+        let triangles = earcutr::earcut(&flat, &hole_starts, 2).unwrap();
+        let params = FloorMeshParams {
+            level: 0,
+            poly,
+            holes,
+            has_texture: false,
+            sides: false,
+            raise: 0.,
+        };
+        let (vertices, indices) = floor_collider_mesh(&params, &triangles);
+        indices
+            .iter()
+            .map(|[a, b, c]| {
+                let [a, b, c] = [a, b, c].map(|i| vertices[*i as usize]);
+                a.dot(b.cross(c)) / 6.
+            })
+            .sum()
+    }
+
+    #[test]
+    fn floor_collider_faces_out_for_either_winding() {
+        let expected = (16. - 4.) * PHYSICS_FLOOR_THICKNESS;
+        for (outer_reversed, hole_reversed) in [(false, false), (true, false), (false, true)] {
+            let mut poly = square(0., 4.);
+            let mut hole = square(1., 3.);
+            if outer_reversed {
+                poly.reverse();
+            }
+            if hole_reversed {
+                hole.reverse();
+            }
+            let volume = collider_volume(poly, vec![hole]);
+            assert!(
+                (volume - expected).abs() < 1e-4,
+                "winding ({outer_reversed}, {hole_reversed}): volume {volume}, expected {expected}"
+            );
+        }
     }
 }
