@@ -89,7 +89,7 @@ impl Plugin for PanoplySceneryPlugin {
                     update_se_aspects.after(read_precinct_data),
                     spawn_se_models.after(update_se_aspects),
                     build_se_colliders.after(update_se_aspects),
-                    // TODO(bevy-0.20): actor processing, restored with actors (D24).
+                    // TODO(PAN3): actor processing (D24).
                     // TerrainFx processing
                     rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
                     rebuild_parcel_terrain_fx

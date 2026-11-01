@@ -1,22 +1,29 @@
 # Agent instructions
 
-Panoply is a semi-procedural RPG on Bevy, currently mid-migration from Bevy 0.15 to Bevy main.
+Panoply is a semi-procedural RPG on Bevy main.
 
 ## Orient
 
-1. Read `docs/migration.md` (the ledger): what has landed, what is next, decisions, deferrals.
-   `docs/goals.md` says what the game is for.
+1. Read `docs/roadmap.md`: the chunks to come, in order. `docs/goals.md` says what the game is
+   for.
 2. Check `git log --oneline -5`.
-3. `grep -rn "TODO(bevy-0.20)"` shows disabled code awaiting restoration.
+3. Read `docs/issues.md`: findings not yet routed.
+
+The other ledgers, read by entry when cited: `docs/decisions.md` (`D<n>`, why things are as they
+are), `docs/deferred.md` (`X<n>`, work put off, each with its gate), `docs/notes.md`
+(measurements, Bevy's observed behaviour, recipes) and `docs/changelog.md` (what has landed).
 
 ## Rules
 
 - Never commit, push, or stage. The author reviews and commits; draft the commit message: a
   short subject line (`feat:` / `fix:` / `refactor:` / `chore:` / `docs:` prefix, under about 72
-  characters), a blank line, then a body of bullets, one per change, wrapped at 72 columns.
-- One chunk at a time: one module group restored or one focused change. Update the ledger in
-  the same chunk (Landed row, Next, new decisions or deferrals).
-- Every open item goes in the ledger: in Next, or in Deferred with a gate.
+  characters) ending with the chunk id, as `(PAN12)`, a blank line, then a body of bullets, one
+  per change, wrapped at 72 columns.
+- One chunk at a time. When it lands, in the same chunk: delete its roadmap entry, add its
+  changelog line (the instructions are in a comment at the top of the file), and record new
+  decisions, deferrals and issues.
+- Every open item has a destination: a chunk in the roadmap, a deferral with a gate, or an
+  issue.
 - Propose structural changes (new dependencies, replacing a subsystem) with a recommendation
   before writing code.
 - Prefer Bevy's built-in replacements over third-party crates where one exists. Check the

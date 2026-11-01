@@ -69,7 +69,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
-# TODO(bevy-0.20): restore these dependencies along with the modules that use them.
+# TODO(PAN3, PAN4, PAN5, X5): restore these dependencies with the modules that use them.
 # base64 = "0.22.0"
 # bevy-inspector-egui = "0.28.1"                     # pins bevy 0.15; replace or bump
 # bitflags = { workspace = true }

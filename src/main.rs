@@ -9,17 +9,18 @@ use bevy::{
     settings::SettingsPlugin,
     window::ExitCondition,
 };
-// TODO(bevy-0.20): restore
+// TODO(X5): restore
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
-// TODO(bevy-0.20): restore
+// TODO(PAN3): restore
+// mod actors;
+// REFERENCE(PAN4, PAN5): uncompiled, deleted as the rewrites replace them.
 // #[cfg(feature = "editor")]
 // mod editor;
-// mod actors;
 // mod portals;
 
 mod diagnostics;
@@ -36,10 +37,10 @@ use crate::{
 use panoply_render::PanoplyRenderPlugin;
 use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
-// TODO(bevy-0.20): restore
+// TODO(PAN3, PAN4): restore
 // use crate::{actors::ActorsPlugin, portals::PortalPlugin};
 
-// TODO(bevy-0.20): restore with editor
+// REFERENCE(PAN5)
 // #[derive(Resource)]
 // struct EditorImages {
 //     world: Handle<Image>,
@@ -98,7 +99,7 @@ fn main() {
         PanoplyRenderPlugin,
         PanoplyTerrainPlugin,
         PanoplySceneryPlugin,
-        // TODO(bevy-0.20): restore
+        // TODO(PAN3, PAN4, X5): restore
         // ActorsPlugin,
         // PortalPlugin,
         // WorldInspectorPlugin::new(),
@@ -223,7 +224,7 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
     }
 }
 
-/// TEMP(bevy-0.20): Spawns one object per custom material plus two GLTF models with material
+/// TEMP(PAN3): Spawns one object per custom material plus two GLTF models with material
 /// extras, so that shader compilation errors show up at runtime. Remove once scenery and
 /// actors are restored.
 fn spawn_material_test(
@@ -299,7 +300,7 @@ fn spawn_material_test(
     }
 }
 
-/// TEMP(bevy-0.20): Exemplars to load as a check on the exemplar loader, including one that
+/// TEMP(PAN3): Exemplars to load as a check on the exemplar loader, including one that
 /// `extends` another. Only catalogs without aspects load until scenery and actors register their
 /// aspect types. Remove once those are restored.
 #[derive(Resource)]

@@ -313,7 +313,7 @@ pub fn read_precinct_data(
             .remove::<ReadPrecinctData>();
 
         // TODO: Sync nav mesh, light sources, particles, etc.
-        // TODO(bevy-0.20): Sync actors, restored with actors (D24).
+        // TODO(PAN3): Sync actors (D24).
 
         let floor_surfaces: Vec<Handle<FloorSurface>> = precinct_asset
             .floor_surfaces
