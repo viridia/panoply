@@ -8,6 +8,7 @@ use bevy::{
 };
 
 pub mod debug_views;
+pub mod diagnostics;
 pub mod shell;
 pub mod zoom;
 
@@ -19,6 +20,7 @@ impl Plugin for EditorPlugin {
             FeathersPlugins,
             shell::EditorShellPlugin,
             debug_views::DebugViewsPlugin,
+            diagnostics::EditorDiagnosticsPlugin,
             zoom::EditorZoomPlugin,
         ))
         .insert_resource(UiTheme(create_dark_theme()));

@@ -42,19 +42,14 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `ablate.py` and `perf.py` tagged `manual` (the driver's chunk 38): a directory run leaves the measurements out. |
 | (pending) | PAN7a: `Propagate<RenderLayers>` (D5); parcel systems moved from `src/terrain` into `panoply_terrain`. |
 | (pending) | PAN7b: `materials` and `models` into `panoply_render`; `src/scenery` into `panoply_scenery`; `HexColor` into `panoply_core`. |
+| (pending) | PAN7c: location overlay, hitch log and profiling diagnostics into `panoply_editor::diagnostics`. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN7 Terrain and scenery crates**, before PAN2, so scenery physics is written in its crate,
-  and before PAN5, whose terrain and scenery modes need them (D37). In three chunks; 7a (render
-  layers, terrain) and 7b (render, scenery) landed.
-  - **7c** The editor-only parts of `diagnostics` (location overlay, hitch log) into
-    `panoply_editor`; the hitch log reads scenery's `Precinct` and `SceneryElement`, so after 7b.
-- **PAN9 Plans wait for readiness**, X33's first slice, after PAN7 so it is written against
-  `panoply_scenery`. An editor-build resource (e.g. `ViewReady`) that is true when the parcel
+- **PAN9 Plans wait for readiness**, X33's first slice. An editor-build resource (e.g. `ViewReady`) that is true when the parcel
   show set (D20) has no precinct still in `ReadPrecinctData`, its scenery scenes spawned, ground
   and flora on every parcel, and an empty warm-up queue. `goto` waits on it with
   `Driver.wait` and a timeout, then a frame or two for the render; the fixed `frames(N)` after
@@ -704,7 +699,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   vs 2x2 shadow filtering 1.3 ms. `GeneratedEnvironmentMapLight` re-filters every frame (35 ms).
   `skybox_diffuse.ktx2` was 1024x1024x6 with no mips; `skybox_diffuse_32.ktx2` is a 32x32 box
   filter of it, visually identical, 0.6 ms cheaper.
-- Hitch log (`diagnostics::hitch`, editor builds): logs each frame over 14 ms after startup,
+- Hitch log (`panoply_editor::diagnostics::hitch`): logs each frame over 14 ms after startup,
   with what the three frames before it spawned (precincts, parcels, parcels shown, scenery,
   scenes, meshes, images, pipelines, physics steps, colliders), and each pipeline created after
   startup with its shader defs. Opt-in: `PANOPLY_HITCH_LOG=1 cargo run`, then grep the output
