@@ -1,0 +1,16 @@
+[package]
+name = "panoply_editor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_feathers"] }
+bevy_action_map = { workspace = true }
+bevy_immediate = { workspace = true }
+panoply_core = { workspace = true }
+panoply_terrain = { workspace = true }
+rapier3d = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

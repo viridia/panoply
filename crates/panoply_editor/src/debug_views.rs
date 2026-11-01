@@ -1,5 +1,4 @@
-//! Debug views, an editor-only aid: rapier's debug render of the viewpoint realm's colliders,
-//! drawn with gizmos.
+//! Debug views: rapier's debug render of the viewpoint realm's colliders, drawn with gizmos.
 
 use std::time::Duration;
 
@@ -45,7 +44,7 @@ pub struct GroundProbe {
     pub hit: Option<Vec3>,
 }
 
-/// Gizmos for physics drawing, which see every realm's layer.
+/// Gizmos for physics drawing, on every realm's layer.
 #[derive(GizmoConfigGroup, Reflect, Default)]
 struct PhysicsGizmos;
 
@@ -71,7 +70,9 @@ impl Plugin for DebugViewsPlugin {
             GizmoConfig {
                 // Lines lie on the ground they outline, so pull them forward to keep them visible.
                 depth_bias: -0.001,
-                render_layers: RenderLayers::from_layers(&(0..16).collect::<Vec<_>>()),
+                // Realm layers only, which start at 1 (`ReservedLayers`): layer 0 is the HUD
+                // camera's, which would draw the lines again through its 2D projection.
+                render_layers: RenderLayers::from_layers(&(1..16).collect::<Vec<_>>()),
                 ..default()
             },
         )

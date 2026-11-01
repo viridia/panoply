@@ -68,7 +68,7 @@ def set_shadows(driver, on):
 CAMERA = "bevy_camera::camera::Camera"
 
 
-INSET = "panoply::view::viewport::ViewportInset"
+INSET = "panoply_core::viewport::ViewportInset"
 
 
 def set_inset(driver, fraction):

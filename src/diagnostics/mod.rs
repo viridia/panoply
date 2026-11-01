@@ -3,7 +3,7 @@ use bevy::{
     diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
-use panoply_core::{metrics::PRECINCT_SIZE_F, Realm, Viewpoint};
+use panoply_core::{metrics::PRECINCT_SIZE_F, Realm, ViewOverlay, Viewpoint};
 use panoply_terrain::PARCEL_SIZE_F;
 
 #[cfg(feature = "editor")]
@@ -89,7 +89,7 @@ fn spawn_text(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             },
         ))
-        .insert(ScreenDiagsText);
+        .insert((ScreenDiagsText, ViewOverlay));
 }
 
 /// The marker on the text showing where the view is centered.
@@ -100,6 +100,7 @@ fn spawn_location_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Name::new("LocationText"),
         LocationText,
+        ViewOverlay,
         Text::new(""),
         TextFont {
             font: FontSource::Handle(asset_server.load("fonts/Rubik/Rubik-VariableFont_wght.ttf")),

@@ -10,6 +10,9 @@ pub mod collision_groups {
 
     /// Parcel ground.
     pub const TERRAIN: Group = Group::GROUP_1;
+
+    /// Every group, with its caption in the editor's Show menu.
+    pub const CAPTIONED: &[(&str, Group)] = &[("Terrain", TERRAIN)];
 }
 
 /// One rapier world per realm, so realms seen through portals never collide with each other.

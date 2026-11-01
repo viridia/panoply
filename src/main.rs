@@ -22,8 +22,6 @@ use window_settings::WindowSettingsPlugin;
 // mod actors;
 // mod portals;
 
-#[cfg(feature = "editor")]
-mod debug_views;
 mod diagnostics;
 mod input;
 mod materials;
@@ -79,7 +77,6 @@ fn main() {
         InfiniteGridPlugin,
         InputPlugin,
     ))
-    .init_resource::<view::viewport::ViewportInset>()
     // .insert_resource(RaycastBackendSettings {
     //     require_markers: true,
     //     ..default()
@@ -97,13 +94,7 @@ fn main() {
     .add_systems(Startup, (setup, spawn_material_test, load_exemplar_check))
     .add_systems(Update, run_exemplar_check)
     .add_systems(Update, (rotate_shapes, nav_to_center))
-    .add_systems(
-        PostUpdate,
-        (
-            view::viewport::update_viewport_inset,
-            view::viewport::update_camera_viewport.after(view::viewport::update_viewport_inset),
-        ),
-    )
+    .add_systems(PostUpdate, view::viewport::update_camera_viewport)
     .add_plugins((
         ReflectTypesPlugin,
         ExemplarPlugin,
@@ -119,9 +110,7 @@ fn main() {
     ));
 
     #[cfg(feature = "editor")]
-    app.add_plugins(debug_views::DebugViewsPlugin);
-    // #[cfg(feature = "editor")]
-    // app.add_plugins(editor::EditorPlugin);
+    app.add_plugins(panoply_editor::EditorPlugin);
 
     app.run();
 

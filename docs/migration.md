@@ -38,19 +38,22 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | Bevy main at `784b85d` and `bevy_action_map` main (D34); warm-up loads `terrain/models-new`. |
 | (pending) | Plans on the `bevy-remote-driver` package (D10); `plans/_panoply_driver.py`; D15 retired. |
 | (pending) | `rapier3d` 0.36 (D35): `PhysicsWorld`, `dt` from the fixed timestep; physics debug views, F3; `plans/physics.py`. |
+| (pending) | PAN1 Editor shell: `panoply_editor` crate (D37); panel, splitter, T; Show menu; `plans/physics.py`. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN1 Editor shell.** The editor's first slice (see X3), as in `arbor_day`'s `main.rs`
-  (feathers' `FeathersSplitPane`, a `bevy_immediate` panel, BSN): a left panel with a splitter,
-  a key to show or hide it, its width saved in settings, and X3's viewport inset fix so the
-  game fills the other pane. Its only content: a Show menu (feathers `menu`) with Physics and
-  one checkbox per collision group, bound to `DebugViews` (D35). F3 stays as a shortcut.
-  faery's other debug views (listed in [faery.md](faery.md), Editor) join the menu with the
-  features they show, not before.
+- **PAN7 Terrain and scenery crates**, before PAN2, so scenery physics is written in its crate,
+  and before PAN5, whose terrain and scenery modes need them (D37). Move the parcel systems
+  from `src/terrain` into `panoply_terrain`, and `src/scenery` into a new `panoply_scenery`
+  (the dependency already runs one way, scenery on terrain, D11). Their ties to the app:
+  `models::PropagateRenderLayers` (flora, scenery elements), replaced by Bevy's
+  `Propagate<RenderLayers>` (was X4); `materials` (`OutlineMaterial`, `FloorNoisyMaterial`) and
+  `models`, which want a crate of their own; `reflect_types::HexColor` and `view::QueryRect`,
+  small enough for `panoply_core`. Also move the editor-only parts of `diagnostics` (location
+  overlay, hitch log) into `panoply_editor`.
 - **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
   floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
   faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
@@ -81,7 +84,8 @@ never reused; a new item takes the next unused number.
   what the player faces) works with the driver's keys today; clicking an actor or fixture needs
   clicks in the world (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own:
   a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
-  through X9. An actor gets physics only where the colliders under it are built (X33).
+  through X9. The game's click handling runs only while the game has the pointer (X3, editor
+  tools). An actor gets physics only where the colliders under it are built (X33).
   Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
   `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
   a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
@@ -99,7 +103,8 @@ never reused; a new item takes the next unused number.
   driver plans that stage, for example, eight skeletons rushing the player, or two followers
   through a doorway.
 - **PAN4 Portals**: a rewrite, not a restoration (D21).
-- **PAN5 Editor**, beyond PAN1's shell (see X3).
+- **PAN5 Editor**, beyond PAN1's shell (see X3). faery's other debug views (listed in
+  [faery.md](faery.md), Editor) join the Show menu with the features they show, not before.
 - **PAN6 Up in Arms.** After the migration, the first playable: the "Up in Arms" quest, end to
   end. Its steps and what each needs are in [goals.md](goals.md).
 
@@ -347,7 +352,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   effects flatten the ground, and only the smoothed mesh has them. Collision groups are
   `panoply_core::realm_physics::collision_groups`, defined as each kind of collider arrives,
   after faery's ([faery.md](faery.md), Physics); Terrain so far. Editor builds (D13) have debug
-  views (`src/debug_views.rs`): `DebugViews`, saved with `bevy_settings`, holds physics on or
+  views (`panoply_editor::debug_views`, D37): `DebugViews`, saved with `bevy_settings`, holds physics on or
   off and a mask of groups to draw; F3 toggles physics. Rapier's debug render draws through a
   gizmo backend, only for colliders of shown parcels (D20), matched by the parcel entity in
   each collider's `user_data`: a trimesh is three lines per triangle, about 25k a parcel, so
@@ -358,6 +363,19 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   follow Bevy main (D34), so each one (character controller, particle engine, navigation mesh
   generator) is a fork to maintain. A crate with no Bevy dependency, such as `rapier3d` (D35),
   needs no fork. Prefer, in order: Bevy's own, a crate without Bevy, our own code, a Bevy crate.
+- **D37** The editor is its own crate, `panoply_editor`, an optional dependency behind the
+  app's `editor` feature (D13); feathers and `bevy_immediate` are its dependencies only, and
+  `main.rs` adds `EditorPlugin`. It sees the engine crates, never the app. Engine crates own
+  neutral knobs (resources, components, messages: `ViewportInset`, `ViewOverlay`, `Viewpoint`);
+  the editor sets them and spawns entities of its own, overlays included, and engine crates do
+  not test the `editor` feature. So an editor mode for a module waits until the module is in a
+  crate (PAN7). The shell (`panoply_editor::shell`) is a feathers split pane: the panel at the
+  left, hidden by default so plans, which start from empty settings, see the whole window; T
+  toggles it; `EditorPanelSettings` saves its width and visibility. While it shows, the
+  primary camera's viewport follows the view pane through `ViewportInset`; hidden, the inset is
+  left alone, so plans can set it. HUD nodes marked `ViewOverlay` move into the view pane. The
+  Show menu's popup holds checkboxes, not menu items: picking an item closes a menu, and a
+  checkbox takes the focus without closing it, so several views toggle in one visit.
 
 ## Deferred
 
@@ -378,28 +396,26 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   sliders; reactivity for game UI decided separately. Much of the editor's design can be
   taken from faery's editor (`packages/editor`; see [faery.md](faery.md), Editor, and
   `design/Editor.md`): read it before designing modes and tools. Design, from the author:
-  - The editor is its own crate, enabled by the `editor` feature (today `src/editor`, D13).
-  - Layout: a side panel on the left (300 px default) with a splitter; the game fills the
-    rest. A key toggles the panel. Bevy main has a splitter (`bevy_ui_widgets`
-    `split_pane.rs`, after 0.20): fork it or write one.
+  - The editor is its own crate, `panoply_editor` (D37). Its shell landed in PAN1: the panel,
+    its splitter and key, and the viewport following the view pane. The old editor,
+    `src/editor` (disabled), moves into the crate mode by mode.
   - Modes: realm, terrain, scenery, catalogs, play (icons in the old repo).
-  - The editor layout is a BSN scene with a slot for the game scene; without `editor`, the
-    game scene is the root. The game view is the camera's viewport, following a UI node:
-    `src/view/viewport.rs` already does this (`ViewportInsetElement` -> `ViewportInset` ->
-    camera `Viewport`), but `update_viewport_inset` queries `GlobalTransform`, which 0.20 UI
-    nodes lack (they have `UiGlobalTransform`), and mixes units (`ComputedNode::size` is
-    physical pixels; `left`/`top` are not divided by the scale factor). Fix when the panel
-    returns.
   - All editor state is saved in `bevy_settings` (mode, selections, panel width, view), so a
     restart returns to where work stopped; the edit-run loop restarts often. Plans start
     from empty settings already (D15), so runs do not depend on the previous run.
   - Editor and game keys use separate `bevy_action_map` contexts; picking keeps panel clicks
-    from the game. Driver plans run with `editor` on, so they should hide the panel (key or
-    setting) to keep screenshots and frame times comparable.
+    from the game.
+  - The editor takes over the pointer in the world. A resource in `panoply_core` says whether
+    the game or the editor handles world clicks; the game's click handling (PAN3) runs only
+    while the game has it. Each editor tool (terrain sculpting, floor editing, scenery
+    placement) is a mode that observes the pointer events it needs, on world meshes or on
+    virtual planes aligned with the world axes, through a picking backend of the editor's own
+    (the old `PlanePickBackend`, `src/editor/lib`), beside mesh picking. Each tool has its own
+    action context, and the game's are off while a tool has the pointer. The mode decides, not
+    the panel: Play mode hands the pointer back to the game, and hiding the panel keeps the
+    tool.
   Also replace `bevy_mod_picking` with `bevy_picking`, `@PreferencesGroup` with
   `SettingsGroup`. *Gate:* editor restoration.
-- **X4** Replace `PropagateRenderLayers` with Bevy's `Propagate<RenderLayers>`. *Gate:* scenery,
-  actors and flora restored (they are the callers).
 - **X5** `bevy-inspector-egui` (pinned bevy 0.15). Bevy main's `bevy_inspector` crate may
   replace it. *Gate:* a compatible release is needed.
 - **X6** Revisit asset bundling. The GLTF layout carries three.js-era assumptions, made to cut
@@ -416,10 +432,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   pointer); with `editor`, on the viewport slot node, so the panel's widgets get their own
   scrolls. Once world entities are pickable, scrolls over them must bubble to the view or not
   block it. Scroll input in `bevy_action_map` is for handling a wheel globally, which this is
-  not. *Gate:* the editor panel (X3).
-- **X9** Finish splitting terrain and scenery into crates: move the parcel systems from
-  `src/terrain` into `panoply_terrain`, and scenery into its own `panoply_scenery`. Flora's only
-  tie to the app is `models::PropagateRenderLayers` (see X4). *Gate:* scenery restored.
+  not. *Gate:* the panel's first content that scrolls (the panel itself landed in PAN1).
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. *Gate:* scenery or actors with shiny materials restored.
@@ -487,7 +500,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   mesh-local space (until then, trunk outlines are thicker on arbor_day models, placed near
   scale 1, than on seedling ones, near 0.65). Drop a hidden parcel's merged meshes and rebuild on show (about 2-3 MB per
   parcel). Removes about 5,000 transform-only scene entities and flora's
-  `PropagateRenderLayers` use (X4). *Gate:* scenery restored and a full scene measured, to see
+  `PropagateRenderLayers` use, if PAN7 has not already replaced it. *Gate:* scenery restored and a full scene measured, to see
   whether the headroom is needed.
 - **X16** Revisit `avian3d` (D22). *Gate:* avian merges multiple physics worlds (issue #935)
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
@@ -626,10 +639,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   editor's property grid (translation and scale of standard shapes, X3) with the F3 view
   live. *Gate:* the author tries Skein, or the first model whose colliders are authored in
   Blender.
-- **X37** End of the migration. Once the restorations land (PAN1 to PAN5), this ledger becomes
+- **X37** End of the migration. Once the restorations land (PAN1 to PAN5, and PAN7), this ledger becomes
   the regular roadmap: work moves from the `migration` branch back to `main`, and the ledger is
   restructured with `../ldd_template`'s tools. PAN6 and anything else never built before the
-  migration belongs to the roadmap. *Gate:* PAN1 to PAN5 landed.
+  migration belongs to the roadmap. *Gate:* PAN1 to PAN5 and PAN7 landed.
 - **X38** Particles and missiles. faery's particles interacted with the world: they despawned
   on collision, could be light and sound sources, and spawned other particles (a fireball or
   cannonball trailing smoke). Third-party Bevy particle engines lack these, and a port of
@@ -694,6 +707,11 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `models` now puts outlines on a child entity instead; (3) `RenderDiagnosticsPlugin` records
   only CPU pass times on Metal.
 
+- Gizmos draw in every camera whose render layers overlap their group's `GizmoConfig`, and the
+  default is layer 0, which here only the HUD camera has (realms take layers from 1,
+  `ReservedLayers`). A gizmo group for the world needs realm layers, as `PhysicsGizmos` has;
+  on layer 0 its lines never reach the 3D view and appear as stray lines through the HUD's 2D
+  projection instead.
 - The water shows a fine square grid (visible before and after D16). Almost certainly the debug
   `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues past
   the map edge in `lighting_bluff.png`. Not yet confirmed by hiding the grid.

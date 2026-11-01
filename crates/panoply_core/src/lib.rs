@@ -6,6 +6,7 @@ pub mod realm_physics;
 pub mod sunlight;
 pub mod transition;
 pub mod viewpoint;
+pub mod viewport;
 
 use bevy::{
     app::{App, FixedUpdate, Plugin, PostUpdate, Update},
@@ -20,6 +21,7 @@ pub use realm_physics::RealmPhysics;
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
 pub use viewpoint::{GotoLocation, Viewpoint};
+pub use viewport::{ViewOverlay, ViewportInset};
 
 /// Marker which identifies the primary camera.
 #[derive(Component)]
@@ -37,6 +39,7 @@ impl Plugin for PanoplyCorePlugin {
             .init_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
             .init_resource::<Sunlight>()
+            .init_resource::<ViewportInset>()
             .add_message::<GotoLocation>()
             .add_systems(Update, (load_realms, viewpoint_transitions, goto_location))
             .add_systems(
