@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3e** Actors wear their hair, beards and hats, colored and outlined.
 - **PAN3d** Actors wear their exemplar's colors.
 - **PAN3b** Actors play their idle clip, outlines following the pose.
 - **PAN3a** An actor stands in the playground; actors and the precinct format are crates.

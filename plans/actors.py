@@ -1,11 +1,11 @@
 """Actors: the player's actor stands on a floor in the playground, with one skeleton (D28),
-plays its idle clip from the shared clips file, and wears its exemplar's colors.
+plays its idle clip from the shared clips file, and wears its hair and its exemplar's colors.
 
     bevy-remote-driver plans/actors.py
 
 Looks at it from the closest camera distance (20), mid-clip, so the outlines can be seen to
-follow the pose. The colors are checked by eye in `actor.png`: tan tunic, gold sleeves, brown
-hair and legs, not the file's default materials.
+follow the pose. Checked by eye in `actor.png`: tan tunic, gold sleeves, brown hair and legs,
+not the file's default materials; the hair, outlined, sits on the head.
 """
 
 from _panoply_driver import PanoplyDriver
@@ -22,8 +22,10 @@ def run(driver):
     driver.present("PrimaryCamera")
     # The body scene: its mesh is named for the skin.
     driver.present("Actor/ActorBody/WithTunic", timeout=WAIT)
+    driver.present("Actor/ActorFeature/HairMediumCut")
     # Waits for warm-up too, whose instances of the character file have skeletons of their own.
     driver.goto(SPOT, 20.0)
+    # The hair's copy of the armature is gone, its mesh bound to the body's bones.
     skeletons = driver.select("hips")
     assert len(skeletons) == 1, f"{len(skeletons)} skeletons, not one"
 

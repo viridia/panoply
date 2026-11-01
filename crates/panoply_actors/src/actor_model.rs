@@ -10,7 +10,8 @@ use super::{
 /// mesh and its skeleton (D28). Waits for the file to load, then spawns the scene.
 #[derive(Debug, Component)]
 pub struct ActorBody {
-    gltf: Handle<Gltf>,
+    /// The character file, which also holds the features (D28).
+    pub(crate) gltf: Handle<Gltf>,
     scene: String,
     /// The skeleton to animate; `None` for an actor without an `Armature`.
     pub(crate) armature: Option<ArmatureSource>,

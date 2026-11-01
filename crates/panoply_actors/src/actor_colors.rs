@@ -3,26 +3,27 @@ use bevy::{
     world_serialization::WorldInstanceReady,
 };
 
-use super::{actor_aspect::Colors, ActorBody};
+use super::{actor_aspect::Colors, ActorBody, ActorFeature};
 
 /// Recolored clones of slot materials, by (material, sRGB color). Holds ids, not handles, so a
 /// clone is freed once no actor uses it, and made again if needed.
 #[derive(Resource, Default)]
 pub struct ActorMaterials(HashMap<(AssetId<StandardMaterial>, [u8; 4]), AssetId<StandardMaterial>>);
 
-/// Applies the actor's `Colors` to its body once the scene has spawned: each mesh whose material
-/// is named for a color slot gets a clone of that material with the slot's color (D28).
-pub fn color_actor_body(
+/// Applies the actor's `Colors` to its body or a feature once the scene has spawned: each mesh
+/// whose material is named for a color slot gets a clone of that material with the slot's color
+/// (D28).
+pub fn color_actor_part(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
-    bodies: Query<&ChildOf, With<ActorBody>>,
+    parts: Query<&ChildOf, Or<(With<ActorBody>, With<ActorFeature>)>>,
     colors: Query<&Colors>,
     children: Query<&Children>,
     meshes: Query<(&GltfMaterialName, &MeshMaterial3d<StandardMaterial>)>,
     mut cache: ResMut<ActorMaterials>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let Ok(actor) = bodies.get(ready.entity) else {
+    let Ok(actor) = parts.get(ready.entity) else {
         return;
     };
     let Ok(colors) = colors.get(actor.parent()) else {

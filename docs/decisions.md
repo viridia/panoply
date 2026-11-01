@@ -148,26 +148,29 @@ never reused.
   loader, `extends` within the same catalog uses `LoadContext::get_label_handle`, since a load
   by path would reload the file being loaded; a missing target is a warning. Checked with a
   temporary log in the loader: `plans/scenery.py` loads each of ten catalogs once.
-- **D28** Actor models stay one glTF per species as authored (`humanoid-male.glb` holds every
-  male body and feature; `humanoid-armature.glb` the shared clips), with no split transform.
-  Bevy always loads a glTF whole, labels included, and uploads all its meshes; the files are
-  small (humanoid male about 1.3 MB of mesh data, 40 clips about 0.5 MB, all characters about
-  8.5 MB on disk, almost no textures), so keeping a species resident costs little, and one file
-  warms in one pass (D26). Load the root `Gltf` and look up `named_scenes`: loading
-  `file.glb#Scene` by label hits Bevy issue #10549 as exemplars did (D27). Clips bind by bone
-  name path (`AnimationTargetId`), so shared clips drive any file's armature with matching
-  bones. Assembly, as in the three.js `SkinnedModel.ts`: one skeleton per actor (the body
-  scene's armature and one `AnimationPlayer`); each selected feature (hair, hat, beard) spawns
-  only its mesh, with a `SkinnedMesh` whose joints are the body's joint entities matched by
-  `Name`. `modelOpt` adds the armature to every skinned scene, so spawning features as whole
-  scenes would duplicate the skeleton. Color slots are material names; an actor's `Colors`
-  replace a slot material's base color with a clone cached by (material, color). Exemplar hex
-  colors are sRGB (`Srgba::hex`); glTF `baseColorFactor` is linear. Colors for slots a mesh
-  lacks are ignored. Expect little sharing: nearly every actor has its own colors (see X23).
-  *Revisit* (with X6) if actors gain real textures, or a character file passes about 10 MB.
-  `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder was never
-  registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output was
-  unchanged.
+- **D28** Actor models stay one glTF per species as authored (`humanoid-male.glb` holds every male
+  body and feature; `humanoid-armature.glb` the shared clips), with no split transform. Bevy always
+  loads a glTF whole, labels included, and uploads all its meshes; the files are small (humanoid
+  male about 1.3 MB of mesh data, 40 clips about 0.5 MB, all characters about 8.5 MB on disk, almost
+  no textures), so keeping a species resident costs little, and one file warms in one pass (D26).
+  Load the root `Gltf` and look up `named_scenes`: loading `file.glb#Scene` by label hits Bevy issue
+  #10549 as exemplars did (D27). Clips bind by bone name path (`AnimationTargetId`), so shared clips
+  drive any file's armature with matching bones. Assembly, as in the three.js `SkinnedModel.ts`: one
+  skeleton per actor (the body scene's armature and one `AnimationPlayer`); each selected feature
+  (hair, hat, beard) spawns its named scene, which `modelOpt` gives its own copy of the armature:
+  once it is ready, each `SkinnedMesh`'s joints are repointed to the body's bones matched by `Name`,
+  and the copy is despawned. Building a feature's meshes from the `Gltf` asset instead would repeat
+  the loader's per-primitive work (the `StandardMaterial` found by label through `bevy_pbr`'s hook,
+  `GltfMaterialName` and `GltfMaterialExtras`, which coloring and outlines key on, bounds), and
+  break as the loader changes. *Revisit* if Bevy can spawn a skinned mesh against another scene's
+  skeleton (bevyengine/bevy#17114), or makes the loader's primitive spawning public. Color slots are
+  material names; an actor's `Colors` replace a slot material's base color with a clone cached by
+  (material, color). Exemplar hex colors are sRGB (`Srgba::hex`); glTF `baseColorFactor` is linear.
+  Colors for slots a mesh lacks are ignored. Expect little sharing: nearly every actor has its own
+  colors (see X23). *Revisit* (with X6) if actors gain real textures, or a character file passes
+  about 10 MB. `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder
+  was never registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output
+  was unchanged.
 - **D29** Hair shine uses Kajiya-Kay (specular from strand direction T: `sin(T, H)^shininess`,
   a band across the strands), likely with Scheuermann's two lobes (a bright primary, a
   hair-tinted secondary). The three.js `HairMaterial` approximated a band with

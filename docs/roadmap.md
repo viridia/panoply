@@ -21,9 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3e Features.** Hair, hats and beards spawn as meshes only, each with a `SkinnedMesh` bound to
-  the body's joints by `Name` (D28), and take the actor's colors as the body does
-  (`color_actor_body`). Hair keeps the standard material until PAN3n.
 - **PAN3o Wielding.** An equipped item's model follows the bone of its equip slot (R14): bring
   faery's `props/weapons.glb` through the asset pipeline, give item exemplars a model aspect (the
   converters dropped it), and attach the model's scene as a child of the `weapon.R` or `weapon.L`
