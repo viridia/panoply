@@ -4,11 +4,9 @@ use bevy::{
 };
 
 use panoply_exemplar::*;
+use panoply_precinct::SceneryInstanceId;
 
-use super::{
-    precinct_asset::SceneryInstanceId,
-    scenery_aspect::{ModelComponent, SceneryModels},
-};
+use super::scenery_aspect::{ModelComponent, SceneryModels};
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct SceneryElement {

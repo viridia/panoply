@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN19.**
+**Next: PAN21.**
 
 ## Next
 
@@ -21,19 +21,11 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3a Load and place.** Restore the `actors` module and register its aspects, so
-  `characters.exem.json` loads. One archetype (humanoid male), loaded through `ExemplarServer`
-  (D27), not `AssetServer::load`; its root `Gltf` loaded, and only the body scene spawned from
-  `named_scenes` (D28): one skeleton, no features or colors, in bind pose, at a fixed spot in the
-  playground, without physics. The three.js version's assembly is
-  `engine/src/world/actors/SkinnedModel.ts` (faery). Remove `TestHumanoid` from
-  `spawn_material_test`. Plan: the actor standing there.
 - **PAN3b Play a clip.** One idle clip from `humanoid-armature.glb` drives the body's armature,
   bound by `AnimationTargetId`, through one `AnimationPlayer` per actor. First, since binding across
-  files is D28's riskiest assumption.
-- **PAN3c Outlines.** The skinned outline looks right on the actor (D14); outline widths from the
-  model (X32) if the actor needs them. `plans/outlines.py` looks at the actor instead of the test
-  objects; remove the rest of `spawn_material_test`.
+  files is D28's riskiest assumption. The plan takes a close-up mid-clip: the outlines came for free
+  (D14), and this checks that they follow the pose. Outline widths from the model stay with X32
+  unless the thin-lined materials (shirt, hood: 0.003) look wrong at the default.
 - **PAN3d Colors.** The `Colors` aspect replaces slot materials with clones cached by (material,
   color), per D28.
 - **PAN3e Features.** Hair, hats and beards spawn as meshes only, each with a `SkinnedMesh` bound to
@@ -57,7 +49,8 @@ components and every layer restartable from saved state (R104).
 - **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the
   query filter excludes `CANOPY` (D39).
 - **PAN3l Precinct actors.** Precincts carry actors (playground `p000-p000` has 13): restore the
-  `actors` field in `PrecinctAsset` (now skipped), and spawn them from the actors module with a
+  `actors` field in `PrecinctAsset` (now skipped), with its deserializer from the uncompiled
+  `panoply_precinct/src/actor_instance.rs` (D40), and spawn them from `panoply_actors` with a
   home-precinct relationship whose despawn is linked (D24), not from scenery. The player is one of
   them. The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
   [faery.md](faery.md), Migration scripts, and decide per field: port, or replace. Remove
@@ -73,6 +66,17 @@ components and every layer restartable from saved state (R104).
   nearest cell outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
 - **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
   shader (D29).
+- **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
+  distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
+  the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
+  `k = 1` a constant screen width; try values between. Depth to the mesh's origin rather than each
+  vertex, so a long model's outline does not taper along it. `k` and the reference as one setting
+  for every outline material, tuned by eye in the editor at several zooms; in play the camera
+  distance is fixed (20), so there it only evens out the near and far rows of the view.
+- **PAN19 New game.** Resets every precinct, and the actors in it, to its authored state: despawn
+  them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
+  play changed (X18), so loading a save is a new game with the save's changes applied. After PAN3l,
+  which puts actors in precincts. R12 is the same reset for one actor.
 - **PAN16 Navigation.** Panoply has none; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
   First evaluate [rerecast](https://crates.io/crates/rerecast): navigation mesh generation is hard
   to maintain alone, which outweighs the cost of a fork (D36); check whether its generator works
@@ -93,7 +97,11 @@ components and every layer restartable from saved state (R104).
   `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a
   chunk's end, absolute plan paths, one driver run at a time, fewer launches) to `AGENTS.md`.
 - **PAN4 Portals**: a rewrite, not a restoration (D21). `src/portals` is reference
-  (`REFERENCE(PAN4)`), deleted once portals work.
+  (`REFERENCE(PAN4)`), deleted once portals work. Portals go in a crate, since the editor places
+  them (D37, D40); which one is open. The old code's portal aspect attaches to walls and fixtures
+  (`panoply_scenery`'s instance types), its views need `panoply_core`'s realms and cameras, and
+  crossing moves the player (R31, `panoply_actors`). First candidate: a crate of their own,
+  `panoply_portals`, over scenery and actors.
 - **PAN5 Editor**, beyond PAN1's shell (see X3). `src/editor`, written for Quill, is reference
   (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The author has
   screenshots of faery's editor. faery's other debug views (listed in
@@ -101,10 +109,10 @@ components and every layer restartable from saved state (R104).
   Among them, faery's parcel and precinct readiness grid, drawn from the survey's data
   (`TerrainPending::survey`, `SceneryPending::survey`, PAN10) when tuning load distances needs
   it on screen.
-- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of
-  each plan what it checks that no other does, and whether that is worth its time and the focus
-  it takes. Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py` and
-  `outlines.py`, stills that could be shots in `lighting.py`. Measurements stay, tagged `manual`.
+- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of each
+  plan what it checks that no other does, and whether that is worth its time and the focus it takes.
+  Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py`, a still that could be a
+  shot in `lighting.py`. Measurements stay, tagged `manual`.
 - **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
   what each needs are in [goals.md](goals.md).
 

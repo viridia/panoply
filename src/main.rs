@@ -1,11 +1,8 @@
 #![allow(dead_code)]
 use bevy::{
-    asset::RenderAssetUsages,
     camera::visibility::RenderLayers,
     dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridPlugin},
-    image::ImageSampler,
     prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     settings::SettingsPlugin,
     window::ExitCondition,
 };
@@ -16,8 +13,6 @@ use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
-// TODO(PAN3a): restore
-// mod actors;
 // REFERENCE(PAN4, PAN5): uncompiled, deleted as the rewrites replace them.
 // #[cfg(feature = "editor")]
 // mod editor;
@@ -34,11 +29,12 @@ use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, remote_driver::RemoteDriverPlugin,
     world::WorldPlugin,
 };
+use panoply_actors::ActorsPlugin;
 use panoply_render::PanoplyRenderPlugin;
 use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
-// TODO(PAN3a, PAN4): restore
-// use crate::{actors::ActorsPlugin, portals::PortalPlugin};
+// TODO(PAN4): restore
+// use crate::portals::PortalPlugin;
 
 // REFERENCE(PAN5)
 // #[derive(Resource)]
@@ -89,9 +85,8 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
-    .add_systems(Startup, (setup, spawn_material_test, load_exemplar_check))
-    .add_systems(Update, run_exemplar_check)
-    .add_systems(Update, (rotate_shapes, nav_to_center))
+    .add_systems(Startup, (setup, load_exemplar_check))
+    .add_systems(Update, (run_exemplar_check, nav_to_center))
     .add_systems(PostUpdate, view::viewport::update_camera_viewport)
     .add_plugins((
         ExemplarPlugin,
@@ -99,8 +94,8 @@ fn main() {
         PanoplyRenderPlugin,
         PanoplyTerrainPlugin,
         PanoplySceneryPlugin,
-        // TODO(PAN3a, PAN4, X5): restore
-        // ActorsPlugin,
+        ActorsPlugin,
+        // TODO(PAN4, X5): restore
         // PortalPlugin,
         // WorldInspectorPlugin::new(),
     ));
@@ -116,50 +111,7 @@ fn main() {
 /// Distance from the camera to the view center. Fixed in the game; the editor can zoom.
 const CAMERA_DISTANCE: f32 = 20.;
 
-/// A marker component for our shapes so we can query them separately from the ground plane
-#[derive(Component)]
-struct Shape;
-
-const X_EXTENT: f32 = 14.5;
-
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let debug_material = materials.add(StandardMaterial {
-        base_color_texture: Some(images.add(uv_debug_texture())),
-        ..default()
-    });
-
-    let shapes = [
-        meshes.add(Cuboid::default()),
-        meshes.add(Capsule3d::default()),
-        meshes.add(Torus::default()),
-        meshes.add(Cylinder::default()),
-        meshes.add(Sphere::default().mesh().ico(5).unwrap()),
-        meshes.add(Sphere::default().mesh().uv(32, 18)),
-    ];
-
-    let num_shapes = shapes.len();
-
-    for (i, shape) in shapes.into_iter().enumerate() {
-        commands.spawn((
-            Name::new("DebugShape"),
-            Mesh3d(shape),
-            MeshMaterial3d(debug_material.clone()),
-            Transform::from_xyz(
-                0.0,
-                2.0,
-                -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
-            )
-            .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-            Shape,
-            RenderLayers::from_layers(&[0, 1, 2, 3, 4, 5]),
-        ));
-    }
-
+fn setup(mut commands: Commands) {
     // commands.insert_resource(AmbientLight {
     //     brightness: 1000.,
     //     color: Srgba {
@@ -218,87 +170,6 @@ fn setup(
     ));
 }
 
-fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_secs() / 2.);
-    }
-}
-
-/// TEMP(PAN3c): Spawns one object per custom material plus two GLTF models with material
-/// extras, so that shader compilation errors show up at runtime.
-fn spawn_material_test(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
-    mut outline_materials: ResMut<Assets<panoply_render::OutlineMaterial>>,
-    mut noisy_materials: ResMut<Assets<panoply_render::FloorNoisyMaterial>>,
-    flame: Res<panoply_render::FlameMaterialHandle>,
-    assets: Res<AssetServer>,
-) {
-    use bevy::{gltf::GltfAssetLabel, pbr::ExtendedMaterial, world_serialization::WorldAssetRoot};
-
-    let all_layers = RenderLayers::from_layers(&(0..16).collect::<Vec<_>>());
-    let cube = Mesh::from(Cuboid::default());
-    let vertex_count = cube.count_vertices();
-    let flame_cube = cube
-        .clone()
-        .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0., 0.5, 0., 1.]; vertex_count]);
-    let cube = meshes.add(cube);
-
-    commands.spawn((
-        Name::new("TestOutline"),
-        Mesh3d(cube.clone()),
-        MeshMaterial3d(
-            standard_materials.add(StandardMaterial::from_color(Srgba::rgb(0.8, 0.7, 0.5))),
-        ),
-        Transform::from_xyz(-4., 1., 4.),
-        all_layers.clone(),
-        children![(
-            Name::new("Outline"),
-            Mesh3d(cube.clone()),
-            MeshMaterial3d(outline_materials.add(panoply_render::OutlineMaterial {
-                width: 0.05,
-                ..default()
-            })),
-            all_layers.clone(),
-        )],
-    ));
-    commands.spawn((
-        Name::new("TestFloorNoisy"),
-        Mesh3d(cube),
-        MeshMaterial3d(noisy_materials.add(ExtendedMaterial {
-            base: StandardMaterial::default(),
-            extension: panoply_render::FloorNoisyMaterialExt {
-                color: Srgba::rgb(0.6, 0.4, 0.2).into(),
-                color_alt: Srgba::rgb(0.3, 0.3, 0.3).into(),
-                roughness: 0.8,
-                roughness_alt: 0.3,
-                noise: panoply_terrain::load_tiling_texture(&assets, "textures/noise_1.png"),
-            },
-        })),
-        Transform::from_xyz(-4., 1., 0.),
-        all_layers.clone(),
-    ));
-    commands.spawn((
-        Name::new("TestFlame"),
-        Mesh3d(meshes.add(flame_cube)),
-        MeshMaterial3d(flame.0.clone()),
-        Transform::from_xyz(-4., 1., -4.),
-        all_layers.clone(),
-    ));
-    for (name, path, x) in [
-        ("TestCamping", "scenery/models/camping.glb", 4.),
-        ("TestHumanoid", "characters/humanoid-male.glb", 8.),
-    ] {
-        commands.spawn((
-            Name::new(name),
-            WorldAssetRoot(assets.load(GltfAssetLabel::Scene(0).from_asset(path))),
-            Transform::from_xyz(x, 0., 0.),
-            bevy::app::Propagate(all_layers.clone()),
-        ));
-    }
-}
-
 /// TEMP(PAN3l): Exemplars to load as a check on the exemplar loader, including one that
 /// `extends` another. Only catalogs without aspects load until scenery and actors register their
 /// aspect types.
@@ -348,37 +219,6 @@ fn run_exemplar_check(
         commands.spawn(Name::new("ExemplarCheckPassed"));
     }
     commands.remove_resource::<ExemplarCheck>();
-}
-
-/// Creates a colorful test pattern
-fn uv_debug_texture() -> Image {
-    const TEXTURE_SIZE: usize = 8;
-
-    let mut palette: [u8; 32] = [
-        255, 102, 159, 255, 255, 159, 102, 255, 236, 255, 102, 255, 121, 255, 102, 255, 102, 255,
-        198, 255, 102, 198, 255, 255, 121, 102, 255, 255, 236, 102, 255, 255,
-    ];
-
-    let mut texture_data = [0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
-    for y in 0..TEXTURE_SIZE {
-        let offset = TEXTURE_SIZE * y * 4;
-        texture_data[offset..(offset + TEXTURE_SIZE * 4)].copy_from_slice(&palette);
-        palette.rotate_right(4);
-    }
-
-    let mut res = Image::new_fill(
-        Extent3d {
-            width: TEXTURE_SIZE as u32,
-            height: TEXTURE_SIZE as u32,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &texture_data,
-        TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::default(),
-    );
-    res.sampler = ImageSampler::nearest();
-    res
 }
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {

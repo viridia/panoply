@@ -10,6 +10,7 @@ futures-lite = { workspace = true }
 lru = { workspace = true }
 panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
+panoply_precinct = { workspace = true }
 panoply_render = { workspace = true }
 panoply_terrain = { workspace = true }
 rapier3d = { workspace = true }

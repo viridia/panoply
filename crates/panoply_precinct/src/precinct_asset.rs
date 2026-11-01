@@ -20,7 +20,7 @@ use std::{
 };
 use thiserror::Error;
 
-use super::floor_region::FloorRegionSer;
+use crate::FloorRegionSer;
 
 extern crate rmp_serde as rmps;
 
@@ -28,28 +28,28 @@ extern crate rmp_serde as rmps;
 #[derive(TypePath, Asset, Serialize, Debug, Default, Clone)]
 pub struct PrecinctAsset {
     /// Table of wall archetypes used by this precinct.
-    pub(crate) scenery_types: Vec<String>,
+    pub scenery_types: Vec<String>,
 
     /// Table of floor archetypes used by this precinct.
     #[serde(default)]
-    pub(crate) floor_surfaces: Vec<String>,
+    pub floor_surfaces: Vec<String>,
 
     /// Table of terrain effect archetypes used by this precinct.
     #[serde(default)]
-    pub(crate) terrain_fx_types: Vec<String>,
+    pub terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.
     #[serde(default)]
-    pub(crate) tiers: Vec<TierSer>,
+    pub tiers: Vec<TierSer>,
 
     /// Packed terrain effect table
-    pub(crate) terrain_fx: Option<Vec<i16>>,
+    pub terrain_fx: Option<Vec<i16>>,
 
     // TODO(PAN3l): `actors: Vec<ActorInstanceData>` (D24). Until then
     // the loader skips the field, and saving a precinct would drop its actors.
     /// Table of scenery instances.
     #[serde(default)]
-    pub(crate) scenery: Vec<SceneryInstanceData>,
+    pub scenery: Vec<SceneryInstanceData>,
     // layers?: Record<string, ILayerData>,
 }
 
@@ -163,13 +163,13 @@ impl PrecinctAsset {
 /** Serialized schema for a tier */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TierSer {
-    pub(crate) level: i32,
+    pub level: i32,
 
     #[serde(default)]
-    pub(crate) pfloors: Vec<FloorRegionSer>,
+    pub pfloors: Vec<FloorRegionSer>,
 
     #[serde(default, with = "panoply_exemplar::ser::vec_rect")]
-    pub(crate) cutaways: Vec<Rect>,
+    pub cutaways: Vec<Rect>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

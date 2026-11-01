@@ -6,12 +6,12 @@ use bevy::{
 };
 use panoply_core::RealmPhysics;
 use panoply_exemplar::*;
+use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
 use rapier3d::prelude::RigidBodyHandle;
 
 use super::{
     floor_region::{FloorRegion, RebuildFloorAspects},
     floor_surface::FloorSurface,
-    precinct_asset::{PrecinctAsset, SceneryInstanceId},
     rle::rle_decode,
     scenery_element::{
         SceneryElement, SceneryElementRebuildAspects, SceneryElementRebuildColliders,

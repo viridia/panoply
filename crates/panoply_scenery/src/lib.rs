@@ -1,6 +1,7 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
 use panoply_exemplar::InstanceType;
+use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
@@ -9,7 +10,6 @@ use self::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
     precinct::{mark_precinct_data, read_precinct_data},
-    precinct_asset::{PrecinctAsset, PrecinctAssetLoader},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{build_se_colliders, ColliderDesc, ColliderShape, ColliderType},
     scenery_element::{spawn_se_model_instances, spawn_se_models, update_se_aspects},
@@ -23,7 +23,6 @@ pub mod floor_region;
 mod floor_surface;
 mod pending;
 pub mod precinct;
-pub mod precinct_asset;
 mod precinct_cache;
 mod rle;
 mod scenery_aspect;

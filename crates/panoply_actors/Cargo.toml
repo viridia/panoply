@@ -1,0 +1,10 @@
+[package]
+name = "panoply_actors"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+panoply_core = { workspace = true }
+panoply_exemplar = { workspace = true }
+serde = { workspace = true }

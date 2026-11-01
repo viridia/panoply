@@ -49,6 +49,4 @@ attachment loaded rather than none). That part of Bevy changes most between rele
 
 ## Verifying
 
-`plans/outlines.py` looks at the test objects from `spawn_material_test` (an outlined cube, the
-camping model, the skinned humanoid) at the closest camera distance, against a light grey clear
-color so that black outlines show.
+`plans/actors.py` looks at the player's actor, a skinned model, at the closest camera distance.

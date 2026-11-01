@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use hashbrown::HashMap;
+use bevy::{platform::collections::HashMap, prelude::*};
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 
@@ -7,11 +6,12 @@ use panoply_core::HexColor;
 
 use super::ACTOR_TYPE;
 
-/// Indicates that the actor has hit points and can take damage.
-#[derive(Component, Debug, Reflect, Clone, Default)]
-#[reflect(Aspect, Default)]
+/// The species' skeleton and the file holding its animation clips, each a `file#Label` path.
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
 pub struct Armature {
     pub armature: String,
+    #[serde(default)]
     pub animations: Option<String>,
 }
 
@@ -35,7 +35,8 @@ impl Aspect for Armature {
     }
 }
 
-/// Indicates that the actor has hit points and can take damage.
+/// The actor's body: a `file#Scene` path to a named scene of a character glTF, which holds the
+/// body mesh and the skeleton it is bound to.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 pub struct Skin(pub String);
@@ -51,31 +52,6 @@ impl Aspect for Skin {
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<Skin> = RemoveComponent::<Skin>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
-    }
-}
-
-/// Indicates that the actor has hit points and can take damage.
-#[derive(Component, Debug, Reflect, Clone, Default)]
-#[reflect(Aspect, Default)]
-pub struct Combatant;
-
-impl Aspect for Combatant {
-    fn name(&self) -> &str {
-        "Combatant"
-    }
-
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Combatant> = RemoveComponent::<Combatant>::new();
         entity.insert(self.clone());
         &DETACH
     }
@@ -160,7 +136,7 @@ impl Aspect for Features {
     }
 }
 
-/// Available color slots for this actor.
+/// Available feature slots for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 pub struct FeatureSlots(pub Vec<String>);

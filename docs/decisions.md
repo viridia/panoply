@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D40.**
+**Next: D41.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -307,3 +307,9 @@ never reused.
   fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket
   among them is an authoring error. The canopy collides with everything for now: when picking
   and sight rays arrive (X3, PAN3), their query filters exclude `CANOPY`.
+- **D40** Actors are a crate, `panoply_actors`, since the editor sees only engine crates (D37) and
+  will edit actors. The precinct file format is a crate of its own, `panoply_precinct`
+  (`PrecinctAsset`, its loader and saver, and the instance data it holds), which `panoply_scenery`
+  and `panoply_actors` both depend on: a precinct holds both scenery and actors (D24), and with the
+  format in scenery, scenery would have to name actor types, a dependency cycle. Scenery still
+  registers the asset and spawns precincts. (PAN3a)

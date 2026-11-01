@@ -4766,6 +4766,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_action_map",
+ "panoply_actors",
  "panoply_core",
  "panoply_editor",
  "panoply_exemplar",
@@ -4775,6 +4776,16 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_actors"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "panoply_core",
+ "panoply_exemplar",
+ "serde",
 ]
 
 [[package]]
@@ -4816,6 +4827,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "panoply_precinct"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "futures-lite",
+ "panoply_exemplar",
+ "rmp-serde",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "panoply_render"
 version = "0.1.0"
 dependencies = [
@@ -4835,6 +4858,7 @@ dependencies = [
  "lru",
  "panoply_core",
  "panoply_exemplar",
+ "panoply_precinct",
  "panoply_render",
  "panoply_terrain",
  "rapier3d",
