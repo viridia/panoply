@@ -23,12 +23,23 @@ pub mod collision_groups {
     /// Fixtures.
     pub const FIXTURE: Group = Group::GROUP_4;
 
+    /// Generated tree trunks.
+    pub const FLORA: Group = Group::GROUP_5;
+
+    /// The surface over generated forests that catches what falls onto them.
+    pub const CANOPY: Group = Group::GROUP_6;
+
+    /// The groups of a parcel's colliders, as opposed to a precinct's.
+    pub const PARCEL: Group = TERRAIN.union(FLORA).union(CANOPY);
+
     /// Every group, with its caption in the editor's Show menu.
     pub const CAPTIONED: &[(&str, Group)] = &[
         ("Terrain", TERRAIN),
         ("Floors", FLOOR),
         ("Walls", WALL),
         ("Fixtures", FIXTURE),
+        ("Trees", FLORA),
+        ("Canopy", CANOPY),
     ];
 }
 

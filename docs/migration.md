@@ -47,26 +47,13 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN10: readiness survey, BRP method `panoply.readiness` (`panoply_editor::diagnostics::survey`); `readiness_grid` in plans; in `goto`'s timeout report; checked in `plans/parcels.py`. |
 | (pending) | Warm-up instances follow the view center (D26); a teleport during startup left outlines unwarmed, failing `plans/scroll.py`. |
 | (pending) | PAN2: static scenery colliders (D38): walls, fixtures, floor trimeshes; Floor, Wall, Fixture groups; `GroundProbe.groups`; checked in `plans/physics.py`. |
+| (pending) | PAN11: tree colliders (D39): trunk capsules and a canopy over forests; Trees and Canopy groups; canopy probed in `plans/physics.py`. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN11 Tree colliders.** A capsule per tree trunk to block walking (radius per biome tree
-  entry, scaled with it, with a default; shrubs and herbs get none), and a canopy so an actor
-  dropped onto a forest cannot fall between trunks into a pocket it cannot leave (trunks can be
-  0.4 m apart; actors are 0.6 m wide). The canopy is quantized to the terrain grid: it covers
-  each tree cell, and each empty cell that a flood fill from the parcel's border through empty
-  cells does not reach (enclosed clearings), read across the border from neighbouring parcels,
-  since placement is deterministic. It is one trimesh per parcel over the covered cells, each
-  corner at the terrain height plus 2 m: continuous, so no holes or steps between trees on a
-  slope. Overhead, it never blocks walking, so covering more than needed costs nothing; no
-  generated tree shares a cell with a building, so it never cuts through a floor. Trees placed
-  as fixtures are authored, get their descriptors' colliders (D38) and no canopy; a pocket
-  among them is an authoring error. Its own collision group
-  touches actors only, so picking and sight rays pass through. Groups Flora and Canopy join the
-  Show menu; `plans/physics.py` probes both.
 - **PAN3 Actors.** First slice: the player's actor loads from a precinct, gets its model,
   stands on the ground with the controller, walks by WASD (R29), and plays clips chosen from
   its velocity; no goals, pathfinder or click to move yet. The slice may read the keys
@@ -88,10 +75,11 @@ never reused; a new item takes the next unused number.
   a server method of its own (the driver's X2), or a waypoint entity spawned there and clicked
   through X9. The game's click handling runs only while the game has the pointer (X3, editor
   tools). An actor gets physics only where the colliders under it are built (X33). Stuck
-  rescue, the backstop for traps PAN11's canopy does not cover (trees against walls, canopy
-  bowls too steep to climb): an actor that is not grounded, or makes no progress against its
+  rescue, the backstop for traps the canopy (D39) does not cover (trees against walls, canopy
+  bowls too steep to climb, clearings enclosed beyond its margin): an actor that is not grounded, or makes no progress against its
   intent, for some seconds moves to the nearest free spot; before navigation, the nearest cell
-  outside the canopy cover.
+  outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39) once the
+  controller is in hand.
   Precincts carry actors (playground `p000-p000` has 13): restore the `actors` field in
   `PrecinctAsset` (now skipped, `TODO(bevy-0.20)`), and spawn them from the actors module with
   a home-precinct relationship whose despawn is linked (D24), not from scenery. Actor
@@ -416,6 +404,18 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   top, so the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's
   `meta_type`). Colliders' `user_data` is the owning entity, for picking later; the F3 view
   draws every scenery collider, and ground only for shown parcels.
+- **D39** Generated trees get a trunk capsule each (blocks walking) and a canopy over the forest
+  (catches what falls onto it, so an actor dropped there cannot land in a pocket between trunks
+  0.4 m apart). Design in `panoply_terrain::flora_physics`'s module doc: the canopy is
+  quantized to the terrain grid, covering tree cells and enclosed clearings found by a flood
+  fill that looks 4 cells into neighbouring parcels, one continuous trimesh 2 m over the
+  ground, never over cells with terrain effects. Both are computed in the flora task and owned
+  by the parcel's flora entity (`OwnedColliders`, D38); `user_data` is the parcel, so the F3
+  view draws them for shown parcels only. Trunk radius is `FloraTableEntry::trunk_radius`
+  (default 0.15, scaled with the instance); shrubs and herbs have none. Trees placed as
+  fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket
+  among them is an authoring error. The canopy collides with everything for now: when picking
+  and sight rays arrive (X3, PAN3), their query filters exclude `CANOPY`.
 
 ## Deferred
 
@@ -699,7 +699,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
 - **X39** Scenery colliders beyond D38's static solids: doors (a kinematic body following the
   glTF node the descriptor's `animation` names, moved by the model's own animation, with no
   separate animation data), sensors, ladders, `hint` and `marker` colliders (the editor's
-  picking proxies), portal volumes, and faery's slab under the world. Trees are PAN11.
+  picking proxies), portal volumes, and faery's slab under the world. Trees are D39.
   *Gate:* the actor feature or editor tool that uses each (PAN3, X3).
 
 ## Notes

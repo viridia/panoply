@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use crate::{
+    flora_physics::{canopy_shape, trunk_shape, FloraShapes},
     BiomesAsset, BiomesHandle, BiomesTable, FloraType, Parcel, ParcelFloraChanged, ParcelTerrainFx,
     RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray, TerrainContoursHandle,
     TerrainContoursTable, TerrainContoursTableAsset,
@@ -8,8 +9,10 @@ use crate::{
 use bevy::{app::Propagate, platform::collections::HashMap};
 use panoply_core::{
     random::{noise3, WeightedChoice},
-    Realm,
+    realm_physics::collision_groups,
+    OwnedColliders, Realm, RealmPhysics,
 };
+use rapier3d::prelude::{ColliderBuilder, Group, InteractionGroups, InteractionTestMode};
 
 use super::{
     terrain_map::TerrainMap, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
@@ -32,6 +35,9 @@ pub struct FloraPlacementResult {
     /// Each terrain parcel or scenery precinct will have one of these, which specifies how many
     /// instances of each model are placed in the world, and where they are located.
     models: HashMap<String, Vec<(UVec2, Transform)>>,
+    /// Base and collider radius of each tree trunk.
+    trunks: Vec<(Vec3, f32)>,
+    shapes: Option<FloraShapes>,
 }
 
 #[derive(Debug, Component, Default)]
@@ -85,6 +91,7 @@ pub fn gen_flora(
             .clone();
 
         let shape_ref = parcel.center_shape();
+        let adjacent = parcel.contours;
         let biome_indices = parcel.biomes;
         let coords = IVec2::new(parcel.coords.x * PARCEL_SIZE, parcel.coords.y * PARCEL_SIZE);
         let terrain_fx = parcel.terrain_fx;
@@ -93,8 +100,10 @@ pub fn gen_flora(
         let task = pool.spawn(async move {
             let mut result = FloraPlacementResult {
                 models: HashMap::new(),
+                trunks: Vec::new(),
+                shapes: None,
             };
-            if compute_flora_placement(
+            if !compute_flora_placement(
                 coords,
                 shape_ref,
                 &contours,
@@ -104,10 +113,13 @@ pub fn gen_flora(
                 &biomes,
                 &mut result,
             ) {
-                Some(result)
-            } else {
-                None
+                return None;
             }
+            result.shapes = Some(FloraShapes {
+                trunks: trunk_shape(&result.trunks),
+                canopy: canopy_shape(&adjacent, &contours.read().unwrap(), &terrain_fx),
+            });
+            Some(result)
         });
         commands
             .entity(entity)
@@ -122,12 +134,18 @@ pub fn insert_flora(
     mut q_parcels: Query<(Entity, &mut Parcel, &mut ComputeFloraTask)>,
     mut q_flora: Query<(&mut FloraInstance, &mut Transform)>,
     q_children: Query<&Children>,
-    q_realms: Query<(&Realm, &TerrainMap)>,
+    mut q_realms: Query<(&Realm, &mut RealmPhysics)>,
     server: Res<AssetServer>,
 ) {
     for (entity, mut parcel, mut task) in q_parcels.iter_mut() {
-        if let Ok((realm, _terrain)) = q_realms.get(parcel.realm) {
+        if let Ok((realm, mut physics)) = q_realms.get_mut(parcel.realm) {
             if let Some(task_result) = future::block_on(future::poll_once(&mut task.0)) {
+                // A parcel without terrain loses its trees' colliders.
+                if task_result.is_none() {
+                    if let Some(flora_entity) = parcel.flora_entity {
+                        commands.entity(flora_entity).remove::<OwnedColliders>();
+                    }
+                }
                 // If there is flora
                 if let Some(mut flora_placement) = task_result {
                     // Get or create flora entity. Also record existing flora instances.
@@ -163,6 +181,37 @@ pub fn insert_flora(
                             child
                         }
                     };
+
+                    // Trunks and canopy, owned by the flora entity; the previous ones go with
+                    // the insert.
+                    let shapes = flora_placement
+                        .shapes
+                        .take()
+                        .into_iter()
+                        .flat_map(|shapes| {
+                            [
+                                (shapes.trunks, collision_groups::FLORA),
+                                (shapes.canopy, collision_groups::CANOPY),
+                            ]
+                        });
+                    let handles = shapes
+                        .filter_map(|(shape, group)| Some((shape?, group)))
+                        .map(|(shape, group)| {
+                            let collider = ColliderBuilder::new(shape)
+                                .collision_groups(InteractionGroups::new(
+                                    group,
+                                    Group::ALL,
+                                    InteractionTestMode::And,
+                                ))
+                                .user_data(entity.to_bits() as u128)
+                                .build();
+                            physics.insert_collider(parcel.physics, collider)
+                        })
+                        .collect();
+                    commands.entity(flora_entity).insert(OwnedColliders {
+                        realm: parcel.realm,
+                        handles,
+                    });
 
                     // Generate model placements for flora.
                     let count = flora_placement.models.iter().fold(0, |n, c| n + c.1.len());
@@ -341,6 +390,9 @@ fn compute_flora_placement(
             if let Some(entry) = feature_model {
                 if let Some(ref model) = entry.proto {
                     let scale = entry.scale + (noise3(gx, gz, 7) * 2. - 1.) * entry.scale_variation;
+                    if feature == FloraType::RandomTree {
+                        out.trunks.push((translation, entry.trunk_radius * scale));
+                    }
                     // println!("Biome: {gx} {gz} {}", model);
                     let entry = out
                         .models

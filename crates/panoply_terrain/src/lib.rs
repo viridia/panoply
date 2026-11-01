@@ -1,5 +1,6 @@
 mod biome;
 mod flora;
+mod flora_physics;
 mod ground_material;
 mod ground_mesh;
 mod hemisphere;

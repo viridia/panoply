@@ -104,8 +104,9 @@ fn toggle_physics(
     }
 }
 
-/// Draws the colliders of the viewpoint's realm: ground only for shown parcels (D20), since all
-/// of it would be millions of lines, and every scenery collider.
+/// Draws the colliders of the viewpoint's realm: those of parcels (ground, trees, canopy) only
+/// for shown parcels (D20), since all of them would be millions of lines, and every scenery
+/// collider.
 fn draw_physics(
     views: Res<DebugViews>,
     viewpoint: Res<Viewpoint>,
@@ -164,7 +165,7 @@ impl DebugRenderBackend for GizmoBackend<'_, '_, '_> {
                 let memberships = collider.collision_groups().memberships;
                 // Scenery colliders are a few lines each, so all of them are drawn.
                 memberships.intersects(self.groups)
-                    && (!memberships.contains(collision_groups::TERRAIN)
+                    && (!memberships.intersects(collision_groups::PARCEL)
                         || self.shown_parcels.contains(&collider.user_data))
             }
             _ => true,

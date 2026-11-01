@@ -36,6 +36,9 @@ pub struct FloraTableEntry {
     /// Each instance's scale is within this much of `scale`, either way.
     #[serde(default = "default_flora_scale_variation")]
     pub scale_variation: f32,
+    /// Radius of a tree's trunk collider at scale 1, scaled with each instance. Trees only.
+    #[serde(default = "default_trunk_radius")]
+    pub trunk_radius: f32,
 }
 
 fn default_flora_scale() -> f32 {
@@ -43,6 +46,10 @@ fn default_flora_scale() -> f32 {
 }
 
 fn default_flora_scale_variation() -> f32 {
+    0.15
+}
+
+fn default_trunk_radius() -> f32 {
     0.15
 }
 
