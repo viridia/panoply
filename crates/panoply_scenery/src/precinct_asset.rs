@@ -45,7 +45,7 @@ pub struct PrecinctAsset {
     /// Packed terrain effect table
     pub(crate) terrain_fx: Option<Vec<i16>>,
 
-    // TODO(PAN3): `actors: Vec<ActorInstanceData>` (D24). Until then
+    // TODO(PAN3l): `actors: Vec<ActorInstanceData>` (D24). Until then
     // the loader skips the field, and saving a precinct would drop its actors.
     /// Table of scenery instances.
     #[serde(default)]
@@ -412,7 +412,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                             precinct.tiers = map.next_value()?;
                         }
                         Field::Actors => {
-                            // TODO(PAN3): read with `ActorInstanceListDeserializer`.
+                            // TODO(PAN3l): read with `ActorInstanceListDeserializer`.
                             map.next_value::<serde::de::IgnoredAny>()?;
                         }
                         Field::Layers => {

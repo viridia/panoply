@@ -16,7 +16,7 @@ use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
-// TODO(PAN3): restore
+// TODO(PAN3a): restore
 // mod actors;
 // REFERENCE(PAN4, PAN5): uncompiled, deleted as the rewrites replace them.
 // #[cfg(feature = "editor")]
@@ -37,7 +37,7 @@ use crate::{
 use panoply_render::PanoplyRenderPlugin;
 use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
-// TODO(PAN3, PAN4): restore
+// TODO(PAN3a, PAN4): restore
 // use crate::{actors::ActorsPlugin, portals::PortalPlugin};
 
 // REFERENCE(PAN5)
@@ -99,7 +99,7 @@ fn main() {
         PanoplyRenderPlugin,
         PanoplyTerrainPlugin,
         PanoplySceneryPlugin,
-        // TODO(PAN3, PAN4, X5): restore
+        // TODO(PAN3a, PAN4, X5): restore
         // ActorsPlugin,
         // PortalPlugin,
         // WorldInspectorPlugin::new(),
@@ -224,9 +224,8 @@ fn rotate_shapes(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>)
     }
 }
 
-/// TEMP(PAN3): Spawns one object per custom material plus two GLTF models with material
-/// extras, so that shader compilation errors show up at runtime. Remove once scenery and
-/// actors are restored.
+/// TEMP(PAN3c): Spawns one object per custom material plus two GLTF models with material
+/// extras, so that shader compilation errors show up at runtime.
 fn spawn_material_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -300,9 +299,9 @@ fn spawn_material_test(
     }
 }
 
-/// TEMP(PAN3): Exemplars to load as a check on the exemplar loader, including one that
+/// TEMP(PAN3l): Exemplars to load as a check on the exemplar loader, including one that
 /// `extends` another. Only catalogs without aspects load until scenery and actors register their
-/// aspect types. Remove once those are restored.
+/// aspect types.
 #[derive(Resource)]
 struct ExemplarCheck(Vec<Handle<panoply_exemplar::Exemplar>>);
 
