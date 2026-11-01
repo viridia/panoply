@@ -54,9 +54,9 @@ speech; animation; physics and ballistic motion.
 ## Appearance
 
 - **R13** Model assembly and colors follow D28; hair follows D29; actors are outlined (D14).
-- **R14** An equipped item shows its model attached to the bone named by its equip slot
-  (default slots `weaponL`, `weaponR`), and changes as equipment changes. A missing bone is
-  reported with the nearest bone name.
+- **R14** An equipped item shows its model attached to the bone named by its equip slot (default
+  slots `weapon.L`, `weapon.R`, the bones' names in the glTF), and changes as equipment changes. A
+  missing bone is reported with the nearest bone name.
 - **R15** An actor on a cut-away floor is hidden (X19), and a hidden actor cannot be picked.
   The player's own actor is never pickable.
 - **R16** Editing an archetype in the editor updates colors live, and rebuilds the model when

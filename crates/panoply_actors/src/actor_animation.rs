@@ -42,10 +42,11 @@ pub fn bind_actor_skeleton(
     let Some(armature) = &body.armature else {
         return;
     };
-    let Some(root) = children
-        .iter_descendants(ready.entity)
-        .find(|entity| names.get(*entity).is_ok_and(|name| name.as_str() == armature.node))
-    else {
+    let Some(root) = children.iter_descendants(ready.entity).find(|entity| {
+        names
+            .get(*entity)
+            .is_ok_and(|name| name.as_str() == armature.node)
+    }) else {
         error!("Actor skeleton [{}] not found in its body", armature.node);
         return;
     };
@@ -67,9 +68,10 @@ fn bind_targets(
     children: &Query<&Children>,
     names: &Query<&Name>,
 ) {
-    commands
-        .entity(entity)
-        .insert((AnimationTargetId::from_names(path.iter()), AnimatedBy(player)));
+    commands.entity(entity).insert((
+        AnimationTargetId::from_names(path.iter()),
+        AnimatedBy(player),
+    ));
     for child in children.get(entity).into_iter().flatten() {
         if let Ok(name) = names.get(*child) {
             path.push(name.clone());

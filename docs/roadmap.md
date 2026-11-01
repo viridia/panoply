@@ -21,10 +21,14 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3d Colors.** The `Colors` aspect replaces slot materials with clones cached by (material,
-  color), per D28.
 - **PAN3e Features.** Hair, hats and beards spawn as meshes only, each with a `SkinnedMesh` bound to
-  the body's joints by `Name` (D28). Hair keeps the standard material until PAN3n.
+  the body's joints by `Name` (D28), and take the actor's colors as the body does
+  (`color_actor_body`). Hair keeps the standard material until PAN3n.
+- **PAN3o Wielding.** An equipped item's model follows the bone of its equip slot (R14): bring
+  faery's `props/weapons.glb` through the asset pipeline, give item exemplars a model aspect (the
+  converters dropped it), and attach the model's scene as a child of the `weapon.R` or `weapon.L`
+  bone. With no inventory yet, an actor aspect names what it holds per slot; the playground actor
+  holds a sword. Plan: the sword moves with the hand through the idle clip.
 - **PAN3f Collider and controller.** A capsule from the archetype's size (R4). First candidate (D36)
   is `rapier3d`'s `KinematicCharacterController`, which has slope limits, ground snapping and
   depenetration (stairs are ramps, so its autostep is not needed); test it against R24 to R26.
@@ -38,7 +42,9 @@ components and every layer restartable from saved state (R104).
 - **PAN3h Move to point.** A body action, not a goal: travel in a straight line to a point at a pace
   (R32, R43), reporting when it finishes (R45). Started from a plan or a debug hook.
 - **PAN3i Blending.** Crossfades between clips (R34); gait from speed (R17, R18), keeping the
-  stride's phase across a change (R19).
+  stride's phase across a change (R19). Build crossfades on `AnimationGraph` blend nodes, so
+  layering (an upper-body mask for R39's gestures) or a speed-weighted walk-run blend only adds
+  nodes.
 - **PAN3j Animation states.** The state follows the current action and the actor's state (idle,
   locomotion, falling, landing): R25, R33, R35, R38, R41.
 - **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the

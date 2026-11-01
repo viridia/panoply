@@ -1,10 +1,11 @@
-"""Actors: the player's actor stands on a floor in the playground, with one skeleton (D28), and
-plays its idle clip from the shared clips file.
+"""Actors: the player's actor stands on a floor in the playground, with one skeleton (D28),
+plays its idle clip from the shared clips file, and wears its exemplar's colors.
 
     bevy-remote-driver plans/actors.py
 
 Looks at it from the closest camera distance (20), mid-clip, so the outlines can be seen to
-follow the pose.
+follow the pose. The colors are checked by eye in `actor.png`: tan tunic, gold sleeves, brown
+hair and legs, not the file's default materials.
 """
 
 from _panoply_driver import PanoplyDriver

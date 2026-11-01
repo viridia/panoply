@@ -68,7 +68,9 @@ pub fn spawn_actor_body_scenes(
             continue;
         };
         if let Some(scene) = gltf.named_scenes.get(body.scene.as_str()) {
-            commands.entity(entity).insert(WorldAssetRoot(scene.clone()));
+            commands
+                .entity(entity)
+                .insert(WorldAssetRoot(scene.clone()));
         } else {
             error!(
                 "Actor body [{}] not found; scenes: {:?}",

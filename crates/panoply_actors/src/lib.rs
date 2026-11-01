@@ -4,12 +4,14 @@ use panoply_exemplar::{Exemplar, ExemplarServer, InstanceType, UpdateAspects};
 
 mod actor_animation;
 mod actor_aspect;
+mod actor_colors;
 mod actor_model;
 
 pub use actor_animation::ActorArmature;
 pub use actor_model::*;
 
 use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
+use self::actor_colors::{color_actor_body, ActorMaterials};
 
 use self::actor_aspect::{Armature, ColorSlots, Colors, FeatureSlots, Features, Skin};
 
@@ -53,7 +55,9 @@ impl Plugin for ActorsPlugin {
                 )
                     .chain(),
             )
-            .add_observer(bind_actor_skeleton);
+            .init_resource::<ActorMaterials>()
+            .add_observer(bind_actor_skeleton)
+            .add_observer(color_actor_body);
     }
 }
 
