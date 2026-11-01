@@ -7,6 +7,7 @@ pub use materials::{
     BlackMaterialHandle, FlameMaterial, FlameMaterialHandle, FloorNoisyMaterial,
     FloorNoisyMaterialExt, OutlineMaterial, OutlineMaterialHandle,
 };
+pub use models::ModelsPending;
 
 /// Panoply's custom materials, and the processing of loaded glTF models: material extras and
 /// pipeline warm-up.

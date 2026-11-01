@@ -23,6 +23,7 @@ pub mod floor_region;
 mod floor_surface;
 pub mod precinct;
 pub mod precinct_asset;
+mod pending;
 mod precinct_cache;
 mod rle;
 mod scenery_aspect;
@@ -33,6 +34,7 @@ mod terrain_fx_map;
 mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
+pub use pending::SceneryPending;
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders

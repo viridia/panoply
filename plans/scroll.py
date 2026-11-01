@@ -36,8 +36,6 @@ def log_lines(driver, marker):
 
 def scroll(driver, label):
     driver.goto(START, DISTANCE, AZIMUTH)
-    # Let loading around the start settle before moving.
-    driver.seconds(1)
     start_frame, start_time = driver.frame(), time.monotonic()
     # Not `key(hold=...)`, which returns before the release.
     driver.press("KeyW")
@@ -51,9 +49,8 @@ def scroll(driver, label):
 
 def run(driver):
     driver.present("PrimaryCamera")
-    driver.present("Ground", timeout={"frames": 600, "seconds": 30})
-    # Model warm-up (panoply_render's models::warmup) runs at startup; wait for it to finish.
-    driver.absent("ModelWarmup", timeout={"frames": 1200, "seconds": 60})
+    # `goto` waits for startup's model warm-up (panoply_render's models::warmup) too.
+    driver.goto(START, DISTANCE, AZIMUTH)
     before = len(log_lines(driver, "Pipeline created"))
     scroll(driver, "cold")
     # The hitch log (editor builds) logs each pipeline created after startup. Walking into new

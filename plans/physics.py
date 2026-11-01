@@ -26,7 +26,6 @@ TERRAIN_GROUP = 1
 def run(driver):
     driver.present("PrimaryCamera")
     driver.goto(SPOT, 20.0)
-    driver.frames(120)
     assert driver.get_resource(VIEWS, at="physics") is False, "physics drawing on at start"
     assert driver.get_resource(PROBE, at="hit") is None, "probe set while drawing is off"
     assert driver.get_resource(PANEL, at="visible") is False, "panel shown at start"

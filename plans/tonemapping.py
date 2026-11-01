@@ -19,7 +19,6 @@ def run(driver):
     driver.present("PrimaryCamera")
     camera = driver.camera()
     driver.goto([80.0, 0.0, 80.0], 40.0)
-    driver.frames(120)
     for mode in MODES:
         driver.call(
             "world.insert_components", {"entity": camera, "components": {TONEMAPPING: mode}}

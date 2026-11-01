@@ -52,15 +52,19 @@ pub fn update_se_aspects(
     }
 }
 
+/// Spawns an element's models. An element without `SceneryModels` (a marker, a region) has
+/// none, but is still marked, and loses any models its exemplar had before.
 pub fn spawn_se_models(
     mut commands: Commands,
-    mut query: Query<(Entity, &SceneryModels, &RenderLayers), With<SceneryElementRebuildModels>>,
-    // mut meshes: ResMut<Assets<Mesh>>,
+    mut query: Query<
+        (Entity, Option<&SceneryModels>, &RenderLayers),
+        With<SceneryElementRebuildModels>,
+    >,
     server: Res<AssetServer>,
 ) {
     for (entity, models, layers) in query.iter_mut() {
         commands.entity(entity).despawn_related::<Children>();
-        for model in models.0.iter() {
+        for model in models.into_iter().flat_map(|models| models.0.iter()) {
             if let Some((fname, fragment)) = model.asset.split_once('#') {
                 let handle: Handle<Gltf> = server.load(fname.to_owned());
                 commands.spawn((

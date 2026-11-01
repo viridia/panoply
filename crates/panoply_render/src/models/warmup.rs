@@ -8,9 +8,12 @@
 use bevy::{
     app::Propagate,
     asset::LoadedFolder,
+    ecs::system::SystemParam,
     gltf::Gltf,
     prelude::*,
-    world_serialization::{WorldAsset, WorldAssetRoot, WorldInstanceReady},
+    world_serialization::{
+        WorldAsset, WorldAssetRoot, WorldInstance, WorldInstanceReady, WorldInstanceSpawner,
+    },
 };
 use panoply_core::{Realm, Viewpoint};
 
@@ -38,11 +41,11 @@ impl Plugin for WarmupPlugin {
 
 /// Keeps the model folders loaded.
 #[derive(Resource)]
-struct ModelFolders(#[allow(dead_code)] Vec<Handle<LoadedFolder>>);
+pub struct ModelFolders(Vec<Handle<LoadedFolder>>);
 
 /// Scenes waiting to be drawn once.
 #[derive(Resource, Default)]
-struct WarmupQueue(Vec<Handle<WorldAsset>>);
+pub struct WarmupQueue(Vec<Handle<WorldAsset>>);
 
 /// A scene instance drawn only to warm up its pipelines.
 #[derive(Component)]
@@ -102,6 +105,44 @@ fn spawn_warmups(
 fn start_warmup_countdown(ready: On<WorldInstanceReady>, mut warmups: Query<&mut ModelWarmup>) {
     if let Ok(mut warmup) = warmups.get_mut(ready.entity) {
         warmup.frames_left = Some(FRAMES_SHOWN);
+    }
+}
+
+/// Model work still to do: model folders loading, scenes waiting for warm-up or being drawn for
+/// it, and scene instances (flora, scenery, warm-ups, anything with a `WorldAssetRoot`) that
+/// Bevy has not yet spawned. For readiness checks, such as the editor's `ViewReady`.
+#[derive(SystemParam)]
+pub struct ModelsPending<'w, 's> {
+    server: Res<'w, AssetServer>,
+    folders: Option<Res<'w, ModelFolders>>,
+    queue: Res<'w, WarmupQueue>,
+    warmups: Query<'w, 's, (), With<ModelWarmup>>,
+    spawner: Res<'w, WorldInstanceSpawner>,
+    scenes: Query<'w, 's, Option<&'static WorldInstance>, With<WorldAssetRoot>>,
+}
+
+impl ModelsPending<'_, '_> {
+    /// Names the first kind of work still pending, or `None` when there is none.
+    pub fn waiting_on(&self) -> Option<&'static str> {
+        let folders_loaded = self.folders.as_ref().is_some_and(|folders| {
+            folders
+                .0
+                .iter()
+                .all(|folder| self.server.is_loaded_with_dependencies(folder))
+        });
+        if !folders_loaded {
+            Some("model folders")
+        } else if !self.queue.0.is_empty() || !self.warmups.is_empty() {
+            Some("warm-up")
+        } else if self
+            .scenes
+            .iter()
+            .any(|instance| !instance.is_some_and(|id| self.spawner.instance_is_ready(**id)))
+        {
+            Some("scene instances")
+        } else {
+            None
+        }
     }
 }
 

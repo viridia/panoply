@@ -56,14 +56,12 @@ def report(driver, label):
 def run(driver):
     driver.present("PrimaryCamera")
     driver.goto(FIRST, DISTANCE)
-    driver.frames(120)
     first = report(driver, "first spot")
     in_view = {name for name, v in first.items() if v != "Hidden"}
     assert in_view, "no parcels in view"
     driver.screenshot("first")
 
     driver.goto(SECOND, DISTANCE)
-    driver.frames(120)
     second = report(driver, "second spot")
     stale = [name for name in in_view if name in second]
     still_shown = [name for name in stale if second[name] != "Hidden"]

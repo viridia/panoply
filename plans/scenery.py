@@ -71,6 +71,5 @@ def run(driver):
     for label, (x, _, z) in spots:
         print(f"{label} at ({x:.1f}, {z:.1f})")
         driver.goto([x, 0.0, z], DISTANCE)
-        driver.frames(240)
         driver.screenshot(label)
     driver.exits("Escape")

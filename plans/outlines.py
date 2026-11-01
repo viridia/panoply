@@ -26,8 +26,6 @@ def run(driver):
             "value": {"Custom": {"Srgba": {"red": 0.8, "green": 0.8, "blue": 0.8, "alpha": 1.0}}},
         },
     )
-    driver.frames(60)
     driver.goto([2.0, 0.0, 2.0], 20.0)
-    driver.frames(30)
     driver.screenshot("outlines")
     driver.exits("Escape")

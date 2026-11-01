@@ -57,7 +57,5 @@ def run(driver):
         )
     for spot, (position, azimuth, distance) in SPOTS.items():
         driver.goto(position, distance, azimuth)
-        # Room for parcels and scenery to spawn and pipelines to compile.
-        driver.frames(120)
         driver.screenshot(name(f"lighting_{spot}"))
     driver.exits("Escape")

@@ -36,9 +36,8 @@ def run(driver):
     driver.screenshot("start")
     for x, z in STOPS:
         driver.goto([x, 0.0, z], 40.0, realm=REALM)
-        # Let parcels load, then average over wall time: the driver's diagnostics report the
-        # latest single frame, which is too noisy to compare.
-        driver.frames(240)
+        # Average over wall time: the driver's diagnostics report the latest single frame, which
+        # is too noisy to compare.
         f0, t0 = driver.frame(), time.monotonic()
         time.sleep(3.0)
         f1, t1 = driver.frame(), time.monotonic()

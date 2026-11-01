@@ -23,7 +23,6 @@ def name(n):
 def run(driver):
     driver.present("PrimaryCamera")
     driver.goto([110.0, 0.0, 150.0], 20.0)
-    driver.frames(120)
     driver.screenshot(name("shadows_still"))
     # Shift+Left strafes; holding it a few frames at a time moves the view slowly.
     for i in range(6):

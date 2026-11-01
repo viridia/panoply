@@ -43,19 +43,23 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN7a: `Propagate<RenderLayers>` (D5); parcel systems moved from `src/terrain` into `panoply_terrain`. |
 | (pending) | PAN7b: `materials` and `models` into `panoply_render`; `src/scenery` into `panoply_scenery`; `HexColor` into `panoply_core`. |
 | (pending) | PAN7c: location overlay, hitch log and profiling diagnostics into `panoply_editor::diagnostics`. |
+| (pending) | PAN9: `goto` waits for `ViewReady` (D10); each engine crate reports its pending work; model-less scenery elements no longer stay marked. |
 
 ## Next
 
 In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row names it) and
 never reused; a new item takes the next unused number.
 
-- **PAN9 Plans wait for readiness**, X33's first slice. An editor-build resource (e.g. `ViewReady`) that is true when the parcel
-  show set (D20) has no precinct still in `ReadPrecinctData`, its scenery scenes spawned, ground
-  and flora on every parcel, and an empty warm-up queue. `goto` waits on it with
-  `Driver.wait` and a timeout, then a frame or two for the render; the fixed `frames(N)` after
-  each `goto` go. About 2,800 such frames (23 s of a 150 s run) today, some of it recoverable,
-  and the counts are guesses that can be too short on a cold load. Not `hot_reload.py`, whose
-  wait is a shader recompile; not the few frames after key presses.
+- **PAN10 Readiness survey**, for debugging loading and tuning load distances. A custom BRP
+  method (e.g. `panoply.readiness`), computed only when called: the viewpoint, then each loaded
+  parcel and precinct, sorted by coordinates, with whether it is shown (D20) and the stages
+  still pending as short codes (`fx`, `ground`, `water`, `flora`, `flora-scenes`); precincts add
+  their asset load state and counts of elements and floors pending, by marker. Each `*Pending`
+  param (PAN9) gains a per-entity form of `waiting_on`, so each crate still owns its markers;
+  the editor provides the handler and the app registers it with `RemotePlugin::with_method`
+  (`src/remote_driver.rs`). `goto` puts the survey in its failure report on timeout. A plan
+  can print it as a grid, as faery's readiness visualizer showed it. An on-screen overlay joins
+  the Show menu only when a feature needs it (PAN5).
 - **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
   floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
   faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
@@ -152,8 +156,10 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   installed with `uv tool install git+…`), as AGENTS.md says. The game enables BRP itself in
   `src/remote_driver.rs`, only when `BEVY_REMOTE_DRIVER_PORT` is set, with Bevy's `bevy_remote`
   feature. Plans live in `plans/` and set `DRIVER = PanoplyDriver`, whose steps
-  (`plans/_panoply_driver.py`) hold what plans repeat: `goto` writes `GotoLocation`, `camera`
-  finds the primary camera. `key(hold=…)` returns at the press, before the release, so a step
+  (`plans/_panoply_driver.py`) hold what plans repeat: `goto` writes `GotoLocation` and waits
+  for `panoply_editor::diagnostics::ViewReady` (nothing loading or building in any loaded parcel
+  or precinct, and warm-up done), then two frames for the render; `camera` finds the primary
+  camera. `key(hold=…)` returns at the press, before the release, so a step
   that is not input (a screenshot, a timing) runs during the hold: a plan that needs the hold
   over presses, waits `frames`, and releases (`smoke.py`, `scroll.py`). Replaced the in-tree
   fork, `crates/bevy_remote_driver`, whose server methods all went upstream.
@@ -616,12 +622,17 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   The same cache would serve Panoply's other generated materials. *Gate:* the first arbor_day species placed in the game.
 - **X33** Region readiness: one query, given an area, that is true when no part of it overlaps a
   parcel or precinct still being built. Actors pass their footprint: an actor gets a physics
-  body only where the colliders under it are built. Plans pass a point (the viewpoint) or the
-  camera's estimated view (the parcel show set, D20, already computes one), for a `goto` step
-  that waits until the area has loaded, replacing the fixed `driver.frames(120)` after each
-  move. A loading screen after a portal would use it too. Render readiness may need its own
-  check, beside physics. faery's version is in [faery.md](faery.md), Actors and navigation.
-  The plans' half is PAN9. *Gate:* actors (PAN3), for the footprint query.
+  body only where the colliders under it are built. Built means inserted and the realm stepped
+  once since: rapier 0.36 adds an inserted collider to the broad phase, which queries and the
+  character controller use, only in `step`, and only the viewpoint's realm steps (D35). A
+  per-realm step count against each parcel's insert step would do; the collider itself is made
+  in the ground-mesh task, so construction needs no state of its own. Plans pass a point (the viewpoint) or the
+  camera's estimated view (the parcel show set, D20, already computes one). A loading screen
+  after a portal would use it too. Render readiness may need its own check, beside physics.
+  faery's version is in [faery.md](faery.md), Actors and navigation. The plans' half landed in
+  PAN9 as `ViewReady`, which covers every loaded parcel and precinct rather than an area; the
+  `*Pending` system params it combines (`TerrainPending`, `SceneryPending`, `ModelsPending`)
+  are where an area filter would go. *Gate:* actors (PAN3), for the footprint query.
 - **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and
   others): the game loads every precinct position near the view, but only some exist. It needs
   to know which do, by a directory scan or a catalog file. A catalog works in packaged and web

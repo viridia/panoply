@@ -21,7 +21,6 @@ MAGENTA = "    return vec4(1.0, 0.0, 1.0, 1.0);\n"
 def run(driver):
     driver.present("PrimaryCamera")
     driver.goto([189.0, 0.0, 62.0], 20.0)
-    driver.frames(120)
     driver.screenshot("hot_reload_before")
     source = SHADER.read_text()
     assert ORIGINAL in source, "water.wesl no longer ends with the expected return"

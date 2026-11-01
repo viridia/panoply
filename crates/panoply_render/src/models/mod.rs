@@ -1,6 +1,8 @@
 // mod model_loader;
 mod warmup;
 
+pub use warmup::ModelsPending;
+
 use bevy::{
     gltf::GltfMaterialExtras, light::NotShadowCaster, mesh::skinning::SkinnedMesh,
     platform::collections::HashMap, prelude::*,
