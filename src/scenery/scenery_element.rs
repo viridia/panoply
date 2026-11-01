@@ -1,10 +1,9 @@
 use bevy::{
-    camera::visibility::RenderLayers, gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot,
+    app::Propagate, camera::visibility::RenderLayers, gltf::Gltf, prelude::*,
+    world_serialization::WorldAssetRoot,
 };
 
 use panoply_exemplar::*;
-
-use crate::models::PropagateRenderLayers;
 
 use super::{
     precinct_asset::SceneryInstanceId,
@@ -70,7 +69,7 @@ pub fn spawn_se_models(
                         label: String::from(fragment),
                         placement: model.clone(),
                     },
-                    layers.clone(),
+                    Propagate(layers.clone()),
                     ChildOf(entity),
                 ));
             }
@@ -104,11 +103,9 @@ pub fn spawn_se_model_instances(
                     budget -= 1;
                     let mut transform = Transform::from_translation(Vec3::new(0., 0., 0.));
                     component_transform(&mut transform, &mesh.placement);
-                    commands.entity(entity).try_insert((
-                        WorldAssetRoot(scene_handle.clone()),
-                        transform,
-                        PropagateRenderLayers,
-                    ));
+                    commands
+                        .entity(entity)
+                        .try_insert((WorldAssetRoot(scene_handle.clone()), transform));
                 } else {
                     error!("Model not found: [{}]", mesh.label);
                     info!("Available scenes: [{:?}]", gltf.named_scenes.keys());

@@ -1,15 +1,14 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use crate::models::PropagateRenderLayers;
-use bevy::platform::collections::HashMap;
-use panoply_core::{
-    random::{noise3, WeightedChoice},
-    Realm,
-};
-use panoply_terrain::{
+use crate::{
     BiomesAsset, BiomesHandle, BiomesTable, FloraType, Parcel, ParcelFloraChanged, ParcelTerrainFx,
     RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray, TerrainContoursHandle,
     TerrainContoursTable, TerrainContoursTableAsset,
+};
+use bevy::{app::Propagate, platform::collections::HashMap};
+use panoply_core::{
+    random::{noise3, WeightedChoice},
+    Realm,
 };
 
 use super::{
@@ -200,7 +199,7 @@ pub fn insert_flora(
                                                     label: fragment.to_string(),
                                                     transform,
                                                 },
-                                                realm.layer.clone(),
+                                                Propagate(realm.layer.clone()),
                                             ))
                                             .id(),
                                     );
@@ -248,11 +247,9 @@ pub fn spawn_flora_model_instances(
             if let Some(gltf) = asset {
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     budget -= 1;
-                    commands.entity(entity).try_insert((
-                        WorldAssetRoot(scene_handle.clone()),
-                        mesh.transform,
-                        PropagateRenderLayers,
-                    ));
+                    commands
+                        .entity(entity)
+                        .try_insert((WorldAssetRoot(scene_handle.clone()), mesh.transform));
                 } else {
                     error!("Model not found: [{}]", mesh.label);
                     info!("Available scenes: [{:?}]", gltf.named_scenes.keys());

@@ -2,42 +2,20 @@
 mod warmup;
 
 use bevy::{
-    camera::visibility::RenderLayers, gltf::GltfMaterialExtras, light::NotShadowCaster,
-    mesh::skinning::SkinnedMesh, platform::collections::HashMap, prelude::*,
-    world_serialization::WorldInstanceReady,
+    gltf::GltfMaterialExtras, light::NotShadowCaster, mesh::skinning::SkinnedMesh,
+    platform::collections::HashMap, prelude::*,
 };
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
 use crate::materials::{BlackMaterialHandle, FlameMaterialHandle, OutlineMaterialHandle};
 
-/// A component that indicates that we want to propagate render layers to all descendants.
-#[derive(Debug, Clone, Copy, Component)]
-pub struct PropagateRenderLayers;
-
 pub struct ModelsPlugin;
 
 impl Plugin for ModelsPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugins(warmup::WarmupPlugin)
-            .add_observer(copy_model_render_layers)
             .add_systems(Update, process_material_extras);
-    }
-}
-
-/// When a model's world instance has finished spawning, copy its render layers to all
-/// descendants.
-pub fn copy_model_render_layers(
-    ready: On<WorldInstanceReady>,
-    mut commands: Commands,
-    q_models: Query<&RenderLayers, With<PropagateRenderLayers>>,
-    q_children: Query<&Children>,
-) {
-    let Ok(layers) = q_models.get(ready.entity) else {
-        return;
-    };
-    for descendant in q_children.iter_descendants(ready.entity) {
-        commands.entity(descendant).try_insert(layers.clone());
     }
 }
 
@@ -70,20 +48,14 @@ fn process_material_extras(
     r_black: Res<BlackMaterialHandle>,
     r_flame: Res<FlameMaterialHandle>,
     q_materials: Query<
-        (
-            Entity,
-            &Mesh3d,
-            Option<&SkinnedMesh>,
-            Option<&RenderLayers>,
-            &GltfMaterialExtras,
-        ),
+        (Entity, &Mesh3d, Option<&SkinnedMesh>, &GltfMaterialExtras),
         (
             With<MeshMaterial3d<StandardMaterial>>,
             Added<GltfMaterialExtras>,
         ),
     >,
 ) {
-    for (entity, mesh, skin, layers, extras) in q_materials.iter() {
+    for (entity, mesh, skin, extras) in q_materials.iter() {
         // println!("material extras: {:?}", extras);
         let options = serde_json::from_str::<MaterialOptions>(&extras.value);
         // println!("material options: {:?}", options);
@@ -91,7 +63,8 @@ fn process_material_extras(
             if options.outline.is_some() {
                 // The outline is an inverted hull drawn over the same mesh. It is a child entity
                 // rather than a second material on this one: an entity with two materials breaks
-                // batching in the shadow and prepass pipelines (a wgpu validation error).
+                // batching in the shadow and prepass pipelines (a wgpu validation error). It
+                // inherits the model's render layers through `Propagate<RenderLayers>`.
                 let mut outline = commands.spawn((
                     Name::new("Outline"),
                     Mesh3d(mesh.0.clone()),
@@ -99,11 +72,6 @@ fn process_material_extras(
                     NotShadowCaster,
                     ChildOf(entity),
                 ));
-                // If the model's layers were already copied down, copy them here too; otherwise
-                // `copy_model_render_layers` reaches this child along with the rest.
-                if let Some(layers) = layers {
-                    outline.insert(layers.clone());
-                }
                 // A skinned mesh's pipeline expects joint bindings, so the hull needs the skin too.
                 if let Some(skin) = skin {
                     outline.insert(skin.clone());

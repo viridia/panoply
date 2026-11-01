@@ -1,16 +1,15 @@
 use std::sync::{Arc, RwLock};
 
-use crate::terrain::{PARCEL_MESH_STRIDE_U, PARCEL_TERRAIN_FX_SIZE};
-use panoply_core::{Realm, RealmPhysics};
-use panoply_terrain::{
+use crate::{
     BiomesAsset, BiomesHandle, GroundMaterial, GroundMaterialCache, Parcel, ParcelTerrainFx,
     RebuildParcelGroundMesh, RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray,
     TerrainOptions, TerrainTypes, ADJACENT_COUNT, CENTER_SHAPE, PARCEL_HEIGHT_SCALE,
     PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE,
-    PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_MESH_STRIDE_U, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
 };
+use panoply_core::{Realm, RealmPhysics};
 
-use super::PARCEL_MESH_SCALE_U;
+use crate::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
 use bevy::{
     asset::RenderAssetUsages,
     mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexFormat},
@@ -19,7 +18,6 @@ use bevy::{
 };
 use futures_lite::future;
 use panoply_core::realm_physics::collision_groups;
-use panoply_terrain::{TerrainContoursHandle, TerrainContoursTable, TerrainContoursTableAsset};
 use rapier3d::prelude::{
     Collider, ColliderBuilder, ColliderHandle, Group, InteractionGroups, InteractionTestMode,
 };
@@ -34,8 +32,6 @@ pub struct ComputeGroundMeshTask(Task<Option<GroundMeshResult>>);
 
 pub const ATTRIBUTE_TERRAIN_FX: MeshVertexAttribute =
     MeshVertexAttribute::new("terrain_fx", 0x1000, VertexFormat::Uint8x4);
-
-const TERRAIN_FX_FINE_SIZE: usize = PARCEL_TERRAIN_FX_SIZE * PARCEL_MESH_SCALE_U;
 
 /// Spawns a task for each parcel to compute the ground mesh geometry.
 #[allow(clippy::type_complexity)]

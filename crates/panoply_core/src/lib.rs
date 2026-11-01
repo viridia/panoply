@@ -9,9 +9,10 @@ pub mod viewpoint;
 pub mod viewport;
 
 use bevy::{
-    app::{App, FixedUpdate, Plugin, PostUpdate, Update},
+    app::{App, FixedUpdate, HierarchyPropagatePlugin, Plugin, PostUpdate, PropagateSet, Update},
     asset::AssetApp,
-    prelude::Component,
+    camera::visibility::{RenderLayers, VisibilitySystems},
+    prelude::{Component, IntoScheduleConfigs},
 };
 pub use layers::ReservedLayers;
 pub use realm::Realm;
@@ -50,6 +51,14 @@ impl Plugin for PanoplyCorePlugin {
                     sunlight::sync_sunlight,
                 ),
             )
-            .add_systems(FixedUpdate, realm_physics_system);
+            .add_systems(FixedUpdate, realm_physics_system)
+            // A scene instance (flora, scenery, model) carries `Propagate<RenderLayers>` with its
+            // realm's layer, which reaches every descendant, including ones spawned later, such
+            // as outline children. Before visibility, so a new scene never draws on layer 0.
+            .add_plugins(HierarchyPropagatePlugin::<RenderLayers>::new(PostUpdate))
+            .configure_sets(
+                PostUpdate,
+                PropagateSet::<RenderLayers>::default().before(VisibilitySystems::CheckVisibility),
+            );
     }
 }

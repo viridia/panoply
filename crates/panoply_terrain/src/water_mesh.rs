@@ -9,13 +9,13 @@ use bevy::{
 };
 use futures_lite::future;
 
-use bevy::platform::collections::HashMap;
-use panoply_core::Realm;
-use panoply_terrain::{
+use crate::{
     Parcel, ParcelWaterChanged, ShapeRef, SquareArray, TerrainContoursHandle, TerrainContoursTable,
     TerrainContoursTableAsset, WaterMaterialResource, ADJACENT_COUNT, ATTRIBUTE_DEPTH_MOTION,
     PARCEL_SIZE_F,
 };
+use bevy::platform::collections::HashMap;
+use panoply_core::Realm;
 
 use super::{
     compute_interpolated_mesh, compute_smoothed_mesh, terrain_map::TerrainMap, PARCEL_HEIGHT_SCALE,

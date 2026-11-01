@@ -1,4 +1,5 @@
 extern crate rmp_serde as rmps;
+use crate::{ShapeRef, ADJACENT_COUNT};
 use bevy::{
     asset::{
         io::{AssetWriterError, Reader},
@@ -10,7 +11,6 @@ use bevy::{
     reflect::TypePath,
 };
 use futures_lite::AsyncWriteExt;
-use panoply_terrain::{ShapeRef, ADJACENT_COUNT};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

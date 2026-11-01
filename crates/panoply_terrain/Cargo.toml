@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 bitflags = { workspace = true }
+futures-lite = { workspace = true }
 lru = { workspace = true }
 panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
@@ -16,3 +17,7 @@ serde_bytes = { workspace = true }
 serde_json = { workspace = true }
 serde_repr = { workspace = true }
 thiserror = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

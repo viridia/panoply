@@ -6,14 +6,13 @@
 //! despawned.
 
 use bevy::{
+    app::Propagate,
     asset::LoadedFolder,
     gltf::Gltf,
     prelude::*,
     world_serialization::{WorldAsset, WorldAssetRoot, WorldInstanceReady},
 };
 use panoply_core::{Realm, Viewpoint};
-
-use super::PropagateRenderLayers;
 
 /// Model folders loaded at startup so that their pipelines are warmed before play.
 const FOLDERS: [&str; 3] = ["terrain/models", "terrain/models-new", "scenery/models"];
@@ -95,9 +94,7 @@ fn spawn_warmups(
             ModelWarmup { frames_left: None },
             WorldAssetRoot(scene),
             transform,
-            // Copied to the scene's descendants by `copy_model_render_layers`.
-            realm.layer.clone(),
-            PropagateRenderLayers,
+            Propagate(realm.layer.clone()),
         ));
     }
 }

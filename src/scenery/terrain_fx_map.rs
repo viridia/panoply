@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 use panoply_core::Realm;
 use panoply_terrain::{
-    Parcel, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh, RebuildParcelTerrainFx,
-    TerrainFxVertexAttr, TerrainOptions,
+    Parcel, ParcelCache, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh,
+    RebuildParcelTerrainFx, TerrainFxVertexAttr, TerrainOptions, PARCEL_SIZE,
+    PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
 };
 
-use crate::terrain::{ParcelCache, PARCEL_SIZE, PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE};
 use panoply_exemplar::*;
 
 use super::{

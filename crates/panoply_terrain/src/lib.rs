@@ -1,30 +1,36 @@
 mod biome;
+mod flora;
 mod ground_material;
+mod ground_mesh;
 mod hemisphere;
 pub mod metrics;
 mod parcel;
+mod parcel_cache;
 mod plugin;
 mod rotator;
 mod square;
 mod terrain_contours;
 mod terrain_fx;
 mod terrain_groups;
+mod terrain_map;
 mod textures;
 mod water_material;
+mod water_mesh;
 
 pub use biome::*;
 pub use ground_material::{GroundMaterial, GroundMaterialCache};
+pub use ground_mesh::*;
 pub use hemisphere::HemisphereLight;
 pub use metrics::*;
 pub use parcel::*;
+pub use parcel_cache::*;
 pub use rotator::*;
 pub use square::*;
 pub use terrain_contours::*;
 pub use terrain_fx::*;
 pub use terrain_groups::*;
+pub use terrain_map::{TerrainMap, TerrainMapAsset, TerrainMapChanged, TerrainMapSaver};
 pub use textures::{load_tiling_texture, tiling_sampler};
 pub use water_material::{WaterMaterial, WaterMaterialResource, ATTRIBUTE_DEPTH_MOTION};
 
 pub use plugin::PanoplyTerrainPlugin;
-
-// embedded_asset!(app, "assets/shaders/gradient_rect.wgsl");

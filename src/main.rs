@@ -29,7 +29,6 @@ mod models;
 mod reflect_types;
 mod remote_driver;
 mod scenery;
-mod terrain;
 mod view;
 mod window_settings;
 mod world;
@@ -37,8 +36,9 @@ mod world;
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
     models::ModelsPlugin, reflect_types::ReflectTypesPlugin, remote_driver::RemoteDriverPlugin,
-    scenery::SceneryPlugin, terrain::TerrainPlugin, world::WorldPlugin,
+    scenery::SceneryPlugin, world::WorldPlugin,
 };
+use panoply_terrain::PanoplyTerrainPlugin;
 // TODO(bevy-0.20): restore
 // use crate::{actors::ActorsPlugin, portals::PortalPlugin};
 
@@ -101,7 +101,7 @@ fn main() {
         MaterialsPlugin,
         WorldPlugin,
         ModelsPlugin,
-        TerrainPlugin,
+        PanoplyTerrainPlugin,
         SceneryPlugin,
         // TODO(bevy-0.20): restore
         // ActorsPlugin,
@@ -299,8 +299,7 @@ fn spawn_material_test(
             Name::new(name),
             WorldAssetRoot(assets.load(GltfAssetLabel::Scene(0).from_asset(path))),
             Transform::from_xyz(x, 0., 0.),
-            all_layers.clone(),
-            models::PropagateRenderLayers,
+            bevy::app::Propagate(all_layers.clone()),
         ));
     }
 }

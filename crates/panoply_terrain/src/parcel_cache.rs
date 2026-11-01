@@ -1,3 +1,9 @@
+use crate::{
+    Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
+    RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainContoursHandle,
+    TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
+    CENTER_SHAPE,
+};
 use bevy::{
     camera::{
         primitives::{Aabb, Frustum},
@@ -5,12 +11,6 @@ use bevy::{
     },
     math::IRect,
     prelude::*,
-};
-use panoply_terrain::{
-    Parcel, ParcelFloraChanged, ParcelKey, ParcelTerrainFx, ParcelThumbnail, ParcelWaterChanged,
-    RebuildParcelGroundMesh, RebuildParcelTerrainFx, ShapeRef, TerrainContoursHandle,
-    TerrainContoursTable, TerrainContoursTableAsset, TerrainFxVertexAttr, ADJACENT_COUNT,
-    CENTER_SHAPE,
 };
 use rapier3d::prelude::{ColliderHandle, RigidBodyBuilder};
 
@@ -39,14 +39,16 @@ pub struct ParcelCache {
     parcels: lru::LruCache<ParcelKey, Entity>,
 }
 
-impl ParcelCache {
-    pub fn new() -> Self {
+impl Default for ParcelCache {
+    fn default() -> Self {
         Self {
             size: 128,
             parcels: lru::LruCache::unbounded(),
         }
     }
+}
 
+impl ParcelCache {
     pub fn size(&self) -> usize {
         self.parcels.len()
     }

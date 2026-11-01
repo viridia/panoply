@@ -40,6 +40,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | `rapier3d` 0.36 (D35): `PhysicsWorld`, `dt` from the fixed timestep; physics debug views, F3; `plans/physics.py`. |
 | (pending) | PAN1 Editor shell: `panoply_editor` crate (D37); panel, splitter, T; Show menu; `plans/physics.py`. |
 | (pending) | `ablate.py` and `perf.py` tagged `manual` (the driver's chunk 38): a directory run leaves the measurements out. |
+| (pending) | PAN7a: `Propagate<RenderLayers>` (D5); parcel systems moved from `src/terrain` into `panoply_terrain`. |
 
 ## Next
 
@@ -47,14 +48,14 @@ In order. Each item has a chunk id, `PAN<N>`, kept when it lands (its Landed row
 never reused; a new item takes the next unused number.
 
 - **PAN7 Terrain and scenery crates**, before PAN2, so scenery physics is written in its crate,
-  and before PAN5, whose terrain and scenery modes need them (D37). Move the parcel systems
-  from `src/terrain` into `panoply_terrain`, and `src/scenery` into a new `panoply_scenery`
-  (the dependency already runs one way, scenery on terrain, D11). Their ties to the app:
-  `models::PropagateRenderLayers` (flora, scenery elements), replaced by Bevy's
-  `Propagate<RenderLayers>` (was X4); `materials` (`OutlineMaterial`, `FloorNoisyMaterial`) and
-  `models`, which want a crate of their own; `reflect_types::HexColor` and `view::QueryRect`,
-  small enough for `panoply_core`. Also move the editor-only parts of `diagnostics` (location
-  overlay, hitch log) into `panoply_editor`.
+  and before PAN5, whose terrain and scenery modes need them (D37). In three chunks; 7a (render
+  layers, terrain) landed.
+  - **7b** `materials` and `models` (warmup included) into a new crate, `panoply_render`;
+    `reflect_types::HexColor` (with its type registration) and `view::QueryRect` into
+    `panoply_core`; then `src/scenery` into a new `panoply_scenery` (the dependency already
+    runs one way, scenery on terrain, D11).
+  - **7c** The editor-only parts of `diagnostics` (location overlay, hitch log) into
+    `panoply_editor`; the hitch log reads scenery's `Precinct` and `SceneryElement`, so after 7b.
 - **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
   floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
   faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
@@ -127,8 +128,11 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `@group(constants::MATERIAL_BIND_GROUP)`. Bevy modules are `bevy_pbr::render::*` etc.
 - **D4** Exemplars stay as the composition mechanism for now. Keep the `panoply_exemplar` API the
   boundary, so that scenery/actors depend on "entity with aspects", not on exemplar internals.
-- **D5** GLTF models spawn via `WorldAssetRoot`; per-model render layers are copied to descendants
-  in an observer on `WorldInstanceReady` (`models::copy_model_render_layers`).
+- **D5** GLTF models spawn via `WorldAssetRoot`. A model instance (flora, scenery element,
+  warm-up) carries `Propagate(realm layer)`, and Bevy's `HierarchyPropagatePlugin<RenderLayers>`
+  (added by `PanoplyCorePlugin`, in `PostUpdate` before `CheckVisibility`, so a new scene never
+  draws on layer 0) gives every descendant the layer, including children spawned later, such as
+  outlines. It replaced an observer that copied layers once, on `WorldInstanceReady`.
 - **D6** Removed the "inline" asset source (`InlineAssetReader` / `InlineAssetParams`); it had
   been unused since `d0d2b9b`.
 - **D7** Asset preprocessing happens in `packages/build-assets/pipeline.ts`, run by `overrun` (a
@@ -504,8 +508,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   `OutlineMaterial`, width times the entry's mean scale, since the shader extrudes in
   mesh-local space (until then, trunk outlines are thicker on arbor_day models, placed near
   scale 1, than on seedling ones, near 0.65). Drop a hidden parcel's merged meshes and rebuild on show (about 2-3 MB per
-  parcel). Removes about 5,000 transform-only scene entities and flora's
-  `PropagateRenderLayers` use, if PAN7 has not already replaced it. *Gate:* scenery restored and a full scene measured, to see
+  parcel). Removes about 5,000 transform-only scene entities, and with them their
+  `Propagate<RenderLayers>` bookkeeping (D5). *Gate:* scenery restored and a full scene measured, to see
   whether the headroom is needed.
 - **X16** Revisit `avian3d` (D22). *Gate:* avian merges multiple physics worlds (issue #935)
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
@@ -701,8 +705,19 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   for `Hitch:`; `plans/scroll.py` turns it on for its own run.
   Before D26, a cold walk (`plans/scroll.py`) showed 40-45 ms frames from pipeline creation and
   17-32 ms frames from scene bursts; after, neither. Frames of 15-24 ms with nothing counted
-  remain, at the same rate in cold and warm passes, so not load-related; possibly the driver's
-  polling. Screenshots stall a frame by 350-480 ms (the window comes to the front).
+  remain, at the same rate in cold and warm passes, so not load-related. Not the driver's
+  polling: a run without the driver, idle at the start location with the window in front
+  (2026-11-01), logged four single missed vsync slots (15-19 ms) in the first seconds after
+  loading, nothing spawned, then none; 119.4 fps between them. Moving the window to the back
+  causes a run of 16 ms frames and a stall of about 60 ms, so read hitch logs from a run kept in
+  front (`> file`). With pipelined rendering, `Time` comes from the render thread, so a stall
+  shows in `delta`, and in the log's frame number, a frame or more after it happens.
+  Screenshots stall a frame by 350-480 ms (the window comes to the front).
+- The FPS counter flickers even in an empty view, as Bevy's `fps_overlay` example does: it shows
+  `smoothed()`, and `FrameTimeDiagnosticsPlugin` sets the smoothing to 2/121, which
+  `Diagnostic` reads as seconds (16.5 ms, about two frames at 120 fps), so it is nearly the raw
+  per-frame rate. Not a frame-pacing problem; a Bevy issue is drafted but not filed. A display
+  counting frames over a second, with the slowest frame as a "low" FPS, would read steadily.
 - Measure frame time by counting frames over wall time without polling: the driver's
   diagnostics return the latest single frame, and polling every 5 ms disturbs the app.
 - Bevy 0.20 issues seen: (1) switching `DirectionalLight::shadow_maps_enabled` off at runtime

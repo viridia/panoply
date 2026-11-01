@@ -1,6 +1,4 @@
-use bevy::{prelude::*, render::view::RenderLayers};
-
-use crate::models::PropagateRenderLayers;
+use bevy::{app::Propagate, prelude::*, render::view::RenderLayers};
 
 use super::{actor_aspect::Skin, ActorRebuildModels};
 
@@ -24,7 +22,7 @@ pub fn spawn_actor_models(
                     handle,
                     label: String::from(fragment),
                 },
-                layers.clone(),
+                Propagate(layers.clone()),
             ));
         }
         commands.entity(entity).remove::<ActorRebuildModels>();
@@ -45,11 +43,9 @@ pub fn spawn_actor_model_instances(
                 // info!("Available scenes: [{:?}]", gltf.named_meshes.keys());
                 if let Some(scene_handle) = gltf.named_scenes.get(mesh.label.as_str()) {
                     info!("Spawning actor mesh: [{}]", mesh.label);
-                    commands.entity(entity).insert((
-                        SceneRoot(scene_handle.clone()),
-                        *transform,
-                        PropagateRenderLayers,
-                    ));
+                    commands
+                        .entity(entity)
+                        .insert((SceneRoot(scene_handle.clone()), *transform));
                 } else {
                     error!("Model not found: [{}]", mesh.label);
                     info!("Available scenes: [{:?}]", gltf.named_scenes.keys());
