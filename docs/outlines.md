@@ -19,8 +19,9 @@ Which objects have outlines:
 
 ## Implementation
 
-`materials::OutlineMaterial` is a small `Material` of its own (`src/materials/outline.rs`,
-`outline.wesl`), not an extension of `StandardMaterial`:
+`panoply_render::OutlineMaterial` is a small `Material` of its own
+(`crates/panoply_render/src/materials/outline.rs`, `outline.wesl`), not an extension of
+`StandardMaterial`:
 
 - unlit, one color and one width (in the mesh's local units);
 - front faces culled, in `specialize`;

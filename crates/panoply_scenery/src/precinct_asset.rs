@@ -494,6 +494,7 @@ pub enum PrecinctAssetSaverError {
 
 #[derive(TypePath)]
 pub struct PrecinctAssetSaver {
+    #[allow(dead_code)] // For dropping unused types on save; the editor saves precincts (PAN5).
     type_registry: TypeRegistryArc,
 }
 

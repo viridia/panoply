@@ -41,6 +41,7 @@ remains. Excluded crates are listed under `[workspace] exclude` in the root `Car
 | (pending) | PAN1 Editor shell: `panoply_editor` crate (D37); panel, splitter, T; Show menu; `plans/physics.py`. |
 | (pending) | `ablate.py` and `perf.py` tagged `manual` (the driver's chunk 38): a directory run leaves the measurements out. |
 | (pending) | PAN7a: `Propagate<RenderLayers>` (D5); parcel systems moved from `src/terrain` into `panoply_terrain`. |
+| (pending) | PAN7b: `materials` and `models` into `panoply_render`; `src/scenery` into `panoply_scenery`; `HexColor` into `panoply_core`. |
 
 ## Next
 
@@ -49,13 +50,17 @@ never reused; a new item takes the next unused number.
 
 - **PAN7 Terrain and scenery crates**, before PAN2, so scenery physics is written in its crate,
   and before PAN5, whose terrain and scenery modes need them (D37). In three chunks; 7a (render
-  layers, terrain) landed.
-  - **7b** `materials` and `models` (warmup included) into a new crate, `panoply_render`;
-    `reflect_types::HexColor` (with its type registration) and `view::QueryRect` into
-    `panoply_core`; then `src/scenery` into a new `panoply_scenery` (the dependency already
-    runs one way, scenery on terrain, D11).
+  layers, terrain) and 7b (render, scenery) landed.
   - **7c** The editor-only parts of `diagnostics` (location overlay, hitch log) into
     `panoply_editor`; the hitch log reads scenery's `Precinct` and `SceneryElement`, so after 7b.
+- **PAN9 Plans wait for readiness**, X33's first slice, after PAN7 so it is written against
+  `panoply_scenery`. An editor-build resource (e.g. `ViewReady`) that is true when the parcel
+  show set (D20) has no precinct still in `ReadPrecinctData`, its scenery scenes spawned, ground
+  and flora on every parcel, and an empty warm-up queue. `goto` waits on it with
+  `Driver.wait` and a timeout, then a frame or two for the render; the fixed `frames(N)` after
+  each `goto` go. About 2,800 such frames (23 s of a 150 s run) today, some of it recoverable,
+  and the counts are guesses that can be too short on a cold load. Not `hot_reload.py`, whose
+  wait is a shader recompile; not the few frames after key presses.
 - **PAN2 Scenery physics**, static only, before PAN3, so the actor walking plan meets walls,
   floors and ramps. Colliders come from the exemplars' `SceneryColliders` descriptors, as in
   faery (`createCollider.ts`; see [faery.md](faery.md), Physics), not from the glTFs (X36):
@@ -157,7 +162,8 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   that is not input (a screenshot, a timing) runs during the hold: a plan that needs the hold
   over presses, waits `frames`, and releases (`smoke.py`, `scroll.py`). Replaced the in-tree
   fork, `crates/bevy_remote_driver`, whose server methods all went upstream.
-- **D11** Layering: `panoply_core` (realm, both grid sizes) <- `panoply_terrain` <- scenery.
+- **D11** Layering: `panoply_core` (realm, both grid sizes) <- `panoply_terrain` <-
+  `panoply_scenery`, which also uses `panoply_render` (materials, models).
   `PRECINCT_SIZE` lives in `panoply_core::metrics`, which removed terrain's only import from
   scenery. Scenery pushes terrain effects into parcels through `ParcelTerrainFx`, defined in
   `panoply_terrain`. At runtime, ground meshes and flora still wait for scenery: a parcel spawns
@@ -239,7 +245,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   such an asset drops the skipped aspects; see X20.
 - **D26** No pipeline compiles while scrolling. Bevy 0.20 creates render pipelines
   synchronously on macOS (`bevy_render` `create_pipeline_task`), about 35 ms each, the first
-  time a material and mesh-layout combination is drawn. `models::warmup` loads the model folders
+  time a material and mesh-layout combination is drawn. `panoply_render`'s warm-up loads the model folders
   (`terrain/models`, `scenery/models`) at startup and draws every scene of each glTF once, tiny
   and below the ground at the view center, then despawns it; any glTF loaded later is warmed
   the same way. Instantiating scenes is budgeted too, 64 per frame for flora and for scenery
@@ -620,7 +626,7 @@ register them are restored, unknown aspect types are skipped with a warning (D25
   that waits until the area has loaded, replacing the fixed `driver.frames(120)` after each
   move. A loading screen after a portal would use it too. Render readiness may need its own
   check, beside physics. faery's version is in [faery.md](faery.md), Actors and navigation.
-  *Gate:* actors (PAN3), or `goto` for plans, whichever comes first.
+  The plans' half is PAN9. *Gate:* actors (PAN3), for the footprint query.
 - **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and
   others): the game loads every precinct position near the view, but only some exist. It needs
   to know which do, by a directory scan or a catalog file. A catalog works in packaged and web

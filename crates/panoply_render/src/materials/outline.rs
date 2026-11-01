@@ -37,11 +37,11 @@ impl Default for OutlineMaterial {
 
 impl Material for OutlineMaterial {
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/outline.wesl".into()
+        "embedded://panoply_render/materials/outline.wesl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/outline.wesl".into()
+        "embedded://panoply_render/materials/outline.wesl".into()
     }
 
     fn enable_prepass() -> bool {

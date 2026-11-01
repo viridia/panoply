@@ -24,20 +24,17 @@ use window_settings::WindowSettingsPlugin;
 
 mod diagnostics;
 mod input;
-mod materials;
-mod models;
-mod reflect_types;
 mod remote_driver;
-mod scenery;
 mod view;
 mod window_settings;
 mod world;
 
 use crate::{
-    diagnostics::ScreenDiagsPlugin, input::InputPlugin, materials::MaterialsPlugin,
-    models::ModelsPlugin, reflect_types::ReflectTypesPlugin, remote_driver::RemoteDriverPlugin,
-    scenery::SceneryPlugin, world::WorldPlugin,
+    diagnostics::ScreenDiagsPlugin, input::InputPlugin, remote_driver::RemoteDriverPlugin,
+    world::WorldPlugin,
 };
+use panoply_render::PanoplyRenderPlugin;
+use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
 // TODO(bevy-0.20): restore
 // use crate::{actors::ActorsPlugin, portals::PortalPlugin};
@@ -96,13 +93,11 @@ fn main() {
     .add_systems(Update, (rotate_shapes, nav_to_center))
     .add_systems(PostUpdate, view::viewport::update_camera_viewport)
     .add_plugins((
-        ReflectTypesPlugin,
         ExemplarPlugin,
-        MaterialsPlugin,
         WorldPlugin,
-        ModelsPlugin,
+        PanoplyRenderPlugin,
         PanoplyTerrainPlugin,
-        SceneryPlugin,
+        PanoplySceneryPlugin,
         // TODO(bevy-0.20): restore
         // ActorsPlugin,
         // PortalPlugin,
@@ -235,9 +230,9 @@ fn spawn_material_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
-    mut outline_materials: ResMut<Assets<materials::OutlineMaterial>>,
-    mut noisy_materials: ResMut<Assets<materials::FloorNoisyMaterial>>,
-    flame: Res<materials::FlameMaterialHandle>,
+    mut outline_materials: ResMut<Assets<panoply_render::OutlineMaterial>>,
+    mut noisy_materials: ResMut<Assets<panoply_render::FloorNoisyMaterial>>,
+    flame: Res<panoply_render::FlameMaterialHandle>,
     assets: Res<AssetServer>,
 ) {
     use bevy::{gltf::GltfAssetLabel, pbr::ExtendedMaterial, world_serialization::WorldAssetRoot};
@@ -261,7 +256,7 @@ fn spawn_material_test(
         children![(
             Name::new("Outline"),
             Mesh3d(cube.clone()),
-            MeshMaterial3d(outline_materials.add(materials::OutlineMaterial {
+            MeshMaterial3d(outline_materials.add(panoply_render::OutlineMaterial {
                 width: 0.05,
                 ..default()
             })),
@@ -273,7 +268,7 @@ fn spawn_material_test(
         Mesh3d(cube),
         MeshMaterial3d(noisy_materials.add(ExtendedMaterial {
             base: StandardMaterial::default(),
-            extension: materials::FloorNoisyMaterialExt {
+            extension: panoply_render::FloorNoisyMaterialExt {
                 color: Srgba::rgb(0.6, 0.4, 0.2).into(),
                 color_alt: Srgba::rgb(0.3, 0.3, 0.3).into(),
                 roughness: 0.8,

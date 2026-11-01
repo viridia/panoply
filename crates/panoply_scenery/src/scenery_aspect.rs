@@ -1,5 +1,5 @@
-use crate::reflect_types::HexColor;
 use bevy::{platform::collections::HashMap, prelude::*};
+use panoply_core::HexColor;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 

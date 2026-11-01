@@ -9,19 +9,19 @@ pub struct FlameMaterial {
 
 impl Material for FlameMaterial {
     fn vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame.wesl".into()
+        "embedded://panoply_render/materials/flame.wesl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame.wesl".into()
+        "embedded://panoply_render/materials/flame.wesl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame_prepass.wesl".into()
+        "embedded://panoply_render/materials/flame_prepass.wesl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://panoply/materials/flame_prepass.wesl".into()
+        "embedded://panoply_render/materials/flame_prepass.wesl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

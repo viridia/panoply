@@ -3,7 +3,7 @@ use hashbrown::HashMap;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 
-use crate::reflect_types::HexColor;
+use panoply_core::HexColor;
 
 use super::ACTOR_TYPE;
 

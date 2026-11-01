@@ -19,7 +19,7 @@ use bevy::{
 use panoply_core::RealmPhysics;
 use panoply_terrain::Parcel;
 
-use crate::scenery::{precinct::Precinct, scenery_element::SceneryElement};
+use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement};
 
 /// A frame longer than this is logged: frames run about 8 ms at 120 fps, and a frame or two
 /// past 14 ms already reads as a stutter.

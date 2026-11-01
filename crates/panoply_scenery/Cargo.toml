@@ -1,0 +1,22 @@
+[package]
+name = "panoply_scenery"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+earcutr = { workspace = true }
+futures-lite = { workspace = true }
+lru = { workspace = true }
+panoply_core = { workspace = true }
+panoply_exemplar = { workspace = true }
+panoply_render = { workspace = true }
+panoply_terrain = { workspace = true }
+rmp-serde = { workspace = true }
+ron = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

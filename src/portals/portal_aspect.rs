@@ -1,4 +1,4 @@
-use crate::scenery::{FIXTURE_TYPE, WALL_TYPE};
+use panoply_scenery::{FIXTURE_TYPE, WALL_TYPE};
 use bevy::prelude::*;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};

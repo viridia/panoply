@@ -10,7 +10,7 @@ use serde::{
 };
 use std::fmt::{self, Debug};
 
-use crate::scenery::precinct_asset::SceneryInstanceId;
+use panoply_scenery::precinct_asset::SceneryInstanceId;
 
 /// Component that defines an actor (mob).
 #[derive(Debug, Component, Clone, Default)]

@@ -13,6 +13,8 @@ members = [
   "crates/panoply_core",
   "crates/panoply_editor",
   "crates/panoply_exemplar",
+  "crates/panoply_render",
+  "crates/panoply_scenery",
   "crates/panoply_terrain",
 ]
 
@@ -36,11 +38,14 @@ bevy_action_map = { git = "https://github.com/viridia/bevy_action_map.git", bran
 # The fork's `bevy-main` branch names Bevy main by branch, as this repo does (D34).
 bevy_immediate = { git = "https://github.com/viridia/bevy_immediate", branch = "bevy-main" }
 bitflags = "2.4.2"
+earcutr = "0.4.3"
 futures-lite = "2.2.0"
 lru = "0.11.0"
 panoply_core = { path = "crates/panoply_core" }
 panoply_editor = { path = "crates/panoply_editor" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
+panoply_render = { path = "crates/panoply_render" }
+panoply_scenery = { path = "crates/panoply_scenery" }
 panoply_terrain = { path = "crates/panoply_terrain" }
 rapier3d = { version = "0.36.1", features = ["debug-render"] }
 rmp-serde = "1.1.2"
@@ -54,16 +59,12 @@ thiserror = "1.0.57"
 [dependencies]
 bevy = { workspace = true }
 bevy_action_map = { workspace = true }
-futures-lite = { workspace = true }
-lru = { workspace = true }
 panoply_core = { workspace = true }
 panoply_editor = { workspace = true, optional = true }
 panoply_exemplar = { workspace = true }
+panoply_render = { workspace = true }
+panoply_scenery = { workspace = true }
 panoply_terrain = { workspace = true }
-rapier3d = { workspace = true }
-rmp-serde = { workspace = true }
-earcutr = "0.4.3"
-ron = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

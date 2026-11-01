@@ -1,3 +1,4 @@
+mod hex_color;
 pub mod layers;
 pub mod metrics;
 pub mod random;
@@ -14,6 +15,7 @@ use bevy::{
     camera::visibility::{RenderLayers, VisibilitySystems},
     prelude::{Component, IntoScheduleConfigs},
 };
+pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
 pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
@@ -36,7 +38,9 @@ pub struct PanoplyCorePlugin;
 
 impl Plugin for PanoplyCorePlugin {
     fn build(&self, app: &mut App) {
-        app.register_asset_loader(RealmsLoader)
+        app.register_type::<HexColor>()
+            .register_type::<Option<HexColor>>()
+            .register_asset_loader(RealmsLoader)
             .init_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
             .init_resource::<Sunlight>()

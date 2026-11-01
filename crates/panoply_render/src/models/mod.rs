@@ -23,6 +23,7 @@ impl Plugin for ModelsPlugin {
 struct MaterialOptions {
     outline: Option<f32>,
 
+    #[allow(dead_code)] // Read once interaction is restored.
     #[serde(default, deserialize_with = "deserialize_bool")]
     interact: Option<bool>,
 
@@ -35,6 +36,7 @@ struct MaterialOptions {
     // #[serde(default, deserialize_with = "deserialize_bool")]
     flame: Option<Value>,
 
+    #[allow(dead_code)] // Read once portals are restored (PAN4).
     #[serde(default, deserialize_with = "deserialize_bool")]
     portalglow: Option<bool>,
 

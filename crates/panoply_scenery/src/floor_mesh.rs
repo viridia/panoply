@@ -1,14 +1,7 @@
-use super::{
-    floor_region::{FloorRegion, RebuildFloorAspects},
-    floor_surface::FloorSurface,
-    FloorOutline,
-};
 use crate::{
-    materials::FloorNoisyMaterial,
-    scenery::{
-        floor_region::{RebuildFloorMaterials, RebuildFloorMesh},
-        FLOOR_THICKNESS, TIER_OFFSET,
-    },
+    floor_region::{FloorRegion, RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
+    floor_surface::FloorSurface,
+    FloorOutline, FLOOR_THICKNESS, TIER_OFFSET,
 };
 use bevy::{
     asset::RenderAssetUsages,
@@ -18,6 +11,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
+use panoply_render::FloorNoisyMaterial;
 
 pub struct FloorMeshResult {
     mesh: Mesh,

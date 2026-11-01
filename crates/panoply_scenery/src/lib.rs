@@ -1,9 +1,8 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
 use panoply_exemplar::InstanceType;
+use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
-
-use crate::materials::OutlineMaterial;
 
 use self::{
     floor_mesh::{
@@ -47,9 +46,9 @@ pub const TERRAIN_FX_TYPE: InstanceType = InstanceType::from_str("TrFx");
 #[derive(Resource, Default)]
 pub struct FloorOutline(pub Handle<OutlineMaterial>);
 
-pub struct SceneryPlugin;
+pub struct PanoplySceneryPlugin;
 
-impl Plugin for SceneryPlugin {
+impl Plugin for PanoplySceneryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PrecinctCache::new())
             .init_asset_loader::<PrecinctAssetLoader>()

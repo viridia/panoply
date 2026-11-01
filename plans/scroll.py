@@ -52,7 +52,7 @@ def scroll(driver, label):
 def run(driver):
     driver.present("PrimaryCamera")
     driver.present("Ground", timeout={"frames": 600, "seconds": 30})
-    # Model warm-up (models::warmup) runs at startup; wait for it to finish.
+    # Model warm-up (panoply_render's models::warmup) runs at startup; wait for it to finish.
     driver.absent("ModelWarmup", timeout={"frames": 1200, "seconds": 60})
     before = len(log_lines(driver, "Pipeline created"))
     scroll(driver, "cold")

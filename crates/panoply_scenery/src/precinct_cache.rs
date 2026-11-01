@@ -1,12 +1,17 @@
 use bevy::{math::IRect, prelude::*};
 
-use crate::view::QueryRect;
 use panoply_core::{Realm, Viewpoint};
 
 use super::{
     precinct::{Precinct, PrecinctKey},
     PRECINCT_SIZE_F,
 };
+
+/// A rectangle of precincts in a realm.
+struct QueryRect {
+    realm: Entity,
+    bounds: IRect,
+}
 
 #[derive(Resource)]
 pub struct PrecinctCache {
@@ -20,10 +25,6 @@ impl PrecinctCache {
             size: 128,
             precincts: lru::LruCache::unbounded(),
         }
-    }
-
-    pub fn size(&self) -> usize {
-        self.precincts.len()
     }
 
     pub fn get(&mut self, key: &PrecinctKey) -> Option<Entity> {

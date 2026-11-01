@@ -4766,16 +4766,12 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_action_map",
- "earcutr",
- "futures-lite",
- "lru",
  "panoply_core",
  "panoply_editor",
  "panoply_exemplar",
+ "panoply_render",
+ "panoply_scenery",
  "panoply_terrain",
- "rapier3d",
- "rmp-serde",
- "ron 0.8.1",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -4813,6 +4809,34 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_render"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "panoply_core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "panoply_scenery"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "earcutr",
+ "futures-lite",
+ "lru",
+ "panoply_core",
+ "panoply_exemplar",
+ "panoply_render",
+ "panoply_terrain",
+ "rmp-serde",
+ "ron 0.8.1",
+ "serde",
  "thiserror 1.0.69",
 ]
 

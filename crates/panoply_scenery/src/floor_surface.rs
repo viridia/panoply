@@ -11,7 +11,7 @@ use ron::de::from_bytes;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::materials::{FloorNoisyMaterial, FloorNoisyMaterialExt};
+use panoply_render::{FloorNoisyMaterial, FloorNoisyMaterialExt};
 
 #[derive(TypePath, Asset, Serialize, Deserialize, Debug, Default, Clone)]
 pub struct FloorSurface {

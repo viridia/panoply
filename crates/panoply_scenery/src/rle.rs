@@ -3,6 +3,7 @@ use std::fmt::Display;
 use thiserror::Error;
 
 /// Run Length Encoding
+#[allow(dead_code)] // The editor saves precincts (PAN5).
 pub fn rle_encode(data: &[u16]) -> Vec<i16> {
     let mut encoding: Vec<i16> = Vec::new();
     let mut run_start = 0;
