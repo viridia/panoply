@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN14** `AGENTS.md` gives the driver workflow, from launching to a chunk's final plan run.
 - **PAN8** The default plan run is three launches, each window titled with its plan's name.
 - **PAN3j** Actors fall, land, turn on the spot, and idle in the stance their aspects choose.
 - **PAN3l** Precincts place their NPCs, facing as in faery; archetypes can scale an actor.

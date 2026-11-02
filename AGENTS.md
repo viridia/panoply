@@ -54,10 +54,19 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 
 - `scripts/verify.sh`: cross-references, Markdown wrapping of changed paragraphs, and
   `cargo clippy --workspace`. A warning is a failure.
-- Runtime: shader and pipeline errors only appear at runtime. Run plans with the remote driver,
-  `bevy-remote-driver plans` (all) or `bevy-remote-driver plans/smoke.py` (one), which launches
-  the game, sends input, saves screenshots under `remote-driver/` in Cargo's target directory,
-  and quits. Write a new plan in `plans/` for behaviour a chunk adds. Screenshots bring the game
-  window to the front. To write a plan, read `../bevy_remote_driver/docs/writing-plans.md`; for
-  the steps, `class Driver` in `../bevy_remote_driver/src/bevy_remote_driver/driver.py`, and
-  Panoply's own (`goto`, `camera`) in `plans/_panoply_driver.py`.
+- Runtime: shader and pipeline errors only appear at runtime. The remote driver's plans, in
+  `plans/`, launch the game, send input, save screenshots under `remote-driver/` in Cargo's target
+  directory, and quit. To write a plan, read `../bevy_remote_driver/docs/writing-plans.md`; for the
+  steps, `class Driver` in `../bevy_remote_driver/src/bevy_remote_driver/driver.py`, and Panoply's
+  own (`goto`, `camera`) in `plans/_panoply_driver.py`.
+- Each plan file is a launch, and each launch's window takes focus from the author, who works during
+  a run and takes a window closing for the run's end. Test a chunk's new behaviour in the existing
+  plan it fits; a new file only for a new area.
+- Run the driver as `/Users/talin/.local/bin/bevy-remote-driver` (the Bash tool's `PATH` lacks
+  `~/.local/bin`), given the absolute path of a plan or of `plans/`: it builds the workspace that
+  holds the plan, and a relative path resolves against the working directory, which may be another
+  repo's. Never two runs at once: plans compete for the window and its timing.
+- A chunk's end, in order: `scripts/verify.sh`; then stop and hand the build to the author to try;
+  when they report back, one run of `/Users/talin/Projects/games/panoply/plans`, every plan and not
+  only the chunk's, approved once; the commit message last. While iterating, run one plan by its
+  path.

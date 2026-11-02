@@ -16,11 +16,6 @@ changelog.
 
 In order.
 
-- **PAN14 Guidance out of memory.** The agent's memory holds project guidance that belongs in git:
-  plan-writing advice (state set through the driver, waits by latency class) goes to
-  `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a
-  chunk's end, absolute plan paths, one driver run at a time, fewer launches) to `AGENTS.md`.
-
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
 (existence, goals, planning, body, presentation) talk through components, with readiness as
