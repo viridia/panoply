@@ -1,0 +1,12 @@
+(
+    meta_format_version: "1.0",
+    asset: Load(
+        loader: "bevy_gltf::loader::GltfLoader",
+        settings: (
+            convert_coordinates: Some((
+                rotate_scene_entity: true,
+                rotate_meshes: false,
+            )),
+        ),
+    ),
+)

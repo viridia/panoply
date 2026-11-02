@@ -25,6 +25,8 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 - `verify.sh`: the verification recipe below, in one call.
 - `xref.py`: every cited id resolves, counters are current, changelog entries keep to one line.
 - `show.py`: prints ledger entries by id.
+- `outlines.py`: lists the meshes in `assets/` drawn without an outline, and whether faery outlined
+  them (`--none` for those nothing outlines).
 - `devfmt.py --diff`: rewraps changed Markdown paragraphs to 100 columns (`--preview` to read
   first). Markdown only: the source trees are exempt, since Rust here still holds commented-out
   code. After editing `devfmt.py`, run `python3 <absolute path>/scripts/test_devfmt.py`.

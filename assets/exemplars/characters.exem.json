@@ -17,6 +17,11 @@
         "armature": "characters/humanoid-male.glb#HumanoidArmature",
         "animations": "characters/humanoid-armature.glb#HumanoidArmature"
       },
+      "ClipNames": {
+        "Walk": "WalkMale",
+        "WalkFast": "WalkFastMale",
+        "Run": "RunMale"
+      },
       "FeatureSlots": [
         "FacialHairBeard",
         "FacialHairGoatee",
@@ -46,6 +51,11 @@
       "Armature": {
         "armature": "characters/humanoid-female.glb#HumanoidArmature",
         "animations": "characters/humanoid-armature.glb#HumanoidArmature"
+      },
+      "ClipNames": {
+        "Walk": "WalkFemale",
+        "WalkFast": "WalkFastFemale",
+        "Run": "RunMale"
       },
       "FeatureSlots": [
         "HairCoiffed",
@@ -1119,6 +1129,11 @@
       "Armature": {
         "armature": "characters/skeleton.glb#HumanoidArmature",
         "animations": "characters/humanoid-armature.glb#HumanoidArmature"
+      },
+      "ClipNames": {
+        "Walk": "WalkMale",
+        "WalkFast": "WalkFastMale",
+        "Run": "RunMale"
       },
       "Skin": "characters/skeleton.glb#Skeleton",
       "ColorSlots": [

@@ -22,7 +22,7 @@ pub use actor_physics::ActorMotion;
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 
-use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
+use self::actor_animation::{animate_actor_gait, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::drive_player;
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
@@ -31,7 +31,7 @@ use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 
 use self::actor_aspect::{
-    Armature, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
+    Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
 };
 use self::item_aspect::{EquipSlot, ItemModel};
 
@@ -62,6 +62,7 @@ pub struct ActorsPlugin;
 impl Plugin for ActorsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Armature>()
+            .register_type::<ClipNames>()
             .register_type::<Skin>()
             .register_type::<CollisionSize>()
             .register_type::<ActorMotion>()
@@ -81,10 +82,11 @@ impl Plugin for ActorsPlugin {
                     update_actor_aspects,
                     spawn_actor_bodies,
                     spawn_actor_body_scenes,
-                    play_actor_idle,
+                    build_actor_graph,
                     attach_wielded_items,
                     start_actor_physics,
                     drive_player,
+                    animate_actor_gait,
                 )
                     .chain(),
             )

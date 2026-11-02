@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D43.**
+**Next: D45.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -337,3 +337,16 @@ never reused.
   which flies on the arrows alone. An actor counts as grounded only on walkable ground (a cast down
   finds a normal with y at least 0.7): rapier's own `grounded` includes steep slopes, where an actor
   that stopped falling would stick instead of sliding (R24). (PAN3g)
+- **D43** Character models face -Z in their files, and an actor faces +Z at heading 0, so Bevy's
+  loader turns each character scene's root around (`GltfConvertCoordinates::rotate_scene_entity`).
+  It is set by a `.glb.meta` beside each file, written by `pipeline.ts` (D7) for every model in
+  `artwork/characters`: a meta file applies to every load, including the warm-up's folder load,
+  where a setting passed in code would depend on which load came first. Not `GltfPlugin`'s default,
+  which would turn scenery too, and not props, which hang from the hand's bone. (PAN3i)
+- **D44** An actor's clip follows its measured speed along its facing over the last fixed tick, not
+  its intent, so an actor stopped by a wall stands rather than walking in place, and backing up
+  plays the walk backward. Gaits and their thresholds follow faery (R18): above 3.5 m/s, not at it,
+  is a run, so the player's jog stays a fast walk. Crossfades are Bevy's `AnimationTransitions` over
+  one `AnimationGraph` per skeleton, every clip a node under the root, so a layer (R39's gestures)
+  adds nodes and a mask. Species name their clips their own way through the `ClipNames` aspect,
+  faery's `actionMap`. (PAN3i)

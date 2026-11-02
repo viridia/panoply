@@ -196,12 +196,14 @@ throwaway shell script that `cd`s to faery and runs them works.)
 | `convert_realm_maps.mts`     | `realms/*.msgpack`         | `terrain/maps/*.terrain`               |
 | `convert_terrain_groups.mts` | `world.json`               | `terrain/terrain.groups.json`          |
 
-Re-running overwrites any edit made in Panoply. On 2026-10-10 exemplars, precincts and the
-five realm maps came out byte-identical (unedited since conversion), but
-`terrain.groups.json` had been hand-edited (per-group `color`, `test` hidden) and was restored
-from git. It also writes `terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js
-version needed for a floors-only realm; it was deleted (see X24). Once the editor (X3) saves content, these scripts are
-one-way history. X1 needs the archetype converter (or a successor) to emit BSN.
+Re-running overwrites any edit made in Panoply. On 2026-10-10 exemplars, precincts and the five
+realm maps came out byte-identical (unedited since conversion), but `terrain.groups.json` had been
+hand-edited (per-group `color`, `test` hidden) and was restored from git. Exemplars have since been
+edited by hand: `CollisionSize` (PAN3f), and humanoids' `ClipNames` gained `"Run": "RunMale"`
+(PAN3i; faery never used the run clips, and `RunFemale` is broken). It also writes
+`terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js version needed for a floors-only
+realm; it was deleted (see X24). Once the editor (X3) saves content, these scripts are one-way
+history. X1 needs the archetype converter (or a successor) to emit BSN.
 
 Conversions baked into Panoply's data: facings from quarter turns to degrees (`* 90`); tier
 `level -= 2` and floor type index `-= 1`; instances without an `iid` numbered in sequence;
@@ -213,10 +215,10 @@ moved, `Boulder1` to `Boulder.1` and similar); floor types become
 Dropped (the scripts log most of them), by the module that would want them. Some are features
 Panoply will not carry over because it has a better way; which is which is undecided per item.
 
-- Actor archetypes: `actionMap`, `equipSlots`, `skills`, `gender`, `scale`,
-  `imposterHeight`/`imposterRadius`, `portraitHeight`/`portraitOffset`. Aspects: `combatant`
-  (some with `healthMax`, `attackPower`), `enemy` (with `loot` tables, e.g. `loot:Wolf`),
-  `conversant`, `shopkeeper`, `follower`, `aggressive`, `territorial`.
+- Actor archetypes: `equipSlots`, `skills`, `gender`, `scale`, `imposterHeight`/`imposterRadius`,
+  `portraitHeight`/`portraitOffset`. Aspects: `combatant` (some with `healthMax`, `attackPower`),
+  `enemy` (with `loot` tables, e.g. `loot:Wolf`), `conversant`, `shopkeeper`, `follower`,
+  `aggressive`, `territorial`.
 - Actor instances in precincts: only `combatant` is kept. Dropped: `enemy`, `territorial`, and
   script hooks (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...).
 - Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): `type`, `model`

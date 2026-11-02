@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I6.**
+**Next: I8.**
 
 - **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
   debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
@@ -27,3 +27,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   the author's video of a fall from the playground's wooden stairs (at 2.45 m/s² gravity): the
   actor's fall accelerates steadily, but the camera did about 70% of its descent after touchdown,
   sliding for 1.2 s and creeping for 1.5 s more.
+- **I6** Two female gait clips in `humanoid-armature.glb` look broken in catwalk: `WalkFastFemale`
+  has stiff arms (perhaps a bad bone export), and `RunFemale` is broken. Female archetypes' `Run`
+  plays `RunMale` meanwhile; `WalkFast` still plays `WalkFastFemale`. Seen by the author in catwalk.
+- **I7** The editor icons' meta files (`assets/editor/icons/*.png.meta`) name the loader
+  `bevy_render::texture::image_loader::ImageLoader`; Bevy finds a meta file's loader by its type
+  path, and the image loader is now in `bevy_image`, so these loads may fail. Read, not run.

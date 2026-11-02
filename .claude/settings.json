@@ -23,6 +23,8 @@
       "Bash(/Users/talin/Projects/games/panoply/scripts/xref.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/show.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/devfmt.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py *)",
       "Bash(python3 /Users/talin/Projects/games/panoply/scripts/test_devfmt.py)",
       "Read(~/.cargo/registry/**)",
       "Read(~/.cargo/git/**)",

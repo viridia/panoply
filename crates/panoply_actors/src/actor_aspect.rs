@@ -35,6 +35,32 @@ impl Aspect for Armature {
     }
 }
 
+/// Renames the clips the engine asks for to the species' own, where they differ: humanoids share
+/// one clips file whose gaits are named by gender (`"Walk": "WalkMale"`).
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct ClipNames(pub HashMap<String, String>);
+
+impl Aspect for ClipNames {
+    fn name(&self) -> &str {
+        "ClipNames"
+    }
+
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == ACTOR_TYPE
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<ClipNames> = RemoveComponent::<ClipNames>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+}
+
 /// The actor's collision capsule (R4), in meters: its whole height, and its radius.
 #[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN23.**
+**Next: PAN24.**
 
 ## Next
 
@@ -21,10 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3i Blending.** Crossfades between clips (R34); gait from speed (R17, R18), keeping the
-  stride's phase across a change (R19). Build crossfades on `AnimationGraph` blend nodes, so
-  layering (an upper-body mask for R39's gestures) or a speed-weighted walk-run blend only adds
-  nodes.
 - **PAN3j Animation states.** The state follows the current action and the actor's state (idle,
   locomotion, falling, landing): R25, R33, R35, R38, R41.
 - **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the
@@ -48,6 +44,13 @@ components and every layer restartable from saved state (R104).
   outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
 - **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
   shader (D29).
+- **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
+  `outline`; faery read the node's extras first, then the parent node's, then the material's, and
+  outlined every skinned mesh by default (`SkinnedModel.ts`, `ModelCatalog.ts`). Male hair, much
+  clothing and every prop set it on the node, so they have no outline. Read `GltfExtras` on the
+  mesh's entity and its parent before `GltfMaterialExtras`; decide whether skinned meshes keep
+  faery's default. `scripts/outlines.py` lists what changes. Weapons also carry a hand-built
+  `Outline` hull, which a node outline would extrude again.
 - **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
   distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
   the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,

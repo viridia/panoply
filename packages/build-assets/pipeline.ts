@@ -77,6 +77,33 @@ target(
     .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
 );
 
+// Characters face -Z in their files, and actors face +Z at heading 0, so Bevy's loader turns each
+// scene's root around (`GltfConvertCoordinates`). A meta file beside each model sets it for every
+// load, the warm-up's folder load included.
+const characterMeta = `(
+    meta_format_version: "1.0",
+    asset: Load(
+        loader: "bevy_gltf::loader::GltfLoader",
+        settings: (
+            convert_coordinates: Some((
+                rotate_scene_entity: true,
+                rotate_meshes: false,
+            )),
+        ),
+    ),
+)
+`;
+target(
+  "characters-meta",
+  directory(srcRoot, "characters")
+    .match("*.glb")
+    .map((src) =>
+      src
+        .transform(() => characterMeta)
+        .dest((p) => p.withRoot(dstRoot).withExtension(".glb.meta"))
+    )
+);
+
 // Prop files (weapons and tools), one named scene per prop.
 target(
   "props",

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3i** Actors walk, fast walk and run by speed, crossfading; models face the way they walk.
 - **PAN3h** Actors travel to a point at a pace, turning toward it; the player's keys cut it short.
 - **PAN3g** WASD walks the player relative to the camera, which follows; steep slopes block it.
 - **PAN3f** Actors fall under gravity and land on the ground; archetypes set their collision size.

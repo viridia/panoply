@@ -2,7 +2,7 @@ use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot};
 
 use super::{
     actor_animation::ArmatureSource,
-    actor_aspect::{Armature, Skin},
+    actor_aspect::{Armature, ClipNames, Skin},
     ActorRebuildModels,
 };
 
@@ -21,10 +21,13 @@ pub struct ActorBody {
 /// scene by label, which would load the whole file again for each actor (D28).
 pub fn spawn_actor_bodies(
     mut commands: Commands,
-    query: Query<(Entity, Option<&Skin>, Option<&Armature>), With<ActorRebuildModels>>,
+    query: Query<
+        (Entity, Option<&Skin>, Option<&Armature>, Option<&ClipNames>),
+        With<ActorRebuildModels>,
+    >,
     server: Res<AssetServer>,
 ) {
-    for (entity, skin, armature) in query.iter() {
+    for (entity, skin, armature, clip_names) in query.iter() {
         commands
             .entity(entity)
             .despawn_related::<Children>()
@@ -44,6 +47,7 @@ pub fn spawn_actor_bodies(
             Some(ArmatureSource {
                 node: node.to_owned(),
                 clips: server.load(clips.to_owned()),
+                clip_names: clip_names.map(|names| names.0.clone()).unwrap_or_default(),
             })
         });
         commands.spawn((
