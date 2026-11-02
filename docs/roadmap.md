@@ -10,11 +10,16 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN31.**
+**Next: PAN32.**
 
 ## Next
 
 In order.
+
+- **PAN31 Smoke captions.** After the driver's chunk 41, which titles the window with the plan and
+  adds a `caption` step: `plans/smoke.py` captions its sections (camera, scenery, physics, parcels),
+  so the window says which is running, and `plans/_panoply_driver.py` drops its `_attach` override,
+  which the driver's default title replaces.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
