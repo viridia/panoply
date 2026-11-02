@@ -10,11 +10,23 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN25.**
+**Next: PAN30.**
 
 ## Next
 
 In order.
+
+- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of each
+  plan what it checks that no other does, and whether that is worth its time and the focus it takes.
+  Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py`, a still that could be a
+  shot in `lighting.py`. Measurements stay, tagged `manual`. The author, who sees the window but not
+  the log, cannot tell what a plan is doing: a `caption` step in `_panoply_driver.py` sets the
+  window's title, and each section of a plan opens with one saying what it checks ("Ray stops on the
+  table's collider"). A section hard to caption is a candidate to cut.
+- **PAN14 Guidance out of memory.** The agent's memory holds project guidance that belongs in git:
+  plan-writing advice (state set through the driver, waits by latency class) goes to
+  `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a
+  chunk's end, absolute plan paths, one driver run at a time, fewer launches) to `AGENTS.md`.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
@@ -33,6 +45,59 @@ components and every layer restartable from saved state (R104).
   enclosed beyond its margin): an actor that is not grounded, or makes no progress against its
   intent, for some seconds moves to the nearest free spot; before navigation, the nearest cell
   outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
+- **PAN25 Nav points.** Named places to travel to: `WorldLocation` and its loader, from
+  `src/world/locations.rs`, moved as `NavPoint` to `panoply_core` beside `GotoLocation`, loading
+  `assets/world.locations.json` (51 points). Two roles: the editor travels to any of them, and those
+  with an icon mark the in-game map (later). faery's `INavPoint` also had `viewAngle` and `center`
+  (the icon's map position); add them when travel or the map needs them.
+- **PAN26 Go To dialog.** G opens a feathers dialog: a text input filtering the nav points sorted by
+  name, Cancel and Go. Click selects, double-click or Go travels by `GotoLocation`, Esc cancels. The
+  filter, used across the editor later, ports faery's `createSearchFilter` (`editor/src/controls/`,
+  with its tests): spaces AND terms, commas OR them; a term matches as a case-insensitive substring,
+  or letter by letter against word starts, each letter starting a word or continuing the word just
+  matched (`bb` matches "BasicBlock", `stvi` "stick-village"). Words start at a capital, `-`, `_` or
+  space. A matcher of its own, not faery's unanchored regex, which let a typed `.` or `+` change the
+  pattern. The list widget is written for PAN29 to reuse.
+- **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
+  scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
+  in that mode. Today the free camera's context and PAN3g's direct key reads are both always on, so
+  the arrows and WASD each drive one thing in every mode. First see X3, which settles how editor
+  modes take the pointer and keys. Go To (PAN26) in play moves the player, and the camera follows as
+  usual; in an editor mode it moves the camera, as before.
+- **PAN18 Player input on `bevy_action_map`.** Moves PAN3g's and PAN3k's direct key reads onto
+  actions, in PAN22's play context.
+- **PAN27 Mode selector.** A control at the top of the editor panel choosing the editor mode (realm,
+  terrain, scenery, catalogs, play; X3), saved in settings. Before designing: the author's
+  screenshots of faery's mode buttons, and the Bevy editor mocks' toolbar. After PAN22, whose states
+  it switches.
+- **PAN28 Property editor.** A fork of arbor_day's `properties.rs` into `panoply_editor`, so each
+  develops for its own needs (sharing later is X48); its attributes replaced by `bevy::annotations`
+  where they overlap, as arbor_day's X25 plans for its own. Beyond arbor_day: nested structs and
+  arrays of structs, and optional fields as faery's aspects had them: a struct is a map whose keys
+  may be absent; a `None` field has no row, a `Some` row has an × button that removes it, and a
+  boxed-plus menu in the panel header lists the absent fields to add. A field's annotations apply
+  through `Option` and `Vec` to their contents, since the `f32` in `Option<f32>` cannot be
+  annotated; Bevy's inspector does this, in a commit after Panoply's locked Bevy, so this chunk may
+  bump Bevy. Every edit is undoable (D49): setting a value at an asset key and property path, adding
+  or removing an optional field, inserting or removing an array item; a drag's steps coalesce into
+  one entry. The undo stack is a module of `panoply_editor`, from the author's unmerged bevy#23373,
+  its contexts keyed by asset rather than `Entity`.
+- **PAN29 Realm mode panel.** PAN26's list in the panel with Go, + (names the current view as a new
+  nav point) and − (removes the selected one), and the selected point's fields below in PAN28's
+  editor; faery's `MapEditPanel`, `NavPointSelector` and `NavPointEditor`. Saving is explicit, as in
+  faery: a save button beside PAN27's mode selector, disabled while nothing is unsaved, writes
+  `world.locations.json`.
+- **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
+  (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
+  distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only
+  attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
+  so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
+  asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
+  action are each native code or, after X7, a formula from the asset; only native for now. E
+  performs the one enabled interaction on what PAN3k's probe hits, with its caption as an on-screen
+  hint; a choice among several is X43. One aspect end to end, the one whose action needs least else
+  (a door changes its collider and model; a container needs an inventory dialog). After PAN18, so E
+  is an action.
 - **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
   shader (D29).
 - **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
@@ -81,28 +146,6 @@ components and every layer restartable from saved state (R104).
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
   game's click handling runs only while the game has the pointer (X3, editor tools).
-- **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
-  scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
-  in that mode. Today the free camera's context and PAN3g's direct key reads are both always on, so
-  the arrows and WASD each drive one thing in every mode. First see X3, which settles how editor
-  modes take the pointer and keys.
-- **PAN18 Player input on `bevy_action_map`.** Moves PAN3g's and PAN3k's direct key reads onto
-  actions, in PAN22's play context.
-- **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
-  (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
-  distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only
-  attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
-  so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
-  asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
-  action are each native code or, after X7, a formula from the asset; only native for now. E
-  performs the one enabled interaction on what PAN3k's probe hits, with its caption as an on-screen
-  hint; a choice among several is X43. One aspect end to end, the one whose action needs least else
-  (a door changes its collider and model; a container needs an inventory dialog). After PAN18, so E
-  is an action.
-- **PAN14 Guidance out of memory.** The agent's memory holds project guidance that belongs in
-  git: plan-writing advice (state set through the driver, waits by latency class) goes to
-  `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a
-  chunk's end, absolute plan paths, one driver run at a time, fewer launches) to `AGENTS.md`.
 - **PAN4 Portals**: a rewrite, not a restoration (D21). `src/portals` is reference
   (`REFERENCE(PAN4)`), deleted once portals work. Portals go in a crate, since the editor places
   them (D37, D40); which one is open. The old code's portal aspect attaches to walls and fixtures
@@ -118,10 +161,6 @@ components and every layer restartable from saved state (R104).
   Show menu with the features they show, not before. Among them, faery's parcel and precinct
   readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
   PAN10) when tuning load distances needs it on screen.
-- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of each
-  plan what it checks that no other does, and whether that is worth its time and the focus it takes.
-  Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py`, a still that could be a
-  shot in `lighting.py`. Measurements stay, tagged `manual`.
 - **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
   what each needs are in [goals.md](goals.md).
 

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X48.**
+**Next: X49.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -336,3 +336,6 @@ dropped, not deferred. Numbers are never reused.
   play-once-and-hold, and R37's behavior on a one-shot's completion. PAN3j plays only the states
   something in the game can cause (D48). *Gate:* each with what causes it: pushing (R28), blocked
   travel (R22), combat, death, sleeping fixtures.
+- **X48** One property editor for Panoply and arbor_day, in a crate both use. PAN28 forks
+  arbor_day's instead, so each grows without satisfying the other. *Gate:* both have settled, or the
+  same fix has to be made in both.
