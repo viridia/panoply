@@ -290,13 +290,14 @@ dropped, not deferred. Numbers are never reused.
   editor's property grid (translation and scale of standard shapes, X3) with the F3 view
   live. *Gate:* the author tries Skein, or the first model whose colliders are authored in
   Blender.
-- **X38** Particles and missiles. faery's particles interacted with the world: they despawned
-  on collision, could be light and sound sources, and spawned other particles (a fireball or
-  cannonball trailing smoke). Third-party Bevy particle engines lack these, and a port of
-  faery's could not do them on the GPU either. So effects split in two: particles, instanced
-  and GPU-driven, purely visual; and missiles, entities without automatic instancing that
-  collide, light, sound and emit particles. The particle engine is undecided. *Gate:* the first
-  effect: snoring (R36 in [actor-requirements.md](actor-requirements.md)) or a missile.
+- **X38** Particles and missiles. faery's particles interacted with the world: they despawned on
+  collision, could be light and sound sources, and spawned other particles (a fireball or cannonball
+  trailing smoke). Third-party Bevy particle engines lack these, and a port of faery's could not do
+  them on the GPU either. So effects split in two: particles, instanced and GPU-driven, purely
+  visual; and missiles, entities without automatic instancing that collide, light, sound and emit
+  particles. Requirements, the engines considered and the design Panoply leans toward are in
+  [particles.md](particles.md). *Gate:* the first effect: snoring (R36 in
+  [actor-requirements.md](actor-requirements.md)) or a missile.
 - **X39** Scenery colliders beyond D38's static solids: doors (a kinematic body following the
   glTF node the descriptor's `animation` names, moved by the model's own animation, with no
   separate animation data), sensors, ladders, `hint` and `marker` colliders (the editor's
