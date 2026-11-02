@@ -107,9 +107,27 @@ Migration scripts below, and X1), `artwork/`.
 
 ## Editor (for Next: `editor`, X3)
 
-- `editor/src/tools/`: 17 tools: floor draw/edit/stamp, wall, fixture, actor, waypoint, flora
-  placement, terrain, terrain contouring, terrain effects, move/rotate instance, select
-  (structure, scenery rectangle), scenery interact. `mutations.ts`, `ToolState.ts`.
+- `editor/src/tools/`: 15 tools, each a subclass of `TerrainTool` (pointer picking against terrain
+  and scenery, hover and drag), with `mutations.ts` and `ToolState.ts`. Most are modal, made by the
+  mode or submode button selected:
+  - Terrain (`view/PlotEditPanel.tsx`): `TerrainContouringTool`, `FloraPlacementTool`.
+  - Floors (`view/modes/PlaceFloorMode.tsx`): `DrawFloorTool`, `EditFloorTool`, and `StampFloorTool`
+    in four shapes (1, 2, 3 cells, octagon).
+  - Scenery (`view/SceneryEditPanel.tsx`): `PlaceWallTool`, `PlaceTerrainFxTool`,
+    `PlaceFixtureTool`, `PlaceActorTool`, `SelectSceneryRectTool`, `SceneryInteractTool`,
+    `SelectStructTool`.
+  - Selected instance (`view/modes/SelectSceneryInstanceMode.tsx`): `MoveInstanceTool`,
+    `RotateInstanceTool`.
+
+  One is situational: `PlaceWaypointTool`, made by a button beside a field in the property editor
+  (`WaypointFieldEditor`, `LocationFieldEditor`, `Location2FieldEditor`).
+- `editor/src/reflex-ui-faery/customFieldEditors.tsx`: the property editor picks a field's widget
+  from its type descriptor, by faery's own reflection: a `subtype` annotation on a plain type (a
+  string's `model`, `realm`, `rgb`, `resourceKey`, `instanceKey`, `textureKey`, `sfx`, `sceneRole`,
+  `instanceGroup`; a nullable string's `dialogueState`; a `Vector3`'s `waypoint`; a record's
+  `stageExitMap`, a union's `stagePredicate`, a tuple's `stageRange`, a struct's `predicate` or
+  `sideEffect`), or a named custom type (`ColorMap`, `FeatureSelection`, `Location`, `Location2`,
+  `InstanceRef`, `Inventory`, `SoundRef`). In Rust most annotations become newtypes (D45).
 - `editor/src/`: `builders`, `controls`, `view`, `helpers`, `reflex-ui-three`,
   `reflex-ui-faery`.
 - `design/Editor.md`: tool organization, map mode, mods and add-ons.

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN24.**
+**Next: PAN25.**
 
 ## Next
 
@@ -50,7 +50,21 @@ components and every layer restartable from saved state (R104).
   clothing and every prop set it on the node, so they have no outline. Read `GltfExtras` on the
   mesh's entity and its parent before `GltfMaterialExtras`; decide whether skinned meshes keep
   faery's default. `scripts/outlines.py` lists what changes. Weapons also carry a hand-built
-  `Outline` hull, which a node outline would extrude again.
+  `Outline` hull, which a node outline would extrude again. To see outlines while editing, a Blender
+  Python script, run once per `.blend`: it makes a geometry-node inverted hull (offset along
+  normals, flip faces, an outline material with backface culling, joined to the mesh) and adds it
+  after the Armature modifier on every mesh, its width driven by the object's `outline` property.
+  Exports must leave the hull out: check whether the glTF exporter skips a modifier that is off for
+  render, else export with modifiers unapplied.
+- **PAN24 Clip repairs.** With PAN23, as one Blender session. `Punch` keys `upper_arm.R` rolled
+  about 140° from its roll in `Stand` (and 70-90° from the mirrored left arm), wringing the
+  shoulder; the keys hold no quaternion sign flips, so the poses themselves are wrong. A Blender
+  Python script rolls the bone back about its own axis on every key, by an angle judged in catwalk,
+  and counter-rotates `forearm.R`'s keys so the forearm and hand stay where they are. A clip audit
+  in `scripts/`, as `outlines.py`, lists clips whose bones' roll strays far from their mirror or
+  from `Stand`. The broken female clips are I6. A trial for X45: retarget one CC0 combat clip onto
+  `HumanoidArmature` and play it beside the hand-keyed ones, to measure the cost per clip and
+  whether the styles mix.
 - **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
   distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
   the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
@@ -104,12 +118,14 @@ components and every layer restartable from saved state (R104).
   crossing moves the player (R31, `panoply_actors`). First candidate: a crate of their own,
   `panoply_portals`, over scenery and actors.
 - **PAN5 Editor**, beyond PAN1's shell (see X3). `src/editor`, written for Quill, is reference
-  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The author has
-  screenshots of faery's editor. faery's other debug views (listed in
-  [faery.md](faery.md), Editor) join the Show menu with the features they show, not before.
-  Among them, faery's parcel and precinct readiness grid, drawn from the survey's data
-  (`TerrainPending::survey`, `SceneryPending::survey`, PAN10) when tuning load distances needs
-  it on screen.
+  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The author has screenshots
+  of faery's editor. Its tools, modal (one per mode or submode button) or situational (the waypoint
+  tool, opened from a field), and its property editor's field widgets are surveyed in
+  [faery.md](faery.md), Editor; port each with the mode or field that needs it, the widgets chosen
+  by field type (D45). faery's other debug views (listed in [faery.md](faery.md), Editor) join the
+  Show menu with the features they show, not before. Among them, faery's parcel and precinct
+  readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
+  PAN10) when tuning load distances needs it on screen.
 - **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of each
   plan what it checks that no other does, and whether that is worth its time and the focus it takes.
   Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py`, a still that could be a

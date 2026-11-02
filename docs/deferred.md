@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X45.**
+**Next: X46.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -156,10 +156,15 @@ dropped, not deferred. Numbers are never reused.
   engine in [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk.
   *Gate:* actors restored (the first content with real mutable state).
 - **X19** Cutaways: when the player is under a ceiling, scenery above them is hidden, including
-  actors on those floors. Rects are authored per tier (`TierSer.cutaways`); choosing them and the
-  3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
-  Scenery). Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
-  `Visibility::Hidden` so descendants inherit it (D19). *Gate:* scenery and actors restored.
+  actors on those floors. Rects are authored per tier (`TierSer.cutaways`); choosing them and the 3D
+  test against element and actor bounds follow the three.js version ([faery.md](faery.md), Scenery).
+  Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
+  `Visibility::Hidden` so descendants inherit it (D19). Once interiors show, check outlines on
+  glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
+  drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
+  behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
+  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant). *Gate:* scenery and
+  actors restored.
 - **X20** Keep unknown aspects lossless (D25): hold each as an opaque value that saves back
   unchanged, so the editor cannot drop data a disabled module owns. *Gate:* editor restored.
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller
@@ -317,3 +322,10 @@ dropped, not deferred. Numbers are never reused.
 - **X44** The precise move (R32): to an exact point, height included, with collisions off. PAN3h's
   travel (`TravelTo`) goes through the character controller, so furniture would stop it. *Gate:* the
   pose action (R43), or the first actor to sit or lie down (R82).
+- **X45** Clips from outside sources, so the author's animation time stops limiting combat moves and
+  poses, as it has so far. Candidates: Mixamo (royalty-free in projects, but no redistribution of
+  the files, which a public repo or extractable assets may break) and CC0 sets such as Quaternius's;
+  check each licence's current terms. Each clip needs retargeting onto the humanoid skeleton (D28)
+  and a style check against the hand-keyed clips; layering in the animation graph (D44, R39) cuts
+  how many are needed. PAN24's trial measures the retargeting cost. *Gate:* combat design (PAN6 or
+  before) needs more moves or poses than are worth keying by hand.

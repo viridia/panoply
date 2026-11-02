@@ -39,8 +39,8 @@ pub fn trunk_shape(trunks: &[(Vec3, f32)]) -> Option<SharedShape> {
     }
     let parts = trunks
         .iter()
-        .map(|&(base, radius)| {
-            let radius = radius.min(CANOPY_HEIGHT * 0.5);
+        .map(|&(base, _radius)| {
+            let radius = 0.35;
             let center = base + Vec3::Y * CANOPY_HEIGHT * 0.5;
             (
                 Pose::from_translation(center),

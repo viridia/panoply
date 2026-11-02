@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D45.**
+**Next: D46.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -350,3 +350,11 @@ never reused.
   one `AnimationGraph` per skeleton, every clip a node under the root, so a layer (R39's gestures)
   adds nodes and a mask. Species name their clips their own way through the `ClipNames` aspect,
   faery's `actionMap`. (PAN3i)
+- **D45** What a field's value refers to is its type, not an annotation. faery's reflection marked
+  plain types with a `subtype` for the property editor (a string marked `dialogueState` showed a
+  drop-down of the dialogue's states; see [faery.md](faery.md), Editor); in Panoply such a field is
+  a newtype (`struct DialogueStateId(String)`, serialized as its inner value), and the editor picks
+  a widget by the field's reflected type. JavaScript had no runtime types, so faery needed
+  annotations; Bevy's reflection has them, and the newtype also stops code passing a realm name
+  where a model path belongs. Annotations remain for how a primitive (`f32`, `String`) is shown, not
+  what it means: a range, a step, a multi-line text box, as reflect custom attributes.
