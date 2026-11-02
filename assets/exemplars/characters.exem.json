@@ -9,6 +9,10 @@
   "Proto.HumanoidMale": {
     "type": "Actr",
     "aspects": {
+      "CollisionSize": {
+        "height": 1.4,
+        "radius": 0.3
+      },
       "Armature": {
         "armature": "characters/humanoid-male.glb#HumanoidArmature",
         "animations": "characters/humanoid-armature.glb#HumanoidArmature"
@@ -35,6 +39,10 @@
   "Proto.HumanoidFemale": {
     "type": "Actr",
     "aspects": {
+      "CollisionSize": {
+        "height": 1.4,
+        "radius": 0.3
+      },
       "Armature": {
         "armature": "characters/humanoid-female.glb#HumanoidArmature",
         "animations": "characters/humanoid-armature.glb#HumanoidArmature"

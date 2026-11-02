@@ -29,6 +29,10 @@ pub mod collision_groups {
     /// The surface over generated forests that catches what falls onto them.
     pub const CANOPY: Group = Group::GROUP_6;
 
+    /// Actors. Their capsules are not yet colliders in the world (D41), so this only names them
+    /// in the debug view.
+    pub const ACTOR: Group = Group::GROUP_7;
+
     /// The groups of a parcel's colliders, as opposed to a precinct's.
     pub const PARCEL: Group = TERRAIN.union(FLORA).union(CANOPY);
 
@@ -40,6 +44,7 @@ pub mod collision_groups {
         ("Fixtures", FIXTURE),
         ("Trees", FLORA),
         ("Canopy", CANOPY),
+        ("Actors", ACTOR),
     ];
 }
 

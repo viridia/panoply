@@ -35,6 +35,43 @@ impl Aspect for Armature {
     }
 }
 
+/// The actor's collision capsule (R4), in meters: its whole height, and its radius.
+#[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct CollisionSize {
+    pub height: f32,
+    pub radius: f32,
+}
+
+impl Default for CollisionSize {
+    fn default() -> Self {
+        Self {
+            height: 1.0,
+            radius: 0.5,
+        }
+    }
+}
+
+impl Aspect for CollisionSize {
+    fn name(&self) -> &str {
+        "CollisionSize"
+    }
+
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == ACTOR_TYPE
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<CollisionSize> = RemoveComponent::<CollisionSize>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+}
+
 /// The actor's body: a `file#Scene` path to a named scene of a character glTF, which holds the
 /// body mesh and the skeleton it is bound to.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]

@@ -9,6 +9,7 @@ use bevy::{
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
 use bevy_action_map::prelude::*;
+use panoply_actors::{Actor, ActorMotion, CollisionSize};
 use panoply_core::{realm_physics::collision_groups, RealmPhysics, Viewpoint};
 use panoply_terrain::Parcel;
 use rapier3d::{
@@ -45,6 +46,9 @@ pub struct GroundProbe {
     /// Collision groups (`collision_groups`) the hit collider belongs to, as bits; 0 for no hit.
     pub groups: u32,
 }
+
+/// Actors' capsules, drawn where the actor is drawn: cyan, against rapier's orange.
+const ACTOR_COLOR: Color = Color::srgb(0.1, 0.9, 1.0);
 
 /// Gizmos for physics drawing, on every realm's layer.
 #[derive(GizmoConfigGroup, Reflect, Default)]
@@ -105,13 +109,14 @@ fn toggle_physics(
 }
 
 /// Draws the colliders of the viewpoint's realm: those of parcels (ground, trees, canopy) only
-/// for shown parcels (D20), since all of them would be millions of lines, and every scenery
-/// collider.
+/// for shown parcels (D20), since all of them would be millions of lines, every scenery
+/// collider, and the capsules of actors with physics.
 fn draw_physics(
     views: Res<DebugViews>,
     viewpoint: Res<Viewpoint>,
     q_realms: Query<&RealmPhysics>,
     q_parcels: Query<(Entity, &Visibility), With<Parcel>>,
+    q_actors: Query<(&Actor, &Transform, Option<&CollisionSize>), With<ActorMotion>>,
     mut pipeline: ResMut<PhysicsDebugRender>,
     mut probe: ResMut<GroundProbe>,
     mut gizmos: Gizmos<PhysicsGizmos>,
@@ -136,6 +141,22 @@ fn draw_physics(
         shown_parcels,
     };
     physics.world().debug_render(&mut pipeline, &mut backend);
+
+    // Actors' capsules are query shapes, not in the world (D41), so rapier does not draw them.
+    if backend.groups.contains(collision_groups::ACTOR) {
+        for (actor, transform, size) in &q_actors {
+            if viewpoint.realm != Some(actor.realm) {
+                continue;
+            }
+            let size = size.cloned().unwrap_or_default();
+            let length = (size.height - 2.0 * size.radius).max(0.0);
+            gizmos.primitive_3d(
+                &Capsule3d::new(size.radius, length),
+                Isometry3d::from_translation(transform.translation + Vec3::Y * size.height * 0.5),
+                ACTOR_COLOR,
+            );
+        }
+    }
 
     let origin = viewpoint.position + Vec3::Y * 1000.;
     let ray = Ray::new(origin, Vec3::NEG_Y);

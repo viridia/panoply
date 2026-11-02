@@ -4785,6 +4785,9 @@ dependencies = [
  "bevy",
  "panoply_core",
  "panoply_exemplar",
+ "panoply_scenery",
+ "panoply_terrain",
+ "rapier3d",
  "serde",
 ]
 
@@ -4806,6 +4809,7 @@ dependencies = [
  "bevy",
  "bevy_action_map",
  "bevy_immediate",
+ "panoply_actors",
  "panoply_core",
  "panoply_render",
  "panoply_scenery",

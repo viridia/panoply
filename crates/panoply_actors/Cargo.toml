@@ -7,6 +7,9 @@ edition = "2021"
 bevy = { workspace = true }
 panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
+panoply_scenery = { workspace = true }
+panoply_terrain = { workspace = true }
+rapier3d = { workspace = true }
 serde = { workspace = true }
 
 [lints.clippy]

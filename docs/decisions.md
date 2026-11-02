@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D41.**
+**Next: D42.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -316,3 +316,13 @@ never reused.
   and `panoply_actors` both depend on: a precinct holds both scenery and actors (D24), and with the
   format in scenery, scenery would have to name actor types, a dependency cycle. Scenery still
   registers the asset and spawns precincts. (PAN3a)
+- **D41** Actors move with `rapier3d`'s `KinematicCharacterController` (D36: no fork), in
+  `FixedUpdate` after the realm steps, so colliders inserted since the last tick are in the broad
+  phase. Bevy main has no transform interpolation, so `panoply_actors::actor_physics` draws each
+  actor between its last two ticks' positions, as Bevy's `physics_in_fixed_timestep` example does.
+  The capsule (`CollisionSize`, R4) is a query shape, not a collider in the world: nothing yet needs
+  to hit an actor, and leaving it out spares filtering the actor out of its own casts. Reversing
+  that, for actors blocking each other or picking, adds a collider and a filter, and lets rapier's
+  debug render draw it; until then the F3 view draws capsules itself, under the `ACTOR` group's
+  "Actors" entry in the Show menu. An actor gets physics when nothing terrain or scenery is pending
+  and a ray down from it hits a collider, until X33's footprint query. (PAN3f)
