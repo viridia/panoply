@@ -2,7 +2,7 @@
 skeleton (D28), plays its idle clip from the shared clips file, wears its hair and its exemplar's
 colors, and holds a sword in its right hand. W walks it away from the camera, turning it to
 match, with the camera following, and S backs it up. A slope steeper than 45° stops it, and it
-slides down one it is dropped onto.
+slides down one it is dropped onto. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
 
     bevy-remote-driver plans/actors.py
 
@@ -26,6 +26,7 @@ TRANSFORM = "bevy_transform::components::transform::Transform"
 GLOBAL_TRANSFORM = "bevy_transform::components::global_transform::GlobalTransform"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
 INTENT = "panoply_actors::actor_control::ActorIntent"
+TRAVEL = "panoply_actors::actor_travel::TravelTo"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 # Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
 SPOT = [37.0, 0.0, 47.0]
@@ -33,6 +34,8 @@ SPOT = [37.0, 0.0, 47.0]
 # whose ground there is about 1 m up.
 HILL_FOOT = [41.0, 0.2, 77.0]
 HILL_FACE = [41.0, 2.5, 74.6]
+# 4 m east of `SPOT`, over the same flat ground W walks on.
+TRAVEL_TARGET = [41.0, 0.0, 47.0]
 WAIT = {"seconds": 60}
 # Trot, the pace W walks at (R17), and walk, S's.
 TROT = 3.0
@@ -152,4 +155,35 @@ def run(driver):
     print(f"slid: {slid}")
     assert slid["position"][1] < 0.3, f"stayed on the slope: {slid}"
     assert slid["position"][2] > HILL_FACE[2], f"did not slide down the face: {slid}"
+
+    # Travel to a point 4 m to the actor's side: it turns there, walks, and stops on the point.
+    place(driver, SPOT)
+    driver.goto(SPOT, 20.0)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": TROT})
+    driver.wait(lambda: travelling(driver), "the actor to finish travelling", {"seconds": 5})
+    arrived = driver.get("Actor", MOTION)
+    print(f"arrived: {arrived}")
+    assert flat_distance(arrived["position"], TRAVEL_TARGET) < 0.06, f"missed: {arrived}"
+    # It faces the bearing to the target, which swings as millimetres of sideways offset matter
+    # more near it.
+    assert arrived["facing"] == Between(math.pi / 2 - 0.15, math.pi / 2 + 0.15), f"{arrived}"
+
+    # W pre-empts travel: it ends short of its target.
+    driver.set("Actor", TRAVEL, {"target": SPOT, "speed": WALK})
+    driver.seconds(0.5)
+    driver.key("KeyW", hold=10)
+    driver.wait(lambda: travelling(driver), "W to end the travel", {"seconds": 1})
+    driver.frames(5)
+    stopped = driver.get("Actor", MOTION)
+    assert flat_distance(stopped["position"], SPOT) > 2.0, f"travelled on: {stopped}"
     driver.exits("Escape")
+
+
+def travelling(driver):
+    """For `wait`: done once the actor has no `TravelTo`."""
+    entity = driver.select("Actor")[0]
+    found = driver.call(
+        "world.get_components", {"entity": entity, "components": [TRAVEL], "strict": False}
+    )["components"]
+    return TRAVEL not in found, lambda: f"{found} at {driver.get('Actor', MOTION)}"

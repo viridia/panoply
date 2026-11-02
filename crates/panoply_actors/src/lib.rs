@@ -9,6 +9,7 @@ mod actor_control;
 mod actor_features;
 mod actor_model;
 mod actor_physics;
+mod actor_travel;
 mod actor_wield;
 mod item_aspect;
 
@@ -18,6 +19,7 @@ pub use actor_control::{ActorIntent, PlayerActor};
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
 pub use actor_physics::ActorMotion;
+pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 
 use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
@@ -25,6 +27,7 @@ use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::drive_player;
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
+use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 
 use self::actor_aspect::{
@@ -63,6 +66,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<CollisionSize>()
             .register_type::<ActorMotion>()
             .register_type::<ActorIntent>()
+            .register_type::<TravelTo>()
             .register_type::<ColorSlots>()
             .register_type::<Colors>()
             .register_type::<FeatureSlots>()
@@ -84,7 +88,12 @@ impl Plugin for ActorsPlugin {
                 )
                     .chain(),
             )
-            .add_systems(FixedUpdate, move_actors.after(realm_physics_system))
+            .add_systems(
+                FixedUpdate,
+                (travel_actors, move_actors)
+                    .chain()
+                    .after(realm_physics_system),
+            )
             .add_systems(
                 RunFixedMainLoop,
                 interpolate_actors.in_set(RunFixedMainLoopSystems::AfterFixedMainLoop),

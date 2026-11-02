@@ -1,5 +1,8 @@
 use bevy::{
-    gltf::Gltf, mesh::skinning::SkinnedMesh, platform::collections::HashMap, prelude::*,
+    gltf::Gltf,
+    mesh::skinning::SkinnedMesh,
+    platform::collections::HashMap,
+    prelude::*,
     world_serialization::{WorldAssetRoot, WorldInstanceReady},
 };
 

@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use panoply_core::Viewpoint;
 use std::f32::consts::PI;
 
-use crate::ActorMotion;
+use crate::{ActorMotion, TravelTo};
 
 /// Paces, in m/s (R17).
 const WALK_SPEED: f32 = 1.5;
@@ -28,17 +28,24 @@ pub struct ActorIntent {
 }
 
 /// Turns the player's keys into their actor's intent. Pressing W or S has the camera follow the
-/// actor again after the free camera left it.
+/// actor again after the free camera left it, and pre-empts travel (R45).
 pub(crate) fn drive_player(
+    mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
     mut viewpoint: ResMut<Viewpoint>,
-    mut players: Query<(Entity, &ActorMotion, &mut ActorIntent), With<PlayerActor>>,
+    mut players: Query<(Entity, &ActorMotion, &mut ActorIntent, Has<TravelTo>), With<PlayerActor>>,
 ) {
-    let Ok((entity, motion, mut intent)) = players.single_mut() else {
+    let Ok((entity, motion, mut intent, travelling)) = players.single_mut() else {
         return;
     };
     let forward = keys.pressed(KeyCode::KeyW);
     let back = keys.pressed(KeyCode::KeyS);
+    if travelling {
+        if !(forward || back) {
+            return;
+        }
+        commands.entity(entity).remove::<TravelTo>();
+    }
     let fast = keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
     let away = viewpoint.azimuth;
     *intent = if forward {

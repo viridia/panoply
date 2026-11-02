@@ -94,9 +94,10 @@ pub(crate) fn start_actor_physics(
         let position = transform.translation;
         let facing = transform.rotation.to_euler(EulerRot::YXZ).0;
         let ray = Ray::new(position + Vec3::Y * GROUND_RAY_RISE, Vec3::NEG_Y);
-        let ground = physics
-            .world()
-            .cast_ray(&ray, GROUND_RAY_LENGTH, true, QueryFilter::default());
+        let ground =
+            physics
+                .world()
+                .cast_ray(&ray, GROUND_RAY_LENGTH, true, QueryFilter::default());
         if ground.is_some() {
             commands.entity(entity).insert(ActorMotion {
                 position,

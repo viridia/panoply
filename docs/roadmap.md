@@ -21,8 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3h Move to point.** A body action, not a goal: travel in a straight line to a point at a pace
-  (R32, R43), reporting when it finishes (R45). Started from a plan or a debug hook.
 - **PAN3i Blending.** Crossfades between clips (R34); gait from speed (R17, R18), keeping the
   stride's phase across a change (R19). Build crossfades on `AnimationGraph` blend nodes, so
   layering (an upper-body mask for R39's gestures) or a speed-weighted walk-run blend only adds

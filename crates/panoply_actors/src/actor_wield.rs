@@ -103,7 +103,11 @@ pub fn attach_wielded_items(
             .flatten()
             .filter(|child| bodies.contains(**child))
             .flat_map(|body| actors.iter_descendants(*body))
-            .find(|entity| names.get(*entity).is_ok_and(|name| name.as_str() == model.slot));
+            .find(|entity| {
+                names
+                    .get(*entity)
+                    .is_ok_and(|name| name.as_str() == model.slot)
+            });
         let Some(bone) = bone else {
             error!("Wielded item bone [{}] not found in the body", model.slot);
             commands.entity(entity).despawn();

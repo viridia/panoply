@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X44.**
+**Next: X45.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -314,3 +314,6 @@ dropped, not deferred. Numbers are never reused.
   interaction for E's probe. In faery no object ever had two enabled at once (an unlocked door could
   offer both close and lock, but nothing in the game calls for locking one), so E performs the one
   enabled. *Gate:* content with an object that has two interactions enabled at once.
+- **X44** The precise move (R32): to an exact point, height included, with collisions off. PAN3h's
+  travel (`TravelTo`) goes through the character controller, so furniture would stop it. *Gate:* the
+  pose action (R43), or the first actor to sit or lie down (R82).
