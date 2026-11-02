@@ -21,8 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the
-  query filter excludes `CANOPY` (D39).
 - **PAN3m Robustness.** In the three.js version actors fell through seams between parcel ground
   colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely cover
   only edges within one shape, not between colliders. Write a plan that walks an actor across parcel
@@ -81,11 +79,11 @@ components and every layer restartable from saved state (R104).
   attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
   so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
   asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
-  action are each native code or, after X7, a formula from the asset; only native for now. E
-  performs the one enabled interaction on what PAN3k's probe hits, with its caption as an on-screen
-  hint; a choice among several is X43. One aspect end to end, the one whose action needs least else
-  (a door changes its collider and model; a container needs an inventory dialog). After PAN18, so E
-  is an action.
+  action are each native code or, after X7, a formula from the asset; only native for now. PAN3k's
+  probe runs continuously, as faery's did: while what it hits has an enabled interaction, its
+  caption shows as a prompt at the bottom of the screen, and E performs it; a choice among several
+  is X43. One aspect end to end, the one whose action needs least else (a door changes its collider
+  and model; a container needs an inventory dialog). After PAN18, so E is an action.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I10.**
+**Next: I11.**
 
 - **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
   debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
@@ -45,3 +45,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
   (convex) is their intersection, which no descriptor shape makes. PAN3j fixed the same copied ramp
   on the 2- and 3-wide tiles. Seen by the author in the F3 view; the corners read, not run.
+- **I10** The frame rate roughly halves around the playground's townsfolk (`townsfolk.png` in
+  `plans/actors.py`). Unmeasured: which part costs (skinning, animation graphs, outlines, draw
+  calls, or the actor systems per frame) is unknown; a frame-time comparison there and elsewhere in
+  the playground would start it. Seen by the author, not measured.

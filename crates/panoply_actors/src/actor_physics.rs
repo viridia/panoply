@@ -72,7 +72,7 @@ fn controller() -> KinematicCharacterController {
 }
 
 /// The actor's capsule, centered on the origin.
-fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) -> Capsule {
+pub(crate) fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) -> Capsule {
     let size = size.cloned().unwrap_or_default().scaled_by(scale);
     let radius = size.radius;
     let half_segment = (size.height * 0.5 - radius).max(0.0);
