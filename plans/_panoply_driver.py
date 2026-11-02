@@ -3,7 +3,6 @@
 
 from bevy_remote_driver import Driver, step
 
-WINDOW = "bevy_window::window::Window"
 GOTO = "panoply_core::viewpoint::GotoLocation"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 READINESS = "panoply.readiness"
@@ -18,20 +17,6 @@ RENDER_FRAMES = 2
 
 
 class PanoplyDriver(Driver):
-    def _attach(self):
-        """Titles the window with the plan's name, so someone watching can tell which plan
-        is running."""
-        super()._attach()
-        self.call(
-            "world.mutate_components",
-            {
-                "entity": self.window,
-                "component": WINDOW,
-                "path": ".title",
-                "value": self.out_dir.name,
-            },
-        )
-
     @step
     def goto(self, position, distance=None, azimuth=None, realm="playground", wait=True):
         """Moves the viewpoint to `position`, `[x, y, z]` in meters, in `realm`; at camera

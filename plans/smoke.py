@@ -58,9 +58,13 @@ COLLIDER_SPOTS = [
 
 def run(driver):
     driver.present("PrimaryCamera")
+    driver.caption("camera")
     camera(driver)
+    driver.caption("scenery")
     scenery(driver)
+    driver.caption("physics and editor")
     physics(driver)
+    driver.caption("parcels")
     parcels(driver)
     driver.exits("Escape")
 
