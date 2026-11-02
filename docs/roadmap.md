@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN21.**
+**Next: PAN22.**
 
 ## Next
 
@@ -79,6 +79,17 @@ components and every layer restartable from saved state (R104).
   game's click handling runs only while the game has the pointer (X3, editor tools).
 - **PAN18 Player input on `bevy_action_map`.** Moves PAN3g's and PAN3k's direct key reads onto
   actions.
+- **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
+  (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
+  distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only
+  attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
+  so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
+  asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
+  action are each native code or, after X7, a formula from the asset; only native for now. E
+  performs the one enabled interaction on what PAN3k's probe hits, with its caption as an on-screen
+  hint; a choice among several is X43. One aspect end to end, the one whose action needs least else
+  (a door changes its collider and model; a container needs an inventory dialog). After PAN18, so E
+  is an action.
 - **PAN14 Guidance out of memory.** The agent's memory holds project guidance that belongs in
   git: plan-writing advice (state set through the driver, waits by latency class) goes to
   `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a

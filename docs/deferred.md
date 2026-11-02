@@ -4,11 +4,16 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X43.**
+**Next: X44.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
-  `faery` repo (the earlier TypeScript/three.js engine), to emit BSN.
+  `faery` repo (the earlier TypeScript/three.js engine), to emit BSN. As of 2026-11, BSN assets wait
+  on an overhaul of Bevy's reflection. Consuming them, with `extends` as scene inheritance, looks
+  straightforward; editing is the hard part. Bevy's scene editor will edit an AST of the scene file
+  and serialize it to BSN, not the spawned entities, which lose imports, type names and loading
+  directives. Open: use that AST in Panoply's editor, or keep exemplars as an editor-only AST of our
+  own that the editor compiles to BSN.
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them.
   Consider deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X3** Editor restoration and its UI. Widgets: `bevy_feathers` (on `bevy_ui_widgets`).
@@ -132,12 +137,20 @@ dropped, not deferred. Numbers are never reused.
 - **X16** Revisit `avian3d` (D22). *Gate:* avian merges multiple physics worlds (issue #935)
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
   between worlds (an actor crossing a portal); and a release supports the Bevy in use.
-- **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`)
-  move to ECS and BSN assets: each goal's hierarchy of elements becomes a hierarchy of entities
-  and components. Most reactions pair a condition with an effect. Conditions are reactive
-  formulas; an effect is usually a Rust type with parameters, but can be a formula. So SAGA
-  (X7) needs a way to embed formulas in assets. *Gate:* BSN assets with shared (singleton, non-instanced) scenes, as for X1,
-  and SAGA formulas in assets.
+- **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`) move to
+  ECS and BSN assets: each goal's hierarchy of elements becomes a hierarchy of entities and
+  components. Most reactions pair a condition with an effect. Conditions are reactive formulas; an
+  effect is usually a Rust type with parameters, but can be a formula. So SAGA (X7) needs a way to
+  embed formulas in assets. The same holds for the other hierarchical assets (quests, dialogues).
+  Definitions are shared, not instanced per actor, and an actor's goal state is kept apart from
+  them: a small cursor (step, timers, bindings) that names definition nodes by stable id, not
+  `Entity`. A cursor is what a sparse save holds (X18) and what a layer restarts from (R104); one
+  shared definition serves every actor running it, and a content edit reaches them all. Shared
+  scenes need not be Bevy's: each definition asset can be spawned once into a hidden registry
+  outside any realm, its state pointing in by id, and respawned on hot reload. Bevy's shared scene
+  assets (proposed by the author, received warmly, likely not first-tier) would only tidy that.
+  *Gate:* BSN assets, with shared scenes or a definition tree spawned once per asset, and SAGA
+  formulas in assets.
 - **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
   eviction; a save is only a root index of chunk versions. Design and what it asks of the
   engine in [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk.
@@ -297,3 +310,7 @@ dropped, not deferred. Numbers are never reused.
   model and slot; the rest of faery's item fields (stats, price, weight, icon) are dropped
   ([faery.md](faery.md), Migration scripts). *Gate:* the first feature that moves items: loot,
   trade, or a quest item.
+- **X43** Choosing among interactions (PAN21): a radial menu on click, or a key hint per enabled
+  interaction for E's probe. In faery no object ever had two enabled at once (an unlocked door could
+  offer both close and lock, but nothing in the game calls for locking one), so E performs the one
+  enabled. *Gate:* content with an object that has two interactions enabled at once.
