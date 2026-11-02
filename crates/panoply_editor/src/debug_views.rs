@@ -38,7 +38,7 @@ impl Default for DebugViews {
 }
 
 /// What a ray cast straight down at the view center hits, while physics drawing is on; `None`
-/// if nothing is under it. Drawn as a marker, and read by `plans/physics.py`.
+/// if nothing is under it. Drawn as a marker, and read by `plans/smoke.py`.
 #[derive(Resource, Reflect, Default, Debug)]
 #[reflect(Resource)]
 pub struct GroundProbe {

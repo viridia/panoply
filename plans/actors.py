@@ -92,23 +92,18 @@ def run(driver):
     print(f"landed: {landed}")
     # The controller keeps a 1 cm gap.
     assert landed["position"][1] == Between(0.0, 0.05), f"not on the ground: {landed}"
-    driver.seconds(1)
+    # Standing, the actor stays put while its idle clip shifts its weight from foot to foot,
+    # which moves the hips, and the sword, which hangs from the right hand's bone.
+    driver.present("Actor/HumanoidArmature/hips")
+    driver.present("weapon.R/WieldedItem/Broadsword")
+    hips = driver.get("Actor/hips", TRANSFORM)
+    sword = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
+    driver.seconds(0.5)
     later = driver.get("Actor", MOTION)
     assert later["position"] == landed["position"], f"moved: {landed} to {later}"
-
-    # The idle clip shifts the actor's weight from foot to foot, which moves the hips.
-    driver.present("Actor/HumanoidArmature/hips")
-    before = driver.get("Actor/hips", TRANSFORM)
-    driver.seconds(1)
-    after = driver.get("Actor/hips", TRANSFORM)
-    assert before != after, f"the hips did not move: {before}"
-
-    # The sword hangs from the right hand's bone, so the idle clip moves it too.
-    driver.present("weapon.R/WieldedItem/Broadsword")
-    before = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
-    driver.seconds(1)
+    assert driver.get("Actor/hips", TRANSFORM) != hips, f"the hips did not move: {hips}"
     after = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
-    assert before != after, f"the sword did not move: {before}"
+    assert after != sword, f"the sword did not move: {sword}"
     driver.screenshot("actor")
 
     # F3 draws the actor's capsule with the colliders.
@@ -131,8 +126,9 @@ def run(driver):
     walked = driver.get("Actor", MOTION)
     print(f"walked: {walked}")
     assert walked["facing"] == Between(math.pi / 2 - 0.01, math.pi / 2 + 0.01), f"facing {walked}"
-    # The turn takes about 0.3 s of the 2, along a curve.
-    assert walked["position"][0] - start[0] == Between(4.0, 2 * TROT), f"{start} to {walked}"
+    # The turn takes about 0.3 s of the 2, along a curve; the steps between press and release
+    # add a little to the 2.
+    assert walked["position"][0] - start[0] == Between(4.0, 2.3 * TROT), f"{start} to {walked}"
     assert walked["position"][2] - start[2] == Between(0.0, 1.0), f"{start} to {walked}"
     assert walked["grounded"], f"not grounded: {walked}"
     # The camera trails the actor and catches up once it stops, to within its slack (0.25 m).

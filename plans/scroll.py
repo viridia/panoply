@@ -1,11 +1,10 @@
 """Scrolling: drives the viewpoint diagonally (+x and +z, where hitches show most) across the
-playground twice along the same line, first over ground never loaded, then again with everything
-cached, to separate load hitches from steady cost.
+playground over ground never loaded, and checks that it compiles no pipelines on the way.
 
     bevy-remote-driver plans/scroll.py
     TRACE=1 bevy-remote-driver plans/scroll.py
 
-Prints the average frame time of each pass. With `TRACE=1` the game is built with Bevy's
+Prints the average frame time; `perf.py` measures the steady cost. With `TRACE=1` the game is built with Bevy's
 `trace_chrome` feature and writes `trace-*.json` (system spans per frame) in the package
 directory; tracing slows every frame, so compare spikes there, not averages.
 """
@@ -65,5 +64,4 @@ def run(driver):
     for line in created:
         print(line.split("Pipeline created: ")[-1][:160])
     assert not created, f"{len(created)} pipelines created during the cold walk"
-    scroll(driver, "warm")
     driver.exits("Escape")

@@ -244,23 +244,23 @@ never reused.
   one chunk per bump, with `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update`
   takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md.
 - **D35** `rapier3d` 0.36, used directly (D22), not through `bevy_rapier`, so not tied to a Bevy
-  version. Its math is glam, the same release as Bevy's (0.33), so `Vec3` passes without
-  conversion. `RealmPhysics` wraps rapier's `PhysicsWorld`, which bundles the sets; queries go
-  through `RealmPhysics::world()`, whose query pipeline is built on demand from the broad
-  phase (no stored `QueryPipeline`). Each step's `dt` is `Time<Fixed>`'s timestep: rapier's
-  default 1/60 s against 64 Hz ticks ran physics about 7% fast. Only the viewpoint's realm is
-  stepped (a realm seen through a portal would freeze). Ground colliders stay the smoothed
-  render mesh, holes and terrain-effect elevation included, not the coarser contour grid: some
-  effects flatten the ground, and only the smoothed mesh has them. Collision groups are
-  `panoply_core::realm_physics::collision_groups`, defined as each kind of collider arrives,
-  after faery's ([faery.md](faery.md), Physics); Terrain, Floor, Wall and Fixture so far (D38). Editor builds (D13) have debug
-  views (`panoply_editor::debug_views`, D37): `DebugViews`, saved with `bevy_settings`, holds physics on or
-  off and a mask of groups to draw; F3 toggles physics. Rapier's debug render draws through a
-  gizmo backend, only for colliders of shown parcels (D20), matched by the parcel entity in
-  each collider's `user_data`: a trimesh is three lines per triangle, about 25k a parcel, so
-  all 128 cached parcels would be about 3M lines a frame. Even so, drawing halves the frame
-  rate, which is accepted for a debug view. `GroundProbe` holds where a ray cast
-  down at the view center hits, drawn as a sphere; `plans/physics.py` checks it.
+  version. Its math is glam, the same release as Bevy's (0.33), so `Vec3` passes without conversion.
+  `RealmPhysics` wraps rapier's `PhysicsWorld`, which bundles the sets; queries go through
+  `RealmPhysics::world()`, whose query pipeline is built on demand from the broad phase (no stored
+  `QueryPipeline`). Each step's `dt` is `Time<Fixed>`'s timestep: rapier's default 1/60 s against 64
+  Hz ticks ran physics about 7% fast. Only the viewpoint's realm is stepped (a realm seen through a
+  portal would freeze). Ground colliders stay the smoothed render mesh, holes and terrain-effect
+  elevation included, not the coarser contour grid: some effects flatten the ground, and only the
+  smoothed mesh has them. Collision groups are `panoply_core::realm_physics::collision_groups`,
+  defined as each kind of collider arrives, after faery's ([faery.md](faery.md), Physics); Terrain,
+  Floor, Wall and Fixture so far (D38). Editor builds (D13) have debug views
+  (`panoply_editor::debug_views`, D37): `DebugViews`, saved with `bevy_settings`, holds physics on
+  or off and a mask of groups to draw; F3 toggles physics. Rapier's debug render draws through a
+  gizmo backend, only for colliders of shown parcels (D20), matched by the parcel entity in each
+  collider's `user_data`: a trimesh is three lines per triangle, about 25k a parcel, so all 128
+  cached parcels would be about 3M lines a frame. Even so, drawing halves the frame rate, which is
+  accepted for a debug view. `GroundProbe` holds where a ray cast down at the view center hits,
+  drawn as a sphere; `plans/smoke.py` checks it.
 - **D36** As few dependencies as possible. A crate that depends on Bevy has to be forked to
   follow Bevy main (D34), so each one (character controller, particle engine, navigation mesh
   generator) is a fork to maintain. A crate with no Bevy dependency, such as `rapier3d` (D35),

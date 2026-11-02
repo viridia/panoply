@@ -21,6 +21,8 @@ from _panoply_driver import PanoplyDriver
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
+# A gallery, judged by eye: a directory run leaves it out.
+TAGS = ["manual"]
 SUNLIGHT = "panoply_core::sunlight::Sunlight"
 HEMISPHERE = "panoply_terrain::hemisphere::HemisphereLight"
 TONEMAPPING = "bevy_render::view::Tonemapping"

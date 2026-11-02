@@ -10,19 +10,12 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN30.**
+**Next: PAN31.**
 
 ## Next
 
 In order.
 
-- **PAN8 Prune the plans.** From a full run's times (the driver reports each plan's), ask of each
-  plan what it checks that no other does, and whether that is worth its time and the focus it takes.
-  Candidates: `tonemapping.py`, whose question D30 settled; `shadows.py`, a still that could be a
-  shot in `lighting.py`. Measurements stay, tagged `manual`. The author, who sees the window but not
-  the log, cannot tell what a plan is doing: a `caption` step in `_panoply_driver.py` sets the
-  window's title, and each section of a plan opens with one saying what it checks ("Ray stops on the
-  table's collider"). A section hard to caption is a candidate to cut.
 - **PAN14 Guidance out of memory.** The agent's memory holds project guidance that belongs in git:
   plan-writing advice (state set through the driver, waits by latency class) goes to
   `../bevy_remote_driver/docs/writing-plans.md`; workflow (one directory run of every plan at a
@@ -98,6 +91,9 @@ components and every layer restartable from saved state (R104).
   hint; a choice among several is X43. One aspect end to end, the one whose action needs least else
   (a door changes its collider and model; a container needs an inventory dialog). After PAN18, so E
   is an action.
+- **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
+  it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
+  `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
 - **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
   shader (D29).
 - **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
