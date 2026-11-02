@@ -10,8 +10,15 @@ render passes' CPU times and the entity count. The window must stay in front for
     ABLATE=msaa,environment bevy-remote-driver plans/ablate.py
 
 runs only the experiments whose names contain one of the given words.
+
+    AT=townsfolk bevy-remote-driver plans/ablate.py
+
+measures among the playground's townsfolk instead. The last experiments cannot be undone, so
+each is measured on top of the one before: actors' animation off, then actors despawned, then
+the environment map off.
 """
 
+import math
 import os
 import time
 
@@ -29,7 +36,15 @@ SETTLE = 60
 DISTANCE = float(os.environ.get("DIST", "20"))
 # Forest, shoreline, water, grass and rocks in view at distance 20: a representative, near
 # worst-case spot. (At distance 20, (80, 80) frames only water.)
-LOCATION = ("playground", [110.0, 0.0, 150.0])
+# Townsfolk: where `plans/actors.py` views them, from their front at 45°.
+LOCATIONS = {
+    "forest": ("playground", [110.0, 0.0, 150.0], None),
+    "townsfolk": ("playground", [145.0, 0.0, 6.0], -0.75 * math.pi),
+}
+LOCATION = LOCATIONS[os.environ.get("AT", "forest")]
+HOME = "panoply_actors::precinct_actors::HomePrecinct"
+SKINNED_MESH = "bevy_mesh::skinning::SkinnedMesh"
+ANIMATION_GRAPH = "bevy_animation::graph::AnimationGraphHandle"
 
 
 def mutate(driver, entity, component, path, value):
@@ -55,6 +70,36 @@ def frame_time(driver, seconds=1.5):
 def set_visible(driver, name, visible):
     for entity in driver.select(name):
         mutate(driver, entity, VISIBILITY, "", "Inherited" if visible else "Hidden")
+
+
+def with_component(driver, component):
+    rows = driver.call("world.query", {"data": {"components": []}, "filter": {"with": [component]}})
+    return [row["entity"] for row in rows]
+
+
+def set_actors_visible(driver, visible):
+    """The precincts' actors: their bodies, outlines and features, in every pass."""
+    for entity in with_component(driver, HOME):
+        mutate(driver, entity, VISIBILITY, "", "Inherited" if visible else "Hidden")
+
+
+def stop_animation(driver):
+    """Without a graph, Bevy skips a skeleton's bones: no clips sampled, no bones moved."""
+    for entity in with_component(driver, ANIMATION_GRAPH):
+        driver.call("world.remove_components", {"entity": entity, "components": [ANIMATION_GRAPH]})
+
+
+def despawn_actors(driver):
+    for entity in with_component(driver, HOME):
+        driver.call("world.despawn_entity", {"entity": entity})
+
+
+def remove_environment_map(driver):
+    for component in [ENV_MAP, GENERATED_ENV_MAP]:
+        try:
+            driver.call("world.remove_components", {"entity": driver.camera(), "components": [component]})
+        except Exception:
+            pass
 
 
 def lights(driver):
@@ -135,8 +180,8 @@ def run(driver):
     mutate(driver, driver.window, WINDOW, ".present_mode", "AutoNoVsync")
     driver.frames(30)
     driver.screenshot("focus")
-    realm, position = LOCATION
-    driver.goto(position, DISTANCE, realm=realm)
+    realm, position, azimuth = LOCATION
+    driver.goto(position, DISTANCE, azimuth, realm=realm)
     base = frame_time(driver)
     original_cascades = get_cascades(driver)
     print(f"camera distance {DISTANCE}; default cascades: {original_cascades['bounds']}")
@@ -150,6 +195,8 @@ def run(driver):
     }
     print(f"entities: {diagnostics.get('entity_count', 0):.0f}")
     print(f"outlines: {len(driver.select('Outline'))}")
+    print(f"precinct actors: {len(with_component(driver, HOME))}")
+    print(f"skinned meshes: {len(with_component(driver, SKINNED_MESH))}")
     passes = sorted(
         ((k, v) for k, v in diagnostics.items() if k.startswith("render/") and k.endswith("elapsed_cpu")),
         key=lambda kv: -kv[1],
@@ -166,6 +213,7 @@ def run(driver):
         ("outlines hidden", lambda: set_visible(driver, "Outline", False), lambda: set_visible(driver, "Outline", True)),
         ("flora hidden", lambda: set_visible(driver, "Flora", False), lambda: set_visible(driver, "Flora", True)),
         ("ground hidden", lambda: set_visible(driver, "Ground", False), lambda: set_visible(driver, "Ground", True)),
+        ("actors hidden", lambda: set_actors_visible(driver, False), lambda: set_actors_visible(driver, True)),
         # A quarter of the pixels: the 3D view shrunk to half width and half height by the
         # editor's viewport inset. (Resizing the window over BRP sets width and height on
         # separate frames, which wgpu rejects; the scale-factor override has no effect.)
@@ -195,17 +243,19 @@ def run(driver):
         again = frame_time(driver)
         print(f"{name}: {t:.1f} ms (saves {again - t:+.1f} ms; restored {again:.1f} ms)")
 
-    if only and not any(w in "environment map" for w in only):
-        driver.exits("Escape")
-        return
-    # Image-based lighting: restoring it would mean recreating its cubemap handles, so this runs
-    # last and is not undone.
-    for component in [ENV_MAP, GENERATED_ENV_MAP]:
-        try:
-            driver.call("world.remove_components", {"entity": driver.camera(), "components": [component]})
-        except Exception:
-            pass
-    t = frame_time(driver)
+    # Not undone, so they run last, each on top of the ones before. Restoring animation or actors
+    # would mean rebuilding them, and image-based lighting its cubemap handles.
+    permanent = [
+        ("animation off", lambda: stop_animation(driver)),
+        ("actors despawned", lambda: despawn_actors(driver)),
+        ("environment map off", lambda: remove_environment_map(driver)),
+    ]
+    if only:
+        permanent = [p for p in permanent if any(w in p[0] for w in only)]
     reference = again if experiments else base
-    print(f"environment map off: {t:.1f} ms (saves {reference - t:+.1f} ms)")
+    for name, apply in permanent:
+        apply()
+        t = frame_time(driver)
+        print(f"{name}: {t:.1f} ms (saves {reference - t:+.1f} ms)")
+        reference = t
     driver.exits("Escape")

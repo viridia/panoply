@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X49.**
+**Next: X52.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -340,3 +340,29 @@ dropped, not deferred. Numbers are never reused.
 - **X48** One property editor for Panoply and arbor_day, in a crate both use. PAN28 forks
   arbor_day's instead, so each grows without satisfying the other. *Gate:* both have settled, or the
   same fix has to be made in both.
+- **X49** Actor capsules as colliders, so a ray can hit an actor. Today an actor's capsule is only a
+  query shape that `move_actors` sweeps. A collider in the realm's rapier world, in a new `ACTOR`
+  collision group that the character controller's filter leaves out, so actors never collide through
+  rapier (R86); the probe and picking include it. Only an actor that moved updates its collider, so
+  resting actors (PAN3p) cost nothing. Check whether a collider without a body must be a sensor to
+  stay out of contact generation. faery also had an inflated capsule for picking
+  ([faery.md](faery.md), Physics); one capsule serves both until picking feels fiddly. *Gate:* the
+  first thing that must hit an actor: picking (X3) or the probe (PAN21).
+- **X50** Repulsion between actors (R23, R86): the aura is added to an actor's travel before the
+  controller moves it, so a pushed actor is still swept against the world and is never pushed
+  through a wall. A smoothed velocity rather than a force, so it does not jitter; a weight per
+  actor, so NPCs yield to the player more than the player to them; and a small sideways bias, so two
+  actors meeting head-on do not stall. Its radius leaves melee in reach. An actor inside another's
+  space wakes (PAN3p). Neighbours by testing every pair in the realm until a grid is needed. *Gate:*
+  NPCs travel among each other (PAN16, X17).
+- **X51** Wake only the resting actors near a collider change. Today any insertion or removal wakes
+  every resting actor in the realm for a tick (PAN3p), so while precincts and parcels stream in, the
+  count changes on most ticks and a crowd stays awake. Instead, `RealmPhysics`, through which every
+  insertion and removal goes, keeps each changed collider's bounding box (read before removal) in a
+  `SmallVec`, so the common case allocates nothing; `move_actors` wakes the resting actors whose
+  capsules overlap one, and clears it. The search starts as a test of each resting actor against
+  each box; a spatial hash grid or a BVH when actor counts need one, or rapier's own once actors are
+  colliders (X49), an intersection query in the `ACTOR` group. Or, before the exact test, a filter:
+  a bitmask of x and z cells taken modulo its width, whose aliasing only wakes extra actors, though
+  a parcel's ground fills much of it. *Gate:* a frame-time hitch measured while walking into a crowd
+  as its precincts load.

@@ -68,5 +68,6 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
   repo's. Never two runs at once: plans compete for the window and its timing.
 - A chunk's end, in order: `scripts/verify.sh`; then stop and hand the build to the author to try;
   when they report back, one run of `/Users/talin/Projects/games/panoply/plans`, every plan and not
-  only the chunk's, approved once; the commit message last. While iterating, run one plan by its
-  path.
+  only the chunk's, approved once; then one of `plans/perf.py`, which the directory run skips, and
+  whose line in `docs/perf.csv` goes in the chunk's commit; the commit message last. While
+  iterating, run one plan by its path.

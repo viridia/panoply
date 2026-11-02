@@ -3,6 +3,9 @@
 Measurements, Bevy's observed behaviour, and recipes, as of when each was written. A note that
 calls for work becomes an issue in [issues.md](issues.md).
 
+- Test machines, by the short hostname that `docs/perf.csv` records:
+  - `Falryn`: MacBook Pro (MacBookPro18,3), Apple M1 Pro (8 performance and 2 efficiency cores,
+    16-core GPU, Metal 3), 32 GB, built-in 3024x1964 Liquid Retina XDR display (up to 120 Hz).
 - Performance at playground (80, 80), camera distance 40, M1 Pro, from `plans/ablate.py`
   (2026-10-10), in the developer's window: 13.7 ms/frame. (Plans now run in the default window
   size, where the same spot measures 15.6 ms; compare runs only with each other.) Camera off:
@@ -59,6 +62,16 @@ calls for work becomes an issue in [issues.md](issues.md).
   `Diagnostic` reads as seconds (16.5 ms, about two frames at 120 fps), so it is nearly the raw
   per-frame rate. Not a frame-pacing problem; a Bevy issue is drafted but not filed. A display
   counting frames over a second, with the slowest frame as a "low" FPS, would read steadily.
+- Actors at the playground's townsfolk (145, 6), distance 20, `AT=townsfolk plans/ablate.py`
+  (2026-11-02): 84 actors loaded, all standing; 12.7 ms a frame, 6.1 ms with the actors despawned.
+  Hiding them saves under 0.5 ms and stopping their animation about 1 ms. The rest is `move_actors`,
+  timed at 8.1 ms per fixed tick (about 100 µs an actor, some 6.5 ms a frame at 80 fps): the
+  controller's move about half, each of the two walkable-ground shape casts about a quarter (about
+  15 µs a cast), the falling ray nothing; no actor or collider stands out. Setting actors'
+  `Transform` only when it changes made no measurable difference. With resting actors (PAN3p) the
+  same plan measures 7.8 ms, 6.1 ms despawned: of the actors' remaining 1.7 ms, drawing them is
+  about 0.9 and animating them 0.4. `docs/perf.csv` has `plans/perf.py`'s before and after; the
+  stops at (80, 80) and (112, 112) gained too, from actors within their loaded precincts.
 - Measure frame time by counting frames over wall time without polling: the driver's
   diagnostics return the latest single frame, and polling every 5 ms disturbs the app.
 - Bevy 0.20 issues seen: (1) switching `DirectionalLight::shadow_maps_enabled` off at runtime

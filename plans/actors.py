@@ -6,7 +6,8 @@ slides down one it is dropped onto. Travel (`TravelTo`) takes it to a point, and
 Its clip follows its speed: stand, walk (backward when backing up), fast walk and run. Dropped,
 it plays falling, landing, then standing; it turns on the spot toward a target behind it; and
 its idle is the one its aspects choose.
-Precincts place their actors, facing as placed, and a precinct's actors despawn with it.
+Precincts place their actors, facing as placed, and a precinct's actors despawn with it. Standing
+actors rest (`ActorResting`), and wake when sent travelling or when a precinct's colliders go.
 
     bevy-remote-driver plans/actors.py
 
@@ -30,6 +31,7 @@ DRIVER = PanoplyDriver
 TRANSFORM = "bevy_transform::components::transform::Transform"
 GLOBAL_TRANSFORM = "bevy_transform::components::global_transform::GlobalTransform"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
+RESTING = "panoply_actors::actor_physics::ActorResting"
 INTENT = "panoply_actors::actor_control::ActorIntent"
 TRAVEL = "panoply_actors::actor_travel::TravelTo"
 PLAYER = "bevy_animation::AnimationPlayer"
@@ -104,6 +106,8 @@ def run(driver):
     assert driver.get("Actor/hips", TRANSFORM) != hips, f"the hips did not move: {hips}"
     after = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
     assert after != sword, f"the sword did not move: {sword}"
+    # Standing, it rests: the controller no longer moves it.
+    wait_resting(driver, "Actor", True)
     driver.screenshot("actor")
 
     # F3 draws the actor's capsule with the colliders.
@@ -193,8 +197,11 @@ def run(driver):
     assert seen[-3:] == ["Falling", "Landing", "Stand"], f"not fall, land, stand: {states}"
 
     # Travel to a point 4 m to the actor's side: it turns there, walks, and stops on the point.
+    # Resting until then, it wakes when sent.
     driver.expect("Actor", MOTION, {"grounded": True})
+    wait_resting(driver, "Actor", True)
     driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": TROT})
+    wait_resting(driver, "Actor", False)
     driver.wait(lambda: travelling(driver), "the actor to finish travelling", {"seconds": 5})
     arrived = driver.get("Actor", MOTION)
     print(f"arrived: {arrived}")
@@ -248,9 +255,12 @@ def run(driver):
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
 
-    # A precinct's actors despawn with it.
+    # A precinct's actors despawn with it. Its colliders go too, which wakes the resting player
+    # for a tick, after which it rests again: as of a later change to the realm's colliders.
+    before = wait_resting(driver, "Actor", True)["collider_changes"]
     driver.call("world.despawn_entity", {"entity": driver.select(FIRST_PRECINCT)[0]})
     driver.absent("Actor:Shopkeeper")
+    wait_resting(driver, "Actor", True, since=before)
     driver.exits("Escape")
 
 
@@ -270,6 +280,7 @@ def check_precinct_actors(driver):
     driver.present("Actor:Shekku/ActorBody", timeout=WAIT)
     # Standing, the shopkeeper keeps the facing the precinct gives it (125.9°).
     driver.expect("Actor:Shopkeeper", MOTION, {"grounded": True}, timeout=WAIT)
+    wait_resting(driver, "Actor:Shopkeeper", True)
     driver.seconds(1)
     facing = driver.get("Actor:Shopkeeper", MOTION)["facing"]
     assert facing == Between(2.18, 2.21), f"shopkeeper facing {facing}"
@@ -293,6 +304,32 @@ def expect_gait(driver, state, speed=None):
     assert found[0] == state, f"state {found[0]}, not {state}: {found}"
     if speed is not None:
         assert found[1] == Between(speed - 0.1, speed + 0.1), f"speed {found[1]}, not {speed}"
+
+
+def resting(driver, selector):
+    """The `ActorResting` of the actor `selector` matches, or None."""
+    entity = driver.select(selector)[0]
+    found = driver.call(
+        "world.get_components", {"entity": entity, "components": [RESTING], "strict": False}
+    )["components"]
+    return found.get(RESTING)
+
+
+def wait_resting(driver, selector, expected, since=None):
+    """Waits until the actor `selector` matches rests, or does not, and returns its
+    `ActorResting`, or None. With `since`, a resting actor must have come to rest after that many
+    collider changes."""
+
+    def check():
+        found = resting(driver, selector)
+        done = (found is not None) == expected
+        if found is not None and since is not None:
+            done = done and found["collider_changes"] > since
+        return done, lambda: f"{found} at {driver.get(selector, MOTION)}"
+
+    state = "to rest" if expected else "not to rest"
+    driver.wait(check, f"{selector} {state}", {"seconds": 5})
+    return resting(driver, selector)
 
 
 def travelling(driver):

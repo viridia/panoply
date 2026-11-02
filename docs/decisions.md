@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D50.**
+**Next: D51.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -382,3 +382,6 @@ never reused.
   relationships between them (hierarchies), since undoing a spawn would then rewrite `Entity`
   references across the history, the problem that stalled the author's undo PR (bevy#23373). A
   changed asset is realized again.
+- **D50** A frame-rate regression is fixed before more features land: once measured, it becomes the
+  first chunk in the roadmap. Slowdowns that overlap are hard to tell apart, so none is left to
+  accumulate behind another. The target is D17's. (PAN3p is the first.)

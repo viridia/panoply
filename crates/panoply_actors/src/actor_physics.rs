@@ -44,9 +44,32 @@ pub struct ActorMotion {
     pub vertical_speed: f32,
     /// Standing on walkable ground as of the last tick: not on a slope too steep to climb.
     pub grounded: bool,
+    /// The normal of that ground, while `grounded`.
+    pub ground_normal: Vec3,
     /// Off the ground and, at some tick since leaving it, more than `FALL_HEIGHT` above it (R25).
     /// Shorter drops, such as a step down, do not count.
     pub falling: bool,
+}
+
+/// Marks an actor that `move_actors` skips: standing on walkable ground, facing its heading and
+/// asked for no speed, so that moving it would leave it where it is. It wakes when that stops
+/// being true, or when the colliders of its realm change.
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[component(storage = "SparseSet")]
+pub struct ActorResting {
+    /// The realm's `RealmPhysics::collider_changes` when the actor came to rest.
+    pub collider_changes: u64,
+}
+
+/// How far a facing may be from the heading for the actor to count as facing it, in radians.
+const FACING_TOLERANCE: f32 = 1e-4;
+
+fn rests(motion: &ActorMotion, intent: &ActorIntent) -> bool {
+    motion.grounded
+        && !motion.falling
+        && intent.speed == 0.0
+        && angle_between(motion.facing, intent.heading).abs() < FACING_TOLERANCE
 }
 
 /// How far above the ground an actor must be to count as falling.
@@ -112,6 +135,7 @@ pub(crate) fn start_actor_physics(
                 previous_facing: facing,
                 vertical_speed: 0.0,
                 grounded: false,
+                ground_normal: Vec3::Y,
                 falling: false,
             });
         }
@@ -122,13 +146,17 @@ pub(crate) fn start_actor_physics(
 /// facing, falling under gravity, stopped and slid by what they meet, and pushed out of what they
 /// are inside (R26). Runs after the realm steps, so colliders inserted since the last tick are in
 /// its broad phase. Only the viewpoint's realm steps, so actors in other realms hold still.
+/// Resting actors (`ActorResting`) are skipped.
 pub(crate) fn move_actors(
+    mut commands: Commands,
     mut actors: Query<(
+        Entity,
         &Actor,
         &mut ActorMotion,
         Option<&ActorIntent>,
         Option<&CollisionSize>,
         Option<&ActorScale>,
+        Option<&ActorResting>,
     )>,
     realms: Query<&RealmPhysics>,
     viewpoint: Res<Viewpoint>,
@@ -136,7 +164,7 @@ pub(crate) fn move_actors(
 ) {
     let dt = time.timestep().as_secs_f32();
     let controller = controller();
-    for (actor, mut motion, intent, size, scale) in &mut actors {
+    for (entity, actor, mut motion, intent, size, scale, resting) in &mut actors {
         motion.previous = motion.position;
         motion.previous_facing = motion.facing;
         if viewpoint.realm != Some(actor.realm) {
@@ -145,10 +173,15 @@ pub(crate) fn move_actors(
         let Ok(physics) = realms.get(actor.realm) else {
             continue;
         };
+        let intent = intent.copied().unwrap_or_default();
+        let still_resting =
+            resting.is_some_and(|resting| resting.collider_changes == physics.collider_changes());
+        if still_resting && rests(&motion, &intent) {
+            continue;
+        }
 
         let shape = capsule(size, scale);
         let center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
-        let intent = intent.copied().unwrap_or_default();
         let turn = angle_between(motion.facing, intent.heading);
         motion.facing = (motion.facing + turn.clamp(-TURN_RATE * dt, TURN_RATE * dt))
             .rem_euclid(std::f32::consts::TAU);
@@ -158,9 +191,8 @@ pub(crate) fn move_actors(
         // travel into a slope is projected onto it, which slows the climb but not the sideways
         // part, so actors drift off the sides of ramps and stairs.
         if motion.grounded {
-            if let Some(normal) = walkable_ground(&queries, &shape, center) {
-                travel.y = -(normal.x * travel.x + normal.z * travel.z) / normal.y;
-            }
+            let normal = motion.ground_normal;
+            travel.y = -(normal.x * travel.x + normal.z * travel.z) / normal.y;
         }
         // A grounded actor standing still asks for no movement, which is when the controller
         // depenetrates.
@@ -177,10 +209,14 @@ pub(crate) fn move_actors(
         );
         motion.position += movement.translation;
         // The controller's `grounded` includes steep slopes, where the actor must keep falling to
-        // slide down (R24).
-        motion.grounded = movement.grounded
-            && walkable_ground(&queries, &shape, center + movement.translation).is_some();
-        if motion.grounded {
+        // slide down (R24). From the pose the next tick starts at, so it serves that tick too.
+        let ground = movement
+            .grounded
+            .then(|| walkable_ground(&queries, &shape, center + movement.translation))
+            .flatten();
+        motion.grounded = ground.is_some();
+        if let Some(normal) = ground {
+            motion.ground_normal = normal;
             motion.vertical_speed = 0.0;
             motion.falling = false;
         } else if !motion.falling {
@@ -190,6 +226,13 @@ pub(crate) fn move_actors(
             motion.falling = queries
                 .cast_ray(&ray, FALL_HEIGHT + GROUND_CAST_GAP, true)
                 .is_none();
+        }
+        if rests(&motion, &intent) {
+            commands.entity(entity).insert(ActorResting {
+                collider_changes: physics.collider_changes(),
+            });
+        } else if resting.is_some() {
+            commands.entity(entity).remove::<ActorResting>();
         }
     }
 }

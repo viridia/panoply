@@ -79,8 +79,9 @@ what counts as a valid route) or behavior. Which part handles each is not yet de
   count toward reaching a waypoint.
 - **R22** An actor that cannot advance (moved under 10% of its intended distance for a few
   ticks) plays the blocked state and replans after 1 s.
-- **R23** Actors steer apart: under 0.3 m between capsules (0.5 m between allies), movement
-  bends away from the other actor.
+- **R23** Actors steer apart: under 0.3 m between capsules (0.5 m between allies), movement bends
+  away from the other actor. A repulsion, not a collision: it grows as they close, and a forced
+  actor can come nearer.
 - **R24** Slopes steeper than about 45° (surface normal y under 0.7) are walls. Walking down a
   walkable slope or stairs stays on the ground instead of launching. Stairs collide as ramps;
   from the camera's distance the difference does not show.
@@ -134,17 +135,17 @@ what counts as a valid route) or behavior. Which part handles each is not yet de
   killed or targeted, so their inventory is never reachable (R74). *Open:* whether the
   instances share an identity (instance variables, the quest role R72 resolving to the present
   one).
-- **R86** Followers keep out of the player's personal space and out of each other's way. Both
-  the pathfinder and the controller contribute. The pathfinder cuts exclusion zones where other
-  actors stand out of the navigation mesh (boolean operations), so routes and destinations
-  avoid them. Actors move at the same time, though, so a plan can still cross another actor's
-  path. Between actors, a repulsion aura (R23) makes the near miss look natural; with the aura
-  alone and no hard collisions between actors, NPCs do not logjam. *Open:* whether actors
-  collide with each other at all, and what a crowd converging on one target (eight skeletons
-  rushing the player) needs beyond the aura. Candidates, to try in test scenarios: attack
-  slots (places around the target handed out to attackers, so only a few close in while the
-  rest wait or circle) and reciprocal velocity obstacles (RVO, or its refinement ORCA: each
-  actor picks a velocity that avoids predicted collisions, assuming the others do the same).
+- **R86** Followers keep out of the player's personal space and out of each other's way. Both the
+  pathfinder and the controller contribute. The pathfinder cuts exclusion zones where other actors
+  stand out of the navigation mesh (boolean operations), so routes and destinations avoid them.
+  Actors move at the same time, though, so a plan can still cross another actor's path. Between
+  actors, a repulsion aura (R23) makes the near miss look natural; with the aura alone and no hard
+  collisions between actors, NPCs do not logjam; actors do not collide with each other. *Open:* what
+  a crowd converging on one target (eight skeletons rushing the player) needs beyond the aura.
+  Candidates, to try in test scenarios: attack slots (places around the target handed out to
+  attackers, so only a few close in while the rest wait or circle) and reciprocal velocity obstacles
+  (RVO, or its refinement ORCA: each actor picks a velocity that avoids predicted collisions,
+  assuming the others do the same).
 - **R87** A party has few followers, typically two. *Open:* temporary quest followers (escort
   missions) depend on how many followers fit without crowding; if one must leave the party for
   a while, the game needs a fiction for it.

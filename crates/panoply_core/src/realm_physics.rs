@@ -73,6 +73,7 @@ fn discard_owned_colliders(mut world: DeferredWorld, context: HookContext) {
 #[derive(Component, Default)]
 pub struct RealmPhysics {
     world: PhysicsWorld,
+    collider_changes: u64,
 }
 
 impl RealmPhysics {
@@ -92,12 +93,20 @@ impl RealmPhysics {
         self.world.colliders.len()
     }
 
+    /// Counts insertions and removals of colliders, so what depends on the world staying as it
+    /// was, such as a resting actor, can tell when it changed.
+    pub fn collider_changes(&self) -> u64 {
+        self.collider_changes
+    }
+
     pub fn insert_body(&mut self, body: RigidBody) -> RigidBodyHandle {
         self.world.insert_body(body)
     }
 
+    /// Removes the body and its colliders.
     pub fn remove_body(&mut self, handle: RigidBodyHandle) {
         self.world.remove_body(handle);
+        self.collider_changes += 1;
     }
 
     pub fn insert_collider(
@@ -105,11 +114,13 @@ impl RealmPhysics {
         handle: RigidBodyHandle,
         collider: Collider,
     ) -> ColliderHandle {
+        self.collider_changes += 1;
         self.world.insert_collider(collider, Some(handle))
     }
 
     pub fn remove_collider(&mut self, collider: ColliderHandle) {
         self.world.remove_collider(collider);
+        self.collider_changes += 1;
     }
 }
 

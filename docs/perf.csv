@@ -1,0 +1,11 @@
+# Frame times from plans/perf.py, one line per run, appended by the plan.
+# Columns: the run's date; the test machine's short hostname (described in notes.md); the commit
+# checked out; whether the tree had uncommitted changes ("yes" measures that commit plus them);
+# the window's size in physical pixels; then ms per frame at each stop, vsync off. Stops are named
+# for their playground position (x_z, camera distance 40) or for what they view (townsfolk at
+# 145_6, distance 20). Compare runs only on the same host and window size. A stop added later
+# gets a new column at the end; older lines leave it empty.
+# A line is committed with the change it measures, so git log on this file names that change.
+date,host,commit,dirty,window,16_16,48_48,80_80,112_112,128_128,townsfolk
+2026-11-02,Falryn,4d56721,yes,2560x1440,8.93,9.06,10.37,9.97,9.92,11.72
+2026-11-02,Falryn,4d56721,yes,2560x1440,8.70,9.06,8.68,8.05,8.13,7.89

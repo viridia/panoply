@@ -9,11 +9,8 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
   debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
   past the map edge in `lighting_bluff.png`. Not yet confirmed by hiding the grid.
-- **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read,
-  not run.
-- **I3** Nothing draws the flame material (`FlameMaterial`, for the `flame` material extra): no
-  model in `assets/scenery/models` has the extra, and PAN3a removed the test cube that used it. A
-  shader break would go unseen until a model with flames is placed. Read, not run.
+- **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
+  run.
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
   Undecided whether a Bevy version is worth it. If so, a candidate home is the editor's catalogs
@@ -45,7 +42,3 @@ confirmed by running something or only by reading. Numbers are never reused.
   m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
   (convex) is their intersection, which no descriptor shape makes. PAN3j fixed the same copied ramp
   on the 2- and 3-wide tiles. Seen by the author in the F3 view; the corners read, not run.
-- **I10** The frame rate roughly halves around the playground's townsfolk (`townsfolk.png` in
-  `plans/actors.py`). Unmeasured: which part costs (skinning, animation graphs, outlines, draw
-  calls, or the actor systems per frame) is unknown; a frame-time comparison there and elsewhere in
-  the playground would start it. Seen by the author, not measured.
