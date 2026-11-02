@@ -44,7 +44,13 @@ pub struct ActorMotion {
     pub vertical_speed: f32,
     /// Standing on walkable ground as of the last tick: not on a slope too steep to climb.
     pub grounded: bool,
+    /// Off the ground and, at some tick since leaving it, more than `FALL_HEIGHT` above it (R25).
+    /// Shorter drops, such as a step down, do not count.
+    pub falling: bool,
 }
+
+/// How far above the ground an actor must be to count as falling.
+const FALL_HEIGHT: f32 = 0.7;
 
 /// Surfaces whose normal's y is under this are walls (R24).
 const WALKABLE_NORMAL_Y: f32 = 0.7;
@@ -106,6 +112,7 @@ pub(crate) fn start_actor_physics(
                 previous_facing: facing,
                 vertical_speed: 0.0,
                 grounded: false,
+                falling: false,
             });
         }
     }
@@ -175,6 +182,14 @@ pub(crate) fn move_actors(
             && walkable_ground(&queries, &shape, center + movement.translation).is_some();
         if motion.grounded {
             motion.vertical_speed = 0.0;
+            motion.falling = false;
+        } else if !motion.falling {
+            // A ray from just above the feet, so it starts outside the ground the controller
+            // keeps its gap from.
+            let ray = Ray::new(motion.position + Vec3::Y * GROUND_CAST_GAP, Vec3::NEG_Y);
+            motion.falling = queries
+                .cast_ray(&ray, FALL_HEIGHT + GROUND_CAST_GAP, true)
+                .is_none();
         }
     }
 }

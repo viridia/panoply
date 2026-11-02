@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D48.**
+**Next: D49.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -368,3 +368,11 @@ never reused.
   as handles loaded with the precinct, so a missing exemplar cannot keep the precinct (and its
   scenery) from loading. The player is not a precinct actor: a new game places the player (X46).
   (PAN3l)
+- **D48** Animation states are a fixed enum in code, each with faery's clip fallback chain, fade and
+  playback, rather than data in the species' assets: species differ by which clips they have, which
+  the chains absorb, and by names, which `ClipNames` maps (D44). The state is chosen each frame from
+  the body's measured motion, as gaits are: falling is physics' flag (more than 0.7 m above the
+  ground since leaving it, so steps down and slides are not falls), turning is a measured turn rate
+  while standing. A landing is an envelope: the crossfade in, a hold at the clip's first frame (its
+  deepest crouch, which the crossfade would otherwise blend away), the clip's rise, the crossfade
+  out. Moving cuts it short after the hold, so input waits on a clip no longer than that. (PAN3j)

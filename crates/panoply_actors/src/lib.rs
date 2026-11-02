@@ -14,7 +14,7 @@ mod actor_wield;
 mod item_aspect;
 mod precinct_actors;
 
-pub use actor_animation::ActorArmature;
+pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
 pub use actor_aspect::{ActorScale, CollisionSize};
 pub use actor_control::{ActorIntent, PlayerActor};
 pub use actor_features::ActorFeature;
@@ -24,7 +24,7 @@ pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 pub use precinct_actors::{HomePrecinct, PrecinctActors};
 
-use self::actor_animation::{animate_actor_gait, bind_actor_skeleton, build_actor_graph};
+use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::drive_player;
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
@@ -74,6 +74,8 @@ impl Plugin for ActorsPlugin {
             .register_type::<ActorMotion>()
             .register_type::<ActorIntent>()
             .register_type::<TravelTo>()
+            .register_type::<ActorAnimationState>()
+            .register_type::<ActorIdle>()
             .register_type::<ColorSlots>()
             .register_type::<Colors>()
             .register_type::<FeatureSlots>()
@@ -94,7 +96,7 @@ impl Plugin for ActorsPlugin {
                     attach_wielded_items,
                     start_actor_physics,
                     drive_player,
-                    animate_actor_gait,
+                    animate_actor_state,
                 )
                     .chain(),
             )

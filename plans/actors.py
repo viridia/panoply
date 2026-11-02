@@ -3,7 +3,9 @@ skeleton (D28), plays its idle clip from the shared clips file, wears its hair a
 colors, and holds a sword in its right hand. W walks it away from the camera, turning it to
 match, with the camera following, and S backs it up. A slope steeper than 45° stops it, and it
 slides down one it is dropped onto. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
-Its clip follows its speed: stand, walk (backward when backing up), fast walk and run.
+Its clip follows its speed: stand, walk (backward when backing up), fast walk and run. Dropped,
+it plays falling, landing, then standing; it turns on the spot toward a target behind it; and
+its idle is the one its aspects choose.
 Precincts place their actors, facing as placed, and a precinct's actors despawn with it.
 
     bevy-remote-driver plans/actors.py
@@ -31,9 +33,9 @@ MOTION = "panoply_actors::actor_physics::ActorMotion"
 INTENT = "panoply_actors::actor_control::ActorIntent"
 TRAVEL = "panoply_actors::actor_travel::TravelTo"
 PLAYER = "bevy_animation::AnimationPlayer"
-# The skeleton's animation graph: the root, then a node per clip in the order
-# `build_actor_graph` adds them.
-STAND_NODE, WALK_NODE, WALK_FAST_NODE, RUN_NODE = 1, 2, 3, 4
+STATE = "panoply_actors::actor_animation::ActorAnimationState"
+IDLE = "panoply_actors::actor_animation::ActorIdle"
+SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 # Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
 SPOT = [37.0, 0.0, 47.0]
@@ -122,7 +124,7 @@ def run(driver):
     driver.press("KeyW")
     driver.seconds(1.5)
     # A trot is a fast walk, its clip at its nominal rate.
-    expect_gait(driver, WALK_FAST_NODE, 1.0)
+    expect_gait(driver, "WalkFast", 1.0)
     driver.seconds(0.5)
     driver.release("KeyW")
     driver.frames(5)
@@ -144,7 +146,7 @@ def run(driver):
     driver.press("KeyS")
     driver.seconds(0.7)
     # The walk, played backward.
-    expect_gait(driver, WALK_NODE, -1.0)
+    expect_gait(driver, "Walk", -1.0)
     driver.seconds(0.3)
     driver.release("KeyS")
     driver.frames(5)
@@ -181,9 +183,20 @@ def run(driver):
     assert slid["position"][1] < 0.3, f"stayed on the slope: {slid}"
     assert slid["position"][2] > HILL_FACE[2], f"did not slide down the face: {slid}"
 
-    # Travel to a point 4 m to the actor's side: it turns there, walks, and stops on the point.
-    place(driver, SPOT)
+    # Dropped from 3 m, the actor falls, lands on touchdown, and stands once the landing ends.
+    place(driver, [SPOT[0], 3.0, SPOT[2]])
     driver.goto(SPOT, 20.0)
+    states = []
+    for _ in range(30):
+        states.append(driver.get(SKELETON, STATE))
+        if "Landing" in states and states[-1] == "Stand":
+            break
+        driver.seconds(0.1)
+    print(f"states in the fall: {states}")
+    seen = [state for i, state in enumerate(states) if i == 0 or states[i - 1] != state]
+    assert seen[-3:] == ["Falling", "Landing", "Stand"], f"not fall, land, stand: {states}"
+
+    # Travel to a point 4 m to the actor's side: it turns there, walks, and stops on the point.
     driver.expect("Actor", MOTION, {"grounded": True})
     driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": TROT})
     driver.wait(lambda: travelling(driver), "the actor to finish travelling", {"seconds": 5})
@@ -195,10 +208,17 @@ def run(driver):
     assert arrived["facing"] == Between(math.pi / 2 - 0.15, math.pi / 2 + 0.15), f"{arrived}"
     # Stopped, it crossfades back to standing.
     driver.seconds(0.5)
-    expect_gait(driver, STAND_NODE)
+    expect_gait(driver, "Stand")
 
-    # Travel back at a run: the run clip, at its nominal rate. Checked by eye in `run.png`: a
-    # running stride, not a walk. The speed ramps up as the actor turns toward the target; the
+    # An aspect choosing combat stance (R38) makes it the idle.
+    driver.set("Actor", IDLE, "CombatStance")
+    driver.frames(2)
+    assert driver.get(SKELETON, STATE) == "CombatStance", "idle not combat stance"
+    driver.set("Actor", IDLE, "Stand")
+
+    # Travel back at a run: the actor turns on the spot toward the target behind it (about 0.3
+    # s), then runs, the run clip at its nominal rate. Checked by eye in `run.png`: a running
+    # stride, not a walk. The speed ramps up as the actor turns toward the target; the
     # screenshot, which takes about 2 s while the actor runs on to it, waits for a sample at the
     # nominal rate, so the rate check never loses its sample to it.
     driver.set("Actor", TRAVEL, {"target": SPOT, "speed": RUN})
@@ -206,13 +226,16 @@ def run(driver):
     shot = False
     while not travelling(driver)[0]:
         gaits.append(gait(driver))
-        node, speed = gaits[-1]
-        if not shot and node == RUN_NODE and speed == Between(0.9, 1.1):
+        state, speed = gaits[-1]
+        if not shot and state == "Run" and speed == Between(0.9, 1.1):
             driver.screenshot("run")
             shot = True
         driver.seconds(0.1)
     print(f"gaits on the way: {gaits}")
-    running = [speed for node, speed in gaits if node == RUN_NODE]
+    states = [state for state, _ in gaits]
+    assert "Turn" in states and "Run" in states, f"did not turn, then run: {gaits}"
+    assert states.index("Turn") < states.index("Run"), f"did not turn on the spot first: {gaits}"
+    running = [speed for state, speed in gaits if state == "Run"]
     assert running, f"never ran: {gaits}"
     assert max(running) == Between(0.9, 1.1), f"run clip not at its nominal rate: {gaits}"
 
@@ -260,18 +283,18 @@ def check_precinct_actors(driver):
 
 
 def gait(driver):
-    """The animation graph node with the most weight on the actor's skeleton, and its playback
-    speed."""
-    active = driver.get("Actor/HumanoidArmature", PLAYER)["active_animations"]
+    """The actor's animation state, and the playback speed of the clip with the most weight on
+    its skeleton."""
+    active = driver.get(SKELETON, PLAYER)["active_animations"]
     entries = active.items() if isinstance(active, dict) else active
-    node, animation = max(entries, key=lambda entry: entry[1]["weight"])
-    return int(node), animation["speed"]
+    _, animation = max(entries, key=lambda entry: entry[1]["weight"])
+    return driver.get(SKELETON, STATE), animation["speed"]
 
 
-def expect_gait(driver, node, speed=None):
+def expect_gait(driver, state, speed=None):
     found = gait(driver)
     print(f"gait: {found}")
-    assert found[0] == node, f"node {found[0]}, not {node}: {found}"
+    assert found[0] == state, f"state {found[0]}, not {state}: {found}"
     if speed is not None:
         assert found[1] == Between(speed - 0.1, speed + 0.1), f"speed {found[1]}, not {speed}"
 

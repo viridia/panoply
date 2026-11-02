@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I9.**
+**Next: I10.**
 
 - **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
   debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
@@ -40,3 +40,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   `exemplars/regional/marheim#Carlyle.Tepper`, whose file does not exist, probably a faery archetype
   path the converter's `mapArch` had no mapping for. Those actors would load no aspects and have no
   body. Read, not run.
+- **I9** The cottage's corner roof tiles (`CottageRoofShinglesConvex`, `...Concave`) each collide as
+  one straight tile's ramp, shifted 0.5 m along the ridge, as in faery, while their models span 2.5
+  m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
+  (convex) is their intersection, which no descriptor shape makes. PAN3j fixed the same copied ramp
+  on the 2- and 3-wide tiles. Seen by the author in the F3 view; the corners read, not run.

@@ -21,8 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3j Animation states.** The state follows the current action and the actor's state (idle,
-  locomotion, falling, landing): R25, R33, R35, R38, R41.
 - **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the
   query filter excludes `CANOPY` (D39).
 - **PAN3m Robustness.** In the three.js version actors fell through seams between parcel ground
