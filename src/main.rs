@@ -85,8 +85,8 @@ fn main() {
         ..default()
     })
     .init_resource::<ReservedLayers>()
-    .add_systems(Startup, (setup, load_exemplar_check))
-    .add_systems(Update, (run_exemplar_check, nav_to_center))
+    .add_systems(Startup, setup)
+    .add_systems(Update, nav_to_center)
     .add_systems(PostUpdate, view::viewport::update_camera_viewport)
     .add_plugins((
         ExemplarPlugin,
@@ -168,57 +168,6 @@ fn setup(mut commands: Commands) {
         // Sharper shadow edges than the default Gaussian filter, and cheaper (about 0.5 ms).
         bevy::light::ShadowFilteringMethod::Hardware2x2,
     ));
-}
-
-/// TEMP(PAN3l): Exemplars to load as a check on the exemplar loader, including one that
-/// `extends` another. Only catalogs without aspects load until scenery and actors register their
-/// aspect types.
-#[derive(Resource)]
-struct ExemplarCheck(Vec<Handle<panoply_exemplar::Exemplar>>);
-
-fn load_exemplar_check(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.insert_resource(ExemplarCheck(vec![
-        assets.load("exemplars/weapons.exem.json#BattleAxe"),
-        assets.load("exemplars/books.exem.json#FTP1"),
-    ]));
-}
-
-/// Once every exemplar has loaded, logs each one's display name and what it extends, and spawns
-/// `ExemplarCheckPassed` for a driver plan to wait on.
-fn run_exemplar_check(
-    mut commands: Commands,
-    check: Option<Res<ExemplarCheck>>,
-    exemplars: Res<Assets<panoply_exemplar::Exemplar>>,
-) {
-    let Some(check) = check else {
-        return;
-    };
-    let Some(loaded) = check
-        .0
-        .iter()
-        .map(|handle| exemplars.get(handle))
-        .collect::<Option<Vec<_>>>()
-    else {
-        return;
-    };
-    let mut passed = true;
-    for exemplar in loaded {
-        let parent = exemplar
-            .0
-            .extends
-            .as_ref()
-            .map(|handle| exemplars.get(handle).map(|e| e.0.display_name.clone()));
-        info!(
-            "Exemplar check: {:?} extends {:?}",
-            exemplar.0.display_name, parent
-        );
-        // An `extends` that never resolved would read as Some(None).
-        passed &= !matches!(parent, Some(None));
-    }
-    if passed {
-        commands.spawn(Name::new("ExemplarCheckPassed"));
-    }
-    commands.remove_resource::<ExemplarCheck>();
 }
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {

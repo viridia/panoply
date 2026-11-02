@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I8.**
+**Next: I9.**
 
 - **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
   debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
@@ -36,3 +36,7 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I7** The editor icons' meta files (`assets/editor/icons/*.png.meta`) name the loader
   `bevy_render::texture::image_loader::ImageLoader`; Bevy finds a meta file's loader by its type
   path, and the image loader is now in `bevy_image`, so these loads may fail. Read, not run.
+- **I8** Two precincts (`playground/p002-p000`, `holm-overland/p008-p012`) name the exemplar
+  `exemplars/regional/marheim#Carlyle.Tepper`, whose file does not exist, probably a faery archetype
+  path the converter's `mapArch` had no mapping for. Those actors would load no aspects and have no
+  body. Read, not run.

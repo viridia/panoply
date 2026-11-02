@@ -78,6 +78,17 @@ impl Default for CollisionSize {
     }
 }
 
+impl CollisionSize {
+    /// The capsule an actor gets: this size, times its `ActorScale`.
+    pub fn scaled_by(&self, scale: Option<&ActorScale>) -> Self {
+        let scale = scale.map_or(1.0, |scale| scale.0);
+        Self {
+            height: self.height * scale,
+            radius: self.radius * scale,
+        }
+    }
+}
+
 impl Aspect for CollisionSize {
     fn name(&self) -> &str {
         "CollisionSize"
@@ -89,6 +100,38 @@ impl Aspect for CollisionSize {
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<CollisionSize> = RemoveComponent::<CollisionSize>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+}
+
+/// Draws the actor's body this many times its modelled size, and scales its `CollisionSize` to
+/// match: one species' model serves a large or small individual.
+#[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct ActorScale(pub f32);
+
+impl Default for ActorScale {
+    fn default() -> Self {
+        Self(1.0)
+    }
+}
+
+impl Aspect for ActorScale {
+    fn name(&self) -> &str {
+        "ActorScale"
+    }
+
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == ACTOR_TYPE
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<ActorScale> = RemoveComponent::<ActorScale>::new();
         entity.insert(self.clone());
         &DETACH
     }

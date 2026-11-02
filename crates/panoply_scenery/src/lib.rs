@@ -88,7 +88,6 @@ impl Plugin for PanoplySceneryPlugin {
                     update_se_aspects.after(read_precinct_data),
                     spawn_se_models.after(update_se_aspects),
                     build_se_colliders.after(update_se_aspects),
-                    // TODO(PAN3l): actor processing (D24).
                     // TerrainFx processing
                     rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
                     rebuild_parcel_terrain_fx

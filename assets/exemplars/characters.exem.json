@@ -1367,7 +1367,8 @@
         "Fur": "#a68d6b",
         "Eye": "#e6bb1f",
         "Nose": "#4a3f37"
-      }
+      },
+      "ActorScale": 1.2
     },
     "extends": "#Proto.FeralDog"
   },
@@ -1387,7 +1388,8 @@
     "aspects": {
       "Colors": {
         "Fur": "#3b3123"
-      }
+      },
+      "ActorScale": 1.3
     },
     "extends": "#Proto.Ursine"
   },
@@ -1443,7 +1445,8 @@
     "aspects": {
       "Colors": {
         "Chitin": "#91a535"
-      }
+      },
+      "ActorScale": 0.9
     },
     "extends": "#Proto.KreekinScout"
   },
@@ -1452,7 +1455,8 @@
     "aspects": {
       "Colors": {
         "Chitin": "#a0c95a"
-      }
+      },
+      "ActorScale": 0.85
     },
     "extends": "#Proto.KreekinScout"
   },
@@ -1462,7 +1466,8 @@
       "Colors": {
         "Chitin": "#82bb59",
         "Eye": "#c0046f"
-      }
+      },
+      "ActorScale": 0.9
     },
     "extends": "#Proto.KreekinScout"
   },

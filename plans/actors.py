@@ -4,6 +4,7 @@ colors, and holds a sword in its right hand. W walks it away from the camera, tu
 match, with the camera following, and S backs it up. A slope steeper than 45° stops it, and it
 slides down one it is dropped onto. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
 Its clip follows its speed: stand, walk (backward when backing up), fast walk and run.
+Precincts place their actors, facing as placed, and a precinct's actors despawn with it.
 
     bevy-remote-driver plans/actors.py
 
@@ -12,7 +13,8 @@ follow the pose. Checked by eye in `actor.png`: tan tunic, gold sleeves, brown h
 not the file's default materials; the hair, outlined, sits on the head. In `actor_capsule.png`,
 a cyan capsule encloses the actor, its bottom on the ground. In `walked.png`, the actor stands
 in the view's center facing away from the camera; in `slope.png`, at the foot of the hill's
-face.
+face. In `creatures.png` (kreekin, feral dogs, bears, bandits; the alpha dog and the black bear
+larger than the rest), `townsfolk.png` and `avatars.png`, each group's actors face as placed.
 """
 
 import math
@@ -42,6 +44,16 @@ HILL_FACE = [41.0, 2.5, 74.6]
 # 4 m east of `SPOT`, over the same flat ground W walks on.
 TRAVEL_TARGET = [41.0, 0.0, 47.0]
 WAIT = {"seconds": 60}
+HOME = "panoply_actors::precinct_actors::HomePrecinct"
+FIRST_PRECINCT = "Precinct:playground:0:0"
+# Groups of precinct actors, a wide variety in a small area each, and the azimuth to see them
+# from. The creatures and townsfolk stand in ranks along z, facing +x, so they are seen from
+# their front at 45° (facing north-east); the townsfolk do not all fit in the view.
+GROUPS = {
+    "creatures": ([124.0, 0.0, 22.0], -0.75 * math.pi),
+    "townsfolk": ([145.0, 0.0, 6.0], -0.75 * math.pi),
+    "avatars": ([8.0, 0.0, 8.0], 0.0),
+}
 # Trot, the pace W walks at (R17), and walk, S's.
 TROT = 3.0
 WALK = 1.5
@@ -67,8 +79,9 @@ def run(driver):
     # Waits for warm-up too, whose instances of the character file have skeletons of their own.
     driver.goto(SPOT, 20.0)
     # The hair's copy of the armature is gone, its mesh bound to the body's bones.
-    skeletons = driver.select("hips")
+    skeletons = driver.select("Actor/hips")
     assert len(skeletons) == 1, f"{len(skeletons)} skeletons, not one"
+    check_precinct_actors(driver)
 
     # Spawned 2 m over ground level (0), the actor gets physics once the ground is built, falls,
     # lands, and stays there.
@@ -185,13 +198,18 @@ def run(driver):
     expect_gait(driver, STAND_NODE)
 
     # Travel back at a run: the run clip, at its nominal rate. Checked by eye in `run.png`: a
-    # running stride, not a walk.
+    # running stride, not a walk. The speed ramps up as the actor turns toward the target; the
+    # screenshot, which takes about 2 s while the actor runs on to it, waits for a sample at the
+    # nominal rate, so the rate check never loses its sample to it.
     driver.set("Actor", TRAVEL, {"target": SPOT, "speed": RUN})
     gaits = []
+    shot = False
     while not travelling(driver)[0]:
         gaits.append(gait(driver))
-        if gaits[-1][0] == RUN_NODE and [node for node, _ in gaits].count(RUN_NODE) == 1:
+        node, speed = gaits[-1]
+        if not shot and node == RUN_NODE and speed == Between(0.9, 1.1):
             driver.screenshot("run")
+            shot = True
         driver.seconds(0.1)
     print(f"gaits on the way: {gaits}")
     running = [speed for node, speed in gaits if node == RUN_NODE]
@@ -206,7 +224,39 @@ def run(driver):
     driver.frames(5)
     stopped = driver.get("Actor", MOTION)
     assert flat_distance(stopped["position"], TRAVEL_TARGET) > 2.0, f"travelled on: {stopped}"
+
+    for name, (position, azimuth) in GROUPS.items():
+        driver.goto(position, 20.0, azimuth=azimuth)
+        driver.screenshot(name)
+
+    # A precinct's actors despawn with it.
+    driver.call("world.despawn_entity", {"entity": driver.select(FIRST_PRECINCT)[0]})
+    driver.absent("Actor:Shopkeeper")
     driver.exits("Escape")
+
+
+def check_precinct_actors(driver):
+    """The playground's first precinct places its 13 actors, each where and as it says."""
+    precinct = driver.select(FIRST_PRECINCT)[0]
+
+    def homed():
+        rows = driver.call(
+            "world.query", {"data": {"components": [HOME]}, "filter": {"with": [HOME]}}
+        )
+        here = [row for row in rows if row["components"][HOME] == precinct]
+        return len(here) == 13, lambda: f"{len(here)} of {len(rows)} actors homed there"
+
+    driver.wait(homed, "the first precinct's 13 actors", WAIT)
+    # Shekku's exemplar extends another, which gives it its skin.
+    driver.present("Actor:Shekku/ActorBody", timeout=WAIT)
+    # Standing, the shopkeeper keeps the facing the precinct gives it (125.9°).
+    driver.expect("Actor:Shopkeeper", MOTION, {"grounded": True}, timeout=WAIT)
+    driver.seconds(1)
+    facing = driver.get("Actor:Shopkeeper", MOTION)["facing"]
+    assert facing == Between(2.18, 2.21), f"shopkeeper facing {facing}"
+    # In the next precinct east, `ActorScale` draws the black bear 1.3 times its model's size.
+    scale = driver.get("Actor:BlackBear/ActorBody", TRANSFORM)["scale"]
+    assert all(s == Between(1.299, 1.301) for s in scale), f"bear scale {scale}"
 
 
 def gait(driver):

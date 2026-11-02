@@ -4785,6 +4785,7 @@ dependencies = [
  "bevy",
  "panoply_core",
  "panoply_exemplar",
+ "panoply_precinct",
  "panoply_scenery",
  "panoply_terrain",
  "rapier3d",

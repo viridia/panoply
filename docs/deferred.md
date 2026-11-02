@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X46.**
+**Next: X47.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -329,3 +329,6 @@ dropped, not deferred. Numbers are never reused.
   and a style check against the hand-keyed clips; layering in the animation graph (D44, R39) cuts
   how many are needed. PAN24's trial measures the retargeting cost. *Gate:* combat design (PAN6 or
   before) needs more moves or poses than are worth keying by hand.
+- **X46** The player's start: a new game offers four avatars (a limited customization), then an
+  opening cut scene places the chosen one at the start. Until then `spawn_player` drops a fixed
+  avatar into the playground. Not a precinct actor (D47). *Gate:* cut scenes.

@@ -25,13 +25,6 @@ components and every layer restartable from saved state (R104).
   locomotion, falling, landing): R25, R33, R35, R38, R41.
 - **PAN3k Interaction probe.** E casts from the actor along its facing and logs what it hits; the
   query filter excludes `CANOPY` (D39).
-- **PAN3l Precinct actors.** Precincts carry actors (playground `p000-p000` has 13): restore the
-  `actors` field in `PrecinctAsset` (now skipped), with its deserializer from the uncompiled
-  `panoply_precinct/src/actor_instance.rs` (D40), and spawn them from `panoply_actors` with a
-  home-precinct relationship whose despawn is linked (D24), not from scenery. The player is one of
-  them. The converters dropped actor fields and aspects (`scale`, `gender`, `enemy`, ...); see
-  [faery.md](faery.md), Migration scripts, and decide per field: port, or replace. Remove
-  `ExemplarCheck` from `main.rs` and `plans/exemplars.py`.
 - **PAN3m Robustness.** In the three.js version actors fell through seams between parcel ground
   colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely cover
   only edges within one shape, not between colliders. Write a plan that walks an actor across parcel
@@ -49,13 +42,14 @@ components and every layer restartable from saved state (R104).
   outlined every skinned mesh by default (`SkinnedModel.ts`, `ModelCatalog.ts`). Male hair, much
   clothing and every prop set it on the node, so they have no outline. Read `GltfExtras` on the
   mesh's entity and its parent before `GltfMaterialExtras`; decide whether skinned meshes keep
-  faery's default. `scripts/outlines.py` lists what changes. Weapons also carry a hand-built
-  `Outline` hull, which a node outline would extrude again. To see outlines while editing, a Blender
-  Python script, run once per `.blend`: it makes a geometry-node inverted hull (offset along
-  normals, flip faces, an outline material with backface culling, joined to the mesh) and adds it
-  after the Armature modifier on every mesh, its width driven by the object's `outline` property.
-  Exports must leave the hull out: check whether the glTF exporter skips a modifier that is off for
-  render, else export with modifiers unapplied.
+  faery's default. `scripts/outlines.py` lists what changes. The playground's creature group (124,
+  22; `creatures.png` in `plans/actors.py`) shows the kreekin, outlined only by node. Weapons also
+  carry a hand-built `Outline` hull, which a node outline would extrude again. To see outlines while
+  editing, a Blender Python script, run once per `.blend`: it makes a geometry-node inverted hull
+  (offset along normals, flip faces, an outline material with backface culling, joined to the mesh)
+  and adds it after the Armature modifier on every mesh, its width driven by the object's `outline`
+  property. Exports must leave the hull out: check whether the glTF exporter skips a modifier that
+  is off for render, else export with modifiers unapplied.
 - **PAN24 Clip repairs.** With PAN23, as one Blender session. `Punch` keys `upper_arm.R` rolled
   about 140° from its roll in `Stand` (and 70-90° from the mirrored left arm), wringing the
   shoulder; the keys hold no quaternion sign flips, so the poses themselves are wrong. A Blender

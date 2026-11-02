@@ -12,15 +12,17 @@ mod actor_physics;
 mod actor_travel;
 mod actor_wield;
 mod item_aspect;
+mod precinct_actors;
 
 pub use actor_animation::ActorArmature;
-pub use actor_aspect::CollisionSize;
+pub use actor_aspect::{ActorScale, CollisionSize};
 pub use actor_control::{ActorIntent, PlayerActor};
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
 pub use actor_physics::ActorMotion;
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
+pub use precinct_actors::{HomePrecinct, PrecinctActors};
 
 use self::actor_animation::{animate_actor_gait, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};
@@ -29,6 +31,7 @@ use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
+use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
 
 use self::actor_aspect::{
     Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
@@ -65,6 +68,9 @@ impl Plugin for ActorsPlugin {
             .register_type::<ClipNames>()
             .register_type::<Skin>()
             .register_type::<CollisionSize>()
+            .register_type::<ActorScale>()
+            .register_type::<HomePrecinct>()
+            .register_type::<PrecinctActors>()
             .register_type::<ActorMotion>()
             .register_type::<ActorIntent>()
             .register_type::<TravelTo>()
@@ -79,6 +85,8 @@ impl Plugin for ActorsPlugin {
                 Update,
                 (
                     spawn_player,
+                    mark_precinct_actors,
+                    spawn_precinct_actors,
                     update_actor_aspects,
                     spawn_actor_bodies,
                     spawn_actor_body_scenes,
@@ -109,9 +117,9 @@ impl Plugin for ActorsPlugin {
     }
 }
 
-/// TODO(PAN3l): the player comes from a precinct. Until then, one actor drops from 2 m over the
-/// playground's ground level, near the table that `plans/physics.py` measures on a floor at 0,
-/// and the camera follows it.
+/// TODO(X46): a new game places the player. Until then, the player's actor drops from 2 m over
+/// the playground's ground level, near the table that `plans/physics.py` measures on a floor at
+/// 0, and the camera follows it.
 const PLAYER_EXEMPLAR: &str = "exemplars/characters.exem.json#Farmer1";
 const PLAYER_REALM: &str = "playground";
 const PLAYER_POSITION: Vec3 = Vec3::new(37.0, 2.0, 47.0);

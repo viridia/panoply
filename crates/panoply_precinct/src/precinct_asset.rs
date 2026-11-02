@@ -20,7 +20,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::FloorRegionSer;
+use crate::{actor_instance::ActorInstanceListDeserializer, ActorInstanceData, FloorRegionSer};
 
 extern crate rmp_serde as rmps;
 
@@ -45,8 +45,10 @@ pub struct PrecinctAsset {
     /// Packed terrain effect table
     pub terrain_fx: Option<Vec<i16>>,
 
-    // TODO(PAN3l): `actors: Vec<ActorInstanceData>` (D24). Until then
-    // the loader skips the field, and saving a precinct would drop its actors.
+    /// The actors the precinct places (D24).
+    #[serde(default)]
+    pub actors: Vec<ActorInstanceData>,
+
     /// Table of scenery instances.
     #[serde(default)]
     pub scenery: Vec<SceneryInstanceData>,
@@ -188,7 +190,7 @@ pub struct SceneryInstanceData {
     /// Archetype Id
     pub id: usize,
 
-    /// Facing direction
+    /// Facing direction, in degrees: 0 faces +z, 90 faces +x.
     pub facing: f32,
 
     /// Position
@@ -412,8 +414,12 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                             precinct.tiers = map.next_value()?;
                         }
                         Field::Actors => {
-                            // TODO(PAN3l): read with `ActorInstanceListDeserializer`.
-                            map.next_value::<serde::de::IgnoredAny>()?;
+                            precinct.actors =
+                                map.next_value_seed(ActorInstanceListDeserializer {
+                                    type_registry: self.type_registry,
+                                    load_context: self.load_context,
+                                    parent_label: "actors",
+                                })?;
                         }
                         Field::Layers => {
                             // TODO

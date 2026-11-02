@@ -14,7 +14,7 @@ use rapier3d::{
     prelude::{Capsule, Pose, QueryFilter, QueryPipeline, Ray},
 };
 
-use crate::{actor_control::angle_between, Actor, ActorIntent, CollisionSize};
+use crate::{actor_control::angle_between, Actor, ActorIntent, ActorScale, CollisionSize};
 
 /// Downward acceleration, in m/s².
 const GRAVITY: f32 = 9.81;
@@ -66,8 +66,8 @@ fn controller() -> KinematicCharacterController {
 }
 
 /// The actor's capsule, centered on the origin.
-fn capsule(size: Option<&CollisionSize>) -> Capsule {
-    let size = size.cloned().unwrap_or_default();
+fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) -> Capsule {
+    let size = size.cloned().unwrap_or_default().scaled_by(scale);
     let radius = size.radius;
     let half_segment = (size.height * 0.5 - radius).max(0.0);
     Capsule::new_y(half_segment, radius)
@@ -121,6 +121,7 @@ pub(crate) fn move_actors(
         &mut ActorMotion,
         Option<&ActorIntent>,
         Option<&CollisionSize>,
+        Option<&ActorScale>,
     )>,
     realms: Query<&RealmPhysics>,
     viewpoint: Res<Viewpoint>,
@@ -128,7 +129,7 @@ pub(crate) fn move_actors(
 ) {
     let dt = time.timestep().as_secs_f32();
     let controller = controller();
-    for (actor, mut motion, intent, size) in &mut actors {
+    for (actor, mut motion, intent, size, scale) in &mut actors {
         motion.previous = motion.position;
         motion.previous_facing = motion.facing;
         if viewpoint.realm != Some(actor.realm) {
@@ -138,7 +139,7 @@ pub(crate) fn move_actors(
             continue;
         };
 
-        let shape = capsule(size);
+        let shape = capsule(size, scale);
         let center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
         let intent = intent.copied().unwrap_or_default();
         let turn = angle_between(motion.facing, intent.heading);

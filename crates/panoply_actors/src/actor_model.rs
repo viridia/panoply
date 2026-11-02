@@ -2,7 +2,7 @@ use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot};
 
 use super::{
     actor_animation::ArmatureSource,
-    actor_aspect::{Armature, ClipNames, Skin},
+    actor_aspect::{ActorScale, Armature, ClipNames, Skin},
     ActorRebuildModels,
 };
 
@@ -22,12 +22,18 @@ pub struct ActorBody {
 pub fn spawn_actor_bodies(
     mut commands: Commands,
     query: Query<
-        (Entity, Option<&Skin>, Option<&Armature>, Option<&ClipNames>),
+        (
+            Entity,
+            Option<&Skin>,
+            Option<&Armature>,
+            Option<&ClipNames>,
+            Option<&ActorScale>,
+        ),
         With<ActorRebuildModels>,
     >,
     server: Res<AssetServer>,
 ) {
-    for (entity, skin, armature, clip_names) in query.iter() {
+    for (entity, skin, armature, clip_names, scale) in query.iter() {
         commands
             .entity(entity)
             .despawn_related::<Children>()
@@ -57,6 +63,7 @@ pub fn spawn_actor_bodies(
                 scene: scene.to_owned(),
                 armature,
             },
+            Transform::from_scale(Vec3::splat(scale.map_or(1.0, |scale| scale.0))),
             ChildOf(entity),
         ));
     }

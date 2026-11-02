@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D46.**
+**Next: D48.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -358,3 +358,13 @@ never reused.
   annotations; Bevy's reflection has them, and the newtype also stops code passing a realm name
   where a model path belongs. Annotations remain for how a primitive (`f32`, `String`) is shown, not
   what it means: a range, a step, a multi-line text box, as reflect custom attributes.
+- **D46** Facings are stored in degrees (0 faces +z, 90 faces +x), for scenery and actors alike, and
+  turned to radians once, at spawn. Ease of editing no longer decides it (feathers' number input
+  shows units), but degrees hold authored angles exactly: quarter turns and snapped increments are
+  whole numbers, where radians are never exact, so comparing facings (axis-aligned walls, whether an
+  edit changed anything, stable saves) needs no tolerance. Radians would match the runtime values
+  (`ActorMotion::facing`) and save the conversion. (PAN3l)
+- **D47** A precinct's actors name their exemplars by path, as scenery's type tables do, rather than
+  as handles loaded with the precinct, so a missing exemplar cannot keep the precinct (and its
+  scenery) from loading. The player is not a precinct actor: a new game places the player (X46).
+  (PAN3l)

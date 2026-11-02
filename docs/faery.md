@@ -223,20 +223,23 @@ edited by hand: `CollisionSize` (PAN3f), and humanoids' `ClipNames` gained `"Run
 realm; it was deleted (see X24). Once the editor (X3) saves content, these scripts are one-way
 history. X1 needs the archetype converter (or a successor) to emit BSN.
 
-Conversions baked into Panoply's data: facings from quarter turns to degrees (`* 90`); tier
-`level -= 2` and floor type index `-= 1`; instances without an `iid` numbered in sequence;
-terrain effect `road` renamed `cobbles`; model paths rewritten (`a:b` to `a.glb#b`, folders
-moved, `Boulder1` to `Boulder.1` and similar); floor types become
+Conversions baked into Panoply's data: wall and fixture facings from quarter turns to degrees
+(`* 90`); actor facings from radians to degrees, turned a quarter (faery's 0 faced +x, Panoply's
++z), and written even when 0; tier `level -= 2` and floor type index `-= 1`; instances without an
+`iid` numbered in sequence; terrain effect `road` renamed `cobbles`; model paths rewritten (`a:b` to
+`a.glb#b`, folders moved, `Boulder1` to `Boulder.1` and similar); floor types become
 `scenery/floors/<kebab-case>.floor.ron` (the `.floor.ron` files are not made by these scripts;
 `floor-tiles.json` is skipped).
 
 Dropped (the scripts log most of them), by the module that would want them. Some are features
 Panoply will not carry over because it has a better way; which is which is undecided per item.
 
-- Actor archetypes: `equipSlots`, `skills`, `gender`, `scale`, `imposterHeight`/`imposterRadius`,
-  `portraitHeight`/`portraitOffset`. Aspects: `combatant` (some with `healthMax`, `attackPower`),
-  `enemy` (with `loot` tables, e.g. `loot:Wolf`), `conversant`, `shopkeeper`, `follower`,
-  `aggressive`, `territorial`.
+- Actor archetypes: `equipSlots` (with X42), `skills` (with combat), `gender` (with dialogue's
+  pronouns; clips already differ by prototype through `ClipNames`), `imposterHeight`/
+  `imposterRadius` (three.js level of detail, not carried over), `portraitHeight`/`portraitOffset`
+  (with dialogue portraits). `scale` was restored by hand as the `ActorScale` aspect (PAN3l).
+  Aspects: `combatant` (some with `healthMax`, `attackPower`), `enemy` (with `loot` tables, e.g.
+  `loot:Wolf`), `conversant`, `shopkeeper`, `follower`, `aggressive`, `territorial`.
 - Actor instances in precincts: only `combatant` is kept. Dropped: `enemy`, `territorial`, and
   script hooks (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...).
 - Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): `type`, `model`

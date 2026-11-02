@@ -9,7 +9,7 @@ use bevy::{
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
 use bevy_action_map::prelude::*;
-use panoply_actors::{Actor, ActorMotion, CollisionSize};
+use panoply_actors::{Actor, ActorMotion, ActorScale, CollisionSize};
 use panoply_core::{realm_physics::collision_groups, RealmPhysics, Viewpoint};
 use panoply_terrain::Parcel;
 use rapier3d::{
@@ -116,7 +116,10 @@ fn draw_physics(
     viewpoint: Res<Viewpoint>,
     q_realms: Query<&RealmPhysics>,
     q_parcels: Query<(Entity, &Visibility), With<Parcel>>,
-    q_actors: Query<(&Actor, &Transform, Option<&CollisionSize>), With<ActorMotion>>,
+    q_actors: Query<
+        (&Actor, &Transform, Option<&CollisionSize>, Option<&ActorScale>),
+        With<ActorMotion>,
+    >,
     mut pipeline: ResMut<PhysicsDebugRender>,
     mut probe: ResMut<GroundProbe>,
     mut gizmos: Gizmos<PhysicsGizmos>,
@@ -144,11 +147,11 @@ fn draw_physics(
 
     // Actors' capsules are query shapes, not in the world (D41), so rapier does not draw them.
     if backend.groups.contains(collision_groups::ACTOR) {
-        for (actor, transform, size) in &q_actors {
+        for (actor, transform, size, scale) in &q_actors {
             if viewpoint.realm != Some(actor.realm) {
                 continue;
             }
-            let size = size.cloned().unwrap_or_default();
+            let size = size.cloned().unwrap_or_default().scaled_by(scale);
             let length = (size.height - 2.0 * size.radius).max(0.0);
             gizmos.primitive_3d(
                 &Capsule3d::new(size.radius, length),

@@ -26,11 +26,12 @@ FIXTURE_GROUP = 8
 CANOPY_GROUP = 0x20
 # (label, spot, expected top, group): a parquet floor on tier 0 (top at TIER_OFFSET), a walnut
 # table (box of half-height 0.42 on the floor at 0), and a tree's cell, whose canopy is 2 m over
-# ground at 0. Trunks are under the canopy, out of the probe's reach.
+# ground at 0. A trunk is as tall as the canopy over its own base, so one on higher ground pokes
+# through it; this cell's trunk does not reach its center.
 SPOTS = [
     ("floor", [58.0, 0.0, 26.62], 0.02, FLOOR_GROUP),
     ("table", [42.23, 0.0, 58.71], 0.84, FIXTURE_GROUP),
-    ("canopy", [108.5, 0.0, 146.5], 2.0, CANOPY_GROUP),
+    ("canopy", [105.5, 0.0, 144.5], 2.0, CANOPY_GROUP),
 ]
 
 
