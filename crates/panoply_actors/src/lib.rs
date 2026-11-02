@@ -1,10 +1,11 @@
 use bevy::{app::Propagate, prelude::*};
-use panoply_core::{realm_physics::realm_physics_system, Realm};
+use panoply_core::{realm_physics::realm_physics_system, Realm, Viewpoint};
 use panoply_exemplar::{Exemplar, ExemplarServer, InstanceAspects, InstanceType, UpdateAspects};
 
 mod actor_animation;
 mod actor_aspect;
 mod actor_colors;
+mod actor_control;
 mod actor_features;
 mod actor_model;
 mod actor_physics;
@@ -13,6 +14,7 @@ mod item_aspect;
 
 pub use actor_animation::ActorArmature;
 pub use actor_aspect::CollisionSize;
+pub use actor_control::{ActorIntent, PlayerActor};
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
 pub use actor_physics::ActorMotion;
@@ -20,6 +22,7 @@ pub use actor_wield::WieldedItem;
 
 use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
 use self::actor_colors::{color_actor_part, ActorMaterials};
+use self::actor_control::drive_player;
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
@@ -59,6 +62,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<Skin>()
             .register_type::<CollisionSize>()
             .register_type::<ActorMotion>()
+            .register_type::<ActorIntent>()
             .register_type::<ColorSlots>()
             .register_type::<Colors>()
             .register_type::<FeatureSlots>()
@@ -76,6 +80,7 @@ impl Plugin for ActorsPlugin {
                     play_actor_idle,
                     attach_wielded_items,
                     start_actor_physics,
+                    drive_player,
                 )
                     .chain(),
             )
@@ -94,7 +99,8 @@ impl Plugin for ActorsPlugin {
 }
 
 /// TODO(PAN3l): the player comes from a precinct. Until then, one actor drops from 2 m over the
-/// playground's ground level, near the table that `plans/physics.py` measures on a floor at 0.
+/// playground's ground level, near the table that `plans/physics.py` measures on a floor at 0,
+/// and the camera follows it.
 const PLAYER_EXEMPLAR: &str = "exemplars/characters.exem.json#Farmer1";
 const PLAYER_REALM: &str = "playground";
 const PLAYER_POSITION: Vec3 = Vec3::new(37.0, 2.0, 47.0);
@@ -103,6 +109,7 @@ const PLAYER_WIELDS: &str = "exemplars/weapons.exem.json#Broadsword";
 fn spawn_player(
     mut commands: Commands,
     mut exemplars: ExemplarServer,
+    mut viewpoint: ResMut<Viewpoint>,
     realms: Query<(Entity, &Realm)>,
     mut spawned: Local<bool>,
 ) {
@@ -116,18 +123,21 @@ fn spawn_player(
     let Some(exemplar) = exemplars.get(PLAYER_EXEMPLAR) else {
         return;
     };
-    commands.spawn((
+    let actor = commands.spawn((
         Name::new("Actor"),
         Actor {
             exemplar,
             realm: realm_entity,
         },
+        PlayerActor,
+        ActorIntent::default(),
         InstanceAspects(vec![Box::new(WieldedItems(vec![PLAYER_WIELDS.to_owned()]))]),
         ActorRebuildAspects,
         Transform::from_translation(PLAYER_POSITION),
         Visibility::default(),
         Propagate(realm.layer.clone()),
     ));
+    viewpoint.follow = Some(actor.id());
     *spawned = true;
 }
 

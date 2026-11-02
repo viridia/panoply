@@ -33,6 +33,11 @@ What Panoply is for. For how far the earlier engine got, see `faery.md`.
 
 ## Art
 
+- Panoply simulates genre conventions, not reality. Its art is a cinematic language of its own: the
+  outlines, the art-nouveau palette and UI, the simplified character designs, the Bollywood combat.
+  Retro is one item in the palette, not the theme.
+- Motion and the camera follow the same rule, verisimilitude over realism: they are judged by how
+  they read on screen.
 - Characters and scenery are good enough at a distance. Close-up portraits are the weak spot.
 
 ## Modding

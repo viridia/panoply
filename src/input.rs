@@ -8,6 +8,8 @@ use panoply_core::Viewpoint;
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
+/// How fast the turn speed approaches the keys', per second (exponential).
+const TURN_EASE_RATE: f32 = 16.;
 const FAST_MULTIPLIER: f32 = 3.;
 const SCROLL_ROTATION_SPEED: f32 = 0.002;
 
@@ -52,9 +54,10 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ActionMapPlugin)
             .add_context::<ViewpointControl>(|context| {
+                // W and S walk the player's actor (`panoply_actors`).
                 context.bind::<MoveForward>(AxisButtons::new(KeyCode::ArrowDown, KeyCode::ArrowUp));
-                context.bind::<MoveForward>(AxisButtons::new(KeyCode::KeyS, KeyCode::KeyW));
                 context.bind::<Turn>(AxisButtons::left_right());
+                context.bind::<Turn>(AxisButtons::new(KeyCode::KeyA, KeyCode::KeyD));
                 // Shift+Arrow is more specific than Arrow, so it takes over from Turn.
                 context
                     .bind::<Strafe>(AxisButtons::left_right())
@@ -77,6 +80,7 @@ fn move_viewpoint(
     input: ContextActions<ViewpointControl>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
+    mut turn_speed: Local<f32>,
 ) {
     let delta = time.delta_secs();
     let fast = if input.value::<Fast>() {
@@ -88,10 +92,14 @@ fn move_viewpoint(
     let turn = input.value::<Turn>();
     let strafe = input.value::<Strafe>();
 
-    if turn != 0. {
-        viewpoint.rotate(-turn * CAMERA_ROTATION_SPEED * delta);
+    // Turning eases in and out, as faery's camera did.
+    let wanted = -turn * CAMERA_ROTATION_SPEED;
+    *turn_speed = wanted + (*turn_speed - wanted) * (-TURN_EASE_RATE * delta).exp();
+    if turn_speed.abs() > 1e-4 {
+        viewpoint.rotate(*turn_speed * delta);
     }
     if forward != 0. || strafe != 0. {
+        viewpoint.follow = None;
         viewpoint.move_local(
             forward * CAMERA_SPEED * delta * fast,
             -strafe * CAMERA_SPEED * delta,

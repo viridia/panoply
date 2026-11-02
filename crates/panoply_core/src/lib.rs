@@ -50,7 +50,11 @@ impl Plugin for PanoplyCorePlugin {
             .add_systems(
                 PostUpdate,
                 (
-                    viewpoint::update_camera_pos,
+                    (
+                        viewpoint::follow_active_entity,
+                        viewpoint::update_camera_pos,
+                    )
+                        .chain(),
                     fit_shadow_cascades,
                     sunlight::sync_sunlight,
                 ),

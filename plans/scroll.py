@@ -23,7 +23,8 @@ FEATURES = ["bevy/trace_chrome"] if os.environ.get("TRACE") else None
 os.environ["PANOPLY_HITCH_LOG"] = "1"
 DISTANCE = 20.0
 START = [8.0, 0.0, 8.0]
-# Facing +x and +z. W walks at 10 m/s: about 100 m in 10 s, 70 m along each axis.
+# Facing +x and +z. ArrowUp flies the camera at 10 m/s: about 100 m in 10 s, 70 m along each
+# axis.
 AZIMUTH = math.pi / 4
 FRAMES = 1200
 
@@ -38,9 +39,9 @@ def scroll(driver, label):
     driver.goto(START, DISTANCE, AZIMUTH)
     start_frame, start_time = driver.frame(), time.monotonic()
     # Not `key(hold=...)`, which returns before the release.
-    driver.press("KeyW")
+    driver.press("ArrowUp")
     driver.frames(FRAMES)
-    driver.release("KeyW")
+    driver.release("ArrowUp")
     elapsed = time.monotonic() - start_time
     frames = driver.frame() - start_frame
     print(f"{label}: {frames} frames in {elapsed:.2f} s, {1000 * elapsed / frames:.1f} ms/frame")

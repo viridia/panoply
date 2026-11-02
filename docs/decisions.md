@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D42.**
+**Next: D43.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -299,17 +299,17 @@ never reused.
   `meta_type`). Colliders' `user_data` is the owning entity, for picking later; the F3 view
   draws every scenery collider, and ground only for shown parcels.
 - **D39** Generated trees get a trunk capsule each (blocks walking) and a canopy over the forest
-  (catches what falls onto it, so an actor dropped there cannot land in a pocket between trunks
-  0.4 m apart). Design in `panoply_terrain::flora_physics`'s module doc: the canopy is
-  quantized to the terrain grid, covering tree cells and enclosed clearings found by a flood
-  fill that looks 4 cells into neighbouring parcels, one continuous trimesh 2 m over the
-  ground, never over cells with terrain effects. Both are computed in the flora task and owned
-  by the parcel's flora entity (`OwnedColliders`, D38); `user_data` is the parcel, so the F3
-  view draws them for shown parcels only. Trunk radius is `FloraTableEntry::trunk_radius`
-  (default 0.15, scaled with the instance); shrubs and herbs have none. Trees placed as
-  fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket
-  among them is an authoring error. The canopy collides with everything for now: when picking
-  and sight rays arrive (X3, PAN3), their query filters exclude `CANOPY`.
+  (catches what falls onto it, so an actor dropped there cannot land in a pocket between trunks 0.4
+  m apart). Design in `panoply_terrain::flora_physics`'s module doc: the canopy is quantized to the
+  terrain grid, covering tree cells and enclosed clearings found by a flood fill that looks 4 cells
+  into neighbouring parcels, one continuous trimesh 2 m over the ground, never over cells with
+  terrain effects. Both are computed in the flora task and owned by the parcel's flora entity
+  (`OwnedColliders`, D38); `user_data` is the parcel, so the F3 view draws them for shown parcels
+  only. Trunk radius is `FloraTableEntry::trunk_radius` (default 0.3, twice the bark's, for the
+  branches packed around it; scaled with the instance); shrubs and herbs have none. Trees placed as
+  fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket among
+  them is an authoring error. The canopy collides with everything for now: when picking and sight
+  rays arrive (X3, PAN3), their query filters exclude `CANOPY`.
 - **D40** Actors are a crate, `panoply_actors`, since the editor sees only engine crates (D37) and
   will edit actors. The precinct file format is a crate of its own, `panoply_precinct`
   (`PrecinctAsset`, its loader and saver, and the instance data it holds), which `panoply_scenery`
@@ -326,3 +326,14 @@ never reused.
   debug render draw it; until then the F3 view draws capsules itself, under the `ACTOR` group's
   "Actors" entry in the Show menu. An actor gets physics when nothing terrain or scenery is pending
   and a ray down from it hits a collider, until X33's footprint query. (PAN3f)
+- **D42** The camera follows an entity named in `Viewpoint::follow` (R102's active entity), set to
+  the player's actor at spawn. Moving the viewpoint any other way (`GotoLocation`, the free camera's
+  arrow keys) clears it, so plans and the editor look anywhere without fighting the actor; W or S
+  sets it again. It trails the entity as faery's camera did, rather than sticking to it, so falls
+  and starts show on screen; locked to the actor, a fall read as the ground rising, at the right
+  speed but mushy to the eye. Keys follow faery's player controller: W walks away from the camera, S
+  backs toward it, A and D turn the camera, and the actor travels along its facing while turning
+  toward the key's heading, so it curves rather than strafes (R29). W and S left the free camera,
+  which flies on the arrows alone. An actor counts as grounded only on walkable ground (a cast down
+  finds a normal with y at least 0.7): rapier's own `grounded` includes steep slopes, where an actor
+  that stopped falling would stick instead of sliding (R24). (PAN3g)

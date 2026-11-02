@@ -10,6 +10,9 @@ use std::f32::consts::PI;
 #[derive(Resource, Default, Debug)]
 pub struct Viewpoint {
     pub realm: Option<Entity>,
+    /// The active entity (R102), whose `Transform` the viewpoint follows. Moving the viewpoint
+    /// any other way (`GotoLocation`, the free camera's keys) clears it.
+    pub follow: Option<Entity>,
     pub position: Vec3,
     pub azimuth: f32,
     pub elevation: f32,
@@ -137,7 +140,49 @@ impl Command for SetViewpointCmd {
             let mut viewpoint = world.get_resource_mut::<Viewpoint>().unwrap();
             viewpoint.realm = Some(realm);
             viewpoint.position = self.position;
+            viewpoint.follow = None;
         }
+    }
+}
+
+/// How far above the followed entity's origin the viewpoint aims.
+const FOLLOW_HEIGHT: f32 = 1.5;
+/// How close the viewpoint must be to its aim before it stops chasing.
+const FOLLOW_SLACK: f32 = 0.25;
+/// How fast the viewpoint chases its aim, per meter beyond the slack, and at most.
+const FOLLOW_RATE: f32 = 2.0;
+const FOLLOW_MAX_SPEED: f32 = 10.0;
+/// From this far away, the viewpoint jumps to its aim instead of chasing it.
+const FOLLOW_JUMP: f32 = 20.0;
+
+/// Moves the viewpoint after the entity it follows, as faery's camera did: it trails behind,
+/// faster the further it is, so a fall or a start shows on screen before the camera catches up.
+/// From far away (a new game, a teleport) it jumps there and faces the entity's way. Before
+/// `update_camera_pos`, and after actors are drawn between their fixed ticks.
+pub fn follow_active_entity(
+    mut viewpoint: ResMut<Viewpoint>,
+    transforms: Query<&Transform>,
+    time: Res<Time>,
+) {
+    let Some(entity) = viewpoint.follow else {
+        return;
+    };
+    let Ok(transform) = transforms.get(entity) else {
+        viewpoint.follow = None;
+        return;
+    };
+    let aim = transform.translation + Vec3::Y * FOLLOW_HEIGHT;
+    let offset = aim - viewpoint.position;
+    let distance = offset.length();
+    if distance >= FOLLOW_JUMP {
+        viewpoint.position = aim;
+        let (facing, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
+        viewpoint.azimuth = facing.rem_euclid(PI * 2.);
+    } else if distance > FOLLOW_SLACK {
+        // Capped, so a hitch does not throw the camera past its aim.
+        let delta = time.delta_secs().min(0.1);
+        let speed = ((distance - FOLLOW_SLACK) * FOLLOW_RATE).min(FOLLOW_MAX_SPEED);
+        viewpoint.position += offset / distance * (speed * delta).min(distance);
     }
 }
 

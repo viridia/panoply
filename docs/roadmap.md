@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN22.**
+**Next: PAN23.**
 
 ## Next
 
@@ -21,10 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3g WASD.** Movement relative to the view, turning gradually (R29); the camera follows the
-  actor (R102), from its interpolated transform (D41). Reads the keys directly, which the driver's
-  keys can press. Test the controller's slope limit and its sliding down steep slopes (R24) while
-  walking: PAN3f checked only a fall onto flat ground.
 - **PAN3h Move to point.** A body action, not a goal: travel in a straight line to a point at a pace
   (R32, R43), reporting when it finishes (R45). Started from a plan or a debug hook.
 - **PAN3i Blending.** Crossfades between clips (R34); gait from speed (R17, R18), keeping the
@@ -46,11 +42,12 @@ components and every layer restartable from saved state (R104).
   colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely cover
   only edges within one shape, not between colliders. Write a plan that walks an actor across parcel
   edges and corners. If it falls: make shared edge vertices bit-identical, overlap parcel colliders
-  by a cell, enable CCD, and cast with a skin. Falling out of the world (R27). Stuck rescue, the
-  backstop for traps the canopy (D39) does not cover (trees against walls, canopy bowls too steep to
-  climb, clearings enclosed beyond its margin): an actor that is not grounded, or makes no progress
-  against its intent, for some seconds moves to the nearest free spot; before navigation, the
-  nearest cell outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
+  by a cell, enable CCD, and cast with a skin. Falling out of the world (R27): a deliberate hole in
+  the playground's terrain drops a walking actor through today. Stuck rescue, the backstop for traps
+  the canopy (D39) does not cover (trees against walls, canopy bowls too steep to climb, clearings
+  enclosed beyond its margin): an actor that is not grounded, or makes no progress against its
+  intent, for some seconds moves to the nearest free spot; before navigation, the nearest cell
+  outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
 - **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
   shader (D29).
 - **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
@@ -77,8 +74,13 @@ components and every layer restartable from saved state (R104).
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
   game's click handling runs only while the game has the pointer (X3, editor tools).
+- **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
+  scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
+  in that mode. Today the free camera's context and PAN3g's direct key reads are both always on, so
+  the arrows and WASD each drive one thing in every mode. First see X3, which settles how editor
+  modes take the pointer and keys.
 - **PAN18 Player input on `bevy_action_map`.** Moves PAN3g's and PAN3k's direct key reads onto
-  actions.
+  actions, in PAN22's play context.
 - **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
   (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
   distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only

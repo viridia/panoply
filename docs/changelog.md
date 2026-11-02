@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3g** WASD walks the player relative to the camera, which follows; steep slopes block it.
 - **PAN3f** Actors fall under gravity and land on the ground; archetypes set their collision size.
 - **PAN3o** Actors hold weapons and tools in their hands; item exemplars carry model and slot.
 - **PAN3e** Actors wear their hair, beards and hats, colored and outlined.
