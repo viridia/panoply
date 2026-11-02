@@ -1,24 +1,32 @@
 use bevy::{app::Propagate, prelude::*};
 use panoply_core::Realm;
-use panoply_exemplar::{Exemplar, ExemplarServer, InstanceType, UpdateAspects};
+use panoply_exemplar::{Exemplar, ExemplarServer, InstanceAspects, InstanceType, UpdateAspects};
 
 mod actor_animation;
 mod actor_aspect;
 mod actor_colors;
 mod actor_features;
 mod actor_model;
+mod actor_wield;
+mod item_aspect;
 
 pub use actor_animation::ActorArmature;
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
+pub use actor_wield::WieldedItem;
 
 use self::actor_animation::{bind_actor_skeleton, play_actor_idle};
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
+use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 
-use self::actor_aspect::{Armature, ColorSlots, Colors, FeatureSlots, Features, Skin};
+use self::actor_aspect::{
+    Armature, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
+};
+use self::item_aspect::{EquipSlot, ItemModel};
 
 pub const ACTOR_TYPE: InstanceType = InstanceType::from_str("Actr");
+pub const ITEM_TYPE: InstanceType = InstanceType::from_str("Item");
 
 /// A character: the player, an NPC or a monster.
 #[derive(Debug, Component)]
@@ -47,6 +55,9 @@ impl Plugin for ActorsPlugin {
             .register_type::<Colors>()
             .register_type::<FeatureSlots>()
             .register_type::<Features>()
+            .register_type::<WieldedItems>()
+            .register_type::<ItemModel>()
+            .register_type::<EquipSlot>()
             .add_systems(
                 Update,
                 (
@@ -55,6 +66,7 @@ impl Plugin for ActorsPlugin {
                     spawn_actor_bodies,
                     spawn_actor_body_scenes,
                     play_actor_idle,
+                    attach_wielded_items,
                 )
                     .chain(),
             )
@@ -62,6 +74,7 @@ impl Plugin for ActorsPlugin {
             .add_observer(bind_actor_skeleton)
             .add_observer(spawn_actor_features)
             .add_observer(bind_actor_feature)
+            .add_observer(spawn_wielded_items)
             .add_observer(color_actor_part);
     }
 }
@@ -71,6 +84,7 @@ impl Plugin for ActorsPlugin {
 const PLAYER_EXEMPLAR: &str = "exemplars/characters.exem.json#Farmer1";
 const PLAYER_REALM: &str = "playground";
 const PLAYER_POSITION: Vec3 = Vec3::new(58.0, 0.02, 26.62);
+const PLAYER_WIELDS: &str = "exemplars/weapons.exem.json#Broadsword";
 
 fn spawn_player(
     mut commands: Commands,
@@ -90,6 +104,7 @@ fn spawn_player(
     commands.spawn((
         Name::new("Actor"),
         Actor { exemplar },
+        InstanceAspects(vec![Box::new(WieldedItems(vec![PLAYER_WIELDS.to_owned()]))]),
         ActorRebuildAspects,
         Transform::from_translation(PLAYER_POSITION),
         Visibility::default(),

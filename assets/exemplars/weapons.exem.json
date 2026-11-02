@@ -2,109 +2,181 @@
   "Axe": {
     "type": "Item",
     "display_name": "Axe",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Axe",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Bow": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#RecurveBow",
+      "EquipSlot": "weapon.L"
+    }
   },
   "Broadsword": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Broadsword",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Shortsword": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Shortsword",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Sabre": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Sabre",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Cutlass": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Cutlass",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Dagger": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Dagger",
+      "EquipSlot": "weapon.R"
+    }
   },
   "Mace": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Mace",
+      "EquipSlot": "weapon.R"
+    }
   },
   "WarHammer": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#WarHammer",
+      "EquipSlot": "weapon.R"
+    }
   },
   "KitchenKnife": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#KitchenKnife",
+      "EquipSlot": "weapon.R"
+    }
   },
   "StirringSpoon": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#StirringSpoon",
+      "EquipSlot": "weapon.R"
+    }
   },
   "StaffPlain": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#StaffPlain",
+      "EquipSlot": "weapon.R"
+    }
   },
   "StaffOrbed": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#StaffOrbed",
+      "EquipSlot": "weapon.R"
+    }
   },
   "WandOrbRed": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#WandOrbRed",
+      "EquipSlot": "weapon.R"
+    }
   },
   "PotMetalSword": {
     "type": "Item",
     "display_name": "Pot-metal Sword",
-    "aspects": {}
+    "aspects": {
+      "EquipSlot": "weapon.R"
+    }
   },
   "RustyIronSword": {
     "type": "Item",
     "display_name": "Rusty Iron Sword",
-    "aspects": {}
+    "aspects": {
+      "EquipSlot": "weapon.R"
+    }
   },
   "BattleAxe": {
     "type": "Item",
     "display_name": "Battle Axe",
-    "aspects": {},
+    "aspects": {
+      "ItemModel": "props/weapons.glb#BattleAxe"
+    },
     "extends": "#Axe"
   },
   "SmithingHammer": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#SmithingHammer",
+      "EquipSlot": "weapon.R"
+    }
   },
   "SmithingTongs": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#SmithingTongs",
+      "EquipSlot": "weapon.L"
+    }
   },
   "PickAxe": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#PickAxe",
+      "EquipSlot": "weapon.L"
+    }
   },
   "Rake": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Rake",
+      "EquipSlot": "weapon.L"
+    }
   },
   "Hoe": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Hoe",
+      "EquipSlot": "weapon.L"
+    }
   },
   "Broom": {
     "type": "Item",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Broom",
+      "EquipSlot": "weapon.L"
+    }
   },
   "VorpalBlade": {
     "type": "Item",
     "display_name": "Vorpal Blade",
-    "aspects": {}
+    "aspects": {
+      "ItemModel": "props/weapons.glb#Shortsword",
+      "EquipSlot": "weapon.R"
+    }
   },
   "FlameWand": {
     "type": "Item",
     "display_name": "Flame Wand",
-    "aspects": {},
+    "aspects": {
+      "ItemModel": "props/weapons.glb#WandOrbRed",
+      "EquipSlot": "weapon.R"
+    },
     "extends": "#WandOrbRed"
   }
 }

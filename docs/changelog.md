@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3o** Actors hold weapons and tools in their hands; item exemplars carry model and slot.
 - **PAN3e** Actors wear their hair, beards and hats, colored and outlined.
 - **PAN3d** Actors wear their exemplar's colors.
 - **PAN3b** Actors play their idle clip, outlines following the pose.

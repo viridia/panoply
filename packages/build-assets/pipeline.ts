@@ -77,12 +77,13 @@ target(
     .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
 );
 
-// target(
-//   'props',
-//   directory(srcRoot, 'props')
-//     .match('*.glb')
-//     .map(src => src.transform(modelOpt).dest({ root: dstRoot }))
-// );
+// Prop files (weapons and tools), one named scene per prop.
+target(
+  "props",
+  directory(srcRoot, "props")
+    .match("*.glb")
+    .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
+);
 
 // Scenery files.
 target(
@@ -108,10 +109,11 @@ function flora(targetName: string, relativeSrcDir: string, outFile: string) {
     targetName,
     directory(srcRoot, relativeSrcDir)
       .match("*.glb")
-      .reduce(new Document(), async (doc, next) => {
+      // Each run reuses `reduce`'s initial value, and `merge` mutates it, so the document is made
+      // per run: one made here would gather another copy of every model in each watch rebuild.
+      .reduce(null as unknown as Document, async (doc, next) => {
         const gltf = await io.readBinary(await next.read());
-        // throw new Error(JSON.stringify(gltf.getRoot()));
-        return doc.merge(gltf);
+        return (doc ?? new Document()).merge(gltf);
       })
       .transform(async (doc) => {
         const buffer = doc.getRoot().listBuffers()[0];
@@ -170,9 +172,10 @@ function arborDayTrees(group: string) {
     `trees-new-${group}`,
     directory(srcRoot, `flora-new/trees-${group}`)
       .match("*.gltf")
-      .reduce(new Document(), async (doc, next) =>
+      // A document per run, as in flora().
+      .reduce(null as unknown as Document, async (doc, next) =>
         // Read by path, not buffer, so the .bin and .png the .gltf references resolve.
-        doc.merge(await io.read(next.path.full))
+        (doc ?? new Document()).merge(await io.read(next.path.full))
       )
       .transform(async (doc) => {
         await doc.transform(unpartition(), dedup());

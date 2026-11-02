@@ -21,11 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3o Wielding.** An equipped item's model follows the bone of its equip slot (R14): bring
-  faery's `props/weapons.glb` through the asset pipeline, give item exemplars a model aspect (the
-  converters dropped it), and attach the model's scene as a child of the `weapon.R` or `weapon.L`
-  bone. With no inventory yet, an actor aspect names what it holds per slot; the playground actor
-  holds a sword. Plan: the sword moves with the hand through the idle clip.
 - **PAN3f Collider and controller.** A capsule from the archetype's size (R4). First candidate (D36)
   is `rapier3d`'s `KinematicCharacterController`, which has slope limits, ground snapping and
   depenetration (stairs are ramps, so its autostep is not needed); test it against R24 to R26.
@@ -33,7 +28,7 @@ components and every layer restartable from saved state (R104).
   interpolate between fixed ticks, or they judder at 120 fps against 64 Hz ticks. Check whether Bevy
   0.20 has transform interpolation built in before adding any. An actor gets physics only where the
   colliders under it are built: a minimal wait for now, X33's footprint query later. Plan: the actor
-  dropped onto the ground lands and stays.
+  dropped from 2 m falls (R25), lands on the ground and stays there.
 - **PAN3g WASD.** Movement relative to the view, turning gradually (R29); the camera follows the
   actor (R102). Reads the keys directly, which the driver's keys can press.
 - **PAN3h Move to point.** A body action, not a goal: travel in a straight line to a point at a pace

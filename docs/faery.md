@@ -219,9 +219,10 @@ Panoply will not carry over because it has a better way; which is which is undec
   `conversant`, `shopkeeper`, `follower`, `aggressive`, `territorial`.
 - Actor instances in precincts: only `combatant` is kept. Dropped: `enemy`, `territorial`, and
   script hooks (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...).
-- Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): only `type`
-  is kept; model, icon, weapon stats, document content and quest hooks, weight, price, stack
-  size and sounds are dropped, so item catalogs are shells.
+- Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): `type`, `model`
+  (as `ItemModel`) and `equipSlot` (as `EquipSlot`, `weaponR` renamed to the bone's `weapon.R`) are
+  kept; icon, weapon stats, document content and quest hooks, weight, price, stack size and sounds
+  are dropped.
 - Wall and fixture aspects: `door`, `stairs`, `ladder`, `toggleButton`, `pushButton`,
   `pressurePlate`, `controlledOpenable`, `wall:autoDoor`, `container` (`openDelay`,
   `containerType`), `sign` (`frame`), `book`, `soundSource` (`sound`, distances), `particles`

@@ -136,6 +136,32 @@ impl Aspect for Features {
     }
 }
 
+/// Items the actor holds, as item exemplar paths, each shown on the bone its `EquipSlot` names.
+/// TODO(X42): replaced by what the actor has equipped from its inventory.
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct WieldedItems(pub Vec<String>);
+
+impl Aspect for WieldedItems {
+    fn name(&self) -> &str {
+        "WieldedItems"
+    }
+
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        meta_type == ACTOR_TYPE
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<WieldedItems> = RemoveComponent::<WieldedItems>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+}
+
 /// Available feature slots for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]

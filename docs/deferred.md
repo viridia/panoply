@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X41.**
+**Next: X43.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -288,3 +288,12 @@ dropped, not deferred. Numbers are never reused.
   learn by correction, for guidance that outgrows `AGENTS.md` or is project-specific enough to
   keep in git rather than the agent's memory. *Gate:* `AGENTS.md` grows long enough that its
   rules crowd out orienting.
+- **X41** Archery. `RecurveBow` in `artwork/props/weapons.blend` is a static mesh: it needs a string
+  bone and a draw clip of its own, played in step with the archer's, which the shared humanoid clips
+  also lack (draw, aim, release). An arrow model too, held on the string while drawn, then a missile
+  (X38). Until then the bow is wielded as a static prop (PAN3o). *Gate:* ranged combat.
+- **X42** Inventory and equipment: an actor's items (R5), and the ones it has equipped, shown on
+  their slots' bones (R14) in place of the `WieldedItems` aspect. Item exemplars keep only their
+  model and slot; the rest of faery's item fields (stats, price, weight, icon) are dropped
+  ([faery.md](faery.md), Migration scripts). *Gate:* the first feature that moves items: loot,
+  trade, or a quest item.

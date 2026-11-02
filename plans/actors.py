@@ -1,5 +1,6 @@
 """Actors: the player's actor stands on a floor in the playground, with one skeleton (D28),
-plays its idle clip from the shared clips file, and wears its hair and its exemplar's colors.
+plays its idle clip from the shared clips file, wears its hair and its exemplar's colors, and
+holds a sword in its right hand.
 
     bevy-remote-driver plans/actors.py
 
@@ -13,6 +14,7 @@ from _panoply_driver import PanoplyDriver
 BIN = "panoply"
 DRIVER = PanoplyDriver
 TRANSFORM = "bevy_transform::components::transform::Transform"
+GLOBAL_TRANSFORM = "bevy_transform::components::global_transform::GlobalTransform"
 # The player's spot, `PLAYER_POSITION` in `src/actors/mod.rs`.
 SPOT = [58.0, 0.0, 26.62]
 WAIT = {"seconds": 60}
@@ -35,5 +37,12 @@ def run(driver):
     driver.seconds(1)
     after = driver.get("Actor/hips", TRANSFORM)
     assert before != after, f"the hips did not move: {before}"
+
+    # The sword hangs from the right hand's bone, so the idle clip moves it too.
+    driver.present("weapon.R/WieldedItem/Broadsword")
+    before = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
+    driver.seconds(1)
+    after = driver.get("weapon.R/WieldedItem", GLOBAL_TRANSFORM)
+    assert before != after, f"the sword did not move: {before}"
     driver.screenshot("actor")
     driver.exits("Escape")

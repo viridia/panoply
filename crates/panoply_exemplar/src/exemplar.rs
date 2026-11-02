@@ -29,6 +29,33 @@ pub struct ExemplarData {
 #[derive(TypePath, Asset)]
 pub struct Exemplar(pub Arc<ExemplarData>);
 
+impl Exemplar {
+    /// The aspect of type `T` that an instance of `exemplar` would get, the nearest along its
+    /// inheritance chain, read without spawning an instance.
+    pub fn find_aspect<'a, T: crate::Aspect>(
+        exemplars: &'a Assets<Exemplar>,
+        exemplar: &Handle<Exemplar>,
+    ) -> Option<&'a T> {
+        let mut next = exemplars.get(exemplar);
+        while let Some(exemplar) = next {
+            let found = exemplar
+                .0
+                .aspects
+                .iter()
+                .find_map(|aspect| aspect.as_reflect().downcast_ref::<T>());
+            if found.is_some() {
+                return found;
+            }
+            next = exemplar
+                .0
+                .extends
+                .as_ref()
+                .and_then(|handle| exemplars.get(handle));
+        }
+        None
+    }
+}
+
 impl Serialize for ExemplarData {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
     where
