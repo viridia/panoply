@@ -23,6 +23,7 @@ What Panoply is for. For how far the earlier engine got, see `faery.md`.
 - Turn-based combat feels artificial and arbitrary. Monsters waiting for the player is just as
   artificial, but the hope is that players accept it as a cinematic convention, like opponents
   taking turns in a martial arts film. Waiting monsters don't freeze; they idle.
+- A brainstorm of film conventions that could become mechanics is in [combat.md](combat.md).
 
 ## Party
 

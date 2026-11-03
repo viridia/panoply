@@ -88,10 +88,10 @@ what counts as a valid route) or behavior. Which part handles each is not yet de
 - **R25** An actor within 0.1 m of the ground snaps to it. Beyond that it falls: the falling
   state over 0.7 m above ground, and a landing state on touchdown when the species has one.
 - **R26** An actor embedded in geometry is pushed out to free space.
-- **R27** An actor that falls out of the world is put back on walkable ground. Stopping the
-  fall is not enough: faery's slab under the world caught falls but left the actor stuck below
-  it (recovery was a TODO). *Open:* where it goes back to (last place it stood, nearest
-  walkable point).
+- **R27** An actor that falls out of the world is put back on walkable ground. Stopping the fall is
+  not enough: faery's slab under the world caught falls but left the actor stuck below it (recovery
+  was a TODO). It goes back to the last place it stood, its velocity zeroed; later, to the last save
+  point (X52).
 - **R28** A pushed actor (not under its own control) moves physically and plays the stumble
   state; its speed is capped at 4 m/s.
 - **R29** Direct movement is relative to the player's view: up always means away from the

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X52.**
+**Next: X54.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -54,8 +54,9 @@ dropped, not deferred. Numbers are never reused.
   HTTP requests: small models (e.g. flora) are combined into one file, and large Blender
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
-- **X7** Scripting and modding using the SAGA language from `bevy_reactor` (SAGA: "Scripts for
-  Animated Graphic Adventures"). *Gate:* the `bevy_reactor` SAGA prototype is ready to integrate.
+- **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
+  [saga.md](saga.md). *Gate:* the author takes up scripting; the first chunk extracts `panoply_saga`
+  from `../bevy_reactor_3/crates/bevy_reactor_formulae`.
 - **X8** Horizontal trackpad scroll rotates the viewpoint through a global `MouseWheel` reader
   (`input::scroll_rotate_viewpoint`), so once the editor panel returns, scrolling the panel
   would rotate the camera too. Route it through picking instead: observe `PointerScroll`,
@@ -366,3 +367,17 @@ dropped, not deferred. Numbers are never reused.
   a bitmask of x and z cells taken modulo its width, whose aliasing only wakes extra actors, though
   a parcel's ground fills much of it. *Gate:* a frame-time hitch measured while walking into a crowd
   as its precincts load.
+- **X52** An actor that falls out of the world goes back to the last save point, where a respawn
+  after death puts it, rather than to the last place it stood (R27, PAN3m). *Gate:* save points.
+- **X53** Skill trees as assets, so skills and spells are content, not engine code
+  ([goals.md](goals.md)). Nodes are data: id, name, icon, description, branch, layout position, and
+  prerequisites (other nodes, points spent, level; a formula only for the unusual one). A node's
+  effects are of three kinds: passive modifiers (a stat, an operation, an amount, and an optional
+  condition formula such as `isWielding(Sword)`); granted abilities, each an asset of its own
+  (targeting, cost, cooldown, animation, an effect formula), as spells are; and named stats or flags
+  that engine systems read at extension points (barter reads a price stat). Stat names are content
+  too, referred to by id. A character sheet is cells (saga.md): derived stats are reactive formulas
+  over other stats, and combat resolution is formulas evaluated per attack, from a ruleset asset.
+  faery's `design/talents.md` sketches branches and their talents. The proving slice: one stat, one
+  modifier with a condition, one granted ability. *Gate:* the first three steps of saga.md's order
+  of work.

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D51.**
+**Next: D52.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -385,3 +385,10 @@ never reused.
 - **D50** A frame-rate regression is fixed before more features land: once measured, it becomes the
   first chunk in the roadmap. Slowdowns that overlap are hard to tell apart, so none is left to
   accumulate behind another. The target is D17's. (PAN3p is the first.)
+- **D51** Parcel ground collides as a trimesh, not a height field: terrain has holes
+  (`TerrainOptions::Hole`), which a height field cannot have. Actors fell through the seams between
+  parcels only in an early faery that used height fields; they have never fallen through the
+  trimeshes, here or in faery's later versions. So off the map's edge and through a hole are the
+  only ways out of the world. Off the map, and where no tile is placed, a realm has its default
+  contour, usually open water or the empty tile, which has no ground; the playground's is the empty
+  tile, and it has a large hole at (23, 43).

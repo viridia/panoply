@@ -21,16 +21,11 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3m Robustness.** In the three.js version actors fell through seams between parcel ground
-  colliders. Ground here is a trimesh per parcel; parry's `FIX_INTERNAL_EDGES` flags likely cover
-  only edges within one shape, not between colliders. Write a plan that walks an actor across parcel
-  edges and corners. If it falls: make shared edge vertices bit-identical, overlap parcel colliders
-  by a cell, enable CCD, and cast with a skin. Falling out of the world (R27): a deliberate hole in
-  the playground's terrain drops a walking actor through today. Stuck rescue, the backstop for traps
-  the canopy (D39) does not cover (trees against walls, canopy bowls too steep to climb, clearings
-  enclosed beyond its margin): an actor that is not grounded, or makes no progress against its
-  intent, for some seconds moves to the nearest free spot; before navigation, the nearest cell
-  outside the canopy cover. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
+- **PAN3q Stuck rescue**, the backstop for traps the canopy (D39) does not cover (trees against
+  walls, canopy bowls too steep to climb, clearings enclosed beyond its margin): an actor that is
+  not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
+  spot; before navigation, the nearest cell outside the canopy cover. Tune the canopy and trunk
+  height (`CANOPY_HEIGHT`, D39).
 - **PAN25 Nav points.** Named places to travel to: `WorldLocation` and its loader, from
   `src/world/locations.rs`, moved as `NavPoint` to `panoply_core` beside `GotoLocation`, loading
   `assets/world.locations.json` (51 points). Two roles: the editor travels to any of them, and those

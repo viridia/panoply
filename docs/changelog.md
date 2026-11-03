@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3m** An actor that falls off the map or through a hole is put back where it last stood.
 - **PAN3p** Standing actors cost almost nothing; `plans/perf.py` logs its frame times to a file.
 - **PAN3k** E logs what lies within 1.5 m ahead of the player's actor, passing through canopies.
 - **PAN31** The smoke test's window title names the part of the test running.

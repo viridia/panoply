@@ -49,7 +49,14 @@ pub struct ActorMotion {
     /// Off the ground and, at some tick since leaving it, more than `FALL_HEIGHT` above it (R25).
     /// Shorter drops, such as a step down, do not count.
     pub falling: bool,
+    /// The feet, at the last tick the actor was `grounded`: where it goes back to if it falls out
+    /// of the world (R27).
+    pub last_stood: Vec3,
 }
+
+/// How far below where it last stood an actor falling with nothing under it goes before it is put
+/// back there, in m: far enough that the fall shows.
+const FALL_OUT_DEPTH: f32 = 2.0;
 
 /// Marks an actor that `move_actors` skips: standing on walkable ground, facing its heading and
 /// asked for no speed, so that moving it would leave it where it is. It wakes when that stops
@@ -137,6 +144,8 @@ pub(crate) fn start_actor_physics(
                 grounded: false,
                 ground_normal: Vec3::Y,
                 falling: false,
+                // Over ground, as the ray found.
+                last_stood: position,
             });
         }
     }
@@ -144,9 +153,10 @@ pub(crate) fn start_actor_physics(
 
 /// Moves actors one fixed tick: turning toward their intent's heading, travelling along their
 /// facing, falling under gravity, stopped and slid by what they meet, and pushed out of what they
-/// are inside (R26). Runs after the realm steps, so colliders inserted since the last tick are in
-/// its broad phase. Only the viewpoint's realm steps, so actors in other realms hold still.
-/// Resting actors (`ActorResting`) are skipped.
+/// are inside (R26), and put back where they last stood when they fall out of the world (R27).
+/// Runs after the realm steps, so colliders inserted since the last tick are in its broad phase.
+/// Only the viewpoint's realm steps, so actors in other realms hold still. Resting actors
+/// (`ActorResting`) are skipped.
 pub(crate) fn move_actors(
     mut commands: Commands,
     mut actors: Query<(
@@ -219,6 +229,7 @@ pub(crate) fn move_actors(
             motion.ground_normal = normal;
             motion.vertical_speed = 0.0;
             motion.falling = false;
+            motion.last_stood = motion.position;
         } else if !motion.falling {
             // A ray from just above the feet, so it starts outside the ground the controller
             // keeps its gap from.
@@ -226,6 +237,15 @@ pub(crate) fn move_actors(
             motion.falling = queries
                 .cast_ray(&ray, FALL_HEIGHT + GROUND_CAST_GAP, true)
                 .is_none();
+        } else if motion.position.y < motion.last_stood.y - FALL_OUT_DEPTH {
+            // Nothing under it: off the map's edge or through a hole, out of the world (R27).
+            let ray = Ray::new(motion.position, Vec3::NEG_Y);
+            if queries.cast_ray(&ray, GROUND_RAY_LENGTH, true).is_none() {
+                motion.position = motion.last_stood;
+                motion.previous = motion.last_stood;
+                motion.vertical_speed = 0.0;
+                motion.falling = false;
+            }
         }
         if rests(&motion, &intent) {
             commands.entity(entity).insert(ActorResting {

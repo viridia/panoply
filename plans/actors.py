@@ -8,6 +8,7 @@ it plays falling, landing, then standing; it turns on the spot toward a target b
 its idle is the one its aspects choose.
 Precincts place their actors, facing as placed, and a precinct's actors despawn with it. Standing
 actors rest (`ActorResting`), and wake when sent travelling or when a precinct's colliders go.
+Fallen into a hole or off the map, the actor is put back where it last stood.
 
     bevy-remote-driver plans/actors.py
 
@@ -47,6 +48,11 @@ HILL_FOOT = [41.0, 0.2, 77.0]
 HILL_FACE = [41.0, 2.5, 74.6]
 # 4 m east of `SPOT`, over the same flat ground W walks on.
 TRAVEL_TARGET = [41.0, 0.0, 47.0]
+# A metre east of the lip at (31.8, 47.1), past the gravestone west of `SPOT`; due west of it, in
+# the hole around (23, 43); and over the empty tile beyond the map's edge.
+BRINK = [32.8, 1.0, 47.1]
+HOLE = [23.0, 0.0, 47.1]
+OFF_THE_MAP = [-5.0, 2.0, 47.0]
 WAIT = {"seconds": 60}
 HOME = "panoply_actors::precinct_actors::HomePrecinct"
 FIRST_PRECINCT = "Precinct:playground:0:0"
@@ -251,6 +257,26 @@ def run(driver):
     stopped = driver.get("Actor", MOTION)
     assert flat_distance(stopped["position"], TRAVEL_TARGET) > 2.0, f"travelled on: {stopped}"
 
+    # Walked west over the lip, the actor falls into the playground's hole with
+    # nothing under it, and is put back where it last stood, at the lip, its fall stopped (R27).
+    place(driver, BRINK)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.set("Actor", TRAVEL, {"target": HOLE, "speed": TROT})
+    fell = wait_fallen(driver)
+    entity = driver.select("Actor")[0]
+    driver.call("world.remove_components", {"entity": entity, "components": [TRAVEL]})
+    lip = wait_put_back(driver)
+    print(f"fell into the hole: {fell}; put back: {lip}")
+    assert lip["position"][0] == Between(29.0, 33.0), f"not back at the lip: {lip}"
+    assert lip["position"] == lip["last_stood"], f"not where it last stood: {lip}"
+
+    # Dropped past the map's edge, where the playground has no ground, it is put back at the lip.
+    place(driver, OFF_THE_MAP)
+    fell = wait_fallen(driver)
+    back = wait_put_back(driver)
+    print(f"fell off the map: {fell}; put back: {back}")
+    assert flat_distance(back["position"], lip["position"]) < 0.1, f"not at the lip: {back}"
+
     for name, (position, azimuth) in GROUPS.items():
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
@@ -330,6 +356,29 @@ def wait_resting(driver, selector, expected, since=None):
     state = "to rest" if expected else "not to rest"
     driver.wait(check, f"{selector} {state}", {"seconds": 5})
     return resting(driver, selector)
+
+
+def wait_fallen(driver):
+    """Waits until the actor has fallen half a metre below ground level (0), and returns its
+    motion."""
+
+    def check():
+        motion = driver.get("Actor", MOTION)
+        return motion["position"][1] < -0.5, lambda: f"{motion}"
+
+    driver.wait(check, "the actor to fall", {"seconds": 5})
+    return driver.get("Actor", MOTION)
+
+
+def wait_put_back(driver):
+    """Waits until the actor stands on the ground again, and returns its motion."""
+
+    def check():
+        motion = driver.get("Actor", MOTION)
+        return motion["grounded"] and motion["position"][1] > -0.5, lambda: f"{motion}"
+
+    driver.wait(check, "the actor to be put back", {"seconds": 5})
+    return driver.get("Actor", MOTION)
 
 
 def travelling(driver):
