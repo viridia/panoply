@@ -4,11 +4,8 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I11.**
+**Next: I12.**
 
-- **I1** The water shows a fine square grid (visible before and after D16). Almost certainly the
-  debug `InfiniteGrid` (`main.rs`) seen through the transparent water: the same grid continues
-  past the map edge in `lighting_bluff.png`. Not yet confirmed by hiding the grid.
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
@@ -42,3 +39,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
   (convex) is their intersection, which no descriptor shape makes. PAN3j fixed the same copied ramp
   on the 2- and 3-wide tiles. Seen by the author in the F3 view; the corners read, not run.
+- **I11** `assets/terrain/shaders/ground.wgsl` looks unused: `GroundMaterial` loads the embedded
+  `crates/panoply_terrain/src/shaders/ground.wesl`, and editing the `.wgsl` changed nothing in a
+  run, which cost a performance test. Candidate: delete it, once `assets/terrain/shaders/` has been
+  checked for other leftovers. Confirmed by running.

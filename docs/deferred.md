@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X54.**
+**Next: X56.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -381,3 +381,22 @@ dropped, not deferred. Numbers are never reused.
   faery's `design/talents.md` sketches branches and their talents. The proving slice: one stat, one
   modifier with a condition, one granted ability. *Gate:* the first three steps of saga.md's order
   of work.
+- **X54** Graphics settings for weaker GPUs, such as `Aerdra`'s integrated one (notes.md). A
+  `GraphicsSettings` resource deriving `SettingsGroup`, as `WindowSettings` does, is all that saving
+  them takes. The controls go in the editor pane for now, and move to a dialog once the game has
+  in-game dialogs. Plans start from empty settings, so they measure the defaults and `docs/perf.csv`
+  stays comparable. The options should be the ones that matter to this engine, not a general list: a
+  game whose camera cannot see the horizon has no use for a draw distance. By the measurements so
+  far: MSAA (3.9 ms, and `plans/ablate.py` already switches it live); a render scale, if
+  `MainPassResolutionOverride` proves to save the pixels' cost without an upscaler (about 4 ms at
+  1080p's pixel count, untested); and outlines (0.5 ms). Thinning trees would save the most after
+  those, but trees have colliders (`flora_physics.rs`), so a tree thinned from view alone would
+  still block the player: not a setting unless collision is settled first. *Gate:* a build goes to
+  players, or the author wants lower settings for their own play on `Aerdra`, whichever comes first.
+- **X55** Tracy, for frame-to-frame problems the averages hide. An opt-in build
+  (`--features bevy/trace_tracy`, so `Cargo.toml` need not change). `tracy-capture` records a run
+  headless, and `tracy-csvexport` should turn it into a table an agent can read, so nobody need read
+  the timeline; its versions must match the client's, as Bevy's `docs/profiling.md` explains. It
+  would not help a GPU bottleneck: `plans/ablate.py`'s GPU figures and vendor tools cover that, and
+  samply already covers CPU cost. *Gate:* a hitch that the hitch log (`PANOPLY_HITCH_LOG=1`) cannot
+  explain.

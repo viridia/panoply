@@ -58,8 +58,9 @@ class PanoplyDriver(Driver):
 
 
 def readiness_grid(survey):
-    """The survey as text: the viewpoint's realm's parcels as a grid, rows by z (north at the
-    top is -z), one cell per parcel (`STAGE_CELLS`), then each precinct still waiting."""
+    """The survey as text: the viewpoint's realm's parcels as a grid, rows by increasing z, so
+    south (-z) is at the top, one cell per parcel (`STAGE_CELLS`), then each precinct still
+    waiting."""
     realm = survey["viewpoint"]["realm"]
     cells = {}
     for parcel in survey["parcels"]:

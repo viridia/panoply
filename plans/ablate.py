@@ -5,11 +5,14 @@
 At one location, at camera distance DIST (default 20), with vsync off, measures the frame time with everything on, then with one
 thing switched off at a time over BRP: water, flora, ground, three quarters of the pixels
 (viewport inset), and all rendering (camera inactive). A large drop names the cost; no drop rules it out. Also prints the
-render passes' CPU times and the entity count. The window must stay in front for the whole run.
+render passes' CPU times, their GPU times and shader invocations where the backend records them, and the entity count. The
+window must stay in front for the whole run.
 
     ABLATE=msaa,environment bevy-remote-driver plans/ablate.py
 
-runs only the experiments whose names contain one of the given words.
+runs only the experiments whose names contain one of the given words, so `ABLATE=none` runs none
+and stops after the baseline's report. `ABLATE=model` hides each flora model loaded, in turn, and
+`ABLATE=hemlock,poplar` those models only; a run without `ABLATE` leaves these out.
 
     AT=townsfolk bevy-remote-driver plans/ablate.py
 
@@ -40,8 +43,21 @@ DISTANCE = float(os.environ.get("DIST", "20"))
 LOCATIONS = {
     "forest": ("playground", [110.0, 0.0, 150.0], None),
     "townsfolk": ("playground", [145.0, 0.0, 6.0], -0.75 * math.pi),
+    # Only trees, terrain and a little water, facing north-west (+x, +z).
+    "trees": ("playground", [47.0, 0.0, 78.0], 0.25 * math.pi),
 }
 LOCATION = LOCATIONS[os.environ.get("AT", "forest")]
+# Flora's node names, in the models' glTF files.
+LEAF_NODES = ["leaf", "leaves"]
+BARK_NODES = ["bark"]
+# Flora's models, as `terrain.biomes.json` names them after the `#`.
+FLORA_MODELS = [
+    "buckberry", "dead1", "dead2", "dead3", "dead4", "desert1", "dreamsage", "eldenthorn",
+    "fireweed", "hemlock1", "hemlock2", "hemlock3", "hemlock4", "leechgrass", "pine-arctic1",
+    "pine-arctic2", "pine-arctic3", "pine-drooping", "pine-fluffy", "poplar-green",
+    "poplar-green2", "poplar-green3", "poplar-ivory", "poplar-orange", "poplar-yellow", "rimeslip",
+    "scragbush", "scrubthistle", "sticklebrush", "whitespear", "wracknettle",
+]
 HOME = "panoply_actors::precinct_actors::HomePrecinct"
 SKINNED_MESH = "bevy_mesh::skinning::SkinnedMesh"
 ANIMATION_GRAPH = "bevy_animation::graph::AnimationGraphHandle"
@@ -65,6 +81,68 @@ def frame_time(driver, seconds=1.5):
     time.sleep(seconds)
     f1, t1 = driver.frame(), time.monotonic()
     return (t1 - t0) * 1000 / max(1, f1 - f0)
+
+
+def render_diagnostics(driver, samples=30):
+    """Each `render/` diagnostic averaged over `samples` readings, since a reading is the latest
+    frame's."""
+    readings = {}
+    for _ in range(samples):
+        driver.frames(4)
+        for diagnostic in driver.call("diagnostics.get", {})["diagnostics"]:
+            path, value = diagnostic["path"], diagnostic["value"]
+            if path.startswith("render/") and value is not None:
+                readings.setdefault(path, []).append(value)
+    return {path: sum(values) / len(values) for path, values in readings.items()}
+
+
+def window_pixels(driver):
+    window = driver.call(
+        "world.get_components", {"entity": driver.window, "components": [WINDOW]}
+    )["components"][WINDOW]["resolution"]
+    return window["physical_width"] * window["physical_height"]
+
+
+def opaque_summary(driver):
+    """The main opaque pass's GPU time and shading, for one experiment's line; empty where the
+    backend does not record them."""
+    average = render_diagnostics(driver)
+    name = "render/main_opaque_pass_3d"
+    ms = average.get(f"{name}/elapsed_gpu")
+    if ms is None:
+        return ""
+    fragments = average.get(f"{name}/fragment_shader_invocations", 0.0)
+    vertices = average.get(f"{name}/vertex_shader_invocations", 0.0)
+    pixels = window_pixels(driver)
+    return f"; opaque pass {ms:.2f} ms, {fragments / pixels:.2f} fragments/pixel, {vertices:,.0f} vertices"
+
+
+def gpu_report(driver):
+    """Prints each render pass's GPU time and shader invocations. Bevy records these on Vulkan and
+    DX12 only, so on Metal this says so and prints nothing else."""
+    average = render_diagnostics(driver)
+    passes = sorted(
+        (
+            (path.removesuffix("/elapsed_gpu"), value)
+            for path, value in average.items()
+            if path.endswith("/elapsed_gpu")
+        ),
+        key=lambda row: -row[1],
+    )
+    if not passes:
+        print("GPU: no timestamps on this backend")
+        return
+    pixels = window_pixels(driver)
+    print(f"GPU, ms per frame:{sum(ms for _, ms in passes):.2f} in all; window {pixels} pixels")
+    for name, ms in passes:
+        fragments = average.get(f"{name}/fragment_shader_invocations")
+        vertices = average.get(f"{name}/vertex_shader_invocations")
+        counts = ""
+        if fragments is not None:
+            counts += f"  {fragments / pixels:.2f} fragments per pixel"
+        if vertices is not None:
+            counts += f"  {vertices:,.0f} vertices"
+        print(f"  {name}: {ms:.2f} ms{counts}")
 
 
 def set_visible(driver, name, visible):
@@ -204,8 +282,20 @@ def run(driver):
     for key, value in passes[:12]:
         print(f"  {key}: {value:.2f} ms")
     print(f"baseline: {base:.1f} ms")
+    gpu_report(driver)
+
+    def hide_all(names):
+        for name in names:
+            set_visible(driver, name, False)
+
+    def show_all(names):
+        for name in names:
+            set_visible(driver, name, True)
 
     experiments = [
+        # The models' own node names: every tree and shrub is opaque bark and alpha-masked leaves.
+        ("leaves hidden", lambda: hide_all(LEAF_NODES), lambda: show_all(LEAF_NODES)),
+        ("bark hidden", lambda: hide_all(BARK_NODES), lambda: show_all(BARK_NODES)),
         # Switching shadow_maps_enabled off at runtime panics bevy_pbr 0.20's render thread
         # ("Failed to get directional light visible entities for cascade"), so there is no
         # shadows experiment; hiding flora removes the trees from the shadow pass as well.
@@ -233,15 +323,28 @@ def run(driver):
     # ABLATE=msaa,env runs only experiments whose names contain one of the words.
     only = [w for w in os.environ.get("ABLATE", "").split(",") if w]
     if only:
+        # One experiment per flora model, only when asked for, since each costs seconds. A model
+        # hidden is hidden everywhere it is loaded, whether or not it is in view.
+        for model in FLORA_MODELS:
+            count = len(driver.select(model))
+            if count and any(w in f"model {model}" for w in only):
+                experiments.append(
+                    (
+                        f"model {model} ({count} loaded)",
+                        lambda model=model: set_visible(driver, model, False),
+                        lambda model=model: set_visible(driver, model, True),
+                    )
+                )
         experiments = [e for e in experiments if any(w in e[0] for w in only)]
     for name, apply, undo in experiments:
         apply()
         t = frame_time(driver)
+        gpu = opaque_summary(driver)
         if name == "quarter pixels":
             driver.screenshot("quarter_pixels")
         undo()
         again = frame_time(driver)
-        print(f"{name}: {t:.1f} ms (saves {again - t:+.1f} ms; restored {again:.1f} ms)")
+        print(f"{name}: {t:.1f} ms (saves {again - t:+.1f} ms; restored {again:.1f} ms){gpu}")
 
     # Not undone, so they run last, each on top of the ones before. Restoring animation or actors
     # would mean rebuilding them, and image-based lighting its cubemap handles.

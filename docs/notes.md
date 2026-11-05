@@ -6,6 +6,9 @@ calls for work becomes an issue in [issues.md](issues.md).
 - Test machines, by the short hostname that `docs/perf.csv` records:
   - `Falryn`: MacBook Pro (MacBookPro18,3), Apple M1 Pro (8 performance and 2 efficiency cores,
     16-core GPU, Metal 3), 32 GB, built-in 3024x1964 Liquid Retina XDR display (up to 120 Hz).
+  - `Aerdra`: Framework Laptop 13 (AMD Ryzen AI 300 Series), Ryzen AI 7 350 (8 cores, 16 threads),
+    integrated Radeon 860M (Vulkan, RADV), 14 GB usable, shared with the GPU, built-in 2880x1920
+    display (120 Hz), Ubuntu 26.04.
 - Performance at playground (80, 80), camera distance 40, M1 Pro, from `plans/ablate.py`
   (2026-10-10), in the developer's window: 13.7 ms/frame. (Plans now run in the default window
   size, where the same spot measures 15.6 ms; compare runs only with each other.) Camera off:
@@ -42,6 +45,31 @@ calls for work becomes an issue in [issues.md](issues.md).
   vs 2x2 shadow filtering 1.3 ms. `GeneratedEnvironmentMapLight` re-filters every frame (35 ms).
   `skybox_diffuse.ktx2` was 1024x1024x6 with no mips; `skybox_diffuse_32.ktx2` is a 32x32 box
   filter of it, visually identical, 0.6 ms cheaper.
+- GPU costs on `Aerdra` at playground (47, 78), facing north-west, distance 20,
+  `AT=trees plans/ablate.py` (2026-11-04): 15 ms a frame, 4.4 ms with the camera off, and 10 ms of
+  GPU time over the render passes, of which the main opaque pass is 7.7 ms. In that pass, hiding
+  flora saves 4.8 ms, ground 2.35 ms, outlines 0.5 ms; MSAA off saves 1.8 ms there and 3.9 ms over
+  the frame; three quarters of the pixels saves 4.6 ms. Temporary edits to `ground.wesl`, measured
+  between normal runs that differ by up to 0.3 ms, save this much in the pass: no shadow receiving
+  at most 0.3 ms (noise), no `apply_pbr_lighting` about 0.5 ms, and a flat color, with neither
+  textures nor lighting, 1.55 ms (2.1 ms over the frame). So of the ground's 2.35 ms, lighting is
+  about 0.5 ms, its textures and blending about 1 ms, and raw fill about 0.8 ms. These figures
+  include the debug `InfiniteGrid`, which PAN32 removed: hiding it there saved about 0.7 ms a frame,
+  taking the transparent pass from 0.69 to 0.10 ms.
+- Flora at the same spot, after PAN32 (`AT=trees ABLATE=leaves,bark,model,flora`, 2026-11-04), from
+  about 15 ms a frame and 8 ms in the main opaque pass. Vertices per frame add up exactly: bark
+  196,666, its outlines 196,666, leaves 138,520, everything else 86,248; outlines hidden with bark
+  because they are drawn only for it. Hiding leaves saves 3.4 ms a frame and 2.08 fragments per
+  pixel; hiding bark, with its outlines, saves 2.4 ms and only 0.21. By model, across all loaded
+  parcels: `poplar-green` (1,011 loaded) 4.3 ms, `poplar-green2` (197) 0.8, `poplar-orange` (198)
+  0.5, `poplar-yellow` (84) 0.4, so about 3 to 5 us a tree: no model stands out per tree, and
+  `poplar-green` costs most by number. Shrubs and herbs: 0.3 ms or less each.
+- `ablate.py`'s GPU figures come from `RenderDiagnosticsPlugin`, which records them on Vulkan and
+  DX12 and not on Metal, so `Falryn` has no GPU figures. `fragment_shader_invocations` is no clean
+  overdraw count: the flat ground above took the pass from 3.43 to 2.75 fragments per pixel with no
+  geometry changed, perhaps because a shader without derivatives needs no helper invocations (a
+  guess). `per_view_shadow_pass` reports 0.01 ms, too low to be the shadow map's drawing, so shadows
+  are not visible in these figures.
 - Hitch log (`panoply_editor::diagnostics::hitch`): logs each frame over 14 ms after startup,
   with what the three frames before it spawned (precincts, parcels, parcels shown, scenery,
   scenes, meshes, images, pipelines, physics steps, colliders), and each pipeline created after

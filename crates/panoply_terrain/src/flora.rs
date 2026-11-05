@@ -230,7 +230,10 @@ pub fn insert_flora(
                                             // Replace flora model
                                             flora_cmp.handle = handle.clone();
                                             flora_cmp.label = fragment.to_string();
-                                            commands.entity(flora).remove::<WorldAssetRoot>();
+                                            commands
+                                                .entity(flora)
+                                                .remove::<WorldAssetRoot>()
+                                                .insert(Name::new(fragment.to_string()));
                                         }
                                         if *transform_cmp != transform {
                                             *transform_cmp = transform;
@@ -248,6 +251,7 @@ pub fn insert_flora(
                                                     label: fragment.to_string(),
                                                     transform,
                                                 },
+                                                Name::new(fragment.to_string()),
                                                 Propagate(realm.layer.clone()),
                                             ))
                                             .id(),

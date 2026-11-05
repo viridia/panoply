@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use bevy::{
     camera::visibility::RenderLayers,
-    dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridPlugin},
     prelude::*,
     settings::SettingsPlugin,
     window::ExitCondition,
@@ -68,7 +67,6 @@ fn main() {
         // Adds FrameTimeDiagnosticsPlugin, so must come before RemoteDriverPlugin.
         ScreenDiagsPlugin,
         RemoteDriverPlugin,
-        InfiniteGridPlugin,
         InputPlugin,
     ))
     // .insert_resource(RaycastBackendSettings {
@@ -122,13 +120,6 @@ fn setup(mut commands: Commands) {
     //     }
     //     .into(),
     // });
-
-    // Debug grid on the ground plane, visible in every realm.
-    commands.spawn((
-        Name::new("InfiniteGrid"),
-        InfiniteGrid,
-        RenderLayers::from_layers(&(0..16).collect::<Vec<_>>()),
-    ));
 
     // TODO: Move to 'view' module
     // Ui Camera
