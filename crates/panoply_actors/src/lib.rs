@@ -1,4 +1,5 @@
 use bevy::{app::Propagate, prelude::*};
+use bevy_action_map::prelude::*;
 use panoply_core::{realm_physics::realm_physics_system, Realm, Viewpoint};
 use panoply_exemplar::{Exemplar, ExemplarServer, InstanceAspects, InstanceType, UpdateAspects};
 
@@ -17,7 +18,9 @@ mod precinct_actors;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
 pub use actor_aspect::{ActorScale, CollisionSize};
-pub use actor_control::{ActorIntent, PlayerActor};
+pub use actor_control::{
+    ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerWalk,
+};
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
 pub use actor_physics::{ActorMotion, ActorResting};
@@ -86,6 +89,15 @@ impl Plugin for ActorsPlugin {
             .register_type::<WieldedItems>()
             .register_type::<ItemModel>()
             .register_type::<EquipSlot>()
+            .add_context::<PlayerControl>(|context| {
+                context.bind::<PlayerWalk>(AxisButtons::new(KeyCode::KeyS, KeyCode::KeyW));
+                context.bind::<PlayerFast>(KeyCode::ShiftLeft);
+                context.bind::<PlayerFast>(KeyCode::ShiftRight);
+                context.bind::<PlayerInteract>(KeyCode::KeyE).press();
+            })
+            .add_systems(Startup, |mut commands: Commands| {
+                commands.spawn((Name::new("PlayerControl"), PlayerControl));
+            })
             .add_systems(
                 Update,
                 (

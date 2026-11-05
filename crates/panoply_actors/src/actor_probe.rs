@@ -1,12 +1,17 @@
 //! The interaction probe: E casts a ray from the player's actor along its facing and logs what it
-//! hits. TODO(PAN18): E as an action. TODO(PAN21): the hit's interactions.
+//! hits. TODO(PAN21): the hit's interactions.
 
 use bevy::prelude::*;
+use bevy_action_map::prelude::*;
 use panoply_core::{realm_physics::collision_groups, RealmPhysics};
 use panoply_scenery::scenery_element::SceneryElement;
 use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
-use crate::{actor_physics::capsule, Actor, ActorMotion, ActorScale, CollisionSize, PlayerActor};
+use crate::{
+    actor_control::{PlayerControl, PlayerInteract},
+    actor_physics::capsule,
+    Actor, ActorMotion, ActorScale, CollisionSize, PlayerActor,
+};
 
 /// How far the probe reaches from the actor's axis: the default interaction distance (R92).
 const PROBE_REACH: f32 = 1.5;
@@ -14,7 +19,7 @@ const PROBE_REACH: f32 = 1.5;
 /// Logs the first collider within reach ahead of the player's actor, from the middle of its
 /// capsule. The canopy is passed through (D39), and actors are not yet colliders (D41).
 pub(crate) fn probe_interaction(
-    keys: Res<ButtonInput<KeyCode>>,
+    input: ContextActions<PlayerControl>,
     players: Query<
         (&Actor, &ActorMotion, Option<&CollisionSize>, Option<&ActorScale>),
         With<PlayerActor>,
@@ -22,7 +27,7 @@ pub(crate) fn probe_interaction(
     realms: Query<&RealmPhysics>,
     names: Query<(Option<&Name>, Option<&SceneryElement>)>,
 ) {
-    if !keys.just_pressed(KeyCode::KeyE) {
+    if !input.fired::<PlayerInteract>() {
         return;
     }
     let Ok((actor, motion, size, scale)) = players.single() else {

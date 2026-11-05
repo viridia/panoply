@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN33.**
+**Next: PAN34.**
 
 ## Next
 
@@ -26,6 +26,16 @@ components and every layer restartable from saved state (R104).
   not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
   spot; before navigation, the nearest cell outside the canopy cover. Tune the canopy and trunk
   height (`CANOPY_HEIGHT`, D39).
+- **PAN33 Widget keys through the mapper.** The mapper feeds focused widgets, so an action mapper
+  and feathers work together: for any game, not only this one, so no Panoply types, and a home in
+  `bevy_action_map` (its X14) once proven. `InputDispatchPlugin` goes; two contexts bind
+  `ControlClass::AnyButton` and share an observer that triggers `FocusedInput<KeyboardInput>` at the
+  focus, or the window. One claims: above every shortcut, consuming, active while a modal is open or
+  a text input has focus. One falls through: below everything, not consuming, active otherwise. A
+  game widget's context consumes what it handles, so a `bevy_ui_widgets::Button` does not activate
+  twice. Test key repeat (held Backspace), same-frame response, IME, and keys with no named
+  `KeyCode`; check `bevy_immediate` for readers of the plugin's events. Records the decision, beside
+  the mapper's D23.
 - **PAN26 Go To dialog.** G opens a feathers dialog: a text input filtering the nav points sorted by
   name, Cancel and Go. Click selects, double-click or Go travels by `GotoLocation`, Esc cancels. The
   filter, used across the editor later, ports faery's `createSearchFilter` (`editor/src/controls/`,
@@ -36,12 +46,10 @@ components and every layer restartable from saved state (R104).
   pattern. The list widget is written for PAN29 to reuse.
 - **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
   scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
-  in that mode. Today the free camera's context and PAN3g's direct key reads are both always on, so
+  in that mode. Today the free camera's context and PAN18's player context are both always on, so
   the arrows and WASD each drive one thing in every mode. First see X3, which settles how editor
   modes take the pointer and keys. Go To (PAN26) in play moves the player, and the camera follows as
   usual; in an editor mode it moves the camera, as before.
-- **PAN18 Player input on `bevy_action_map`.** Moves PAN3g's and PAN3k's direct key reads onto
-  actions, in PAN22's play context.
 - **PAN27 Mode selector.** A control at the top of the editor panel choosing the editor mode (realm,
   terrain, scenery, catalogs, play; X3), saved in settings. Before designing: the author's
   screenshots of faery's mode buttons, and the Bevy editor mocks' toolbar. After PAN22, whose states
@@ -73,7 +81,7 @@ components and every layer restartable from saved state (R104).
   probe runs continuously, as faery's did: while what it hits has an enabled interaction, its
   caption shows as a prompt at the bottom of the screen, and E performs it; a choice among several
   is X43. One aspect end to end, the one whose action needs least else (a door changes its collider
-  and model; a container needs an inventory dialog). After PAN18, so E is an action.
+  and model; a container needs an inventory dialog).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

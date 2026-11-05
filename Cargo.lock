@@ -4783,6 +4783,7 @@ name = "panoply_actors"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_action_map",
  "panoply_core",
  "panoply_exemplar",
  "panoply_precinct",
