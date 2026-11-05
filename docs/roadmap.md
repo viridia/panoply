@@ -26,11 +26,6 @@ components and every layer restartable from saved state (R104).
   not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
   spot; before navigation, the nearest cell outside the canopy cover. Tune the canopy and trunk
   height (`CANOPY_HEIGHT`, D39).
-- **PAN25 Nav points.** Named places to travel to: `WorldLocation` and its loader, from
-  `src/world/locations.rs`, moved as `NavPoint` to `panoply_core` beside `GotoLocation`, loading
-  `assets/world.locations.json` (51 points). Two roles: the editor travels to any of them, and those
-  with an icon mark the in-game map (later). faery's `INavPoint` also had `viewAngle` and `center`
-  (the icon's map position); add them when travel or the map needs them.
 - **PAN26 Go To dialog.** G opens a feathers dialog: a text input filtering the nav points sorted by
   name, Cancel and Go. Click selects, double-click or Go travels by `GotoLocation`, Esc cancels. The
   filter, used across the editor later, ports faery's `createSearchFilter` (`editor/src/controls/`,

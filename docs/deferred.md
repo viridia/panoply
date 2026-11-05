@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X56.**
+**Next: X57.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -400,3 +400,7 @@ dropped, not deferred. Numbers are never reused.
   would not help a GPU bottleneck: `plans/ablate.py`'s GPU figures and vendor tools cover that, and
   samply already covers CPU cost. *Gate:* a hitch that the hitch log (`PANOPLY_HITCH_LOG=1`) cannot
   explain.
+- **X56** The in-game map: nav points with an `icon` mark it. faery's `INavPoint` also had `center`,
+  the icon's position on the map where it differs from the point's, and `viewAngle`, the heading on
+  arrival; add each to `NavPoint` when something reads it. *Gate:* the map is planned, or travel
+  needs a heading.

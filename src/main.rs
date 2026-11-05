@@ -7,7 +7,7 @@ use bevy::{
 };
 // TODO(X5): restore
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use panoply_core::{HudCamera, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
+use panoply_core::{HudCamera, PanoplyCorePlugin, PrimaryCamera, Realm, ReservedLayers, Viewpoint};
 use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
@@ -22,11 +22,9 @@ mod input;
 mod remote_driver;
 mod view;
 mod window_settings;
-mod world;
 
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, remote_driver::RemoteDriverPlugin,
-    world::WorldPlugin,
 };
 use panoply_actors::ActorsPlugin;
 use panoply_render::PanoplyRenderPlugin;
@@ -88,7 +86,7 @@ fn main() {
     .add_systems(PostUpdate, view::viewport::update_camera_viewport)
     .add_plugins((
         ExemplarPlugin,
-        WorldPlugin,
+        PanoplyCorePlugin,
         PanoplyRenderPlugin,
         PanoplyTerrainPlugin,
         PanoplySceneryPlugin,

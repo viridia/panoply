@@ -1,6 +1,7 @@
 mod hex_color;
 pub mod layers;
 pub mod metrics;
+pub mod nav_point;
 pub mod random;
 pub mod realm;
 pub mod realm_physics;
@@ -17,6 +18,8 @@ use bevy::{
 };
 pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
+use nav_point::NavPointsLoader;
+pub use nav_point::{NavPoint, NavPointsAsset, NavPointsHandleResource};
 pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
 use realm_physics::realm_physics_system;
@@ -43,6 +46,9 @@ impl Plugin for PanoplyCorePlugin {
             .register_asset_loader(RealmsLoader)
             .init_asset::<RealmData>()
             .init_resource::<RealmsHandleResource>()
+            .register_asset_loader(NavPointsLoader)
+            .init_asset::<NavPointsAsset>()
+            .init_resource::<NavPointsHandleResource>()
             .init_resource::<Sunlight>()
             .init_resource::<ViewportInset>()
             .add_message::<GotoLocation>()

@@ -1,0 +1,114 @@
+use bevy::asset::io::Reader;
+use bevy::asset::{AssetLoader, LoadContext};
+use bevy::prelude::*;
+use bevy::reflect::TypePath;
+use serde::Deserialize;
+use thiserror::Error;
+
+/// A named place to travel to.
+#[derive(Deserialize, Clone, Debug)]
+pub struct NavPoint {
+    /// Unique name of this nav point, such as `"stick-village"`.
+    pub name: String,
+
+    /// Name of the realm holding this nav point.
+    pub realm: String,
+
+    /// Where a traveler arrives, in meters.
+    pub pos: Vec3,
+
+    /// Human-readable name, if it differs from `name`.
+    pub caption: Option<String>,
+
+    /// The icon marking this nav point on the in-game map, which shows only those that have one:
+    /// `village`, `town`, `keep`, `cave`, `ruin` or `camp`.
+    pub icon: Option<String>,
+}
+
+impl NavPoint {
+    pub fn display_name(&self) -> &str {
+        self.caption.as_deref().unwrap_or(&self.name)
+    }
+}
+
+/// Every nav point in the world, from `world.locations.json`.
+#[derive(TypePath, Asset)]
+pub struct NavPointsAsset(pub Vec<NavPoint>);
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum NavPointsLoaderError {
+    #[error("Could not load nav points: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not decode nav points: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
+#[derive(Default, TypePath)]
+pub struct NavPointsLoader;
+
+impl AssetLoader for NavPointsLoader {
+    type Asset = NavPointsAsset;
+    type Error = NavPointsLoaderError;
+    type Settings = ();
+
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        Ok(NavPointsAsset(serde_json::from_slice(&bytes)?))
+    }
+
+    fn extensions(&self) -> &[&str] {
+        &["locations.json"]
+    }
+}
+
+/// Keeps the nav points loaded, and finds them in `Assets<NavPointsAsset>`.
+#[derive(Resource)]
+pub struct NavPointsHandleResource(pub Handle<NavPointsAsset>);
+
+impl FromWorld for NavPointsHandleResource {
+    fn from_world(world: &mut World) -> Self {
+        let server = world.resource::<AssetServer>();
+        NavPointsHandleResource(server.load("world.locations.json"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    /// The authored file decodes, and each point names a realm that exists, since `GotoLocation`
+    /// to an unknown realm does nothing.
+    #[test]
+    fn authored_nav_points_name_real_realms() {
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let bytes = std::fs::read(assets.join("world.locations.json")).unwrap();
+        let points: Vec<NavPoint> = serde_json::from_slice(&bytes).unwrap();
+        assert!(!points.is_empty());
+        for point in &points {
+            let realm = assets.join(format!("realms/{}.realm.json", point.realm));
+            assert!(realm.exists(), "{} is in {}", point.name, point.realm);
+        }
+    }
+
+    #[test]
+    fn display_name_prefers_the_caption() {
+        let mut point = NavPoint {
+            name: "stick-village".into(),
+            realm: "playground".into(),
+            pos: Vec3::ZERO,
+            caption: None,
+            icon: None,
+        };
+        assert_eq!(point.display_name(), "stick-village");
+        point.caption = Some("Stick Village".into());
+        assert_eq!(point.display_name(), "Stick Village");
+    }
+}
