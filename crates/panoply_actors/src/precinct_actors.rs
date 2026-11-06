@@ -31,7 +31,8 @@ pub(crate) fn mark_precinct_actors(
     mut events: MessageReader<AssetEvent<PrecinctAsset>>,
 ) {
     for event in events.read() {
-        let (AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id }) = event else {
+        let (AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id }) = event
+        else {
             continue;
         };
         if let Some((entity, _)) = precincts.iter().find(|(_, p)| p.asset.id() == *id) {

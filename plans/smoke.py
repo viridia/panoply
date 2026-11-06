@@ -11,6 +11,11 @@
   beside the view, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
   drawn as a white sphere. The Show menu is clicked twice: the second click lands only if the
   first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
+- Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
+  Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
+  move the selection and Enter travels, to the first point shown if none is selected. An arrow
+  held there does not turn the view. An arrow
+  held there leaves the view where it was.
 - Parcels: those outside the view are hidden, and so are their ground meshes, but stay cached;
   once `goto` returns, the readiness survey shows nothing pending.
 
@@ -39,6 +44,12 @@ WAIT = {"frames": 900, "seconds": 45}
 SPOT = [110.0, 0.0, 150.0]
 # Far from `SPOT`, past the playground's terrain.
 FAR = [400.0, 0.0, 400.0]
+# The nav point "test-inn", from `world.locations.json`.
+TEST_INN = [56.65786741155058, 0.0, 37.0414409317615]
+WAREHOUSE = [41.59800604609949, 0.0, 41.48915667709594]
+COMPUTED = "bevy_ui::ui_node::ComputedNode"
+UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
+MODAL = "bevy_ui_widgets::modal::ModalDialog"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 TERRAIN_GROUP = 1
@@ -64,6 +75,8 @@ def run(driver):
     scenery(driver)
     driver.caption("physics and editor")
     physics(driver)
+    driver.caption("go to dialog")
+    goto_dialog(driver)
     driver.caption("parcels")
     parcels(driver)
     driver.exits("Escape")
@@ -231,6 +244,70 @@ def physics(driver):
     driver.key("KeyT")
     driver.frames(10)
     assert driver.get_resource(INSET, at="left") == 0.0, "view still inset with the panel hidden"
+
+
+def arrived(driver, spot, how):
+    driver.absent("GotoDialog")
+    driver.frames(2)
+    here = view(driver)["position"]
+    print(f"{how}: at {here}")
+    assert abs(here[0] - spot[0]) < 0.01 and abs(here[2] - spot[2]) < 0.01, f"{how}: at {here}"
+
+
+def goto_dialog(driver):
+    # Esc closes the dialog, and only the dialog: outside it, Esc quits.
+    driver.key("KeyG")
+    driver.present("GotoDialog/warehouse")
+    driver.frames(10)
+    # The barrier covers the window, and centers the dialog in it.
+    barrier = driver.get("GotoDialog", COMPUTED, at="size")
+    barrier_at = driver.get("GotoDialog", UI_GLOBAL)[-2:]
+    (modal,) = driver.call(
+        "world.query", {"data": {"components": [COMPUTED, UI_GLOBAL]}, "filter": {"with": [MODAL]}}
+    )
+    dialog = modal["components"][COMPUTED]["size"]
+    dialog_at = modal["components"][UI_GLOBAL][-2:]
+    print(f"barrier {barrier} at {barrier_at}, dialog {dialog} at {dialog_at}")
+    assert barrier_at == [barrier[0] / 2, barrier[1] / 2], "the barrier does not cover the window"
+    assert dialog_at == barrier_at and dialog[1] < barrier[1], "the dialog is not centered"
+    driver.screenshot("goto_dialog_open")
+    driver.key("Escape")
+    driver.absent("GotoDialog")
+
+    # `tein` matches only "test-inn", by its words' starts; the filter box has focus as it opens.
+    driver.key("KeyG")
+    driver.present("GotoDialog/warehouse")
+    driver.type("tein")
+    driver.absent("GotoDialog/warehouse")
+    driver.present("GotoDialog/test-inn")
+    driver.click("GotoDialog/test-inn")
+    driver.screenshot("goto_dialog")
+    driver.click("GotoDialog/Go")
+    arrived(driver, TEST_INN, "click and Go")
+
+    # In the filter box, Down and Up move the selection, and Enter travels.
+    driver.key("KeyG")
+    driver.present("GotoDialog/warehouse")
+    driver.type("wareh")
+    driver.present("GotoDialog/warehouse2")
+    driver.key("ArrowDown")
+    driver.key("ArrowDown")
+    driver.key("ArrowUp")
+    driver.key("Enter")
+    arrived(driver, WAREHOUSE, "arrows and Enter")
+
+    # The filter box keeps a held arrow from the camera for the whole hold, not just its first
+    # frame. Then, with nothing selected, Enter travels to the first point shown.
+    driver.key("KeyG")
+    driver.present("GotoDialog/warehouse")
+    driver.type("tein")
+    driver.absent("GotoDialog/warehouse")
+    before = driver.get("PrimaryCamera", TRANSFORM)
+    hold(driver, "ArrowLeft", 0.5)
+    after = driver.get("PrimaryCamera", TRANSFORM)
+    assert before == after, f"a held arrow in the filter box moved the view: {before} to {after}"
+    driver.key("Enter")
+    arrived(driver, TEST_INN, "Enter")
 
 
 def parcel_visibility(driver):

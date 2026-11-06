@@ -29,9 +29,7 @@
 
 use bevy::{
     ecs::entity::Entities,
-    input::{
-        gamepad::GamepadButtonChangedEvent, mouse::MouseWheel, InputSystems,
-    },
+    input::{gamepad::GamepadButtonChangedEvent, mouse::MouseWheel, InputSystems},
     input_focus::{
         dispatch_focused_input, FocusCause, FocusedInput, InputFocus, InputFocusSystems,
     },
@@ -81,32 +79,32 @@ impl Plugin for WidgetKeysPlugin {
         app.register_required_components::<ModalDialog, ModalDialogFocus>();
         app.add_observer(focus_opened_modal)
             .add_context::<WidgetKeysClaim>(|context| {
-            context.active_if(widget_claims_keys);
-            context
-                .bind_class::<ClaimedWidgetKey>(ControlClass::AnyButton)
-                .consume();
-        })
-        .add_context::<WidgetKeysFallthrough>(|context| {
-            context.bind_class::<UnclaimedWidgetKey>(ControlClass::AnyButton);
-        })
-        .add_observer(deliver_widget_key::<ClaimedWidgetKey>)
-        .add_observer(deliver_widget_key::<UnclaimedWidgetKey>)
-        .add_systems(Startup, |mut commands: Commands| {
-            commands.spawn((Name::new("WidgetKeysClaim"), WidgetKeysClaim));
-            commands.spawn((Name::new("WidgetKeysFallthrough"), WidgetKeysFallthrough));
-        })
-        // The rest of what `InputDispatchPlugin` delivered, as it did. Nothing in Bevy's widgets
-        // reads these today, but a widget of a game's own may.
-        .add_systems(
-            PreUpdate,
-            (
-                dispatch_focused_input::<GamepadButtonChangedEvent>,
-                dispatch_focused_input::<MouseWheel>,
-            )
-                .chain()
-                .in_set(InputFocusSystems::Dispatch)
-                .after(InputSystems),
-        );
+                context.active_if(widget_claims_keys);
+                context
+                    .bind_class::<ClaimedWidgetKey>(ControlClass::AnyButton)
+                    .consume();
+            })
+            .add_context::<WidgetKeysFallthrough>(|context| {
+                context.bind_class::<UnclaimedWidgetKey>(ControlClass::AnyButton);
+            })
+            .add_observer(deliver_widget_key::<ClaimedWidgetKey>)
+            .add_observer(deliver_widget_key::<UnclaimedWidgetKey>)
+            .add_systems(Startup, |mut commands: Commands| {
+                commands.spawn((Name::new("WidgetKeysClaim"), WidgetKeysClaim));
+                commands.spawn((Name::new("WidgetKeysFallthrough"), WidgetKeysFallthrough));
+            })
+            // The rest of what `InputDispatchPlugin` delivered, as it did. Nothing in Bevy's
+            // widgets reads these today, but a widget of a game's own may.
+            .add_systems(
+                PreUpdate,
+                (
+                    dispatch_focused_input::<GamepadButtonChangedEvent>,
+                    dispatch_focused_input::<MouseWheel>,
+                )
+                    .chain()
+                    .in_set(InputFocusSystems::Dispatch)
+                    .after(InputSystems),
+            );
     }
 }
 
@@ -136,9 +134,9 @@ fn focus_opened_modal(
     parents: Query<&ChildOf>,
 ) {
     let dialog = add.event_target();
-    let inside = focus
-        .get()
-        .is_some_and(|focused| focused == dialog || parents.iter_ancestors(focused).any(|e| e == dialog));
+    let inside = focus.get().is_some_and(|focused| {
+        focused == dialog || parents.iter_ancestors(focused).any(|e| e == dialog)
+    });
     if !inside {
         focus.set(dialog, FocusCause::Navigated);
     }
@@ -206,7 +204,12 @@ mod tests {
 
     fn app() -> (App, Entity) {
         let mut app = App::new();
-        app.add_plugins((InputPlugin, InputFocusPlugin, ActionMapPlugin, WidgetKeysPlugin));
+        app.add_plugins((
+            InputPlugin,
+            InputFocusPlugin,
+            ActionMapPlugin,
+            WidgetKeysPlugin,
+        ));
         app.add_context::<OnFoot>(|context| {
             context.bind::<Walk>(KeyCode::KeyW);
         });
@@ -225,10 +228,16 @@ mod tests {
                 }
             },
         );
-        app.add_systems(Update, |input: ContextActions<OnFoot>, mut seen: ResMut<Seen>| {
-            seen.walked |= input.fired::<Walk>();
-        });
-        let window = app.world_mut().spawn((Window::default(), PrimaryWindow)).id();
+        app.add_systems(
+            Update,
+            |input: ContextActions<OnFoot>, mut seen: ResMut<Seen>| {
+                seen.walked |= input.fired::<Walk>();
+            },
+        );
+        let window = app
+            .world_mut()
+            .spawn((Window::default(), PrimaryWindow))
+            .id();
         // Startup spawns the contexts.
         app.update();
         (app, window)

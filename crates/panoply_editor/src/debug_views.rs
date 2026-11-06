@@ -117,7 +117,12 @@ fn draw_physics(
     q_realms: Query<&RealmPhysics>,
     q_parcels: Query<(Entity, &Visibility), With<Parcel>>,
     q_actors: Query<
-        (&Actor, &Transform, Option<&CollisionSize>, Option<&ActorScale>),
+        (
+            &Actor,
+            &Transform,
+            Option<&CollisionSize>,
+            Option<&ActorScale>,
+        ),
         With<ActorMotion>,
     >,
     mut pipeline: ResMut<PhysicsDebugRender>,

@@ -123,3 +123,9 @@ calls for work becomes an issue in [issues.md](issues.md).
   Overland has one precinct here; the old engine's overland rooms were not migrated.
 - Floor regions have identity transforms: their outlines are in precinct coordinates.
 - With `dynamic_linking`, run via `cargo run`; the bare binary can't find `libstd`.
+- bsn `#name`s collide across a nested macro (Bevy 784b85d): a `bsn_list!` written inside a `bsn!`'s
+  prop (`@contents: bsn_list! {...}`) gave its first `#name` the same entity as the outer scene's
+  first, so a dialog's barrier and its Cancel button became one entity, parented to the footer. The
+  same `bsn_list!` spliced straight into `Children [...]` does not collide, so the cause lies in how
+  a scene component's props resolve, not in the nested macro's call site. Build such a list in a
+  function of its own (`goto::dialog_contents`). Filed as bevy#26446.

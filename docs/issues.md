@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I13.**
+**Next: I16.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -53,3 +53,13 @@ confirmed by running something or only by reading. Numbers are never reused.
   owner, as a child of the owner, so hidden owners hide their lines and F3 and the group checkboxes
   only switch visibility; actors' capsules stay immediate. Unchecked: whether retained gizmos are
   frustum-culled or only follow `Visibility`. Confirmed by running.
+- **I13** Walls in shadow look flat: on the Marheim palace (nav point `town.marheim`), the sides
+  facing away from the sun show none of their modeled relief (pilasters, panels, moldings), one tone
+  across the face. Likely cause: in shadow only the hemisphere ambient lights them, and it varies
+  only with how far a face points up, so every vertical face turned the same way gets the same
+  light. Candidates: SSAO, a weak unshadowed fill light opposite the sun, or ambient that depends on
+  more of the normal. Seen in the author's screenshot; the cause read, not run.
+- **I15** In the Go To filter box, holding Up or Down steps the list once rather than repeating:
+  `nav_point_list` binds them as `Button` actions, and the mapper passes OS key repeats only to
+  class bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump
+  the lock here and add it to the two bindings. Seen by the author; the cause read, not run.

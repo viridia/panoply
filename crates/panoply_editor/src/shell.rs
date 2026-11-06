@@ -1,6 +1,6 @@
 //! The editor's shell: a panel at the left of the game's view, split from it by a handle that
-//! drags. T shows or hides the panel. The panel holds the Show menu, which turns debug views on
-//! and off.
+//! drags. T shows or hides the panel, and G opens the Go To dialog (`goto`). The panel holds the
+//! Show menu, which turns debug views on and off.
 
 use std::time::Duration;
 
@@ -26,10 +26,10 @@ use bevy_immediate::{
     ui::{checked::ImmUiChecked, CapsUiFeathers},
     Imm, ImmEntity,
 };
-use panoply_core::{realm_physics::collision_groups, ViewOverlay, ViewportInset};
+use panoply_core::{realm_physics::collision_groups, GameViewNode, ViewOverlay, ViewportInset};
 use rapier3d::prelude::Group;
 
-use crate::debug_views::DebugViews;
+use crate::{debug_views::DebugViews, goto::OpenGotoDialog};
 
 /// Narrowest either pane may be, in logical pixels.
 const MIN_PANE_WIDTH: f32 = 200.0;
@@ -90,6 +90,7 @@ impl Plugin for EditorShellPlugin {
         app.add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ShowMenu>::new())
             .add_context::<EditorShellControl>(|context| {
                 context.bind::<TogglePanel>(KeyCode::KeyT);
+                context.bind::<OpenGotoDialog>(KeyCode::KeyG);
             })
             .add_systems(
                 Startup,
@@ -149,6 +150,7 @@ fn shell() -> impl Scene {
                 @FeathersPane { @size: 3.0, @min_size: MIN_PANE_WIDTH }
                 #EditorView
                 ViewPane
+                GameViewNode
             ]
         ]
     }

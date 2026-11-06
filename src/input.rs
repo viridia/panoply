@@ -1,10 +1,9 @@
 use bevy::{
-    input::mouse::{MouseScrollUnit, MouseWheel},
-    prelude::*,
+    input::mouse::MouseScrollUnit, picking::events::PointerScroll, prelude::*,
     settings::SaveSettingsSync,
 };
 use bevy_action_map::prelude::*;
-use panoply_core::Viewpoint;
+use panoply_core::{GameViewNode, Viewpoint};
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
@@ -72,7 +71,8 @@ impl Plugin for InputPlugin {
                 commands.spawn((Name::new("ViewpointControl"), ViewpointControl));
                 commands.spawn((Name::new("AppControl"), AppControl));
             })
-            .add_systems(Update, (move_viewpoint, scroll_rotate_viewpoint, quit));
+            .add_systems(Update, (move_viewpoint, quit))
+            .add_observer(scroll_rotate_viewpoint);
     }
 }
 
@@ -107,17 +107,27 @@ fn move_viewpoint(
     }
 }
 
-/// Horizontal trackpad scroll rotates the viewpoint.
-// TODO: Observe `PointerScroll` on the game view instead, so scrolls over UI go to the UI
-// (ledger X8).
+/// Horizontal trackpad scroll over the game's view rotates the viewpoint; a scroll over UI goes to
+/// the UI. Every scroll bubbles up to the window, so this acts there, once, on scrolls that started
+/// on the window itself or within a [`GameViewNode`].
 fn scroll_rotate_viewpoint(
-    mut scroll_events: MessageReader<MouseWheel>,
+    scroll: On<PointerScroll>,
+    windows: Query<(), With<Window>>,
+    game_views: Query<(), With<GameViewNode>>,
+    parents: Query<&ChildOf>,
     mut viewpoint: ResMut<Viewpoint>,
 ) {
-    for ev in scroll_events.read() {
-        if ev.unit == MouseScrollUnit::Pixel {
-            viewpoint.rotate(ev.x * -SCROLL_ROTATION_SPEED);
-        }
+    let at = scroll.event_target();
+    if !windows.contains(at) || scroll.unit != MouseScrollUnit::Pixel {
+        return;
+    }
+    let origin = scroll.original_event_target();
+    let over_view = origin == at
+        || std::iter::once(origin)
+            .chain(parents.iter_ancestors(origin))
+            .any(|e| game_views.contains(e));
+    if over_view {
+        viewpoint.rotate(scroll.x * -SCROLL_ROTATION_SPEED);
     }
 }
 

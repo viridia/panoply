@@ -491,7 +491,7 @@ dependencies = [
 [[package]]
 name = "bevy_action_map"
 version = "0.2.0-dev"
-source = "git+https://github.com/viridia/bevy_action_map.git?branch=main#8c8a1bbe2e580c90a9984ac8dc4e99acb52143df"
+source = "git+https://github.com/viridia/bevy_action_map.git?branch=main#13e128bd042897ba60de81b2e118afb568c6dffb"
 dependencies = [
  "bevy_action_map_macros",
  "bevy_app",
@@ -512,7 +512,7 @@ dependencies = [
 [[package]]
 name = "bevy_action_map_macros"
 version = "0.2.0-dev"
-source = "git+https://github.com/viridia/bevy_action_map.git?branch=main#8c8a1bbe2e580c90a9984ac8dc4e99acb52143df"
+source = "git+https://github.com/viridia/bevy_action_map.git?branch=main#13e128bd042897ba60de81b2e118afb568c6dffb"
 dependencies = [
  "proc-macro2",
  "quote",

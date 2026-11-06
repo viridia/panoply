@@ -21,14 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN26 Go To dialog.** G opens a feathers dialog: a text input filtering the nav points sorted by
-  name, Cancel and Go. Click selects, double-click or Go travels by `GotoLocation`, Esc cancels. The
-  filter, used across the editor later, ports faery's `createSearchFilter` (`editor/src/controls/`,
-  with its tests): spaces AND terms, commas OR them; a term matches as a case-insensitive substring,
-  or letter by letter against word starts, each letter starting a word or continuing the word just
-  matched (`bb` matches "BasicBlock", `stvi` "stick-village"). Words start at a capital, `-`, `_` or
-  space. A matcher of its own, not faery's unanchored regex, which let a typed `.` or `+` change the
-  pattern. The list widget is written for PAN29 to reuse.
 - **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
   scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
   in that mode. Today the free camera's context and PAN18's player context are both always on, so
@@ -127,7 +119,12 @@ components and every layer restartable from saved state (R104).
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
-  game's click handling runs only while the game has the pointer (X3, editor tools).
+  game's click handling runs only while the game has the pointer (X3, editor tools). Scrolls over
+  pickable world entities must still turn the view: `input::scroll_rotate_viewpoint` takes only
+  scrolls that start on the window or within a `GameViewNode`. The author's approach: a backstop
+  picking backend, ordered behind every other, that takes whatever hits the others missed, so
+  colliders and world objects get their hits and a miss still lands on the world. The author has
+  written one before; find it first.
 - **PAN4 Portals**: a rewrite, not a restoration (D21). `src/portals` is reference
   (`REFERENCE(PAN4)`), deleted once portals work. Portals go in a crate, since the editor places
   them (D37, D40); which one is open. The old code's portal aspect attaches to walls and fixtures

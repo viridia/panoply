@@ -289,7 +289,10 @@ pub(crate) fn build_actor_graph(
             });
             states.insert(state, state_clip.clone());
         }
-        let Some(stand) = states.get(&ActorAnimationState::Stand).map(|stand| stand.node) else {
+        let Some(stand) = states
+            .get(&ActorAnimationState::Stand)
+            .map(|stand| stand.node)
+        else {
             report("Stand");
             commands.entity(entity).remove::<ActorArmature>();
             continue;
@@ -367,11 +370,13 @@ pub(crate) fn animate_actor_state(
             continue;
         };
         if next != *state {
-            let old = clips.get(*state).filter(|_| state.nominal_speed().is_some());
+            let old = clips
+                .get(*state)
+                .filter(|_| state.nominal_speed().is_some());
             *state = next;
             // The fraction of the stride the old gait had reached.
-            let phase = old
-                .and_then(|old| Some(player.animation(old.node)?.seek_time() / duration(old)?));
+            let phase =
+                old.and_then(|old| Some(player.animation(old.node)?.seek_time() / duration(old)?));
             if transitions.get_main_animation() != Some(next_clip.node) {
                 let active = transitions.play(&mut player, next_clip.node, next.clips().fade);
                 active.set_speed(1.0);

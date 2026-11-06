@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN26** G opens Go To: type to filter the named places, then Go or Enter travels to one.
 - **PAN33** Typing in a text field or a dialog no longer also drives the game behind it.
 - **PAN18** W and S held together now stop the player's actor; before, W won.
 - **PAN25** A contributor finds the 51 named places to travel to in `panoply_core`, as `NavPoint`.

@@ -21,7 +21,12 @@ const PROBE_REACH: f32 = 1.5;
 pub(crate) fn probe_interaction(
     input: ContextActions<PlayerControl>,
     players: Query<
-        (&Actor, &ActorMotion, Option<&CollisionSize>, Option<&ActorScale>),
+        (
+            &Actor,
+            &ActorMotion,
+            Option<&CollisionSize>,
+            Option<&ActorScale>,
+        ),
         With<PlayerActor>,
     >,
     realms: Query<&RealmPhysics>,

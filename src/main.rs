@@ -1,10 +1,7 @@
 #![allow(dead_code)]
 use bevy::{
-    camera::visibility::RenderLayers,
-    input_focus::InputDispatchPlugin,
-    prelude::*,
-    settings::SettingsPlugin,
-    window::ExitCondition,
+    camera::visibility::RenderLayers, input_focus::InputDispatchPlugin, prelude::*,
+    settings::SettingsPlugin, window::ExitCondition,
 };
 // TODO(X5): restore
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;

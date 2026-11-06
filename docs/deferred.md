@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X57.**
+**Next: X59.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -57,15 +57,6 @@ dropped, not deferred. Numbers are never reused.
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
   [saga.md](saga.md). *Gate:* the author takes up scripting; the first chunk extracts `panoply_saga`
   from `../bevy_reactor_3/crates/bevy_reactor_formulae`.
-- **X8** Horizontal trackpad scroll rotates the viewpoint through a global `MouseWheel` reader
-  (`input::scroll_rotate_viewpoint`), so once the editor panel returns, scrolling the panel
-  would rotate the camera too. Route it through picking instead: observe `PointerScroll`,
-  which goes to the entity under the pointer and bubbles up. Without `editor`, observe it on
-  the window entity (the window backend hits the window when nothing else is under the
-  pointer); with `editor`, on the viewport slot node, so the panel's widgets get their own
-  scrolls. Once world entities are pickable, scrolls over them must bubble to the view or not
-  block it. Scroll input in `bevy_action_map` is for handling a wheel globally, which this is
-  not. *Gate:* the panel's first content that scrolls (the panel itself landed in PAN1).
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. *Gate:* scenery or actors with shiny materials restored.
@@ -404,3 +395,22 @@ dropped, not deferred. Numbers are never reused.
   the icon's position on the map where it differs from the point's, and `viewAngle`, the heading on
   arrival; add each to `NavPoint` when something reads it. *Gate:* the map is planned, or travel
   needs a heading.
+- **X57** Bevy widget bugs the author is fixing upstream (bevy#26444, bevy#26445), all seen in the
+  Go To dialog, which Panoply leaves alone meanwhile:
+  - A list's focus outline (`highlight_active` in feathers' `listview.rs`) is pickable and covers
+    its row, so the second click of a double-click lands on it and `PointerClick::count` restarts:
+    double-clicking a nav point does nothing.
+  - Feathers colors a text input's cursor only when the theme changes, so an input spawned later
+    keeps the default dark gray cursor.
+  - A modal makes focus visible as it opens (`modal_dialog_barrier_on_spawn` in `bevy_ui_widgets`'
+    `modal.rs`), so the filter box shows a focus ring with no keyboard navigation, which closes up
+    the gap between it and the list.
+  - bevy#26447: the list view's scrollbar positions itself against its container's edge
+    (`right: px(4)`), where in feathers the container owns the padding. Go To nests the list as
+    `group() > group_body()`, whose padding is lopsided by that inset until it is gone.
+
+  *Gate:* a Bevy bump that includes the fixes; then check each in the Go To dialog, and add a
+  double-click to its check in `plans/smoke.py`.
+- **X58** The game UI's font in assets, not code: `panoply_core::fonts` loads Macondo Swash Caps and
+  names its family. *Gate:* BSN assets (X1); then a game UI scene names the font, and the module
+  goes.
