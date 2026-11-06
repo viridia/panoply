@@ -1,4 +1,5 @@
 mod fonts;
+mod game_mode;
 mod hex_color;
 pub mod layers;
 pub mod metrics;
@@ -15,9 +16,10 @@ use bevy::{
     app::{App, FixedUpdate, HierarchyPropagatePlugin, Plugin, PostUpdate, PropagateSet, Update},
     asset::AssetApp,
     camera::visibility::{RenderLayers, VisibilitySystems},
-    prelude::{Component, IntoScheduleConfigs},
+    prelude::{AppExtStates, Component, IntoScheduleConfigs},
 };
 pub use fonts::GAME_UI_FONT;
+pub use game_mode::GameMode;
 use fonts::GameFonts;
 pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
@@ -44,7 +46,10 @@ pub struct PanoplyCorePlugin;
 
 impl Plugin for PanoplyCorePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<HexColor>()
+        app.init_state::<GameMode>()
+            // So plans can read and set the mode.
+            .register_type_mutable_state::<GameMode>()
+            .register_type::<HexColor>()
             .register_type::<Option<HexColor>>()
             .register_asset_loader(RealmsLoader)
             .init_asset::<RealmData>()

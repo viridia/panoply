@@ -1,6 +1,8 @@
 use bevy::{app::Propagate, prelude::*};
 use bevy_action_map::prelude::*;
-use panoply_core::{realm_physics::realm_physics_system, Realm, Viewpoint};
+use panoply_core::{
+    realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
+};
 use panoply_exemplar::{Exemplar, ExemplarServer, InstanceAspects, InstanceType, UpdateAspects};
 
 mod actor_animation;
@@ -19,7 +21,7 @@ mod precinct_actors;
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
 pub use actor_aspect::{ActorScale, CollisionSize};
 pub use actor_control::{
-    ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerWalk,
+    ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerTurn, PlayerWalk,
 };
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
@@ -30,7 +32,7 @@ pub use precinct_actors::{HomePrecinct, PrecinctActors};
 
 use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};
-use self::actor_control::drive_player;
+use self::actor_control::{drive_player, follow_player, goto_player};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
 use self::actor_probe::probe_interaction;
@@ -90,7 +92,12 @@ impl Plugin for ActorsPlugin {
             .register_type::<ItemModel>()
             .register_type::<EquipSlot>()
             .add_context::<PlayerControl>(|context| {
+                // In editing the same keys drive the free camera (`ViewpointControl`).
+                context.active_in_state(GameMode::Play);
                 context.bind::<PlayerWalk>(AxisButtons::new(KeyCode::KeyS, KeyCode::KeyW));
+                context.bind::<PlayerWalk>(AxisButtons::new(KeyCode::ArrowDown, KeyCode::ArrowUp));
+                context.bind::<PlayerTurn>(AxisButtons::new(KeyCode::KeyA, KeyCode::KeyD));
+                context.bind::<PlayerTurn>(AxisButtons::left_right());
                 context.bind::<PlayerFast>(KeyCode::ShiftLeft);
                 context.bind::<PlayerFast>(KeyCode::ShiftRight);
                 context.bind::<PlayerInteract>(KeyCode::KeyE).press();
@@ -98,6 +105,13 @@ impl Plugin for ActorsPlugin {
             .add_systems(Startup, |mut commands: Commands| {
                 commands.spawn((Name::new("PlayerControl"), PlayerControl));
             })
+            .add_systems(OnEnter(GameMode::Play), follow_player)
+            .add_systems(
+                Update,
+                goto_player
+                    .after(goto_location)
+                    .run_if(in_state(GameMode::Play)),
+            )
             .add_systems(
                 Update,
                 (

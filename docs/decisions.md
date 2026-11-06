@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D53.**
+**Next: D54.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -403,3 +403,10 @@ never reused.
   widgets it uses. Meant for any game pairing a mapper with feathers, so the module names no Panoply
   type and can move to `bevy_action_map` (its X14). Reversing it lets typing reach game actions
   again. (PAN33)
+- **D53** The app's mode is a Bevy state, `GameMode`, of two values, play and edit; the editor's
+  modes (realm, terrain, scenery, catalogs; X3) will be sub-states of edit, not siblings of play
+  with a computed state for what the editor modes share. A build without the editor has only play,
+  and what every editor mode shares (the free camera, Go To moving the view) is then the parent
+  state itself. Each mode's keys are a context active only in it (`active_in_state`), so WASD and
+  the arrows drive the free camera in edit and the player's actor in play, as in faery. Reversing it
+  means the computed state and an editor-modes list kept in step with it. (PAN22)

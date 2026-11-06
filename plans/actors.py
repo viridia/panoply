@@ -9,6 +9,8 @@ its idle is the one its aspects choose.
 Precincts place their actors, facing as placed, and a precinct's actors despawn with it. Standing
 actors rest (`ActorResting`), and wake when sent travelling or when a precinct's colliders go.
 Fallen into a hole or off the map, the actor is put back where it last stood.
+The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
+play the arrows do as WASD, and Go To moves the actor.
 
     bevy-remote-driver plans/actors.py
 
@@ -122,10 +124,19 @@ def run(driver):
     driver.screenshot("actor_capsule")
     driver.key("F3")
 
-    # With the camera facing +x, W turns the actor from +z to +x and walks it there, and the
-    # camera follows again (`goto` left it).
+    # In editing, W moves the free camera, not the actor.
     driver.goto(SPOT, 20.0, azimuth=math.pi / 2)
     start = driver.get("Actor", MOTION)["position"]
+    driver.key("KeyW", hold=10)
+    driver.frames(5)
+    view = driver.get_resource(VIEW_READY, at="position")
+    assert flat_distance(view, SPOT) > 0.5, f"W did not move the view: {view}"
+    assert driver.get("Actor", MOTION)["position"] == start, "W moved the actor in editing"
+
+    # In play, with the camera facing +x, W turns the actor from +z to +x and walks it there, and
+    # the camera follows again (`goto` left it).
+    driver.goto(SPOT, 20.0, azimuth=math.pi / 2)
+    driver.mode("Play")
     driver.press("KeyW")
     driver.seconds(1.5)
     # A trot is a fast walk, its clip at its nominal rate.
@@ -167,7 +178,9 @@ def run(driver):
     # The hill's south face rises from about 0.1 at z 75 to 1.8 at z 74, too steep to walk up
     # (R24): W toward it stops the actor at its foot.
     place(driver, HILL_FOOT)
+    driver.mode("Edit")
     driver.goto(HILL_FOOT, 20.0, azimuth=math.pi)
+    driver.mode("Play")
     driver.press("KeyW")
     highest = -math.inf
     for _ in range(8):
@@ -191,6 +204,7 @@ def run(driver):
 
     # Dropped from 3 m, the actor falls, lands on touchdown, and stands once the landing ends.
     place(driver, [SPOT[0], 3.0, SPOT[2]])
+    driver.mode("Edit")
     driver.goto(SPOT, 20.0)
     states = []
     for _ in range(30):
@@ -248,14 +262,37 @@ def run(driver):
     assert running, f"never ran: {gaits}"
     assert max(running) == Between(0.9, 1.1), f"run clip not at its nominal rate: {gaits}"
 
-    # W pre-empts travel: it ends short of its target.
+    # In play, Up pre-empts travel as W does: it ends short of its target.
+    driver.mode("Play")
     driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": WALK})
     driver.seconds(0.5)
-    driver.key("KeyW", hold=10)
-    driver.wait(lambda: travelling(driver), "W to end the travel", {"seconds": 1})
+    driver.key("ArrowUp", hold=10)
+    driver.wait(lambda: travelling(driver), "Up to end the travel", {"seconds": 1})
     driver.frames(5)
     stopped = driver.get("Actor", MOTION)
     assert flat_distance(stopped["position"], TRAVEL_TARGET) > 2.0, f"travelled on: {stopped}"
+
+    # In play, Go To moves the actor, which lands there, and the view follows it.
+    driver.goto(TRAVEL_TARGET, 20.0, wait=False)
+
+    # Until the ground there is ready, the actor has no `ActorMotion`.
+    def landed_there():
+        entity = driver.select("Actor")[0]
+        found = driver.call(
+            "world.get_components", {"entity": entity, "components": [MOTION], "strict": False}
+        )["components"]
+        motion = found.get(MOTION)
+        there = motion is not None and flat_distance(motion["position"], TRAVEL_TARGET) < 0.1
+        return there and motion["grounded"], lambda: f"{motion}"
+
+    driver.wait(landed_there, "the actor to land at the Go To", {"seconds": 5})
+    moved = driver.get("Actor", MOTION)
+    print(f"went to: {moved}")
+    assert flat_distance(moved["position"], TRAVEL_TARGET) < 0.1, f"not moved there: {moved}"
+    driver.seconds(1)
+    view = driver.get_resource(VIEW_READY, at="position")
+    assert flat_distance(view, moved["position"]) < 0.3, f"view at {view}, not the actor"
+    driver.mode("Edit")
 
     # Walked west over the lip, the actor falls into the playground's hole with
     # nothing under it, and is put back where it last stood, at the lip, its fall stopped (R27).

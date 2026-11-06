@@ -107,6 +107,19 @@ Migration scripts below, and X1), `artwork/`.
 
 ## Editor (for Next: `editor`, X3)
 
+- Screenshots, in [faery-screenshots/](faery-screenshots/), each mode at its route: a bar of mode
+  buttons atop the panel, realm (`/map`), terrain (`/plots`), scenery, catalogs and play, then save
+  (disabled while nothing is unsaved) and the Show menu (▼).
+  - `realm.png`: map size, realm and view position; arrows that turn the view by quarter turns;
+    Create and Change Realm; nav points with Go, + and −.
+  - `terrain.png`: the terrain tools as a grid of buttons; terrain groups and biomes, each list with
+    its own + − ▲ ▼; the terrain plot palette.
+  - `scenery-select.png`, `scenery-walls.png`, `scenery-actors.png`: the scenery tools as a grid of
+    buttons, the selected tool's palette with a search box, New and Clone; for actors, the selected
+    exemplar's properties below.
+  - `catalogs-quests.png`: catalog kinds (quests, dialogues, remarks, books, particles, items, item
+    tables, spawn tables, cut scenes), the chosen kind's entries, New, Clone and search.
+  - `play.png`: the realm's actors, the selected one's goal tree, then its state.
 - `editor/src/tools/`: 15 tools, each a subclass of `TerrainTool` (pointer picking against terrain
   and scenery, hover and drag), with `mutations.ts` and `ToolState.ts`. Most are modal, made by the
   mode or submode button selected:

@@ -21,16 +21,11 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN22 Game modes.** Which mode the app is in (play, an editor mode; later menus, dialogue, cut
-  scenes) as Bevy states, with each mode's input in its own `bevy_action_map` context, active only
-  in that mode. Today the free camera's context and PAN18's player context are both always on, so
-  the arrows and WASD each drive one thing in every mode. First see X3, which settles how editor
-  modes take the pointer and keys. Go To (PAN26) in play moves the player, and the camera follows as
-  usual; in an editor mode it moves the camera, as before.
-- **PAN27 Mode selector.** A control at the top of the editor panel choosing the editor mode (realm,
-  terrain, scenery, catalogs, play; X3), saved in settings. Before designing: the author's
-  screenshots of faery's mode buttons, and the Bevy editor mocks' toolbar. After PAN22, whose states
-  it switches.
+- **PAN27 Mode selector.** A row of buttons at the top of the editor panel, as faery's (its
+  screenshots in [faery.md](faery.md), Editor): realm, terrain, scenery, catalogs and play. Play
+  sets `GameMode::Play`; the others set edit and their sub-state of it (D53), which this chunk adds.
+  The mode is saved in settings, and F2 (`TODO(PAN27)` in `shell.rs`) goes or becomes the selector's
+  key. Also see the Bevy editor mocks' toolbar.
 - **PAN28 Property editor.** A fork of arbor_day's `properties.rs` into `panoply_editor`, so each
   develops for its own needs (sharing later is X48); its attributes replaced by `bevy::annotations`
   where they overlap, as arbor_day's X25 plans for its own. Beyond arbor_day: nested structs and

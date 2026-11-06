@@ -1,18 +1,24 @@
 //! The player's direct control of their actor, relative to the view (R29): W walks away from the
-//! camera, S backs toward it, and the actor turns gradually to match. A and D turn the camera
-//! (`ViewpointControl`), and with it the way W walks.
+//! camera, S backs toward it, and the actor turns gradually to match. A and D turn the camera, and
+//! with it the way W walks; standing still, the player can turn the view to see their actor's front
+//! or what lies behind it. The arrows do the same as WASD.
 
-use bevy::prelude::*;
+use bevy::{app::Propagate, prelude::*};
 use bevy_action_map::prelude::*;
-use panoply_core::Viewpoint;
+use panoply_core::{GotoLocation, Realm, Viewpoint};
 use std::f32::consts::PI;
 
-use crate::{ActorMotion, TravelTo};
+use crate::{Actor, ActorMotion, TravelTo};
 
 /// Walk away from the camera (+) or back toward it (-).
 #[derive(InputAction)]
 #[action(path = "player.walk", output = f32, intent = Analog1)]
 pub struct PlayerWalk;
+
+/// Turn the camera left (-) or right (+), read by the viewpoint's own turning (`move_viewpoint`).
+#[derive(InputAction)]
+#[action(path = "player.turn", output = f32, intent = Analog1)]
+pub struct PlayerTurn;
 
 /// Go at a faster pace while held.
 #[derive(InputAction)]
@@ -97,6 +103,47 @@ pub(crate) fn drive_player(
     if forward || back {
         viewpoint.follow = Some(entity);
     }
+}
+
+/// Entering play, the camera follows the player's actor again, wherever the free camera left it.
+pub(crate) fn follow_player(
+    mut viewpoint: ResMut<Viewpoint>,
+    players: Query<Entity, With<PlayerActor>>,
+) {
+    if let Ok(player) = players.single() {
+        viewpoint.follow = Some(player);
+    }
+}
+
+/// In play, Go To moves the player's actor: after `goto_location` has moved the view there, the
+/// actor joins it and the view follows the actor again. Without its `ActorMotion` the actor waits,
+/// as a new one does, until the ground there has loaded (`start_actor_physics`).
+pub(crate) fn goto_player(
+    mut gotos: MessageReader<GotoLocation>,
+    mut commands: Commands,
+    mut players: Query<(Entity, &mut Actor, &mut Transform), With<PlayerActor>>,
+    realms: Query<(Entity, &Realm)>,
+) {
+    let Some(goto) = gotos.read().last() else {
+        return;
+    };
+    let Ok((player, mut actor, mut transform)) = players.single_mut() else {
+        return;
+    };
+    let Some((realm_entity, realm)) = realms.iter().find(|(_, realm)| realm.name == goto.realm)
+    else {
+        return;
+    };
+    actor.realm = realm_entity;
+    transform.translation = goto.position;
+    commands
+        .entity(player)
+        .remove::<(ActorMotion, TravelTo)>()
+        .insert((ActorIntent::default(), Propagate(realm.layer.clone())));
+    // After `goto_location`'s command, which leaves the view following nothing.
+    commands.queue(move |world: &mut World| {
+        world.resource_mut::<Viewpoint>().follow = Some(player);
+    });
 }
 
 /// The signed angle from `from` to `to`, in (-PI, PI].

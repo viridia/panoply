@@ -4,6 +4,7 @@
 from bevy_remote_driver import Driver, step
 
 GOTO = "panoply_core::viewpoint::GotoLocation"
+MODE = "panoply_core::game_mode::GameMode"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 READINESS = "panoply.readiness"
 
@@ -45,6 +46,19 @@ class PanoplyDriver(Driver):
 
         self.wait(check, f"the view at {realm} {list(position)} to load", READY_TIMEOUT)
         self._until(self.frame() + RENDER_FRAMES)
+
+    @step
+    def mode(self, mode):
+        """Switches the app to `mode`, `"Play"` or `"Edit"` (`GameMode`; a plan starts in Edit),
+        and waits until it is there. In play the movement keys drive the player's actor, and
+        `goto` moves the actor too."""
+        self.set_resource(f"bevy_state::state::resources::NextState<{MODE}>", {"Pending": mode})
+
+        def check():
+            current = self.get_resource(f"bevy_state::state::resources::State<{MODE}>")
+            return current == mode, lambda: f"in {current}"
+
+        self.wait(check, f"the mode {mode}", {"seconds": 2})
 
     def readiness(self):
         """The readiness survey (`panoply.readiness`): the viewpoint, `ready` and `waiting_on`

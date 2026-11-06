@@ -3,7 +3,8 @@ use bevy::{
     settings::SaveSettingsSync,
 };
 use bevy_action_map::prelude::*;
-use panoply_core::{GameViewNode, Viewpoint};
+use panoply_actors::{PlayerControl, PlayerTurn};
+use panoply_core::{GameMode, GameViewNode, Viewpoint};
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
@@ -37,7 +38,7 @@ pub struct Fast;
 #[action(path = "app.quit", output = bool, intent = Button)]
 pub struct Quit;
 
-/// Keyboard control of the viewpoint, used while editing.
+/// The free camera: keyboard control of the viewpoint, used while editing.
 #[derive(InputContext)]
 #[context(path = "viewpoint.control", tick = Render)]
 pub struct ViewpointControl;
@@ -53,13 +54,18 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ActionMapPlugin)
             .add_context::<ViewpointControl>(|context| {
-                // W and S walk the player's actor (`panoply_actors`).
+                // In play the same keys drive the player's actor (`PlayerControl`).
+                context.active_in_state(GameMode::Edit);
                 context.bind::<MoveForward>(AxisButtons::new(KeyCode::ArrowDown, KeyCode::ArrowUp));
+                context.bind::<MoveForward>(AxisButtons::new(KeyCode::KeyS, KeyCode::KeyW));
                 context.bind::<Turn>(AxisButtons::left_right());
                 context.bind::<Turn>(AxisButtons::new(KeyCode::KeyA, KeyCode::KeyD));
                 // Shift+Arrow is more specific than Arrow, so it takes over from Turn.
                 context
                     .bind::<Strafe>(AxisButtons::left_right())
+                    .with(ModifierKey::Shift);
+                context
+                    .bind::<Strafe>(AxisButtons::new(KeyCode::KeyA, KeyCode::KeyD))
                     .with(ModifierKey::Shift);
                 context.bind::<Fast>(KeyCode::ShiftLeft);
                 context.bind::<Fast>(KeyCode::ShiftRight);
@@ -76,8 +82,11 @@ impl Plugin for InputPlugin {
     }
 }
 
+/// Moves the free camera, and turns the view in either mode: in play the player's keys turn it
+/// (R29), and their actor turns to match only as it walks.
 fn move_viewpoint(
     input: ContextActions<ViewpointControl>,
+    player: ActionsQuery<PlayerControl>,
     mut viewpoint: ResMut<Viewpoint>,
     time: Res<Time>,
     mut turn_speed: Local<f32>,
@@ -89,7 +98,12 @@ fn move_viewpoint(
         1.
     };
     let forward = input.value::<MoveForward>();
-    let turn = input.value::<Turn>();
+    // The context not in its mode is inactive and reads 0.
+    let turn = input.value::<Turn>()
+        + player
+            .iter()
+            .map(|(_, state)| state.value::<PlayerTurn>())
+            .sum::<f32>();
     let strafe = input.value::<Strafe>();
 
     // Turning eases in and out, as faery's camera did.

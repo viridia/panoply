@@ -26,7 +26,9 @@ use bevy_immediate::{
     ui::{checked::ImmUiChecked, CapsUiFeathers},
     Imm, ImmEntity,
 };
-use panoply_core::{realm_physics::collision_groups, GameViewNode, ViewOverlay, ViewportInset};
+use panoply_core::{
+    realm_physics::collision_groups, GameMode, GameViewNode, ViewOverlay, ViewportInset,
+};
 use rapier3d::prelude::Group;
 
 use crate::{debug_views::DebugViews, goto::OpenGotoDialog};
@@ -62,6 +64,11 @@ impl Default for EditorPanelSettings {
 #[action(path = "editor.toggle_panel", output = bool, intent = Button)]
 pub struct TogglePanel;
 
+/// Switch between playing and editing (`GameMode`).
+#[derive(InputAction)]
+#[action(path = "editor.toggle_mode", output = bool, intent = Button)]
+pub struct ToggleGameMode;
+
 /// Editor shell shortcuts.
 #[derive(InputContext)]
 #[context(path = "editor.shell", tick = Render)]
@@ -91,6 +98,8 @@ impl Plugin for EditorShellPlugin {
             .add_context::<EditorShellControl>(|context| {
                 context.bind::<TogglePanel>(KeyCode::KeyT);
                 context.bind::<OpenGotoDialog>(KeyCode::KeyG);
+                // TODO(PAN27): the mode selector. Not Tab, which feathers' tab navigation takes.
+                context.bind::<ToggleGameMode>(KeyCode::F2);
             })
             .add_systems(
                 Startup,
@@ -105,6 +114,7 @@ impl Plugin for EditorShellPlugin {
                 Update,
                 (
                     toggle_panel,
+                    toggle_game_mode,
                     show_panel,
                     fit_panel_width,
                     adopt_view_overlays,
@@ -164,6 +174,19 @@ fn toggle_panel(
     if input.fired::<TogglePanel>() {
         settings.visible = !settings.visible;
         commands.queue(SaveSettingsDeferred(SAVE_DELAY));
+    }
+}
+
+fn toggle_game_mode(
+    input: ContextActions<EditorShellControl>,
+    mode: Res<State<GameMode>>,
+    mut next: ResMut<NextState<GameMode>>,
+) {
+    if input.fired::<ToggleGameMode>() {
+        next.set(match mode.get() {
+            GameMode::Play => GameMode::Edit,
+            GameMode::Edit => GameMode::Play,
+        });
     }
 }
 
