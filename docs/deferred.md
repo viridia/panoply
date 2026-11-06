@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X59.**
+**Next: X60.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -414,3 +414,7 @@ dropped, not deferred. Numbers are never reused.
 - **X58** The game UI's font in assets, not code: `panoply_core::fonts` loads Macondo Swash Caps and
   names its family. *Gate:* BSN assets (X1); then a game UI scene names the font, and the module
   goes.
+- **X59** Wide editors: data too unwieldy for the panel's narrow column gets an editor that replaces
+  the 3D view while its entry is selected, as faery's dialogue state machine editor did
+  ([faery.md](faery.md), Editor, `catalogs-dialogue.png`). *Gate:* the first catalog kind whose
+  entries do not fit the panel is taken up; dialogues are the likely first.

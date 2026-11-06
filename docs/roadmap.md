@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN35.**
+**Next: PAN44.**
 
 ## Next
 
@@ -21,25 +21,78 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN28 Property editor.** A fork of arbor_day's `properties.rs` into `panoply_editor`, so each
-  develops for its own needs (sharing later is X48); its attributes replaced by `bevy::annotations`
-  where they overlap, as arbor_day's X25 plans for its own. Beyond arbor_day: nested structs and
-  arrays of structs, and optional fields as faery's aspects had them: a struct is a map whose keys
-  may be absent; a `None` field has no row, a `Some` row has an × button that removes it, and a
-  boxed-plus menu in the panel header lists the absent fields to add. A field's annotations apply
-  through `Option` and `Vec` to their contents, since the `f32` in `Option<f32>` cannot be
-  annotated; Bevy's inspector does this, in a commit after Panoply's locked Bevy, so this chunk may
-  bump Bevy. Every edit is undoable (D49): setting a value at an asset key and property path, adding
-  or removing an optional field, inserting or removing an array item; a drag's steps coalesce into
-  one entry. The undo stack is a module of `panoply_editor`, from the author's unmerged bevy#23373,
-  its contexts keyed by asset rather than `Entity`.
-- **PAN29 Realm mode panel.** PAN26's list in the panel with Go, + (names the current view as a new
-  nav point) and − (removes the selected one), and the selected point's fields below in PAN28's
-  editor; faery's `MapEditPanel`, `NavPointSelector` and `NavPointEditor`. Saving is explicit, as in
-  faery: a save button before the panel's menu button (`shell.rs`), square and as tall as it, with
-  the floppy-disk icon (`assets/editor/icons/save.png`), writes every asset with unsaved changes,
-  and is disabled while there are none. The nav points (`world.locations.json`) are the first such
-  asset.
+- **PAN29 Realm mode panel.** The realm mode's panel, after faery's `MapEditPanel` (`realm.png`) but
+  free to depart from it: stats about the map (its size in parcels, the realm, the view position),
+  then PAN26's nav point list with Go, + (names the current view as a new nav point) and − (removes
+  the selected one); faery's `NavPointSelector`. + asks for the name in a generic text-entry dialog,
+  which PAN35 reuses. Saving is explicit, as in faery: a save button before the panel's menu button
+  (`shell.rs`), square and as tall as it, with the floppy-disk icon
+  (`assets/editor/icons/save.png`), writes every asset with unsaved changes, and is disabled while
+  there are none. The nav points (`world.locations.json`) are the first such asset. The selected
+  point's fields wait for PAN28. + and − are the first edits, without undo until PAN42.
+- **PAN42 Undo stack.** A module of `panoply_editor`, from the author's unmerged bevy#23373, its
+  contexts keyed by asset rather than `Entity` (D49). Its first customer is PAN29's nav point + and
+  −, made undoable here; every later edit is undoable from the start.
+- **PAN35 Create and Change Realm.** Two buttons in the realm panel, each opening a modal dialog:
+  Create Realm asks for a name in PAN29's text-entry dialog and makes a new, empty realm; Change
+  Realm picks one of the realms in a list-selection dialog and moves the view there. The dialog
+  holds a generic chooser, generalized from PAN26's `nav_point_list.rs`: a scrolling list sorted by
+  name and a filter box using `search_filter`. PAN41's exemplar choosers reuse it.
+- **PAN36 Mode overlays.** Each editor mode draws its own overlays while active. Realm mode's first:
+  a grid on the ground at parcel and precinct boundaries, and the realm's border (faery's
+  `FlatGridOverlay` and `ParcelBoundsOverlay`, mounted by `MapEditPanel.tsx`); Panoply's Quill
+  editor drew it already (`src/editor/ui/overlays/map_bounds.rs`). Terrain mode's cursor and
+  selected parcel come with PAN38; the scenery mode's (faery's grid, floor cutaway, colliders, marks
+  and portals) with PAN5.
+- **PAN37 Map size control.** In the realm panel, eight buttons that grow or shrink the realm by a
+  parcel on each of its four sides, two per side (faery's `MapSizeControl.tsx`; the pattern recurs
+  elsewhere in faery). The control rotates with the camera's azimuth, so its sides match the map's
+  on screen; faery also squashed it vertically to match the view's tilt. A press changes the terrain
+  map's bounds (`realm.parcel_bounds`, `terrain_map.rs`) and marks it unsaved for PAN29's save
+  button. New ground: rendering and picking of transformed UI nodes (`UiTransform`) follow the
+  transform in principle but are little exercised, so expect Bevy bugs, each found in the locked
+  checkout and reported or fixed upstream. Panoply's Quill editor never had one.
+- **PAN38 Terrain sculpting.** Terrain mode's panel and its tool palette: raise, lower and flatten,
+  each by brush or by rectangle; draw trees, shrubs and herbs, and erase flora; rotate the selected
+  parcel's contour. Ported from the Quill editor (`REFERENCE(PAN5)`): `ui/mode_terrain.rs`,
+  `ui/tool_terrain_edit.rs`, `ui/overlays/terrain_cursor.rs` and `selected_parcel.rs`,
+  `terrain/terrain_map_undo.rs`. Edits mark the terrain map unsaved for PAN29's save button and go
+  on PAN42's undo stack.
+- **PAN39 Contour chooser.** The terrain contours as a list of 3D thumbnails, choosing the selected
+  parcel's contour, with controls to group and order the list (faery's + − ▲ ▼, `terrain.png`). From
+  the Quill editor's `ui/controls/contour_chooser.rs`, `renderers/terrain_thumbnail.rs` and
+  `terrain/terrain_contour_undo.rs`. Its thumbnails are offscreen render targets of preview parcels
+  in a hidden realm; rendering many at once stalled the engine, so one camera was retargeted to one
+  thumbnail a frame, and an edited contour's thumbnail updated a few frames later. Whether to keep
+  that or render only the rows in view is decided in the chunk.
+- **PAN40 Water and biome.** In terrain mode, buttons that toggle whether the selected plot is water
+  or terrain, and a selector for the current parcel's biome (faery's `PlotEditPanel.tsx`,
+  `terrain.png`).
+- **PAN41 Exemplar chooser.** Catalogs mode's first panel: the exemplar kinds (actor, wall, floor,
+  fixture), then the chosen kind's exemplars in PAN35's chooser (the Quill editor's
+  `ui/controls/exemplar_chooser.rs`). The same chooser serves later in scenery mode, for the
+  exemplar to place and an existing instance's exemplar (PAN5). PAN28 edits the chosen one.
+- **PAN28 Property editor.** For the exemplar chosen in PAN41 and the realm panel's selected nav
+  point (faery's `NavPointEditor`). A fork of arbor_day's `properties.rs` into `panoply_editor`, so
+  each develops for its own needs (sharing later is X48); its attributes replaced by
+  `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is in
+  [faery.md](faery.md), Editor, its screenshots included. Beyond arbor_day: nested structs and
+  arrays of structs (faery's weakest part, so its layout is a starting point only), and optional
+  fields as faery's aspects had them: a struct is a map whose keys may be absent; a `None` field has
+  no row, a `Some` row has an × button that removes it, and a boxed-plus menu in the panel header
+  lists the absent fields to add. A field's annotations apply through `Option` and `Vec` to their
+  contents, since the `f32` in `Option<f32>` cannot be annotated; Bevy's inspector does this, in a
+  commit after Panoply's locked Bevy, so this chunk may bump Bevy. Every edit is undoable in PAN42's
+  stack (D49): setting a value at an asset key and property path, adding or removing an optional
+  field, inserting or removing an array item; a drag's steps coalesce into one entry. Nesting must
+  not squeeze the values: in faery, labels and values in separate columns, under nesting, cramped
+  the labels and cut values off.
+- **PAN43 Inherited fields.** Provisional. Fields an exemplar inherits through `extends` show apart
+  from its own, as faery's did in dim italics (`scenery-actor-inherited.png`); editing one overrides
+  it, and × on an override reverts it to the inherited value rather than removing the field. faery
+  had this from JavaScript prototypes; in Panoply `extends` is a handle to the parent exemplar
+  (D27), so how the editor tells own fields from inherited ones is decided in the chunk. X1's move
+  to BSN would make `extends` scene inheritance.
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
   rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where

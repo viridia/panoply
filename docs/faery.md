@@ -110,8 +110,8 @@ Migration scripts below, and X1), `artwork/`.
 - Screenshots, in [faery-screenshots/](faery-screenshots/), each mode at its route: a bar of mode
   buttons atop the panel, realm (`/map`), terrain (`/plots`), scenery, catalogs and play, then save
   (disabled while nothing is unsaved) and the Show menu (▼).
-  - `realm.png`: map size, realm and view position; arrows that turn the view by quarter turns;
-    Create and Change Realm; nav points with Go, + and −.
+  - `realm.png`: map size, realm and view position; the map size control (eight arrows that grow or
+    shrink each side, turned with the camera); Create and Change Realm; nav points with Go, + and −.
   - `terrain.png`: the terrain tools as a grid of buttons; terrain groups and biomes, each list with
     its own + − ▲ ▼; the terrain plot palette.
   - `scenery-select.png`, `scenery-walls.png`, `scenery-actors.png`: the scenery tools as a grid of
@@ -120,6 +120,14 @@ Migration scripts below, and X1), `artwork/`.
   - `catalogs-quests.png`: catalog kinds (quests, dialogues, remarks, books, particles, items, item
     tables, spawn tables, cut scenes), the chosen kind's entries, New, Clone and search.
   - `play.png`: the realm's actors, the selected one's goal tree, then its state.
+  - The property editor: `properties-skill.png` (× removes an optional field, Add lists the absent
+    ones, an array collapsed to "1 items" with − +); `scenery-fixture.png` (nested structs and
+    arrays, joined by tree lines); `scenery-actor-inherited.png` (fields inherited through `extends`
+    in dim italics, where × reverts an overridden field to the inherited value; a color field opened
+    to its wheel). Nested structs and arrays were its weakest part.
+  - `catalogs-dialogue.png`: the dialogue state machine editor, which replaced the 3D view while a
+    dialogue entry was selected: a box per state holding its intros and options, each in the
+    property editor, with lines from a `go` field to the state it names.
 - `editor/src/tools/`: 15 tools, each a subclass of `TerrainTool` (pointer picking against terrain
   and scenery, hover and drag), with `mutations.ts` and `ToolState.ts`. Most are modal, made by the
   mode or submode button selected:
