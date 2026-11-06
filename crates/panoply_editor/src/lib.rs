@@ -10,6 +10,7 @@ use bevy::{
 pub mod debug_views;
 pub mod diagnostics;
 pub mod goto;
+pub mod mode_selector;
 pub mod nav_point_list;
 pub mod search_filter;
 pub mod shell;
@@ -27,6 +28,7 @@ impl Plugin for EditorPlugin {
             zoom::EditorZoomPlugin,
             goto::GotoDialogPlugin,
             nav_point_list::NavPointListPlugin,
+            mode_selector::ModeSelectorPlugin,
         ))
         .insert_resource(UiTheme(create_dark_theme()));
     }

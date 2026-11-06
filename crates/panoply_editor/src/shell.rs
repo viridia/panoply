@@ -1,6 +1,6 @@
 //! The editor's shell: a panel at the left of the game's view, split from it by a handle that
-//! drags. T shows or hides the panel, and G opens the Go To dialog (`goto`). The panel holds the
-//! Show menu, which turns debug views on and off.
+//! drags. T shows or hides the panel, and G opens the Go To dialog (`goto`). Atop the panel are the
+//! mode selector (`mode_selector`) and the Show menu, which turns debug views on and off.
 
 use std::time::Duration;
 
@@ -8,9 +8,10 @@ use bevy::{
     ecs::system::SystemParam,
     feathers::{
         controls::{
-            FeathersCheckbox, FeathersMenu, FeathersMenuButton, FeathersMenuPopup, FeathersPane,
-            FeathersSplitPane, FeathersSplitPaneHandle,
+            FeathersCheckbox, FeathersMenu, FeathersMenuPopup, FeathersMenuToolButton,
+            FeathersPane, FeathersSplitPane, FeathersSplitPaneHandle,
         },
+        display::icon,
         theme::{ThemeBackgroundColor, ThemedText},
         tokens,
     },
@@ -26,17 +27,19 @@ use bevy_immediate::{
     ui::{checked::ImmUiChecked, CapsUiFeathers},
     Imm, ImmEntity,
 };
-use panoply_core::{
-    realm_physics::collision_groups, GameMode, GameViewNode, ViewOverlay, ViewportInset,
-};
+use panoply_core::{realm_physics::collision_groups, GameViewNode, ViewOverlay, ViewportInset};
 use rapier3d::prelude::Group;
 
-use crate::{debug_views::DebugViews, goto::OpenGotoDialog};
+use crate::{
+    debug_views::DebugViews,
+    goto::OpenGotoDialog,
+    mode_selector::{ModeSelector, ToggleGameMode},
+};
 
 /// Narrowest either pane may be, in logical pixels.
 const MIN_PANE_WIDTH: f32 = 200.0;
 
-const SAVE_DELAY: Duration = Duration::from_millis(500);
+pub(crate) const SAVE_DELAY: Duration = Duration::from_millis(500);
 
 /// The panel's layout, saved between runs.
 #[derive(Resource, SettingsGroup, Reflect, Clone, PartialEq, Debug)]
@@ -63,11 +66,6 @@ impl Default for EditorPanelSettings {
 #[derive(InputAction)]
 #[action(path = "editor.toggle_panel", output = bool, intent = Button)]
 pub struct TogglePanel;
-
-/// Switch between playing and editing (`GameMode`).
-#[derive(InputAction)]
-#[action(path = "editor.toggle_mode", output = bool, intent = Button)]
-pub struct ToggleGameMode;
 
 /// Editor shell shortcuts.
 #[derive(InputContext)]
@@ -98,7 +96,7 @@ impl Plugin for EditorShellPlugin {
             .add_context::<EditorShellControl>(|context| {
                 context.bind::<TogglePanel>(KeyCode::KeyT);
                 context.bind::<OpenGotoDialog>(KeyCode::KeyG);
-                // TODO(PAN27): the mode selector. Not Tab, which feathers' tab navigation takes.
+                // Not Tab, which feathers' tab navigation takes.
                 context.bind::<ToggleGameMode>(KeyCode::F2);
             })
             .add_systems(
@@ -114,7 +112,6 @@ impl Plugin for EditorShellPlugin {
                 Update,
                 (
                     toggle_panel,
-                    toggle_game_mode,
                     show_panel,
                     fit_panel_width,
                     adopt_view_overlays,
@@ -148,10 +145,21 @@ fn shell() -> impl Scene {
                 PanelPane
                 ThemeBackgroundColor(tokens::WINDOW_BG)
                 Children [
-                    ShowMenu
                     Node {
+                        align_items: AlignItems::Center,
+                        column_gap: px(8),
                         padding: UiRect::all(px(8)),
                     }
+                    Children [
+                        ModeSelector
+                        Node { column_gap: px(1) }
+                        --
+                        // The space between the selector and the menu takes up the slack.
+                        Node { flex_grow: 1.0 }
+                        --
+                        ShowMenu
+                        Node
+                    ]
                 ]
                 --
                 @FeathersSplitPaneHandle
@@ -174,19 +182,6 @@ fn toggle_panel(
     if input.fired::<TogglePanel>() {
         settings.visible = !settings.visible;
         commands.queue(SaveSettingsDeferred(SAVE_DELAY));
-    }
-}
-
-fn toggle_game_mode(
-    input: ContextActions<EditorShellControl>,
-    mode: Res<State<GameMode>>,
-    mut next: ResMut<NextState<GameMode>>,
-) {
-    if input.fired::<ToggleGameMode>() {
-        next.set(match mode.get() {
-            GameMode::Play => GameMode::Edit,
-            GameMode::Edit => GameMode::Play,
-        });
     }
 }
 
@@ -324,11 +319,17 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
         // frame.
         let mut views = params.views.clone();
         ui.ch_id("show_menu")
-            .on_spawn_apply_scene(|| bsn! { @FeathersMenu })
+            // As tall as its button, which is taller than feathers' row height.
+            .on_spawn_apply_scene(|| bsn! { @FeathersMenu Node { height: px(32) } })
             .add(|ui| {
                 ui.ch().on_spawn_apply_scene(|| {
                     bsn! {
-                        @FeathersMenuButton { @caption: bsn! { Text("Show") ThemedText } }
+                        @FeathersMenuToolButton {
+                            @caption: bsn! { @icon("editor/icons/menu.png") Node { height: px(20) } },
+                            @arrow: false,
+                        }
+                        // Square, as tall as the mode selector's buttons.
+                        Node { width: px(32), height: px(32) }
                         #Show
                     }
                 });

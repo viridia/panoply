@@ -21,11 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN27 Mode selector.** A row of buttons at the top of the editor panel, as faery's (its
-  screenshots in [faery.md](faery.md), Editor): realm, terrain, scenery, catalogs and play. Play
-  sets `GameMode::Play`; the others set edit and their sub-state of it (D53), which this chunk adds.
-  The mode is saved in settings, and F2 (`TODO(PAN27)` in `shell.rs`) goes or becomes the selector's
-  key. Also see the Bevy editor mocks' toolbar.
 - **PAN28 Property editor.** A fork of arbor_day's `properties.rs` into `panoply_editor`, so each
   develops for its own needs (sharing later is X48); its attributes replaced by `bevy::annotations`
   where they overlap, as arbor_day's X25 plans for its own. Beyond arbor_day: nested structs and
@@ -41,8 +36,10 @@ components and every layer restartable from saved state (R104).
 - **PAN29 Realm mode panel.** PAN26's list in the panel with Go, + (names the current view as a new
   nav point) and − (removes the selected one), and the selected point's fields below in PAN28's
   editor; faery's `MapEditPanel`, `NavPointSelector` and `NavPointEditor`. Saving is explicit, as in
-  faery: a save button beside PAN27's mode selector, disabled while nothing is unsaved, writes
-  `world.locations.json`.
+  faery: a save button before the panel's menu button (`shell.rs`), square and as tall as it, with
+  the floppy-disk icon (`assets/editor/icons/save.png`), writes every asset with unsaved changes,
+  and is disabled while there are none. The nav points (`world.locations.json`) are the first such
+  asset.
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
   rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where

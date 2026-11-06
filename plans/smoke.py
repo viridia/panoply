@@ -8,7 +8,7 @@
   (the tiered dungeon floors of precinct 0,0).
 - Physics and editor: F3 draws the colliders; a ray cast down at the view center hits the
   ground, then a floor's, a fixture's and a tree's canopy colliders; T shows the editor panel
-  beside the view, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
+  beside the view, its mode selector and F2 switch modes, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
   drawn as a white sphere. The Show menu is clicked twice: the second click lands only if the
   first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
@@ -39,6 +39,10 @@ VIEWS = "panoply_editor::debug_views::DebugViews"
 PROBE = "panoply_editor::debug_views::GroundProbe"
 PANEL = "panoply_editor::shell::EditorPanelSettings"
 INSET = "panoply_core::viewport::ViewportInset"
+GAME_MODE = "panoply_core::game_mode::GameMode"
+EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
+BUTTON_VARIANT = "bevy_feathers::controls::button::ButtonVariant"
+MODE_BUTTONS = ["RealmMode", "TerrainMode", "SceneryMode", "CatalogsMode", "PlayMode"]
 WAIT = {"frames": 900, "seconds": 45}
 # Forest, shoreline, water, grass and rocks.
 SPOT = [110.0, 0.0, 150.0]
@@ -226,6 +230,22 @@ def physics(driver):
     left = driver.get_resource(INSET, at="left")
     assert left == Between(300.0, 320.0), f"view not beside the panel: inset {left}"
 
+    # The mode selector starts on Realm; its buttons choose the editor mode or play, and F2
+    # switches to play and back to the editor mode last chosen.
+    assert editor_mode(driver) == "Realm", f"started in {editor_mode(driver)}"
+    driver.screenshot("mode_selector")
+    driver.click("TerrainMode")
+    wait_mode(driver, editor_mode, "Terrain")
+    expect_highlight(driver, "TerrainMode")
+    driver.click("PlayMode")
+    wait_mode(driver, game_mode, "Play")
+    driver.key("F2")
+    wait_mode(driver, game_mode, "Edit")
+    assert editor_mode(driver) == "Terrain", f"F2 returned to {editor_mode(driver)}"
+    driver.click("RealmMode")
+    wait_mode(driver, editor_mode, "Realm")
+    expect_highlight(driver, "RealmMode")
+
     driver.click("Show")
     driver.click("Terrain")
     driver.frames(5)
@@ -244,6 +264,33 @@ def physics(driver):
     driver.key("KeyT")
     driver.frames(10)
     assert driver.get_resource(INSET, at="left") == 0.0, "view still inset with the panel hidden"
+
+
+def game_mode(driver):
+    return driver.get_resource(f"bevy_state::state::resources::State<{GAME_MODE}>")
+
+
+def editor_mode(driver):
+    return driver.get_resource(f"bevy_state::state::resources::State<{EDITOR_MODE}>")
+
+
+def wait_mode(driver, read, expected):
+    """Waits until `read` (`game_mode` or `editor_mode`) gives `expected`."""
+
+    def check():
+        found = read(driver)
+        return found == expected, lambda: f"in {found}"
+
+    driver.wait(check, f"the mode {expected}", {"seconds": 2})
+
+
+def expect_highlight(driver, chosen):
+    """Of the mode selector's buttons, only `chosen` is highlighted."""
+    driver.frames(2)
+    for button in MODE_BUTTONS:
+        variant = driver.get(button, BUTTON_VARIANT)
+        expected = "Primary" if button == chosen else "Normal"
+        assert variant == expected, f"{button} is {variant}, not {expected}"
 
 
 def arrived(driver, spot, how):

@@ -5,6 +5,7 @@ from bevy_remote_driver import Driver, step
 
 GOTO = "panoply_core::viewpoint::GotoLocation"
 MODE = "panoply_core::game_mode::GameMode"
+MODE_SETTINGS = "panoply_editor::mode_selector::EditorModeSettings"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 READINESS = "panoply.readiness"
 
@@ -50,9 +51,9 @@ class PanoplyDriver(Driver):
     @step
     def mode(self, mode):
         """Switches the app to `mode`, `"Play"` or `"Edit"` (`GameMode`; a plan starts in Edit),
-        and waits until it is there. In play the movement keys drive the player's actor, and
-        `goto` moves the actor too."""
-        self.set_resource(f"bevy_state::state::resources::NextState<{MODE}>", {"Pending": mode})
+        as the editor's mode selector does, and waits until it is there. In play the movement keys
+        drive the player's actor, and `goto` moves the actor too."""
+        self.set_resource(MODE_SETTINGS, mode, at="game_mode")
 
         def check():
             current = self.get_resource(f"bevy_state::state::resources::State<{MODE}>")
