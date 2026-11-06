@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I12.**
+**Next: I13.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -43,3 +43,13 @@ confirmed by running something or only by reading. Numbers are never reused.
   `crates/panoply_terrain/src/shaders/ground.wesl`, and editing the `.wgsl` changed nothing in a
   run, which cost a performance test. Candidate: delete it, once `assets/terrain/shaders/` has been
   checked for other leftovers. Confirmed by running.
+- **I12** Physics drawing (F3) costs grow with everything the session has loaded: each frame,
+  rapier's `debug_render` turns every collider in the realm into immediate-mode gizmo lines, and
+  scenery colliders are drawn for every loaded precinct, shown or not (`debug_views.rs`). In
+  `plans/smoke.py` on battery, F3 frames ran 21-28 ms after a visit to (60.5, 41.5), and fell to
+  about 3 FPS in runs that had visited the stick village (35.5, 114.5) first. Not a fixed-step
+  spiral: a frame catching up 16 physics steps took 23 ms. Candidate fix: retained gizmos
+  (`GizmoAsset`, `Gizmo`), built once per parcel or precinct from rapier's lines grouped by collider
+  owner, as a child of the owner, so hidden owners hide their lines and F3 and the group checkboxes
+  only switch visibility; actors' capsules stay immediate. Unchecked: whether retained gizmos are
+  frustum-culled or only follow `Visibility`. Confirmed by running.

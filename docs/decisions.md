@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D52.**
+**Next: D53.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -392,3 +392,14 @@ never reused.
   only ways out of the world. Off the map, and where no tile is placed, a realm has its default
   contour, usually open water or the empty tile, which has no ground; the playground's is the empty
   tile, and it has a large hole at (23, 43).
+- **D52** Widgets get their keys from the action mapper, not from Bevy's `InputDispatchPlugin`,
+  which the app disables; how is in `src/widget_keys.rs`. One arbiter then decides every key: with
+  Bevy's dispatch beside the mapper, a key typed in a text field also reached game actions, and a
+  consuming context could not keep a key from a focused widget. Feathers stays unmodified, since the
+  mapper delivers the `FocusedInput` its widgets already read; a context per widget kind,
+  `bevy_action_map`'s D23 pattern, would have meant reimplementing keyboard handling for every
+  feathers widget. Where a key goes follows focus, read from marker components the plugin makes
+  required by each widget: a zero-sized type per kind rather than an enum, so a game links only the
+  widgets it uses. Meant for any game pairing a mapper with feathers, so the module names no Panoply
+  type and can move to `bevy_action_map` (its X14). Reversing it lets typing reach game actions
+  again. (PAN33)

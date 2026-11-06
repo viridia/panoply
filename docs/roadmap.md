@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN34.**
+**Next: PAN35.**
 
 ## Next
 
@@ -21,21 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN3q Stuck rescue**, the backstop for traps the canopy (D39) does not cover (trees against
-  walls, canopy bowls too steep to climb, clearings enclosed beyond its margin): an actor that is
-  not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
-  spot; before navigation, the nearest cell outside the canopy cover. Tune the canopy and trunk
-  height (`CANOPY_HEIGHT`, D39).
-- **PAN33 Widget keys through the mapper.** The mapper feeds focused widgets, so an action mapper
-  and feathers work together: for any game, not only this one, so no Panoply types, and a home in
-  `bevy_action_map` (its X14) once proven. `InputDispatchPlugin` goes; two contexts bind
-  `ControlClass::AnyButton` and share an observer that triggers `FocusedInput<KeyboardInput>` at the
-  focus, or the window. One claims: above every shortcut, consuming, active while a modal is open or
-  a text input has focus. One falls through: below everything, not consuming, active otherwise. A
-  game widget's context consumes what it handles, so a `bevy_ui_widgets::Button` does not activate
-  twice. Test key repeat (held Backspace), same-frame response, IME, and keys with no named
-  `KeyCode`; check `bevy_immediate` for readers of the plugin's events. Records the decision, beside
-  the mapper's D23.
 - **PAN26 Go To dialog.** G opens a feathers dialog: a text input filtering the nav points sorted by
   name, Cancel and Go. Click selects, double-click or Go travels by `GotoLocation`, Esc cancels. The
   filter, used across the editor later, ports faery's `createSearchFilter` (`editor/src/controls/`,
@@ -71,6 +56,16 @@ components and every layer restartable from saved state (R104).
   editor; faery's `MapEditPanel`, `NavPointSelector` and `NavPointEditor`. Saving is explicit, as in
   faery: a save button beside PAN27's mode selector, disabled while nothing is unsaved, writes
   `world.locations.json`.
+- **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
+  actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
+  rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where
+  the log is kept, and whether a plan reads it, decided when it is written; what else counts as
+  unusual is added as it turns up.
+- **PAN3q Stuck rescue**, the backstop for traps the canopy (D39) does not cover (trees against
+  walls, canopy bowls too steep to climb, clearings enclosed beyond its margin): an actor that is
+  not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
+  spot; before navigation, the nearest cell outside the canopy cover. Each rescue goes in PAN34's
+  log. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
 - **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
   (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
   distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only

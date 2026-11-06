@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use bevy::{
     camera::visibility::RenderLayers,
+    input_focus::InputDispatchPlugin,
     prelude::*,
     settings::SettingsPlugin,
     window::ExitCondition,
@@ -21,10 +22,12 @@ mod diagnostics;
 mod input;
 mod remote_driver;
 mod view;
+mod widget_keys;
 mod window_settings;
 
 use crate::{
     diagnostics::ScreenDiagsPlugin, input::InputPlugin, remote_driver::RemoteDriverPlugin,
+    widget_keys::WidgetKeysPlugin,
 };
 use panoply_actors::ActorsPlugin;
 use panoply_render::PanoplyRenderPlugin;
@@ -56,7 +59,9 @@ fn main() {
                 exit_condition: ExitCondition::DontExit,
                 ..default()
             })
-            .set(AssetPlugin::default()),
+            .set(AssetPlugin::default())
+            // Widgets get their keys from the mapper (`widget_keys`).
+            .disable::<InputDispatchPlugin>(),
         // Plans run with `BEVY_SETTINGS_DIR` set to a directory of their own, so a plan run never
         // changes the developer's saved window position or zoom.
         SettingsPlugin::new("org.viridia.panoply"),
@@ -66,6 +71,7 @@ fn main() {
         ScreenDiagsPlugin,
         RemoteDriverPlugin,
         InputPlugin,
+        WidgetKeysPlugin,
     ))
     // .insert_resource(RaycastBackendSettings {
     //     require_markers: true,

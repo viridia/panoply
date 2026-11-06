@@ -10,7 +10,7 @@
   ground, then a floor's, a fixture's and a tree's canopy colliders; T shows the editor panel
   beside the view, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
   drawn as a white sphere. The Show menu is clicked twice: the second click lands only if the
-  first left the menu open.
+  first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
 - Parcels: those outside the view are hidden, and so are their ground meshes, but stay cached;
   once `goto` returns, the readiness survey shows nothing pending.
 
@@ -163,7 +163,10 @@ def scenery(driver):
 
     # Floor regions have identity transforms (their outlines are in precinct coordinates), so the
     # floors are visited at a fixed spot.
-    spots = [("element", position(elements[0])), ("floors", [0.0, 0.0, 0.0])]
+    # The element with the lowest x (then z), so each run visits the same spot, and loads the same
+    # precincts, whatever order the query returns.
+    element = min(elements, key=lambda row: (position(row)[0], position(row)[2]))
+    spots = [("element", position(element)), ("floors", [0.0, 0.0, 0.0])]
     for label, (x, _, z) in spots:
         print(f"{label} at ({x:.1f}, {z:.1f})")
         driver.goto([x, 0.0, z], 15.0)
@@ -216,6 +219,11 @@ def physics(driver):
     groups = driver.get_resource(VIEWS, at="physics_groups")
     assert groups & TERRAIN_GROUP == 0, f"Terrain still drawn: groups {groups:#x}"
     driver.screenshot("show_menu")
+    # Widgets get keys from the mapper (`widget_keys`): Space toggles the checkbox just clicked.
+    driver.key("Space")
+    driver.frames(5)
+    groups = driver.get_resource(VIEWS, at="physics_groups")
+    assert groups & TERRAIN_GROUP, f"Space did not toggle the focused checkbox: {groups:#x}"
     driver.click("Physics")
     driver.frames(5)
     assert driver.get_resource(VIEWS, at="physics") is False, "Physics did not turn off"
