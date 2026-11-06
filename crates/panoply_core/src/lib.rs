@@ -1,3 +1,4 @@
+mod fonts;
 mod hex_color;
 pub mod layers;
 pub mod metrics;
@@ -16,6 +17,8 @@ use bevy::{
     camera::visibility::{RenderLayers, VisibilitySystems},
     prelude::{Component, IntoScheduleConfigs},
 };
+pub use fonts::GAME_UI_FONT;
+use fonts::GameFonts;
 pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
 use nav_point::NavPointsLoader;
@@ -27,7 +30,7 @@ pub use realm_physics::{OwnedColliders, RealmPhysics};
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
 pub use viewpoint::{GotoLocation, Viewpoint};
-pub use viewport::{ViewOverlay, ViewportInset};
+pub use viewport::{GameViewNode, ViewOverlay, ViewportInset};
 
 /// Marker which identifies the primary camera.
 #[derive(Component)]
@@ -49,6 +52,7 @@ impl Plugin for PanoplyCorePlugin {
             .register_asset_loader(NavPointsLoader)
             .init_asset::<NavPointsAsset>()
             .init_resource::<NavPointsHandleResource>()
+            .init_resource::<GameFonts>()
             .init_resource::<Sunlight>()
             .init_resource::<ViewportInset>()
             .add_message::<GotoLocation>()
