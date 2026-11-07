@@ -13,9 +13,11 @@ wrapping handles and state, side maps from handles to objects). See D23.
 An npm workspace (last touched 2024). Main packages under `packages/`:
 
 - `engine`: the core. Subsystems under `engine/src/`: `world`, `physics`, `nav`, `portals`,
-  `archetypes`, `behaviors`, `quests`, `dialogue`, `items`, `skills`, `stats`, `particles`,
-  `audio`, `lighting`, `materials`, `models`, `animation`, `render`, `overlays`, `player`,
-  `scripting`.
+  `archetypes`, `behaviors`, `quests`, `dialogue`, `items`, `skills`, `stats`, `particles`, `audio`,
+  `lighting`, `materials`, `models`, `animation`, `render`, `overlays`, `player`, `scripting`. Skip
+  `lib/computable`, a Solid-signal graph of derived values that change detection and systems
+  replace; its subclasses (`world/structures/Computed*.ts`, `world/terrain/Computed*.ts`) hold the
+  derivations worth reading.
 - `game`: game rules on top of the engine: `aspects`, `sim`, `behaviors`, `goals`, `quests`,
   `systems`, `books`.
 - `editor`: the real editor (`los-editor` and `los-game` are thin entry points).

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN44.**
+**Next: PAN45.**
 
 ## Next
 
@@ -24,6 +24,10 @@ components and every layer restartable from saved state (R104).
 - **PAN42 Undo stack.** A module of `panoply_editor`, from the author's unmerged bevy#23373, its
   contexts keyed by asset rather than `Entity` (D49). Its first customer is PAN29's nav point + and
   −, made undoable here; every later edit is undoable from the start.
+- **PAN44 Quit confirmation.** Escape (`Quit`, `src/input.rs`) and the window's close button exit at
+  once, losing edits that Save has not written. While `UnsavedAssets` is not empty, both ask first,
+  in a modal dialog like PAN29's text entry: Save, Discard or Cancel. The close button needs
+  `WindowPlugin::close_when_requested` off and `WindowCloseRequested` handled.
 - **PAN35 Create and Change Realm.** Two buttons in the realm panel, each opening a modal dialog:
   Create Realm asks for a name in PAN29's text-entry dialog and makes a new, empty realm; Change
   Realm picks one of the realms in a list-selection dialog and moves the view there. The dialog

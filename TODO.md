@@ -1,45 +1,19 @@
 # Migration
 
 - Scripting
-- Biome data
 - Revive editor
 
 # TODO
 
 - Better picking on tiers - disable terrain picks
 - wall draw sometimes kicks into remove mode - missing exemplar ref?
-- Quit confirm dialog
-- Text input
-- File unsaved indicator.
-  - Track which things are unsaved.
 - Terrain contour list.
   - filter by group
   - contours not appearing in the correct order in groups.
   - empty tile shows nothing, should show black floor.
-- think about converting realm name to Arc<String>. Either that or have a realm id.
-- World camera pan needs to use bubbled scroll events.
-- Build an entity inspector
-- Bugs:
-  - Materials get loaded multiple times?
-- Assets
-  - Asset Reader that allows cache miss
-- Wall Physics
-  - implement
-  - Use enum for collider type? Really depends on whether it's editable.
-- Finish terrain shader
-  - biomes (snow, desert, etc.)
-- Portals
-  - perspective projection
-  - modified frustum
 - Possibly move to common crate:
-  - msgpack (no, we want to remove this actually, get rid of extension types)
   - inline_assets?
   - reflect_types
-- Skybox experiments
-
-* TODO: Wheel rotation should only work if mouse within viewport. We'll need to add a system
-  to track which region we're in.
-* Finish water motion.
 
 Future:
 
@@ -49,71 +23,15 @@ Future:
 
 # Bevy Issues
 
-- [Invalid Generation Error](https://github.com/bevyengine/bevy/issues/12345)
 - [Reflection type aliases](https://github.com/bevyengine/bevy/issues/12387)
-- [Upstream bevy_mod_picking](https://github.com/bevyengine/bevy/issues/12365)
-- [Multi-pass materials](https://github.com/bevyengine/bevy/issues/12208)
 - [Support archive assets](https://github.com/bevyengine/bevy/issues/12279)
 - [Allow missing assets](https://github.com/bevyengine/bevy/issues/12210)
-- [Support hemisphere light](https://github.com/bevyengine/bevy/issues/12027)
-
-# Aspects to define
-
-- SceneryElement
-  - [x] scenery::Models - list of glb models to display
-  - [x] scenery::Colliders - physics colliders
-  - [x] scenery::Marks - interaction marks
-  - [ ] scenery::Container - open / close / lock behaviors
-  - [ ] scenery::Door - open / close / lock
-  - [ ] scenery::Stairs - allows click-to-climb
-  - [ ] scenery::Ladder - allows click-to-climb
-  - [ ] scenery::Sign - click to read
-  - [ ] scenery::PortalAperture - portal dimensions
-  - [ ] scenery::PortalTarget - portal target location
-  - [ ] scenery::LightSource - point light source location
-  - [ ] scenery::SoundSource - ambient sound emitter
-  - [ ] scenery::WallSize - grid alignment options
-  - [ ] mechanics::PushButton - click to interact
-  - [ ] mechanics::ToggleButton - click to interact
-  - [ ] mechanics::PressurePlate - senses being walked on
-  - [ ] mechanics::ControlledOpenable - change state via remote signal
-  - [ ] mechanics::AutoDoor
-  - [ ] trigger::Circle - detects when player is within circle
-  - [ ] trigger::Rect - detects when player is within rect
-  - [ ] trigger::Encounter - increases chance of enemy spawn based on proximity
-  - [ ] scenery::Waymark - used for NPC scripted events
-- Sfx
-  - [ ] sfx::Music
-  - [ ] sfx::WaterFx
-  - [ ] sfx::Particles
-- Actors
-  - [ ] actor::Model
-  - [ ] actor::ColorSlots
-  - [ ] actor::Colors
-  - [ ] actor::FeatureSlots
-  - [ ] actor::Features
-  - [ ] actor::EquippedSlots
-  - [ ] actor::Equipped
-  - [ ] actor::Skills
-  - [ ] actor::Physics
-  - [ ] actor::Gender
-  - [ ] actor::Ally
-  - [ ] actor::Portrait
-  - [ ] actor::GoalsXXX\* (can be multiple)
-- InventoryItem
-  - [ ] inventory::Item - appearance, weight, stack size, price
-  - [ ] inventory::Container - carrying capacity
-  - [ ] inventory::Equippable - equip slot
-  - [ ] inventory::Weapon - damage type, range
-  - [ ] inventory::Document - link to text content, page style
-  - [ ] inventory::QuestItem - quest id, stage
-- Book
 
 # Project hierarchy
 
 - actors
   - Action
-  - Actor
+  - [x] Actor
   - ActorTemplate
   - ActorArchetype
   - ActorAffix
@@ -191,14 +109,14 @@ Future:
 - scenery
   - [x] Fixture
   - [x] FixtureArchetype
-  - FixtureModels
+  - [x] FixtureModels
   - FixtureObstacles
-  - FixturePhysics
-  - Floor
+  - [x] FixturePhysics
+  - [x] Floor
   - [x] FloorArchetype
   - [x] FloorModels
   - FloorObstacles
-  - FloorPhysics
+  - [x] FloorPhysics
   - [x] PrecinctCache
   - [x] Precinct
   - [x] Tier
@@ -207,7 +125,7 @@ Future:
   - [x] ParcelCache
   - [x] Parcel
   - [x] TerrainShape
-  - TerrainFx
+  - [x] TerrainFx
 - view
   - [x] Viewpoint
   - Portals
@@ -234,19 +152,6 @@ convert artwork/export/editor/building.png -background black -alpha Remove artwo
   - drag states
   - overlays
 
-# New Ground Shader
-
-- texture slots
-  - dirt
-  - cobbles
-- biome slots
-  - texture index
-  - blend weights for corners (xyzw)
-  - rotation
-  - scale
-  - blend params
-    - noise factor
-
 # Scripting
 
 Access to:
@@ -257,7 +162,6 @@ Access to:
 - register quest
 - register dialog
 - register mod
-
   - add character asset
 
 - In old engine, scripts were part of archetypes.
@@ -312,7 +216,6 @@ export interface IAspectType<
 ```
 
 - effectively we want a script to be able to implement:
-
   - a Scenery exemplar
   - an Actor exemplar
   - an Item exempler

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X61.**
+**Next: X64.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -59,7 +59,10 @@ dropped, not deferred. Numbers are never reused.
   from `../bevy_reactor_3/crates/bevy_reactor_formulae`.
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
-  camera. *Gate:* scenery or actors with shiny materials restored.
+  camera. The sky itself is never in view; the skybox is only there to light. Without an environment
+  map, mirrored surfaces look flat, and environment maps have proved expensive, so this is an
+  experiment in cost: measure each probe layout with `plans/perf.py`. *Gate:* scenery or actors with
+  shiny materials restored.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about
@@ -422,3 +425,30 @@ dropped, not deferred. Numbers are never reused.
   hint in the text-entry dialog). `EditableText` lists placeholders as planned but not implemented
   (`bevy_text`'s `editing.rs`), and feathers' text input has none; an overlaid label was judged not
   worth it. *Gate:* a Bevy bump whose `EditableText` or feathers text input has placeholders.
+- **X61** Audio. Panoply has no sound. The old engine had ambient sound emitters placed as a scenery
+  aspect (`SoundSource`), music, water sounds and an audio-effect system (`AudioFx`,
+  `AudioFxTemplate`). The proving slice: one ambient emitter aspect and music per realm, on Bevy's
+  built-in audio. *Gate:* PAN6, or the author takes up sound.
+- **X62** Signs and books: things to read. A sign is a scenery aspect whose interaction shows its
+  text; a document is an inventory item that links to text content and a page style (faery's book
+  aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
+  since its action needs only a reading view. *Gate:* PAN21.
+- **X63** Mechanisms: the stock elements puzzles are built from, and how they are wired together.
+  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
+  automatic doors and spear traps, wired by reactive formulas so that elaborate puzzles combine
+  simple parts ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under
+  Migration scripts). Beside them: triggers (a circle or rectangle the player enters), encounter
+  zones, and waymarks for scripted NPC events. To decide: how one element signals another (an entity
+  event, as PAN21's actions are, or a formula over the other's state), and which parts are native
+  aspects and which are SAGA (X7). The hard part is referencing and naming. A precinct is named by
+  its realm and coordinates, and is like a module: its walls and fixtures that others can refer to
+  are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy to type
+  into a text box, so the field for a signal source browses the available signals with a filter, as
+  PAN35's chooser does. Also open: what a reference into a precinct that is not loaded reads.
+  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
+  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
+  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
+  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
+  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
+  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
+  a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
