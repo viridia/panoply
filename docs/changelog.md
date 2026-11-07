@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN48** Character files are Blender 5.2's; their `.glb`s are up to 70% smaller, junk clips gone.
 - **PAN29** Realm mode's panel shows the map's stats and edits nav points; Save writes them.
 - **PAN27** Buttons atop the editor panel choose the editor mode or play, kept across restarts.
 - **PAN22** F2 switches play and edit: WASD and arrows move the player, or the camera; Go To too.

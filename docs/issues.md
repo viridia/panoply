@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I16.**
+**Next: I17.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -27,6 +27,8 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I6** Two female gait clips in `humanoid-armature.glb` look broken in catwalk: `WalkFastFemale`
   has stiff arms (perhaps a bad bone export), and `RunFemale` is broken. Female archetypes' `Run`
   plays `RunMale` meanwhile; `WalkFast` still plays `WalkFastFemale`. Seen by the author in catwalk.
+  After PAN48's re-export from Blender 5.2, `RunFemale` looks odd but no longer broken, seen by the
+  author in catwalk and the game, though its poses compare equal to the 3.5 export's.
 - **I8** Two precincts (`playground/p002-p000`, `holm-overland/p008-p012`) name the exemplar
   `exemplars/regional/marheim#Carlyle.Tepper`, whose file does not exist, probably a faery archetype
   path the converter's `mapArch` had no mapping for. Those actors would load no aspects and have no
@@ -60,3 +62,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   `nav_point_list` binds them as `Button` actions, and the mapper passes OS key repeats only to
   class bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump
   the lock here and add it to the two bindings. Seen by the author; the cause read, not run.
+- **I16** `humanoid-male.blend` links the actions `Default` and `RunAction` from
+  `humanoid-armature.blend`, and `wasp.blend` links `Default`; none exists there any more, probably
+  renamed since. Neither file exports clips, so nothing in the game shows it; Blender warns on
+  opening them. Candidates: relink to `DefaultAction` and `RunMaleAction`, or remove the links.
+  Confirmed by running (Blender's warnings).

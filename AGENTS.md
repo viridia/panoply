@@ -31,6 +31,12 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 - `show.py`: prints ledger entries by id.
 - `outlines.py`: lists the meshes in `assets/` drawn without an outline, and whether faery outlined
   them (`--none` for those nothing outlines).
+- `blend_inventory.py`: what is wrong with `.blend` files' clips, materials and export settings
+  (D55). It and the other `blend_*.py` run themselves inside Blender, headless.
+- `blend_export.py`: exports `.blend` files with their remembered settings (`--to DIR` elsewhere).
+- `blend_cleanup.py`: repairs what the inventory reports; a dry run unless `--apply`, which saves
+  `.blend` files, so it has no allow rule.
+- `glb_compare.py`: what a re-export changed, clip by clip and pose by pose, against git `HEAD`.
 - `devfmt.py --diff`: rewraps changed Markdown paragraphs to 100 columns (`--preview` to read
   first). Markdown only: the source trees are exempt, since Rust here still holds commented-out
   code. After editing `devfmt.py`, run `python3 <absolute path>/scripts/test_devfmt.py`.

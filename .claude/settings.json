@@ -26,6 +26,11 @@
       "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py *)",
       "Bash(python3 /Users/talin/Projects/games/panoply/scripts/test_devfmt.py)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/blend_inventory.py)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/blend_inventory.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/blend_export.py)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/blend_export.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/glb_compare.py *)",
       "Read(~/.cargo/registry/**)",
       "Read(~/.cargo/git/**)",
       "Read(//Users/talin/Projects/games/**)"

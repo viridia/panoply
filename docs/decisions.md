@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D55.**
+**Next: D56.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -421,3 +421,16 @@ never reused.
   the authored files' form (faery's `JSON.stringify`): arrays of numbers on one line, whole floats
   as integers, so a save changes only what was edited. Reversing it means edits that show only after
   saving. (PAN29)
+- **D55** Character files are Blender 5.2 files, exported with the settings each file remembers
+  (`EXPORT_SETTINGS` in `scripts/blendtools.py`), which File > Export > glTF 2.0 opens with and
+  `blend_export.py` uses. A clip is an NLA track, named by the track (NLA Tracks mode): Actions mode
+  also exports hidden objects' actions and doubles the channels of an action two strips use.
+  Remembered settings, not 4.2's collection exporters: an exporter cannot sit on a scene's root
+  collection, and one on a collection leaves out any object later added outside it. Actions keep
+  their names, since other files link them from `humanoid-armature.blend` by name. Blender 5.2
+  exports 3.5's characters differently in ways `blend_cleanup.py` repairs in the file, each matching
+  what 3.5 exported; the one that was never well defined is IK/FK switches, constraint influences
+  some clips leave unkeyed, which take whatever value Blender last evaluated, so every clip now keys
+  them. `blend_inventory.py` reports a file's departures from all this, and `glb_compare.py` what a
+  re-export changed. Reversing it means going back to 3.5, whose exporter read the stash tracks and
+  shortened strips correctly only by accident. (PAN48)

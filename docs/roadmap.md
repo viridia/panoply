@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN46.**
+**Next: PAN49.**
 
 ## Next
 
@@ -128,11 +128,15 @@ components and every layer restartable from saved state (R104).
   faery's default. `scripts/outlines.py` lists what changes. The playground's creature group (124,
   22; `creatures.png` in `plans/actors.py`) shows the kreekin, outlined only by node. Weapons also
   carry a hand-built `Outline` hull, which a node outline would extrude again. To see outlines while
-  editing, a Blender Python script, run once per `.blend`: it makes a geometry-node inverted hull
-  (offset along normals, flip faces, an outline material with backface culling, joined to the mesh)
-  and adds it after the Armature modifier on every mesh, its width driven by the object's `outline`
-  property. Exports must leave the hull out: check whether the glTF exporter skips a modifier that
-  is off for render, else export with modifiers unapplied.
+  editing, a Blender Python script, run once per `.blend`: after the Armature modifier on every
+  mesh, an Edge Split on sharp edges, then a Solidify (flipped normals, Even Thickness off, an
+  outline material with backface culling), its thickness driven by the object's `outline` property.
+  It shows two things: meshes with no outline, and sharp convex corners that need a bevel. The Edge
+  Split is for the second: `outline.wesl` extrudes along the exported normals, which split at sharp
+  edges and open cracks at hard corners, while a Solidify alone offsets along unsplit vertex normals
+  and would hide them. Check the preview against the game on one model with a hard corner, including
+  flat-shaded faces, which the Edge Split may not split. Exports must leave the hull out, with Apply
+  Modifiers on (D55), by a means this chunk settles.
 - **PAN24 Clip repairs.** With PAN23, as one Blender session. `Punch` keys `upper_arm.R` rolled
   about 140° from its roll in `Stand` (and 70-90° from the mirrored left arm), wringing the
   shoulder; the keys hold no quaternion sign flips, so the poses themselves are wrong. A Blender
@@ -142,6 +146,20 @@ components and every layer restartable from saved state (R104).
   from `Stand`. The broken female clips are I6. A trial for X45: retarget one CC0 combat clip onto
   `HumanoidArmature` and play it beside the hand-keyed ones, to measure the cost per clip and
   whether the styles mix.
+- **PAN46 Blender procedures.** In the same Blender session as PAN24, so that new clips and
+  characters are looked up rather than relearned. A section in `artwork/characters/Blender.md`, for
+  Blender 5.2, click by click with the traps at their steps: a new character on the shared armature
+  (parent with automatic weights, fix the weights, play the existing clips). The author follows the
+  draft once in Blender and corrects it.
+- **PAN47 Clip panel.** A Panoply add-on for Blender 5.2, replacing the NLA editor for clip work, so
+  clips are never renamed or edited through it. A panel lists the clips; selecting one makes it the
+  action being edited (no tweak mode to forget), with play. New and Delete change a clip's NLA track
+  and action together, a new clip's action named as its track; Rename renames the track only, since
+  other files link actions by name (D55). Export uses the file's remembered settings (D55), and
+  `blend_inventory.py`'s report shows after each. Keying stays in the Dope Sheet and Graph Editor;
+  the NLA editor's blending and timing go unused, since the animation graph blends clips in the
+  game. `Blender.md` gains a section on installing the add-on and using it, and the author tries it
+  in the same session as PAN46.
 - **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
   distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
   the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
