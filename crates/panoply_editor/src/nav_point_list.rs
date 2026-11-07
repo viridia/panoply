@@ -1,4 +1,4 @@
-//! A list of the nav points, sorted by name, with a filter box above it (`search_filter`). A click
+//! A list of the nav points, sorted by name, with a filter box below it (`search_filter`). A click
 //! selects a point; a double-click triggers [`ActivateNavPoint`], which bubbles up from the list
 //! to whatever holds it. While the filter box has focus, Up and Down move the selection and Enter
 //! activates the selected point, or the first shown if none is.
@@ -19,7 +19,7 @@ use bevy::{
     ui_widgets::{listbox_update_selection, ListBox, ScrollArea, SetSelected, ValueChange},
 };
 use bevy_action_map::prelude::*;
-use panoply_core::{NavPoint, NavPointsAsset, NavPointsHandleResource};
+use panoply_core::{GotoLocation, NavPoint, NavPointsAsset, NavPointsHandleResource};
 
 use crate::search_filter::SearchFilter;
 
@@ -89,31 +89,24 @@ impl Plugin for NavPointListPlugin {
     }
 }
 
-/// The list, its filter box focused as it spawns.
-pub fn nav_point_list() -> impl Scene {
+/// The list; with `autofocus`, its filter box takes the focus as it spawns. A list in the panel
+/// must not, or the keys that move the view would type into it.
+pub fn nav_point_list(autofocus: bool) -> impl Scene {
     bsn! {
         NavPointList
         Node {
             flex_direction: FlexDirection::Column,
-            row_gap: px(6),
+            row_gap: px(4),
             flex_grow: 1.0,
             min_height: px(0),
         }
         Children [
-            @FeathersTextInputContainer
-            Node { flex_grow: 0.0, flex_shrink: 0.0 }
-            Children [
-                @FeathersTextInput
-                #Filter
-                NavPointFilter
-                AutoFocus
-            ]
-            --
             @group()
             Node { flex_grow: 1.0, min_height: px(0) }
             Children [
                 @group_body()
-                Node { flex_grow: 1.0, min_height: px(0) }
+                // Feathers pads a group's body by 6; the editor spaces by 4.
+                Node { flex_grow: 1.0, min_height: px(0), padding: px(4) }
                 Children [
                     @FeathersListView
                     #Rows
@@ -123,7 +116,22 @@ pub fn nav_point_list() -> impl Scene {
                     on(activate_row)
                 ]
             ]
+            --
+            // Below the list, not above: empty, the box shows every point, so the list is the
+            // content and the box only narrows it. A search whose empty box shows nothing would
+            // put the box first.
+            @FeathersTextInputContainer
+            Node { flex_grow: 0.0, flex_shrink: 0.0 }
+            Children [ @filter_input(autofocus) ]
         ]
+    }
+}
+
+fn filter_input(autofocus: bool) -> Box<dyn Scene> {
+    if autofocus {
+        Box::new(bsn! { @FeathersTextInput #Filter NavPointFilter AutoFocus })
+    } else {
+        Box::new(bsn! { @FeathersTextInput #Filter NavPointFilter })
     }
 }
 
@@ -325,6 +333,31 @@ fn filter_keys(
         entity: row,
         container: ScrollIntoViewContainer::Nearest,
     });
+}
+
+/// Moves the viewpoint to a nav point, by name.
+#[derive(bevy::ecs::system::SystemParam)]
+pub(crate) struct Travel<'w> {
+    handle: Res<'w, NavPointsHandleResource>,
+    assets: Res<'w, Assets<NavPointsAsset>>,
+    gotos: MessageWriter<'w, GotoLocation>,
+}
+
+impl Travel<'_> {
+    /// Moves the viewpoint to the point named `name`, if there is one.
+    pub(crate) fn to(&mut self, name: &str) {
+        let point = self
+            .assets
+            .get(&self.handle.0)
+            .and_then(|points| points.0.iter().find(|p| p.name == name));
+        if let Some(point) = point {
+            self.gotos.write(GotoLocation {
+                realm: point.realm.clone(),
+                position: point.pos,
+                ..default()
+            });
+        }
+    }
 }
 
 #[cfg(test)]

@@ -21,15 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN29 Realm mode panel.** The realm mode's panel, after faery's `MapEditPanel` (`realm.png`) but
-  free to depart from it: stats about the map (its size in parcels, the realm, the view position),
-  then PAN26's nav point list with Go, + (names the current view as a new nav point) and − (removes
-  the selected one); faery's `NavPointSelector`. + asks for the name in a generic text-entry dialog,
-  which PAN35 reuses. Saving is explicit, as in faery: a save button before the panel's menu button
-  (`shell.rs`), square and as tall as it, with the floppy-disk icon
-  (`assets/editor/icons/save.png`), writes every asset with unsaved changes, and is disabled while
-  there are none. The nav points (`world.locations.json`) are the first such asset. The selected
-  point's fields wait for PAN28. + and − are the first edits, without undo until PAN42.
 - **PAN42 Undo stack.** A module of `panoply_editor`, from the author's unmerged bevy#23373, its
   contexts keyed by asset rather than `Entity` (D49). Its first customer is PAN29's nav point + and
   −, made undoable here; every later edit is undoable from the start.

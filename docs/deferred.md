@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X60.**
+**Next: X61.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -418,3 +418,7 @@ dropped, not deferred. Numbers are never reused.
   the 3D view while its entry is selected, as faery's dialogue state machine editor did
   ([faery.md](faery.md), Editor, `catalogs-dialogue.png`). *Gate:* the first catalog kind whose
   entries do not fit the panel is taken up; dialogues are the likely first.
+- **X60** Placeholder text in the editor's text boxes ("Filter…" in the nav point list's filter, a
+  hint in the text-entry dialog). `EditableText` lists placeholders as planned but not implemented
+  (`bevy_text`'s `editing.rs`), and feathers' text input has none; an overlaid label was judged not
+  worth it. *Gate:* a Bevy bump whose `EditableText` or feathers text input has placeholders.

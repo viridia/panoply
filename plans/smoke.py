@@ -11,6 +11,10 @@
   beside the view, its mode selector and F2 switch modes, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
   drawn as a white sphere. The Show menu is clicked twice: the second click lands only if the
   first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
+- Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
+  travels to the point selected; + asks for a name, refusing one in use, and adds the point,
+  which enables Save; Save writes `world.locations.json` (restored afterwards); − removes the
+  point.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
   Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
@@ -21,6 +25,8 @@
 
 Settings start empty, so physics drawing starts off and the panel hidden.
 """
+
+from pathlib import Path
 
 from bevy_remote_driver import Between
 
@@ -54,6 +60,9 @@ WAREHOUSE = [41.59800604609949, 0.0, 41.48915667709594]
 COMPUTED = "bevy_ui::ui_node::ComputedNode"
 UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
 MODAL = "bevy_ui_widgets::modal::ModalDialog"
+TEXT = "bevy_ui::widget::text::Text"
+DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
+LOCATIONS = Path(__file__).resolve().parent.parent / "assets" / "world.locations.json"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 TERRAIN_GROUP = 1
@@ -223,16 +232,19 @@ def physics(driver):
             driver.screenshot("scenery_colliders")
     driver.screenshot("tree_colliders")
 
-    # The panel is 300 wide by default, and the view starts after it and the handle.
+    # The panel is 328 wide by default, its narrowest (`MIN_PANEL_WIDTH`), and the view starts
+    # after it and the handle.
     driver.key("KeyT")
     driver.frames(10)
     assert driver.get_resource(PANEL, at="visible") is True, "T did not show the panel"
     left = driver.get_resource(INSET, at="left")
-    assert left == Between(300.0, 320.0), f"view not beside the panel: inset {left}"
+    assert left == Between(328.0, 348.0), f"view not beside the panel: inset {left}"
 
     # The mode selector starts on Realm; its buttons choose the editor mode or play, and F2
     # switches to play and back to the editor mode last chosen.
     assert editor_mode(driver) == "Realm", f"started in {editor_mode(driver)}"
+    # The starting mode has its panel too, not only a mode switched to.
+    driver.present("RealmPanel")
     driver.screenshot("mode_selector")
     driver.click("TerrainMode")
     wait_mode(driver, editor_mode, "Terrain")
@@ -245,6 +257,7 @@ def physics(driver):
     driver.click("RealmMode")
     wait_mode(driver, editor_mode, "Realm")
     expect_highlight(driver, "RealmMode")
+    realm_panel(driver)
 
     driver.click("Show")
     driver.click("Terrain")
@@ -264,6 +277,65 @@ def physics(driver):
     driver.key("KeyT")
     driver.frames(10)
     assert driver.get_resource(INSET, at="left") == 0.0, "view still inset with the panel hidden"
+
+
+def realm_panel(driver):
+    driver.present("RealmPanel/warehouse")
+    driver.expect("RealmPanel/Realm", TEXT, "playground")
+    driver.screenshot("realm_panel")
+
+    # The panel's filter box does not take the focus: an arrow still turns the view.
+    before = driver.get("PrimaryCamera", TRANSFORM)
+    hold(driver, "ArrowLeft", 0.3)
+    assert driver.get("PrimaryCamera", TRANSFORM) != before, "the panel's list took the arrows"
+
+    driver.click("RealmPanel/warehouse")
+    expect_disabled(driver, "RealmPanel/Go", False)
+    driver.click("RealmPanel/Go")
+    arrived(driver, WAREHOUSE, "the panel's Go")
+
+    # + refuses a name in use, and adds the point under a new one, selected.
+    expect_disabled(driver, "Save", True)
+    driver.click("AddNavPoint")
+    driver.present("TextEntryDialog/Entry")
+    driver.type("warehouse")
+    driver.expect("TextEntryDialog/Hint", TEXT, "Name in use")
+    expect_disabled(driver, "TextEntryDialog/Ok", True)
+    driver.type("-smoke")
+    expect_disabled(driver, "TextEntryDialog/Ok", False)
+    driver.screenshot("new_nav_point")
+    driver.click("TextEntryDialog/Ok")
+    driver.absent("TextEntryDialog")
+    driver.present("RealmPanel/warehouse-smoke")
+    expect_disabled(driver, "Save", False)
+
+    # Save writes the file. The original goes back however the checks end; the file watcher then
+    # reloads it.
+    original = LOCATIONS.read_bytes()
+    try:
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        assert '"warehouse-smoke"' in LOCATIONS.read_text(), "Save did not write the new point"
+        driver.click("RemoveNavPoint")
+        driver.absent("RealmPanel/warehouse-smoke")
+        expect_disabled(driver, "Save", False)
+    finally:
+        LOCATIONS.write_bytes(original)
+
+
+def expect_disabled(driver, selector, disabled):
+    """Waits until the widget `selector` is disabled, or enabled."""
+
+    def check():
+        (entity,) = driver.select(selector)
+        found = driver.call(
+            "world.get_components", {"entity": entity, "components": [DISABLED], "strict": False}
+        )
+        has = DISABLED in found["components"]
+        return has == disabled, lambda: "disabled" if has else "enabled"
+
+    state = "disabled" if disabled else "enabled"
+    driver.wait(check, f"{selector} {state}", {"seconds": 2})
 
 
 def game_mode(driver):

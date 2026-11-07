@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D54.**
+**Next: D55.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -410,3 +410,14 @@ never reused.
   state itself. Each mode's keys are a context active only in it (`active_in_state`), so WASD and
   the arrows drive the free camera in edit and the player's actor in play, as in faery. Reversing it
   means the computed state and an editor-modes list kept in step with it. (PAN22)
+- **D54** The editor edits assets in memory and saves them only when asked. An edit changes the
+  loaded asset (`Assets::get_mut`), so the world shows it at once, and marks it in `UnsavedAssets`;
+  the save button writes every marked asset, each type registered with `register_saveable`, through
+  a temporary file renamed over the original. faery showed many edits only after a save, through the
+  file watcher's reload; Panoply's never wait for it. Asset events never mark an asset, so the
+  reload of a file just saved leaves it saved; an asset whose reload is expensive (a precinct, which
+  respawns its actors) must also ignore the reload of its own save, which its first editing chunk
+  handles. Writes are synchronous until an asset is large enough to need a task. JSON is written in
+  the authored files' form (faery's `JSON.stringify`): arrays of numbers on one line, whole floats
+  as integers, so a save changes only what was edited. Reversing it means edits that show only after
+  saving. (PAN29)

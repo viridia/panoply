@@ -1,6 +1,8 @@
 //! The editor's shell: a panel at the left of the game's view, split from it by a handle that
 //! drags. T shows or hides the panel, and G opens the Go To dialog (`goto`). Atop the panel are the
-//! mode selector (`mode_selector`) and the Show menu, which turns debug views on and off.
+//! mode selector (`mode_selector`), the save button, which writes every unsaved asset (`unsaved`),
+//! and the Show menu, which turns debug views on and off. Below them, [`PanelBody`] holds the
+//! current mode's panel.
 
 use std::time::Duration;
 
@@ -8,7 +10,7 @@ use bevy::{
     ecs::system::SystemParam,
     feathers::{
         controls::{
-            FeathersCheckbox, FeathersMenu, FeathersMenuPopup, FeathersMenuToolButton,
+            FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuPopup, FeathersMenuToolButton,
             FeathersPane, FeathersSplitPane, FeathersSplitPaneHandle,
         },
         display::icon,
@@ -17,8 +19,8 @@ use bevy::{
     },
     prelude::*,
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
-    ui::{UiGlobalTransform, UiSystems},
-    ui_widgets::{split_pane_self_update, Pane, ValueChange},
+    ui::{InteractionDisabled, UiGlobalTransform, UiSystems},
+    ui_widgets::{split_pane_self_update, Activate, Pane, ValueChange},
     window::PrimaryWindow,
 };
 use bevy_action_map::prelude::*;
@@ -33,11 +35,23 @@ use rapier3d::prelude::Group;
 use crate::{
     debug_views::DebugViews,
     goto::OpenGotoDialog,
-    mode_selector::{ModeSelector, ToggleGameMode},
+    mode_selector::{EditorMode, ModeSelector, ToggleGameMode, SELECTOR_WIDTH},
+    realm_panel::realm_panel,
+    unsaved::{SaveAssets, UnsavedAssets},
 };
 
 /// Narrowest either pane may be, in logical pixels.
 const MIN_PANE_WIDTH: f32 = 200.0;
+
+/// The top row's padding and the gaps between its parts.
+const ROW_SPACING: f32 = 8.0;
+/// The save button and the Show menu's button are square, as tall as the mode selector.
+const ROW_BUTTON: f32 = 32.0;
+
+/// Narrowest the panel may be: wide enough for its top row unsquished. The row's padding at both
+/// ends, the selector, then the gaps around the slack between it and the two buttons.
+const MIN_PANEL_WIDTH: f32 =
+    2.0 * ROW_SPACING + SELECTOR_WIDTH + 3.0 * ROW_SPACING + 2.0 * ROW_BUTTON;
 
 pub(crate) const SAVE_DELAY: Duration = Duration::from_millis(500);
 
@@ -57,7 +71,7 @@ impl Default for EditorPanelSettings {
     fn default() -> Self {
         Self {
             visible: false,
-            width: 300.0,
+            width: MIN_PANEL_WIDTH,
         }
     }
 }
@@ -84,6 +98,16 @@ struct PanelHandle;
 #[derive(Component, Default, Clone)]
 struct ViewPane;
 
+/// The root of the immediate-mode panel body, below the mode selector: it shows the current
+/// mode's panel. Built each frame from the mode, so the mode the app starts in has its panel
+/// without waiting on state transitions, which run before the shell spawns.
+#[derive(Component, Default, Clone)]
+pub(crate) struct PanelBody;
+
+/// The save button, disabled while nothing is unsaved.
+#[derive(Component, Default, Clone)]
+struct SaveButton;
+
 /// The root of the immediate-mode Show menu.
 #[derive(Component, Default, Clone)]
 struct ShowMenu;
@@ -92,7 +116,10 @@ pub struct EditorShellPlugin;
 
 impl Plugin for EditorShellPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ShowMenu>::new())
+        app.add_plugins((
+            BevyImmediateAttachPlugin::<CapsUiFeathers, ShowMenu>::new(),
+            BevyImmediateAttachPlugin::<CapsUiFeathers, PanelBody>::new(),
+        ))
             .add_context::<EditorShellControl>(|context| {
                 context.bind::<TogglePanel>(KeyCode::KeyT);
                 context.bind::<OpenGotoDialog>(KeyCode::KeyG);
@@ -115,6 +142,7 @@ impl Plugin for EditorShellPlugin {
                     show_panel,
                     fit_panel_width,
                     adopt_view_overlays,
+                    enable_save.run_if(resource_changed::<UnsavedAssets>),
                 ),
             )
             .add_systems(PostUpdate, follow_view_pane.after(UiSystems::Layout));
@@ -140,26 +168,51 @@ fn shell() -> impl Scene {
             on(split_pane_self_update)
             on(save_panel_width)
             Children [
-                @FeathersPane { @size: 1.0, @min_size: MIN_PANE_WIDTH }
+                @FeathersPane { @size: 1.0, @min_size: MIN_PANEL_WIDTH }
                 #EditorPanel
                 PanelPane
                 ThemeBackgroundColor(tokens::WINDOW_BG)
                 Children [
                     Node {
                         align_items: AlignItems::Center,
-                        column_gap: px(8),
-                        padding: UiRect::all(px(8)),
+                        column_gap: px(ROW_SPACING),
+                        padding: UiRect::all(px(ROW_SPACING)),
                     }
                     Children [
                         ModeSelector
                         Node { column_gap: px(1) }
                         --
-                        // The space between the selector and the menu takes up the slack.
+                        // The space between the selector and the buttons takes up the slack.
                         Node { flex_grow: 1.0 }
+                        --
+                        @FeathersButton {
+                            @caption: bsn! { @icon("editor/icons/save.png") Node { height: px(20) } },
+                        }
+                        // Square, as tall as the mode selector's buttons.
+                        Node {
+                            width: px(ROW_BUTTON),
+                            height: px(ROW_BUTTON),
+                            padding: UiRect::ZERO,
+                        }
+                        #Save
+                        SaveButton
+                        InteractionDisabled
+                        on(|_: On<Activate>, mut saves: MessageWriter<SaveAssets>| {
+                            saves.write(SaveAssets);
+                        })
                         --
                         ShowMenu
                         Node
                     ]
+                    --
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        flex_grow: 1.0,
+                        min_height: px(0),
+                        padding: UiRect { top: px(0), ..UiRect::all(px(8)) },
+                    }
+                    #PanelBody
+                    PanelBody
                 ]
                 --
                 @FeathersSplitPaneHandle
@@ -171,6 +224,23 @@ fn shell() -> impl Scene {
                 GameViewNode
             ]
         ]
+    }
+}
+
+fn enable_save(
+    unsaved: Res<UnsavedAssets>,
+    button: Single<(Entity, Has<InteractionDisabled>), With<SaveButton>>,
+    mut commands: Commands,
+) {
+    let (button, disabled) = *button;
+    match (unsaved.is_empty(), disabled) {
+        (false, true) => {
+            commands.entity(button).remove::<InteractionDisabled>();
+        }
+        (true, false) => {
+            commands.entity(button).insert(InteractionDisabled);
+        }
+        _ => {}
     }
 }
 
@@ -218,7 +288,7 @@ fn fit_panel_width(
     }
     let logical_width = |node: &ComputedNode| node.size().x * node.inverse_scale_factor();
     let total = logical_width(panel.1) + logical_width(view.1);
-    if total < 2.0 * MIN_PANE_WIDTH {
+    if total < MIN_PANEL_WIDTH + MIN_PANE_WIDTH {
         return;
     }
     if (total - *last_total).abs() < 0.5 && !settings.is_changed() {
@@ -226,7 +296,7 @@ fn fit_panel_width(
     }
     *last_total = total;
 
-    let width = settings.width.clamp(MIN_PANE_WIDTH, total - MIN_PANE_WIDTH);
+    let width = settings.width.clamp(MIN_PANEL_WIDTH, total - MIN_PANE_WIDTH);
     if (panel.0.size - width).abs() >= 0.5 {
         panel.0.size = width;
     }
@@ -303,6 +373,26 @@ fn follow_view_pane(
 }
 
 #[derive(SystemParam)]
+pub(crate) struct PanelBodyParams<'w> {
+    mode: Option<Res<'w, State<EditorMode>>>,
+}
+
+impl ImmediateAttach<CapsUiFeathers> for PanelBody {
+    type Params = PanelBodyParams<'static>;
+
+    /// One child, keyed by the mode, so a mode switch replaces it; none while playing. The other
+    /// modes have no panel yet.
+    fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut PanelBodyParams) {
+        match params.mode.as_deref().map(State::get) {
+            Some(EditorMode::Realm) => {
+                ui.ch_id("realm").on_spawn_apply_scene(realm_panel);
+            }
+            Some(EditorMode::Terrain | EditorMode::Scenery | EditorMode::Catalogs) | None => {}
+        }
+    }
+}
+
+#[derive(SystemParam)]
 struct ShowMenuParams<'w, 's> {
     views: ResMut<'w, DebugViews>,
     commands: Commands<'w, 's>,
@@ -320,7 +410,7 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
         let mut views = params.views.clone();
         ui.ch_id("show_menu")
             // As tall as its button, which is taller than feathers' row height.
-            .on_spawn_apply_scene(|| bsn! { @FeathersMenu Node { height: px(32) } })
+            .on_spawn_apply_scene(|| bsn! { @FeathersMenu Node { height: px(ROW_BUTTON) } })
             .add(|ui| {
                 ui.ch().on_spawn_apply_scene(|| {
                     bsn! {
@@ -329,7 +419,7 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
                             @arrow: false,
                         }
                         // Square, as tall as the mode selector's buttons.
-                        Node { width: px(32), height: px(32) }
+                        Node { width: px(ROW_BUTTON), height: px(ROW_BUTTON) }
                         #Show
                     }
                 });

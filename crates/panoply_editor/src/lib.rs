@@ -10,10 +10,14 @@ use bevy::{
 pub mod debug_views;
 pub mod diagnostics;
 pub mod goto;
+pub mod json;
 pub mod mode_selector;
 pub mod nav_point_list;
+pub mod realm_panel;
 pub mod search_filter;
 pub mod shell;
+pub mod text_entry;
+pub mod unsaved;
 pub mod zoom;
 
 pub struct EditorPlugin;
@@ -29,6 +33,9 @@ impl Plugin for EditorPlugin {
             goto::GotoDialogPlugin,
             nav_point_list::NavPointListPlugin,
             mode_selector::ModeSelectorPlugin,
+            realm_panel::RealmPanelPlugin,
+            text_entry::TextEntryPlugin,
+            unsaved::UnsavedAssetsPlugin,
         ))
         .insert_resource(UiTheme(create_dark_theme()));
     }

@@ -14,10 +14,8 @@ use bevy::{
     ui_widgets::{Activate, RequestClose},
 };
 use bevy_action_map::prelude::*;
-use panoply_core::{GotoLocation, NavPointsAsset, NavPointsHandleResource};
-
 use crate::{
-    nav_point_list::{nav_point_list, ActivateNavPoint, NavPointList},
+    nav_point_list::{nav_point_list, ActivateNavPoint, NavPointList, Travel},
     shell::EditorShellControl,
 };
 
@@ -81,7 +79,7 @@ fn dialog_contents() -> impl SceneList {
         --
         @FeathersDialogBody
         Node { height: vh(60), min_height: px(0) }
-        Children [ @nav_point_list() ]
+        Children [ @nav_point_list(true) ]
         --
         @FeathersDialogFooter Children [
             @FeathersButton { @caption: bsn! { Text("Cancel") ThemedText } }
@@ -102,13 +100,29 @@ fn dialog_contents() -> impl SceneList {
     }
 }
 
-/// Disables Go while the list has nothing selected.
+/// The nav point list inside the dialog: the realm panel may hold another.
+fn dialog_list<'a>(
+    dialog: Entity,
+    children: &Query<&Children>,
+    lists: &'a Query<&NavPointList>,
+) -> Option<&'a NavPointList> {
+    children
+        .iter_descendants(dialog)
+        .find_map(|e| lists.get(e).ok())
+}
+
+/// Disables Go while the dialog's list has nothing selected.
 fn enable_go(
-    lists: Query<&NavPointList, Changed<NavPointList>>,
+    dialogs: Query<Entity, With<GotoDialog>>,
+    children: Query<&Children>,
+    lists: Query<&NavPointList>,
     buttons: Query<(Entity, Has<InteractionDisabled>), With<GoButton>>,
     mut commands: Commands,
 ) {
-    let Some(list) = lists.iter().next() else {
+    let Some(list) = dialogs
+        .iter()
+        .find_map(|dialog| dialog_list(dialog, &children, &lists))
+    else {
         return;
     };
     for (button, disabled) in &buttons {
@@ -124,48 +138,26 @@ fn enable_go(
     }
 }
 
-/// Observer on the Go button: travels to the selected point.
+/// Observer on the Go button: travels to the selected point and closes the dialog.
 fn go(
     _activate: On<Activate>,
-    lists: Query<&NavPointList>,
     dialogs: Query<Entity, With<GotoDialog>>,
+    children: Query<&Children>,
+    lists: Query<&NavPointList>,
     mut travel: Travel,
+    mut commands: Commands,
 ) {
-    let Some(name) = lists.iter().find_map(|list| list.selected.clone()) else {
-        return;
-    };
     for dialog in &dialogs {
-        travel.to(&name, dialog);
-    }
-}
-
-/// Observer on the dialog: travels to a double-clicked point.
-fn travel_to_activated(activate: On<ActivateNavPoint>, mut travel: Travel) {
-    travel.to(&activate.name, activate.event_target());
-}
-
-#[derive(bevy::ecs::system::SystemParam)]
-struct Travel<'w, 's> {
-    handle: Res<'w, NavPointsHandleResource>,
-    assets: Res<'w, Assets<NavPointsAsset>>,
-    gotos: MessageWriter<'w, GotoLocation>,
-    commands: Commands<'w, 's>,
-}
-
-impl Travel<'_, '_> {
-    /// Moves the viewpoint to the point named `name`, and closes `dialog`.
-    fn to(&mut self, name: &str, dialog: Entity) {
-        let point = self
-            .assets
-            .get(&self.handle.0)
-            .and_then(|points| points.0.iter().find(|p| p.name == name));
-        if let Some(point) = point {
-            self.gotos.write(GotoLocation {
-                realm: point.realm.clone(),
-                position: point.pos,
-                ..default()
-            });
+        let selected = dialog_list(dialog, &children, &lists).and_then(|l| l.selected.as_ref());
+        if let Some(name) = selected {
+            travel.to(name);
+            commands.entity(dialog).despawn();
         }
-        self.commands.entity(dialog).despawn();
     }
+}
+
+/// Observer on the dialog: travels to a double-clicked point and closes the dialog.
+fn travel_to_activated(activate: On<ActivateNavPoint>, mut travel: Travel, mut commands: Commands) {
+    travel.to(&activate.name);
+    commands.entity(activate.event_target()).despawn();
 }

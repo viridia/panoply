@@ -2,11 +2,11 @@ use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
-/// A named place to travel to.
-#[derive(Deserialize, Clone, Debug)]
+/// A named place to travel to. Fields serialize in the file's order, and absent ones stay absent.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct NavPoint {
     /// Unique name of this nav point, such as `"stick-village"`.
     pub name: String,
@@ -14,15 +14,26 @@ pub struct NavPoint {
     /// Name of the realm holding this nav point.
     pub realm: String,
 
-    /// Where a traveler arrives, in meters.
+    /// Where a traveler arrives, in meters; saved to the centimetre (`serialize_centimetres`).
+    #[serde(serialize_with = "serialize_centimetres")]
     pub pos: Vec3,
 
     /// Human-readable name, if it differs from `name`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
 
     /// The icon marking this nav point on the in-game map, which shows only those that have one:
     /// `village`, `town`, `keep`, `cave`, `ruin` or `camp`.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
+}
+
+/// Writes a position rounded to the centimetre: finer is noise, such as the `4.7e-15` heights
+/// faery's math left on ground at 0, and arrival needs no more, since a traveler is set on the
+/// ground below the point. `+ 0.0` turns a rounded `-0.0` into `0.0`.
+fn serialize_centimetres<S: Serializer>(pos: &Vec3, serializer: S) -> Result<S::Ok, S::Error> {
+    let round = |v: f32| (v * 100.0).round() / 100.0 + 0.0;
+    [round(pos.x), round(pos.y), round(pos.z)].serialize(serializer)
 }
 
 impl NavPoint {
@@ -96,6 +107,35 @@ mod tests {
             let realm = assets.join(format!("realms/{}.realm.json", point.realm));
             assert!(realm.exists(), "{} is in {}", point.name, point.realm);
         }
+    }
+
+    /// Serializing the authored points and reading them back gives the same points, positions
+    /// to within the half centimetre that rounding moves them.
+    #[test]
+    fn authored_nav_points_round_trip() {
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let bytes = std::fs::read(assets.join("world.locations.json")).unwrap();
+        let points: Vec<NavPoint> = serde_json::from_slice(&bytes).unwrap();
+        let written = serde_json::to_vec(&points).unwrap();
+        let read: Vec<NavPoint> = serde_json::from_slice(&written).unwrap();
+        assert_eq!(read.len(), points.len());
+        for (read, point) in read.iter().zip(&points) {
+            assert!(read.pos.abs_diff_eq(point.pos, 0.005), "{} moved", point.name);
+            assert_eq!(NavPoint { pos: point.pos, ..read.clone() }, *point);
+        }
+    }
+
+    #[test]
+    fn positions_save_to_the_centimetre() {
+        let point = NavPoint {
+            name: "warehouse".into(),
+            realm: "playground".into(),
+            pos: Vec3::new(41.59800604609949, 4.733259878704557e-15, -1e-9),
+            caption: None,
+            icon: None,
+        };
+        let json = serde_json::to_string(&point).unwrap();
+        assert!(json.contains(r#""pos":[41.6,0.0,0.0]"#), "{json}");
     }
 
     #[test]

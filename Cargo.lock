@@ -4817,6 +4817,7 @@ dependencies = [
  "panoply_scenery",
  "panoply_terrain",
  "rapier3d",
+ "serde",
  "serde_json",
 ]
 

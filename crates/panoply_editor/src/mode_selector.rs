@@ -55,6 +55,14 @@ pub struct EditorModeSettings {
 #[derive(Component, Default, Clone)]
 pub(crate) struct ModeSelector;
 
+/// Each button's width, fixed so the selector's width does not depend on its icons'. The widest
+/// icon (`world.png`, 36.6 wide at the selector's 24 high) is a little cramped inside the padding.
+const BUTTON_WIDTH: f32 = 44.0;
+
+/// The selector's width: its buttons and the 1-pixel seams between them (`shell.rs`).
+pub(crate) const SELECTOR_WIDTH: f32 =
+    BUTTONS.len() as f32 * BUTTON_WIDTH + (BUTTONS.len() - 1) as f32;
+
 /// The selector's buttons, in order: a name, its icon, and the mode it selects. Play is last.
 const BUTTONS: [(&str, &str, Option<EditorMode>); 5] = [
     ("RealmMode", "editor/icons/world.png", Some(EditorMode::Realm)),
@@ -150,7 +158,12 @@ impl ImmediateAttach<CapsUiFeathers> for ModeSelector {
                             @corners: corners,
                             @variant: ButtonVariant::selected(selected),
                         }
-                        Node { height: px(32), flex_shrink: 0.0 }
+                        Node {
+                            width: px(BUTTON_WIDTH),
+                            height: px(32),
+                            padding: UiRect::horizontal(px(4)),
+                            flex_shrink: 0.0,
+                        }
                     }
                 })
                 .on_spawn_insert(move || Name::new(name))
