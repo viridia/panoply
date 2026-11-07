@@ -1,7 +1,7 @@
 # Outlines
 
-Outlines are central to the art style: art nouveau, specifically Mucha. This note records how
-they are drawn and why, so the choice is not re-litigated each Bevy upgrade.
+Outlines are central to the art style: art nouveau, specifically Mucha. This doc records how they
+are drawn and why, so the choice is not re-litigated each Bevy upgrade.
 
 ## Technique
 

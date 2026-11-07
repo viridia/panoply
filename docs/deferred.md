@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X64.**
+**Next: X66.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -55,8 +55,8 @@ dropped, not deferred. Numbers are never reused.
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
-  [saga.md](saga.md). *Gate:* the author takes up scripting; the first chunk extracts `panoply_saga`
-  from `../bevy_reactor_3/crates/bevy_reactor_formulae`.
+  [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula: value slots, then
+  cells and reactions for X63's button and door. *Gate:* PAN45.
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. The sky itself is never in view; the skybox is only there to light. Without an environment
@@ -444,11 +444,24 @@ dropped, not deferred. Numbers are never reused.
   its realm and coordinates, and is like a module: its walls and fixtures that others can refer to
   are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy to type
   into a text box, so the field for a signal source browses the available signals with a filter, as
-  PAN35's chooser does. Also open: what a reference into a precinct that is not loaded reads.
-  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
-  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
-  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
-  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
-  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
-  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
-  a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
+  PAN35's chooser does. A reference into a precinct that is not loaded suspends the formula reading
+  it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to differ from
+  what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance` observable that
+  is null while its target is not loaded, a `StructureRefNode` watching structures load and unload,
+  and global variables or lazily loaded scope objects for long-range wiring; global references by
+  realm and coordinates in `design/scripting/predicates.md`; animated instances (moving parts) kept
+  apart from static instancing in `engine/src/models/InstancedModels.ts`. The first customer is
+  PAN6's door opened by a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
+- **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
+  ([modding.md](modding.md), Types a mod declares). Bevy plans that layer, for dynamic data, on
+  `bevy_reflect2` (bevy#26356); use Bevy's if it has landed. *Gate:* a mod needs an aspect that
+  native aspects, formulas and the generic variables aspect cannot express.
+- **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
+  `Sword` cannot collide; an order for packages that override the same exemplar; what a save keeps
+  of a removed mod's aspects (X20 covers only the editor); and a mod built against an older version
+  of its game's primitives. The model for ids is WESL's imports
+  ([spec](https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md)), which Panoply's
+  shaders already use: `package::` names the package's own items, any other first segment names a
+  dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
+  decides what a package exports, as X63's precinct exports do. SAGA's imports and asset ids would
+  share one scheme. *Gate:* a second package loads beside the game.

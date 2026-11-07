@@ -1,9 +1,9 @@
 # Save games
 
-Panoply aims at open worlds larger than fit in memory, built from precincts that page in and
-out (see the ledger, D24). Much of the world is mutable, so a save game must capture changes
-across the whole world without writing the whole world. This note records the design, from the
-author's essay [Minimizing save games with structural
+Panoply aims at open worlds larger than fit in memory, built from precincts that page in and out
+(see the ledger, D24). Much of the world is mutable, so a save game must capture changes across the
+whole world without writing the whole world. This doc records the design, from the author's essay
+[Minimizing save games with structural
 sharing](https://medium.com/machine-words/minimizing-save-games-with-structural-sharing-6365222def15),
 and what it asks of the engine. Nothing here is implemented yet; the old three.js engine never
 finished it either.

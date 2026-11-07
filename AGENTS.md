@@ -15,6 +15,10 @@ are), `docs/deferred.md` (`X<n>`, work put off, each with its gate), `docs/actor
 (what has landed). Print an entry by its id rather than reading the file: `scripts/show.py D24 PAN3`
 (`--toc D` lists one prefix's entries).
 
+The rest of `docs/` are design docs, each owning one subsystem's design and cited by section
+(`saga.md`, `modding.md`, `combat.md`), and references, which map something outside Panoply
+(`faery.md`, the old engine's code).
+
 ## Tools
 
 The scripts in `scripts/` are allowlisted in `.claude/settings.json` by absolute path, so call them

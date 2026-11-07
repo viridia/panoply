@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN45.**
+**Next: PAN46.**
 
 ## Next
 
@@ -104,11 +104,17 @@ components and every layer restartable from saved state (R104).
   attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
   so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
   asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
-  action are each native code or, after X7, a formula from the asset; only native for now. PAN3k's
-  probe runs continuously, as faery's did: while what it hits has an enabled interaction, its
-  caption shows as a prompt at the bottom of the screen, and E performs it; a choice among several
-  is X43. One aspect end to end, the one whose action needs least else (a door changes its collider
-  and model; a container needs an inventory dialog).
+  action are each native code or, after PAN45, a formula from the asset; only native for now.
+  PAN3k's probe runs continuously, as faery's did: while what it hits has an enabled interaction,
+  its caption shows as a prompt at the bottom of the screen, and E performs it; a choice among
+  several is X43. One aspect end to end, the one whose action needs least else (a door changes its
+  collider and model; a container needs an inventory dialog).
+- **PAN45 First formula.** SAGA's first customer: the door's `when` from PAN21, as formulas in its
+  exemplar asset ([saga.md](saga.md), Early customers). Extracts `panoply_saga` from
+  `../bevy_reactor_3/crates/bevy_reactor_formulae`, tests passing, with `.saga` files and the syntax
+  grammar; settles how an asset embeds a formula, which dialogue conditions and goals (X17) reuse;
+  and reads `self.door.open` through a compiled component accessor. On demand only: no cells or
+  reactions. The action stays native. Checked in the plan that tests PAN21's door.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

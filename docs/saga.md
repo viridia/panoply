@@ -1,11 +1,10 @@
 # SAGA
 
-SAGA is Panoply's scripting language. Scripts are for what the runtime gives them, not for syntax:
-behaviors that hot reload, game logic that ships in mods and DLC, and thematic content (skills,
-spells) kept out of the engine so it serves other games of the genre. Most scripts are like
-spreadsheet formulas: short, not long-running, holding no memory but the world's. The game's logic
-emerges from many of them working together. This note records the design; nothing here is
-implemented yet (X7).
+SAGA is Panoply's scripting language, and the only code a mod can ship ([modding.md](modding.md)).
+Scripts are for what the runtime gives them, not for syntax: behaviors that hot reload, and logic
+that ships outside the engine. Most scripts are like spreadsheet formulas: short, not long-running,
+holding no memory but the world's. The game's logic emerges from many of them working together. This
+doc records the design; nothing here is implemented yet (X7).
 
 ## Early customers
 
@@ -16,6 +15,12 @@ implemented yet (X7).
 
 Dialogue conditions, like interactions' `when` (PAN21), are evaluated on demand, when the options
 are listed. Quest stages, goals and presence react to change.
+
+The first customer is the door's `when` (PAN45): its "Open" and "Close" are offered by
+`!self.door.open` and `self.door.open`, formulas in its exemplar asset. An on-demand formula needs
+no cells or reaction passes, and PAN21's native action already has the effect, so SAGA only returns
+a boolean. The second is reactive: X63's door opened by a button, its `open` a formula over its
+source's `active`.
 
 ## The prototype
 
@@ -48,6 +53,21 @@ a `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when p
   implemented for the glam and Bevy types that matter, with a reflection fallback.
 - **References name things by stable id** (a fixture in the actor's precinct, the player), resolved
   to an `Entity` when read, as X17's cursors name definition nodes.
+- **Absent is `Option`.** A field nobody set, or a reference with no target, is `None`; the type
+  solver makes scripts handle it. `??` is sugar for `unwrap_or`, and `?.` for mapping to a field.
+  There is no null.
+- **Not loaded is not absent.** Reading a reference whose target's precinct is not loaded suspends
+  the evaluation, as React's Suspense does, and the formula's dependency on the reference queues it
+  again when the target loads. Scripts never see it; the host applies the fallback of each kind of
+  consumer:
+  - a reactive cell keeps its last value, so a door stays as its save left it;
+  - an on-demand condition counts as false: the interaction or dialogue option is not offered;
+  - an effect is discarded whole, and since its writes are buffered, it leaves no partial change.
+
+  A formula that could decide without the missing part (an OR whose other input is true) holds
+  instead. Kleene's three-valued logic, with unknown a value that propagates through every operator,
+  would decide it, at the cost of a third case in every operator that leaks into scripts as SQL's
+  NULL does. Not until a puzzle needs it.
 - **Opaque values stay boxed or borrowed:** handles, names, strings, collections. The per-call heap
   bounds them.
 - **Enums are not flattened.** Scripts see colors as `LinearRgba`, converted at the boundary. An
@@ -163,8 +183,9 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 
 ## Order of work
 
-1. Extract `panoply_saga`, its tests passing, with `.saga` as its extension and the syntax
-   grammar.
-2. Value types in slots, and compiled component accessors.
-3. Cells, memos and the reaction passes, with `proximity` and an hour predicate as the first native
-   memos; measure with `plans/perf.py`.
+1. Extract `panoply_saga`, its tests passing, with `.saga` as its extension and the syntax grammar
+   (PAN45).
+2. Formulas embedded in assets and compiled component accessors, for the door's `when` (PAN45).
+3. Value types in slots.
+4. Cells, memos and the reaction passes, with `proximity` and an hour predicate as the first native
+   memos, for X63's button and door; measure with `plans/perf.py`.

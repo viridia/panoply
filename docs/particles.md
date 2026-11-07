@@ -1,9 +1,9 @@
 # Particles
 
 Visual effects split in two (X38 in the ledger): particles, purely visual, instanced and drawn in
-bulk; and missiles, entities that collide, light, sound and emit particles. This note records
-what particles must do, the engines considered, and the design Panoply leans toward. Nothing here
-is implemented, and no chunk is planned.
+bulk; and missiles, entities that collide, light, sound and emit particles. This doc records what
+particles must do, the engines considered, and the design Panoply leans toward. Nothing here is
+implemented, and no chunk is planned.
 
 ## Uses
 
