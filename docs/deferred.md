@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X68.**
+**Next: X69.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -465,7 +465,10 @@ dropped, not deferred. Numbers are never reused.
   dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
   decides what a package exports, as X63's precinct exports do. SAGA's imports and asset ids would
   share one scheme. *Gate:* a second package loads beside the game.
-- **X67** The `.blend` files in `artwork/scenery/` and `artwork/props/` (25) move to Blender 5.2 as
-  the characters did (D55): `blend_inventory.py` and a `blend_cleanup.py --preview` against today's
-  `.glb`s first, since their materials may hit the same exporter changes. *Gate:* one of them is
-  next opened to edit.
+- **X68** Scenes nested in scenes. Bevy's spawner panics reloading a scene that holds another
+  scene's root: the reload despawns the inner root inside the spawner's `resource_scope`, where the
+  hook that would forget its instance cannot reach the spawner, then reparents the instance to the
+  dead root (`world_asset_spawner.rs:372`, `:517`). Wielded items are the one nesting, each a child
+  of a body's bone, and PAN49 avoids it there by rebuilding actors whose file reloads
+  (`rebuild_reloaded_actors`). The author is reporting it upstream. *Gate:* another kind of scene is
+  nested in one (an item on a precinct's prop, say), or Bevy's fix lands.

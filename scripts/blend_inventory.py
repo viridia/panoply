@@ -11,11 +11,13 @@ exports wrong or confuses later edits:
     stash track          Blender's [Action Stash], made on switching actions; exported as a clip
     only in a stash      an action no other track plays, lost if its stash track is deleted
     default track name   a track still named NlaTrack, so the clip is too
-    off-track action     an armature's active action on no track, which NLA export leaves out
+    off-track action     an active action on no track, which NLA export leaves out: an armature's,
+                         or a mesh's that moves it (a door)
     short strip          a strip covering less than its action, so the clip is cut short
     unkeyed switch       a clip leaving unkeyed a constraint influence (an IK/FK switch) that
                          another clip keys, so it takes whatever value Blender last evaluated
-    mesh action          an action on a mesh that only animates bones, so does nothing there
+    mesh action          an action or track on a mesh that does not move it (bone curves, stray
+                         keys on a modifier), so exports nothing
     tweak mode           an object left in the NLA editor's tweak mode
     partial multiply     a Multiply Mix node feeding Base Color with a Factor other than 1, whose
                          color the exporter leaves out
@@ -44,10 +46,15 @@ def problems(blend):
         if ad.use_tweak_mode:
             found.append(f"{obj.name}: tweak mode")
         if obj.type == "MESH":
-            if ad.action and bt.bones_only(ad.action):
+            if ad.action and not bt.animates_transform(ad.action):
                 found.append(f"{obj.name}: mesh action {ad.action.name!r}")
             for track in ad.nla_tracks:
-                found.append(f"{obj.name}: mesh track {track.name!r}")
+                if not any(bt.animates_transform(s.action) for s in track.strips if s.action):
+                    found.append(f"{obj.name}: mesh track {track.name!r}")
+            on_track = {s.action.name for t in ad.nla_tracks for s in t.strips if s.action}
+            moves = ad.action and bt.animates_transform(ad.action)
+            if moves and not obj.hide_render and ad.action.name not in on_track:
+                found.append(f"{obj.name}: off-track action {ad.action.name!r}")
             continue
         if obj.type != "ARMATURE" or obj.hide_render:
             continue

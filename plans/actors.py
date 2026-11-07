@@ -8,7 +8,8 @@ it plays falling, landing, then standing; it turns on the spot toward a target b
 its idle is the one its aspects choose.
 Precincts place their actors, facing as placed, and a precinct's actors despawn with it. Standing
 actors rest (`ActorResting`), and wake when sent travelling or when a precinct's colliders go.
-Fallen into a hole or off the map, the actor is put back where it last stood.
+Fallen into a hole or off the map, the actor is put back where it last stood. Its character file
+reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor.
 
@@ -24,6 +25,7 @@ larger than the rest), `townsfolk.png` and `avatars.png`, each group's actors fa
 """
 
 import math
+from pathlib import Path
 
 from bevy_remote_driver import Between
 
@@ -56,6 +58,7 @@ BRINK = [32.8, 1.0, 47.1]
 HOLE = [23.0, 0.0, 47.1]
 OFF_THE_MAP = [-5.0, 2.0, 47.0]
 WAIT = {"seconds": 60}
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
 HOME = "panoply_actors::precinct_actors::HomePrecinct"
 FIRST_PRECINCT = "Precinct:playground:0:0"
 # Groups of precinct actors, a wide variety in a small area each, and the azimuth to see them
@@ -70,6 +73,20 @@ GROUPS = {
 TROT = 3.0
 WALK = 1.5
 RUN = 5.0
+
+
+def reload(driver, relative):
+    """Writes an asset's own bytes back over it, so the file watcher reloads it, and waits until
+    the player's actor has a new body."""
+    body = driver.select("Actor/ActorBody")[0]
+    path = ASSETS / relative
+    path.write_bytes(path.read_bytes())
+
+    def rebuilt():
+        bodies = driver.select("Actor/ActorBody")
+        return bool(bodies) and bodies[0] != body, lambda: f"the body is still {body}"
+
+    driver.wait(rebuilt, f"{relative} to reload", WAIT)
 
 
 def flat_distance(a, b):
@@ -317,6 +334,15 @@ def run(driver):
     for name, (position, azimuth) in GROUPS.items():
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
+
+    # A reloaded character file rebuilds the actors made from it, hair and sword included, rather
+    # than Bevy respawning its scenes in place, which panicked on the sword's.
+    reload(driver, "characters/humanoid-male.glb")
+    driver.present("Actor/ActorFeature/HairMediumCut")
+    driver.present("weapon.R/WieldedItem/Broadsword")
+    driver.frames(10)
+    skeletons = driver.select("Actor/hips")
+    assert len(skeletons) == 1, f"{len(skeletons)} skeletons after the reload, not one"
 
     # A precinct's actors despawn with it. Its colliders go too, which wakes the resting player
     # for a tick, after which it rests again: as of a later change to the realm's colliders.

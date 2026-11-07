@@ -10,11 +10,29 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN49.**
+**Next: PAN51.**
 
 ## Next
 
 In order.
+
+- **PAN50 Scenery to Blender 5.2**, as the characters moved (D55), in progress. Scenery clips are
+  object animation on meshes (doors, gates, lids), mostly active actions on no track, which 3.5
+  exported named by the action. The tools now handle that, uncommitted: such an action gets a track
+  of its name, a mesh action that moves nothing (stray Bevel keys in `carpentry`) is cleared, and a
+  file with tracks on a rendered mesh exports animation.
+  `blend_cleanup.py --preview DIR artwork/scenery artwork/props` blocks nothing; nothing is saved.
+  Its comparison with today's `.glb`s (`glb_compare.py --pair artwork/scenery DIR`): props differ
+  only in specular, and clip names hold, but these need a look, file by file, before saving. Index
+  counts changed in `sepia-brick-house`, `ice-cave`, `hedge-walls`, `walls-keep-1`/`-2`, `palisade`
+  and `camping`; some exports are years old (exporter 1.x, 3.2), so their `.blend`s may have changed
+  since, and `sepia-brick-house` and `cave` were exported without applied modifiers, which D55
+  applies. Base colors (`pbrMetallicRoughness`) changed in `cottage`, `decorations`,
+  `walls-dungeon`, `walls-keep-*`, `marble-palace` and `stonework`, beyond the Mix-factor rule.
+  Nodes `Stal` (`ice-cave`) and `Plane` (`thatch`) are gone and `CaveEntrance` (`cave`) is new.
+  `OpenMetal` (`walls-keep-1`) lost a translation channel, its pose off by 0.59. Smaller: `Flames`
+  alpha, `symbols` emission, `DarkWood` double-sided, outline extras. Then save, export, and the
+  author's look at the scenery in the game.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale

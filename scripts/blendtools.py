@@ -107,8 +107,28 @@ def fcurves(action):
     ]
 
 
+TRANSFORM_PATHS = {
+    "location",
+    "rotation_euler",
+    "rotation_quaternion",
+    "rotation_axis_angle",
+    "scale",
+}
+
+
+def animates_transform(action):
+    """Whether the action moves an object itself, as a door's opening does: the only animation of a
+    mesh that glTF exports. Bone curves, and keys on modifiers or other properties, it leaves out."""
+    if action.library and action.is_missing:
+        return False
+    return any(fc.data_path in TRANSFORM_PATHS for fc in fcurves(action))
+
+
 def bones_only(action):
-    """Whether every curve of the action animates a bone: on a mesh, such an action does nothing."""
+    """Whether every curve of the action animates a bone: on a mesh, such an action does nothing.
+    So does an action linked from a library that no longer has it."""
+    if action.library and action.is_missing:
+        return True
     curves = fcurves(action)
     return bool(curves) and all(fc.data_path.startswith("pose.bones[") for fc in curves)
 
@@ -185,13 +205,14 @@ def is_default_name(track):
 
 
 def animates(blend_objects):
-    """Whether a file's export carries clips: it has a local armature that renders, with tracks."""
+    """Whether a file's export carries clips: a local object that renders has tracks, an armature
+    (a character) or a mesh (a door)."""
     return any(
-        obj.type == "ARMATURE"
+        obj.type in ("ARMATURE", "MESH")
         and is_local(obj)
         and not obj.hide_render
         and obj.animation_data
-        and len(obj.animation_data.nla_tracks) > 0
+        and any(not is_stash(t) for t in obj.animation_data.nla_tracks)
         for obj in blend_objects
     )
 

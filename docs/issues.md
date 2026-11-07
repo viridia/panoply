@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I17.**
+**Next: I18.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -62,8 +62,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   `nav_point_list` binds them as `Button` actions, and the mapper passes OS key repeats only to
   class bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump
   the lock here and add it to the two bindings. Seen by the author; the cause read, not run.
-- **I16** `humanoid-male.blend` links the actions `Default` and `RunAction` from
-  `humanoid-armature.blend`, and `wasp.blend` links `Default`; none exists there any more, probably
-  renamed since. Neither file exports clips, so nothing in the game shows it; Blender warns on
-  opening them. Candidates: relink to `DefaultAction` and `RunMaleAction`, or remove the links.
-  Confirmed by running (Blender's warnings).
+- **I17** Every overrun run rewrites the terrain textures (`assets/terrain/textures/*.ktx2`, 14
+  files) and `assets/terrain/models-new/temperate.glb` with different bytes, sizes shifting under
+  1%, though their sources and `pipeline.ts` are unchanged; no difference shows. Likely a
+  nondeterministic encoder; each run leaves unrelated binary changes to revert. Part of the
+  discussion of replacing overrun. Confirmed by running (`git diff --stat` after a run).

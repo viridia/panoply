@@ -119,6 +119,7 @@ impl Plugin for ActorsPlugin {
                     mark_precinct_actors,
                     spawn_precinct_actors,
                     update_actor_aspects,
+                    rebuild_reloaded_actors,
                     spawn_actor_bodies,
                     spawn_actor_body_scenes,
                     build_actor_graph,

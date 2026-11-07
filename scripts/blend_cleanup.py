@@ -4,7 +4,8 @@
     scripts/blend_cleanup.py                  dry run: print each change, save nothing
     scripts/blend_cleanup.py --apply ...      make the changes and save the files
     scripts/blend_cleanup.py --preview DIR    dry run, exporting each cleaned file into DIR
-    scripts/blend_cleanup.py a.blend dir ...  files or directories (default artwork/characters/)
+    scripts/blend_cleanup.py a.blend dir ...  files or directories (default artwork/characters/;
+                                              a bare name is looked for there)
 
 Runs inside Blender 5.2 or later, headless (see blendtools.py). A file holding something without a
 rule here is reported and not saved. The changes, in order:
@@ -19,7 +20,10 @@ rule here is reported and not saved. The changes, in order:
                     value the clip before it, in name order, ended with
     strip ranges    each strip covers its whole action, as Blender 3.5's exporter read it; a
                     one-frame action is left
-    mesh actions    a mesh's active action and NLA tracks are removed when they only animate bones
+    mesh actions    a mesh's active action and NLA tracks are removed when they do not move the mesh
+                    (bone curves, stray keys on a modifier), which glTF cannot export; one that
+                    moves it (a door) and is on no track gets a track named for the action, as
+                    Blender 3.5 named the clip
     base colors     a Multiply Mix node feeding Base Color gets a Factor of 1, which Blender 5.2's
                     exporter needs to export its color, as 3.5's did whatever the Factor; and
                     when no Material Output targets all renderers, the one a Principled BSDF
@@ -98,16 +102,30 @@ class Cleanup:
                 self.change(f"remembered Panoply's export settings, {anim} animation")
 
     def mesh(self, obj, ad):
-        if ad.action and bt.bones_only(ad.action):
-            self.change(f"{obj.name}: cleared mesh action {ad.action.name!r}")
+        """A mesh's clips move the mesh itself (a door); anything else on it exports nothing."""
+        if ad.action and not bt.animates_transform(ad.action):
+            self.change(f"{obj.name}: cleared mesh action {ad.action.name!r}, which moves nothing")
             ad.action = None
         for track in list(ad.nla_tracks):
             actions = [s.action for s in track.strips if s.action]
-            if actions and all(bt.bones_only(a) for a in actions):
-                self.change(f"{obj.name}: deleted mesh track {track.name!r}")
+            if not any(bt.animates_transform(a) for a in actions):
+                self.change(f"{obj.name}: deleted mesh track {track.name!r}, which moves nothing")
                 ad.nla_tracks.remove(track)
+            elif bt.is_stash(track):
+                self.block(f"{obj.name}: stash track {track.name!r} moves the mesh")
+        on_track = {s.action.name for t in ad.nla_tracks for s in t.strips if s.action}
+        # A mesh with rendering off is not exported, so its action is no clip.
+        if ad.action and not obj.hide_render and ad.action.name not in on_track:
+            # Named for the action, as Blender 3.5 named such a clip.
+            name = ad.action.name
+            if name in {t.name for t in ad.nla_tracks}:
+                self.block(f"{obj.name}: off-track {name!r} would need a track of that name, taken")
             else:
-                self.block(f"{obj.name}: mesh track {track.name!r} animates the mesh itself")
+                track = ad.nla_tracks.new()
+                track.name = name
+                track.strips.new(name, int(ad.action.frame_range[0]), ad.action)
+                self.change(f"{obj.name}: new track {name!r} for its off-track action")
+        self.strip_ranges(obj, ad)
 
     def switches(self, obj, ad):
         """Key, in each clip that leaves it unkeyed, any constraint influence another clip keys."""
@@ -187,6 +205,9 @@ class Cleanup:
                 track.strips.new(name, int(ad.action.frame_range[0]), ad.action)
                 self.change(f"{obj.name}: new track {name!r} for off-track {ad.action.name!r}")
         self.switches(obj, ad)
+        self.strip_ranges(obj, ad)
+
+    def strip_ranges(self, obj, ad):
         for track in ad.nla_tracks:
             if len(track.strips) != 1 or track.strips[0].action is None:
                 self.block(f"{obj.name}: track {track.name!r} is not one strip with an action")

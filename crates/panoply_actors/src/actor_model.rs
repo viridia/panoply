@@ -17,6 +17,35 @@ pub struct ActorBody {
     pub(crate) armature: Option<ArmatureSource>,
 }
 
+/// Rebuilds the models of each actor whose character file was reloaded, rather than letting Bevy
+/// respawn its scenes in place: that would leave the features skinned to the old bones, spawn the
+/// features again, and lose the wielded items, whose scenes are children of the body's bones.
+/// Bevy's spawner also panics reloading a scene that holds another scene's root, as a bone holds
+/// a wielded item. Asset events reach `Update` a frame before the spawner reads them in
+/// `SpawnScene`, so the old scenes are despawned, and forgotten by the spawner, before it would
+/// respawn them.
+pub fn rebuild_reloaded_actors(
+    mut commands: Commands,
+    mut events: MessageReader<AssetEvent<Gltf>>,
+    bodies: Query<(&ActorBody, &ChildOf)>,
+) {
+    let reloaded: Vec<AssetId<Gltf>> = events
+        .read()
+        .filter_map(|event| match event {
+            AssetEvent::Modified { id } => Some(*id),
+            _ => None,
+        })
+        .collect();
+    if reloaded.is_empty() {
+        return;
+    }
+    for (body, actor) in bodies.iter() {
+        if reloaded.contains(&body.gltf.id()) {
+            commands.entity(actor.parent()).insert(ActorRebuildModels);
+        }
+    }
+}
+
 /// Replaces the body of each actor whose aspects changed. The root `Gltf` is loaded, not the
 /// scene by label, which would load the whole file again for each actor (D28).
 pub fn spawn_actor_bodies(
