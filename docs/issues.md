@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I23.**
+**Next: I25.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -60,3 +60,15 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I21** The chaparral biome has no ground texture: `GroundMaterialCache::get_material` leaves its
   surface out of the layers, so the ground fades to bare dirt toward a chaparral corner. faery
   painted it as moss is painted, with its own texture, between taiga and sand. Read, not run.
+- **I23** The marble palace's walls are smooth-shaded in many places that should be flat, so flat
+  surfaces look rounded; a fix for the author in Blender. Possibly from PAN50's move to 5.2, which
+  replaced Auto Smooth: comparing a wall's vertex count in the 3.5 and 5.2 exports would tell, and
+  if so other scenery may share it. Any batch repair leaves out the stick walls, whose smooth
+  shading looks good. Hard edges split the normals `outline.wesl` extrudes along, so check the
+  corners for cracks (PAN23). Seen by the author; the cause unconfirmed.
+- **I24** Scenery has no hemisphere light: only `ground.wesl` applies it, and other materials get
+  `GlobalAmbientLight` at the average color (D16), so a shaded wall's ambient is uniform. faery lit
+  everything with it, amber on undersides and lower faces. Candidate: patch `StandardMaterial`'s
+  ambient term. The darkening at the bottom of the stick walls, which the author likes, cannot be
+  this light; an `SSAO=off` shot at the stick village (35.5, 114.5) would show whether it is SSAO.
+  Read, not run.

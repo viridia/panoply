@@ -10,12 +10,20 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN55.**
+**Next: PAN56.**
 
 ## Next
 
 In order.
 
+- **PAN55 Typical views.** What is tested should be what a player sees. The sun runs exactly along z
+  (`realm.rs`), so walls facing ±x get no sunlight and shadow edges follow the building grid; take
+  faery's direction, `(3, 10, 5)`, the same height swung 31° off the axis. The play camera is at 20
+  (D17, "not final") and faery's was at 11, both at a 40° field of view: confirm faery measured
+  distance the same way, settle the distance by eye in play, and update `CAMERA_DISTANCE`, D17 and
+  the editor's `ZOOM_BASE_DISTANCE`, which is also the closest it can zoom. Five of `perf.py`'s six
+  stops are at 40, which only the editor sees: move them to the play distance and keep one at 40,
+  which starts a new baseline on each machine. Recheck the SSAO radius (D57), judged at 20.
 - **PAN54 Fractal biome edges.** Biome transitions break into patches of one size, and a transition
   across a row of parcels still reads as a straight band (`lighting_biomes.png` in
   `plans/lighting.py`): `ground.wesl` blends with one sample of `noise.png`. faery summed octaves of
