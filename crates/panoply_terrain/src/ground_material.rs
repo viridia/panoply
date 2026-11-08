@@ -1,6 +1,7 @@
 use bevy::{
     mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
     pbr::{MaterialPipeline, MaterialPipelineKey},
+    platform::collections::HashMap,
     prelude::*,
     reflect::TypePath,
     render::render_resource::{
@@ -30,66 +31,44 @@ pub struct BiomeSurfaceAttrs {
     edge_tint: LinearRgba,
 }
 
+// Blend and edge thresholds from the old engine's terrain shader (faery's `TerrainMaterial.ts`),
+// one set per surface; its moss blend, a sharper curve, is approximated.
 impl BiomeSurfaceAttrs {
-    pub const GRASS: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
+    const BASE: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
         roughness: 0.99,
-        blend_var: 0.1,
+        blend_var: 0.5,
         blend_t0: 0.4,
-        blend_t1: 0.5,
+        blend_t1: 0.6,
         edge_var: 0.5,
         edge_t0: 0.45,
-        edge_t1: 0.9,
+        edge_t1: 0.7,
         tx_scale: 0.2,
         edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+    };
+
+    pub const GRASS: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
+        edge_t0: 0.5,
+        ..Self::BASE
     };
 
     pub const MOSS: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        roughness: 0.99,
-        blend_var: 0.1,
-        blend_t0: 0.4,
+        blend_t0: 0.45,
         blend_t1: 0.5,
-        edge_var: 0.5,
-        edge_t0: 0.45,
-        edge_t1: 0.9,
-        tx_scale: 0.2,
-        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+        edge_t1: 0.65,
+        ..Self::BASE
     };
 
-    pub const SAND: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        roughness: 0.99,
-        blend_var: 0.1,
-        blend_t0: 0.4,
-        blend_t1: 0.5,
-        edge_var: 0.5,
-        edge_t0: 0.45,
-        edge_t1: 0.9,
-        tx_scale: 0.2,
-        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
-    };
+    pub const SAND: BiomeSurfaceAttrs = Self::BASE;
 
     pub const SNOW: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        roughness: 0.99,
-        blend_var: 0.1,
-        blend_t0: 0.4,
-        blend_t1: 0.5,
-        edge_var: 0.5,
-        edge_t0: 0.45,
-        edge_t1: 0.9,
-        tx_scale: 0.2,
-        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
+        blend_t0: 0.45,
+        blend_t1: 0.55,
+        edge_t0: 0.52,
+        edge_t1: 0.65,
+        ..Self::BASE
     };
 
-    pub const TAIGA: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        roughness: 0.99,
-        blend_var: 0.1,
-        blend_t0: 0.4,
-        blend_t1: 0.5,
-        edge_var: 0.5,
-        edge_t0: 0.45,
-        edge_t1: 0.9,
-        tx_scale: 0.2,
-        edge_tint: LinearRgba::new(0.65, 0.65, 0.65, 1.0),
-    };
+    pub const TAIGA: BiomeSurfaceAttrs = Self::BASE;
 }
 
 #[derive(AsBindGroup, TypePath, Debug, Clone, Asset)]
@@ -187,9 +166,9 @@ pub struct GroundMaterialCache {
     pub snow: Handle<Image>,
     pub taiga: Handle<Image>,
 
-    pub material: Option<Handle<GroundMaterial>>,
-    // pub sand: Handle<Image>,
-    // pub snow: Handle<Image>,
+    /// One material per combination of surfaces at a parcel's four corners, since the material
+    /// carries the textures and the weights that blend them across the parcel.
+    pub materials: HashMap<[BiomeSurfaceType; 4], Handle<GroundMaterial>>,
 }
 
 impl FromWorld for GroundMaterialCache {
@@ -204,9 +183,7 @@ impl FromWorld for GroundMaterialCache {
             sand: load_tiling_texture(assets, "terrain/textures/sand.ktx2"),
             snow: load_tiling_texture(assets, "terrain/textures/snow.ktx2"),
             taiga: load_tiling_texture(assets, "terrain/textures/taiga2.ktx2"),
-            material: None,
-            // sand: assets.load("textures/sand.png"),
-            // snow: assets.load("textures/snow.png"),
+            materials: HashMap::default(),
         }
     }
 }
@@ -224,97 +201,71 @@ impl GroundMaterialCache {
             biomes_table.get_biome(parcel_biomes[2]).surface,
             biomes_table.get_biome(parcel_biomes[3]).surface,
         ];
-        // println!("parcel_biomes: {:?}", biomes);
-        let mut biome_textures: [Handle<Image>; 4] = [
-            Handle::default(),
-            Handle::default(),
-            Handle::default(),
-            Handle::default(),
+        if let Some(material) = self.materials.get(&biomes) {
+            return material.clone();
+        }
+        // Each corner's weight for every surface. Tundra is taiga with half snow on top.
+        let mut weights: HashMap<BiomeSurfaceType, Vec4> = HashMap::default();
+        for (corner, surface) in biomes.iter().enumerate() {
+            let mut add = |surface: BiomeSurfaceType, weight: f32| {
+                let w = &mut weights.entry(surface).or_insert(Vec4::ZERO)[corner];
+                *w = w.max(weight);
+            };
+            match surface {
+                BiomeSurfaceType::Tundra => {
+                    add(BiomeSurfaceType::Taiga, 1.0);
+                    add(BiomeSurfaceType::Snow, 0.5);
+                }
+                surface => add(*surface, 1.0),
+            }
+        }
+
+        // The topcoats over the dirt underlay, in the order they are painted, each covering those
+        // before. Chaparral has no texture yet.
+        let layers = [
+            (BiomeSurfaceType::Grass, &self.grass, BiomeSurfaceAttrs::GRASS),
+            (BiomeSurfaceType::Taiga, &self.taiga, BiomeSurfaceAttrs::TAIGA),
+            (BiomeSurfaceType::Moss, &self.moss, BiomeSurfaceAttrs::MOSS),
+            (BiomeSurfaceType::Sand, &self.sand, BiomeSurfaceAttrs::SAND),
+            (BiomeSurfaceType::Snow, &self.snow, BiomeSurfaceAttrs::SNOW),
         ];
+        // The first topcoat covers the whole parcel, so that the next paints over it rather than
+        // over dirt; unless a corner is bare (rock or dirt), whose underlay is then the first.
+        let bare = biomes
+            .iter()
+            .any(|s| matches!(s, BiomeSurfaceType::Rock | BiomeSurfaceType::Dirt));
+        let mut biome_textures: [Handle<Image>; 4] = Default::default();
         let mut biome_weight = Mat4::ZERO;
-        // biome_weight
-        //     .col_mut(0)
-        //     .clone_from(&Vec4::new(1.0, 1.0, 1.0, 1.0));
-        // biome_weight.y_axis = Vec4::new(0.0, 1.0, 1.0, 1.0);
         let mut biome_surface = [BiomeSurfaceAttrs::GRASS; 8];
         let mut surface_index = 0usize;
+        for (surface, texture, attrs) in layers {
+            let Some(&weight) = weights.get(&surface) else {
+                continue;
+            };
+            if surface_index == 4 {
+                break;
+            }
+            biome_textures[surface_index] = texture.clone();
+            biome_surface[surface_index] = attrs;
+            *biome_weight.col_mut(surface_index) =
+                if surface_index == 0 && !bare { Vec4::ONE } else { weight };
+            surface_index += 1;
+        }
 
-        // if biomes.contains(&crate::BiomeSurfaceType::Dirt) {}
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Grass) {
-            biome_textures[surface_index] = self.grass.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::GRASS;
-            biome_weight
-                .col_mut(surface_index)
-                .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Grass));
-            surface_index += 1;
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Moss) {
-            biome_textures[surface_index] = self.moss.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::MOSS;
-            biome_weight
-                .col_mut(surface_index)
-                .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Moss));
-            surface_index += 1;
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Sand) {
-            biome_textures[surface_index] = self.sand.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::SAND;
-            biome_weight
-                .col_mut(surface_index)
-                .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Sand));
-            surface_index += 1;
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Snow) {
-            biome_textures[surface_index] = self.snow.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::SNOW;
-            biome_weight
-                .col_mut(surface_index)
-                .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Snow));
-            surface_index += 1;
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Tundra) {
-            // TODO
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Taiga) {
-            biome_textures[surface_index] = self.taiga.clone();
-            biome_surface[surface_index] = BiomeSurfaceAttrs::TAIGA;
-            biome_weight
-                .col_mut(surface_index)
-                .clone_from(&get_biome_weights(&biomes, crate::BiomeSurfaceType::Taiga));
-            surface_index += 1;
-        }
-        if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Chaparral) {
-            // TODO
-        }
-        // if surface_index < 4 && biomes.contains(&crate::BiomeSurfaceType::Rock) {}
-        // if surface_index < 4 &&
-
-        self.material
-            .get_or_insert_with(|| {
-                materials.add(GroundMaterial {
-                    noise: self.noise.clone(),
-                    dirt: self.dirt.clone(),
-                    cobbles: self.cobbles.clone(),
-                    texture0: biome_textures[0].clone(),
-                    texture1: biome_textures[1].clone(),
-                    texture2: biome_textures[2].clone(),
-                    texture3: biome_textures[3].clone(),
-                    water_color: Srgba::rgb(0.0, 0.25, 0.3).into(),
-                    biome_weight,
-                    biome_surface,
-                    hemisphere: [LinearRgba::NONE; 2],
-                })
-            })
-            .clone()
+        let material = materials.add(GroundMaterial {
+            noise: self.noise.clone(),
+            dirt: self.dirt.clone(),
+            cobbles: self.cobbles.clone(),
+            texture0: biome_textures[0].clone(),
+            texture1: biome_textures[1].clone(),
+            texture2: biome_textures[2].clone(),
+            texture3: biome_textures[3].clone(),
+            water_color: Srgba::rgb(0.0, 0.25, 0.3).into(),
+            biome_weight,
+            biome_surface,
+            hemisphere: [LinearRgba::NONE; 2],
+        });
+        self.materials.insert(biomes, material.clone());
+        material
     }
-}
-
-fn get_biome_weights(biomes: &[BiomeSurfaceType; 4], surf: BiomeSurfaceType) -> Vec4 {
-    let mut weights = Vec4::ZERO;
-    for (i, biome) in biomes.iter().enumerate() {
-        if *biome == surf {
-            weights[i] = 1.0;
-        }
-    }
-    weights
 }

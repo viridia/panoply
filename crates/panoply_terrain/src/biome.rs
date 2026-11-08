@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use panoply_core::random::Choice;
 
-#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, Copy, Clone)]
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Eq, Hash, Debug, Default, Copy, Clone)]
 #[repr(u8)]
 pub enum BiomeSurfaceType {
     #[default]

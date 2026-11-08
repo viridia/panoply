@@ -141,10 +141,11 @@ fn blend_biome(
         biome: BiomeSurfaceAttrs,
         weight: f32,
         tx_color: vec3<f32>) {
-    let blend = smoothstep(
-        biome.blend_t0, biome.blend_t1, weight + (*out).terrain_noise * biome.blend_var);
-    let edge_blend = smoothstep(
-        biome.edge_t0, biome.edge_t1, weight + (*out).terrain_noise * biome.edge_var);
+    // The noise texture runs 0 to 1 about 0.5, with a deviation of 0.13; the old engine's blend
+    // thresholds were tuned for signed fractal noise with a deviation of about 0.16.
+    let noise = ((*out).terrain_noise - 0.5) * 1.25;
+    let blend = smoothstep(biome.blend_t0, biome.blend_t1, weight + noise * biome.blend_var);
+    let edge_blend = smoothstep(biome.edge_t0, biome.edge_t1, weight + noise * biome.edge_var);
     (*out).color = mix(
         (*out).color,
         vec4(
@@ -166,11 +167,14 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
         vec4<f32>(vertex.position, 1.0)
     );
 
-    let parcel_uv = fract(wposition.xz / 16.);
+    // From the mesh's own coordinates, which run 0 to 16 across the parcel: `fract` of the world
+    // position would wrap the far edge's vertices to 0, giving them the near corners' weights.
+    let parcel_uv = clamp(vertex.position.xz / 16., vec2(0.), vec2(1.));
+    // The corners in `TerrainMap::adjacent_biomes`'s order: (0, 0), +x, +z, then +x +z.
     let biome_interpolation = vec4<f32>(
         (1. - parcel_uv.x) * (1. - parcel_uv.y),
-        (1. - parcel_uv.x) * parcel_uv.y,
         parcel_uv.x * (1. - parcel_uv.y),
+        (1. - parcel_uv.x) * parcel_uv.y,
         parcel_uv.x * parcel_uv.y
     );
 

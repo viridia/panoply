@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I21.**
+**Next: I23.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -61,5 +61,12 @@ confirmed by running something or only by reading. Numbers are never reused.
   old `fta-tiles` repo, which is nowhere on this machine, so `HumanMaleForm` exports without that
   texture. Candidates: find the image in faery's assets under another name, or drop the texture.
   Reported by `blend_inventory.py`; the effect read, not run.
-- **I20** Biomes choose the trees but not the ground's shading: demorun's and Corath's parcels of
-  different biomes have the same ground. Seen by the author in the game; the cause not looked for.
+- **I21** The chaparral biome has no ground texture: `GroundMaterialCache::get_material` leaves its
+  surface out of the layers, so the ground fades to bare dirt toward a chaparral corner. faery
+  painted it as moss is painted, with its own texture, between taiga and sand. Read, not run.
+- **I22** Biome transitions break into patches of one size, and a transition across a row of parcels
+  still reads as a straight band (`lighting_biomes.png` in `plans/lighting.py`). The ground shader
+  blends with one sample of `noise.png`; faery summed several octaves of simplex noise over warped
+  coordinates, too costly to keep. Candidate: re-author `noise.png` in Vortex
+  (`artwork/vortex/terrain-noise.vtx`) as warped, multi-octave noise, and re-centre the shader's
+  scale (`blend_biome`, which assumes a deviation of 0.13) to its spread. Seen in the gallery.

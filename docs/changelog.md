@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN53** The ground shows each parcel's biome, snow and tundra among them, mixing in patches.
 - **PAN51** Carlyle Tepper appears; `verify.sh` fails when an asset names a path that is not there.
 - **PAN50** Scenery and props are Blender 5.2's: highlights shift, and the keep's walnut has grain.
 - **PAN49** A character file re-exported while the game runs rebuilds its actors, not crashing.
