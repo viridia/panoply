@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D57.**
+**Next: D58.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -443,3 +443,10 @@ never reused.
   in Panoply stay. It relies on Panoply's catalogs and exemplar names matching faery's one for one,
   as they did when it was written. How it merges is in [faery.md](faery.md), Migration scripts.
   Reversing it means freezing the converter and porting each aspect by hand. (PAN51)
+- **D57** The primary camera uses SSAO at Low quality with SMAA, in place of 4x MSAA. Faces in shade
+  get only ambient light, which alone leaves their relief flat. SSAO requires MSAA off, and dropping
+  MSAA pays for nearly all of it: on Aerdra the pair costs about what MSAA did (`docs/perf.csv`), on
+  the Mac 1-2 ms more, while High costs Aerdra about 3 ms more and Low shows no noise. SMAA has been
+  judged only on the two high-density displays, Mac and Aerdra, where aliasing hardly shows.
+  Reversing it means giving up the occlusion to have MSAA back, and leaves the prepass unused.
+  (PAN52)

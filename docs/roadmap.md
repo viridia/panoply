@@ -16,16 +16,6 @@ changelog.
 
 In order.
 
-- **PAN52 SSAO trial.** Walls in shadow look flat: on the Marheim palace (nav point `town.marheim`),
-  faces turned from the sun show none of their relief (pilasters, panels, moldings), since only the
-  ambient light reaches them and it varies only with how far a face points up. Try
-  `ScreenSpaceAmbientOcclusion` on `PrimaryCamera`: it needs `Msaa::Off`, so SMAA in its place (TAA
-  hides SSAO's noise better but needs motion vectors from every material and may ghost the
-  outlines). `ground.wesl` replaces Bevy's ambient term with its hemisphere light, so it samples the
-  SSAO texture itself; `GroundMaterial`'s custom vertex layout may need its own prepass vertex
-  shader for the normal prepass. Screenshots of `town.marheim` with and without, and a `perf.py` run
-  with it, decide: keep it, or try a weak unshadowed fill light opposite the sun, or ambient that
-  depends on more of the normal.
 - **PAN54 Fractal biome edges.** Biome transitions break into patches of one size, and a transition
   across a row of parcels still reads as a straight band (`lighting_biomes.png` in
   `plans/lighting.py`): `ground.wesl` blends with one sample of `noise.png`. faery summed octaves of
