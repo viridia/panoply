@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I18.**
+**Next: I19.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -67,3 +67,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   1%, though their sources and `pipeline.ts` are unchanged; no difference shows. Likely a
   nondeterministic encoder; each run leaves unrelated binary changes to revert. Part of the
   discussion of replacing overrun. Confirmed by running (`git diff --stat` after a run).
+- **I18** `humanoid-armature.blend`'s `Face` and `Eyes` materials read `face-texture.png` from the
+  old `fta-tiles` repo, which is nowhere on this machine, so `HumanMaleForm` exports without that
+  texture. Candidates: find the image in faery's assets under another name, or drop the texture.
+  Reported by `blend_inventory.py`; the effect read, not run.

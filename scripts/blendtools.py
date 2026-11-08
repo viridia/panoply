@@ -185,6 +185,43 @@ def stray_output(material):
     return fed[0] if len(fed) == 1 else None
 
 
+def alpha_only_colors(material):
+    """(Color Attribute node, Principled BSDF) pairs where the node feeds the BSDF's Alpha and
+    nothing reads its Color.
+
+    Blender 5.2's exporter does not handle that case: it writes a white COLOR_0 and the attribute
+    as COLOR_1, which engines ignore, so the mesh draws opaque. Blender 3.5 wrote the attribute as
+    COLOR_0."""
+    if material.library or not material.node_tree or material.is_grease_pencil:
+        return []
+    found = []
+    for node in material.node_tree.nodes:
+        if node.bl_idname != "ShaderNodeVertexColor" or node.outputs["Color"].links:
+            continue
+        for link in node.outputs["Alpha"].links:
+            if link.to_node.bl_idname == "ShaderNodeBsdfPrincipled" and link.to_socket.name == "Alpha":
+                found.append((node, link.to_node))
+    return found
+
+
+def missing_images(material):
+    """The images a material's Image Texture nodes read whose files are missing and not packed.
+
+    The exporter leaves such a texture out, so the material exports without it."""
+    import bpy
+
+    if material.library or not material.node_tree or material.is_grease_pencil:
+        return []
+    found = []
+    for node in material.node_tree.nodes:
+        image = node.image if node.bl_idname == "ShaderNodeTexImage" else None
+        if image is None or image.source != "FILE" or image.packed_file or image in found:
+            continue
+        if not Path(bpy.path.abspath(image.filepath)).exists():
+            found.append(image)
+    return found
+
+
 def influence_target(data_path):
     """The bone and constraint names in `pose.bones["b"].constraints["c"].influence`."""
     parts = data_path.split('"')

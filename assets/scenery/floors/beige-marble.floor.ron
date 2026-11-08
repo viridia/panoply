@@ -1,0 +1,6 @@
+FloorSurface(
+    material: Standard(
+        texture: Some("textures/beige-marble.png"),
+        roughness: Some(0.35),
+    ),
+)

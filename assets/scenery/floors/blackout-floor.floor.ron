@@ -1,0 +1,8 @@
+FloorSurface(
+    material: Unlit({
+        color: "#000000",
+    })
+    nav: {
+        blocked: true,
+    }
+)

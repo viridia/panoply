@@ -258,17 +258,17 @@ dropped, not deferred. Numbers are never reused.
   PAN9 as `ViewReady`, which covers every loaded parcel and precinct rather than an area; the
   `*Pending` system params it combines (`TerrainPending`, `SceneryPending`, `ModelsPending`)
   are where an area filter would go. *Gate:* actors (PAN3), for the footprint query.
-- **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and
-  others): the game loads every precinct position near the view, but only some exist. It needs
-  to know which do, by a directory scan or a catalog file. A catalog works in packaged and web
-  builds, where folder loading may not. It could be a `pipeline.ts` target that lists
-  `assets/scenery/precincts/<realm>/` into a catalog: unusual in reading from `assets/` rather
-  than `artwork/`, but rerun by overrun whenever the editor saves a precinct. Two floor types are missing too. `slate.floor.ron` was never written; faery's `Slate`
-  is textured (`slate-grid.png`, already in `assets/textures/`). `terrain-fx.earth.floor.ron`
-  is not a floor: faery's `TerrainFx.Earth` aliases the `Road` terrain effect (`cobbles` here),
-  which faery's `Structure.ts` filled as a terrain effect when it appeared among a precinct's
-  floor types; `convert_precincts.mts` made it a floor surface path. *Gate:* the editor creates
-  precincts (X3), or the errors hide a real one.
+- **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and others):
+  the game loads every precinct position near the view, but only some exist. It needs to know which
+  do, by a directory scan or a catalog file. A catalog works in packaged and web builds, where
+  folder loading may not. It could be a `pipeline.ts` target that lists
+  `assets/scenery/precincts/<realm>/` into a catalog: unusual in reading from `assets/` rather than
+  `artwork/`, but rerun by overrun whenever the editor saves a precinct. Nine floor types are
+  missing too, none a floor: `terrain-fx.*`, `grave-x`/`-y` and `tilled-x`/`-y` are faery terrain
+  effects (`terrainfx.json`; `TerrainFx.Earth` aliases `Road`, `cobbles` here), which faery's
+  `Structure.ts` filled as terrain effects when they appeared among a precinct's floor types;
+  `convert_precincts.mts` made them floor surface paths. *Gate:* the editor creates precincts (X3),
+  or the errors hide a real one.
 - **X35** Tunnels and cave entrances, which must be navigable: the ground can have holes
   (`TerrainHole`, per 1 m cell, in the mesh and the collider), but `TerrainOptions::Flatten`
   is declared and never set or read, here or in faery (`TerrainEffect.ts`, commented out), and

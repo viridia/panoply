@@ -1,0 +1,7 @@
+FloorSurface(
+    material: Standard(
+        texture: Some("textures/rough-stone-warm.png"),
+        roughness: Some(0.3),
+    ),
+    raise: -0.08,
+)

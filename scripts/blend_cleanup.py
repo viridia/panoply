@@ -28,6 +28,11 @@ rule here is reported and not saved. The changes, in order:
                     exporter needs to export its color, as 3.5's did whatever the Factor; and
                     when no Material Output targets all renderers, the one a Principled BSDF
                     feeds is made to, for the same reason (a renderer's own output still wins)
+    alpha colors    a Color Attribute node whose Alpha alone feeds a Principled BSDF gets its Color
+                    multiplied into Base Color too, which Blender 5.2's exporter needs to write the
+                    attribute as COLOR_0, as 3.5 did; with Base Color linked, the file is blocked
+    images          an image a material reads whose file is missing reads the file of that name in
+                    textures/ beside the .blend, when there is one
     export          Panoply's export settings are remembered in the scene, for files beside a .glb
 
 Actions keep their names: other files link actions from humanoid-armature.blend by name.
@@ -94,12 +99,37 @@ class Cleanup:
                     f"not {output.target}"
                 )
                 output.target = "ALL"
+            for node, bsdf in bt.alpha_only_colors(material):
+                self.alpha_only(material, node, bsdf)
+            for image in bt.missing_images(material):
+                found = self.blend.parent / "textures" / Path(image.filepath).name
+                if found.exists():
+                    self.change(f"material {material.name}: {image.name!r} now reads {found.name}")
+                    image.filepath = "//textures/" + found.name
         if bt.exported_glb(self.blend).exists():
             expected = bt.expected_settings(bpy.data.objects)
             if bt.settings_drift(bpy.context.scene.get(bt.SETTINGS_KEY), expected):
                 bpy.context.scene[bt.SETTINGS_KEY] = expected
                 anim = "with" if expected["export_animations"] else "without"
                 self.change(f"remembered Panoply's export settings, {anim} animation")
+
+    def alpha_only(self, material, node, bsdf):
+        """Feeds the node's Color into Base Color, multiplied by the color Base Color held, so the
+        exporter writes the attribute as COLOR_0 and the base color as before."""
+        base = bsdf.inputs["Base Color"]
+        if base.is_linked:
+            self.block(f"material {material.name}: alpha-only color {node.name!r}, Base Color linked")
+            return
+        tree = material.node_tree
+        mix = tree.nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.blend_type = "MULTIPLY"
+        mix.location = (bsdf.location.x - 200, bsdf.location.y)
+        mix.inputs["Factor"].default_value = 1.0
+        mix.inputs["A"].default_value = base.default_value[:]
+        tree.links.new(node.outputs["Color"], mix.inputs["B"])
+        tree.links.new(mix.outputs["Result"], base)
+        self.change(f"material {material.name}: {node.name!r} Color multiplies Base Color")
 
     def mesh(self, obj, ad):
         """A mesh's clips move the mesh itself (a door); anything else on it exports nothing."""

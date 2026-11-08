@@ -23,7 +23,10 @@ exports wrong or confuses later edits:
                          color the exporter leaves out
     stray output         a material whose Principled BSDF feeds an output for one renderer only,
                          with none for all, so the exporter finds no color
-    export setting       remembered export settings missing, or differing from Panoply's
+    alpha-only color     a Color Attribute node whose Alpha alone feeds a Principled BSDF, which the
+                         exporter writes as a second color set, so the mesh draws opaque
+    missing image        an image a material reads whose file is missing, so its texture is left out
+    export setting      remembered export settings missing, or differing from Panoply's
 """
 
 import sys
@@ -108,6 +111,10 @@ def problems(blend):
                 f"material {material.name}: stray output, {output.name!r} targets only "
                 f"{output.target}"
             )
+        for node, _ in bt.alpha_only_colors(material):
+            found.append(f"material {material.name}: alpha-only color {node.name!r}")
+        for image in bt.missing_images(material):
+            found.append(f"material {material.name}: missing image {image.filepath!r}")
     if bt.exported_glb(blend).exists():
         stored = bpy.context.scene.get(bt.SETTINGS_KEY)
         found += bt.settings_drift(stored, bt.expected_settings(bpy.data.objects))
