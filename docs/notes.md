@@ -118,6 +118,13 @@ calls for work becomes an issue in [issues.md](issues.md).
   the water (`AlphaMode::Blend`, custom forward material) without switching the renderer to
   deferred and reworking the water. Its cost was not measured. From the game's high camera,
   most reflected rays leave the screen (sky), so it could only reflect the far banks.
+- Bevy's SSAO scales ambient light by `ssao_multibounce(visibility, base_color)`
+  (`bevy_pbr/src/ssao/utils.wesl`), which lightens occlusion on bright surfaces, standing in for
+  light bouncing between them: a raw visibility of 0.6 stays 0.61 at a linear base color of 0.1,
+  becomes 0.76 at 0.5 and 0.83 at 0.7. So it reads strongly on dark stone (Heron Creek Armory,
+  Marheim's walls, cottage stone, dungeon walls) and hardly at all on `marble-palace`'s white
+  marble; `ground.wesl` applies the same curve. Its Low quality (4 samples a pixel) showed no noise
+  in motion on `Aerdra`, without temporal antialiasing (2026-11-08).
 - Scenery content: playground `p000-p000` holds 1,048 scenery instances, 13 actors and 6 tiers,
   a usable test map for scenery performance (X15); the other playground precincts hold less.
   Overland has one precinct here; the old engine's overland rooms were not migrated.

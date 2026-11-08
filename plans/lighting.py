@@ -8,8 +8,9 @@ breaking on a bluff), lighting_ocean.png (189, 62: open water only), lighting_fa
 shore spot at camera distance 40: texture shimmer and mipmaps), lighting_snow.png (demorun
 190, 220: snow meeting tundra, across parcel edges), lighting_glade.png (demorun 226, 223: grass
 amid snow), lighting_biomes.png (holm-overland 992, 891 at distance 80: many parcels' biomes
-blending) and lighting_marheim.png (holm-overland 499, 701: the palace's relief on faces turned
-from the sun). Environment variables try
+blending), lighting_marheim.png (holm-overland 499, 701: the palace's relief on faces turned
+from the sun) and lighting_armory.png (holm-overland 797, 1101: Heron Creek Armory's shadowed
+side, where ambient occlusion shows most). Environment variables try
 other values without a rebuild, through the reflected resources:
 
     SUN=1500        Sunlight::illuminance (lux)
@@ -18,6 +19,9 @@ other values without a rebuild, through the reflected resources:
     SSAO=off        removes ScreenSpaceAmbientOcclusion from the camera
     SSAO=msaa       removes it and SMAA, and turns on 4x MSAA in both cameras
     SSAO_RADIUS=1.5 ScreenSpaceAmbientOcclusion::radius (m)
+    SSAO_QUALITY=Low
+                    ScreenSpaceAmbientOcclusion::quality_level: Low, Medium, High (the
+                    default) or Ultra
     SHOTS=before    prefixes the names, for side-by-side comparison
 """
 
@@ -49,6 +53,7 @@ SPOTS = {
     "glade": ("demorun", [225.7, 0.0, 222.6], None, 20.0),
     "biomes": ("holm-overland", [992.0, 0.0, 891.1], None, 80.0),
     "marheim": ("holm-overland", [499.29, 0.2, 700.93], None, 20.0),
+    "armory": ("holm-overland", [797.0, 0.0, 1101.0], None, 20.0),
 }
 
 
@@ -82,6 +87,16 @@ def run(driver):
             driver.call(
                 "world.insert_components", {"entity": camera, "components": {MSAA: "Sample4"}}
             )
+    if "SSAO_QUALITY" in os.environ:
+        driver.call(
+            "world.mutate_components",
+            {
+                "entity": driver.camera(),
+                "component": SSAO,
+                "path": ".quality_level",
+                "value": os.environ["SSAO_QUALITY"],
+            },
+        )
     if "SSAO_RADIUS" in os.environ:
         driver.call(
             "world.mutate_components",

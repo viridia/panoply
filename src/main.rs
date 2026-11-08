@@ -164,7 +164,11 @@ fn setup(mut commands: Commands) {
         // SSAO requires MSAA off, so SMAA does the antialiasing.
         Msaa::Off,
         bevy::anti_alias::smaa::Smaa::default(),
-        bevy::pbr::ScreenSpaceAmbientOcclusion::default(),
+        // Low costs about a third of the default High (`docs/perf.csv`), with no visible noise.
+        bevy::pbr::ScreenSpaceAmbientOcclusion {
+            quality_level: bevy::pbr::ScreenSpaceAmbientOcclusionQualityLevel::Low,
+            ..default()
+        },
     ));
 }
 

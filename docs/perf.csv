@@ -1,28 +1,36 @@
 # Frame times from plans/perf.py, one line per run, appended by the plan.
 # Columns: the run's date; the test machine's short hostname (described in notes.md); the commit
 # checked out; whether the tree had uncommitted changes ("yes" measures that commit plus them);
-# the window's size in physical pixels; then ms per frame at each stop, vsync off. Stops are named
-# for their playground position (x_z, camera distance 40) or for what they view (townsfolk at
-# 145_6, distance 20). Compare runs only on the same host and window size. A stop added later
-# gets a new column at the end; older lines leave it empty.
+# the window's size in physical pixels; the plan's environment variables that change what is
+# drawn (its docstring lists them; empty for the build as committed); then ms per frame at each
+# stop, vsync off. Stops are named for their playground position (x_z, camera distance 40) or for
+# what they view (townsfolk at 145_6, distance 20). Compare runs only on the same host and window
+# size. A stop added later gets a new column at the end; older lines leave it empty.
 # A line is committed with the change it measures, so git log on this file names that change.
-date,host,commit,dirty,window,16_16,48_48,80_80,112_112,128_128,townsfolk
-2026-11-02,Falryn,4d56721,yes,2560x1440,8.93,9.06,10.37,9.97,9.92,11.72
-2026-11-02,Falryn,4d56721,yes,2560x1440,8.70,9.06,8.68,8.05,8.13,7.89
-2026-11-02,Falryn,f3e726a,yes,2560x1440,10.37,10.54,11.66,10.25,9.38,9.37
-2026-11-02,Falryn,f3e726a,yes,2560x1440,9.88,10.49,10.92,9.74,9.50,9.38
-2026-11-04,Aerdra,0768651,no,2560x1440,8.19,13.46,15.71,14.28,12.36,9.76
-2026-11-05,Falryn,2d0ed84,yes,2560x1440,8.78,9.23,8.79,8.32,8.30,8.09
-2026-11-05,Falryn,9f7e158,yes,2560x1440,8.85,9.40,8.78,8.54,8.25,8.02
-2026-11-05,MacBookPro,effaeeb,yes,2560x1440,8.92,9.12,8.75,8.39,8.34,8.00
-2026-11-06,Falryn,6da3764,yes,2560x1440,8.67,9.14,8.84,8.27,8.26,8.04
-2026-11-06,Falryn,d620645,yes,2560x1440,9.11,9.51,8.83,8.37,8.31,8.00
-2026-11-06,Falryn,bea65b5,yes,2560x1440,9.01,9.49,8.88,8.29,8.34,8.10
-2026-11-06,Falryn,5a217cd,yes,2560x1440,8.84,9.21,8.78,8.24,8.31,7.91
-2026-11-07,Falryn,628fd8c,yes,2560x1440,8.74,9.10,8.49,8.05,8.01,7.69
-2026-11-07,Falryn,44122ee,yes,2560x1440,8.73,9.05,8.57,8.06,8.06,7.88
-2026-11-07,Falryn,b534b89,yes,2560x1440,9.14,9.46,8.89,8.39,8.39,8.13
-2026-11-07,Falryn,733b9fa,yes,2560x1440,8.95,9.36,9.11,8.65,8.44,8.25
-2026-11-07,Falryn,5b348ed,yes,2560x1440,9.06,9.50,9.11,8.58,8.55,8.17
-2026-11-08,Aerdra,e05a094,no,2560x1440,11.60,15.82,17.79,16.65,15.09,11.82
-2026-11-08,Aerdra,6cb6d86,yes,2560x1440,8.66,13.65,15.54,13.96,12.13,9.50
+date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfolk
+2026-11-02,Falryn,4d56721,yes,2560x1440,,8.93,9.06,10.37,9.97,9.92,11.72
+2026-11-02,Falryn,4d56721,yes,2560x1440,,8.70,9.06,8.68,8.05,8.13,7.89
+2026-11-02,Falryn,f3e726a,yes,2560x1440,,10.37,10.54,11.66,10.25,9.38,9.37
+2026-11-02,Falryn,f3e726a,yes,2560x1440,,9.88,10.49,10.92,9.74,9.50,9.38
+2026-11-04,Aerdra,0768651,no,2560x1440,,8.19,13.46,15.71,14.28,12.36,9.76
+2026-11-05,Falryn,2d0ed84,yes,2560x1440,,8.78,9.23,8.79,8.32,8.30,8.09
+2026-11-05,Falryn,9f7e158,yes,2560x1440,,8.85,9.40,8.78,8.54,8.25,8.02
+2026-11-05,MacBookPro,effaeeb,yes,2560x1440,,8.92,9.12,8.75,8.39,8.34,8.00
+2026-11-06,Falryn,6da3764,yes,2560x1440,,8.67,9.14,8.84,8.27,8.26,8.04
+2026-11-06,Falryn,d620645,yes,2560x1440,,9.11,9.51,8.83,8.37,8.31,8.00
+2026-11-06,Falryn,bea65b5,yes,2560x1440,,9.01,9.49,8.88,8.29,8.34,8.10
+2026-11-06,Falryn,5a217cd,yes,2560x1440,,8.84,9.21,8.78,8.24,8.31,7.91
+2026-11-07,Falryn,628fd8c,yes,2560x1440,,8.74,9.10,8.49,8.05,8.01,7.69
+2026-11-07,Falryn,44122ee,yes,2560x1440,,8.73,9.05,8.57,8.06,8.06,7.88
+2026-11-07,Falryn,b534b89,yes,2560x1440,,9.14,9.46,8.89,8.39,8.39,8.13
+2026-11-07,Falryn,733b9fa,yes,2560x1440,,8.95,9.36,9.11,8.65,8.44,8.25
+2026-11-07,Falryn,5b348ed,yes,2560x1440,,9.06,9.50,9.11,8.58,8.55,8.17
+2026-11-08,Aerdra,e05a094,no,2560x1440,,11.60,15.82,17.79,16.65,15.09,11.82
+2026-11-08,Aerdra,6cb6d86,yes,2560x1440,,8.66,13.65,15.54,13.96,12.13,9.50
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO=off,7.41,9.90,11.52,10.48,10.11,7.74
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO=prepass,8.46,11.76,13.64,12.33,10.90,8.96
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SMAA=off,11.94,16.40,18.31,16.75,15.42,11.64
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO=off SMAA=off,6.51,9.32,10.97,10.24,9.86,7.07
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO_QUALITY=Low,9.11,13.44,14.95,13.72,12.16,10.22
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO_QUALITY=Medium,10.07,14.26,16.08,14.76,13.19,10.31
+2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO_QUALITY=High,11.97,16.29,17.91,16.60,15.07,11.52
