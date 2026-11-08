@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN54** Snow and moss meet other ground in clumps of many sizes; slopes bare a little sooner.
 - **PAN55** The camera sits closer to the action, and the sun falls at an angle across buildings.
 - **PAN52** Corners and creases deepen in shade, so walls away from the sun show their relief.
 - **PAN53** The ground shows each parcel's biome, snow and tundra among them, mixing in patches.

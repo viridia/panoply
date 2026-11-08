@@ -17,17 +17,23 @@ use crate::{load_tiling_texture, BiomeSurfaceType, BiomesTable, ParcelBiomes};
 pub struct BiomeSurfaceAttrs {
     /// Surface roughness.
     roughness: f32,
+    /// How far noise moves this surface's boundary: higher is clumpier and spreads the
+    /// transition wider. Scaled down to nothing where the surface's weight nears 0 or 1.
     blend_var: f32,
+    /// The surface starts to appear where its weight plus noise passes this value.
     blend_t0: f32,
+    /// The surface is fully opaque above this value. The gap from `blend_t0` is the softness of
+    /// its edge, and their midpoint sets its coverage: lower covers more.
     blend_t1: f32,
+    /// As `blend_var`, for the tinted rim.
     edge_var: f32,
+    /// Below this value the surface takes the full `edge_tint`.
     edge_t0: f32,
+    /// Above this value the surface has no tint, so the rim lies between `blend_t0` and here.
     edge_t1: f32,
-
-    // Texture scale
+    /// Texture repeats per metre.
     tx_scale: f32,
-
-    // Darkened color which shows up at edges of top surface (near roads etc.).
+    /// Multiplies the surface's color at its rim, near roads and other surfaces.
     edge_tint: LinearRgba,
 }
 
@@ -52,17 +58,23 @@ impl BiomeSurfaceAttrs {
     };
 
     pub const MOSS: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        blend_t0: 0.45,
-        blend_t1: 0.5,
+        blend_var: 0.9,
+        blend_t0: 0.04,
+        blend_t1: 0.56,
+        edge_var: 0.9,
         edge_t1: 0.65,
         ..Self::BASE
     };
 
     pub const SAND: BiomeSurfaceAttrs = Self::BASE;
 
+    // Snow lies in clumps rather than fading: much noise over a narrow threshold, so that where
+    // it is thin (a low weight) only the patches remain.
     pub const SNOW: BiomeSurfaceAttrs = BiomeSurfaceAttrs {
-        blend_t0: 0.45,
-        blend_t1: 0.55,
+        blend_var: 0.7,
+        blend_t0: 0.46,
+        blend_t1: 0.54,
+        edge_var: 0.7,
         edge_t0: 0.52,
         edge_t1: 0.65,
         ..Self::BASE
@@ -220,8 +232,16 @@ impl GroundMaterialCache {
         // The topcoats over the dirt underlay, in the order they are painted, each covering those
         // before. Chaparral has no texture yet.
         let layers = [
-            (BiomeSurfaceType::Grass, &self.grass, BiomeSurfaceAttrs::GRASS),
-            (BiomeSurfaceType::Taiga, &self.taiga, BiomeSurfaceAttrs::TAIGA),
+            (
+                BiomeSurfaceType::Grass,
+                &self.grass,
+                BiomeSurfaceAttrs::GRASS,
+            ),
+            (
+                BiomeSurfaceType::Taiga,
+                &self.taiga,
+                BiomeSurfaceAttrs::TAIGA,
+            ),
             (BiomeSurfaceType::Moss, &self.moss, BiomeSurfaceAttrs::MOSS),
             (BiomeSurfaceType::Sand, &self.sand, BiomeSurfaceAttrs::SAND),
             (BiomeSurfaceType::Snow, &self.snow, BiomeSurfaceAttrs::SNOW),
@@ -244,8 +264,11 @@ impl GroundMaterialCache {
             }
             biome_textures[surface_index] = texture.clone();
             biome_surface[surface_index] = attrs;
-            *biome_weight.col_mut(surface_index) =
-                if surface_index == 0 && !bare { Vec4::ONE } else { weight };
+            *biome_weight.col_mut(surface_index) = if surface_index == 0 && !bare {
+                Vec4::ONE
+            } else {
+                weight
+            };
             surface_index += 1;
         }
 

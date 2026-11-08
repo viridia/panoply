@@ -10,23 +10,11 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN56.**
+**Next: PAN57.**
 
 ## Next
 
 In order.
-
-- **PAN54 Fractal biome edges.** Biome transitions break into patches of one size, and a transition
-  across a row of parcels still reads as a straight band (`lighting_biomes.png` in
-  `plans/lighting.py`): `ground.wesl` blends with one sample of `noise.png`. faery summed octaves of
-  simplex noise over warped coordinates per fragment (`TerrainMaterial.ts`, `terraNoise`), too
-  costly there. Here the vertex shader computes it, from the world position so parcel edges agree:
-  ground vertices are 0.25 m apart, and a view holds some 250k of them against 3.7M fragments. The
-  fragment shader adds a small high-frequency sample of `noise.png`, and the per-biome smoothsteps
-  clamp the sum; `blend_biome`'s scale is re-centred to the new spread, and `slope_mix` reads the
-  same noise. Judged in the lighting gallery; `perf.py` for the cost. The alternative, a warped
-  multi-octave `noise.png` re-authored in Vortex (`artwork/vortex/terrain-noise.vtx`), costs nothing
-  at runtime.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
@@ -40,6 +28,10 @@ components and every layer restartable from saved state (R104).
   once, losing edits that Save has not written. While `UnsavedAssets` is not empty, both ask first,
   in a modal dialog like PAN29's text entry: Save, Discard or Cancel. The close button needs
   `WindowPlugin::close_when_requested` off and `WindowCloseRequested` handled.
+- **PAN56 Saved editor view.** The editor's realm, position and azimuth saved between runs, as faery
+  did, so an iteration need not navigate back: a settings group beside `ZoomSettings`, written with
+  its debounce and only when the view changes. The saved realm comes before `nav_to_center`'s
+  default, which remains the fallback when that realm is gone.
 - **PAN35 Create and Change Realm.** Two buttons in the realm panel, each opening a modal dialog:
   Create Realm asks for a name in PAN29's text-entry dialog and makes a new, empty realm; Change
   Realm picks one of the realms in a list-selection dialog and moves the view there. The dialog

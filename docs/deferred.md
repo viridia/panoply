@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X71.**
+**Next: X72.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -477,3 +477,10 @@ dropped, not deferred. Numbers are never reused.
   biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
   they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
   editor places scenery (PAN5).
+- **X71** Biome blend properties as data, with sliders: move `BiomeSurfaceAttrs` out of the
+  constants in `ground_material.rs` into `terrain.biomes.json`, reflectable and live-editable, so a
+  surface's transition can be tuned by eye. The file lists biomes, several sharing a surface (the
+  meadows), and the properties are per surface, so where they sit in it is to be decided.
+  `blend_var` sets how much of a parcel the transition spans and the gap between `blend_t0` and
+  `blend_t1` the sharpness of a clump's border; separate fields for the two would suit sliders
+  better. *Gate:* the property editor (PAN28).

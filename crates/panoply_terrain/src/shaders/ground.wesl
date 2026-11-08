@@ -1,11 +1,11 @@
 import bevy_core_pipeline::tonemapping::tone_mapping;
 import bevy_pbr::render::{
-    mesh_view_bindings::view,
     mesh_functions as mfns,
+    pbr_functions as fns,
     mesh_bindings::mesh,
     mesh_types::MESH_FLAGS_SHADOW_RECEIVER_BIT,
-    pbr_types::{PbrInput, pbr_input_new},
-    pbr_functions as fns,
+    mesh_view_bindings::view,
+    pbr_types::{PbrInput, pbr_input_new}
 };
 @if(SCREEN_SPACE_AMBIENT_OCCLUSION)
 import bevy_pbr::render::mesh_view_bindings::screen_space_ambient_occlusion_texture;
@@ -26,7 +26,7 @@ struct BiomeSurfaceAttrs {
 
     // Darkened color which shows up at edges of top surface (near roads etc.).
     edge_tint: vec4<f32>,
-};
+}
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(1)
 var noise: texture_2d<f32>;
@@ -93,8 +93,9 @@ const GT_SNOW = 7u;
 const GT_CHAPARRAL = 8u;
 
 const UV_ROT = mat2x2<f32>(
-    vec2<f32>(0.8775825618903728, 0.479425538604203),
-    vec2<f32>(-0.479425538604203, 0.8775825618903728));
+        vec2<f32>(0.8775825618903728, 0.479425538604203),
+        vec2<f32>(-0.479425538604203, 0.8775825618903728),
+    );
 
 // struct BiomeWeights {
 //     weights: array<f32, 10>,
@@ -104,7 +105,7 @@ struct Vertex {
     @location(0) position: vec3<f32>,
     @location(3) normal: vec3<f32>,
     @location(2) terrain_style: vec2<u32>,
-};
+}
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
@@ -113,7 +114,7 @@ struct VertexOutput {
     @location(2) slope: f32,
     @location(3) biome_weight: vec4<f32>,
     @location(4) terrain_style: vec4<f32>,
-};
+}
 
 // const dirt_biome = BiomeSurfaceAttrs(
 //     0.99,
@@ -135,52 +136,85 @@ struct VertexOutput {
 struct SurfaceAccum {
     color: vec4<f32>,
     terrain_noise: f32,
+    // How much `terrain_noise` changes across a pixel.
+    noise_width: f32,
     under_noise: f32,
     under_mix: f32,
     under_darken: f32,
 }
 
+// Three octaves of `noise`, each rotated against the last. Centred on 0.5, with about the
+// deviation of one sample (0.13). Warping the coordinates smears this into veins.
+fn fractal_noise(uv: vec2<f32>) -> f32 {
+    let n0 = textureSample(noise, noise_sampler, uv * 0.04).x - 0.5;
+    let n1 = textureSample(noise, noise_sampler, uv * UV_ROT * 0.11).x - 0.5;
+    let n2 = textureSample(noise, noise_sampler, uv * UV_ROT * UV_ROT * 0.31).x - 0.5;
+    return 0.5 + (n0 + n1 * 0.6 + n2 * 0.35) / 1.25;
+}
+
+// A smoothstep at least a pixel and a half wide, so that a sharp edge does not alias.
+fn edge_step(t0: f32, t1: f32, value: f32, pixel_width: f32) -> f32 {
+    let widen = max(0., pixel_width * 1.5 - (t1 - t0)) * 0.5;
+    return smoothstep(t0 - widen, t1 + widen, value);
+}
+
 fn blend_biome(
-        out: ptr<function, SurfaceAccum>,
-        biome: BiomeSurfaceAttrs,
-        weight: f32,
-        tx_color: vec3<f32>) {
-    // The noise texture runs 0 to 1 about 0.5, with a deviation of 0.13; the old engine's blend
-    // thresholds were tuned for signed fractal noise with a deviation of about 0.16.
-    let noise = ((*out).terrain_noise - 0.5) * 1.25;
-    let blend = smoothstep(biome.blend_t0, biome.blend_t1, weight + noise * biome.blend_var);
-    let edge_blend = smoothstep(biome.edge_t0, biome.edge_t1, weight + noise * biome.edge_var);
+    out: ptr<function, SurfaceAccum>,
+    biome: BiomeSurfaceAttrs,
+    weight: f32,
+    tx_color: vec3<f32>,
+) {
+    // `terrain_noise` has a deviation of about 0.13; the old engine's blend thresholds were tuned
+    // for signed fractal noise with a deviation of about 0.16.
+    // Strongest where the surface is half present, and nothing at weights 0 and 1, so that a
+    // parcel wholly of one surface stays solid.
+    let mixing = 4. * weight * (1. - weight);
+    let noise = ((*out).terrain_noise - 0.5) * 1.25 * mixing;
+    let width = (*out).noise_width * 1.25 * mixing;
+    let blend = edge_step(
+            biome.blend_t0,
+            biome.blend_t1,
+            weight + noise * biome.blend_var,
+            width * biome.blend_var,
+        );
+    let edge_blend = edge_step(
+            biome.edge_t0,
+            biome.edge_t1,
+            weight + noise * biome.edge_var,
+            width * biome.edge_var,
+        );
     (*out).color = mix(
-        (*out).color,
-        vec4(
-            mix(
-                tx_color * biome.edge_tint.rgb,
-                tx_color,
-                min(edge_blend, 1. - (*out).under_darken)
+            (*out).color,
+            vec4(
+                mix(
+                    tx_color * biome.edge_tint.rgb,
+                    tx_color,
+                    min(edge_blend, 1. - (*out).under_darken),
+                ),
+                biome.roughness,
             ),
-            biome.roughness
-        ),
-        blend);
+            blend,
+        );
 }
 
 @vertex
 fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> VertexOutput {
     var out: VertexOutput;
     var wposition = mfns::mesh_position_local_to_world(
-        mfns::get_world_from_local(instance_index),
-        vec4<f32>(vertex.position, 1.0)
-    );
+            mfns::get_world_from_local(instance_index),
+            vec4<f32>(vertex.position, 1.0),
+        );
 
     // From the mesh's own coordinates, which run 0 to 16 across the parcel: `fract` of the world
     // position would wrap the far edge's vertices to 0, giving them the near corners' weights.
     let parcel_uv = clamp(vertex.position.xz / 16., vec2(0.), vec2(1.));
     // The corners in `TerrainMap::adjacent_biomes`'s order: (0, 0), +x, +z, then +x +z.
     let biome_interpolation = vec4<f32>(
-        (1. - parcel_uv.x) * (1. - parcel_uv.y),
-        parcel_uv.x * (1. - parcel_uv.y),
-        (1. - parcel_uv.x) * parcel_uv.y,
-        parcel_uv.x * parcel_uv.y
-    );
+            (1. - parcel_uv.x) * (1. - parcel_uv.y),
+            parcel_uv.x * (1. - parcel_uv.y),
+            (1. - parcel_uv.x) * parcel_uv.y,
+            parcel_uv.x * parcel_uv.y,
+        );
 
     // // Compute weights for each ground cover type.
     // var first_layer = true;
@@ -203,101 +237,109 @@ fn vertex(vertex: Vertex, @builtin(instance_index) instance_index: u32) -> Verte
 
     out.world_position = wposition;
     out.position = mfns::mesh_position_local_to_clip(
-        mfns::get_world_from_local(instance_index),
-        vec4<f32>(vertex.position, 1.0)
-    );
+            mfns::get_world_from_local(instance_index),
+            vec4<f32>(vertex.position, 1.0),
+        );
 
     out.terrain_style = vec4(
-        f32(vertex.terrain_style.x & 0xffu) * 1.0 / 255.0,
-        f32((vertex.terrain_style.x >> 8u) & 0xffu) * 1.0 / 255.0,
-        f32((vertex.terrain_style.x >> 16u) & 0xffu) * 1.0 / 255.0,
-        f32((vertex.terrain_style.x >> 24u) & 0xffu) * 1.0 / 255.0
-  	);
+            f32(vertex.terrain_style.x & 0xffu) * 1.0 / 255.0,
+            f32((vertex.terrain_style.x >> 8u) & 0xffu) * 1.0 / 255.0,
+            f32((vertex.terrain_style.x >> 16u) & 0xffu) * 1.0 / 255.0,
+            f32((vertex.terrain_style.x >> 24u) & 0xffu) * 1.0 / 255.0,
+        );
 
     out.world_normal = mfns::mesh_normal_local_to_world(vertex.normal, instance_index);
     out.slope = -out.world_normal.y;
     out.biome_weight = vec4<f32>(
-        dot(biome_weight[0], biome_interpolation),
-        dot(biome_weight[1], biome_interpolation),
-        dot(biome_weight[2], biome_interpolation),
-        dot(biome_weight[3], biome_interpolation)
-    );
+            dot(biome_weight[0], biome_interpolation),
+            dot(biome_weight[1], biome_interpolation),
+            dot(biome_weight[2], biome_interpolation),
+            dot(biome_weight[3], biome_interpolation),
+        );
     return out;
 }
 
 @fragment
-fn fragment(
-    @builtin(front_facing) is_front: bool,
-    mesh: VertexOutput,
-) -> @location(0) vec4<f32> {
+fn fragment(@builtin(front_facing) is_front: bool, mesh: VertexOutput) -> @location(0) vec4<f32> {
     let uv = vec2<f32>(mesh.world_position.xz);
 
-	  let fx_cobbles = mesh.terrain_style.x;
-  	let fx_soil = mesh.terrain_style.y;
-  	let fx_earth = mesh.terrain_style.z;
-	// let fx_path = mesh.terrain_style.w;
+    let fx_cobbles = mesh.terrain_style.x;
+    let fx_soil = mesh.terrain_style.y;
+    let fx_earth = mesh.terrain_style.z;
+    // let fx_path = mesh.terrain_style.w;
 
     let slope = 1.0 - pow(mesh.slope, 2.);
     let dirt_color = textureSample(dirt, dirt_sampler, uv * 0.1);
 
     var sfc: SurfaceAccum;
     sfc.color = dirt_color;
-    sfc.terrain_noise = textureSample(noise, noise_sampler, uv * 0.04).x;
+    sfc.terrain_noise = fractal_noise(uv);
+    sfc.noise_width = fwidth(sfc.terrain_noise);
     sfc.under_darken = 0.;
     sfc.under_mix = 0.;
     sfc.under_noise = textureSample(noise, noise_sampler, uv * 0.3).x;
 
-    let under_roughness = 0.9 - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
-  //   // let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
+    let under_roughness = 0.9
+        - (dirt_color.r - dirt_color.g - dirt_color.b) * 0.8; // Roughness for underlayers
+    //   // let under_noise = dot(persist0_6, terrainNoise_2_5) * 0.5;
 
+    // No top coats on steep hillsides.
     let slope_mix = slope + sfc.terrain_noise * 0.5;
-    sfc.under_mix = max(sfc.under_mix, smoothstep(0.35, 0.55, slope_mix));
-    sfc.under_darken = max(sfc.under_darken, smoothstep(0.1, 0.6, slope_mix));
+    sfc.under_mix = max(sfc.under_mix, smoothstep(0.25, 0.51, slope_mix));
+    sfc.under_darken = max(sfc.under_darken, smoothstep(0.06, 0.56, slope_mix));
 
     var under_color = dirt_color.xyz;
 
-	// Packed and dried earth effects.
+    // Packed and dried earth effects.
     if fx_earth > 0. {
         let fx_blend: f32 = smoothstep(0.2, 1.0, fx_earth + sfc.under_noise);
         // under_color = dirt_color.rgb;
-		// float pathBlend = smoothstep(0., .5, fxPath);
-		// underColor = mix(
-		// 	dirtColor.xyz * 0.5,
-		// 	dirtColor.xyz * (1. - vBiomeWeight[Moss] * 0.5),
-		// 	pathBlend);
-		// underMix = max(underMix, smoothstep(0., 0.9, fxPath + underNoise * 0.6));
-		sfc.under_darken = max(
-            sfc.under_darken,
-            smoothstep(0.2, 0.9, fx_earth * 1.4 + sfc.under_noise * 1.4));
-		sfc.under_mix = max(sfc.under_mix, fx_blend);
+        // float pathBlend = smoothstep(0., .5, fxPath);
+        // underColor = mix(
+        // 	dirtColor.xyz * 0.5,
+        // 	dirtColor.xyz * (1. - vBiomeWeight[Moss] * 0.5),
+        // 	pathBlend);
+        // underMix = max(underMix, smoothstep(0., 0.9, fxPath + underNoise * 0.6));
+        sfc.under_darken = max(
+                sfc.under_darken,
+                smoothstep(0.2, 0.9, fx_earth * 1.4 + sfc.under_noise * 1.4),
+            );
+        sfc.under_mix = max(sfc.under_mix, fx_blend);
     }
 
-	// Tilled soil effects - farm fields, graves, etc.
+    // Tilled soil effects - farm fields, graves, etc.
     if fx_soil > 0. {
         let fx_blend: f32 = fx_soil;
         under_color = dirt_color.rgb * vec3f(.7, .6, .6);
-		// float soilBlend = smoothstep(0., .3, fxSoil);
-		// vec4 soilColor = texture2D(dirtTexture, vPosition.xz * 0.5) * vec4(.7, .6, .6, 1.);
-		// underColor = mix(underColor, soilColor.rgb, soilBlend);
-		// underRoughness = mix(underRoughness, 0.9, soilBlend);
-		// underMix = max(underMix, smoothstep(0.3, 1.1, fxSoil * 2. + underNoise * 0.6));
-		sfc.under_darken = max(
-            sfc.under_darken,
-            smoothstep(0.3, 1.1, fx_soil * 2. + sfc.under_noise * 0.6));
-		sfc.under_mix = max(sfc.under_mix, fx_blend);
+        // float soilBlend = smoothstep(0., .3, fxSoil);
+        // vec4 soilColor = texture2D(dirtTexture, vPosition.xz * 0.5) * vec4(.7, .6, .6, 1.);
+        // underColor = mix(underColor, soilColor.rgb, soilBlend);
+        // underRoughness = mix(underRoughness, 0.9, soilBlend);
+        // underMix = max(underMix, smoothstep(0.3, 1.1, fxSoil * 2. + underNoise * 0.6));
+        sfc.under_darken = max(
+                sfc.under_darken,
+                smoothstep(0.3, 1.1, fx_soil * 2. + sfc.under_noise * 0.6),
+            );
+        sfc.under_mix = max(sfc.under_mix, fx_blend);
     }
 
-	// Cobblestone effects.
+    // Cobblestone effects.
     if fx_cobbles > 0. {
         let cobbles_color = textureSample(cobbles, cobbles_sampler, uv * UV_ROT * 0.45);
-    		let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
-        let fx_blend: f32 = smoothstep(0.9, 1.2, fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9);
-    		let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
-    		// underRoughness = mix(underRoughness, 1.0 - cracks * 0.7, roadBlend);
-    		sfc.under_mix = max(sfc.under_mix, fx_blend);
-            under_color = mix(
+        let cracks = cobbles_color.r + cobbles_color.g + cobbles_color.b;
+        let fx_blend: f32 = smoothstep(
+                0.9,
+                1.2,
+                fx_cobbles + sfc.under_noise * 1.9 - 0.1 + cracks * 0.9,
+            );
+        let dark_blend = smoothstep(0.0, 1.0, fx_cobbles * 1.7 + sfc.under_noise * 0.8 - 0.05);
+        // underRoughness = mix(underRoughness, 1.0 - cracks * 0.7, roadBlend);
+        sfc.under_mix = max(sfc.under_mix, fx_blend);
+        under_color = mix(
                 mix(under_color, under_color * 0.7, dark_blend),
-                cobbles_color.rgb, fx_blend);
+                cobbles_color.rgb,
+                fx_blend,
+            );
         sfc.under_darken = max(sfc.under_darken, dark_blend);
     }
 
@@ -310,39 +352,43 @@ fn fragment(
     let s2_weight = mesh.biome_weight.z;
     let s3_weight = mesh.biome_weight.w;
 
-     // Surface 0
+    // Surface 0
     if s1_weight < 1.0 && s2_weight < 1.0 && s3_weight < 1.0 {
         let color = textureSample(
-            surface0,
-            surface0_sampler,
-            uv * UV_ROT * biome_surface[0].tx_scale);
+                surface0,
+                surface0_sampler,
+                uv * UV_ROT * biome_surface[0].tx_scale,
+            );
         blend_biome(&sfc, biome_surface[0], s0_weight, color.rgb);
     }
 
     // Surface 1
     if s1_weight > 0. && s2_weight < 1.0 && s3_weight < 1.0 {
         let color = textureSample(
-            surface1,
-            surface1_sampler,
-            uv * UV_ROT * biome_surface[1].tx_scale);
+                surface1,
+                surface1_sampler,
+                uv * UV_ROT * biome_surface[1].tx_scale,
+            );
         blend_biome(&sfc, biome_surface[1], s1_weight, color.rgb);
     }
 
     // Surface 2
     if s2_weight > 0. && s3_weight < 1.0 {
         let color = textureSample(
-            surface2,
-            surface2_sampler,
-            uv * UV_ROT * biome_surface[2].tx_scale);
+                surface2,
+                surface2_sampler,
+                uv * UV_ROT * biome_surface[2].tx_scale,
+            );
         blend_biome(&sfc, biome_surface[2], s2_weight, color.rgb);
     }
 
     // Surface 3
     if s3_weight > 0. {
         let color = textureSample(
-            surface3,
-            surface3_sampler,
-            uv * UV_ROT * biome_surface[3].tx_scale);
+                surface3,
+                surface3_sampler,
+                uv * UV_ROT * biome_surface[3].tx_scale,
+            );
         blend_biome(&sfc, biome_surface[3], s3_weight, color.rgb);
     }
 
@@ -362,11 +408,7 @@ fn fragment(
     pbr_input.material.perceptual_roughness = roughness;
     pbr_input.frag_coord = mesh.position;
     pbr_input.world_position = mesh.world_position;
-    pbr_input.world_normal = fns::prepare_world_normal(
-        mesh.world_normal,
-        false,
-        is_front,
-    );
+    pbr_input.world_normal = fns::prepare_world_normal(mesh.world_normal, false, is_front);
     pbr_input.flags |= MESH_FLAGS_SHADOW_RECEIVER_BIT;
     pbr_input.is_orthographic = false;
     pbr_input.N = normalize(pbr_input.world_normal);
