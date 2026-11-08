@@ -4,6 +4,7 @@
 //! activates the selected point, or the first shown if none is.
 
 use bevy::{
+    ecs::system::SystemParam,
     feathers::{
         containers::{group, group_body},
         controls::{
@@ -16,9 +17,14 @@ use bevy::{
     prelude::*,
     text::EditableText,
     ui::{ScrollIntoView, ScrollIntoViewContainer, Selected},
-    ui_widgets::{listbox_update_selection, ListBox, ScrollArea, SetSelected, ValueChange},
+    ui_widgets::{listbox_update_selection, ListBox, SetSelected, ValueChange},
 };
 use bevy_action_map::prelude::*;
+use bevy_immediate::{
+    attach::{BevyImmediateAttachPlugin, ImmediateAttach},
+    ui::CapsUiFeathers,
+    Imm, ImmMarker,
+};
 use panoply_core::{GotoLocation, NavPoint, NavPointsAsset, NavPointsHandleResource};
 
 use crate::search_filter::SearchFilter;
@@ -27,9 +33,11 @@ use crate::search_filter::SearchFilter;
 #[derive(Component, Default, Clone)]
 pub struct NavPointList {
     pub selected: Option<String>,
-    /// The filter text the rows were last built for, or `None` before they first are.
-    built_for: Option<String>,
 }
+
+/// The immediate-mode root that holds the rows.
+#[derive(Component, Default, Clone)]
+pub(crate) struct NavPointRows;
 
 /// The filter box.
 #[derive(Component, Default, Clone)]
@@ -84,7 +92,8 @@ impl Plugin for NavPointListPlugin {
         .add_systems(Startup, |mut commands: Commands| {
             commands.spawn((Name::new("NavPointFilterKeys"), NavPointFilterKeys));
         })
-        .add_systems(Update, (build_rows, filter_keys))
+        .add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, NavPointRows>::new())
+        .add_systems(Update, filter_keys)
         .add_observer(name_row);
     }
 }
@@ -108,7 +117,15 @@ pub fn nav_point_list(autofocus: bool) -> impl Scene {
                 // Feathers pads a group's body by 6; the editor spaces by 4.
                 Node { flex_grow: 1.0, min_height: px(0), padding: px(4) }
                 Children [
-                    @FeathersListView
+                    @FeathersListView {
+                        @rows: bsn_list! {
+                            NavPointRows
+                            Node {
+                                flex_direction: FlexDirection::Column,
+                                align_items: AlignItems::Stretch,
+                            }
+                        }
+                    }
                     #Rows
                     Node { flex_grow: 1.0, min_height: px(0) }
                     on(listbox_update_selection)
@@ -143,67 +160,66 @@ pub fn filtered_points<'a>(points: &'a [NavPoint], filter: &str) -> Vec<&'a NavP
     kept
 }
 
-/// Rebuilds each list's rows when its filter text changes, and when the nav points load or change.
-fn build_rows(
-    mut lists: Query<(Entity, &mut NavPointList)>,
-    filters: Query<&EditableText, With<NavPointFilter>>,
-    scroll_areas: Query<(), With<ScrollArea>>,
-    children: Query<&Children>,
-    handle: Res<NavPointsHandleResource>,
-    assets: Res<Assets<NavPointsAsset>>,
-    mut events: MessageReader<AssetEvent<NavPointsAsset>>,
-    mut commands: Commands,
-) {
-    let points_changed = events.read().count() > 0;
-    let Some(points) = assets.get(&handle.0) else {
-        return;
-    };
-    for (list, mut state) in &mut lists {
-        let descendants = || children.iter_descendants(list);
-        let Some(text) = descendants().find_map(|e| filters.get(e).ok()) else {
-            continue;
+#[derive(SystemParam)]
+pub(crate) struct NavPointRowsParams<'w, 's> {
+    lists: Query<'w, 's, &'static mut NavPointList>,
+    // The immediate context can write text on the entities it manages, and the filter is not one.
+    filters: Query<
+        'w,
+        's,
+        &'static EditableText,
+        (With<NavPointFilter>, Without<ImmMarker<CapsUiFeathers>>),
+    >,
+    parents: Query<'w, 's, &'static ChildOf>,
+    children: Query<'w, 's, &'static Children>,
+    handle: Res<'w, NavPointsHandleResource>,
+    assets: Res<'w, Assets<NavPointsAsset>>,
+}
+
+impl ImmediateAttach<CapsUiFeathers> for NavPointRows {
+    type Params = NavPointRowsParams<'static, 'static>;
+
+    /// A row per point the filter shows, keyed by name, so a row keeps its selection while it
+    /// stays shown.
+    fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut NavPointRowsParams) {
+        let Some(points) = params.assets.get(&params.handle.0) else {
+            return;
         };
-        let Some(rows) = descendants().find(|&e| scroll_areas.contains(e)) else {
-            continue;
+        let Some(list) = ui.current_entity().and_then(|rows| {
+            params
+                .parents
+                .iter_ancestors(rows)
+                .find(|&e| params.lists.contains(e))
+        }) else {
+            return;
+        };
+        let Some(text) = params
+            .children
+            .iter_descendants(list)
+            .find_map(|e| params.filters.get(e).ok())
+        else {
+            return;
         };
         let text = text.value();
-        if !points_changed && state.built_for.as_deref() == Some(&*text) {
-            continue;
-        }
-        state.built_for = Some(text.to_string());
-
         let shown = filtered_points(&points.0, &text);
-        if !shown.iter().any(|p| state.selected.as_ref() == Some(&p.name)) {
+        for point in &shown {
+            let name = point.name.clone();
+            ui.ch_id(&point.name).on_spawn_apply_scene(move || row(name));
+        }
+        let mut state = params.lists.get_mut(list).unwrap();
+        let hidden = |selected: &String| !shown.iter().any(|p| p.name == *selected);
+        if state.selected.as_ref().is_some_and(hidden) {
             state.selected = None;
         }
-        let scenes: Vec<Box<dyn SceneList>> = shown
-            .into_iter()
-            .map(|point| row(&point.name, state.selected.as_ref() == Some(&point.name)))
-            .collect();
-        commands
-            .entity(rows)
-            .despawn_related::<Children>()
-            .queue_spawn_related_scenes::<Children>(Box::new(scenes) as Box<dyn SceneList>);
     }
 }
 
-fn row(name: &str, selected: bool) -> Box<dyn SceneList> {
-    let (name, label) = (name.to_string(), name.to_string());
-    if selected {
-        bsn! {
-            @FeathersListRow
-            NavPointRow({name.clone()})
-            Selected
-            Children [ Text({label.clone()}) ThemedText ]
-        }
-        .into()
-    } else {
-        bsn! {
-            @FeathersListRow
-            NavPointRow({name.clone()})
-            Children [ Text({label.clone()}) ThemedText ]
-        }
-        .into()
+fn row(name: String) -> impl Scene {
+    let label = name.clone();
+    bsn! {
+        @FeathersListRow
+        NavPointRow({name.clone()})
+        Children [ Text({label.clone()}) ThemedText ]
     }
 }
 

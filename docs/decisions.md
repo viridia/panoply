@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D60.**
+**Next: D61.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -467,3 +467,15 @@ never reused.
   An override replaces the whole list (X74). The probe sweeps a box from feet to head rather than
   casting a ray, to find a chest on the ground and a sign at eye level alike. Reversing it means
   per-kind entries, which only Rust could extend. (PAN21)
+- **D60** UI that shows or edits dynamic data is written as if Bevy had a reactive framework, as
+  faery had solid.js, so that adopting one when it arrives changes little. A view is a function of
+  its state: it reads the model where the model lives and keeps no copy, each read standing in for a
+  future tracked dependency. Children that depend on data are built by `bevy_immediate`, keyed and
+  owned by their parent, never by a queued spawn into a remembered entity, which can be despawned
+  before the spawn lands. What is computed from the data is a plain function of its inputs
+  (`filtered_points`), a future memo. A widget's own state (a filter, a selection) sits in a
+  component on its root, a future signal. A widget that edits changes the model through a named
+  operation (`NavPointEdits`) and does not update its own display, which follows from the model. A
+  system that derives a property outside a view (`enable_buttons`) recomputes it from the model and
+  writes only on a difference, a future effect. Reversing it means settling on push updates per
+  widget, as `build_rows` was, each with its own staleness to manage.

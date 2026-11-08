@@ -77,9 +77,3 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I26** The character can tunnel through doors by pressing against them. Seen by the author.
   Likely cause: door colliders are not built at all (`ColliderDesc::shape` returns `None` for them),
   read, not run. PAN59 builds them.
-- **I27** Starting the game in play mode, the nav point names are drawn on top of each other over
-  the editor's mode selector. Older than PAN21. Likely cause: the app starts in Edit, so the realm
-  panel's list exists for a moment; `build_rows` queues its rows (`queue_spawn_related_scenes`), the
-  switch to play despawns the panel first, and the rows are left with no parent, as root nodes at
-  the window's corner. Candidate: build the rows only once the list is settled, or hold off the
-  panel until the saved mode applies. Seen by the author; the cause read, not run.
