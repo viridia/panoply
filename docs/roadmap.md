@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN59.**
+**Next: PAN60.**
 
 ## Next
 
@@ -113,23 +113,17 @@ components and every layer restartable from saved state (R104).
   not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
   spot; before navigation, the nearest cell outside the canopy cover. Each rescue goes in PAN34's
   log. Tune the canopy and trunk height (`CANOPY_HEIGHT`, D39).
-- **PAN21 Interactions.** What things offer to be done to them, as faery's aspects did
-  (`packages/game/src/aspects/`, after The Sims): each entry has an id, caption, cursor, icon,
-  distance, a `when` and an action. Entries belong to aspect types, registered in code; assets only
-  attach and configure aspects, as faery's did. Actions are entity events triggered on the target,
-  so goals can trigger them too (R71, X17). `when` is evaluated on demand, when the probe or a goal
-  asks, not reactively. Variants share an id (a container's "Open" and "Empty"). `when` and the
-  action are each native code or, after PAN45, a formula from the asset; only native for now.
-  PAN3k's probe runs continuously, as faery's did: while what it hits has an enabled interaction,
-  its caption shows as a prompt at the bottom of the screen, and E performs it; a choice among
-  several is X43. One aspect end to end, the one whose action needs least else (a door changes its
-  collider and model; a container needs an inventory dialog).
-- **PAN45 First formula.** SAGA's first customer: the door's `when` from PAN21, as formulas in its
-  exemplar asset ([saga.md](saga.md), Early customers). Extracts `panoply_saga` from
-  `../bevy_reactor_3/crates/bevy_reactor_formulae`, tests passing, with `.saga` files and the syntax
-  grammar; settles how an asset embeds a formula, which dialogue conditions and goals (X17) reuse;
-  and reads `self.door.open` through a compiled component accessor. On demand only: no cells or
-  reactions. The action stays native. Checked in the plan that tests PAN21's door.
+- **PAN59 Door.** A `Door` aspect on the cottage door (`CottageWallDoorway`), played by its
+  `OpenDoor` clip and offered through `Interactions`. Its collider is built and follows the animated
+  glTF node its descriptor's `animation` names, as faery's `PhysicsMovable` did (X39's door part),
+  so the leaf is solid and within the probe's reach through the whole swing. Closes I26.
+- **PAN45 First formula.** SAGA's first customer: the chest's `when`, as formulas in `Proto.Chest`
+  ([saga.md](saga.md), Early customers), which splits its one toggling entry into Open and Close.
+  Extracts `panoply_saga` from `../bevy_reactor_3/crates/bevy_reactor_formulae`, tests passing, with
+  `.saga` files and the syntax grammar; settles how an asset embeds a formula, which dialogue
+  conditions and goals (X17) reuse; and reads `ContainerState`'s `open` through a compiled component
+  accessor, type-checking `self` against the exemplar's resolved aspects. On demand only: no cells
+  or reactions. The action stays native. Checked in `plans/actors.py`, which tests the chest.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

@@ -16,11 +16,10 @@ doc records the design; nothing here is implemented yet (X7).
 Dialogue conditions, like interactions' `when` (PAN21), are evaluated on demand, when the options
 are listed. Quest stages, goals and presence react to change.
 
-The first customer is the door's `when` (PAN45): its "Open" and "Close" are offered by
-`!self.door.open` and `self.door.open`, formulas in its exemplar asset. An on-demand formula needs
-no cells or reaction passes, and PAN21's native action already has the effect, so SAGA only returns
-a boolean. The second is reactive: X63's door opened by a button, its `open` a formula over its
-source's `active`.
+The first customer is the chest's `when` (PAN45): its "Open" and "Close" are offered by whether its
+`ContainerState` is open, formulas in `Proto.Chest`. An on-demand formula needs no cells or reaction
+passes, and PAN21's native action already has the effect, so SAGA only returns a boolean. The second
+is reactive: X63's door opened by a button, its `open` a formula over its source's `active`.
 
 ## The prototype
 
@@ -185,7 +184,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 
 1. Extract `panoply_saga`, its tests passing, with `.saga` as its extension and the syntax grammar
    (PAN45).
-2. Formulas embedded in assets and compiled component accessors, for the door's `when` (PAN45).
+2. Formulas embedded in assets and compiled component accessors, for the chest's `when` (PAN45).
 3. Value types in slots.
 4. Cells, memos and the reaction passes, with `proximity` and an hour predicate as the first native
    memos, for X63's button and door; measure with `plans/perf.py`.

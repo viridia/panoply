@@ -35,7 +35,10 @@ use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::{drive_player, follow_player, goto_player};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
-use self::actor_probe::probe_interaction;
+use self::actor_probe::{
+    clear_probed_interaction, probe_interaction, spawn_interaction_prompt,
+    update_interaction_key, update_interaction_prompt, InteractionKey, ProbedInteraction,
+};
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
@@ -105,7 +108,19 @@ impl Plugin for ActorsPlugin {
             .add_systems(Startup, |mut commands: Commands| {
                 commands.spawn((Name::new("PlayerControl"), PlayerControl));
             })
+            .init_resource::<ProbedInteraction>()
+            .init_resource::<InteractionKey>()
+            .add_systems(Startup, spawn_interaction_prompt)
             .add_systems(OnEnter(GameMode::Play), follow_player)
+            .add_systems(OnExit(GameMode::Play), clear_probed_interaction)
+            .add_systems(
+                Update,
+                (
+                    update_interaction_key.run_if(resource_changed::<PromptGeneration>),
+                    update_interaction_prompt,
+                )
+                    .chain(),
+            )
             .add_systems(
                 Update,
                 goto_player
@@ -126,7 +141,7 @@ impl Plugin for ActorsPlugin {
                     attach_wielded_items,
                     start_actor_physics,
                     drive_player,
-                    probe_interaction,
+                    probe_interaction.run_if(in_state(GameMode::Play)),
                     animate_actor_state,
                 )
                     .chain(),

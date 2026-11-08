@@ -9,6 +9,7 @@ mod catalogs;
 mod command;
 mod exemplar;
 mod instance_type;
+mod interaction;
 mod loader;
 /// Serialzation and deserialization functions.
 pub mod ser;
@@ -26,6 +27,7 @@ pub use command::UpdateAspects;
 pub use exemplar::Exemplar;
 use exemplar::ExemplarCatalog;
 pub use instance_type::InstanceType;
+pub use interaction::*;
 
 /// Bevy plugin for exemplars.
 pub struct ExemplarPlugin;
@@ -33,6 +35,10 @@ pub struct ExemplarPlugin;
 impl Plugin for ExemplarPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ExemplarCatalogs>()
+            .init_resource::<InteractionActions>()
+            .register_type::<Interactions>()
+            .register_type::<InteractionDesc>()
+            .register_type::<Vec<InteractionDesc>>()
             .init_asset::<ExemplarCatalog>()
             .init_asset::<Exemplar>()
             .init_asset_loader::<loader::ExemplarLoader>();

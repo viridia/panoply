@@ -1,0 +1,182 @@
+use std::any::TypeId;
+
+use bevy::{platform::collections::HashMap, prelude::*};
+use serde::{Deserialize, Serialize};
+
+use crate::{Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent};
+
+/// How close an interaction can be performed from, when its entry does not say.
+pub const DEFAULT_INTERACTION_DISTANCE: f32 = 1.5;
+
+/// Something that can be done to an instance, as written in its exemplar.
+#[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Default, Serialize, Deserialize)]
+pub struct InteractionDesc {
+    /// Names the interaction. Entries may share one, each with its own `when`.
+    pub id: String,
+
+    /// Shown to the player while the interaction is available.
+    pub caption: String,
+
+    /// Name of the mouse cursor to show.
+    #[serde(default)]
+    pub cursor: Option<String>,
+
+    /// Name of the icon to show.
+    #[serde(default)]
+    pub icon: Option<String>,
+
+    /// How close the interaction can be performed from, in meters.
+    #[serde(default)]
+    pub distance: Option<f32>,
+
+    /// Formula deciding whether the interaction is offered. `None` always offers it.
+    #[serde(default)]
+    pub when: Option<String>,
+
+    /// Name of the action to perform, registered with
+    /// [`InteractionAppExt::register_interaction_action`].
+    pub action: String,
+}
+
+impl InteractionDesc {
+    /// Whether the interaction is offered now. Formulas cannot be evaluated yet, so an entry that
+    /// has one is an error and is not offered.
+    pub fn enabled(&self) -> bool {
+        if self.when.is_some() {
+            error_once!("Interaction '{}' has a `when`, which needs SAGA", self.id);
+            return false;
+        }
+        true
+    }
+
+    /// How close the interaction can be performed from, in meters.
+    pub fn reach(&self) -> f32 {
+        self.distance.unwrap_or(DEFAULT_INTERACTION_DISTANCE)
+    }
+}
+
+/// What can be done to an instance. An exemplar's list replaces any it inherits.
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize)]
+pub struct Interactions(pub Vec<InteractionDesc>);
+
+impl Interactions {
+    /// The first entry offered now that reaches `distance`.
+    pub fn first_enabled(&self, distance: f32) -> Option<&InteractionDesc> {
+        self.0
+            .iter()
+            .find(|entry| distance <= entry.reach() && entry.enabled())
+    }
+}
+
+impl Aspect for Interactions {
+    fn name(&self) -> &str {
+        "Interactions"
+    }
+
+    fn can_attach(&self, _meta_type: InstanceType) -> bool {
+        true
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
+        static DETACH: RemoveComponent<Interactions> = RemoveComponent::<Interactions>::new();
+        entity.insert(self.clone());
+        &DETACH
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+}
+
+#[derive(Clone, Copy)]
+struct InteractionAction {
+    aspect: TypeId,
+    trigger: fn(&mut World, Entity),
+}
+
+/// The actions an [`InteractionDesc`] can name.
+#[derive(Resource, Default)]
+pub struct InteractionActions(HashMap<String, InteractionAction>);
+
+/// Registers actions for [`InteractionDesc`]s to name.
+pub trait InteractionAppExt {
+    /// Registers the action `name`, which `trigger` performs, normally by triggering an entity
+    /// event. It can only be performed on an entity with the aspect component `A`.
+    fn register_interaction_action<A: Component>(
+        &mut self,
+        name: &str,
+        trigger: fn(&mut World, Entity),
+    ) -> &mut Self;
+}
+
+impl InteractionAppExt for App {
+    fn register_interaction_action<A: Component>(
+        &mut self,
+        name: &str,
+        trigger: fn(&mut World, Entity),
+    ) -> &mut Self {
+        self.world_mut()
+            .get_resource_or_init::<InteractionActions>()
+            .0
+            .insert(
+                name.to_owned(),
+                InteractionAction {
+                    aspect: TypeId::of::<A>(),
+                    trigger,
+                },
+            );
+        self
+    }
+}
+
+/// Performs the action `name` on `target`. An unknown action, or a target without the aspect the
+/// action needs, is an error.
+pub fn perform_interaction(world: &mut World, target: Entity, name: &str) {
+    let Some(action) = world.resource::<InteractionActions>().0.get(name).copied() else {
+        error!("Unknown interaction action '{name}'");
+        return;
+    };
+    let Ok(entity) = world.get_entity(target) else {
+        return;
+    };
+    if !entity.contains_type_id(action.aspect) {
+        error!("{target} lacks the aspect that interaction action '{name}' needs");
+        return;
+    }
+    (action.trigger)(world, target);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(id: &str, distance: f32, when: Option<&str>) -> InteractionDesc {
+        InteractionDesc {
+            id: id.to_owned(),
+            distance: Some(distance),
+            when: when.map(str::to_owned),
+            ..default()
+        }
+    }
+
+    #[test]
+    fn no_when_is_enabled_and_a_when_is_not() {
+        assert!(entry("a", 1., None).enabled());
+        assert!(!entry("a", 1., Some("self.container.open")).enabled());
+    }
+
+    #[test]
+    fn first_enabled_in_reach_wins() {
+        let list = Interactions(vec![
+            entry("formula", 2., Some("true")),
+            entry("near", 0.5, None),
+            entry("far", 2., None),
+            entry("later", 2., None),
+        ]);
+        assert_eq!(list.first_enabled(0.4).unwrap().id, "near");
+        assert_eq!(list.first_enabled(1.).unwrap().id, "far");
+        assert!(list.first_enabled(3.).is_none());
+    }
+}

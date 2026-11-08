@@ -2297,10 +2297,27 @@
       ]
     }
   },
+  "Proto.Chest": {
+    "type": "Fixt",
+    "aspects": {
+      "Interactions": [
+        {
+          "id": "open",
+          "caption": "Open",
+          "distance": 1,
+          "action": "ContainerToggle"
+        }
+      ]
+    }
+  },
   "ChestLarge": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
+    "extends": "#Proto.Chest",
     "aspects": {
+      "Container": {
+        "clip": "ChestLarge.Open"
+      },
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestLarge"
@@ -2322,7 +2339,11 @@
   "ChestSmall": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
+    "extends": "#Proto.Chest",
     "aspects": {
+      "Container": {
+        "clip": "ChestSmall.Open"
+      },
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestSmall"
@@ -2343,7 +2364,11 @@
   },
   "ChestSmaller": {
     "type": "Fixt",
+    "extends": "#Proto.Chest",
     "aspects": {
+      "Container": {
+        "clip": "ChestSmaller.Open"
+      },
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestSmaller"

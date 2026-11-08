@@ -42,9 +42,6 @@ where
     //   /** Formulas to be bound to the specified properties */
     //   formulas?: IFormulaGenerators<SelfType, Props, Config>;
 
-    //   /** Ways in which the player can interact with this instance. */
-    //   interactions?: IInteraction<SelfType, Props, Config>[];
-
     //   /** List of quest roles associated with this actor. */
     //   questRoles?: string[];
 

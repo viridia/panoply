@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D59.**
+**Next: D60.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -458,3 +458,12 @@ never reused.
   in, and undoing or redoing returns there, so the change lands where its panel shows it. Switching
   modes is not an entry: browsing would add steps to undo and clear redo. Reversing it means
   deciding which history Ctrl+Z means in each mode. (PAN42)
+- **D59** What can be done to a thing is one universal aspect, `Interactions`, a list of entries in
+  the asset, on anything: a mod can add assets and formulas but no Rust aspects, and actions like
+  Unlock cross kinds of thing, where faery wrote them per aspect. Aspects for a kind (`Container`)
+  hold its data and native code and no entries, and an exemplar's aspects are the interface `self`
+  has. An entry's `when` is a formula, `None` meaning always offered; its `action` names a native
+  event registered with the aspect it needs, so an exemplar without that aspect cannot perform it.
+  An override replaces the whole list (X74). The probe sweeps a box from feet to head rather than
+  casting a ray, to find a chest on the ground and a sign at eye level alike. Reversing it means
+  per-kind entries, which only Rust could extend. (PAN21)

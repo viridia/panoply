@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN21** Facing a chest shows a prompt at the bottom of the view, and E opens and shuts it.
 - **PAN42** Ctrl+Z and Ctrl+Shift+Z undo and redo adding and removing nav points in the editor.
 - **PAN54** Snow and moss meet other ground in clumps of many sizes; slopes bare a little sooner.
 - **PAN55** The camera sits closer to the action, and the sun falls at an angle across buildings.

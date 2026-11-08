@@ -11,7 +11,8 @@ actors rest (`ActorResting`), and wake when sent travelling or when a precinct's
 Fallen into a hole or off the map, the actor is put back where it last stood. Its character file
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
-play the arrows do as WASD, and Go To moves the actor.
+play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
+opens and shuts it.
 
     bevy-remote-driver plans/actors.py
 
@@ -44,6 +45,9 @@ STATE = "panoply_actors::actor_animation::ActorAnimationState"
 IDLE = "panoply_actors::actor_animation::ActorIdle"
 SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
+CONTAINER_STATE = "panoply_scenery::container_aspect::ContainerState"
+TEXT = "bevy_ui::widget::text::Text"
+SPAN = "bevy_text::text::TextSpan"
 # Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
 SPOT = [37.0, 0.0, 47.0]
 # South of the small hill whose top is near 41, 74, on flat ground; and over its south face,
@@ -331,6 +335,8 @@ def run(driver):
     print(f"fell off the map: {fell}; put back: {back}")
     assert flat_distance(back["position"], lip["position"]) < 0.1, f"not at the lip: {back}"
 
+    check_chest(driver)
+
     for name, (position, azimuth) in GROUPS.items():
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
@@ -351,6 +357,64 @@ def run(driver):
     driver.absent("Actor:Shopkeeper")
     wait_resting(driver, "Actor", True, since=before)
     driver.exits("Escape")
+
+
+def prompt(driver):
+    return driver.get("InteractionPrompt", TEXT) + driver.get("InteractionPromptCaption", SPAN)
+
+
+def check_chest(driver):
+    """Facing the chest nearest `SPOT`, the prompt offers it and E opens and shuts it; walking away
+    clears the prompt. Checked by eye in `chest_shut.png` and `chest_open.png`: the lid raised."""
+    rows = driver.call(
+        "world.query",
+        {
+            "data": {"components": [CONTAINER_STATE, GLOBAL_TRANSFORM]},
+            "filter": {"with": [CONTAINER_STATE]},
+        },
+    )
+    assert rows, "no containers near the player"
+
+    def translation(row):
+        # An affine: three axes, then the translation.
+        return row["components"][GLOBAL_TRANSFORM][9:]
+
+    row = min(rows, key=lambda row: flat_distance(translation(row), SPOT))
+    chest, center = row["entity"], translation(row)
+    # West of it, facing east (+x), inside the entry's 1 m.
+    stand = [center[0] - 0.8, center[1] + 0.2, center[2]]
+    driver.goto(stand, 8.0)
+    place(driver, stand)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    motion = driver.get("Actor", MOTION)
+    motion.update(facing=math.pi / 2)
+    driver.set("Actor", MOTION, motion)
+    driver.mode("Play")
+    driver.frames(5)
+    print(f"chest at {center}, actor {driver.get('Actor', MOTION)}")
+    assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r}"
+    driver.screenshot("chest_shut")
+
+    def state():
+        return driver.call(
+            "world.get_components", {"entity": chest, "components": [CONTAINER_STATE]}
+        )["components"][CONTAINER_STATE]
+
+    driver.key("KeyE")
+    driver.frames(5)
+    assert state() == {"open": True}, f"E did not open it: {state()}"
+    driver.seconds(2)
+    driver.screenshot("chest_open")
+    driver.key("KeyE")
+    driver.frames(5)
+    assert state() == {"open": False}, f"E did not shut it: {state()}"
+
+    motion = driver.get("Actor", MOTION)
+    motion.update(facing=-math.pi / 2)
+    driver.set("Actor", MOTION, motion)
+    driver.frames(5)
+    assert prompt(driver) == "", f"prompt not cleared: {prompt(driver)!r}"
+    driver.mode("Edit")
 
 
 def check_precinct_actors(driver):

@@ -1,11 +1,14 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
-use panoply_exemplar::InstanceType;
+use panoply_exemplar::{InstanceType, InteractionAppExt};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
+    container_aspect::{
+        bind_container_clip, toggle_container, Container, ContainerState, ContainerToggle,
+    },
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
@@ -18,6 +21,7 @@ use self::{
     wall_aspect::WallSize,
 };
 
+mod container_aspect;
 mod floor_mesh;
 pub mod floor_region;
 mod floor_surface;
@@ -61,6 +65,13 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<SceneryColliders>()
             .register_type::<SceneryMarks>()
             .register_type::<LightSource>()
+            .register_type::<Container>()
+            .register_type::<ContainerState>()
+            .register_interaction_action::<Container>("ContainerToggle", |world, entity| {
+                world.trigger(ContainerToggle { entity });
+            })
+            .add_observer(bind_container_clip)
+            .add_observer(toggle_container)
             .register_type::<WallSize>()
             .register_type::<TerrainEffect>()
             .register_type::<TerrainHole>()

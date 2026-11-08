@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X74.**
+**Next: X78.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -491,3 +491,17 @@ dropped, not deferred. Numbers are never reused.
 - **X73** Undoing back to the saved state leaves the asset marked unsaved, so Save stays enabled.
   Harmless, since Save rewrites the same content, but PAN44's prompt would ask needlessly. The fix
   is a saved-at position per asset in the history. *Gate:* PAN44.
+- **X74** Merging `Interactions` entries by `id` along `extends`, so a variant such as a trapped
+  chest restates only the entry it changes; an override now replaces the whole list (D59). Needs a
+  way to remove an inherited entry. *Gate:* that repetition hurting in real content.
+- **X75** The look of the interaction prompt (PAN21): the decorative box around the key, and the
+  key's font, for now `KEY_PROMPT_FONT` (Rubik). The key should be somewhat hefty in weight, and in
+  a different-looking font from the caption, though non-swash Macondo has a far more readable
+  capital E; both fonts should be light-hearted, not serious or mechanical. *Gate:* the HUD's visual
+  pass.
+- **X76** A layout for the HUD, so its on-screen controls have a place each and do not stomp on one
+  another; the interaction prompt is the first, centred at the bottom of the view. *Gate:* the
+  second on-screen control in play.
+- **X77** Localizing captions: `InteractionDesc::caption` is literal text in the exemplar, as are
+  other strings the player reads. How assets name text and where translations live is undecided.
+  *Gate:* before captions and other player-facing text are authored in quantity.
