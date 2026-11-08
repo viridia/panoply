@@ -7,6 +7,10 @@ import bevy_pbr::render::{
     pbr_types::{PbrInput, pbr_input_new},
     pbr_functions as fns,
 };
+@if(SCREEN_SPACE_AMBIENT_OCCLUSION)
+import bevy_pbr::render::mesh_view_bindings::screen_space_ambient_occlusion_texture;
+@if(SCREEN_SPACE_AMBIENT_OCCLUSION)
+import bevy_pbr::ssao::utils::ssao_multibounce;
 
 struct BiomeSurfaceAttrs {
     roughness: f32,
@@ -98,7 +102,7 @@ const UV_ROT = mat2x2<f32>(
 
 struct Vertex {
     @location(0) position: vec3<f32>,
-    @location(1) normal: vec3<f32>,
+    @location(3) normal: vec3<f32>,
     @location(2) terrain_style: vec2<u32>,
 };
 
@@ -372,7 +376,12 @@ fn fragment(
 
     var color = fns::apply_pbr_lighting(pbr_input);
     let sky_weight = 0.5 + 0.5 * pbr_input.N.y;
-    let ambient = mix(hemisphere[1].rgb, hemisphere[0].rgb, sky_weight);
+    var ambient = mix(hemisphere[1].rgb, hemisphere[0].rgb, sky_weight);
+    @if(SCREEN_SPACE_AMBIENT_OCCLUSION) {
+        let ssao_position = vec2<i32>(mesh.position.xy - view.main_pass_viewport.xy);
+        let ssao = textureLoad(screen_space_ambient_occlusion_texture, ssao_position, 0i).r;
+        ambient *= ssao_multibounce(ssao, diffuse_color.rgb);
+    }
     color = vec4<f32>(color.rgb + diffuse_color.rgb * ambient * view.exposure, color.a);
 
     return tone_mapping(color, view.color_grading);

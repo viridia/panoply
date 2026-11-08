@@ -34,10 +34,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
   (convex) is their intersection, which no descriptor shape makes. PAN3j fixed the same copied ramp
   on the 2- and 3-wide tiles. Seen by the author in the F3 view; the corners read, not run.
-- **I11** `assets/terrain/shaders/ground.wgsl` looks unused: `GroundMaterial` loads the embedded
-  `crates/panoply_terrain/src/shaders/ground.wesl`, and editing the `.wgsl` changed nothing in a
-  run, which cost a performance test. Candidate: delete it, once `assets/terrain/shaders/` has been
-  checked for other leftovers. Confirmed by running.
 - **I12** Physics drawing (F3) costs grow with everything the session has loaded: each frame,
   rapier's `debug_render` turns every collider in the realm into immediate-mode gizmo lines, and
   scenery colliders are drawn for every loaded precinct, shown or not (`debug_views.rs`). In
@@ -64,9 +60,3 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I21** The chaparral biome has no ground texture: `GroundMaterialCache::get_material` leaves its
   surface out of the layers, so the ground fades to bare dirt toward a chaparral corner. faery
   painted it as moss is painted, with its own texture, between taiga and sand. Read, not run.
-- **I22** Biome transitions break into patches of one size, and a transition across a row of parcels
-  still reads as a straight band (`lighting_biomes.png` in `plans/lighting.py`). The ground shader
-  blends with one sample of `noise.png`; faery summed several octaves of simplex noise over warped
-  coordinates, too costly to keep. Candidate: re-author `noise.png` in Vortex
-  (`artwork/vortex/terrain-noise.vtx`) as warped, multi-octave noise, and re-centre the shader's
-  scale (`blend_biome`, which assumes a deviation of 0.13) to its spread. Seen in the gallery.

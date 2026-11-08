@@ -7,13 +7,17 @@ lighting_shore.png (110, 150: water, trees), lighting_bluff.png (197, 9, facing 
 breaking on a bluff), lighting_ocean.png (189, 62: open water only), lighting_far.png (the
 shore spot at camera distance 40: texture shimmer and mipmaps), lighting_snow.png (demorun
 190, 220: snow meeting tundra, across parcel edges), lighting_glade.png (demorun 226, 223: grass
-amid snow) and lighting_biomes.png (holm-overland 992, 891 at distance 80: many parcels' biomes
-blending). Environment variables try
+amid snow), lighting_biomes.png (holm-overland 992, 891 at distance 80: many parcels' biomes
+blending) and lighting_marheim.png (holm-overland 499, 701: the palace's relief on faces turned
+from the sun). Environment variables try
 other values without a rebuild, through the reflected resources:
 
     SUN=1500        Sunlight::illuminance (lux)
     AMBIENT=600     HemisphereLight::brightness
     TONEMAP=AgX     camera Tonemapping (Linear by default)
+    SSAO=off        removes ScreenSpaceAmbientOcclusion from the camera
+    SSAO=msaa       removes it and SMAA, and turns on 4x MSAA in both cameras
+    SSAO_RADIUS=1.5 ScreenSpaceAmbientOcclusion::radius (m)
     SHOTS=before    prefixes the names, for side-by-side comparison
 """
 
@@ -29,6 +33,9 @@ TAGS = ["manual"]
 SUNLIGHT = "panoply_core::sunlight::Sunlight"
 HEMISPHERE = "panoply_terrain::hemisphere::HemisphereLight"
 TONEMAPPING = "bevy_render::view::Tonemapping"
+SSAO = "bevy_pbr::ssao::ScreenSpaceAmbientOcclusion"
+SMAA = "bevy_anti_alias::smaa::Smaa"
+MSAA = "bevy_render::view::Msaa"
 PREFIX = os.environ.get("SHOTS", "")
 # Name: (realm, position, azimuth, camera distance). Azimuth 0 faces +z, PI/4 faces between +x
 # and +z.
@@ -41,6 +48,7 @@ SPOTS = {
     "snow": ("demorun", [190.3, 0.0, 220.1], None, 20.0),
     "glade": ("demorun", [225.7, 0.0, 222.6], None, 20.0),
     "biomes": ("holm-overland", [992.0, 0.0, 891.1], None, 80.0),
+    "marheim": ("holm-overland", [499.29, 0.2, 700.93], None, 20.0),
 }
 
 
@@ -63,6 +71,26 @@ def run(driver):
         driver.call(
             "world.insert_components",
             {"entity": camera, "components": {TONEMAPPING: os.environ["TONEMAP"]}},
+        )
+    if os.environ.get("SSAO") == "off":
+        driver.call("world.remove_components", {"entity": driver.camera(), "components": [SSAO]})
+    if os.environ.get("SSAO") == "msaa":
+        driver.call(
+            "world.remove_components", {"entity": driver.camera(), "components": [SSAO, SMAA]}
+        )
+        for camera in (driver.camera(), driver.select("HudCamera")[0]):
+            driver.call(
+                "world.insert_components", {"entity": camera, "components": {MSAA: "Sample4"}}
+            )
+    if "SSAO_RADIUS" in os.environ:
+        driver.call(
+            "world.mutate_components",
+            {
+                "entity": driver.camera(),
+                "component": SSAO,
+                "path": ".radius",
+                "value": float(os.environ["SSAO_RADIUS"]),
+            },
         )
     for spot, (realm, position, azimuth, distance) in SPOTS.items():
         driver.goto(position, distance, azimuth, realm=realm)

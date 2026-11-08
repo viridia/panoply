@@ -75,7 +75,6 @@ fn main() {
     //     ..default()
     // })
     // .insert_resource(settings)
-    // .insert_resource(Msaa::Off)
     .insert_resource(Viewpoint {
         position: Vec3::new(0., 0., 0.),
         azimuth: 0.,
@@ -134,6 +133,9 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         HudCamera,
+        // Matches `PrimaryCamera`: cameras with different MSAA do not share a main texture, and
+        // the HUD draws over the 3D view's.
+        Msaa::Off,
     ));
 
     // Primary Camera
@@ -159,6 +161,10 @@ fn setup(mut commands: Commands) {
         bevy::render::view::Tonemapping::Linear,
         // Sharper shadow edges than the default Gaussian filter, and cheaper (about 0.5 ms).
         bevy::light::ShadowFilteringMethod::Hardware2x2,
+        // SSAO requires MSAA off, so SMAA does the antialiasing.
+        Msaa::Off,
+        bevy::anti_alias::smaa::Smaa::default(),
+        bevy::pbr::ScreenSpaceAmbientOcclusion::default(),
     ));
 }
 

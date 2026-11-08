@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN54.**
+**Next: PAN55.**
 
 ## Next
 
@@ -26,6 +26,17 @@ In order.
   shader for the normal prepass. Screenshots of `town.marheim` with and without, and a `perf.py` run
   with it, decide: keep it, or try a weak unshadowed fill light opposite the sun, or ambient that
   depends on more of the normal.
+- **PAN54 Fractal biome edges.** Biome transitions break into patches of one size, and a transition
+  across a row of parcels still reads as a straight band (`lighting_biomes.png` in
+  `plans/lighting.py`): `ground.wesl` blends with one sample of `noise.png`. faery summed octaves of
+  simplex noise over warped coordinates per fragment (`TerrainMaterial.ts`, `terraNoise`), too
+  costly there. Here the vertex shader computes it, from the world position so parcel edges agree:
+  ground vertices are 0.25 m apart, and a view holds some 250k of them against 3.7M fragments. The
+  fragment shader adds a small high-frequency sample of `noise.png`, and the per-biome smoothsteps
+  clamp the sum; `blend_biome`'s scale is re-centred to the new spread, and `slope_mix` reads the
+  same noise. Judged in the lighting gallery; `perf.py` for the cost. The alternative, a warped
+  multi-octave `noise.png` re-authored in Vortex (`artwork/vortex/terrain-noise.vtx`), costs nothing
+  at runtime.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale

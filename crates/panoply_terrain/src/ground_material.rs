@@ -130,19 +130,16 @@ impl Material for GroundMaterial {
         "embedded://panoply_terrain/shaders/ground.wesl".into()
     }
 
-    // fn prepass_vertex_shader() -> ShaderRef {
-    //     "terrain/shaders/ground.wesl".into()
-    // }
-
     fn specialize(
         _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
+        // Position and normal are where Bevy's default prepass shader reads them.
         let vertex_layout = layout.0.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
-            Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),
+            Mesh::ATTRIBUTE_NORMAL.at_shader_location(3),
             GroundMaterial::ATTRIBUTE_TERRAIN_STYLE.at_shader_location(2),
         ])?;
         descriptor.vertex.buffers = vec![vertex_layout];
