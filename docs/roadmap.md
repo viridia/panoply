@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN57.**
+**Next: PAN59.**
 
 ## Next
 
@@ -21,9 +21,19 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN42 Undo stack.** A module of `panoply_editor`, from the author's unmerged bevy#23373, its
-  contexts keyed by asset rather than `Entity` (D49). Its first customer is PAN29's nav point + and
-  −, made undoable here; every later edit is undoable from the start.
+- **PAN57 Wait while saving.** Save writes the file, and the file watcher's reload of it arrives 0.3
+  s or more later, replacing the asset with the file as saved: an edit made in between is silently
+  lost, its undo entry and unsaved mark left behind. Save shows a wait cursor (`OverrideCursor` set
+  to `SystemCursorIcon::Wait`) and an invisible modal barrier that intercepts clicks and keys, until
+  each written asset has reported `AssetEvent::Modified` or `AssetLoadFailedEvent`; with edits
+  blocked, a `Modified` can only be the reload. An asset whose write failed is not waited for. With
+  watching off there is no reload to wait for. A timeout, logged, is the backstop. Before PAN38,
+  where the next brush stroke would be lost. `plans/smoke.py` waits for the barrier to go after
+  Save.
+- **PAN58 Toast.** A brief message in the editor that fades by itself and takes no input; Bevy's
+  widgets have none. First customers: a failed save (PAN57), which only the log reports today, and
+  the label of what Ctrl+Z just undid or redid (`UndoAction::label`, PAN42), which tells the author
+  what changed when it is out of sight (X72).
 - **PAN44 Quit confirmation.** Escape (`Quit`, `src/input.rs`) and the window's close button exit at
   once, losing edits that Save has not written. While `UnsavedAssets` is not empty, both ask first,
   in a modal dialog like PAN29's text entry: Save, Discard or Cancel. The close button needs
@@ -83,9 +93,10 @@ components and every layer restartable from saved state (R104).
   contents, since the `f32` in `Option<f32>` cannot be annotated; Bevy's inspector does this, in a
   commit after Panoply's locked Bevy, so this chunk may bump Bevy. Every edit is undoable in PAN42's
   stack (D49): setting a value at an asset key and property path, adding or removing an optional
-  field, inserting or removing an array item; a drag's steps coalesce into one entry. Nesting must
-  not squeeze the values: in faery, labels and values in separate columns, under nesting, cramped
-  the labels and cut values off.
+  field, inserting or removing an array item; a drag's steps coalesce into one entry, with
+  `coalesce` added to `UndoAction` from bevy#23373, which PAN42 left out. Nesting must not squeeze
+  the values: in faery, labels and values in separate columns, under nesting, cramped the labels and
+  cut values off.
 - **PAN43 Inherited fields.** Provisional. Fields an exemplar inherits through `extends` show apart
   from its own, as faery's did in dim italics (`scenery-actor-inherited.png`); editing one overrides
   it, and × on an override reverts it to the inherited value rather than removing the field. faery

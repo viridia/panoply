@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D58.**
+**Next: D59.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -452,3 +452,9 @@ never reused.
   Low, and Low shows no noise. SMAA has been judged only on the two high-density displays, Mac and
   Aerdra, where aliasing hardly shows. Reversing it means giving up the occlusion to have MSAA back,
   and leaves the prepass unused. (PAN52)
+- **D58** The editor has one undo history, not a context per asset as bevy#23373 has per entity. One
+  mode edits several assets and two modes edit one (the terrain map, from PAN37 and PAN38), and
+  separate histories would lose the order of those edits. Each entry records the mode it was made
+  in, and undoing or redoing returns there, so the change lands where its panel shows it. Switching
+  modes is not an entry: browsing would add steps to undo and clear redo. Reversing it means
+  deciding which history Ctrl+Z means in each mode. (PAN42)

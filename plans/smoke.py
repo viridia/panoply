@@ -13,8 +13,9 @@
   first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
-  which enables Save; Save writes `world.locations.json` (restored afterwards); − removes the
-  point.
+  which enables Save; Ctrl+Z and Ctrl+Shift+Z undo and redo that, returning to Realm mode from
+  another, and do nothing while a text field has the keys; Save writes `world.locations.json`
+  (restored afterwards); − removes the point.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
   Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
@@ -309,6 +310,33 @@ def realm_panel(driver):
     driver.present("RealmPanel/warehouse-smoke")
     expect_disabled(driver, "Save", False)
 
+    # Undo removes the point, and redo brings it back. Before Save, whose reload would overwrite
+    # the edits (PAN57).
+    undo(driver)
+    driver.absent("RealmPanel/warehouse-smoke")
+    undo(driver, redo=True)
+    driver.present("RealmPanel/warehouse-smoke")
+
+    # Undo from another mode returns to the mode of the edit.
+    driver.click("TerrainMode")
+    wait_mode(driver, editor_mode, "Terrain")
+    undo(driver)
+    wait_mode(driver, editor_mode, "Realm")
+    driver.absent("RealmPanel/warehouse-smoke")
+    undo(driver, redo=True)
+    driver.present("RealmPanel/warehouse-smoke")
+
+    # While a text field has the keys, the history does not get them.
+    driver.click("AddNavPoint")
+    driver.present("TextEntryDialog/Entry")
+    undo(driver)
+    driver.click("TextEntryDialog/Cancel")
+    driver.absent("TextEntryDialog")
+    driver.present("RealmPanel/warehouse-smoke")
+
+    # Undo cleared the selection, which − needs.
+    driver.click("RealmPanel/warehouse-smoke")
+
     # Save writes the file. The original goes back however the checks end; the file watcher then
     # reloads it.
     original = LOCATIONS.read_bytes()
@@ -321,6 +349,17 @@ def realm_panel(driver):
         expect_disabled(driver, "Save", False)
     finally:
         LOCATIONS.write_bytes(original)
+
+
+def undo(driver, redo=False):
+    """Presses Ctrl+Z, or with `redo` Ctrl+Shift+Z."""
+    driver.press("ControlLeft")
+    if redo:
+        driver.press("ShiftLeft")
+    driver.key("KeyZ")
+    if redo:
+        driver.release("ShiftLeft")
+    driver.release("ControlLeft")
 
 
 def expect_disabled(driver, selector, disabled):

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X72.**
+**Next: X74.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -484,3 +484,10 @@ dropped, not deferred. Numbers are never reused.
   `blend_var` sets how much of a parcel the transition spans and the gap between `blend_t0` and
   `blend_t1` the sharpness of a clump's border; separate fields for the two would suit sliders
   better. *Gate:* the property editor (PAN28).
+- **X72** Undo of an edit that is off-screen: the camera does not move on undo, so the change can
+  happen out of sight. Candidate: an action optionally reports where it happened, and the camera
+  moves only if that is off-screen or in another realm. *Gate:* PAN38 or PAN5, the first edits with
+  a place on the map, if it annoys in use.
+- **X73** Undoing back to the saved state leaves the asset marked unsaved, so Save stays enabled.
+  Harmless, since Save rewrites the same content, but PAN44's prompt would ask needlessly. The fix
+  is a saved-at position per asset in the history. *Gate:* PAN44.

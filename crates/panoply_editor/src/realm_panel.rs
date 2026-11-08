@@ -1,7 +1,10 @@
 //! Realm mode's panel: stats about the map, then the nav points with Go, + and −. Go, a
 //! double-click or Enter travels to the selected point; + names the current view as a new point,
 //! through the text-entry dialog; − removes the selected point. + and − change the nav points in
-//! memory, where the list shows them at once, and mark them unsaved for the save button.
+//! memory, where the list shows them at once, mark them unsaved for the save button, and can be
+//! undone.
+
+use std::borrow::Cow;
 
 use bevy::{
     ecs::system::SystemParam,
@@ -27,6 +30,7 @@ use crate::{
     mode_selector::EditorMode,
     nav_point_list::{nav_point_list, ActivateNavPoint, NavPointList, Travel},
     text_entry::{text_entry_dialog, TextEntered},
+    undo::{UndoAction, UndoStack},
     unsaved::UnsavedAssets,
 };
 
@@ -235,44 +239,170 @@ fn add_point(
     entered: On<TextEntered>,
     viewpoint: Res<Viewpoint>,
     realms: Query<&Realm>,
-    handle: Res<NavPointsHandleResource>,
-    mut assets: ResMut<Assets<NavPointsAsset>>,
-    mut unsaved: ResMut<UnsavedAssets>,
+    mut edits: NavPointEdits,
     mut list: PanelList,
 ) {
     let Some(realm) = viewpoint.realm.and_then(|e| realms.get(e).ok()) else {
         warn!("No nav point added: the view is in no realm");
         return;
     };
-    let Some(mut points) = assets.get_mut(&handle.0) else {
-        return;
-    };
-    points.0.push(NavPoint {
-        name: entered.text.clone(),
-        realm: realm.name.clone(),
-        pos: viewpoint.position,
-        caption: None,
-        icon: None,
+    edits.make(NavPointChange::Insert {
+        index: usize::MAX,
+        point: NavPoint {
+            name: entered.text.clone(),
+            realm: realm.name.clone(),
+            pos: viewpoint.position,
+            caption: None,
+            icon: None,
+        },
     });
-    unsaved.mark(&handle.0);
     list.select(Some(entered.text.clone()));
 }
 
 /// Observer on −: removes the selected point.
-fn remove_selected(
-    _activate: On<Activate>,
-    handle: Res<NavPointsHandleResource>,
-    mut assets: ResMut<Assets<NavPointsAsset>>,
-    mut unsaved: ResMut<UnsavedAssets>,
-    mut list: PanelList,
-) {
+fn remove_selected(_activate: On<Activate>, mut edits: NavPointEdits, mut list: PanelList) {
     let Some(name) = list.selected() else {
         return;
     };
-    let Some(mut points) = assets.get_mut(&handle.0) else {
-        return;
-    };
-    points.0.retain(|p| p.name != name);
-    unsaved.mark(&handle.0);
+    edits.make(NavPointChange::Remove { name });
     list.select(None);
+}
+
+/// What + and − need to change the nav points.
+#[derive(SystemParam)]
+struct NavPointEdits<'w> {
+    handle: Res<'w, NavPointsHandleResource>,
+    assets: ResMut<'w, Assets<NavPointsAsset>>,
+    unsaved: ResMut<'w, UnsavedAssets>,
+    history: ResMut<'w, UndoStack>,
+    mode: Res<'w, State<EditorMode>>,
+}
+
+impl NavPointEdits<'_> {
+    /// Makes `change`, marks the points unsaved, and records how to reverse it.
+    fn make(&mut self, change: NavPointChange) {
+        let Some(mut points) = self.assets.get_mut(&self.handle.0) else {
+            return;
+        };
+        let Some(inverse) = change.make(&mut points.0) else {
+            return;
+        };
+        self.unsaved.mark(&self.handle.0);
+        self.history.push(
+            *self.mode.get(),
+            NavPointUndo {
+                asset: self.handle.0.id(),
+                change: inverse,
+            },
+        );
+    }
+}
+
+/// One edit to the list of nav points.
+enum NavPointChange {
+    /// Adds a point at `index`, or last if the list is shorter.
+    Insert { index: usize, point: NavPoint },
+    /// Removes the point called `name`.
+    Remove { name: String },
+}
+
+impl NavPointChange {
+    /// Makes the change and returns its inverse, or `None` if the point to remove is not there.
+    /// Reinserting at the index removed from keeps the file's order.
+    fn make(&self, points: &mut Vec<NavPoint>) -> Option<NavPointChange> {
+        match self {
+            NavPointChange::Insert { index, point } => {
+                points.insert((*index).min(points.len()), point.clone());
+                Some(NavPointChange::Remove {
+                    name: point.name.clone(),
+                })
+            }
+            NavPointChange::Remove { name } => {
+                let index = points.iter().position(|p| &p.name == name)?;
+                Some(NavPointChange::Insert {
+                    index,
+                    point: points.remove(index),
+                })
+            }
+        }
+    }
+}
+
+/// Makes a [`NavPointChange`] from the history.
+struct NavPointUndo {
+    asset: AssetId<NavPointsAsset>,
+    change: NavPointChange,
+}
+
+impl UndoAction for NavPointUndo {
+    fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction> {
+        let inverse = world
+            .resource_mut::<Assets<NavPointsAsset>>()
+            .get_mut(self.asset)
+            .and_then(|mut points| self.change.make(&mut points.0));
+        let Some(change) = inverse else {
+            warn!("{} did nothing: the nav point is gone", self.label());
+            return self;
+        };
+        world.resource_mut::<UnsavedAssets>().mark(self.asset);
+        Box::new(NavPointUndo {
+            asset: self.asset,
+            change,
+        })
+    }
+
+    fn label(&self) -> Cow<'static, str> {
+        match &self.change {
+            NavPointChange::Insert { point, .. } => format!("Add nav point {}", point.name),
+            NavPointChange::Remove { name } => format!("Remove nav point {name}"),
+        }
+        .into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn point(name: &str) -> NavPoint {
+        NavPoint {
+            name: name.into(),
+            realm: "playground".into(),
+            pos: Vec3::ZERO,
+            caption: None,
+            icon: None,
+        }
+    }
+
+    fn names(points: &[NavPoint]) -> Vec<&str> {
+        points.iter().map(|p| p.name.as_str()).collect()
+    }
+
+    #[test]
+    fn undoing_a_removal_restores_the_order() {
+        let mut points = vec![point("a"), point("b"), point("c")];
+        let remove = NavPointChange::Remove { name: "b".into() };
+        let insert = remove.make(&mut points).unwrap();
+        assert_eq!(names(&points), ["a", "c"]);
+        insert.make(&mut points).unwrap();
+        assert_eq!(names(&points), ["a", "b", "c"]);
+    }
+
+    #[test]
+    fn an_index_past_the_end_appends() {
+        let mut points = vec![point("a")];
+        let insert = NavPointChange::Insert {
+            index: usize::MAX,
+            point: point("b"),
+        };
+        insert.make(&mut points).unwrap();
+        assert_eq!(names(&points), ["a", "b"]);
+    }
+
+    #[test]
+    fn removing_a_missing_point_has_no_inverse() {
+        let mut points = vec![point("a")];
+        let remove = NavPointChange::Remove { name: "z".into() };
+        assert!(remove.make(&mut points).is_none());
+    }
 }
