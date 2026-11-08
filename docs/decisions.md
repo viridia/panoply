@@ -71,9 +71,11 @@ never reused.
   (about 4 ms a frame at any cubemap size). The ground shader applies it per pixel in place of
   Bevy's ambient term; other materials get `GlobalAmbientLight` at the average color. It is
   reflected, so it can be tuned live over BRP.
-- **D17** Normal camera distance is about 20 (not final): close enough to read characters and
-  NPCs, far enough to navigate. Performance targets assume it: a rock-solid 120 fps, with terrain
-  leaving room for scenery and actors. Measured at playground (110, 150), a forest/shore spot.
+- **D17** The camera distance in play is 11, as faery's was (PAN55). It trades reading the detail of
+  characters and scenery against seeing enough of the surrounding terrain not to feel
+  claustrophobic, and a typical combat must fit on screen, so no untargetable opponent hits from
+  off-stage. Performance targets assume it: a rock-solid 120 fps, with terrain leaving room for
+  scenery and actors.
 - **D18** Shadows: one cascade fitted to the camera distance, 0.4x to 2.5x (8-50 m at 20), refitted
   on zoom (`panoply_core::viewpoint::fit_shadow_cascades`); `ShadowFilteringMethod::Hardware2x2`.
   Crisper shadows, as the painterly style wants, and 1.7 ms cheaper than Bevy's default four

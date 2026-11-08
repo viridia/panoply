@@ -107,7 +107,7 @@ fn main() {
 }
 
 /// Distance from the camera to the view center. Fixed in the game; the editor can zoom.
-const CAMERA_DISTANCE: f32 = 20.;
+const CAMERA_DISTANCE: f32 = 11.;
 
 fn setup(mut commands: Commands) {
     // commands.insert_resource(AmbientLight {

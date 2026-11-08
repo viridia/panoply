@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I25.**
+**Next: I27.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -72,3 +72,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   ambient term. The darkening at the bottom of the stick walls, which the author likes, cannot be
   this light; an `SSAO=off` shot at the stick village (35.5, 114.5) would show whether it is SSAO.
   Read, not run.
+- **I25** A gap shows between scenery bases and the terrain on dirt areas. Seen by the author; the
+  cause not looked into.
+- **I26** The character can tunnel through doors by pressing against them. Seen by the author; the
+  cause not looked into.

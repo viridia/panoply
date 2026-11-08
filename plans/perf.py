@@ -52,15 +52,19 @@ SETTINGS = {
 QUALITIES = ["Low", "Medium", "High", "Ultra"]
 ROOT = Path(__file__).resolve().parent.parent
 LOG = ROOT / "docs" / "perf.csv"
+# The game's camera distance (`CAMERA_DISTANCE`, `src/main.rs`), and a zoomed-out editor's.
+PLAY = 11.0
+EDITOR = 40.0
 # Each stop's column in the log, its position, camera distance and azimuth. The townsfolk are seen
-# as `plans/actors.py` sees them.
+# from the direction `plans/actors.py` sees them.
 STOPS = [
-    ("16_16", [16.0, 0.0, 16.0], 40.0, None),
-    ("48_48", [48.0, 0.0, 48.0], 40.0, None),
-    ("80_80", [80.0, 0.0, 80.0], 40.0, None),
-    ("112_112", [112.0, 0.0, 112.0], 40.0, None),
-    ("128_128", [128.0, 0.0, 128.0], 40.0, None),
-    ("townsfolk", [145.0, 0.0, 6.0], 20.0, -0.75 * math.pi),
+    ("16_16", [16.0, 0.0, 16.0], PLAY, None),
+    ("48_48", [48.0, 0.0, 48.0], PLAY, None),
+    ("80_80", [80.0, 0.0, 80.0], PLAY, None),
+    ("112_112", [112.0, 0.0, 112.0], PLAY, None),
+    ("128_128", [128.0, 0.0, 128.0], PLAY, None),
+    ("townsfolk", [145.0, 0.0, 6.0], PLAY, -0.75 * math.pi),
+    ("editor", [128.0, 0.0, 128.0], EDITOR, None),
 ]
 
 
@@ -131,7 +135,7 @@ def run(driver):
         ms = (t1 - t0) * 1000 / max(1, f1 - f0)
         times.append(ms)
         print(f"{name}: {ms:.2f} ms/frame ({1000 / ms:.0f} fps)")
-    driver.screenshot("townsfolk")
+        driver.screenshot(name)
     window = driver.call(
         "world.get_components", {"entity": driver.window, "components": [WINDOW]}
     )["components"][WINDOW]["resolution"]

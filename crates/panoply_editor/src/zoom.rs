@@ -10,9 +10,9 @@ use bevy_action_map::prelude::*;
 use panoply_core::Viewpoint;
 
 /// Camera distance at zoom level 0; each level doubles it.
-const ZOOM_BASE_DISTANCE: f32 = 20.;
+const ZOOM_BASE_DISTANCE: f32 = 11.;
 const ZOOM_MIN_LEVEL: f32 = 0.;
-const ZOOM_MAX_LEVEL: f32 = 2.;
+const ZOOM_MAX_LEVEL: f32 = 3.;
 const ZOOM_STEP: f32 = 0.5;
 const ZOOM_SECONDS: f32 = 0.2;
 
@@ -26,7 +26,7 @@ pub struct ZoomSettings {
 
 impl Default for ZoomSettings {
     fn default() -> Self {
-        Self { level: 1.5 }
+        Self { level: 2.5 }
     }
 }
 

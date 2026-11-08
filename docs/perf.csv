@@ -3,11 +3,13 @@
 # checked out; whether the tree had uncommitted changes ("yes" measures that commit plus them);
 # the window's size in physical pixels; the plan's environment variables that change what is
 # drawn (its docstring lists them; empty for the build as committed); then ms per frame at each
-# stop, vsync off. Stops are named for their playground position (x_z, camera distance 40) or for
-# what they view (townsfolk at 145_6, distance 20). Compare runs only on the same host and window
+# stop, vsync off. Stops are named for their playground position (x_z, camera distance 11) or for
+# what they view (townsfolk at 145_6, distance 11; editor at 128_128, distance 40). Lines before
+# PAN55's are at distance 40 (townsfolk 20) with the sun on the z axis, so compare only lines after
+# them. Compare runs only on the same host and window
 # size. A stop added later gets a new column at the end; older lines leave it empty.
 # A line is committed with the change it measures, so git log on this file names that change.
-date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfolk
+date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfolk,editor
 2026-11-02,Falryn,4d56721,yes,2560x1440,,8.93,9.06,10.37,9.97,9.92,11.72
 2026-11-02,Falryn,4d56721,yes,2560x1440,,8.70,9.06,8.68,8.05,8.13,7.89
 2026-11-02,Falryn,f3e726a,yes,2560x1440,,10.37,10.54,11.66,10.25,9.38,9.37
@@ -35,3 +37,4 @@ date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfo
 2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO_QUALITY=Medium,10.07,14.26,16.08,14.76,13.19,10.31
 2026-11-08,Aerdra,0cd1511,yes,2560x1440,SSAO_QUALITY=High,11.97,16.29,17.91,16.60,15.07,11.52
 2026-11-08,Falryn,eb4a7a4,yes,2560x1440,,11.33,11.49,9.86,9.44,9.70,8.92
+2026-11-08,Falryn,cd6f51d,yes,2560x1440,,8.72,9.68,7.44,7.50,7.05,8.60,9.45

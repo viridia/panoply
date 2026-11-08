@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, LoadContext, LoadedFolder};
 use bevy::camera::visibility::RenderLayers;
@@ -155,11 +153,10 @@ pub fn load_realms(
                             ..default()
                         },
                         RealmSun,
-                        Transform {
-                            translation: Vec3::new(0.0, 2.0, 0.0),
-                            rotation: Quat::from_rotation_x(-PI / 3.),
-                            ..default()
-                        },
+                        // Off the axes, so walls on the building grid are lit unequally and
+                        // shadow edges do not run along it.
+                        Transform::from_xyz(0.0, 2.0, 0.0)
+                            .looking_to(Vec3::new(-3.0, -10.0, -5.0), Vec3::Y),
                         Visibility::Visible,
                         CascadeShadowConfigBuilder {
                             first_cascade_far_bound: 4.0,

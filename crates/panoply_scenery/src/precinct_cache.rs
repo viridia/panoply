@@ -47,7 +47,7 @@ pub fn spawn_precincts(
         return;
     }
 
-    let distance = viewpoint.camera_distance(); // Nominally 20
+    let distance = viewpoint.camera_distance(); // Nominally 11
 
     // Determine coordinates of view in precinct units.
     let view_radius = distance * 0.75 + 20.;

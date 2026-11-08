@@ -15,7 +15,7 @@ play the arrows do as WASD, and Go To moves the actor.
 
     bevy-remote-driver plans/actors.py
 
-Looks at it from the closest camera distance (20), mid-clip, so the outlines can be seen to
+Looks at it from camera distance 20, mid-clip, so the outlines can be seen to
 follow the pose. Checked by eye in `actor.png`: tan tunic, gold sleeves, brown hair and legs,
 not the file's default materials; the hair, outlined, sits on the head. In `actor_capsule.png`,
 a cyan capsule encloses the actor, its bottom on the ground. In `walked.png`, the actor stands

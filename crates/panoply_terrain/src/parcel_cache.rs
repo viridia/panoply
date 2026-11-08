@@ -119,7 +119,7 @@ pub fn spawn_parcels(
     };
 
     let contours_table = contours_asset.0.read().unwrap();
-    let distance = viewpoint.camera_distance(); // Nominally 20
+    let distance = viewpoint.camera_distance(); // Nominally 11
 
     // Determine coordinates of view in parcel units.
     let view_radius = distance * 0.75 + 20.;

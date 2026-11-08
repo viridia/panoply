@@ -16,14 +16,6 @@ changelog.
 
 In order.
 
-- **PAN55 Typical views.** What is tested should be what a player sees. The sun runs exactly along z
-  (`realm.rs`), so walls facing ±x get no sunlight and shadow edges follow the building grid; take
-  faery's direction, `(3, 10, 5)`, the same height swung 31° off the axis. The play camera is at 20
-  (D17, "not final") and faery's was at 11, both at a 40° field of view: confirm faery measured
-  distance the same way, settle the distance by eye in play, and update `CAMERA_DISTANCE`, D17 and
-  the editor's `ZOOM_BASE_DISTANCE`, which is also the closest it can zoom. Five of `perf.py`'s six
-  stops are at 40, which only the editor sees: move them to the play distance and keep one at 40,
-  which starts a new baseline on each machine. Recheck the SSAO radius (D57), judged at 20.
 - **PAN54 Fractal biome edges.** Biome transitions break into patches of one size, and a transition
   across a row of parcels still reads as a straight band (`lighting_biomes.png` in
   `plans/lighting.py`): `ground.wesl` blends with one sample of `noise.png`. faery summed octaves of
@@ -186,7 +178,7 @@ components and every layer restartable from saved state (R104).
   `k = 1` a constant screen width; try values between. Depth to the mesh's origin rather than each
   vertex, so a long model's outline does not taper along it. `k` and the reference as one setting
   for every outline material, tuned by eye in the editor at several zooms; in play the camera
-  distance is fixed (20), so there it only evens out the near and far rows of the view.
+  distance is fixed (11), so there it only evens out the near and far rows of the view.
 - **PAN19 New game.** Resets every precinct, and the actors in it, to its authored state: despawn
   them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
   play changed (X18), so loading a save is a new game with the save's changes applied. After PAN3l,

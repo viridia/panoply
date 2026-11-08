@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN55** The camera sits closer to the action, and the sun falls at an angle across buildings.
 - **PAN52** Corners and creases deepen in shade, so walls away from the sun show their relief.
 - **PAN53** The ground shows each parcel's biome, snow and tundra among them, mixing in patches.
 - **PAN51** Carlyle Tepper appears; `verify.sh` fails when an asset names a path that is not there.
