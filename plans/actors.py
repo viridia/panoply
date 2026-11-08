@@ -48,6 +48,11 @@ VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 CONTAINER_STATE = "panoply_scenery::container_aspect::ContainerState"
 TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
+WINDOW = "bevy_window::window::Window"
+CURSOR_ICON = "bevy_window::cursor::CursorIcon"
+WINDOW_EVENT = "bevy_window::event::WindowEvent"
+VIEWPORT_INSET = "panoply_core::viewport::ViewportInset"
+POINTER_INTERACTION = "bevy_picking::pointer::PointerInteraction"
 # Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
 SPOT = [37.0, 0.0, 47.0]
 # South of the small hill whose top is near 41, 74, on flat ground; and over its south face,
@@ -363,6 +368,65 @@ def prompt(driver):
     return driver.get("InteractionPrompt", TEXT) + driver.get("InteractionPromptCaption", SPAN)
 
 
+def check_cursor(driver, chest):
+    """In play, the pointer picks the chest, and the backstop off it; in the editor, neither. Scans
+    outward from the middle of the view, which follows the player, standing beside the chest. BRP
+    cannot read a custom cursor, which holds an image handle: which one shows is checked by eye."""
+    row = driver.call(
+        "world.query", {"data": {"components": [WINDOW, CURSOR_ICON]}, "filter": {"with": [WINDOW]}}
+    )[0]
+    window, resolution = row["entity"], row["components"][WINDOW]["resolution"]
+    scale = resolution["scale_factor_override"] or resolution["scale_factor"]
+    inset = driver.get_resource(VIEWPORT_INSET)
+    width = resolution["physical_width"] / scale - inset["left"] - inset["right"]
+    height = resolution["physical_height"] / scale - inset["top"] - inset["bottom"]
+    middle = (inset["left"] + width / 2, inset["top"] + height / 2)
+
+    def hover(x, y):
+        driver.message(
+            WINDOW_EVENT,
+            {
+                "CursorMoved": {
+                    "window": window,
+                    "position": [x, y],
+                    "physical_position": [x * scale, y * scale],
+                    "delta": None,
+                }
+            },
+        )
+        driver.frames(3)
+        rows = driver.call(
+            "world.query",
+            {
+                "data": {"components": [POINTER_INTERACTION]},
+                "filter": {"with": [POINTER_INTERACTION]},
+            },
+        )
+        hits = rows[0]["components"][POINTER_INTERACTION]["sorted_entities"]
+        return hits[0][0] if hits else None
+
+    backstop = driver.select("WorldBackstop")[0]
+    near = range(-200, 201, 25)
+    spots = sorted(((x, y) for x in near for y in near), key=lambda spot: abs(spot[0]) + abs(spot[1]))
+    for x, y in spots:
+        over = hover(middle[0] + x, middle[1] + y)
+        if over == chest:
+            print(f"chest picked {x}, {y} from the middle of the view")
+            break
+    else:
+        raise AssertionError(f"chest not picked near the middle of the view; last over {over}")
+    over = hover(inset["left"] + 40, inset["top"] + height - 40)
+    assert over == backstop, f"over {over}, not the backstop {backstop}"
+    driver.mode("Edit")
+    driver.frames(5)
+    over = hover(middle[0], middle[1])
+    assert over == window, f"over {over} in the editor, not the window {window}"
+    icon = driver.call("world.get_components", {"entity": window, "components": [CURSOR_ICON]})
+    assert "Custom" not in icon["components"][CURSOR_ICON], f"the game's cursor: {icon}"
+    driver.mode("Play")
+    driver.frames(5)
+
+
 def check_chest(driver):
     """Facing the chest nearest `SPOT`, the prompt offers it and E opens and shuts it; walking away
     clears the prompt. Checked by eye in `chest_shut.png` and `chest_open.png`: the lid raised."""
@@ -394,6 +458,7 @@ def check_chest(driver):
     print(f"chest at {center}, actor {driver.get('Actor', MOTION)}")
     assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r}"
     driver.screenshot("chest_shut")
+    check_cursor(driver, chest)
 
     def state():
         return driver.call(

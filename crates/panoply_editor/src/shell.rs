@@ -165,6 +165,7 @@ fn shell() -> impl Scene {
                 height: percent(100),
                 min_height: px(0),
             }
+            Pickable::IGNORE
             on(split_pane_self_update)
             on(save_panel_width)
             Children [
@@ -222,6 +223,7 @@ fn shell() -> impl Scene {
                 #EditorView
                 ViewPane
                 GameViewNode
+                Pickable::IGNORE
             ]
         ]
     }

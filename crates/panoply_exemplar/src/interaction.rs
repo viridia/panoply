@@ -8,6 +8,9 @@ use crate::{Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent};
 /// How close an interaction can be performed from, when its entry does not say.
 pub const DEFAULT_INTERACTION_DISTANCE: f32 = 1.5;
 
+/// The cursor over an instance whose interaction names none, or that offers several.
+pub const DEFAULT_INTERACTION_CURSOR: &str = "interact";
+
 /// Something that can be done to an instance, as written in its exemplar.
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Default, Serialize, Deserialize)]
@@ -67,6 +70,17 @@ impl Interactions {
         self.0
             .iter()
             .find(|entry| distance <= entry.reach() && entry.enabled())
+    }
+
+    /// The name of the cursor to show over the instance, however far away it is, if it offers
+    /// anything now.
+    pub fn hover_cursor(&self) -> Option<&str> {
+        let mut enabled = self.0.iter().filter(|entry| entry.enabled());
+        let first = enabled.next()?;
+        Some(match enabled.next() {
+            Some(_) => DEFAULT_INTERACTION_CURSOR,
+            None => first.cursor.as_deref().unwrap_or(DEFAULT_INTERACTION_CURSOR),
+        })
     }
 }
 
@@ -178,5 +192,27 @@ mod tests {
         assert_eq!(list.first_enabled(0.4).unwrap().id, "near");
         assert_eq!(list.first_enabled(1.).unwrap().id, "far");
         assert!(list.first_enabled(3.).is_none());
+    }
+
+    #[test]
+    fn hover_cursor_is_the_only_entrys_or_the_default() {
+        let chest = InteractionDesc {
+            cursor: Some("open-chest".to_owned()),
+            ..entry("open", 1., None)
+        };
+        let disabled = entry("formula", 1., Some("true"));
+        assert_eq!(
+            Interactions(vec![chest.clone(), disabled.clone()]).hover_cursor(),
+            Some("open-chest")
+        );
+        assert_eq!(
+            Interactions(vec![entry("a", 1., None)]).hover_cursor(),
+            Some(DEFAULT_INTERACTION_CURSOR)
+        );
+        assert_eq!(
+            Interactions(vec![chest, entry("a", 1., None)]).hover_cursor(),
+            Some(DEFAULT_INTERACTION_CURSOR)
+        );
+        assert_eq!(Interactions(vec![disabled]).hover_cursor(), None);
     }
 }

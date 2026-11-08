@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X78.**
+**Next: X79.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -505,3 +505,7 @@ dropped, not deferred. Numbers are never reused.
 - **X77** Localizing captions: `InteractionDesc::caption` is literal text in the exemplar, as are
   other strings the player reads. How assets name text and where translations live is undecided.
   *Gate:* before captions and other player-facing text are authored in quantity.
+- **X78** The rest of faery's hover feedback (PAN60, `SceneView.tsx`): the disabled cursor over an
+  instance offering nothing, an actor's nameplate on hover, and hiding the cursor when idle. Its
+  other cursors are in `../faery`, to copy as entries name them. *Gate:* content or play that misses
+  each.

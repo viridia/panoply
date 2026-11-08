@@ -1,4 +1,4 @@
-use bevy::{app::Propagate, prelude::*};
+use bevy::{app::Propagate, picking::PickingSystems, prelude::*};
 use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
@@ -17,6 +17,7 @@ mod actor_travel;
 mod actor_wield;
 mod item_aspect;
 mod precinct_actors;
+mod world_pick;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
 pub use actor_aspect::{ActorScale, CollisionSize};
@@ -42,6 +43,7 @@ use self::actor_probe::{
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
+use self::world_pick::{pick_world, spawn_world_backstop, WorldCursors};
 
 use self::actor_aspect::{
     Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
@@ -110,7 +112,14 @@ impl Plugin for ActorsPlugin {
             })
             .init_resource::<ProbedInteraction>()
             .init_resource::<InteractionKey>()
-            .add_systems(Startup, spawn_interaction_prompt)
+            .init_resource::<WorldCursors>()
+            .add_systems(Startup, (spawn_interaction_prompt, spawn_world_backstop))
+            .add_systems(
+                PreUpdate,
+                pick_world
+                    .in_set(PickingSystems::Backend)
+                    .run_if(in_state(GameMode::Play)),
+            )
             .add_systems(OnEnter(GameMode::Play), follow_player)
             .add_systems(OnExit(GameMode::Play), clear_probed_interaction)
             .add_systems(

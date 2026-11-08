@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D61.**
+**Next: D62.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -479,3 +479,10 @@ never reused.
   system that derives a property outside a view (`enable_buttons`) recomputes it from the model and
   writes only on a difference, a future effect. Reversing it means settling on push updates per
   widget, as `build_rows` was, each with its own staleness to manage.
+- **D61** The game's world picking casts the pointer's ray at rapier colliders, not meshes, as faery
+  did: colliders are what the probe and physics already agree on, and an animated or many-meshed
+  model needs no special handling. Behind every hit stands `WorldBackstop`, an entity that exists to
+  be hovered during play and carries the game's cursor; the editor's panels keep the system cursor,
+  since `DefaultCursor` is global and a window's `EntityCursor` is not read. The editor's view pane
+  ignores the pointer, so hits reach the world through it. Reversing it means mesh picking, whose
+  hits on terrain and instanced foliage would have to be filtered. (PAN60)

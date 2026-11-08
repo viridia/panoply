@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN60.**
+**Next: PAN61.**
 
 ## Next
 
@@ -192,12 +192,9 @@ components and every layer restartable from saved state (R104).
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
-  game's click handling runs only while the game has the pointer (X3, editor tools). Scrolls over
-  pickable world entities must still turn the view: `input::scroll_rotate_viewpoint` takes only
-  scrolls that start on the window or within a `GameViewNode`. The author's approach: a backstop
-  picking backend, ordered behind every other, that takes whatever hits the others missed, so
-  colliders and world objects get their hits and a miss still lands on the world. The author has
-  written one before; find it first.
+  game's click handling runs only while the game has the pointer (X3, editor tools). A click that
+  misses every interactive thing lands on `WorldBackstop` (D61), and a ground click needs the ground
+  point, which it does not report.
 - **PAN4 Portals**: a rewrite, not a restoration (D21). `src/portals` is reference
   (`REFERENCE(PAN4)`), deleted once portals work. Portals go in a crate, since the editor places
   them (D37, D40); which one is open. The old code's portal aspect attaches to walls and fixtures
