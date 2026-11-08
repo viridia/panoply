@@ -50,6 +50,7 @@ run_step() {
 
 # First because they cost milliseconds.
 run_step "scripts/xref.py" python3 scripts/xref.py --quiet
+run_step "scripts/asset_xref.py" python3 scripts/asset_xref.py --quiet
 run_step "scripts/devfmt.py --check --diff" python3 scripts/devfmt.py --check --diff
 run_step "cargo clippy --workspace" cargo clippy --workspace
 

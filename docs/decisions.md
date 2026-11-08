@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D56.**
+**Next: D57.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -436,3 +436,10 @@ never reused.
   file's departures from all this, and `glb_compare.py` what a re-export changed. Reversing it means
   going back to 3.5, whose exporter read the stash tracks and shortened strips correctly only by
   accident. (PAN48, PAN50)
+- **D56** faery's archetypes reach Panoply by merge, through `convert_archetypes.mts`, not by hand
+  as each feature lands. faery's world was built unevenly, some kinds of content far more complete
+  than others, so each feature that lands has data waiting in faery; with the merge, adding the
+  aspect's case to the converter and rerunning brings it to every exemplar at once, while hand edits
+  in Panoply stay. It relies on Panoply's catalogs and exemplar names matching faery's one for one,
+  as they did when it was written. How it merges is in [faery.md](faery.md), Migration scripts.
+  Reversing it means freezing the converter and porting each aspect by hand. (PAN51)

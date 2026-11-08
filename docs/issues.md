@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I19.**
+**Next: I21.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -29,10 +29,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   plays `RunMale` meanwhile; `WalkFast` still plays `WalkFastFemale`. Seen by the author in catwalk.
   After PAN48's re-export from Blender 5.2, `RunFemale` looks odd but no longer broken, seen by the
   author in catwalk and the game, though its poses compare equal to the 3.5 export's.
-- **I8** Two precincts (`playground/p002-p000`, `holm-overland/p008-p012`) name the exemplar
-  `exemplars/regional/marheim#Carlyle.Tepper`, whose file does not exist, probably a faery archetype
-  path the converter's `mapArch` had no mapping for. Those actors would load no aspects and have no
-  body. Read, not run.
 - **I9** The cottage's corner roof tiles (`CottageRoofShinglesConvex`, `...Concave`) each collide as
   one straight tile's ramp, shifted 0.5 m along the ridge, as in faery, while their models span 2.5
   m both ways. A valley (concave) is the union of two ramps, so two descriptors fit it; a hip
@@ -52,12 +48,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   owner, as a child of the owner, so hidden owners hide their lines and F3 and the group checkboxes
   only switch visibility; actors' capsules stay immediate. Unchecked: whether retained gizmos are
   frustum-culled or only follow `Visibility`. Confirmed by running.
-- **I13** Walls in shadow look flat: on the Marheim palace (nav point `town.marheim`), the sides
-  facing away from the sun show none of their modeled relief (pilasters, panels, moldings), one tone
-  across the face. Likely cause: in shadow only the hemisphere ambient lights them, and it varies
-  only with how far a face points up, so every vertical face turned the same way gets the same
-  light. Candidates: SSAO, a weak unshadowed fill light opposite the sun, or ambient that depends on
-  more of the normal. Seen in the author's screenshot; the cause read, not run.
 - **I15** In the Go To filter box, holding Up or Down steps the list once rather than repeating:
   `nav_point_list` binds them as `Button` actions, and the mapper passes OS key repeats only to
   class bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump
@@ -71,3 +61,5 @@ confirmed by running something or only by reading. Numbers are never reused.
   old `fta-tiles` repo, which is nowhere on this machine, so `HumanMaleForm` exports without that
   texture. Candidates: find the image in faery's assets under another name, or drop the texture.
   Reported by `blend_inventory.py`; the effect read, not run.
+- **I20** Biomes choose the trees but not the ground's shading: demorun's and Corath's parcels of
+  different biomes have the same ground. Seen by the author in the game; the cause not looked for.

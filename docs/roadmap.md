@@ -10,24 +10,27 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN52.**
+**Next: PAN53.**
 
 ## Next
 
 In order.
 
-- **PAN51 Asset cross-references.** An `xref.py` for `assets/`, run by `verify.sh` with its own
-  allow rule: every path an asset names resolves. The thinnest slice is the references the precincts
-  hold (floor surfaces and exemplars) and those the exemplars hold (models, as `file.glb#Node`, the
-  node looked for in the `.glb`), since a missing one shows only as a "Path not found" when someone
-  visits the precinct, as the Heron Creek Armory's floors did. Known breaks are listed in the script
-  against the ledger entry that owns them (X34's nine terrain-effect paths, I8's exemplar), so the
-  check passes now and fails on a new one, and fails too when a listed break is fixed, so the list
-  shrinks. Textures in floors and other asset kinds come later, as found. PAN3, Actors, in lettered
-  parts. Requirements, from faery's actor module, are in
-  [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time
-  scale (existence, goals, planning, body, presentation) talk through components, with readiness as
-  components and every layer restartable from saved state (R104).
+- **PAN52 SSAO trial.** Walls in shadow look flat: on the Marheim palace (nav point `town.marheim`),
+  faces turned from the sun show none of their relief (pilasters, panels, moldings), since only the
+  ambient light reaches them and it varies only with how far a face points up. Try
+  `ScreenSpaceAmbientOcclusion` on `PrimaryCamera`: it needs `Msaa::Off`, so SMAA in its place (TAA
+  hides SSAO's noise better but needs motion vectors from every material and may ghost the
+  outlines). `ground.wesl` replaces Bevy's ambient term with its hemisphere light, so it samples the
+  SSAO texture itself; `GroundMaterial`'s custom vertex layout may need its own prepass vertex
+  shader for the normal prepass. Screenshots of `town.marheim` with and without, and a `perf.py` run
+  with it, decide: keep it, or try a weak unshadowed fill light opposite the sun, or ambient that
+  depends on more of the normal.
+
+PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
+[actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
+(existence, goals, planning, body, presentation) talk through components, with readiness as
+components and every layer restartable from saved state (R104).
 
 - **PAN42 Undo stack.** A module of `panoply_editor`, from the author's unmerged bevy#23373, its
   contexts keyed by asset rather than `Entity` (D49). Its first customer is PAN29's nav point + and

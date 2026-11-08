@@ -28,6 +28,8 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 
 - `verify.sh`: the verification recipe below, in one call.
 - `xref.py`: every cited id resolves, counters are current, changelog entries keep to one line.
+- `asset_xref.py`: every path a precinct or exemplar names resolves, known breaks listed against
+  their ledger entries.
 - `show.py`: prints ledger entries by id.
 - `outlines.py`: lists the meshes in `assets/` drawn without an outline, and whether faery outlined
   them (`--none` for those nothing outlines).
@@ -62,8 +64,8 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 
 ## Verify
 
-- `scripts/verify.sh`: cross-references, Markdown wrapping of changed paragraphs, and
-  `cargo clippy --workspace`. A warning is a failure.
+- `scripts/verify.sh`: cross-references in the ledgers and in `assets/`, Markdown wrapping of
+  changed paragraphs, and `cargo clippy --workspace`. A warning is a failure.
 - Runtime: shader and pipeline errors only appear at runtime. The remote driver's plans, in
   `plans/`, launch the game, send input, save screenshots under `remote-driver/` in Cargo's target
   directory, and quit. To write a plan, read `../bevy_remote_driver/docs/writing-plans.md`; for the

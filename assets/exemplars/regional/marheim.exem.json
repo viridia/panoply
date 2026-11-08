@@ -1,0 +1,26 @@
+{
+  "Carlyle.Tepper": {
+    "type": "Actr",
+    "display_name": "Carlyle Tepper",
+    "aspects": {
+      "Colors": {
+        "Hair": "#966633",
+        "FacialHair": "#966633",
+        "Tunic": "#792525",
+        "TunicTrim": "#994333",
+        "Collar": "#905c40",
+        "Shirt": "#7e4025",
+        "Arms": "#c25b5b",
+        "Gauntlets": "#6b4040",
+        "Legs": "#614537",
+        "Boots": "#58391c",
+        "Belt": "#422525"
+      },
+      "Features": {
+        "HairThinning": true,
+        "FacialHairMustache": true
+      }
+    },
+    "extends": "../characters.exem.json#Proto.HumanMaleTunicHeavy"
+  }
+}

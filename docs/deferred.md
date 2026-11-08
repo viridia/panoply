@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X69.**
+**Next: X71.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -263,12 +263,8 @@ dropped, not deferred. Numbers are never reused.
   do, by a directory scan or a catalog file. A catalog works in packaged and web builds, where
   folder loading may not. It could be a `pipeline.ts` target that lists
   `assets/scenery/precincts/<realm>/` into a catalog: unusual in reading from `assets/` rather than
-  `artwork/`, but rerun by overrun whenever the editor saves a precinct. Nine floor types are
-  missing too, none a floor: `terrain-fx.*`, `grave-x`/`-y` and `tilled-x`/`-y` are faery terrain
-  effects (`terrainfx.json`; `TerrainFx.Earth` aliases `Road`, `cobbles` here), which faery's
-  `Structure.ts` filled as terrain effects when they appeared among a precinct's floor types;
-  `convert_precincts.mts` made them floor surface paths. *Gate:* the editor creates precincts (X3),
-  or the errors hide a real one.
+  `artwork/`, but rerun by overrun whenever the editor saves a precinct. *Gate:* the editor creates
+  precincts (X3), or the errors hide a real one.
 - **X35** Tunnels and cave entrances, which must be navigable: the ground can have holes
   (`TerrainHole`, per 1 m cell, in the mesh and the collider), but `TerrainOptions::Flatten`
   is declared and never set or read, here or in faery (`TerrainEffect.ts`, commented out), and
@@ -472,3 +468,12 @@ dropped, not deferred. Numbers are never reused.
   of a body's bone, and PAN49 avoids it there by rebuilding actors whose file reloads
   (`rebuild_reloaded_actors`). The author is reporting it upstream. *Gate:* another kind of scene is
   nested in one (an item on a precinct's prop, say), or Bevy's fix lands.
+- **X69** Stop faery's precinct converter overwriting ([faery.md](faery.md), Migration scripts):
+  once Panoply edits a precinct, a rerun would undo it. Freeze it as the realm map converter is, or
+  make it merge as the archetype converter does, if faery's precincts still hold content Panoply has
+  not taken (instance inventories and aspects, layers). *Gate:* the editor saves a precinct (PAN5),
+  or one is edited by hand.
+- **X70** Rebuild demorun's cottages. Demorun was made to film a character running through many
+  biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
+  they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
+  editor places scenery (PAN5).

@@ -7089,7 +7089,7 @@
     "aspects": {
       "SceneryModels": [
         {
-          "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallSloped",
+          "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallBlockRamp",
           "y_rotation": 180
         }
       ],

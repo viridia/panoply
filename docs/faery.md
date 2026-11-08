@@ -223,28 +223,37 @@ UI and art:
 
 Scripting and modding were all JavaScript, so nothing carries over to Bevy.
 
-## Migration scripts (*read*, *run* 2026-10-10)
+## Migration scripts (*read*, *run* 2026-11-07)
 
 `scripts/convert_*.mts` turn `packages/los-data` into Panoply assets, writing straight into
-`../panoply/assets`. Paths are relative to the faery root, so run from there:
-`npx tsx scripts/<name>.mts`. (From a Panoply session the shell cannot leave the repo; a
-throwaway shell script that `cd`s to faery and runs them works.)
+`../panoply/assets`. Node runs them without a build step, from any directory:
+`node /Users/talin/Projects/games/faery/scripts/<name>.mts`. Run the archetypes before the
+precincts, which resolve names against the exemplars.
 
-| Script                       | Reads (`los-data/`)        | Writes (`assets/`)                     |
-| ---------------------------- | -------------------------- | -------------------------------------- |
-| `convert_archetypes.mts`     | `meta/archetypes/*.json`   | `exemplars/*.exem.json`                |
-| `convert_precincts.mts`      | `scenery/<realm>/*.msgpack`| `scenery/precincts/<realm>/*.msgpack`  |
-| `convert_realm_maps.mts`     | `realms/*.msgpack`         | `terrain/maps/*.terrain`               |
-| `convert_terrain_groups.mts` | `world.json`               | `terrain/terrain.groups.json`          |
+| Script                       | Reads (`los-data/`)              | Writes (`assets/`)                    | Runs      |
+| ---------------------------- | -------------------------------- | ------------------------------------- | --------- |
+| `convert_archetypes.mts`     | `meta/archetypes/`, `regional/`  | `exemplars/**/*.exem.json`            | merges    |
+| `convert_precincts.mts`      | `scenery/<realm>/*.msgpack`      | `scenery/precincts/<realm>/*.msgpack` | overwrites|
+| `convert_realm_maps.mts`     | `realms/*.msgpack`               | `terrain/maps/*.terrain`              | frozen    |
+| `convert_terrain_groups.mts` | `world.json`                     | `terrain/terrain.groups.json`         | frozen    |
 
-Re-running overwrites any edit made in Panoply. On 2026-10-10 exemplars, precincts and the five
-realm maps came out byte-identical (unedited since conversion), but `terrain.groups.json` had been
-hand-edited (per-group `color`, `test` hidden) and was restored from git. Exemplars have since been
-edited by hand: `CollisionSize` (PAN3f), and humanoids' `ClipNames` gained `"Run": "RunMale"`
-(PAN3i; faery never used the run clips, and `RunFemale` is broken). It also writes
-`terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js version needed for a floors-only
-realm; it was deleted (see X24). Once the editor (X3) saves content, these scripts are one-way
-history. X1 needs the archetype converter (or a successor) to emit BSN.
+The frozen two warn and exit: they convert everything they read, and the editor edits their outputs
+(PAN37-PAN40). The archetype converter merges (D56): it adds the catalogs, exemplars, top-level
+fields and aspects Panoply lacks, and keeps those it has, so hand edits survive (`CollisionSize`,
+PAN3f; humanoids' `"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). `--dry-run` reports
+without writing; `--replace <Aspect>` rewrites that aspect wherever it differs. An exemplar deleted
+in Panoply returns on the next run, so a deletion is made in the converter. From `meta/regional/` it
+takes actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs.
+
+The precinct converter overwrites, which is safe while nothing in Panoply edits a precinct (X69). It
+resolves each exemplar name against Panoply's catalogs: a name its catalog lacks moves to the one
+catalog that has it (faery's precincts named `wall-tiles` for `furnishings`' `Font`), and a name no
+catalog has is dropped with its instances. Precincts holding only tiers in faery's older layout
+(`walls` and `floors`, which Panoply does not read) are skipped, and their output deleted.
+
+The realm map converter also wrote `terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js
+version needed for a floors-only realm; it was deleted (see X24). X1 needs the archetype converter
+(or a successor) to emit BSN.
 
 Conversions baked into Panoply's data: wall and fixture facings from quarter turns to degrees
 (`* 90`); actor facings from radians to degrees, turned a quarter (faery's 0 faced +x, Panoply's

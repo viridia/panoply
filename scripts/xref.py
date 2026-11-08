@@ -44,7 +44,7 @@ LEDGERS = [
 CHUNK = "PAN"
 
 # Source files whose comments cite ids, as (directory, glob).
-CODE = [("src", "*.rs"), ("crates", "*.rs"), ("plans", "*.py")]
+CODE = [("src", "*.rs"), ("crates", "*.rs"), ("plans", "*.py"), ("scripts", "*.py")]
 
 WIDTH = 100
 
@@ -108,7 +108,10 @@ def highest_ever(path, pattern):
 
 def sources():
     md = sorted(ROOT.glob("*.md")) + sorted(DOCS.glob("*.md"))
-    code = sorted(p for d, glob in CODE for p in (ROOT / d).rglob(glob))
+    # This script's docstring cites example ids.
+    code = sorted(
+        p for d, glob in CODE for p in (ROOT / d).rglob(glob) if p != Path(__file__).resolve()
+    )
     return md, code
 
 
