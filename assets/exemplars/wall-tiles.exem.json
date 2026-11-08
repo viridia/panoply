@@ -5475,7 +5475,13 @@
   "MossyStoneSarcophagus": {
     "type": "Wall",
     "display_name": "Sarcophagus",
+    "extends": "furnishings.exem.json#Proto.Container",
     "aspects": {
+      "Container": {
+        "clips": [
+          "OpenLid2"
+        ]
+      },
       "WallSize": {
         "x": 2,
         "y": 1
@@ -5634,7 +5640,13 @@
   "RoughStoneSarcophagus": {
     "type": "Wall",
     "display_name": "Sarcophagus",
+    "extends": "furnishings.exem.json#Proto.Container",
     "aspects": {
+      "Container": {
+        "clips": [
+          "OpenLid"
+        ]
+      },
       "WallSize": {
         "x": 2,
         "y": 1

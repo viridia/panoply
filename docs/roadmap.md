@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN61.**
+**Next: PAN62.**
 
 ## Next
 
@@ -117,13 +117,14 @@ components and every layer restartable from saved state (R104).
   `OpenDoor` clip and offered through `Interactions`. Its collider is built and follows the animated
   glTF node its descriptor's `animation` names, as faery's `PhysicsMovable` did (X39's door part),
   so the leaf is solid and within the probe's reach through the whole swing. Closes I26.
-- **PAN45 First formula.** SAGA's first customer: the chest's `when`, as formulas in `Proto.Chest`
-  ([saga.md](saga.md), Early customers), which splits its one toggling entry into Open and Close.
-  Extracts `panoply_saga` from `../bevy_reactor_3/crates/bevy_reactor_formulae`, tests passing, with
-  `.saga` files and the syntax grammar; settles how an asset embeds a formula, which dialogue
-  conditions and goals (X17) reuse; and reads `ContainerState`'s `open` through a compiled component
-  accessor, type-checking `self` against the exemplar's resolved aspects. On demand only: no cells
-  or reactions. The action stays native. Checked in `plans/actors.py`, which tests the chest.
+- **PAN45 First formula.** SAGA's first customer: the chest's `when`, as formulas in
+  `Proto.Container` ([saga.md](saga.md), Early customers), which splits its one toggling entry into
+  Open and Close. Extracts `panoply_saga` from `../bevy_reactor_3/crates/bevy_reactor_formulae`,
+  tests passing, with `.saga` files and the syntax grammar; settles how an asset embeds a formula,
+  which dialogue conditions and goals (X17) reuse; and reads `ContainerState`'s `open` through a
+  compiled component accessor, type-checking `self` against the exemplar's resolved aspects. On
+  demand only: no cells or reactions. The action stays native. Checked in `plans/actors.py`, which
+  tests the chest.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

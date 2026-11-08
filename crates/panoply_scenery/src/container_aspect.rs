@@ -2,14 +2,14 @@ use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldInstanceReady};
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 
-use super::{scenery_element::SceneryElementMesh, FIXTURE_TYPE};
+use super::{scenery_element::SceneryElementMesh, FIXTURE_TYPE, WALL_TYPE};
 
-/// A fixture that opens and closes, such as a chest.
+/// A fixture or wall tile that opens and closes, such as a chest or a sarcophagus.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 pub struct Container {
-    /// Name of the clip that opens it, in the file of its model.
-    pub clip: String,
+    /// Names of the clips that open it, played together, in the file of its model.
+    pub clips: Vec<String>,
 }
 
 impl Aspect for Container {
@@ -18,7 +18,7 @@ impl Aspect for Container {
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == FIXTURE_TYPE
+        meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
@@ -42,11 +42,11 @@ pub struct ContainerState {
     pub open: bool,
 }
 
-/// The animation that moves a container's lid.
+/// The animations that move a container's lid or doors.
 #[derive(Component)]
-pub(crate) struct ContainerClip {
+pub(crate) struct ContainerClips {
     player: Entity,
-    node: AnimationNodeIndex,
+    nodes: Vec<AnimationNodeIndex>,
 }
 
 /// Opens a closed container, or closes an open one.
@@ -57,8 +57,7 @@ pub struct ContainerToggle {
 }
 
 /// Once a container's model has spawned, gives its `AnimationPlayer`, which Bevy's loader puts on
-/// the model's root, a graph of the opening clip. A container already open starts at the clip's
-/// end.
+/// the model's root, a graph of the opening clips. A container already open starts at their ends.
 pub(crate) fn bind_container_clip(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -76,56 +75,72 @@ pub(crate) fn bind_container_clip(
     let Ok((container, state)) = containers.get(element.parent()) else {
         return;
     };
-    let Some(clip) = gltfs
-        .get(&mesh.handle)
-        .and_then(|gltf| gltf.named_animations.get(container.clip.as_str()))
+    let Some(gltf) = gltfs.get(&mesh.handle) else {
+        return;
+    };
+    let Some(handles) = container
+        .clips
+        .iter()
+        .map(|name| {
+            let clip = gltf.named_animations.get(name.as_str());
+            if clip.is_none() {
+                error!("Container clip [{name}] not found");
+            }
+            clip.cloned()
+        })
+        .collect::<Option<Vec<_>>>()
     else {
-        error!("Container clip [{}] not found", container.clip);
         return;
     };
     let Some(player) = children
         .iter_descendants(ready.entity)
         .find(|entity| players.contains(*entity))
     else {
-        error!("Container clip [{}] has no player", container.clip);
+        error!("Container clips {:?} have no player", container.clips);
         return;
     };
-    let (graph, node) = AnimationGraph::from_clip(clip.clone());
+    let (graph, nodes) = AnimationGraph::from_clips(handles.iter().cloned());
     commands
         .entity(player)
         .insert(AnimationGraphHandle(graphs.add(graph)));
-    commands
-        .entity(element.parent())
-        .insert(ContainerClip { player, node });
     if state.open {
-        if let (Ok(mut player), Some(clip)) = (players.get_mut(player), clips.get(clip)) {
-            player.play(node).seek_to(clip.duration());
+        if let Ok(mut player) = players.get_mut(player) {
+            for (&node, handle) in nodes.iter().zip(&handles) {
+                if let Some(clip) = clips.get(handle) {
+                    player.play(node).seek_to(clip.duration());
+                }
+            }
         }
     }
+    commands
+        .entity(element.parent())
+        .insert(ContainerClips { player, nodes });
 }
 
-/// Flips a container and plays its clip from wherever it has got to: forward to open, backward to
-/// close. A clip that has run its course holds its last pose.
+/// Flips a container and plays its clips from wherever they have got to: forward to open, backward
+/// to close. A clip that has run its course holds its last pose.
 pub(crate) fn toggle_container(
     toggle: On<ContainerToggle>,
-    mut containers: Query<(&mut ContainerState, Option<&ContainerClip>)>,
+    mut containers: Query<(&mut ContainerState, Option<&ContainerClips>)>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    let Ok((mut state, clip)) = containers.get_mut(toggle.entity) else {
+    let Ok((mut state, clips)) = containers.get_mut(toggle.entity) else {
         return;
     };
     state.open = !state.open;
-    let Some(clip) = clip else {
+    let Some(clips) = clips else {
         return;
     };
-    let Ok(mut player) = players.get_mut(clip.player) else {
+    let Ok(mut player) = players.get_mut(clips.player) else {
         return;
     };
-    let active = player.play(clip.node);
-    let time = active.seek_time().max(0.);
-    // A finished animation no longer advances; `replay` makes it run again.
-    active.replay();
-    active
-        .seek_to(time)
-        .set_speed(if state.open { 1. } else { -1. });
+    for &node in &clips.nodes {
+        let active = player.play(node);
+        let time = active.seek_time().max(0.);
+        // A finished animation no longer advances; `replay` makes it run again.
+        active.replay();
+        active
+            .seek_to(time)
+            .set_speed(if state.open { 1. } else { -1. });
+    }
 }

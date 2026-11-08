@@ -17,9 +17,10 @@ Dialogue conditions, like interactions' `when` (PAN21), are evaluated on demand,
 are listed. Quest stages, goals and presence react to change.
 
 The first customer is the chest's `when` (PAN45): its "Open" and "Close" are offered by whether its
-`ContainerState` is open, formulas in `Proto.Chest`. An on-demand formula needs no cells or reaction
-passes, and PAN21's native action already has the effect, so SAGA only returns a boolean. The second
-is reactive: X63's door opened by a button, its `open` a formula over its source's `active`.
+`ContainerState` is open, formulas in `Proto.Container`. An on-demand formula needs no cells or
+reaction passes, and PAN21's native action already has the effect, so SAGA only returns a boolean.
+The second is reactive: X63's door opened by a button, its `open` a formula over its source's
+`active`.
 
 ## The prototype
 

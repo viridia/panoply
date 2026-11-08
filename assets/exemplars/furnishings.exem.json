@@ -2297,7 +2297,7 @@
       ]
     }
   },
-  "Proto.Chest": {
+  "Proto.Container": {
     "type": "Fixt",
     "aspects": {
       "Interactions": [
@@ -2314,10 +2314,12 @@
   "ChestLarge": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
-    "extends": "#Proto.Chest",
+    "extends": "#Proto.Container",
     "aspects": {
       "Container": {
-        "clip": "ChestLarge.Open"
+        "clips": [
+          "ChestLarge.Open"
+        ]
       },
       "SceneryModels": [
         {
@@ -2340,10 +2342,12 @@
   "ChestSmall": {
     "type": "Fixt",
     "display_name": "Wooden Chest",
-    "extends": "#Proto.Chest",
+    "extends": "#Proto.Container",
     "aspects": {
       "Container": {
-        "clip": "ChestSmall.Open"
+        "clips": [
+          "ChestSmall.Open"
+        ]
       },
       "SceneryModels": [
         {
@@ -2365,10 +2369,12 @@
   },
   "ChestSmaller": {
     "type": "Fixt",
-    "extends": "#Proto.Chest",
+    "extends": "#Proto.Container",
     "aspects": {
       "Container": {
-        "clip": "ChestSmaller.Open"
+        "clips": [
+          "ChestSmaller.Open"
+        ]
       },
       "SceneryModels": [
         {
@@ -2391,7 +2397,14 @@
   "WoodenDresser": {
     "type": "Fixt",
     "display_name": "Dresser",
+    "extends": "#Proto.Container",
     "aspects": {
+      "Container": {
+        "clips": [
+          "DresserDoorLeft.Open",
+          "DresserDoorRight.Open"
+        ]
+      },
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Dresser"
