@@ -4,12 +4,16 @@ use bevy::{
     picking::{
         backend::{ray::RayMap, HitData, PointerHits},
         cursor::EntityCursor,
+        hover::HoverMap,
+        pointer::{PointerAction, PointerId, PointerInput},
     },
     platform::collections::HashMap,
     prelude::*,
-    window::{CustomCursor, CustomCursorImage},
+    window::{CursorOptions, CustomCursor, CustomCursorImage, PrimaryWindow},
 };
-use panoply_core::{realm_physics::collision_groups, PrimaryCamera, RealmPhysics, Viewpoint};
+use panoply_core::{
+    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
+};
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
 use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
@@ -18,6 +22,9 @@ const PICK_RANGE: f32 = 500.;
 
 /// Below every backend but the window's, which reports at negative infinity.
 const BACKSTOP_ORDER: f32 = f32::MIN;
+
+/// How long the pointer must rest before the cursor hides, in seconds.
+const CURSOR_IDLE_SECONDS: f32 = 1.;
 
 /// The cursor shown over the world when nothing there can be interacted with.
 const WORLD_CURSOR: &str = "pointer";
@@ -69,6 +76,37 @@ pub(crate) fn spawn_world_backstop(
         WorldBackstop,
         cursors.get(WORLD_CURSOR).clone(),
     ));
+}
+
+/// Hides the cursor while it rests over the 3D view during play, as it would otherwise sit in the
+/// middle of the scene while the player walks. It stays over the UI.
+pub(crate) fn hide_idle_cursor(
+    mut pointer: MessageReader<PointerInput>,
+    time: Res<Time<Real>>,
+    mode: Res<State<GameMode>>,
+    hover: Res<HoverMap>,
+    ui_nodes: Query<(), With<Node>>,
+    mut options: Single<&mut CursorOptions, With<PrimaryWindow>>,
+    mut last_active: Local<f32>,
+) {
+    let active = pointer.read().any(|input| {
+        input.pointer_id.is_mouse()
+            && matches!(
+                input.action,
+                PointerAction::Move { .. } | PointerAction::Press(_)
+            )
+    });
+    if active {
+        *last_active = time.elapsed_secs();
+    }
+    let over_world = hover
+        .get(&PointerId::Mouse)
+        .is_some_and(|hovered| !hovered.keys().any(|entity| ui_nodes.contains(*entity)));
+    let idle = time.elapsed_secs() - *last_active >= CURSOR_IDLE_SECONDS;
+    let visible = !(*mode.get() == GameMode::Play && over_world && idle);
+    if options.visible != visible {
+        options.visible = visible;
+    }
 }
 
 /// A picking backend. Casts each pointer's ray into the viewed realm's colliders, and reports the

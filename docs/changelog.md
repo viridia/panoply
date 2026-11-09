@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN62** In play the cursor hides after a second at rest over the scene, and returns on moving.
 - **PAN61** Dressers and sarcophagi open and shut as chests do.
 - **PAN60** In play the pointer is a game cursor, which changes over things you can use.
 - **PAN21** Facing a chest shows a prompt at the bottom of the view, and E opens and shuts it.

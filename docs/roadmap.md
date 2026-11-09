@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN62.**
+**Next: PAN65.**
 
 ## Next
 
@@ -21,6 +21,13 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
+- **PAN63 Scenery animations.** One aspect for what faery's `animations` did on 33 exemplars
+  (`AnimationDriver.ts`): clips played together, either driven by a boolean input or looping from
+  spawn, with a delay per transition. Replaces `Container::clips`; the windmill gets its loop and
+  the sarcophagi their 0.5 s delay. PAN59's door builds on it.
+- **PAN64 Transition sounds.** A transition's sound, with its own delay and volume, played at the
+  instance's position when PAN63's clips start; the first slice of X61, on Bevy's built-in audio.
+  Sounds are in faery's `packages/los-assets/src/sfx/`.
 - **PAN57 Wait while saving.** Save writes the file, and the file watcher's reload of it arrives 0.3
   s or more later, replacing the asset with the file as saved: an edit made in between is silently
   lost, its undo entry and unsaved mark left behind. Save shows a wait cursor (`OverrideCursor` set

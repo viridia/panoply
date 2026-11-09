@@ -50,6 +50,7 @@ TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
 WINDOW = "bevy_window::window::Window"
 CURSOR_ICON = "bevy_window::cursor::CursorIcon"
+CURSOR_OPTIONS = "bevy_window::window::CursorOptions"
 WINDOW_EVENT = "bevy_window::event::WindowEvent"
 VIEWPORT_INSET = "panoply_core::viewport::ViewportInset"
 POINTER_INTERACTION = "bevy_picking::pointer::PointerInteraction"
@@ -417,6 +418,17 @@ def check_cursor(driver, chest):
         raise AssertionError(f"chest not picked near the middle of the view; last over {over}")
     over = hover(inset["left"] + 40, inset["top"] + height - 40)
     assert over == backstop, f"over {over}, not the backstop {backstop}"
+
+    def cursor_visible():
+        return driver.call(
+            "world.get_components", {"entity": window, "components": [CURSOR_OPTIONS]}
+        )["components"][CURSOR_OPTIONS]["visible"]
+
+    assert cursor_visible(), "the cursor hid while moving"
+    driver.seconds(1.5)
+    assert not cursor_visible(), "the cursor did not hide at rest"
+    hover(inset["left"] + 50, inset["top"] + height - 40)
+    assert cursor_visible(), "the cursor did not return on moving"
     driver.mode("Edit")
     driver.frames(5)
     over = hover(middle[0], middle[1])

@@ -43,7 +43,7 @@ use self::actor_probe::{
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
-use self::world_pick::{pick_world, spawn_world_backstop, WorldCursors};
+use self::world_pick::{hide_idle_cursor, pick_world, spawn_world_backstop, WorldCursors};
 
 use self::actor_aspect::{
     Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
@@ -120,6 +120,7 @@ impl Plugin for ActorsPlugin {
                     .in_set(PickingSystems::Backend)
                     .run_if(in_state(GameMode::Play)),
             )
+            .add_systems(Update, hide_idle_cursor)
             .add_systems(OnEnter(GameMode::Play), follow_player)
             .add_systems(OnExit(GameMode::Play), clear_probed_interaction)
             .add_systems(

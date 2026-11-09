@@ -506,6 +506,5 @@ dropped, not deferred. Numbers are never reused.
   other strings the player reads. How assets name text and where translations live is undecided.
   *Gate:* before captions and other player-facing text are authored in quantity.
 - **X78** The rest of faery's hover feedback (PAN60, `SceneView.tsx`): the disabled cursor over an
-  instance offering nothing, an actor's nameplate on hover, and hiding the cursor when idle. Its
-  other cursors are in `../faery`, to copy as entries name them. *Gate:* content or play that misses
-  each.
+  instance offering nothing, and an actor's nameplate on hover. Its other cursors are in `../faery`,
+  to copy as entries name them. *Gate:* content or play that misses each.
