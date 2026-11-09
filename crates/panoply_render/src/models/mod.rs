@@ -10,7 +10,9 @@ use bevy::{
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
-use crate::materials::{BlackMaterialHandle, FlameMaterialHandle, OutlineMaterialHandle};
+use crate::materials::{
+    BlackMaterialHandle, FlameMaterialHandle, HairExtension, HairMaterial, OutlineMaterialHandle,
+};
 
 pub struct ModelsPlugin;
 
@@ -24,6 +26,8 @@ impl Plugin for ModelsPlugin {
 #[derive(Debug, Clone, Deserialize)]
 struct MaterialOptions {
     outline: Option<f32>,
+
+    material: Option<String>,
 
     #[allow(dead_code)] // Read once interaction is restored.
     #[serde(default, deserialize_with = "deserialize_bool")]
@@ -51,19 +55,50 @@ fn process_material_extras(
     r_outline: Res<OutlineMaterialHandle>,
     r_black: Res<BlackMaterialHandle>,
     r_flame: Res<FlameMaterialHandle>,
+    standard_materials: Res<Assets<StandardMaterial>>,
+    mut hair_materials: ResMut<Assets<HairMaterial>>,
+    mut hair_by_source: Local<HashMap<AssetId<StandardMaterial>, AssetId<HairMaterial>>>,
     q_materials: Query<
-        (Entity, &Mesh3d, Option<&SkinnedMesh>, &GltfMaterialExtras),
         (
-            With<MeshMaterial3d<StandardMaterial>>,
-            Added<GltfMaterialExtras>,
+            Entity,
+            &Mesh3d,
+            Option<&SkinnedMesh>,
+            &GltfMaterialExtras,
+            &MeshMaterial3d<StandardMaterial>,
         ),
+        Added<GltfMaterialExtras>,
     >,
 ) {
-    for (entity, mesh, skin, extras) in q_materials.iter() {
+    for (entity, mesh, skin, extras, material) in q_materials.iter() {
         // println!("material extras: {:?}", extras);
         let options = serde_json::from_str::<MaterialOptions>(&extras.value);
         // println!("material options: {:?}", options);
         if let Ok(options) = options {
+            // By now an actor's colors have replaced the material (`color_actor_part` runs as the
+            // scene spawns), so the hair takes its color from the material on the entity.
+            if options.material.as_deref() == Some("hair") {
+                let cached = hair_by_source
+                    .get(&material.id())
+                    .and_then(|id| hair_materials.get_strong_handle(*id));
+                let hair = cached.or_else(|| {
+                    let mut base = standard_materials.get(material.id())?.clone();
+                    // The shine is the extension's; this would add a round highlight to it.
+                    base.reflectance = 0.0;
+                    let handle = hair_materials.add(HairMaterial {
+                        base,
+                        extension: HairExtension::default(),
+                    });
+                    hair_by_source.insert(material.id(), handle.id());
+                    Some(handle)
+                });
+                if let Some(hair) = hair {
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial3d<StandardMaterial>>()
+                        .insert(MeshMaterial3d(hair));
+                }
+            }
+
             if options.outline.is_some() {
                 // The outline is an inverted hull drawn over the same mesh. It is a child entity
                 // rather than a second material on this one: an entity with two materials breaks

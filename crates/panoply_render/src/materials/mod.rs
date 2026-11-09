@@ -2,10 +2,12 @@ use bevy::{asset::embedded_asset, prelude::*};
 
 mod flame;
 mod floor_noisy;
+mod hair;
 mod outline;
 
 pub use flame::FlameMaterial;
 pub use floor_noisy::{FloorNoisyMaterial, FloorNoisyMaterialExt};
+pub use hair::{HairExtension, HairMaterial};
 pub use outline::OutlineMaterial;
 
 #[derive(Debug, Clone, Resource, Default)]
@@ -23,6 +25,7 @@ impl Plugin for MaterialsPlugin {
     fn build(&self, app: &mut App) {
         embedded_asset!(app, "flame.wesl");
         embedded_asset!(app, "flame_prepass.wesl");
+        embedded_asset!(app, "hair.wesl");
         embedded_asset!(app, "outline.wesl");
         app.init_resource::<OutlineMaterialHandle>()
             .init_resource::<BlackMaterialHandle>()
@@ -30,6 +33,7 @@ impl Plugin for MaterialsPlugin {
             .add_plugins(MaterialPlugin::<FloorNoisyMaterial>::default())
             .add_plugins(MaterialPlugin::<OutlineMaterial>::default())
             .add_plugins(MaterialPlugin::<FlameMaterial>::default())
+            .add_plugins(MaterialPlugin::<HairMaterial>::default())
             .add_systems(
                 Startup,
                 (

@@ -112,8 +112,6 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN3n Hair shading.** Materials with extras `material: hair` get strand tangents and a hair
-  shader (D29).
 - **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
   `outline`; faery read the node's extras first, then the parent node's, then the material's, and
   outlined every skinned mesh by default (`SkinnedModel.ts`, `ModelCatalog.ts`). Male hair, much

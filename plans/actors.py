@@ -151,6 +151,10 @@ def run(driver):
     driver.screenshot("actor_capsule")
     driver.key("F3")
 
+    # Close enough to judge the hair's shine, a band across the strands (D29).
+    driver.goto([landed["position"][0], landed["position"][1] + 1.6, landed["position"][2]], 2.5)
+    driver.screenshot("hair")
+
     # In editing, W moves the free camera, not the actor.
     driver.goto(SPOT, 20.0, azimuth=math.pi / 2)
     start = driver.get("Actor", MOTION)["position"]

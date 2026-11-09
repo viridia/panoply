@@ -173,17 +173,17 @@ never reused.
   about 10 MB. `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder
   was never registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output
   was unchanged.
-- **D29** Hair shine uses Kajiya-Kay (specular from strand direction T: `sin(T, H)^shininess`,
-  a band across the strands), likely with Scheuermann's two lobes (a bright primary, a
-  hair-tinted secondary). The three.js `HairMaterial` approximated a band with
-  `pow(sin(dot(R, V) * PI), shininess)`, which follows the surface, not the strands, and shows
-  in close-ups. Hair UVs are auto-unwrapped, so T comes from a procedural comb in `pipeline.ts`,
-  written as each hair mesh's `TANGENT` attribute (Bevy skins tangents): for scalp hair, the
-  direction from a crown point (top of the mesh bounds, a little back) projected onto the
-  surface; for facial hair, model-space down projected onto the surface; a fallback where the
-  projection vanishes. Shading: first try `StandardMaterial` anisotropy (no shader); if it
-  reads too realistic for the art style (D14, X12), an `ExtendedMaterial` with Kajiya-Kay in
-  WESL.
+- **D29** Hair shine uses Kajiya-Kay (specular from strand direction T: `sin(T, H)^shininess`, a
+  band across the strands) with Scheuermann's two lobes (a bright primary, a hair-tinted secondary),
+  in an `ExtendedMaterial` (`hair.wesl`). The three.js `HairMaterial` approximated a band with
+  `pow(sin(dot(R, V) * PI), shininess)`, which follows the surface, not the strands, and shows in
+  close-ups. Hair UVs are auto-unwrapped, so T comes from a procedural comb in `pipeline.ts`,
+  written as each hair mesh's `TANGENT` attribute (Bevy skins tangents): the direction from a crown
+  point (top of the mesh bounds, a little back) projected onto the surface, with a fallback where
+  the projection vanishes. Only materials with extras `material: hair` are combed, so facial hair is
+  not. Both lobes' colors grow with the base color, so the shine fades with the hair's luminance.
+  Not `StandardMaterial` anisotropy, which lights hair white on a camera with a normal prepass
+  (I28), and could not tint the band.
 - **D30** Lighting follows the three.js version, so painted textures read as painted. The camera
   uses `Tonemapping::Linear` (identity, like three.js's default; `None` would also turn off
   deband dithering), not TonyMcMapface, which desaturated the palette. Ambient outweighs the

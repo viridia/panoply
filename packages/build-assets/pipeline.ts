@@ -1,6 +1,6 @@
 /// <reference types="overrun/overrun" />
 import { directory, target, DirectoryTask, source } from "overrun";
-import { NodeIO, Document, Logger } from "@gltf-transform/core";
+import { NodeIO, Document, Logger, Primitive } from "@gltf-transform/core";
 import { resample, dedup, unpartition } from "@gltf-transform/functions";
 import { KHRMaterialsUnlit, Unlit } from "@gltf-transform/extensions";
 import path from "path";
@@ -26,6 +26,75 @@ const srcRoot = path.resolve(__dirname, "../../artwork");
 const dstRoot = path.resolve(__dirname, "../../assets");
 const io = new NodeIO();
 io.setLogger(new Logger(Logger.Verbosity.ERROR));
+
+// How far the crown sits behind the center of the hair, as a fraction of its depth. Characters
+// face -Z in their files, so behind is +Z.
+const HAIR_CROWN_BACK = 0.15;
+
+type Vec3 = [number, number, number];
+
+/** The part of `v` in the plane with normal `n`, normalized; null if nothing is left of it. */
+function projectOntoPlane(v: Vec3, n: Vec3): Vec3 | null {
+  const d = v[0] * n[0] + v[1] * n[1] + v[2] * n[2];
+  const x = v[0] - n[0] * d;
+  const y = v[1] - n[1] * d;
+  const z = v[2] - n[2] * d;
+  const length = Math.hypot(x, y, z);
+  return length < 1e-4 ? null : [x / length, y / length, z / length];
+}
+
+/** Combs a hair primitive: its `TANGENT` is the strand direction, away from a crown point at the
+    top of the hair, along the surface. Hair UVs are auto-unwrapped, so they give no direction. */
+function combHair(doc: Document, primitive: Primitive) {
+  const position = primitive.getAttribute("POSITION");
+  const normal = primitive.getAttribute("NORMAL");
+  if (!position || !normal) {
+    return;
+  }
+
+  // Bounds of the vertices this primitive draws: an accessor may be shared with other primitives.
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  const indices = primitive.getIndices();
+  const drawn = indices ? indices.getCount() : position.getCount();
+  const p: Vec3 = [0, 0, 0];
+  for (let i = 0; i < drawn; i++) {
+    position.getElement(indices ? indices.getScalar(i) : i, p);
+    for (let axis = 0; axis < 3; axis++) {
+      min[axis] = Math.min(min[axis], p[axis]);
+      max[axis] = Math.max(max[axis], p[axis]);
+    }
+  }
+  const crown: Vec3 = [
+    (min[0] + max[0]) / 2,
+    max[1],
+    (min[2] + max[2]) / 2 + (max[2] - min[2]) * HAIR_CROWN_BACK,
+  ];
+
+  // gltf-transform rejects a `Float32Array` from this file's realm (overrun runs it in a VM
+  // context), so the array is made with the constructor of one of its own. POSITION is always float.
+  const FloatArray = position.getArray()!.constructor as Float32ArrayConstructor;
+  const tangents = new FloatArray(position.getCount() * 4);
+  const n: Vec3 = [0, 0, 0];
+  for (let i = 0; i < position.getCount(); i++) {
+    position.getElement(i, p);
+    normal.getElement(i, n);
+    const away: Vec3 = [p[0] - crown[0], p[1] - crown[1], p[2] - crown[2]];
+    // At the crown there is no direction away from it, and a surface can face straight along it.
+    const t = projectOntoPlane(away, n) ??
+      projectOntoPlane([0, -1, 0], n) ??
+      projectOntoPlane([0, 0, 1], n) ?? [1, 0, 0];
+    tangents.set([t[0], t[1], t[2], 1], i * 4);
+  }
+  primitive.setAttribute(
+    "TANGENT",
+    doc
+      .createAccessor()
+      .setType("VEC4")
+      .setArray(tangents)
+      .setBuffer(position.getBuffer())
+  );
+}
 
 // .glb model optimization pass.
 const modelOpt = async (src: Buffer): Promise<Buffer> => {
@@ -59,6 +128,13 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
             unlit = ext.createUnlit();
           }
           mat.setExtension("KHR_materials_unlit", unlit);
+        }
+      }
+      for (let mesh of doc.getRoot().listMeshes()) {
+        for (let primitive of mesh.listPrimitives()) {
+          if (primitive.getMaterial()?.getExtras().material === "hair") {
+            combHair(doc, primitive);
+          }
         }
       }
       return doc;

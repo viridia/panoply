@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I28.**
+**Next: I30.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -77,3 +77,13 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I26** The character can tunnel through doors by pressing against them. Seen by the author.
   Likely cause: door colliders are not built at all (`ColliderDesc::shape` returns `None` for them),
   read, not run. PAN59 builds them.
+- **I28** Bevy's `StandardMaterial` anisotropy lights a surface white where its directions are not
+  computed, since the lighting is gated only on `STANDARD_MATERIAL_ANISOTROPY`. In
+  `pbr_fragment.wesl` they need the `pbr_anisotropy_texture` feature even for an untextured
+  material, and are skipped under `LOAD_PREPASS_NORMALS` (a normal prepass with MSAA off, as SSAO
+  has). Worth reporting upstream. Hair rendered white with the feature off and on; that the prepass
+  is the remaining cause is read, not run.
+- **I29** `pipeline.ts` sets `KHR_materials_unlit` on `black` and `unlit` materials, but the
+  extension is not registered on the `NodeIO`, so gltf-transform drops it on writing, with a warning
+  the error-only logger hides. Those materials work only through their extras at runtime. Confirmed
+  in the same writer path for anisotropy; the unlit case read, not run.

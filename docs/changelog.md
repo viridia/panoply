@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN3n** Hair shines in a soft band across its strands, moving with the sun.
 - **PAN44** Quitting the editor with unsaved edits asks first: Save, Discard or Cancel.
 - **PAN58** The editor briefly shows what Ctrl+Z just undid or redid, and when a save has failed.
 - **PAN57** After Save the editor waits a moment for the file to reload, so no edit is lost to it.
