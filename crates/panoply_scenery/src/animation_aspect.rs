@@ -1,4 +1,10 @@
-use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldInstanceReady};
+use bevy::{
+    audio::{SpatialScale, Volume},
+    gltf::Gltf,
+    prelude::*,
+    world_serialization::WorldInstanceReady,
+};
+use panoply_core::Viewpoint;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +39,40 @@ pub struct AnimationTransition {
     /// How long to wait before playing, in seconds.
     #[serde(default)]
     pub delay: f32,
+
+    /// Heard when the clips start.
+    #[serde(default)]
+    pub sound: Option<TransitionSound>,
+}
+
+/// A sound that accompanies an [`AnimationTransition`].
+#[derive(Debug, Reflect, Clone, Serialize, Deserialize)]
+#[reflect(Default, Serialize, Deserialize)]
+pub struct TransitionSound {
+    /// The audio file.
+    pub asset: String,
+
+    /// How long after the clips start to play it, in seconds.
+    #[serde(default)]
+    pub delay: f32,
+
+    /// Linear gain at close range.
+    #[serde(default = "full_volume")]
+    pub volume: f32,
+}
+
+impl Default for TransitionSound {
+    fn default() -> Self {
+        Self {
+            asset: String::new(),
+            delay: 0.,
+            volume: full_volume(),
+        }
+    }
+}
+
+fn full_volume() -> f32 {
+    1.
 }
 
 /// Clips of a model that play together, as its exemplar describes them.
@@ -55,11 +95,21 @@ pub struct SceneryAnimation {
 }
 
 impl SceneryAnimation {
-    fn delay(&self, to: bool) -> f32 {
-        self.transitions
+    fn bind_transition(&self, to: bool, asset_server: &AssetServer) -> BoundTransition {
+        let transition = self
+            .transitions
             .iter()
-            .find(|transition| transition.to == to)
-            .map_or(0., |transition| transition.delay)
+            .find(|transition| transition.to == to);
+        BoundTransition {
+            delay: transition.map_or(0., |transition| transition.delay),
+            sound: transition
+                .and_then(|transition| transition.sound.as_ref())
+                .map(|sound| BoundSound {
+                    source: asset_server.load(&sound.asset),
+                    delay: sound.delay,
+                    volume: sound.volume,
+                }),
+        }
     }
 }
 
@@ -89,12 +139,27 @@ impl Aspect for SceneryAnimations {
     }
 }
 
+/// A [`TransitionSound`], its file loading from the time the model binds so that it is ready to
+/// play.
+#[derive(Clone)]
+struct BoundSound {
+    source: Handle<AudioSource>,
+    delay: f32,
+    volume: f32,
+}
+
+/// An [`AnimationTransition`], bound to its model.
+struct BoundTransition {
+    delay: f32,
+    sound: Option<BoundSound>,
+}
+
 /// One [`SceneryAnimation`] that follows an input, bound to its model.
 struct InputAnimation {
     nodes: Vec<AnimationNodeIndex>,
     input: AnimationInput,
-    delay_true: f32,
-    delay_false: f32,
+    on_true: BoundTransition,
+    on_false: BoundTransition,
     /// The input's value, as last seen.
     value: bool,
     /// Seconds left before the clips play for a change of the input.
@@ -121,6 +186,7 @@ pub(crate) fn bind_scenery_animations(
     gltfs: Res<Assets<Gltf>>,
     clips: Res<Assets<AnimationClip>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
+    asset_server: Res<AssetServer>,
 ) {
     let Ok((mesh, element)) = meshes.get(ready.entity) else {
         return;
@@ -166,8 +232,8 @@ pub(crate) fn bind_scenery_animations(
             bound.push(InputAnimation {
                 nodes,
                 input,
-                delay_true: animation.delay(true),
-                delay_false: animation.delay(false),
+                on_true: animation.bind_transition(true, &asset_server),
+                on_false: animation.bind_transition(false, &asset_server),
                 value,
                 wait: None,
             });
@@ -184,22 +250,29 @@ pub(crate) fn bind_scenery_animations(
 
 /// Plays clips whose input has changed, after the transition's delay, from wherever they have got
 /// to: forward for true, backward for false. A clip that has run its course holds its last pose.
+/// Queues the transition's sound as the clips start.
 pub(crate) fn drive_scenery_animations(
     time: Res<Time>,
-    mut instances: Query<(&mut BoundAnimations, Option<&ContainerState>)>,
+    mut commands: Commands,
+    mut instances: Query<(
+        &mut BoundAnimations,
+        Option<&ContainerState>,
+        &GlobalTransform,
+    )>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    for (mut bound, container) in &mut instances {
+    for (mut bound, container, transform) in &mut instances {
         let bound = &mut *bound;
         for animation in &mut bound.animations {
             let value = animation.input.read(container);
+            let transition = if value {
+                &animation.on_true
+            } else {
+                &animation.on_false
+            };
             if value != animation.value {
                 animation.value = value;
-                animation.wait = Some(if value {
-                    animation.delay_true
-                } else {
-                    animation.delay_false
-                });
+                animation.wait = Some(transition.delay);
             }
             let Some(wait) = &mut animation.wait else {
                 continue;
@@ -209,6 +282,16 @@ pub(crate) fn drive_scenery_animations(
                 continue;
             }
             animation.wait = None;
+            if let Some(sound) = &transition.sound {
+                commands.spawn((
+                    Name::new("TransitionSound"),
+                    Transform::from_translation(transform.translation()),
+                    PendingSound {
+                        sound: sound.clone(),
+                        wait: sound.delay,
+                    },
+                ));
+            }
             let Ok(mut player) = players.get_mut(bound.player) else {
                 continue;
             };
@@ -222,5 +305,68 @@ pub(crate) fn drive_scenery_animations(
                     .set_speed(if value { 1. } else { -1. });
             }
         }
+    }
+}
+
+/// A sound whose [`TransitionSound::delay`] is still running. An entity of its own, so that a
+/// sound already on its way is heard even if the input changes back.
+#[derive(Component)]
+pub(crate) struct PendingSound {
+    sound: BoundSound,
+    wait: f32,
+}
+
+/// Within this distance of the viewpoint, in metres, a sound is at full volume.
+const SOUND_NEAR: f32 = 2.;
+
+/// At this distance from the viewpoint, in metres, and beyond, a sound is silent.
+const SOUND_FAR: f32 = 16.;
+
+/// The exponent of the curve between [`SOUND_NEAR`] and [`SOUND_FAR`].
+const SOUND_FALLOFF: f32 = 1.9;
+
+/// Shrinks positions so that every ear is within rodio's 1 unit of the emitter, where its
+/// inverse-square falloff has no effect: [`sound_gain`] sets the loudness and the spatial sink only
+/// pans, which depends on the ratio of the distances and so is unaffected by the scale. Rodio's
+/// falloff measured from the camera would leave a chest 11 m away almost silent.
+const SOUND_PAN_ONLY: SpatialScale = SpatialScale::new(0.001);
+
+/// The gain of a sound of `volume`, `distance` metres from the viewpoint. Measured from the
+/// viewpoint, which follows the player, so that zooming the camera does not change it.
+fn sound_gain(volume: f32, distance: f32) -> f32 {
+    let t = ((distance - SOUND_NEAR) / (SOUND_FAR - SOUND_NEAR)).clamp(0., 1.);
+    volume * (1. - t).powf(SOUND_FALLOFF)
+}
+
+/// Starts each [`PendingSound`] whose delay is over, at the loudness its distance gives it then.
+pub(crate) fn start_pending_sounds(
+    time: Res<Time>,
+    viewpoint: Res<Viewpoint>,
+    mut commands: Commands,
+    mut pending: Query<(Entity, &mut PendingSound, &Transform)>,
+) {
+    for (entity, mut sound, transform) in &mut pending {
+        sound.wait -= time.delta_secs();
+        if sound.wait > 0. {
+            continue;
+        }
+        let distance = viewpoint.position.distance(transform.translation);
+        let gain = sound_gain(sound.sound.volume, distance);
+        if gain <= 0. {
+            commands.entity(entity).despawn();
+            continue;
+        }
+        commands
+            .entity(entity)
+            .remove::<PendingSound>()
+            .insert((
+                AudioPlayer::new(sound.sound.source.clone()),
+                PlaybackSettings {
+                    volume: Volume::Linear(gain),
+                    spatial: true,
+                    spatial_scale: Some(SOUND_PAN_ONLY),
+                    ..PlaybackSettings::DESPAWN
+                },
+            ));
     }
 }

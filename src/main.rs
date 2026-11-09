@@ -154,6 +154,7 @@ fn setup(mut commands: Commands) {
         // should get `LightProbe` volumes instead.
         RenderLayers::none(),
         PrimaryCamera,
+        SpatialListener::default(),
         // Textures are painted to be seen as they are, as in the three.js version (which had no
         // tone mapping). Bevy's default, TonyMcMapface, desaturates the palette. Lighting is kept
         // low enough (`Sunlight`, `HemisphereLight`) that little clips. Linear rather than None,

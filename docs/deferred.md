@@ -421,10 +421,12 @@ dropped, not deferred. Numbers are never reused.
   hint in the text-entry dialog). `EditableText` lists placeholders as planned but not implemented
   (`bevy_text`'s `editing.rs`), and feathers' text input has none; an overlaid label was judged not
   worth it. *Gate:* a Bevy bump whose `EditableText` or feathers text input has placeholders.
-- **X61** Audio. Panoply has no sound. The old engine had ambient sound emitters placed as a scenery
-  aspect (`SoundSource`), music, water sounds and an audio-effect system (`AudioFx`,
+- **X61** Audio beyond transition sounds (D63). The old engine had ambient sound emitters placed as
+  a scenery aspect (`SoundSource`), music, water sounds and an audio-effect system (`AudioFx`,
   `AudioFxTemplate`). The proving slice: one ambient emitter aspect and music per realm, on Bevy's
-  built-in audio. *Gate:* PAN6, or the author takes up sound.
+  built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry: his
+  hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
+  takes up sound.
 - **X62** Signs and books: things to read. A sign is a scenery aspect whose interaction shows its
   text; a document is an inventory item that links to text content and a page style (faery's book
   aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,

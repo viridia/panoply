@@ -8,8 +8,9 @@ A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floor surfaces, 
 under `assets/`, and exemplars (`file#Label`), whose catalog must exist and hold the label or an
 alias of it. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
 `file.glb#Name`: the file must exist and hold a scene of that name (`SceneryModels`, `Skin`,
-`ItemModel`), or, for `Armature.armature`, a node. `Armature.animations` names only its file. An
-`extends` must resolve as a precinct's exemplar does.
+`ItemModel`), or, for `Armature.armature`, a node. `Armature.animations` names only its file, and a
+`SceneryAnimations` transition's sound a file. An `extends` must resolve as a precinct's exemplar
+does.
 
 A missing reference shows in the game only as an error when something loads it, so a break can sit
 unseen until someone visits the precinct. Known breaks are listed in KNOWN against the ledger entry
@@ -219,6 +220,11 @@ def check_exemplars(assets, report):
                     reference = value if field is None else value.get(field)
                     if reference is not None:
                         report(where, reference, assets.model_problem(reference, kind))
+            for animation in aspects.get("SceneryAnimations", []):
+                for transition in animation.get("transitions", []):
+                    if "sound" in transition:
+                        reference = transition["sound"]["asset"]
+                        report(where, reference, assets.file_problem(reference))
 
 
 def main():

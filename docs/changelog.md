@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN64** Chests, dressers and sarcophagi make sounds as they open and shut.
 - **PAN63** The windmill turns, and a sarcophagus lid waits a moment before it moves.
 - **PAN62** In play the cursor hides after a second at rest over the scene, and returns on moving.
 - **PAN61** Dressers and sarcophagi open and shut as chests do.

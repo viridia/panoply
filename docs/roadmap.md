@@ -21,9 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN64 Transition sounds.** A transition's sound, with its own delay and volume, played at the
-  instance's position when `SceneryAnimations` clips start; the first slice of X61, on Bevy's
-  built-in audio. Sounds are in faery's `packages/los-assets/src/sfx/`.
 - **PAN57 Wait while saving.** Save writes the file, and the file watcher's reload of it arrives 0.3
   s or more later, replacing the asset with the file as saved: an edit made in between is silently
   lost, its undo entry and unsaved mark left behind. Save shows a wait cursor (`OverrideCursor` set

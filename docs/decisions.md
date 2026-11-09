@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D63.**
+**Next: D64.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -491,3 +491,9 @@ never reused.
   all its doors, containers, switches and traps. An aspect for a kind (`Container`) owns the state
   an input reads and knows nothing of clips. Inputs are an enum, each read natively, until SAGA can
   read them. Reversing it means each kind binding and playing its own clips. (PAN63)
+- **D63** The listener is not the character's head or the camera but the part of the screen the
+  player is attending to, so a sound's loudness is faery's curve from the viewpoint, set when it
+  starts, and left and right are the screen's: Bevy's spatial audio only pans it, from a listener on
+  the camera. A tiny `SpatialScale` holds rodio's inverse-square distance term at 1, which would
+  otherwise measure from the camera and change with zoom. Reversing it means tuning the scale
+  against the camera distance and losing the authored cut-off at 16 m. (PAN64)

@@ -5486,11 +5486,17 @@
           "transitions": [
             {
               "to": true,
-              "delay": 0.5
+              "delay": 0.5,
+              "sound": {
+                "asset": "sfx/sarc-thud.ogg"
+              }
             },
             {
               "to": false,
-              "delay": 0.5
+              "delay": 0.5,
+              "sound": {
+                "asset": "sfx/sarco-close.ogg"
+              }
             }
           ]
         }
@@ -5664,11 +5670,17 @@
           "transitions": [
             {
               "to": true,
-              "delay": 0.5
+              "delay": 0.5,
+              "sound": {
+                "asset": "sfx/sarc-thud.ogg"
+              }
             },
             {
               "to": false,
-              "delay": 0.5
+              "delay": 0.5,
+              "sound": {
+                "asset": "sfx/sarco-close.ogg"
+              }
             }
           ]
         }

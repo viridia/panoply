@@ -6,7 +6,9 @@ use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
-    animation_aspect::{bind_scenery_animations, drive_scenery_animations, SceneryAnimations},
+    animation_aspect::{
+        bind_scenery_animations, drive_scenery_animations, start_pending_sounds, SceneryAnimations,
+    },
     container_aspect::{toggle_container, Container, ContainerState, ContainerToggle},
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
@@ -73,7 +75,7 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<SceneryAnimations>()
             .add_observer(bind_scenery_animations)
             .add_observer(toggle_container)
-            .add_systems(Update, drive_scenery_animations)
+            .add_systems(Update, (drive_scenery_animations, start_pending_sounds))
             .register_type::<WallSize>()
             .register_type::<TerrainEffect>()
             .register_type::<TerrainHole>()

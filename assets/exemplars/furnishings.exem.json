@@ -2330,7 +2330,22 @@
           "clips": [
               "ChestLarge.Open"
           ],
-          "input": "open"
+          "input": "open",
+          "transitions": [
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/chest-close.ogg",
+                "delay": 0.5
+              }
+            },
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/chest-open.ogg"
+              }
+            }
+          ]
         }
       ],
       "SceneryModels": [
@@ -2361,7 +2376,21 @@
           "clips": [
               "ChestSmall.Open"
           ],
-          "input": "open"
+          "input": "open",
+          "transitions": [
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/chest-close.ogg"
+              }
+            },
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/chest-open.ogg"
+              }
+            }
+          ]
         }
       ],
       "SceneryModels": [
@@ -2391,7 +2420,21 @@
           "clips": [
               "ChestSmaller.Open"
           ],
-          "input": "open"
+          "input": "open",
+          "transitions": [
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/chest-close.ogg"
+              }
+            },
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/chest-open.ogg"
+              }
+            }
+          ]
         }
       ],
       "SceneryModels": [
@@ -2423,7 +2466,22 @@
               "DresserDoorLeft.Open",
               "DresserDoorRight.Open"
           ],
-          "input": "open"
+          "input": "open",
+          "transitions": [
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/chest-close.ogg",
+                "delay": 0.33
+              }
+            },
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/chest-open.ogg"
+              }
+            }
+          ]
         }
       ],
       "SceneryModels": [
