@@ -343,6 +343,8 @@ def realm_panel(driver):
     try:
         driver.click("Save")
         expect_disabled(driver, "Save", True)
+        # The barrier holds edits off until the file watcher's reload, which would overwrite them.
+        driver.absent("SaveBarrier")
         assert '"warehouse-smoke"' in LOCATIONS.read_text(), "Save did not write the new point"
         driver.click("RemoveNavPoint")
         driver.absent("RealmPanel/warehouse-smoke")

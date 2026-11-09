@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN57** After Save the editor waits a moment for the file to reload, so no edit is lost to it.
 - **PAN64** Chests, dressers and sarcophagi make sounds as they open and shut.
 - **PAN63** The windmill turns, and a sarcophagus lid waits a moment before it moves.
 - **PAN62** In play the cursor hides after a second at rest over the scene, and returns on moving.

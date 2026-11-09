@@ -21,15 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN57 Wait while saving.** Save writes the file, and the file watcher's reload of it arrives 0.3
-  s or more later, replacing the asset with the file as saved: an edit made in between is silently
-  lost, its undo entry and unsaved mark left behind. Save shows a wait cursor (`OverrideCursor` set
-  to `SystemCursorIcon::Wait`) and an invisible modal barrier that intercepts clicks and keys, until
-  each written asset has reported `AssetEvent::Modified` or `AssetLoadFailedEvent`; with edits
-  blocked, a `Modified` can only be the reload. An asset whose write failed is not waited for. With
-  watching off there is no reload to wait for. A timeout, logged, is the backstop. Before PAN38,
-  where the next brush stroke would be lost. `plans/smoke.py` waits for the barrier to go after
-  Save.
 - **PAN58 Toast.** A brief message in the editor that fades by itself and takes no input; Bevy's
   widgets have none. First customers: a failed save (PAN57), which only the log reports today, and
   the label of what Ctrl+Z just undid or redid (`UndoAction::label`, PAN42), which tells the author
