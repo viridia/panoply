@@ -5477,11 +5477,24 @@
     "display_name": "Sarcophagus",
     "extends": "furnishings.exem.json#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "OpenLid2"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "OpenLid2"
+          ],
+          "input": "open",
+          "transitions": [
+            {
+              "to": true,
+              "delay": 0.5
+            },
+            {
+              "to": false,
+              "delay": 0.5
+            }
+          ]
+        }
+      ],
       "WallSize": {
         "x": 2,
         "y": 1
@@ -5642,11 +5655,24 @@
     "display_name": "Sarcophagus",
     "extends": "furnishings.exem.json#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "OpenLid"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "OpenLid"
+          ],
+          "input": "open",
+          "transitions": [
+            {
+              "to": true,
+              "delay": 0.5
+            },
+            {
+              "to": false,
+              "delay": 0.5
+            }
+          ]
+        }
+      ],
       "WallSize": {
         "x": 2,
         "y": 1

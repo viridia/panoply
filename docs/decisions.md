@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D62.**
+**Next: D63.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -486,3 +486,8 @@ never reused.
   since `DefaultCursor` is global and a window's `EntityCursor` is not read. The editor's view pane
   ignores the pointer, so hits reach the world through it. Reversing it means mesh picking, whose
   hits on terrain and instanced foliage would have to be filtered. (PAN60)
+- **D62** How scenery moves is one aspect, `SceneryAnimations`, a list in the exemplar of clips
+  played together, each following a named boolean input or looping, as faery's `animations` did for
+  all its doors, containers, switches and traps. An aspect for a kind (`Container`) owns the state
+  an input reads and knows nothing of clips. Inputs are an enum, each read natively, until SAGA can
+  read them. Reversing it means each kind binding and playing its own clips. (PAN63)

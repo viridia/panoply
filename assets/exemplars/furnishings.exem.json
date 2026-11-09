@@ -1870,6 +1870,14 @@
   "Windmill": {
     "type": "Fixt",
     "aspects": {
+      "SceneryAnimations": [
+        {
+          "clips": [
+            "WindmillBladesAction"
+          ],
+          "loop": true
+        }
+      ],
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Windmill"
@@ -2300,6 +2308,7 @@
   "Proto.Container": {
     "type": "Fixt",
     "aspects": {
+      "Container": {},
       "Interactions": [
         {
           "id": "open",
@@ -2316,11 +2325,14 @@
     "display_name": "Wooden Chest",
     "extends": "#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "ChestLarge.Open"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "ChestLarge.Open"
+          ],
+          "input": "open"
+        }
+      ],
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestLarge"
@@ -2344,11 +2356,14 @@
     "display_name": "Wooden Chest",
     "extends": "#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "ChestSmall.Open"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "ChestSmall.Open"
+          ],
+          "input": "open"
+        }
+      ],
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestSmall"
@@ -2371,11 +2386,14 @@
     "type": "Fixt",
     "extends": "#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "ChestSmaller.Open"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "ChestSmaller.Open"
+          ],
+          "input": "open"
+        }
+      ],
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#ChestSmaller"
@@ -2399,12 +2417,15 @@
     "display_name": "Dresser",
     "extends": "#Proto.Container",
     "aspects": {
-      "Container": {
-        "clips": [
-          "DresserDoorLeft.Open",
-          "DresserDoorRight.Open"
-        ]
-      },
+      "SceneryAnimations": [
+        {
+          "clips": [
+              "DresserDoorLeft.Open",
+              "DresserDoorRight.Open"
+          ],
+          "input": "open"
+        }
+      ],
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Dresser"

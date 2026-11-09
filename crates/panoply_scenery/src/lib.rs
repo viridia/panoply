@@ -6,9 +6,8 @@ use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
 
 use self::{
-    container_aspect::{
-        bind_container_clip, toggle_container, Container, ContainerState, ContainerToggle,
-    },
+    animation_aspect::{bind_scenery_animations, drive_scenery_animations, SceneryAnimations},
+    container_aspect::{toggle_container, Container, ContainerState, ContainerToggle},
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
@@ -21,6 +20,7 @@ use self::{
     wall_aspect::WallSize,
 };
 
+mod animation_aspect;
 mod container_aspect;
 mod floor_mesh;
 pub mod floor_region;
@@ -70,8 +70,10 @@ impl Plugin for PanoplySceneryPlugin {
             .register_interaction_action::<Container>("ContainerToggle", |world, entity| {
                 world.trigger(ContainerToggle { entity });
             })
-            .add_observer(bind_container_clip)
+            .register_type::<SceneryAnimations>()
+            .add_observer(bind_scenery_animations)
             .add_observer(toggle_container)
+            .add_systems(Update, drive_scenery_animations)
             .register_type::<WallSize>()
             .register_type::<TerrainEffect>()
             .register_type::<TerrainHole>()
