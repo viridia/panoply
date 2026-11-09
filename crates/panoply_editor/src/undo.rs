@@ -12,6 +12,7 @@ use panoply_core::GameMode;
 use crate::{
     mode_selector::{EditorMode, EditorModeSettings},
     shell::SAVE_DELAY,
+    toast::ShowToast,
 };
 
 /// A change that can be applied to the world, and that yields its inverse: applying an undo gives
@@ -33,7 +34,9 @@ struct UndoEntry {
 impl UndoEntry {
     /// Returns to the entry's mode, applies its action, and returns the inverse entry.
     fn apply(self, world: &mut World, direction: &str) -> UndoEntry {
-        info!("{direction}: {}", self.action.label());
+        let message = format!("{direction}: {}", self.action.label());
+        info!("{message}");
+        world.write_message(ShowToast(message.into()));
         show_mode(world, self.mode);
         UndoEntry {
             mode: self.mode,

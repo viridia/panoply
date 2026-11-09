@@ -22,7 +22,7 @@ use bevy::{
 use bevy_action_map::prelude::*;
 use panoply_core::NavPointsAsset;
 
-use crate::json::to_asset_json;
+use crate::{json::to_asset_json, toast::ShowToast};
 
 /// The assets changed since they were last written.
 #[derive(Resource, Default, Debug)]
@@ -207,6 +207,7 @@ fn save_assets<A: SaveableAsset>(
     mut requests: MessageReader<SaveAssets>,
     mut unsaved: ResMut<UnsavedAssets>,
     mut wait: ResMut<SaveWait>,
+    mut toasts: MessageWriter<ShowToast>,
     assets: Res<Assets<A>>,
     server: Res<AssetServer>,
 ) {
@@ -227,7 +228,13 @@ fn save_assets<A: SaveableAsset>(
                     wait.ids.insert(id.untyped());
                 }
             }
-            Err(error) => error!("Could not save {id:?}: {error}"),
+            Err(error) => {
+                error!("Could not save {id:?}: {error}");
+                let name = server
+                    .get_path(id)
+                    .map_or_else(|| "an asset".to_string(), |path| path.to_string());
+                toasts.write(ShowToast(format!("Could not save {name}").into()));
+            }
         }
     }
 }

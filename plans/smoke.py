@@ -314,8 +314,10 @@ def realm_panel(driver):
     # the edits (PAN57).
     undo(driver)
     driver.absent("RealmPanel/warehouse-smoke")
+    driver.expect("Toast/ToastText", TEXT, "Undo: Remove nav point warehouse-smoke")
     undo(driver, redo=True)
     driver.present("RealmPanel/warehouse-smoke")
+    driver.expect("Toast/ToastText", TEXT, "Redo: Add nav point warehouse-smoke")
 
     # Undo from another mode returns to the mode of the edit.
     driver.click("TerrainMode")

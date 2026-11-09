@@ -21,10 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN58 Toast.** A brief message in the editor that fades by itself and takes no input; Bevy's
-  widgets have none. First customers: a failed save (PAN57), which only the log reports today, and
-  the label of what Ctrl+Z just undid or redid (`UndoAction::label`, PAN42), which tells the author
-  what changed when it is out of sight (X72).
 - **PAN44 Quit confirmation.** Escape (`Quit`, `src/input.rs`) and the window's close button exit at
   once, losing edits that Save has not written. While `UnsavedAssets` is not empty, both ask first,
   in a modal dialog like PAN29's text entry: Save, Discard or Cancel. The close button needs

@@ -17,6 +17,7 @@ pub mod realm_panel;
 pub mod search_filter;
 pub mod shell;
 pub mod text_entry;
+pub mod toast;
 pub mod undo;
 pub mod unsaved;
 pub mod zoom;
@@ -36,6 +37,7 @@ impl Plugin for EditorPlugin {
             mode_selector::ModeSelectorPlugin,
             realm_panel::RealmPanelPlugin,
             text_entry::TextEntryPlugin,
+            toast::ToastPlugin,
             undo::UndoPlugin,
             unsaved::UnsavedAssetsPlugin,
         ))
