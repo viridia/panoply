@@ -1,7 +1,8 @@
 //! A modal dialog asking for a line of text, such as a new name. OK, or Enter in the box, triggers
 //! [`TextEntered`] on the dialog and closes it; the opener observes the event on the entity it
-//! spawned. OK is disabled while the text, trimmed, is empty or one of the dialog's taken values,
-//! which are given when it opens: a modal dialog's taken names cannot change while it is open.
+//! spawned. OK is disabled while the text, trimmed, is empty, one of the dialog's taken values, or
+//! refused by its rule. The taken values are given when it opens: a modal dialog's taken names
+//! cannot change while it is open.
 
 use bevy::{
     feathers::{
@@ -25,7 +26,12 @@ use bevy_action_map::prelude::*;
 #[derive(Component, Default, Clone)]
 pub struct TextEntryDialog {
     pub taken: HashSet<String>,
+    /// Says why the text, not empty and not taken, cannot be accepted.
+    pub rule: Option<TextEntryRule>,
 }
+
+/// A check on the text in a [`TextEntryDialog`], returning why it fails.
+pub type TextEntryRule = fn(&str) -> Option<&'static str>;
 
 /// The text box.
 #[derive(Component, Default, Clone)]
@@ -76,6 +82,16 @@ impl Plugin for TextEntryPlugin {
 
 /// The dialog, titled `title`, its box labeled `label`. Its root is named `#TextEntryDialog`.
 pub fn text_entry_dialog(title: &str, label: &str, taken: HashSet<String>) -> impl Scene {
+    text_entry_dialog_with_rule(title, label, taken, None)
+}
+
+/// As [`text_entry_dialog`], with a further check on the text.
+pub fn text_entry_dialog_with_rule(
+    title: &str,
+    label: &str,
+    taken: HashSet<String>,
+    rule: Option<TextEntryRule>,
+) -> impl Scene {
     let (title, label) = (title.to_string(), label.to_string());
     bsn! {
         @FeathersDialog {
@@ -85,7 +101,7 @@ pub fn text_entry_dialog(title: &str, label: &str, taken: HashSet<String>) -> im
             },
         }
         #TextEntryDialog
-        TextEntryDialog { taken: {taken.clone()} }
+        TextEntryDialog { taken: {taken.clone()}, rule: {rule} }
         on(|close: On<RequestClose>, mut commands: Commands| {
             commands.entity(close.event_target()).despawn();
         })
@@ -145,7 +161,7 @@ fn rejection(dialog: &TextEntryDialog, text: &str) -> Option<&'static str> {
     } else if dialog.taken.contains(text) {
         Some("Name in use")
     } else {
-        None
+        dialog.rule.and_then(|rule| rule(text))
     }
 }
 

@@ -113,28 +113,27 @@ pub struct GotoLocation {
 
 pub fn goto_location(
     mut messages: MessageReader<GotoLocation>,
-    mut viewpoint: ResMut<Viewpoint>,
     mut commands: Commands,
 ) {
     for goto in messages.read() {
-        if let Some(distance) = goto.camera_distance {
-            viewpoint.set_camera_distance(distance, 0.);
-        }
-        if let Some(azimuth) = goto.azimuth {
-            viewpoint.azimuth = azimuth.rem_euclid(PI * 2.);
-        }
         commands.queue(SetViewpointCmd {
             position: goto.position,
             realm: goto.realm.clone(),
+            camera_distance: goto.camera_distance,
+            azimuth: goto.azimuth,
         });
     }
 }
 
 /// Command which directly sets the viewpoint to a new position, used in editor.
-/// For gameplay, the viewpoint follows the "active entity".
+/// For gameplay, the viewpoint follows the "active entity". Everything changes at once: a new
+/// camera distance seen at the old position would load parcels around a place never shown, whose
+/// precincts may never load.
 pub struct SetViewpointCmd {
     pub position: Vec3,
     pub realm: String,
+    pub camera_distance: Option<f32>,
+    pub azimuth: Option<f32>,
 }
 
 impl Command for SetViewpointCmd {
@@ -152,6 +151,12 @@ impl Command for SetViewpointCmd {
             viewpoint.realm = Some(realm);
             viewpoint.position = self.position;
             viewpoint.follow = None;
+            if let Some(distance) = self.camera_distance {
+                viewpoint.set_camera_distance(distance, 0.);
+            }
+            if let Some(azimuth) = self.azimuth {
+                viewpoint.azimuth = azimuth.rem_euclid(PI * 2.);
+            }
         }
     }
 }

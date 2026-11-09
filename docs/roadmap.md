@@ -21,11 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN35 Create and Change Realm.** Two buttons in the realm panel, each opening a modal dialog:
-  Create Realm asks for a name in PAN29's text-entry dialog and makes a new, empty realm; Change
-  Realm picks one of the realms in a list-selection dialog and moves the view there. The dialog
-  holds a generic chooser, generalized from PAN26's `nav_point_list.rs`: a scrolling list sorted by
-  name and a filter box using `search_filter`. PAN41's exemplar choosers reuse it.
 - **PAN36 Mode overlays.** Each editor mode draws its own overlays while active. Realm mode's first:
   a grid on the ground at parcel and precinct boundaries, and the realm's border (faery's
   `FlatGridOverlay` and `ParcelBoundsOverlay`, mounted by `MapEditPanel.tsx`); Panoply's Quill
@@ -57,7 +52,7 @@ components and every layer restartable from saved state (R104).
   or terrain, and a selector for the current parcel's biome (faery's `PlotEditPanel.tsx`,
   `terrain.png`).
 - **PAN41 Exemplar chooser.** Catalogs mode's first panel: the exemplar kinds (actor, wall, floor,
-  fixture), then the chosen kind's exemplars in PAN35's chooser (the Quill editor's
+  fixture), then the chosen kind's exemplars in a `chooser` (the Quill editor's
   `ui/controls/exemplar_chooser.rs`). The same chooser serves later in scenery mode, for the
   exemplar to place and an existing instance's exemplar (PAN5). PAN28 edits the chosen one.
 - **PAN28 Property editor.** For the exemplar chosen in PAN41 and the realm panel's selected nav

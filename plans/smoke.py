@@ -7,16 +7,15 @@
 - Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
   Screenshots at a scenery element (walls, and the road from terrain effects) and at the origin
   (the tiered dungeon floors of precinct 0,0).
-- Physics and editor: F3 draws the colliders; a ray cast down at the view center hits the
-  ground, then a floor's, a fixture's and a tree's canopy colliders; T shows the editor panel
-  beside the view, its mode selector and F2 switch modes, and its Show menu turns views off. `GroundProbe` holds where the ray hit,
-  drawn as a white sphere. The Show menu is clicked twice: the second click lands only if the
-  first left the menu open. Space toggles the focused checkbox, so keys reach widgets.
+- Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes.
+  Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
   which enables Save; Ctrl+Z and Ctrl+Shift+Z undo and redo that, returning to Realm mode from
   another, and do nothing while a text field has the keys; Save writes `world.locations.json`
-  (restored afterwards); − removes the point.
+  (restored afterwards); − removes the point. Create Realm refuses a name in use or one that
+  cannot name a file, writes a new realm (deleted afterwards) and cuts to it; Change Realm filters
+  the realms and goes back, keeping the view's coordinates.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
   Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
@@ -25,7 +24,7 @@
 - Parcels: those outside the view are hidden, and so are their ground meshes, but stay cached;
   once `goto` returns, the readiness survey shows nothing pending.
 
-Settings start empty, so physics drawing starts off and the panel hidden.
+Settings start empty, so the panel starts hidden.
 """
 
 from pathlib import Path
@@ -43,8 +42,6 @@ MESH = "bevy_mesh::components::Mesh3d"
 VISIBILITY = "bevy_camera::visibility::Visibility"
 INHERITED = "bevy_camera::visibility::InheritedVisibility"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
-VIEWS = "panoply_editor::debug_views::DebugViews"
-PROBE = "panoply_editor::debug_views::GroundProbe"
 PANEL = "panoply_editor::shell::EditorPanelSettings"
 SAVED_VIEW = "panoply_editor::saved_view::EditorViewSettings"
 INSET = "panoply_core::viewport::ViewportInset"
@@ -65,22 +62,10 @@ UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
 MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
-LOCATIONS = Path(__file__).resolve().parent.parent / "assets" / "world.locations.json"
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
+LOCATIONS = ASSETS / "world.locations.json"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
-TERRAIN_GROUP = 1
-FLOOR_GROUP = 2
-FIXTURE_GROUP = 8
-CANOPY_GROUP = 0x20
-# (label, spot, expected top, group): a parquet floor on tier 0 (top at TIER_OFFSET), a walnut
-# table (box of half-height 0.42 on the floor at 0), and a tree's cell, whose canopy is 2 m over
-# ground at 0. A trunk is as tall as the canopy over its own base, so one on higher ground pokes
-# through it; this cell's trunk does not reach its center.
-COLLIDER_SPOTS = [
-    ("floor", [58.0, 0.0, 26.62], 0.02, FLOOR_GROUP),
-    ("table", [42.23, 0.0, 58.71], 0.84, FIXTURE_GROUP),
-    ("canopy", [105.5, 0.0, 144.5], 2.0, CANOPY_GROUP),
-]
 
 
 def run(driver):
@@ -89,8 +74,8 @@ def run(driver):
     camera(driver)
     driver.caption("scenery")
     scenery(driver)
-    driver.caption("physics and editor")
-    physics(driver)
+    driver.caption("editor")
+    editor(driver)
     driver.caption("go to dialog")
     goto_dialog(driver)
     driver.caption("parcels")
@@ -206,38 +191,8 @@ def scenery(driver):
         driver.screenshot(label)
 
 
-def physics(driver):
-    driver.goto(SPOT, 20.0)
-    assert driver.get_resource(VIEWS, at="physics") is False, "physics drawing on at start"
-    assert driver.get_resource(PROBE, at="hit") is None, "probe set while drawing is off"
+def editor(driver):
     assert driver.get_resource(PANEL, at="visible") is False, "panel shown at start"
-
-    driver.key("F3")
-    driver.frames(10)
-    assert driver.get_resource(VIEWS, at="physics") is True, "F3 did not turn physics on"
-    hit = driver.get_resource(PROBE, at="hit")
-    print(f"ground under the view center: {hit}")
-    assert hit is not None, "the ray hit nothing"
-    x, y, z = hit
-    assert abs(x - SPOT[0]) < 0.01 and abs(z - SPOT[2]) < 0.01, f"hit off the view center: {hit}"
-    assert -20.0 < y < 40.0, f"hit at an unlikely height: {y}"
-    groups = driver.get_resource(PROBE, at="groups")
-    assert groups == TERRAIN_GROUP, f"hit groups {groups:#x}, not terrain"
-    driver.screenshot("colliders")
-
-    # Scenery and canopy colliders: the probe stops on top of each.
-    for label, spot, top, group in COLLIDER_SPOTS:
-        driver.goto(spot, 20.0)
-        driver.frames(5)
-        hit = driver.get_resource(PROBE, at="hit")
-        groups = driver.get_resource(PROBE, at="groups")
-        print(f"{label}: hit {hit}, groups {groups:#x}")
-        assert hit is not None, f"{label}: the ray hit nothing"
-        assert hit[1] == Between(top - 0.01, top + 0.01), f"{label}: hit at {hit[1]}, not {top}"
-        assert groups == group, f"{label}: hit groups {groups:#x}, not {group:#x}"
-        if label == "table":
-            driver.screenshot("scenery_colliders")
-    driver.screenshot("tree_colliders")
 
     # The panel is 328 wide by default, its narrowest (`MIN_PANEL_WIDTH`), and the view starts
     # after it and the handle.
@@ -265,21 +220,6 @@ def physics(driver):
     wait_mode(driver, editor_mode, "Realm")
     expect_highlight(driver, "RealmMode")
     realm_panel(driver)
-
-    driver.click("Show")
-    driver.click("Terrain")
-    driver.frames(5)
-    groups = driver.get_resource(VIEWS, at="physics_groups")
-    assert groups & TERRAIN_GROUP == 0, f"Terrain still drawn: groups {groups:#x}"
-    driver.screenshot("show_menu")
-    # Widgets get keys from the mapper (`widget_keys`): Space toggles the checkbox just clicked.
-    driver.key("Space")
-    driver.frames(5)
-    groups = driver.get_resource(VIEWS, at="physics_groups")
-    assert groups & TERRAIN_GROUP, f"Space did not toggle the focused checkbox: {groups:#x}"
-    driver.click("Physics")
-    driver.frames(5)
-    assert driver.get_resource(VIEWS, at="physics") is False, "Physics did not turn off"
 
     driver.key("KeyT")
     driver.frames(10)
@@ -369,6 +309,57 @@ def realm_panel(driver):
         driver.absent("SaveBarrier")
     finally:
         LOCATIONS.write_bytes(original)
+
+    create_and_change_realm(driver)
+
+
+def create_and_change_realm(driver):
+    # A realm's files are written at once, so they go however the checks end.
+    files = [ASSETS / "realms" / "smoke-realm.realm.json", ASSETS / "terrain/maps/smoke-realm.terrain"]
+    try:
+        # Create Realm refuses a name in use, and one that cannot name a file.
+        driver.click("CreateRealm")
+        driver.present("TextEntryDialog/Entry")
+        driver.type("playground")
+        driver.expect("TextEntryDialog/Hint", TEXT, "Name in use")
+        expect_disabled(driver, "TextEntryDialog/Ok", True)
+        driver.click("TextEntryDialog/Cancel")
+        driver.absent("TextEntryDialog")
+        driver.click("CreateRealm")
+        driver.present("TextEntryDialog/Entry")
+        driver.type("a.b")
+        driver.expect("TextEntryDialog/Hint", TEXT, "Letters, digits, - and _ only")
+        expect_disabled(driver, "TextEntryDialog/Ok", True)
+        driver.click("TextEntryDialog/Cancel")
+        driver.absent("TextEntryDialog")
+
+        # The view cuts to the new realm, which has no parcels and is still ready.
+        driver.click("CreateRealm")
+        driver.present("TextEntryDialog/Entry")
+        driver.type("smoke-realm")
+        driver.click("TextEntryDialog/Ok")
+        driver.absent("TextEntryDialog")
+        driver.expect("RealmPanel/Realm", TEXT, "smoke-realm")
+        driver.expect("RealmPanel/Size", TEXT, "0 × 0 parcels")
+        assert all(file.exists() for file in files), "Create Realm did not write both files"
+        driver.goto([0.0, 0.0, 0.0], realm="smoke-realm")
+        driver.screenshot("new_realm")
+        driver.goto(WAREHOUSE, realm="smoke-realm")
+
+        # Change Realm lists the new realm, filters, and goes back.
+        driver.click("ChangeRealm")
+        driver.present("ChangeRealmDialog/smoke-realm")
+        driver.type("playg")
+        driver.absent("ChangeRealmDialog/smoke-realm")
+        driver.click("ChangeRealmDialog/playground")
+        driver.screenshot("change_realm")
+        driver.click("ChangeRealmDialog/Go")
+        driver.absent("ChangeRealmDialog")
+        driver.expect("RealmPanel/Realm", TEXT, "playground")
+        arrived(driver, WAREHOUSE, "Change Realm, keeping the position")
+    finally:
+        for file in files:
+            file.unlink(missing_ok=True)
 
 
 def undo(driver, redo=False):

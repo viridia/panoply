@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X79.**
+**Next: X81.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -511,3 +511,9 @@ dropped, not deferred. Numbers are never reused.
 - **X78** The rest of faery's hover feedback (PAN60, `SceneView.tsx`): the disabled cursor over an
   instance offering nothing, and an actor's nameplate on hover. Its other cursors are in `../faery`,
   to copy as entries name them. *Gate:* content or play that misses each.
+- **X79** Deleting a realm from the editor. Today its files (`realms/<name>.realm.json`,
+  `terrain/maps/<name>.terrain`) are removed by hand, which also undoes a realm made by mistake
+  (D65). *Gate:* realms deleted often enough to miss it.
+- **X80** Nav points drawn as markers in the editor's view, those of other realms dimmed, so an
+  underground level can be laid out against its overland counterpart without showing two realms at
+  once. *Gate:* building a level that needs it; at the earliest, PAN36's overlays.

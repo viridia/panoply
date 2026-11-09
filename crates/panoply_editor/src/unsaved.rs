@@ -7,7 +7,7 @@
 //! an edit made in between would be lost. Until each written asset has reloaded, [`SaveWait`] holds
 //! a barrier over the window, a wait cursor, and every key.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use bevy::{
     asset::{
@@ -239,6 +239,13 @@ fn save_assets<A: SaveableAsset>(
     }
 }
 
+/// The file on disk of the asset at `path` in the assets folder.
+pub(crate) fn asset_file(path: &Path) -> PathBuf {
+    FileAssetReader::new(AssetPlugin::default().file_path)
+        .root_path()
+        .join(path)
+}
+
 /// Writes the asset `id` to a temporary file beside its own, then renames it over the original,
 /// so a failed write leaves the original whole. Returns the file's path.
 fn save<A: SaveableAsset>(
@@ -251,9 +258,7 @@ fn save<A: SaveableAsset>(
     if path.source() != &AssetSourceId::Default {
         return Err(format!("{path} is not in the assets folder").into());
     }
-    let file = FileAssetReader::new(AssetPlugin::default().file_path)
-        .root_path()
-        .join(path.path());
+    let file = asset_file(path.path());
     let mut temporary = file.clone().into_os_string();
     temporary.push(".new");
     std::fs::write(&temporary, asset.to_bytes()?)?;

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D65.**
+**Next: D66.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -476,7 +476,7 @@ never reused.
   future tracked dependency. Children that depend on data are built by `bevy_immediate`, keyed and
   owned by their parent, never by a queued spawn into a remembered entity, which can be despawned
   before the spawn lands. What is computed from the data is a plain function of its inputs
-  (`filtered_points`), a future memo. A widget's own state (a filter, a selection) sits in a
+  (`filtered_items`), a future memo. A widget's own state (a filter, a selection) sits in a
   component on its root, a future signal. A widget that edits changes the model through a named
   operation (`NavPointEdits`) and does not update its own display, which follows from the model. A
   system that derives a property outside a view (`enable_buttons`) recomputes it from the model and
@@ -507,3 +507,7 @@ never reused.
   game and respawning after death always cut, however near; a cut scene's change of focus to another
   character is smooth when the two are near, for continuity, which setting `follow` already gives,
   and cuts when they are far. (PAN56)
+- **D65** Creating a realm writes its files at once, rather than waiting for Save: a realm exists
+  only as files, and an asset with no path cannot go through `UnsavedAssets`. So creation is not on
+  the undo stack. Reversing it means giving in-memory assets a path and letting realms load without
+  a file. (PAN35)

@@ -45,9 +45,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   only switch visibility; actors' capsules stay immediate. Unchecked: whether retained gizmos are
   frustum-culled or only follow `Visibility`. Confirmed by running.
 - **I15** In the Go To filter box, holding Up or Down steps the list once rather than repeating:
-  `nav_point_list` binds them as `Button` actions, and the mapper passes OS key repeats only to
-  class bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump
-  the lock here and add it to the two bindings. Seen by the author; the cause read, not run.
+  `chooser` binds them as `Button` actions, and the mapper passes OS key repeats only to class
+  bindings. The fix is `bevy_action_map`'s chunk 208, a `.key_repeat()` condition; then bump the
+  lock here and add it to the two bindings. Seen by the author; the cause read, not run.
 - **I17** Every overrun run rewrites the terrain textures (`assets/terrain/textures/*.ktx2`, 14
   files) and `assets/terrain/models-new/temperate.glb` with different bytes, sizes shifting under
   1%, though their sources and `pipeline.ts` are unchanged; no difference shows. Likely a

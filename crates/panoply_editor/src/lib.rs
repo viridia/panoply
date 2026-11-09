@@ -7,12 +7,14 @@ use bevy::{
     prelude::*,
 };
 
+pub mod chooser;
 pub mod debug_views;
 pub mod diagnostics;
 pub mod goto;
 pub mod json;
 pub mod mode_selector;
 pub mod nav_point_list;
+pub mod new_realm;
 pub mod quit_dialog;
 pub mod realm_panel;
 pub mod saved_view;
@@ -35,7 +37,11 @@ impl Plugin for EditorPlugin {
             diagnostics::EditorDiagnosticsPlugin,
             zoom::EditorZoomPlugin,
             goto::GotoDialogPlugin,
-            nav_point_list::NavPointListPlugin,
+            (
+                chooser::ChooserPlugin,
+                nav_point_list::NavPointListPlugin,
+                new_realm::NewRealmPlugin,
+            ),
             mode_selector::ModeSelectorPlugin,
             quit_dialog::QuitDialogPlugin,
             realm_panel::RealmPanelPlugin,

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN35** The realm panel can create a new, empty realm, and change to any realm from a list.
 - **PAN56** The editor reopens at the realm, place and heading it was left at.
 - **PAN65** Light hair is softer in shade, its lit side falling away gently instead of cutting off.
 - **PAN3n** Hair shines in a soft band across its strands, moving with the sun.

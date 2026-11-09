@@ -37,6 +37,11 @@ pub struct TerrainMapAsset {
 }
 
 impl TerrainMapAsset {
+    /// The contents of a `.terrain` file.
+    pub fn to_bytes(&self) -> Result<Vec<u8>, rmps::encode::Error> {
+        rmps::encode::to_vec_named(self)
+    }
+
     /// Returns true if the terrain map includes the given coordinates. The bounds is
     /// considered a half-open interval: a point at `min` is considered inside, at `max` is
     /// considered outside.
@@ -184,7 +189,7 @@ impl AssetSaver for TerrainMapSaver {
         _settings: &Self::Settings,
         _asset_path: bevy::asset::AssetPath<'_>,
     ) -> Result<(), TerrainMapSaverError> {
-        let v = rmps::encode::to_vec_named(&*asset)?;
+        let v = asset.to_bytes()?;
         writer.write_all(&v).await?;
         Ok(())
     }

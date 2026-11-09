@@ -1,4 +1,5 @@
-//! Realm mode's panel: stats about the map, then the nav points with Go, + and −. Go, a
+//! Realm mode's panel: stats about the map, Create Realm and Change Realm, then the nav points with
+//! Go, + and −. Go, a
 //! double-click or Enter travels to the selected point; + names the current view as a new point,
 //! through the text-entry dialog; − removes the selected point. + and − change the nav points in
 //! memory, where the list shows them at once, mark them unsaved for the save button, and can be
@@ -24,12 +25,17 @@ use bevy_immediate::{
     ui::{text::ImmUiText, CapsUiFeathers},
     Imm,
 };
-use panoply_core::{NavPoint, NavPointsAsset, NavPointsHandleResource, Realm, Viewpoint};
+use panoply_core::{
+    GotoLocation, NavPoint, NavPointsAsset, NavPointsHandleResource, Realm, Viewpoint,
+};
+use panoply_terrain::PARCEL_SIZE;
 
 use crate::{
+    chooser::{chooser_dialog, ActivateChooserItem, Chooser, ItemChosen},
     mode_selector::EditorMode,
-    nav_point_list::{nav_point_list, ActivateNavPoint, NavPointList, Travel},
-    text_entry::{text_entry_dialog, TextEntered},
+    nav_point_list::{nav_point_chooser, Travel},
+    new_realm::{realm_name_rule, CreateRealm},
+    text_entry::{text_entry_dialog, text_entry_dialog_with_rule, TextEntered},
     undo::{UndoAction, UndoStack},
     unsaved::UnsavedAssets,
 };
@@ -78,7 +84,18 @@ pub(crate) fn realm_panel() -> impl Scene {
                 ]
             ]
             --
-            @nav_point_list(false)
+            Node { column_gap: px(4) }
+            Children [
+                @FeathersButton { @caption: bsn! { Text("Create Realm…") ThemedText } }
+                #CreateRealm
+                on(open_create_realm)
+                --
+                @FeathersButton { @caption: bsn! { Text("Change Realm…") ThemedText } }
+                #ChangeRealm
+                on(open_change_realm)
+            ]
+            --
+            @nav_point_chooser()
             --
             Node { justify_content: JustifyContent::FlexEnd, column_gap: px(4) }
             Children [
@@ -159,7 +176,7 @@ impl ImmediateAttach<CapsUiFeathers> for RealmStats {
 struct PanelList<'w, 's> {
     panels: Query<'w, 's, Entity, With<RealmPanel>>,
     children: Query<'w, 's, &'static Children>,
-    lists: Query<'w, 's, &'static mut NavPointList>,
+    lists: Query<'w, 's, &'static mut Chooser>,
 }
 
 impl PanelList<'_, '_> {
@@ -214,8 +231,56 @@ fn go(_activate: On<Activate>, list: PanelList, mut travel: Travel) {
 }
 
 /// Observer on the panel: a double-click or Enter in its list.
-fn travel_to_activated(activate: On<ActivateNavPoint>, mut travel: Travel) {
+fn travel_to_activated(activate: On<ActivateChooserItem>, mut travel: Travel) {
     travel.to(&activate.name);
+}
+
+/// Observer on Create Realm: asks for a name that is not taken and can name its files.
+fn open_create_realm(_activate: On<Activate>, realms: Query<&Realm>, mut commands: Commands) {
+    let taken: HashSet<String> = realms.iter().map(|r| r.name.clone()).collect();
+    let dialog = text_entry_dialog_with_rule("Create Realm", "Name", taken, Some(realm_name_rule));
+    commands.spawn_scene(dialog).observe(
+        |entered: On<TextEntered>, mut creates: MessageWriter<CreateRealm>| {
+            creates.write(CreateRealm(entered.text.clone()));
+        },
+    );
+}
+
+/// Observer on Change Realm: asks which realm to go to.
+fn open_change_realm(_activate: On<Activate>, realms: Query<&Realm>, mut commands: Commands) {
+    let names = realms.iter().map(|r| r.name.clone()).collect();
+    commands
+        .spawn_scene(chooser_dialog("Change Realm", "Go", names))
+        .insert(Name::new("ChangeRealmDialog"))
+        .observe(change_realm);
+}
+
+/// Observer on the dialog: moves the view to the chosen realm at the same coordinates, since an
+/// underground realm is laid out to match its overland counterpart. A position off that realm's map
+/// goes to the middle of the map instead; a realm with no parcels has no map to be off.
+fn change_realm(
+    chosen: On<ItemChosen>,
+    realms: Query<&Realm>,
+    viewpoint: Res<Viewpoint>,
+    mut gotos: MessageWriter<GotoLocation>,
+) {
+    let Some(realm) = realms.iter().find(|r| r.name == chosen.name) else {
+        return;
+    };
+    let map = realm.parcel_bounds.as_rect();
+    let parcel_size = PARCEL_SIZE as f32;
+    let here = viewpoint.position;
+    let position = if map.is_empty() || map.contains(here.xz() / parcel_size) {
+        here
+    } else {
+        let center = map.center() * parcel_size;
+        Vec3::new(center.x, 0., center.y)
+    };
+    gotos.write(GotoLocation {
+        realm: realm.name.clone(),
+        position,
+        ..default()
+    });
 }
 
 /// Observer on +: asks for the new point's name, which must not be taken.
