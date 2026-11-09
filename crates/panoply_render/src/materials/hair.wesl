@@ -10,16 +10,22 @@ import bevy_pbr::render::{
 
 // Scheuermann's two lobes: a bright one, and a broader one tinted by the hair. Each is shifted
 // along the strand so the bands separate.
-const PRIMARY_SHININESS: f32 = 60.0;
+const PRIMARY_SHININESS: f32 = 70.0;
 const PRIMARY_SHIFT: f32 = 0.1;
-const PRIMARY_STRENGTH: f32 = 0.1;
+const PRIMARY_STRENGTH: f32 = 0.07;
 const PRIMARY_WHITENESS: f32 = 0.5;
 const SECONDARY_SHININESS: f32 = 20.0;
 const SECONDARY_SHIFT: f32 = -0.1;
-const SECONDARY_STRENGTH: f32 = 0.1;
+const SECONDARY_STRENGTH: f32 = 0.07;
 // How much the shine fades on light hair, by the hair's luminance. Both lobes' colors grow with
 // the base color, so without this light hair gets over twice the shine of dark hair.
 const LIGHT_HAIR_FADE: f32 = 0.8;
+// Light hair passes light from strand to strand, which softens its terminator and lifts its shaded
+// side. How far past the terminator that reaches (in NdotL), and how much of it shows on hair of
+// luminance 1; dark hair absorbs it, so it scales with luminance.
+const SCATTER_WRAP: f32 = 0.5;
+const SCATTER_STRENGTH: f32 = 1.0;
+const FRAC_1_PI: f32 = 0.31830988;
 
 /// Kajiya-Kay: bright where the half vector is perpendicular to the strand, a band across it.
 fn strand_specular(
@@ -50,7 +56,8 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     let N = pbr_input.N;
     let V = pbr_input.V;
     let base = pbr_input.material.base_color.rgb;
-    let fade = 1.0 - LIGHT_HAIR_FADE * saturate(dot(base, vec3<f32>(0.2126, 0.7152, 0.0722)));
+    let luminance = saturate(dot(base, vec3<f32>(0.2126, 0.7152, 0.0722)));
+    let fade = 1.0 - LIGHT_HAIR_FADE * luminance;
     let primary_color = mix(base, vec3<f32>(1.0), PRIMARY_WHITENESS) * PRIMARY_STRENGTH * fade;
     let secondary_color = base * SECONDARY_STRENGTH * fade;
 
@@ -70,9 +77,6 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
         let light = &view_bindings::lights.directional_lights[i];
         let L = (*light).direction_to_light;
         let NdotL = saturate(dot(N, L));
-        if NdotL <= 0.0 {
-            continue;
-        }
 
         var shadow: f32 = 1.0;
         if (pbr_input.flags & MESH_FLAGS_SHADOW_RECEIVER_BIT) != 0u
@@ -85,6 +89,15 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
                     view_z,
                     pbr_input.frag_coord.xy,
                 );
+        }
+
+        // Only what plain diffuse (NdotL * shadow) left out, so the lit side is no brighter.
+        let wrapped = saturate((dot(N, L) + SCATTER_WRAP) / (1.0 + SCATTER_WRAP));
+        let scatter = max(wrapped - NdotL * shadow, 0.0) * SCATTER_STRENGTH * luminance;
+        shine += base * FRAC_1_PI * (*light).color.rgb * scatter;
+
+        if NdotL <= 0.0 {
+            continue;
         }
 
         let H = normalize(L + V);

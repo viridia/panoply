@@ -183,7 +183,10 @@ never reused.
   the projection vanishes. Only materials with extras `material: hair` are combed, so facial hair is
   not. Both lobes' colors grow with the base color, so the shine fades with the hair's luminance.
   Not `StandardMaterial` anisotropy, which lights hair white on a camera with a normal prepass
-  (I28), and could not tint the band.
+  (I28), and could not tint the band. Light hair also has its terminator softened and its shaded
+  side lifted by a wrapped diffuse term scaled by luminance (PAN65): without it, the lack of
+  scattering showed on platinum hair, and dark hair absorbs the light anyway. It treats a cast
+  shadow as self-shadow, so light hair glows a little in a wall's shade.
 - **D30** Lighting follows the three.js version, so painted textures read as painted. The camera
   uses `Tonemapping::Linear` (identity, like three.js's default; `None` would also turn off
   deband dithering), not TonyMcMapface, which desaturated the palette. Ambient outweighs the
