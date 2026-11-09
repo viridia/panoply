@@ -13,6 +13,7 @@ pub mod goto;
 pub mod json;
 pub mod mode_selector;
 pub mod nav_point_list;
+pub mod quit_dialog;
 pub mod realm_panel;
 pub mod search_filter;
 pub mod shell;
@@ -35,6 +36,7 @@ impl Plugin for EditorPlugin {
             goto::GotoDialogPlugin,
             nav_point_list::NavPointListPlugin,
             mode_selector::ModeSelectorPlugin,
+            quit_dialog::QuitDialogPlugin,
             realm_panel::RealmPanelPlugin,
             text_entry::TextEntryPlugin,
             toast::ToastPlugin,

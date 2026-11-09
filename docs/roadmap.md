@@ -21,10 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN44 Quit confirmation.** Escape (`Quit`, `src/input.rs`) and the window's close button exit at
-  once, losing edits that Save has not written. While `UnsavedAssets` is not empty, both ask first,
-  in a modal dialog like PAN29's text entry: Save, Discard or Cancel. The close button needs
-  `WindowPlugin::close_when_requested` off and `WindowCloseRequested` handled.
 - **PAN56 Saved editor view.** The editor's realm, position and azimuth saved between runs, as faery
   did, so an iteration need not navigate back: a settings group beside `ZoomSettings`, written with
   its debounce and only when the view changes. The saved realm comes before `nav_to_center`'s

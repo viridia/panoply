@@ -4,7 +4,7 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_actors::{PlayerControl, PlayerTurn};
-use panoply_core::{GameMode, GameViewNode, Viewpoint};
+use panoply_core::{GameMode, GameViewNode, QuitGate, QuitRequest, Viewpoint};
 
 const CAMERA_SPEED: f32 = 10.;
 const CAMERA_ROTATION_SPEED: f32 = 1.5;
@@ -77,7 +77,7 @@ impl Plugin for InputPlugin {
                 commands.spawn((Name::new("ViewpointControl"), ViewpointControl));
                 commands.spawn((Name::new("AppControl"), AppControl));
             })
-            .add_systems(Update, (move_viewpoint, quit))
+            .add_systems(Update, (move_viewpoint, quit, perform_quit))
             .add_observer(scroll_rotate_viewpoint);
     }
 }
@@ -146,8 +146,19 @@ fn scroll_rotate_viewpoint(
     }
 }
 
-fn quit(input: ContextActions<AppControl>, mut commands: Commands) {
+fn quit(input: ContextActions<AppControl>, mut requests: MessageWriter<QuitRequest>) {
     if input.fired::<Quit>() {
+        requests.write(QuitRequest);
+    }
+}
+
+/// Saves settings and exits on a [`QuitRequest`], unless the [`QuitGate`] is held.
+fn perform_quit(
+    mut requests: MessageReader<QuitRequest>,
+    gate: Res<QuitGate>,
+    mut commands: Commands,
+) {
+    if requests.read().count() > 0 && !gate.held {
         commands.queue(SaveSettingsSync::IfChanged);
         commands.write_message(AppExit::Success);
     }

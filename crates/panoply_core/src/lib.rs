@@ -4,6 +4,7 @@ mod hex_color;
 pub mod layers;
 pub mod metrics;
 pub mod nav_point;
+mod quit;
 pub mod random;
 pub mod realm;
 pub mod realm_physics;
@@ -25,6 +26,7 @@ pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
 use nav_point::NavPointsLoader;
 pub use nav_point::{NavPoint, NavPointsAsset, NavPointsHandleResource};
+pub use quit::{QuitGate, QuitRequest};
 pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
 use realm_physics::realm_physics_system;
@@ -60,6 +62,8 @@ impl Plugin for PanoplyCorePlugin {
             .init_resource::<GameFonts>()
             .init_resource::<Sunlight>()
             .init_resource::<ViewportInset>()
+            .init_resource::<QuitGate>()
+            .add_message::<QuitRequest>()
             .add_message::<GotoLocation>()
             .add_systems(Update, (load_realms, viewpoint_transitions, goto_location))
             .add_systems(

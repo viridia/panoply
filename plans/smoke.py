@@ -310,6 +310,12 @@ def realm_panel(driver):
     driver.present("RealmPanel/warehouse-smoke")
     expect_disabled(driver, "Save", False)
 
+    # With the point unsaved, Escape asks first, and Cancel stays.
+    driver.key("Escape")
+    driver.present("QuitDialog")
+    driver.click("QuitDialog/Cancel")
+    driver.absent("QuitDialog")
+
     # Undo removes the point, and redo brings it back. Before Save, whose reload would overwrite
     # the edits (PAN57).
     undo(driver)
@@ -351,6 +357,10 @@ def realm_panel(driver):
         driver.click("RemoveNavPoint")
         driver.absent("RealmPanel/warehouse-smoke")
         expect_disabled(driver, "Save", False)
+        # Saved again, so that nothing is unsaved when the plan's last Escape quits.
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
     finally:
         LOCATIONS.write_bytes(original)
 

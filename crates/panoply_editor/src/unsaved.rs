@@ -74,7 +74,7 @@ impl ClassBinding for DroppedKey {
 
 /// The order of the systems of each saveable asset type.
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-enum SaveSystems {
+pub(crate) enum SaveSystems {
     /// Reads asset events. Before [`SaveSystems::Write`], so that the event of an edit made just
     /// before a save is gone by the time the save starts waiting.
     Track,

@@ -3,10 +3,11 @@ use std::time::Duration;
 use bevy::{
     ecs::system::NonSendMarker,
     prelude::*,
-    settings::{ReflectSettingsGroup, SaveSettingsDeferred, SaveSettingsSync, SettingsGroup},
+    settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
     window::{PrimaryWindow, WindowCloseRequested, WindowMode, WindowResized, WindowResolution},
     winit::WINIT_WINDOWS,
 };
+use panoply_core::QuitRequest;
 
 /// Settings group which remembers the window position, size and fullscreen state.
 #[derive(Resource, SettingsGroup, Reflect, Default, Clone, PartialEq, Debug)]
@@ -25,7 +26,7 @@ pub struct WindowSettingsPlugin;
 impl Plugin for WindowSettingsPlugin {
     fn build(&self, app: &mut App) {
         init_window_settings(app);
-        app.add_systems(Update, (update_window_settings, save_on_window_close));
+        app.add_systems(Update, (update_window_settings, quit_on_window_close));
     }
 }
 
@@ -98,11 +99,14 @@ fn update_window_settings(
     }
 }
 
-/// Save settings and exit when the window is closed. Requires
-/// `WindowPlugin::exit_condition` to be `ExitCondition::DontExit`.
-fn save_on_window_close(mut close: MessageReader<WindowCloseRequested>, mut commands: Commands) {
+/// Asks to quit when the window's close button is pressed. Requires `WindowPlugin` to have
+/// `exit_condition` be `ExitCondition::DontExit` and `close_when_requested` off, so that the window
+/// stays open if the quit is held.
+fn quit_on_window_close(
+    mut close: MessageReader<WindowCloseRequested>,
+    mut requests: MessageWriter<QuitRequest>,
+) {
     if close.read().next().is_some() {
-        commands.queue(SaveSettingsSync::IfChanged);
-        commands.write_message(AppExit::Success);
+        requests.write(QuitRequest);
     }
 }

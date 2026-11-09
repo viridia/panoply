@@ -54,6 +54,8 @@ fn main() {
                 }),
                 // Intercept exit so that settings can be saved.
                 exit_condition: ExitCondition::DontExit,
+                // The close button asks first, while there is unsaved work (`QuitGate`).
+                close_when_requested: false,
                 ..default()
             })
             .set(AssetPlugin::default())
