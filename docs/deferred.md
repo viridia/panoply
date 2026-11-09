@@ -147,8 +147,9 @@ dropped, not deferred. Numbers are never reused.
   *Gate:* BSN assets, with shared scenes or a definition tree spawned once per asset, and SAGA
   formulas in assets.
 - **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
-  eviction; a save is only a root index of chunk versions. Design and what it asks of the
-  engine in [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk.
+  eviction; a save is only a root index of chunk versions. Design and what it asks of the engine in
+  [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
+  angle is saved too; a load follows the player with `Viewpoint::follow_snapped`, which keeps it.
   *Gate:* actors restored (the first content with real mutable state).
 - **X19** Cutaways: when the player is under a ceiling, scenery above them is hidden, including
   actors on those floors. Rects are authored per tier (`TierSer.cutaways`); choosing them and the 3D

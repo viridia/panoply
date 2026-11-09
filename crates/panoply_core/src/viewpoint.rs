@@ -13,6 +13,9 @@ pub struct Viewpoint {
     /// The active entity (R102), whose `Transform` the viewpoint follows. Moving the viewpoint
     /// any other way (`GotoLocation`, the free camera's keys) clears it.
     pub follow: Option<Entity>,
+    /// Whether the next follow step lands on the entity rather than chasing it; see
+    /// [`Viewpoint::follow_snapped`].
+    pub follow_snap: bool,
     pub position: Vec3,
     pub azimuth: f32,
     pub elevation: f32,
@@ -21,6 +24,14 @@ pub struct Viewpoint {
 }
 
 impl Viewpoint {
+    /// Follow `entity`, landing on it at once whatever the distance, as after a change of realm or
+    /// a loaded game. The azimuth stays as it is.
+    pub fn follow_snapped(&mut self, entity: Entity) -> &mut Self {
+        self.follow = Some(entity);
+        self.follow_snap = true;
+        self
+    }
+
     /// Move the viewpoint to a new position
     pub fn _move_to(&mut self, position: Vec3) -> &mut Self {
         self.position = position;
@@ -169,12 +180,16 @@ pub fn follow_active_entity(
     };
     let Ok(transform) = transforms.get(entity) else {
         viewpoint.follow = None;
+        viewpoint.follow_snap = false;
         return;
     };
     let aim = transform.translation + Vec3::Y * FOLLOW_HEIGHT;
     let offset = aim - viewpoint.position;
     let distance = offset.length();
-    if distance >= FOLLOW_JUMP {
+    if viewpoint.follow_snap {
+        viewpoint.position = aim;
+        viewpoint.follow_snap = false;
+    } else if distance >= FOLLOW_JUMP {
         viewpoint.position = aim;
         let (facing, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
         viewpoint.azimuth = facing.rem_euclid(PI * 2.);

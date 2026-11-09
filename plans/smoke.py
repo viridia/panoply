@@ -2,7 +2,8 @@
 
     bevy-remote-driver plans/smoke.py
 
-- Camera: the arrows move, strafe and turn the view, and = and - zoom it.
+- Camera: the arrows move, strafe and turn the view, which the editor's saved view tracks, and
+  = and - zoom it.
 - Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
   Screenshots at a scenery element (walls, and the road from terrain effects) and at the origin
   (the tiered dungeon floors of precinct 0,0).
@@ -45,6 +46,7 @@ VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 VIEWS = "panoply_editor::debug_views::DebugViews"
 PROBE = "panoply_editor::debug_views::GroundProbe"
 PANEL = "panoply_editor::shell::EditorPanelSettings"
+SAVED_VIEW = "panoply_editor::saved_view::EditorViewSettings"
 INSET = "panoply_core::viewport::ViewportInset"
 GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
@@ -131,6 +133,10 @@ def camera(driver):
     hold(driver, "ArrowRight", 0.3)
     after = driver.get("PrimaryCamera", TRANSFORM)["rotation"]
     assert before != after, f"the view did not turn: {before}"
+
+    saved = driver.get_resource(SAVED_VIEW)
+    assert saved["realm"] == "playground", saved
+    assert all(abs(a - b) < 0.5 for a, b in zip(saved["position"], strafed)), saved
 
     # Zooming in brings the camera closer. (Plans run with their own settings, so this never
     # touches the developer's saved zoom.)

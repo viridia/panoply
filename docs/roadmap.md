@@ -21,10 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN56 Saved editor view.** The editor's realm, position and azimuth saved between runs, as faery
-  did, so an iteration need not navigate back: a settings group beside `ZoomSettings`, written with
-  its debounce and only when the view changes. The saved realm comes before `nav_to_center`'s
-  default, which remains the fallback when that realm is gone.
 - **PAN35 Create and Change Realm.** Two buttons in the realm panel, each opening a modal dialog:
   Create Realm asks for a name in PAN29's text-entry dialog and makes a new, empty realm; Change
   Realm picks one of the realms in a list-selection dialog and moves the view there. The dialog
@@ -183,7 +179,9 @@ components and every layer restartable from saved state (R104).
   them (D37, D40); which one is open. The old code's portal aspect attaches to walls and fixtures
   (`panoply_scenery`'s instance types), its views need `panoply_core`'s realms and cameras, and
   crossing moves the player (R31, `panoply_actors`). First candidate: a crate of their own,
-  `panoply_portals`, over scenery and actors.
+  `panoply_portals`, over scenery and actors. Decide here, once crossing can be felt, how the view
+  changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
+  while `follow_active_entity`'s far jump turns to the actor's facing.
 - **PAN5 Editor**, beyond PAN1's shell (see X3). `src/editor`, written for Quill, is reference
   (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The author has screenshots
   of faery's editor. Its tools, modal (one per mode or submode button) or situational (the waypoint

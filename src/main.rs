@@ -176,6 +176,10 @@ fn setup(mut commands: Commands) {
 }
 
 fn nav_to_center(mut viewpoint: ResMut<Viewpoint>, realms: Query<(Entity, &Realm), Added<Realm>>) {
+    // A realm added later, or the editor's saved view, keeps the view where it is.
+    if viewpoint.realm.is_some() {
+        return;
+    }
     // let rname = "overland";
     let rname = "playground";
     if let Some(realm) = realms.iter().find(|r| r.1.name == rname) {

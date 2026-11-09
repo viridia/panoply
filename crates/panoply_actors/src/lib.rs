@@ -214,7 +214,10 @@ fn spawn_player(
         Visibility::default(),
         Propagate(realm.layer.clone()),
     ));
-    viewpoint.follow = Some(actor.id());
+    // A view already placed (the editor's saved view) stays there; entering play follows the actor.
+    if viewpoint.position == Vec3::ZERO {
+        viewpoint.follow = Some(actor.id());
+    }
     *spawned = true;
 }
 

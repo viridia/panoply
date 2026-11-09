@@ -105,13 +105,19 @@ pub(crate) fn drive_player(
     }
 }
 
-/// Entering play, the camera follows the player's actor again, wherever the free camera left it.
+/// Entering play, the camera follows the player's actor again, in its realm, wherever the free
+/// camera left it.
 pub(crate) fn follow_player(
     mut viewpoint: ResMut<Viewpoint>,
-    players: Query<Entity, With<PlayerActor>>,
+    players: Query<(Entity, &Actor), With<PlayerActor>>,
 ) {
-    if let Ok(player) = players.single() {
-        viewpoint.follow = Some(player);
+    if let Ok((player, actor)) = players.single() {
+        if viewpoint.realm == Some(actor.realm) {
+            viewpoint.follow = Some(player);
+        } else {
+            viewpoint.realm = Some(actor.realm);
+            viewpoint.follow_snapped(player);
+        }
     }
 }
 

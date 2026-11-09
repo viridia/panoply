@@ -15,6 +15,7 @@ pub mod mode_selector;
 pub mod nav_point_list;
 pub mod quit_dialog;
 pub mod realm_panel;
+pub mod saved_view;
 pub mod search_filter;
 pub mod shell;
 pub mod text_entry;
@@ -38,6 +39,7 @@ impl Plugin for EditorPlugin {
             mode_selector::ModeSelectorPlugin,
             quit_dialog::QuitDialogPlugin,
             realm_panel::RealmPanelPlugin,
+            saved_view::SavedViewPlugin,
             text_entry::TextEntryPlugin,
             toast::ToastPlugin,
             undo::UndoPlugin,

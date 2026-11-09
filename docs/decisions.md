@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D64.**
+**Next: D65.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -500,3 +500,10 @@ never reused.
   the camera. A tiny `SpatialScale` holds rodio's inverse-square distance term at 1, which would
   otherwise measure from the camera and change with zoom. Reversing it means tuning the scale
   against the camera distance and losing the authored cut-off at 16 m. (PAN64)
+- **D64** The camera works as film and theatre do: a jump in space or time (another realm, a
+  teleport, a passage of time) is a hard cut, and movement within a scene a smooth change of view. A
+  gliding camera across a jump reads as travel that did not happen. `Go To` and
+  `Viewpoint::follow_snapped` cut; D42's trailing is the smooth case. In play, restoring a saved
+  game and respawning after death always cut, however near; a cut scene's change of focus to another
+  character is smooth when the two are near, for continuity, which setting `follow` already gives,
+  and cuts when they are far. (PAN56)
