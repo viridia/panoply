@@ -21,14 +21,26 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN38 Terrain sculpting.** Terrain mode's panel and its tool palette: raise, lower and flatten,
-  each by brush or by rectangle; draw trees, shrubs and herbs, and erase flora; rotate the selected
-  parcel's contour. Ported from the Quill editor (`REFERENCE(PAN5)`): `ui/mode_terrain.rs`,
-  `ui/tool_terrain_edit.rs`, `ui/overlays/terrain_cursor.rs` and `selected_parcel.rs`,
-  `terrain/terrain_map_undo.rs`. Edits mark the terrain map unsaved for PAN29's save button and go
-  on PAN42's undo stack. The cursor and selected parcel are mode overlays (`mode_overlays.rs`)
-  draped on the ground, which `panoply_overlays`' flat shapes cannot do: decide here between a
-  draping builder (gizmoids' `Line3dBuilder`, reviewed as `ShapeBuilder` was) and retained gizmos.
+PAN38, Terrain mode's panel, in lettered parts: its layout, then its tools. PAN39 and PAN40 fill the
+rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs`,
+`ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
+asset unsaved and goes on the undo stack.
+
+- **PAN38a Terrain panel layout.** Terrain mode's panel in faery's arrangement: on the left the tool
+  palette, four rows of three (raise, lower, flatten by brush; the same by rectangle; trees, shrubs,
+  herbs; erase flora, rotate counter-clockwise, rotate clockwise), with faery's icons; below it the
+  places for Has water and Has terrain, Terrain Groups and Biomes; on the right the contour list's.
+  A palette button shows as chosen and does nothing yet; the other places are empty until their
+  parts fill them.
+- **PAN38b Parcel selection.** A click on the ground selects a parcel, outlined by a mode overlay
+  (`mode_overlays.rs`) draped on the ground, which `panoply_overlays`' flat shapes cannot do: decide
+  here between a draping builder (gizmoids' `Line3dBuilder`, reviewed as `ShapeBuilder` was) and
+  retained gizmos. The rotate buttons turn the selected parcel's contour, an edit to the terrain map
+  (`ui/overlays/selected_parcel.rs`, `terrain/terrain_map_undo.rs`).
+- **PAN38c Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, with a
+  draped cursor (`ui/overlays/terrain_cursor.rs`). They edit the contour, so every parcel that uses
+  it changes: the contours table becomes saveable here (`terrain/terrain_contour_undo.rs`).
+- **PAN38d Flora drawing.** Draw trees, shrubs and herbs into the contour, and erase them.
 - **PAN39 Contour chooser.** The terrain contours as a list of 3D thumbnails, choosing the selected
   parcel's contour, with controls to group and order the list (faery's + − ▲ ▼, `terrain.png`). From
   the Quill editor's `ui/controls/contour_chooser.rs`, `renderers/terrain_thumbnail.rs` and
