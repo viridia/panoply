@@ -3,6 +3,9 @@ pub const PARCEL_SIZE_F: f32 = PARCEL_SIZE as f32;
 pub const PARCEL_SIZE_U: usize = PARCEL_SIZE as usize;
 pub const PARCEL_HEIGHT_SCALE: f32 = 0.5;
 
+/// The water's surface, in meters.
+pub const WATER_HEIGHT: f32 = -0.4;
+
 pub const PARCEL_WATER_RESOLUTION: usize = 32;
 pub const PARCEL_WATER_STRIDE: usize = PARCEL_WATER_RESOLUTION + 1;
 pub const PARCEL_WATER_VERTEX_COUNT: usize = PARCEL_WATER_STRIDE * PARCEL_WATER_STRIDE;

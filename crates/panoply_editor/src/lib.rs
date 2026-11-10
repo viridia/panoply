@@ -18,11 +18,13 @@ pub mod mode_overlays;
 pub mod mode_selector;
 pub mod nav_point_list;
 pub mod new_realm;
+pub mod parcel_selection;
 pub mod quit_dialog;
 pub mod realm_panel;
 pub mod saved_view;
 pub mod search_filter;
 pub mod shell;
+pub mod terrain_map_edit;
 pub mod terrain_panel;
 pub mod text_entry;
 pub mod toast;
@@ -48,6 +50,7 @@ impl PluginGroup for EditorPlugins {
             .add(nav_point_list::NavPointListPlugin)
             .add(new_realm::NewRealmPlugin)
             .add(map_size::MapSizePlugin)
+            .add(parcel_selection::ParcelSelectionPlugin)
             .add(mode_selector::ModeSelectorPlugin)
             .add(quit_dialog::QuitDialogPlugin)
             .add(realm_panel::RealmPanelPlugin)

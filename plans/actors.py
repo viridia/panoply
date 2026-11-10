@@ -49,6 +49,7 @@ CONTAINER_STATE = "panoply_scenery::container_aspect::ContainerState"
 TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
 WINDOW = "bevy_window::window::Window"
+NAME = "bevy_ecs::name::Name"
 CURSOR_ICON = "bevy_window::cursor::CursorIcon"
 CURSOR_OPTIONS = "bevy_window::window::CursorOptions"
 WINDOW_EVENT = "bevy_window::event::WindowEvent"
@@ -379,7 +380,8 @@ def prompt(driver):
 
 
 def check_cursor(driver, chest):
-    """In play, the pointer picks the chest, and the backstop off it; in the editor, neither. Scans
+    """In play, the pointer picks the chest, and the backstop off it; in the editor, neither, but
+    the ground's parcel, with the system cursor. Scans
     outward from the middle of the view, which follows the player, standing beside the chest. BRP
     cannot read a custom cursor, which holds an image handle: which one shows is checked by eye."""
     row = driver.call(
@@ -440,8 +442,11 @@ def check_cursor(driver, chest):
     assert cursor_visible(), "the cursor did not return on moving"
     driver.mode("Edit")
     driver.frames(5)
+    # In the editor the game's picking is off: the pointer is over the ground's parcel, which the
+    # editor picks, not the chest.
     over = hover(middle[0], middle[1])
-    assert over == window, f"over {over} in the editor, not the window {window}"
+    name = driver.call("world.get_components", {"entity": over, "components": [NAME]})
+    assert name["components"][NAME].startswith("Parcel:"), f"over {name} in the editor"
     icon = driver.call("world.get_components", {"entity": window, "components": [CURSOR_ICON]})
     assert "Custom" not in icon["components"][CURSOR_ICON], f"the game's cursor: {icon}"
     driver.mode("Play")

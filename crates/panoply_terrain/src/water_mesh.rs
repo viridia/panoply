@@ -20,10 +20,8 @@ use panoply_core::Realm;
 use super::{
     compute_interpolated_mesh, compute_smoothed_mesh, terrain_map::TerrainMap, PARCEL_HEIGHT_SCALE,
     PARCEL_MESH_STRIDE, PARCEL_MESH_VERTEX_COUNT, PARCEL_WATER_RESOLUTION,
-    PARCEL_WATER_VERTEX_COUNT,
+    PARCEL_WATER_VERTEX_COUNT, WATER_HEIGHT,
 };
-
-const WATER_HEIGHT: f32 = -0.4;
 
 /// Spawns a task for each parcel to compute the water mesh geometry.
 pub fn gen_water_meshes(

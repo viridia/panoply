@@ -3,10 +3,9 @@
 //! turned with the camera's azimuth and squashed by its tilt, so each edge's buttons lie on the
 //! side of the control where that edge lies on screen. Each arrow points the way its edge moves.
 //!
-//! A press resizes the view realm's terrain map in memory, where the grid and the ground show it at
-//! once, marks it unsaved for the save button, and can be undone.
+//! A press resizes the view realm's terrain map, an edit (`terrain_map_edit.rs`).
 
-use std::{borrow::Cow, f32::consts::PI};
+use std::f32::consts::PI;
 
 use bevy::{
     feathers::{constants::icons, controls::FeathersButton, display::icon},
@@ -14,13 +13,8 @@ use bevy::{
     ui_widgets::Activate,
 };
 use panoply_core::Viewpoint;
-use panoply_terrain::{TerrainMap, TerrainMapAsset};
 
-use crate::{
-    mode_selector::EditorMode,
-    undo::{UndoAction, UndoStack},
-    unsaved::UnsavedAssets,
-};
+use crate::{mode_selector::EditorMode, terrain_map_edit::TerrainMapEdits};
 
 /// The grid's side cells, which hold the buttons' short sides, and its middle cell.
 const CELL: f32 = 16.0;
@@ -204,71 +198,17 @@ fn follow_camera(
 }
 
 /// Observer on each button: resizes the view realm's terrain map.
-fn resize_map(
-    activate: On<Activate>,
-    edges: Query<&MapEdge>,
-    viewpoint: Res<Viewpoint>,
-    terrain_maps: Query<&TerrainMap>,
-    mut assets: ResMut<Assets<TerrainMapAsset>>,
-    mut unsaved: ResMut<UnsavedAssets>,
-    mut history: ResMut<UndoStack>,
-    mode: Res<State<EditorMode>>,
-) {
+fn resize_map(activate: On<Activate>, edges: Query<&MapEdge>, mut edits: TerrainMapEdits) {
     let Ok(edge) = edges.get(activate.event_target()) else {
         return;
     };
-    let Some(terrain) = viewpoint.realm.and_then(|e| terrain_maps.get(e).ok()) else {
-        warn!("Map not resized: the view realm has no terrain map");
-        return;
-    };
-    let Some(before) = assets.get(&terrain.handle).cloned() else {
-        return;
-    };
-    let Some(bounds) = edge.resized(before.bounds) else {
-        return;
-    };
-    if let Some(mut map) = assets.get_mut(&terrain.handle) {
+    edits.edit("Resize map", |map| {
+        let Some(bounds) = edge.resized(map.bounds) else {
+            return false;
+        };
         map.resize(bounds);
-    }
-    unsaved.mark(&terrain.handle);
-    history.push(
-        *mode.get(),
-        TerrainMapUndo {
-            asset: terrain.handle.id(),
-            map: before,
-        },
-    );
-}
-
-/// Puts back a terrain map as it was before a resize.
-struct TerrainMapUndo {
-    asset: AssetId<TerrainMapAsset>,
-    map: TerrainMapAsset,
-}
-
-impl UndoAction for TerrainMapUndo {
-    fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction> {
-        let TerrainMapUndo { asset, map } = *self;
-        let replaced = {
-            let mut assets = world.resource_mut::<Assets<TerrainMapAsset>>();
-            assets
-                .get_mut(asset)
-                .map(|mut current| std::mem::replace(&mut *current, map.clone()))
-        };
-        let Some(replaced) = replaced else {
-            warn!("Resize map did nothing: the terrain map is gone");
-            return Box::new(TerrainMapUndo { asset, map });
-        };
-        world.resource_mut::<UnsavedAssets>().mark(asset);
-        Box::new(TerrainMapUndo {
-            asset,
-            map: replaced,
-        })
-    }
-
-    fn label(&self) -> Cow<'static, str> {
-        "Resize map".into()
-    }
+        true
+    });
 }
 
 #[cfg(test)]

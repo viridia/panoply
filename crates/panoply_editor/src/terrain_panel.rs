@@ -23,6 +23,7 @@ use bevy_immediate::{
 
 use crate::{
     mode_selector::{EditorModeSettings, TerrainTool},
+    parcel_selection::SelectedParcelEdits,
     shell::SAVE_DELAY,
 };
 
@@ -40,25 +41,37 @@ const BUTTON_WIDTH: f32 = 44.0;
 const BUTTON_HEIGHT: f32 = 44.0;
 const COLUMNS: usize = 3;
 
-/// The palette's buttons, in rows of three: a name, its icon and the icon's height, and the tool it
-/// chooses, or none for the rotate buttons. Each icon keeps its own aspect, at the height that
-/// fits it in 40 by 32. The PNGs are exported at twice these heights, 1:1 on a high-density
-/// display, with black in their transparent pixels: filtering blends that colour into an icon's
-/// edge, and Inkscape's default white shows as a light fringe.
-const BUTTONS: [(&str, &str, f32, Option<TerrainTool>); 12] = [
-    ("RaiseDraw", "editor/icons/raise-draw.png", 32., Some(TerrainTool::RaiseDraw)),
-    ("LowerDraw", "editor/icons/lower-draw.png", 32., Some(TerrainTool::LowerDraw)),
-    ("FlattenDraw", "editor/icons/flatten-draw.png", 32., Some(TerrainTool::FlattenDraw)),
-    ("RaiseRect", "editor/icons/raise-rect.png", 32., Some(TerrainTool::RaiseRect)),
-    ("LowerRect", "editor/icons/lower-rect.png", 32., Some(TerrainTool::LowerRect)),
-    ("FlattenRect", "editor/icons/flatten-rect.png", 32., Some(TerrainTool::FlattenRect)),
-    ("DrawTrees", "editor/icons/pine.png", 32., Some(TerrainTool::DrawTrees)),
-    ("DrawShrubs", "editor/icons/shrub.png", 32., Some(TerrainTool::DrawShrubs)),
-    ("DrawHerbs", "editor/icons/herb.png", 32., Some(TerrainTool::DrawHerbs)),
-    ("EraseFlora", "editor/icons/chop.png", 32., Some(TerrainTool::EraseFlora)),
-    ("RotateCcw", "editor/icons/rotate-ccw.png", 26., None),
-    ("RotateCw", "editor/icons/rotate-cw.png", 26., None),
-];
+/// What a palette button does: choose a tool, or turn the selected parcel's contour by a number of
+/// quarter turns.
+#[derive(Clone, Copy, PartialEq)]
+enum PaletteAction {
+    Tool(TerrainTool),
+    Rotate(u8),
+}
+
+/// The palette's buttons, in rows of three: a name, its icon and the icon's height, and what it
+/// does. Each icon keeps its own aspect, at the height that fits it in 40 by 32. The PNGs are
+/// exported at twice these heights, 1:1 on a high-density display, with black in their transparent
+/// pixels: filtering blends that colour into an icon's edge, and Inkscape's default white shows as
+/// a light fringe.
+const BUTTONS: [(&str, &str, f32, PaletteAction); 12] = {
+    use PaletteAction::{Rotate, Tool};
+    [
+        ("RaiseDraw", "editor/icons/raise-draw.png", 32., Tool(TerrainTool::RaiseDraw)),
+        ("LowerDraw", "editor/icons/lower-draw.png", 32., Tool(TerrainTool::LowerDraw)),
+        ("FlattenDraw", "editor/icons/flatten-draw.png", 32., Tool(TerrainTool::FlattenDraw)),
+        ("RaiseRect", "editor/icons/raise-rect.png", 32., Tool(TerrainTool::RaiseRect)),
+        ("LowerRect", "editor/icons/lower-rect.png", 32., Tool(TerrainTool::LowerRect)),
+        ("FlattenRect", "editor/icons/flatten-rect.png", 32., Tool(TerrainTool::FlattenRect)),
+        ("DrawTrees", "editor/icons/pine.png", 32., Tool(TerrainTool::DrawTrees)),
+        ("DrawShrubs", "editor/icons/shrub.png", 32., Tool(TerrainTool::DrawShrubs)),
+        ("DrawHerbs", "editor/icons/herb.png", 32., Tool(TerrainTool::DrawHerbs)),
+        ("EraseFlora", "editor/icons/chop.png", 32., Tool(TerrainTool::EraseFlora)),
+        // Three quarter turns one way are one the other.
+        ("RotateCcw", "editor/icons/rotate-ccw.png", 26., Rotate(3)),
+        ("RotateCw", "editor/icons/rotate-cw.png", 26., Rotate(1)),
+    ]
+};
 
 pub struct TerrainPanelPlugin;
 
@@ -125,8 +138,10 @@ fn list_place() -> impl Scene {
 #[derive(SystemParam)]
 struct TerrainPaletteParams<'w, 's> {
     settings: ResMut<'w, EditorModeSettings>,
-    /// The tool the buttons last showed: `is_changed` would miss the palette's own changes.
-    shown: Local<'s, Option<TerrainTool>>,
+    parcel: SelectedParcelEdits<'w, 's>,
+    /// The tool the buttons last showed, and whether the rotate buttons were enabled: `is_changed`
+    /// would miss the palette's own changes.
+    shown: Local<'s, Option<(TerrainTool, bool)>>,
     commands: Commands<'w, 's>,
 }
 
@@ -134,16 +149,19 @@ impl ImmediateAttach<CapsUiFeathers> for TerrainPalette {
     type Params = TerrainPaletteParams<'static, 'static>;
 
     /// A button per tool, each named for its tool, the chosen one highlighted, then the rotate
-    /// buttons, disabled until there is a parcel to rotate. The grid's outer corners are rounded.
+    /// buttons, disabled while no parcel is selected. The grid's outer corners are rounded.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut TerrainPaletteParams) {
         // Edit a copy: writing through `ResMut` every frame would mark the settings changed every
         // frame.
         let mut settings = *params.settings;
-        let changed = *params.shown != Some(settings.terrain_tool);
-        *params.shown = Some(settings.terrain_tool);
+        let can_rotate = params.parcel.parcel().is_some();
+        let shown = Some((settings.terrain_tool, can_rotate));
+        let changed = *params.shown != shown;
+        *params.shown = shown;
+        let mut turns = None;
         let last = BUTTONS.len() - 1;
-        for (index, &(name, image, height, tool)) in BUTTONS.iter().enumerate() {
-            let selected = tool == Some(settings.terrain_tool);
+        for (index, &(name, image, height, action)) in BUTTONS.iter().enumerate() {
+            let selected = action == PaletteAction::Tool(settings.terrain_tool);
             let corners = match index {
                 0 => RoundedCorners::TopLeft,
                 i if i == COLUMNS - 1 => RoundedCorners::TopRight,
@@ -172,12 +190,32 @@ impl ImmediateAttach<CapsUiFeathers> for TerrainPalette {
                 })
                 .on_spawn_insert(move || Name::new(name))
                 .on_change_insert(changed, move || ButtonVariant::selected(selected));
-            if tool.is_none() {
-                button = button.on_spawn_insert(|| InteractionDisabled);
+            match action {
+                PaletteAction::Tool(tool) => {
+                    if button.activated() {
+                        settings.terrain_tool = tool;
+                    }
+                }
+                PaletteAction::Rotate(by) => {
+                    let update = button.will_be_spawned() || changed;
+                    button = button.at_this_moment_apply_commands_if(
+                        |commands| {
+                            if can_rotate {
+                                commands.remove::<InteractionDisabled>();
+                            } else {
+                                commands.insert(InteractionDisabled);
+                            }
+                        },
+                        || update,
+                    );
+                    if button.activated() {
+                        turns = Some(by);
+                    }
+                }
             }
-            if let (Some(tool), true) = (tool, button.activated()) {
-                settings.terrain_tool = tool;
-            }
+        }
+        if let Some(turns) = turns {
+            params.parcel.rotate(turns);
         }
         if params.settings.set_if_neq(settings) {
             params.commands.queue(SaveSettingsDeferred(SAVE_DELAY));

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X81.**
+**Next: X83.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -504,3 +504,11 @@ dropped, not deferred. Numbers are never reused.
 - **X80** Nav points drawn as markers in the editor's view, those of other realms dimmed, so an
   underground level can be laid out against its overland counterpart without showing two realms at
   once. *Gate:* building a level that needs it; at the earliest, PAN36's overlays.
+- **X81** A switch for the selected parcel's overlay between the contour as edited, which it shows
+  now, and the smoothed ground the game draws, as faery had. *Gate:* sculpting (PAN38c) that needs
+  to see where the smoothed ground lies.
+- **X82** Picking the selected parcel's contour as drawn, before smoothing, as faery did with a
+  low-resolution mesh of it (`Editor.ts`, `pickTerrain`): a rapier `HeightField` built from the
+  contour and cast at by ray, outside any physics world. Today a click lands on the smoothed ground,
+  which can lie off the contour's lines. *Gate:* sculpting (PAN38c) landing visibly off the point
+  aimed at.

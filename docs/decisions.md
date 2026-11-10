@@ -517,7 +517,10 @@ never reused.
   depends on, written only on a difference, and the mesh is rebuilt when it changes: faery's many
   tool overlays without a reactive framework, each a shape and a short update system. The crate
   holds no Panoply types, so it can leave the workspace. Reversing it means immediate gizmos,
-  redrawn every frame and without the faint underlay where the scene hides them. (PAN36)
+  redrawn every frame and without the faint underlay where the scene hides them. (PAN36) Terrain
+  overlays are lines instead, Bevy's retained gizmos (`Gizmo`, `GizmoAsset`), rebuilt the same way:
+  a contour seen edge-on loses a flat stroke but not a line, and the underlay, which shows where an
+  overlay passes through scenery, matters little on the ground. (PAN38b)
 - **D67** An actor moves, and gets physics, only where its footprint is built: every parcel and
   precinct under its capsule plus half a metre is loaded and has no colliders still to build
   (`GroundReady`, the `area_waiting` of `TerrainPending` and `SceneryPending`). Elsewhere it holds

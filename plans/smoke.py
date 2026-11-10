@@ -10,7 +10,8 @@
   (the tiered dungeon floors of precinct 0,0).
 - Actors: after that tour, which evicts the ground under the actors at the start, none is falling.
 - Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
-  Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play.
+  Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play;
+  its rotate buttons wait for a selected parcel, whose contour is drawn.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -19,7 +20,8 @@
   (restored afterwards); − removes the point. Create Realm refuses a name in use or one that
   cannot name a file, writes a new realm (deleted afterwards) and cuts to it. There the map size
   control grows and shrinks the map, keeps a parcel, undoes, takes clicks turned with the view,
-  and saves. Change Realm filters the realms and goes back, keeping the view's coordinates.
+  and saves; the playground's selected parcel does not count there, and a parcel selected there
+  turns, undoably. Change Realm filters the realms and goes back, keeping the view's coordinates.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
   Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
@@ -52,6 +54,7 @@ INSET = "panoply_core::viewport::ViewportInset"
 GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
 TERRAIN_TOOL = "panoply_editor::mode_selector::TerrainTool"
+SELECTION = "panoply_editor::parcel_selection::ParcelSelection"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
 VIRTUAL = "bevy_time::time::Time<bevy_time::virt::Virtual>"
 BUTTON_VARIANT = "bevy_feathers::controls::button::ButtonVariant"
@@ -63,6 +66,8 @@ TOOL_BUTTONS = [
 WAIT = {"frames": 900, "seconds": 45}
 # Forest, shoreline, water, grass and rocks.
 SPOT = [110.0, 0.0, 150.0]
+# The parcel under `SPOT`, 16 m on a side.
+SPOT_PARCEL = [6, 9]
 # Far from `SPOT`, past the playground's terrain.
 FAR = [400.0, 0.0, 400.0]
 # The nav point "test-inn", from `world.locations.json`.
@@ -250,6 +255,14 @@ def editor(driver):
     wait_mode(driver, terrain_tool, "DrawShrubs")
     expect_highlight(driver, "DrawShrubs", TOOL_BUTTONS)
     driver.screenshot("terrain_panel")
+    # The rotate buttons wait for a selected parcel, whose contour is drawn. The driver cannot
+    # click the ground, so the plan selects through the setting.
+    expect_disabled(driver, "RotateCw", True)
+    driver.goto(SPOT, 20.0)
+    select_parcel(driver, "playground", SPOT_PARCEL)
+    expect_disabled(driver, "RotateCw", False)
+    driver.present("SelectedContour")
+    driver.screenshot("selected_parcel")
     driver.click("PlayMode")
     wait_mode(driver, game_mode, "Play")
     driver.key("F2")
@@ -402,6 +415,7 @@ def create_and_change_realm(driver):
         driver.click("GrowWest")
         driver.expect("RealmPanel/Size", TEXT, "2 × 2 parcels")
         driver.screenshot("map_size")
+        rotate_contour(driver)
         # Save writes the terrain map, which the reload brings back the same size.
         driver.click("Save")
         expect_disabled(driver, "Save", True)
@@ -424,6 +438,27 @@ def create_and_change_realm(driver):
     finally:
         for file in files:
             file.unlink(missing_ok=True)
+
+
+def select_parcel(driver, realm, parcel):
+    driver.set_resource(SELECTION, {"realm": realm, "parcel": parcel})
+
+
+def rotate_contour(driver):
+    """In the new realm, whose map is 2 × 2 parcels from (-1, 0): the playground's selection does
+    not count here, and the rotate buttons turn a parcel selected here, undoably."""
+    driver.click("TerrainMode")
+    wait_mode(driver, editor_mode, "Terrain")
+    expect_disabled(driver, "RotateCw", True)
+    select_parcel(driver, "smoke-realm", [0, 0])
+    expect_disabled(driver, "RotateCw", False)
+    driver.click("RotateCw")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Rotate contour")
+    undo(driver, redo=True)
+    driver.expect("Toast/ToastText", TEXT, "Redo: Rotate contour")
+    driver.click("RealmMode")
+    wait_mode(driver, editor_mode, "Realm")
 
 
 def undo(driver, redo=False):
