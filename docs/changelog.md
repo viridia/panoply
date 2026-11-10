@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN38c** Terrain mode's sculpting tools show where they will act, and draw the parcel grid.
 - **PAN38b** In terrain mode a click selects a parcel, showing its contour, which Rotate turns.
 - **PAN66c** Under overload the game slows down, at worst, rather than freezing.
 - **PAN66b** Actors away from the view hold still while their ground is unloaded, not falling.

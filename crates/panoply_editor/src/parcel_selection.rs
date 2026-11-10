@@ -6,6 +6,9 @@
 //! While editing, the ground is picked by its colliders, as play picks (D61), but only the ground:
 //! the hit is reported on the parcel, with the point hit. The water's surface is picked too, by ray
 //! math, so that a parcel with no ground, or ground far below the water, is picked where it is seen.
+//! So is the selected parcel's contour, as drawn: the ground smooths it, and along the parcel's
+//! edges blends it with its neighbors', which can leave the ground far from the lines a tool is
+//! aimed by.
 
 use bevy::{
     ecs::system::SystemParam,
@@ -26,7 +29,10 @@ use panoply_terrain::{
 };
 use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
-use crate::{mode_selector::EditorMode, shell::SAVE_DELAY, terrain_map_edit::TerrainMapEdits};
+use crate::{
+    mode_overlays::SelectedContour, mode_selector::EditorMode, shell::SAVE_DELAY,
+    terrain_map_edit::TerrainMapEdits,
+};
 
 /// How far from the camera a pointer's ray can hit the ground, in meters.
 const PICK_RANGE: f32 = 500.;
@@ -68,8 +74,9 @@ impl Plugin for ParcelSelectionPlugin {
     }
 }
 
-/// A picking backend while editing. Casts each pointer's ray at the view realm's ground and at the
-/// water's surface, and reports the parcel under whichever it meets first, with the point.
+/// A picking backend while editing. Casts each pointer's ray at the view realm's ground, at the
+/// water's surface and at the selected contour, and reports the parcel under whichever it meets
+/// first, with the point.
 /// Scenery does not stop the ray, so ground behind a wall can be picked.
 fn pick_ground(
     rays: Res<RayMap>,
@@ -77,6 +84,7 @@ fn pick_ground(
     viewpoint: Res<Viewpoint>,
     realms: Query<&RealmPhysics>,
     cache: Res<ParcelCache>,
+    contours: Query<&SelectedContour>,
     mut hits: MessageWriter<PointerHits>,
 ) {
     let Some(realm) = viewpoint.realm else {
@@ -113,10 +121,21 @@ fn pick_ground(
                 };
                 Some((cache.peek(&key)?, distance))
             });
-        let nearest = match (ground, water) {
-            (Some(g), Some(w)) => Some(if w.1 < g.1 { w } else { g }),
-            (g, w) => g.or(w),
-        };
+        let contour = contours
+            .iter()
+            .find_map(|contour| contour.cast(*ray, PICK_RANGE))
+            .and_then(|(coords, distance)| {
+                let key = ParcelKey {
+                    realm,
+                    x: coords.x,
+                    z: coords.y,
+                };
+                Some((cache.peek(&key)?, distance))
+            });
+        let nearest = [ground, water, contour]
+            .into_iter()
+            .flatten()
+            .min_by(|a, b| a.1.total_cmp(&b.1));
         let Some((parcel, distance)) = nearest else {
             continue;
         };

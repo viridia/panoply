@@ -11,7 +11,8 @@
 - Actors: after that tour, which evicts the ground under the actors at the start, none is falling.
 - Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
   Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play;
-  its rotate buttons wait for a selected parcel, whose contour is drawn.
+  its rotate buttons wait for a selected parcel, whose contour is drawn. A brush tool's cursor
+  follows the pointer over that parcel and stays on its edge while dragged off it.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -78,6 +79,10 @@ UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
 MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
+TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
+REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
+WINDOW = "bevy_window::window::Window"
+WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
 # The arrows fly the view at 10 m/s.
@@ -241,12 +246,12 @@ def editor(driver):
     # The starting mode has its panel too, not only a mode switched to.
     driver.present("RealmPanel")
     driver.screenshot("mode_selector")
-    # Realm mode's grid is drawn only in Realm mode.
-    driver.present("RealmGrid")
+    # Realm mode's grid has precincts; terrain mode's, parcels only.
+    assert driver.get("RealmGrid", REALM_GRID)["parcels_only"] is False
     driver.click("TerrainMode")
     wait_mode(driver, editor_mode, "Terrain")
     expect_highlight(driver, "TerrainMode")
-    driver.absent("RealmGrid")
+    wait_mode(driver, lambda d: d.get("RealmGrid", REALM_GRID)["parcels_only"], True)
     # Terrain mode's palette starts on Raise and chooses the tool.
     driver.present("TerrainPanel")
     assert terrain_tool(driver) == "RaiseDraw", f"started with {terrain_tool(driver)}"
@@ -263,6 +268,7 @@ def editor(driver):
     expect_disabled(driver, "RotateCw", False)
     driver.present("SelectedContour")
     driver.screenshot("selected_parcel")
+    terrain_cursor(driver)
     driver.click("PlayMode")
     wait_mode(driver, game_mode, "Play")
     driver.key("F2")
@@ -438,6 +444,85 @@ def create_and_change_realm(driver):
     finally:
         for file in files:
             file.unlink(missing_ok=True)
+
+
+def terrain_cursor(driver):
+    """Over the selected parcel, a brush tool's cursor surrounds the vertex under the pointer; a
+    drag off the parcel keeps it on the parcel's edge, and off it without a drag none shows. The
+    flora tools have no cursor yet. The view is centered on the parcel."""
+    window, scale, middle, corner = view_points(driver)
+    tool = terrain_tool(driver)
+    driver.click("RaiseDraw")
+    wait_mode(driver, terrain_tool, "RaiseDraw")
+    x0, z0 = (n * 16 for n in SPOT_PARCEL)
+
+    def inside(v):
+        return x0 <= v[0] <= x0 + 16 and z0 <= v[1] <= z0 + 16
+
+    def cursor():
+        return driver.get("TerrainCursor", TERRAIN_CURSOR)
+
+    move_pointer(driver, window, scale, middle)
+    over = cursor()
+    assert over, "no cursor over the selected parcel"
+    vertices = over[0]
+    assert vertices["min"] == vertices["max"] and inside(vertices["min"]), f"cursor at {over}"
+    driver.screenshot("terrain_cursor")
+
+    button(driver, window, "Pressed")
+    move_pointer(driver, window, scale, corner)
+    dragged = cursor()
+    assert dragged, "no cursor dragged off the parcel"
+    v = dragged[0]["min"]
+    on_edge = v[0] in (x0, x0 + 16) or v[1] in (z0, z0 + 16)
+    assert inside(v) and on_edge, f"dragged off the parcel to {v}, not its edge"
+    button(driver, window, "Released")
+    assert cursor() is None, f"cursor off the parcel after the drag: {cursor()}"
+    driver.click(tool)
+    wait_mode(driver, terrain_tool, tool)
+    move_pointer(driver, window, scale, middle)
+    assert cursor() is None, f"a cursor for {tool}: {cursor()}"
+
+
+def view_points(driver):
+    """The window, its scale, and two points in logical pixels: the middle of the view and one
+    near its top-left corner."""
+    row = driver.call(
+        "world.query", {"data": {"components": [WINDOW]}, "filter": {"with": [WINDOW]}}
+    )[0]
+    resolution = row["components"][WINDOW]["resolution"]
+    scale = resolution["scale_factor_override"] or resolution["scale_factor"]
+    inset = driver.get_resource(INSET)
+    width = resolution["physical_width"] / scale - inset["left"] - inset["right"]
+    height = resolution["physical_height"] / scale - inset["top"] - inset["bottom"]
+    middle = (inset["left"] + width / 2, inset["top"] + height / 2)
+    corner = (inset["left"] + 20, inset["top"] + 20)
+    return row["entity"], scale, middle, corner
+
+
+def move_pointer(driver, window, scale, point):
+    x, y = point
+    driver.message(
+        WINDOW_EVENT,
+        {
+            "CursorMoved": {
+                "window": window,
+                "position": [x, y],
+                "physical_position": [x * scale, y * scale],
+                "delta": None,
+            }
+        },
+    )
+    driver.frames(3)
+
+
+def button(driver, window, state):
+    """Presses or releases the primary mouse button where the pointer is."""
+    driver.message(
+        WINDOW_EVENT,
+        {"MouseButtonInput": {"button": "Left", "state": state, "window": window}},
+    )
+    driver.frames(3)
 
 
 def select_parcel(driver, realm, parcel):

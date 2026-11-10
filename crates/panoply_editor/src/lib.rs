@@ -24,6 +24,7 @@ pub mod realm_panel;
 pub mod saved_view;
 pub mod search_filter;
 pub mod shell;
+pub mod terrain_cursor;
 pub mod terrain_map_edit;
 pub mod terrain_panel;
 pub mod text_entry;
@@ -55,6 +56,7 @@ impl PluginGroup for EditorPlugins {
             .add(quit_dialog::QuitDialogPlugin)
             .add(realm_panel::RealmPanelPlugin)
             .add(terrain_panel::TerrainPanelPlugin)
+            .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_entry::TextEntryPlugin)
             .add(toast::ToastPlugin)

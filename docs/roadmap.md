@@ -26,13 +26,12 @@ rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs
 `ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
 asset unsaved and goes on the undo stack.
 
-- **PAN38c Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, with a
-  draped cursor (`ui/overlays/terrain_cursor.rs`). They edit the contour, so every parcel that uses
-  it changes: the contours table becomes saveable here (`terrain/terrain_contour_undo.rs`). Picking
-  is per tool, as faery's was (`Editor.ts`, `pickFlat`): a flatten drag projects the pointer's ray
-  onto a plane at the height where the drag started, rather than picking. Terrain mode also draws a
-  parcel grid, as realm mode's but parcels only, without the precincts or the map's border.
-- **PAN38d Flora drawing.** Draw trees, shrubs and herbs into the contour, and erase them.
+- **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
+  terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
+  the contours table becomes saveable here (`terrain/terrain_contour_undo.rs`).
+- **PAN38e Flora drawing.** Draw trees, shrubs and herbs into the contour, and erase them, with a
+  cursor around the cell under the pointer (the Quill editor's `DecalRectCursor`,
+  `ui/overlays/terrain_cursor.rs`, and `terrain_pick_pos`), which the flora tools lack today.
 - **PAN39 Contour chooser.** The terrain contours as a list of 3D thumbnails, choosing the selected
   parcel's contour, with controls to group and order the list (faery's + − ▲ ▼, `terrain.png`). From
   the Quill editor's `ui/controls/contour_chooser.rs`, `renderers/terrain_thumbnail.rs` and
