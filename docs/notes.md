@@ -140,3 +140,14 @@ calls for work becomes an issue in [issues.md](issues.md).
   buttons draw and pick where they are shown; the smoke plan clicks them turned by 237°. A node's
   `UiTransform` scales before it rotates, so a squash applied after a turn takes a parent node of
   its own. Layout ignores the transforms, so a turning node's parent reserves the space it sweeps.
+- The editor's fall to 3 fps in `plans/smoke.py` (2026-11-09; the fixes are PAN66), measured with
+  temporary probes: frame time grew linearly with fixed steps, about 13 ms plus 20 ms a step, up to
+  Bevy's 16-step catch-up (250 ms at the default 64 Hz). The realm step took 0.3 ms; `move_actors`
+  took the rest, with 13 of 17 actors awake and falling, the lowest at y −0.4. Cause: the tour
+  (`camera`, `scenery`) loads over 128 parcels, so the parcel cache evicts those loaded at startup
+  around (37, 47), and their colliders go with them; 12 actors there and at (110, 19) began falling
+  with no collider below. Ground restored under an actor mid-fall leaves it embedded. Rapier 0.36's
+  controller depenetrates only when asked for no movement (`move_shape`), so a falling actor stays
+  embedded, and each move then costs about 2.5 ms (release; 0.1 ms on the surface) and moves
+  nothing, whatever the fall speed: a capsule 0.4 m into a flat 64×64-cell parcel mesh, timed over
+  200 moves. Actors whose ground stays missing loop through R27's put-back, falling 2 m and back.

@@ -8,7 +8,7 @@
   Screenshots at a scenery element (walls, and the road from terrain effects) and at the origin
   (the tiered dungeon floors of precinct 0,0).
 - Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
-  Realm mode alone draws its grid.
+  Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -49,8 +49,13 @@ SAVED_VIEW = "panoply_editor::saved_view::EditorViewSettings"
 INSET = "panoply_core::viewport::ViewportInset"
 GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
+TERRAIN_TOOL = "panoply_editor::mode_selector::TerrainTool"
 BUTTON_VARIANT = "bevy_feathers::controls::button::ButtonVariant"
 MODE_BUTTONS = ["RealmMode", "TerrainMode", "SceneryMode", "CatalogsMode", "PlayMode"]
+TOOL_BUTTONS = [
+    "RaiseDraw", "LowerDraw", "FlattenDraw", "RaiseRect", "LowerRect", "FlattenRect",
+    "DrawTrees", "DrawShrubs", "DrawHerbs", "EraseFlora", "RotateCcw", "RotateCw",
+]
 WAIT = {"frames": 900, "seconds": 45}
 # Forest, shoreline, water, grass and rocks.
 SPOT = [110.0, 0.0, 150.0]
@@ -216,11 +221,21 @@ def editor(driver):
     wait_mode(driver, editor_mode, "Terrain")
     expect_highlight(driver, "TerrainMode")
     driver.absent("RealmGrid")
+    # Terrain mode's palette starts on Raise and chooses the tool.
+    driver.present("TerrainPanel")
+    assert terrain_tool(driver) == "RaiseDraw", f"started with {terrain_tool(driver)}"
+    expect_highlight(driver, "RaiseDraw", TOOL_BUTTONS)
+    driver.click("DrawShrubs")
+    wait_mode(driver, terrain_tool, "DrawShrubs")
+    expect_highlight(driver, "DrawShrubs", TOOL_BUTTONS)
+    driver.screenshot("terrain_panel")
     driver.click("PlayMode")
     wait_mode(driver, game_mode, "Play")
     driver.key("F2")
     wait_mode(driver, game_mode, "Edit")
     assert editor_mode(driver) == "Terrain", f"F2 returned to {editor_mode(driver)}"
+    # Leaving terrain mode and returning keeps its tool.
+    wait_mode(driver, terrain_tool, "DrawShrubs")
     driver.click("RealmMode")
     wait_mode(driver, editor_mode, "Realm")
     expect_highlight(driver, "RealmMode")
@@ -424,6 +439,10 @@ def editor_mode(driver):
     return driver.get_resource(f"bevy_state::state::resources::State<{EDITOR_MODE}>")
 
 
+def terrain_tool(driver):
+    return driver.get_resource(f"bevy_state::state::resources::State<{TERRAIN_TOOL}>")
+
+
 def wait_mode(driver, read, expected):
     """Waits until `read` (`game_mode` or `editor_mode`) gives `expected`."""
 
@@ -434,10 +453,11 @@ def wait_mode(driver, read, expected):
     driver.wait(check, f"the mode {expected}", {"seconds": 2})
 
 
-def expect_highlight(driver, chosen):
-    """Of the mode selector's buttons, only `chosen` is highlighted."""
+def expect_highlight(driver, chosen, buttons=MODE_BUTTONS):
+    """Of a segmented button's `buttons`, the mode selector's unless given, only `chosen` is
+    highlighted."""
     driver.frames(2)
-    for button in MODE_BUTTONS:
+    for button in buttons:
         variant = driver.get(button, BUTTON_VARIANT)
         expected = "Primary" if button == chosen else "Normal"
         assert variant == expected, f"{button} is {variant}, not {expected}"

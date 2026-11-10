@@ -10,11 +10,31 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN66.**
+**Next: PAN67.**
 
 ## Next
 
 In order.
+
+PAN66, actor physics on missing ground, in lettered parts, each fixing its own cause of the editor's
+fall to 3 fps in `plans/smoke.py` (the diagnosis is in [notes.md](notes.md)). A slow fixed step
+could hide either of the first two, so each part checks its own fix, not the frame rate.
+
+- **PAN66a Push embedded actors out (R26).** An actor caught inside ground (its parcel's collider
+  inserted around it mid-fall) never leaves it: rapier's controller pushes out only when asked for
+  no movement, and a falling actor always asks to move down. Before a tick's move, an actor whose
+  capsule overlaps a collider first moves with no translation. Its regression test: a capsule 0.4 m
+  into a parcel's ground mesh ends free within a few ticks.
+- **PAN66b Actor physics readiness.** Physics ground follows the drawing cache: evicting a parcel
+  removes its colliders, while `move_actors` moves every actor in the realm, so actors far from the
+  view fall, and those whose ground stays missing loop through R27's put-back forever. An actor
+  moves only while its footprint (its parcel's ground and its precinct's scenery) is built, and
+  holds still as a resting actor does otherwise; `start_actor_physics` waits so once, at spawn
+  (`TODO(X33)`). Checked in `smoke.py` after its tour: no actor falling, none awake without intent.
+- **PAN66c Fixed-step spiral guard.** Bevy catches up by up to 250 ms of fixed steps a frame (16),
+  so a step that costs more than its 15.6 ms freezes the game rather than slowing it. Lower the
+  catch-up (`Time<Virtual>::set_max_delta`) to a few steps, so overload runs in slow motion; decide
+  here how many, and whether the hitch log reports frames that hit the cap.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
@@ -26,12 +46,6 @@ rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs
 `ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
 asset unsaved and goes on the undo stack.
 
-- **PAN38a Terrain panel layout.** Terrain mode's panel in faery's arrangement: on the left the tool
-  palette, four rows of three (raise, lower, flatten by brush; the same by rectangle; trees, shrubs,
-  herbs; erase flora, rotate counter-clockwise, rotate clockwise), with faery's icons; below it the
-  places for Has water and Has terrain, Terrain Groups and Biomes; on the right the contour list's.
-  A palette button shows as chosen and does nothing yet; the other places are empty until their
-  parts fill them.
 - **PAN38b Parcel selection.** A click on the ground selects a parcel, outlined by a mode overlay
   (`mode_overlays.rs`) draped on the ground, which `panoply_overlays`' flat shapes cannot do: decide
   here between a draping builder (gizmoids' `Line3dBuilder`, reviewed as `ShapeBuilder` was) and

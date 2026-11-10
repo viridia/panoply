@@ -1,6 +1,7 @@
 //! The mode selector: a segmented button atop the editor panel choosing the editor mode (realm,
 //! terrain, scenery, catalogs) or play. F2 switches between play and the last editor mode. The
-//! choice is saved, so a restart returns to it.
+//! choice is saved, so a restart returns to it, and so is each mode's own sub-mode, as terrain
+//! mode's tool.
 
 use bevy::{
     ecs::system::SystemParam,
@@ -36,19 +37,39 @@ pub enum EditorMode {
     Catalogs,
 }
 
+/// Terrain mode's tool, chosen in its palette (`terrain_panel.rs`); a sub-state of terrain mode,
+/// so that a tool's systems run only while it is chosen there.
+#[derive(SubStates, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[source(EditorMode = EditorMode::Terrain)]
+pub enum TerrainTool {
+    #[default]
+    RaiseDraw,
+    LowerDraw,
+    FlattenDraw,
+    RaiseRect,
+    LowerRect,
+    FlattenRect,
+    DrawTrees,
+    DrawShrubs,
+    DrawHerbs,
+    EraseFlora,
+}
+
 /// Switch between play and the last editor mode.
 #[derive(InputAction)]
 #[action(path = "editor.toggle_mode", output = bool, intent = Button)]
 pub struct ToggleGameMode;
 
 /// The mode chosen, saved between runs. The states follow it (`apply_mode`); while playing,
-/// `editor_mode` is the one F2 returns to.
+/// `editor_mode` is the one F2 returns to, and outside terrain mode `terrain_tool` is the tool it
+/// returns to.
 #[derive(Resource, SettingsGroup, Reflect, Clone, Copy, PartialEq, Debug, Default)]
 #[reflect(Resource, SettingsGroup, Default)]
 #[settings_group(group = "editor_mode")]
 pub struct EditorModeSettings {
     pub game_mode: GameMode,
     pub editor_mode: EditorMode,
+    pub terrain_tool: TerrainTool,
 }
 
 /// The root of the immediate-mode selector.
@@ -77,8 +98,10 @@ pub struct ModeSelectorPlugin;
 impl Plugin for ModeSelectorPlugin {
     fn build(&self, app: &mut App) {
         app.add_sub_state::<EditorMode>()
-            // So plans can read the mode.
+            .add_sub_state::<TerrainTool>()
+            // So plans can read the mode and tool.
             .register_type_mutable_state::<EditorMode>()
+            .register_type_mutable_state::<TerrainTool>()
             .add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ModeSelector>::new())
             .add_systems(
                 Update,
@@ -92,15 +115,21 @@ impl Plugin for ModeSelectorPlugin {
 }
 
 /// Sets the states to the mode chosen, at startup from the saved settings and after each change.
+/// Every change of mode goes through the settings, so this is where a sub-state is given its value
+/// in the frame its parent enters: a sub-state entering with its parent takes a pending value over
+/// its default, and a pending value is dropped at the next transition, entered or not.
 fn apply_mode(
     settings: Res<EditorModeSettings>,
     mut game_mode: ResMut<NextState<GameMode>>,
     mut editor_mode: ResMut<NextState<EditorMode>>,
+    mut terrain_tool: ResMut<NextState<TerrainTool>>,
 ) {
     game_mode.set_if_different(settings.game_mode);
-    // A sub-state entering with its parent takes a pending value over its default.
     if settings.game_mode == GameMode::Edit {
         editor_mode.set_if_different(settings.editor_mode);
+        if settings.editor_mode == EditorMode::Terrain {
+            terrain_tool.set_if_different(settings.terrain_tool);
+        }
     }
 }
 

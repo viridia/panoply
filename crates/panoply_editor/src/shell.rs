@@ -37,6 +37,7 @@ use crate::{
     goto::OpenGotoDialog,
     mode_selector::{EditorMode, ModeSelector, ToggleGameMode, SELECTOR_WIDTH},
     realm_panel::realm_panel,
+    terrain_panel::terrain_panel,
     unsaved::{SaveAssets, UnsavedAssets},
 };
 
@@ -389,7 +390,10 @@ impl ImmediateAttach<CapsUiFeathers> for PanelBody {
             Some(EditorMode::Realm) => {
                 ui.ch_id("realm").on_spawn_apply_scene(realm_panel);
             }
-            Some(EditorMode::Terrain | EditorMode::Scenery | EditorMode::Catalogs) | None => {}
+            Some(EditorMode::Terrain) => {
+                ui.ch_id("terrain").on_spawn_apply_scene(terrain_panel);
+            }
+            Some(EditorMode::Scenery | EditorMode::Catalogs) | None => {}
         }
     }
 }

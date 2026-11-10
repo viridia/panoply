@@ -101,7 +101,7 @@ fn main() {
     ));
 
     #[cfg(feature = "editor")]
-    app.add_plugins(panoply_editor::EditorPlugin);
+    app.add_plugins(panoply_editor::EditorPlugins);
 
     app.run();
 

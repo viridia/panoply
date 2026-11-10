@@ -270,19 +270,19 @@ never reused.
   follow Bevy main (D34), so each one (character controller, particle engine, navigation mesh
   generator) is a fork to maintain. A crate with no Bevy dependency, such as `rapier3d` (D35),
   needs no fork. Prefer, in order: Bevy's own, a crate without Bevy, our own code, a Bevy crate.
-- **D37** The editor is its own crate, `panoply_editor`, an optional dependency behind the
-  app's `editor` feature (D13); feathers and `bevy_immediate` are its dependencies only, and
-  `main.rs` adds `EditorPlugin`. It sees the engine crates, never the app. Engine crates own
-  neutral knobs (resources, components, messages: `ViewportInset`, `ViewOverlay`, `Viewpoint`);
-  the editor sets them and spawns entities of its own, overlays included, and engine crates do
-  not test the `editor` feature. So an editor mode for a module waits until the module is in a
-  crate (PAN7). The shell (`panoply_editor::shell`) is a feathers split pane: the panel at the
-  left, hidden by default so plans, which start from empty settings, see the whole window; T
-  toggles it; `EditorPanelSettings` saves its width and visibility. While it shows, the
-  primary camera's viewport follows the view pane through `ViewportInset`; hidden, the inset is
-  left alone, so plans can set it. HUD nodes marked `ViewOverlay` move into the view pane. The
-  Show menu's popup holds checkboxes, not menu items: picking an item closes a menu, and a
-  checkbox takes the focus without closing it, so several views toggle in one visit.
+- **D37** The editor is its own crate, `panoply_editor`, an optional dependency behind the app's
+  `editor` feature (D13); feathers and `bevy_immediate` are its dependencies only, and `main.rs`
+  adds `EditorPlugins`. It sees the engine crates, never the app. Engine crates own neutral knobs
+  (resources, components, messages: `ViewportInset`, `ViewOverlay`, `Viewpoint`); the editor sets
+  them and spawns entities of its own, overlays included, and engine crates do not test the `editor`
+  feature. So an editor mode for a module waits until the module is in a crate (PAN7). The shell
+  (`panoply_editor::shell`) is a feathers split pane: the panel at the left, hidden by default so
+  plans, which start from empty settings, see the whole window; T toggles it; `EditorPanelSettings`
+  saves its width and visibility. While it shows, the primary camera's viewport follows the view
+  pane through `ViewportInset`; hidden, the inset is left alone, so plans can set it. HUD nodes
+  marked `ViewOverlay` move into the view pane. The Show menu's popup holds checkboxes, not menu
+  items: picking an item closes a menu, and a checkbox takes the focus without closing it, so
+  several views toggle in one visit.
 - **D38** Static scenery colliders come from the exemplars' `SceneryColliders` descriptors, not
   the glTFs (X36). Each precinct has one fixed body at its origin (`Precinct::physics`, removed
   with the precinct); not one per tier, since elements are the precinct's children and
