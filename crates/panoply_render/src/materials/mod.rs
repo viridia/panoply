@@ -4,11 +4,13 @@ mod flame;
 mod floor_noisy;
 mod hair;
 mod outline;
+mod portal_glow;
 
 pub use flame::FlameMaterial;
 pub use floor_noisy::{FloorNoisyMaterial, FloorNoisyMaterialExt};
 pub use hair::{HairExtension, HairMaterial};
 pub use outline::OutlineMaterial;
+pub use portal_glow::PortalGlowMaterial;
 
 #[derive(Debug, Clone, Resource, Default)]
 pub struct OutlineMaterialHandle(pub Handle<OutlineMaterial>);
@@ -19,6 +21,9 @@ pub struct BlackMaterialHandle(pub Handle<StandardMaterial>);
 #[derive(Debug, Clone, Resource, Default)]
 pub struct FlameMaterialHandle(pub Handle<FlameMaterial>);
 
+#[derive(Debug, Clone, Resource, Default)]
+pub struct PortalGlowMaterialHandle(pub Handle<PortalGlowMaterial>);
+
 pub struct MaterialsPlugin;
 
 impl Plugin for MaterialsPlugin {
@@ -27,19 +32,23 @@ impl Plugin for MaterialsPlugin {
         embedded_asset!(app, "flame_prepass.wesl");
         embedded_asset!(app, "hair.wesl");
         embedded_asset!(app, "outline.wesl");
+        embedded_asset!(app, "portal_glow.wesl");
         app.init_resource::<OutlineMaterialHandle>()
             .init_resource::<BlackMaterialHandle>()
             .init_resource::<FlameMaterialHandle>()
+            .init_resource::<PortalGlowMaterialHandle>()
             .add_plugins(MaterialPlugin::<FloorNoisyMaterial>::default())
             .add_plugins(MaterialPlugin::<OutlineMaterial>::default())
             .add_plugins(MaterialPlugin::<FlameMaterial>::default())
             .add_plugins(MaterialPlugin::<HairMaterial>::default())
+            .add_plugins(MaterialPlugin::<PortalGlowMaterial>::default())
             .add_systems(
                 Startup,
                 (
                     create_outline_material,
                     create_black_material,
                     create_flame_material,
+                    create_portal_glow_material,
                 ),
             );
     }
@@ -71,4 +80,11 @@ pub fn create_flame_material(
     resource.0 = materials.add(FlameMaterial {
         noise: asset_server.load("textures/noise_1.png"),
     });
+}
+
+fn create_portal_glow_material(
+    mut materials: ResMut<Assets<PortalGlowMaterial>>,
+    mut resource: ResMut<PortalGlowMaterialHandle>,
+) {
+    resource.0 = materials.add(PortalGlowMaterial::default());
 }

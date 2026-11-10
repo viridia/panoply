@@ -12,6 +12,7 @@ use serde_json::Value;
 
 use crate::materials::{
     BlackMaterialHandle, FlameMaterialHandle, HairExtension, HairMaterial, OutlineMaterialHandle,
+    PortalGlowMaterialHandle,
 };
 
 pub struct ModelsPlugin;
@@ -42,7 +43,6 @@ struct MaterialOptions {
     // #[serde(default, deserialize_with = "deserialize_bool")]
     flame: Option<Value>,
 
-    #[allow(dead_code)] // Read once portals are restored (PAN4).
     #[serde(default, deserialize_with = "deserialize_bool")]
     portalglow: Option<bool>,
 
@@ -55,6 +55,7 @@ fn process_material_extras(
     r_outline: Res<OutlineMaterialHandle>,
     r_black: Res<BlackMaterialHandle>,
     r_flame: Res<FlameMaterialHandle>,
+    r_portal_glow: Res<PortalGlowMaterialHandle>,
     standard_materials: Res<Assets<StandardMaterial>>,
     mut hair_materials: ResMut<Assets<HairMaterial>>,
     mut hair_by_source: Local<HashMap<AssetId<StandardMaterial>, AssetId<HairMaterial>>>,
@@ -125,6 +126,11 @@ fn process_material_extras(
                     .entity(entity)
                     .remove::<MeshMaterial3d<StandardMaterial>>()
                     .insert(MeshMaterial3d(r_flame.0.clone()));
+            } else if options.portalglow.unwrap_or(false) {
+                commands
+                    .entity(entity)
+                    .remove::<MeshMaterial3d<StandardMaterial>>()
+                    .insert((MeshMaterial3d(r_portal_glow.0.clone()), NotShadowCaster));
             } else if !options.extra.is_empty() {
                 // warn!("Unknown material option: {:?}", options.extra);
                 // println!("material extras: {:?}", extras);
