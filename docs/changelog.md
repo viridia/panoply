@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN37** The realm panel's map size control grows or shrinks the map a parcel at a side.
 - **PAN36** In realm mode the editor draws the map's parcel and precinct grid and its border.
 - **PAN35** The realm panel can create a new, empty realm, and change to any realm from a list.
 - **PAN56** The editor reopens at the realm, place and heading it was left at.

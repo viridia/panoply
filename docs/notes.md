@@ -136,3 +136,7 @@ calls for work becomes an issue in [issues.md](issues.md).
   same `bsn_list!` spliced straight into `Children [...]` does not collide, so the cause lies in how
   a scene component's props resolve, not in the nested macro's call site. Build such a list in a
   function of its own (`goto::dialog_contents`). Filed as bevy#26446.
+- `UiTransform` on nested nodes (PAN37's map size control, locked Bevy 784b85d): rotated and scaled
+  buttons draw and pick where they are shown; the smoke plan clicks them turned by 237°. A node's
+  `UiTransform` scales before it rotates, so a squash applied after a turn takes a parent node of
+  its own. Layout ignores the transforms, so a turning node's parent reserves the space it sweeps.

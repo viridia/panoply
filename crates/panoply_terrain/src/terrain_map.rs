@@ -98,6 +98,28 @@ impl TerrainMapAsset {
         self.default_biome
     }
 
+    /// Moves the map's edges to `bounds`. Each parcel inside both the old and new bounds keeps its
+    /// shape and biome; parcels new to the map take the off-map defaults, so the ground they show
+    /// does not change.
+    pub fn resize(&mut self, bounds: IRect) {
+        let area = (bounds.width() * bounds.height()) as usize;
+        let mut shapes = vec![self.default_shape << 2; area];
+        let mut biomes = vec![self.default_biome; area];
+        let kept = bounds.intersect(self.bounds);
+        for y in kept.min.y..kept.max.y {
+            for x in kept.min.x..kept.max.x {
+                let from = ((y - self.bounds.min.y) * self.bounds.width() + x - self.bounds.min.x)
+                    as usize;
+                let to = ((y - bounds.min.y) * bounds.width() + x - bounds.min.x) as usize;
+                shapes[to] = self.shapes[from];
+                biomes[to] = self.biomes[from];
+            }
+        }
+        self.bounds = bounds;
+        self.shapes = shapes;
+        self.biomes = biomes;
+    }
+
     /// Return the biomes at the 4 corners of the parcel.
     pub fn adjacent_biomes(&self, pt: IVec2) -> [u8; 4] {
         [
@@ -342,5 +364,46 @@ fn convert_parcel_to_precinct(parcel_bounds: &IRect) -> IRect {
             (parcel_bounds.max.x + PARCELS_PER_PRECINCT - 1) / PARCELS_PER_PRECINCT,
             (parcel_bounds.max.y + PARCELS_PER_PRECINCT - 1) / PARCELS_PER_PRECINCT,
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A 2 × 2 map at (-1, -1), each parcel's shape and biome numbered 1 to 4 in row order.
+    fn map() -> TerrainMapAsset {
+        TerrainMapAsset {
+            bounds: IRect::new(-1, -1, 1, 1),
+            shapes: vec![1 << 2, 2 << 2, 3 << 2, 4 << 2],
+            biomes: vec![1, 2, 3, 4],
+            default_shape: 9,
+            default_biome: 7,
+        }
+    }
+
+    #[test]
+    fn growing_keeps_parcels_in_place_and_fills_with_defaults() {
+        let mut map = map();
+        map.resize(IRect::new(-2, -1, 1, 1));
+        assert_eq!(map.biomes, [7, 1, 2, 7, 3, 4]);
+        assert_eq!(map.shape_at(IVec2::new(-2, 0)).shape, 9);
+        assert_eq!(map.shape_at(IVec2::new(0, 0)).shape, 4);
+    }
+
+    #[test]
+    fn shrinking_drops_the_parcels_outside() {
+        let mut map = map();
+        map.resize(IRect::new(-1, 0, 1, 1));
+        assert_eq!(map.biomes, [3, 4]);
+        assert_eq!(map.shapes.len(), 2);
+    }
+
+    #[test]
+    fn an_empty_map_grows_to_defaults() {
+        let mut map = TerrainMapAsset::default();
+        map.resize(IRect::new(0, 0, 1, 1));
+        assert_eq!(map.biomes, [0]);
+        assert_eq!(map.shapes, [0]);
     }
 }

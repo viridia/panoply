@@ -1,9 +1,8 @@
-//! Realm mode's panel: stats about the map, Create Realm and Change Realm, then the nav points with
-//! Go, + and −. Go, a
-//! double-click or Enter travels to the selected point; + names the current view as a new point,
-//! through the text-entry dialog; − removes the selected point. + and − change the nav points in
-//! memory, where the list shows them at once, mark them unsaved for the save button, and can be
-//! undone.
+//! Realm mode's panel: stats about the map; below them, the map size control over Create Realm and
+//! Change Realm, beside the nav points with Go, + and −. Go, a double-click or Enter travels to the
+//! selected point; + names the current view as a new point, through the text-entry dialog; −
+//! removes the selected point. + and − change the nav points in memory, where the list shows them
+//! at once, mark them unsaved for the save button, and can be undone.
 
 use std::borrow::Cow;
 
@@ -32,6 +31,7 @@ use panoply_terrain::PARCEL_SIZE;
 
 use crate::{
     chooser::{chooser_dialog, ActivateChooserItem, Chooser, ItemChosen},
+    map_size::map_size_control,
     mode_selector::EditorMode,
     nav_point_list::{nav_point_chooser, Travel},
     new_realm::{realm_name_rule, CreateRealm},
@@ -84,36 +84,49 @@ pub(crate) fn realm_panel() -> impl Scene {
                 ]
             ]
             --
-            Node { column_gap: px(4) }
+            Node { column_gap: px(4), flex_grow: 1.0, min_height: px(0) }
             Children [
-                @FeathersButton { @caption: bsn! { Text("Create Realm…") ThemedText } }
-                #CreateRealm
-                on(open_create_realm)
+                Node { flex_direction: FlexDirection::Column, row_gap: px(4), flex_shrink: 0.0 }
+                Children [
+                    @map_size_control()
+                    --
+                    @FeathersButton { @caption: bsn! { Text("Create Realm…") ThemedText } }
+                    #CreateRealm
+                    on(open_create_realm)
+                    --
+                    @FeathersButton { @caption: bsn! { Text("Change Realm…") ThemedText } }
+                    #ChangeRealm
+                    on(open_change_realm)
+                ]
                 --
-                @FeathersButton { @caption: bsn! { Text("Change Realm…") ThemedText } }
-                #ChangeRealm
-                on(open_change_realm)
-            ]
-            --
-            @nav_point_chooser()
-            --
-            Node { justify_content: JustifyContent::FlexEnd, column_gap: px(4) }
-            Children [
-                @FeathersButton { @caption: bsn! { Text("Go") ThemedText } }
-                #Go
-                NeedsSelection
-                InteractionDisabled
-                on(go)
-                --
-                @FeathersButton { @caption: bsn! { Text("+") ThemedText } }
-                #AddNavPoint
-                on(open_add_dialog)
-                --
-                @FeathersButton { @caption: bsn! { Text("−") ThemedText } }
-                #RemoveNavPoint
-                NeedsSelection
-                InteractionDisabled
-                on(remove_selected)
+                Node {
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(4),
+                    flex_grow: 1.0,
+                    min_width: px(0),
+                }
+                Children [
+                    @nav_point_chooser()
+                    --
+                    Node { justify_content: JustifyContent::FlexEnd, column_gap: px(4) }
+                    Children [
+                        @FeathersButton { @caption: bsn! { Text("Go") ThemedText } }
+                        #Go
+                        NeedsSelection
+                        InteractionDisabled
+                        on(go)
+                        --
+                        @FeathersButton { @caption: bsn! { Text("+") ThemedText } }
+                        #AddNavPoint
+                        on(open_add_dialog)
+                        --
+                        @FeathersButton { @caption: bsn! { Text("−") ThemedText } }
+                        #RemoveNavPoint
+                        NeedsSelection
+                        InteractionDisabled
+                        on(remove_selected)
+                    ]
+                ]
             ]
         ]
     }

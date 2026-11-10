@@ -12,6 +12,7 @@ pub mod debug_views;
 pub mod diagnostics;
 pub mod goto;
 pub mod json;
+pub mod map_size;
 pub mod mode_overlays;
 pub mod mode_selector;
 pub mod nav_point_list;
@@ -44,6 +45,7 @@ impl Plugin for EditorPlugin {
                 chooser::ChooserPlugin,
                 nav_point_list::NavPointListPlugin,
                 new_realm::NewRealmPlugin,
+                map_size::MapSizePlugin,
             ),
             mode_selector::ModeSelectorPlugin,
             quit_dialog::QuitDialogPlugin,

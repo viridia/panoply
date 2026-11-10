@@ -15,8 +15,9 @@
   which enables Save; Ctrl+Z and Ctrl+Shift+Z undo and redo that, returning to Realm mode from
   another, and do nothing while a text field has the keys; Save writes `world.locations.json`
   (restored afterwards); − removes the point. Create Realm refuses a name in use or one that
-  cannot name a file, writes a new realm (deleted afterwards) and cuts to it; Change Realm filters
-  the realms and goes back, keeping the view's coordinates.
+  cannot name a file, writes a new realm (deleted afterwards) and cuts to it. There the map size
+  control grows and shrinks the map, keeps a parcel, undoes, takes clicks turned with the view,
+  and saves. Change Realm filters the realms and goes back, keeping the view's coordinates.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
   Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
@@ -348,6 +349,29 @@ def create_and_change_realm(driver):
         assert all(file.exists() for file in files), "Create Realm did not write both files"
         driver.goto([0.0, 0.0, 0.0], realm="smoke-realm")
         driver.screenshot("new_realm")
+
+        # The map size control moves one edge a parcel at a time, and keeps at least one parcel.
+        driver.click("GrowEast")
+        driver.expect("RealmPanel/Size", TEXT, "1 × 1 parcels")
+        driver.click("ShrinkNorth")
+        driver.click("GrowSouth")
+        driver.expect("RealmPanel/Size", TEXT, "1 × 2 parcels")
+        undo(driver)
+        driver.expect("RealmPanel/Size", TEXT, "1 × 1 parcels")
+        driver.expect("Toast/ToastText", TEXT, "Undo: Resize map")
+        undo(driver, redo=True)
+        driver.expect("RealmPanel/Size", TEXT, "1 × 2 parcels")
+        # Turned with the view, its buttons still take clicks.
+        driver.goto([0.0, 0.0, 0.0], azimuth=1.0, realm="smoke-realm")
+        driver.click("GrowWest")
+        driver.expect("RealmPanel/Size", TEXT, "2 × 2 parcels")
+        driver.screenshot("map_size")
+        # Save writes the terrain map, which the reload brings back the same size.
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        driver.expect("RealmPanel/Size", TEXT, "2 × 2 parcels")
+
         driver.goto(WAREHOUSE, realm="smoke-realm")
 
         # Change Realm lists the new realm, filters, and goes back.

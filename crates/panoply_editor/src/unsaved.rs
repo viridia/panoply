@@ -21,6 +21,7 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::NavPointsAsset;
+use panoply_terrain::TerrainMapAsset;
 
 use crate::{json::to_asset_json, toast::ShowToast};
 
@@ -93,6 +94,12 @@ impl SaveableAsset for NavPointsAsset {
     }
 }
 
+impl SaveableAsset for TerrainMapAsset {
+    fn to_bytes(&self) -> Result<Vec<u8>, BevyError> {
+        Ok(TerrainMapAsset::to_bytes(self)?)
+    }
+}
+
 /// Adds a saveable asset type: [`SaveAssets`] writes its unsaved assets.
 pub trait RegisterSaveable {
     fn register_saveable<A: SaveableAsset>(&mut self) -> &mut Self;
@@ -128,7 +135,8 @@ impl Plugin for UnsavedAssetsPlugin {
             .add_systems(Startup, |mut commands: Commands| {
                 commands.spawn((Name::new("SaveWaitKeys"), SaveWaitKeys));
             })
-            .register_saveable::<NavPointsAsset>();
+            .register_saveable::<NavPointsAsset>()
+            .register_saveable::<TerrainMapAsset>();
     }
 }
 

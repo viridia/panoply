@@ -21,14 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN37 Map size control.** In the realm panel, eight buttons that grow or shrink the realm by a
-  parcel on each of its four sides, two per side (faery's `MapSizeControl.tsx`; the pattern recurs
-  elsewhere in faery). The control rotates with the camera's azimuth, so its sides match the map's
-  on screen; faery also squashed it vertically to match the view's tilt. A press changes the terrain
-  map's bounds (`realm.parcel_bounds`, `terrain_map.rs`) and marks it unsaved for PAN29's save
-  button. New ground: rendering and picking of transformed UI nodes (`UiTransform`) follow the
-  transform in principle but are little exercised, so expect Bevy bugs, each found in the locked
-  checkout and reported or fixed upstream. Panoply's Quill editor never had one.
 - **PAN38 Terrain sculpting.** Terrain mode's panel and its tool palette: raise, lower and flatten,
   each by brush or by rectangle; draw trees, shrubs and herbs, and erase flora; rotate the selected
   parcel's contour. Ported from the Quill editor (`REFERENCE(PAN5)`): `ui/mode_terrain.rs`,
