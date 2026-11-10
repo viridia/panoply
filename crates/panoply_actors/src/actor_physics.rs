@@ -191,12 +191,15 @@ pub(crate) fn move_actors(
         }
 
         let shape = capsule(size, scale);
-        let center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
+        let queries = physics.world().query_pipeline();
+        let mut center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
+        let pushed = push_out(&controller, &queries, &shape, center, dt);
+        motion.position += pushed;
+        center += pushed;
         let turn = angle_between(motion.facing, intent.heading);
         motion.facing = (motion.facing + turn.clamp(-TURN_RATE * dt, TURN_RATE * dt))
             .rem_euclid(std::f32::consts::TAU);
         let mut travel = Quat::from_rotation_y(motion.facing) * Vec3::Z * intent.speed;
-        let queries = physics.world().query_pipeline();
         // On a slope, travel along the ground at the full horizontal pace. Left to the controller,
         // travel into a slope is projected onto it, which slows the climb but not the sideways
         // part, so actors drift off the sides of ramps and stairs.
@@ -204,8 +207,6 @@ pub(crate) fn move_actors(
             let normal = motion.ground_normal;
             travel.y = -(normal.x * travel.x + normal.z * travel.z) / normal.y;
         }
-        // A grounded actor standing still asks for no movement, which is when the controller
-        // depenetrates.
         if !motion.grounded {
             motion.vertical_speed -= GRAVITY * dt;
         }
@@ -257,6 +258,29 @@ pub(crate) fn move_actors(
     }
 }
 
+/// The translation that pushes a capsule centered at `center` out of what it is inside (R26), or
+/// zero if it is inside nothing. The controller pushes out only when asked for no movement, so an
+/// actor that falls or walks would otherwise stay inside ground that was built around it, such as
+/// a parcel's collider inserted mid-fall, and every move would cost a full set of its shape-casts
+/// while moving nothing. Each call corrects up to a quarter of the capsule's height, so deeper
+/// overlaps take a few ticks. A standing actor rests the controller's gap clear of the ground, so
+/// it overlaps nothing and is not moved.
+fn push_out(
+    controller: &KinematicCharacterController,
+    queries: &QueryPipeline,
+    shape: &Capsule,
+    center: Vec3,
+    dt: f32,
+) -> Vec3 {
+    let pose = Pose::from_translation(center);
+    if queries.intersect_shape(pose, shape).next().is_none() {
+        return Vec3::ZERO;
+    }
+    controller
+        .move_shape(dt, queries, shape, &pose, Vec3::ZERO, |_| {})
+        .translation
+}
+
 /// The normal of the ground just under a capsule centered at `center`, if it is gentle enough to
 /// walk on.
 fn walkable_ground(queries: &QueryPipeline, shape: &Capsule, center: Vec3) -> Option<Vec3> {
@@ -284,5 +308,81 @@ pub(crate) fn interpolate_actors(
         transform.translation = motion.previous.lerp(motion.position, fraction);
         let turn = angle_between(motion.previous_facing, motion.facing);
         transform.rotation = Quat::from_rotation_y(motion.previous_facing + turn * fraction);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rapier3d::prelude::{ColliderBuilder, RigidBodyBuilder};
+
+    use super::*;
+
+    const DT: f32 = 1.0 / 64.0;
+
+    /// A flat parcel's ground at y = 0: 16 m, 64 by 64 cells, as `ground_mesh.rs` builds it.
+    fn parcel_ground() -> RealmPhysics {
+        let (size, cells) = (16.0, 64u32);
+        let step = size / cells as f32;
+        let vertices = (0..=cells)
+            .flat_map(|z| (0..=cells).map(move |x| Vec3::new(x as f32, 0.0, z as f32) * step))
+            .collect();
+        let row = cells + 1;
+        let indices = (0..cells)
+            .flat_map(|z| (0..cells).map(move |x| (z, x)))
+            .flat_map(|(z, x)| {
+                let (a, b) = (z * row + x, z * row + x + 1);
+                let (c, d) = ((z + 1) * row + x + 1, (z + 1) * row + x);
+                [[a, b, d], [b, c, d]]
+            })
+            .collect();
+        let mut physics = RealmPhysics::default();
+        let body = physics.insert_body(RigidBodyBuilder::fixed().build());
+        physics.insert_collider(body, ColliderBuilder::trimesh(vertices, indices).unwrap().build());
+        // The query pipeline takes in new colliders when the world steps.
+        physics.step(DT);
+        physics
+    }
+
+    /// Where a capsule's center is when its feet are at `feet` over the middle of the parcel.
+    fn center_at(shape: &Capsule, feet: f32) -> Vec3 {
+        Vec3::new(8.0, feet + shape.half_height() + shape.radius, 8.0)
+    }
+
+    #[test]
+    fn a_falling_actor_inside_the_ground_is_pushed_out_and_lands() {
+        let physics = parcel_ground();
+        let queries = physics.world().query_pipeline();
+        let (controller, shape) = (controller(), capsule(None, None));
+        let mut center = center_at(&shape, -0.4);
+        let mut vertical_speed = 0.0;
+        let mut landed = false;
+        for _ in 0..4 {
+            center += push_out(&controller, &queries, &shape, center, DT);
+            vertical_speed -= GRAVITY * DT;
+            let movement = controller.move_shape(
+                DT,
+                &queries,
+                &shape,
+                &Pose::from_translation(center),
+                Vec3::Y * vertical_speed * DT,
+                |_| {},
+            );
+            center += movement.translation;
+            landed = movement.grounded;
+        }
+        let feet = center.y - shape.half_height() - shape.radius;
+        assert!(landed, "not grounded, feet at {feet}");
+        assert!((0.0..0.05).contains(&feet), "feet at {feet}, not on the ground");
+        let pose = Pose::from_translation(center);
+        assert!(queries.intersect_shape(pose, &shape).next().is_none(), "still inside the ground");
+    }
+
+    #[test]
+    fn a_standing_actor_is_not_pushed() {
+        let physics = parcel_ground();
+        let queries = physics.world().query_pipeline();
+        let (controller, shape) = (controller(), capsule(None, None));
+        let center = center_at(&shape, GROUND_CAST_GAP);
+        assert_eq!(push_out(&controller, &queries, &shape, center, DT), Vec3::ZERO);
     }
 }

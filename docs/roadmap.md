@@ -20,11 +20,6 @@ PAN66, actor physics on missing ground, in lettered parts, each fixing its own c
 fall to 3 fps in `plans/smoke.py` (the diagnosis is in [notes.md](notes.md)). A slow fixed step
 could hide either of the first two, so each part checks its own fix, not the frame rate.
 
-- **PAN66a Push embedded actors out (R26).** An actor caught inside ground (its parcel's collider
-  inserted around it mid-fall) never leaves it: rapier's controller pushes out only when asked for
-  no movement, and a falling actor always asks to move down. Before a tick's move, an actor whose
-  capsule overlaps a collider first moves with no translation. Its regression test: a capsule 0.4 m
-  into a parcel's ground mesh ends free within a few ticks.
 - **PAN66b Actor physics readiness.** Physics ground follows the drawing cache: evicting a parcel
   removes its colliders, while `move_actors` moves every actor in the realm, so actors far from the
   view fall, and those whose ground stays missing loop through R27's put-back forever. An actor
