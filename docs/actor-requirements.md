@@ -1,12 +1,12 @@
 # Actor requirements
 
-What actors must do, taken from faery's actor module (`packages/engine/src/world/actors`, with
-its `goals/`, and `physics/PhysicsActor.ts`). These are behaviors, not designs: animation, the
-character controller and goals are being re-engineered, and state moves onto entities. Numbers
-are faery's values, starting points to tune. Decisions already made elsewhere are linked, not
-restated: ownership (D24), models and colors (D28), hair (D29), goals as entities (X17), saves
-(X18), cutaways (X19), region readiness (X33). Ids are never reused; a new requirement takes
-the next unused number, so ids within a section are not always in order.
+What actors must do, taken from faery's actor module (`packages/engine/src/world/actors`, with its
+`goals/`, and `physics/PhysicsActor.ts`). These are behaviors, not designs: animation, the character
+controller and goals are being re-engineered, and state moves onto entities. Numbers are faery's
+values, starting points to tune. Decisions already made elsewhere are linked, not restated:
+ownership (D24), models and colors (D28), hair (D29), goals as entities (X17), saves (X18), cutaways
+(X19), footprint readiness (D67). Ids are never reused; a new requirement takes the next unused
+number, so ids within a section are not always in order.
 
 ## Definition
 
@@ -35,17 +35,17 @@ the next unused number, so ids within a section are not always in order.
 - **R10** Phasing: an aspect can make an actor present only in some quest stages. An actor
   that is on screen stays present until it leaves the screen, so it never vanishes in view.
   In the editor, every actor is present.
-- **R11** An actor has physics only in the realm being viewed, and only where the colliders
-  under it are built (X33).
+- **R11** An actor has physics only in the realm being viewed, and only where the colliders under it
+  are built (D67).
 - **R12** Restoring an actor's initial state (reset) puts back its position, realm, facing,
   animation and goals.
 
 ## Timing
 
-Actors sit on many asynchronous processes at different time scales, which overlap and
-interact: loading the instance definition, its exemplar and its behaviors; loading the
-environment it stands in (X33); goal planning and pathfinding; loading and saving games;
-speech; animation; physics and ballistic motion.
+Actors sit on many asynchronous processes at different time scales, which overlap and interact:
+loading the instance definition, its exemplar and its behaviors; loading the environment it stands
+in (D67); goal planning and pathfinding; loading and saving games; speech; animation; physics and
+ballistic motion.
 
 - **R104** No process may assume another has finished. Each can be pending, or change while
   another runs (the ground unloads during a path, a save lands mid-step, a line ends during a

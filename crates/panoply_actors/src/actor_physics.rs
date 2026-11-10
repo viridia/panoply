@@ -4,7 +4,7 @@
 //! The capsule is a query shape, not a collider in the world, so actors do not yet collide with
 //! each other.
 
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 use panoply_core::{RealmPhysics, Viewpoint};
 use panoply_scenery::SceneryPending;
 use panoply_terrain::TerrainPending;
@@ -109,25 +109,56 @@ pub(crate) fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) 
     Capsule::new_y(half_segment, radius)
 }
 
-/// Gives an actor physics once the ground under it is built. A minimal wait: nothing terrain or
-/// scenery is pending anywhere, and a ray down from above the actor hits a collider, which it
-/// does only after the realm has stepped since the collider was inserted. TODO(X33): the
-/// footprint query.
+/// How far past its capsule an actor's footprint reaches, in meters: further than it moves in a
+/// tick, so the ground ahead is built before the actor steps onto it.
+const FOOTPRINT_MARGIN: f32 = 0.5;
+
+/// Whether the colliders under an actor are built. The parcel and precinct caches follow the
+/// view, and evict what they drop with its colliders, so an actor away from the view can lose the
+/// ground under it; one moved then would fall through where it stood.
+#[derive(SystemParam)]
+pub(crate) struct GroundReady<'w, 's> {
+    terrain: TerrainPending<'w, 's>,
+    scenery: SceneryPending<'w, 's>,
+}
+
+impl GroundReady<'_, '_> {
+    /// Whether everything under the footprint of a capsule of `radius` at `position` in `realm`
+    /// is built.
+    fn under(&self, realm: Entity, position: Vec3, radius: f32) -> bool {
+        let reach = Vec2::splat(radius + FOOTPRINT_MARGIN);
+        let footprint = Rect::from_corners(position.xz() - reach, position.xz() + reach);
+        self.terrain.area_waiting(realm, footprint).is_none()
+            && self.scenery.area_waiting(realm, footprint).is_none()
+    }
+}
+
+/// Gives an actor physics once the ground under it is built: its footprint (`GroundReady`), and a
+/// ray down from above the actor hits a collider, which it does only after the realm has stepped
+/// since the collider was inserted.
 pub(crate) fn start_actor_physics(
     mut commands: Commands,
-    actors: Query<(Entity, &Actor, &Transform), Without<ActorMotion>>,
+    actors: Query<
+        (
+            Entity,
+            &Actor,
+            &Transform,
+            Option<&CollisionSize>,
+            Option<&ActorScale>,
+        ),
+        Without<ActorMotion>,
+    >,
     realms: Query<&RealmPhysics>,
-    terrain: TerrainPending,
-    scenery: SceneryPending,
+    ground: GroundReady,
 ) {
-    if actors.is_empty() || terrain.waiting_on().is_some() || scenery.waiting_on().is_some() {
-        return;
-    }
-    for (entity, actor, transform) in &actors {
+    for (entity, actor, transform, size, scale) in &actors {
         let Ok(physics) = realms.get(actor.realm) else {
             continue;
         };
         let position = transform.translation;
+        if !ground.under(actor.realm, position, capsule(size, scale).radius) {
+            continue;
+        }
         let facing = transform.rotation.to_euler(EulerRot::YXZ).0;
         let ray = Ray::new(position + Vec3::Y * GROUND_RAY_RISE, Vec3::NEG_Y);
         let ground =
@@ -155,7 +186,8 @@ pub(crate) fn start_actor_physics(
 /// facing, falling under gravity, stopped and slid by what they meet, and pushed out of what they
 /// are inside (R26), and put back where they last stood when they fall out of the world (R27).
 /// Runs after the realm steps, so colliders inserted since the last tick are in its broad phase.
-/// Only the viewpoint's realm steps, so actors in other realms hold still. Resting actors
+/// Only the viewpoint's realm steps, so actors in other realms hold still, and so do actors whose
+/// ground is not built (`GroundReady`), mid-fall included, until it is. Resting actors
 /// (`ActorResting`) are skipped.
 pub(crate) fn move_actors(
     mut commands: Commands,
@@ -171,6 +203,7 @@ pub(crate) fn move_actors(
     realms: Query<&RealmPhysics>,
     viewpoint: Res<Viewpoint>,
     time: Res<Time<Fixed>>,
+    ground: GroundReady,
 ) {
     let dt = time.timestep().as_secs_f32();
     let controller = controller();
@@ -191,6 +224,9 @@ pub(crate) fn move_actors(
         }
 
         let shape = capsule(size, scale);
+        if !ground.under(actor.realm, motion.position, shape.radius) {
+            continue;
+        }
         let queries = physics.world().query_pipeline();
         let mut center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
         let pushed = push_out(&controller, &queries, &shape, center, dt);

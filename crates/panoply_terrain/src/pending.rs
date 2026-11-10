@@ -7,13 +7,14 @@ use crate::{
     flora::{ComputeFloraTask, FloraInstance},
     terrain_map::TerrainMap,
     water_mesh::ComputeWaterMeshTask,
-    BiomesHandle, ComputeGroundMeshTask, Parcel, ParcelFloraChanged, ParcelWaterChanged,
-    RebuildParcelGroundMesh, RebuildParcelTerrainFx, TerrainContoursHandle,
+    BiomesHandle, ComputeGroundMeshTask, Parcel, ParcelCache, ParcelFloraChanged, ParcelKey,
+    ParcelWaterChanged, RebuildParcelGroundMesh, RebuildParcelTerrainFx, TerrainContoursHandle,
+    PARCEL_SIZE_F,
 };
 
 /// Terrain work still to do: assets loading, parcels whose ground, water or flora is not yet
 /// built, and flora scenes waiting for their frame budget. For readiness checks, such as the
-/// editor's `ViewReady`, and the readiness survey.
+/// editor's `ViewReady` and actors' footprints, and the readiness survey.
 #[derive(SystemParam)]
 pub struct TerrainPending<'w, 's> {
     server: Res<'w, AssetServer>,
@@ -52,6 +53,7 @@ pub struct TerrainPending<'w, 's> {
     /// Each flora instance's parent is the parcel's flora entity, a child of the parcel.
     flora_scenes: Query<'w, 's, &'static ChildOf, (With<FloraInstance>, Without<WorldAssetRoot>)>,
     parents: Query<'w, 's, &'static ChildOf>,
+    cache: Res<'w, ParcelCache>,
 }
 
 /// One parcel's state, for the readiness survey.
@@ -81,6 +83,29 @@ impl TerrainPending<'_, '_> {
         } else {
             None
         }
+    }
+
+    /// Names what keeps the colliders under `area` (world x and z, in meters) in `realm` from being
+    /// built: a parcel there not loaded, since the parcel cache evicts parcels with their colliders,
+    /// or one whose ground or flora, whose trunks and canopy are colliders, is still being built.
+    /// `None` when they all are, for physics on that ground, such as an actor's footprint.
+    pub fn area_waiting(&self, realm: Entity, area: Rect) -> Option<&'static str> {
+        if self.assets_loading() {
+            return Some("terrain assets");
+        }
+        let min = (area.min / PARCEL_SIZE_F).floor().as_ivec2();
+        let max = (area.max / PARCEL_SIZE_F).floor().as_ivec2();
+        for z in min.y..=max.y {
+            for x in min.x..=max.x {
+                let Some(parcel) = self.cache.peek(&ParcelKey { realm, x, z }) else {
+                    return Some("parcels not loaded");
+                };
+                if self.ground.contains(parcel) || self.flora.contains(parcel) {
+                    return Some("parcels");
+                }
+            }
+        }
+        None
     }
 
     /// Whether the contours, biomes or a realm's terrain map are still loading.

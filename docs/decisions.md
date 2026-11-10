@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D67.**
+**Next: D68.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -329,8 +329,8 @@ never reused.
   to hit an actor, and leaving it out spares filtering the actor out of its own casts. Reversing
   that, for actors blocking each other or picking, adds a collider and a filter, and lets rapier's
   debug render draw it; until then the F3 view draws capsules itself, under the `ACTOR` group's
-  "Actors" entry in the Show menu. An actor gets physics when nothing terrain or scenery is pending
-  and a ray down from it hits a collider, until X33's footprint query. (PAN3f)
+  "Actors" entry in the Show menu. An actor gets physics when its footprint is built (D67) and a ray
+  down from it hits a collider. (PAN3f)
 - **D42** The camera follows an entity named in `Viewpoint::follow` (R102's active entity), set to
   the player's actor at spawn. Moving the viewpoint any other way (`GotoLocation`, the free camera's
   arrow keys) clears it, so plans and the editor look anywhere without fighting the actor; W or S
@@ -518,3 +518,13 @@ never reused.
   tool overlays without a reactive framework, each a shape and a short update system. The crate
   holds no Panoply types, so it can leave the workspace. Reversing it means immediate gizmos,
   redrawn every frame and without the faint underlay where the scene hides them. (PAN36)
+- **D67** An actor moves, and gets physics, only where its footprint is built: every parcel and
+  precinct under its capsule plus half a metre is loaded and has no colliders still to build
+  (`GroundReady`, the `area_waiting` of `TerrainPending` and `SceneryPending`). Elsewhere it holds
+  as it is, mid-fall included. Physics ground comes from the parcel and precinct caches, which
+  follow the view and evict what they drop with its colliders, so an actor away from the view can
+  lose its ground; moved then, it fell through where it stood (notes, the 3 fps spiral). The
+  alternative, keeping what lies under actors out of eviction, ties physics further to the drawing
+  caches. No step count is kept for new colliders: `move_actors` runs after the realm steps, and
+  only the stepped realm's actors move. Reversing it means actors simulate on ground that may be
+  gone. faery's `isPhysicsReady` was the same check (faery.md, Actors and navigation). (PAN66b)

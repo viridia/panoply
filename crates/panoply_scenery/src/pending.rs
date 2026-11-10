@@ -3,21 +3,25 @@ use bevy::{
     world_serialization::WorldAssetRoot,
 };
 
+use panoply_core::Realm;
+
 use crate::{
     floor_mesh::ComputeFloorMeshTask,
     floor_region::{RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
-    precinct::{Precinct, ReadPrecinctData},
+    precinct::{Precinct, PrecinctKey, ReadPrecinctData},
+    precinct_cache::PrecinctCache,
     scenery_element::{
         SceneryElementMesh, SceneryElementRebuildAspects, SceneryElementRebuildColliders,
         SceneryElementRebuildModels,
     },
     terrain_fx_map::RebuildTerrainFxVertexAttrs,
+    PRECINCT_SIZE_F,
 };
 
 /// Scenery work still to do: precinct assets loading, precincts, elements and floors not yet
 /// built, and element scenes waiting for their frame budget. For readiness checks, such as the
-/// editor's `ViewReady`, and the readiness survey. A precinct with no file fails to load, and
-/// counts as done (X34).
+/// editor's `ViewReady` and actors' footprints, and the readiness survey. A precinct with no file
+/// fails to load, and counts as done (X34).
 #[derive(SystemParam)]
 pub struct SceneryPending<'w, 's> {
     server: Res<'w, AssetServer>,
@@ -48,6 +52,8 @@ pub struct SceneryPending<'w, 's> {
     >,
     scenes: Query<'w, 's, Entity, (With<SceneryElementMesh>, Without<WorldAssetRoot>)>,
     parents: Query<'w, 's, &'static ChildOf>,
+    realms: Query<'w, 's, &'static Realm>,
+    cache: Res<'w, PrecinctCache>,
 }
 
 /// One precinct's state, for the readiness survey.
@@ -82,6 +88,48 @@ impl SceneryPending<'_, '_> {
         } else {
             None
         }
+    }
+
+    /// Names what keeps the colliders under `area` (world x and z, in meters) in `realm` from being
+    /// built: a precinct there not loaded, since the precinct cache evicts precincts with their
+    /// colliders, its asset still loading, or work on it or on its elements' aspects and colliders
+    /// or its floors still to do. Outside the realm's precinct bounds there is no scenery to wait
+    /// for. `None` when it is all built, for physics on that ground, such as an actor's footprint.
+    pub fn area_waiting(&self, realm: Entity, area: Rect) -> Option<&'static str> {
+        let Ok(bounds) = self.realms.get(realm).map(|realm| realm.precinct_bounds) else {
+            return None;
+        };
+        let min = (area.min / PRECINCT_SIZE_F).floor().as_ivec2();
+        let max = (area.max / PRECINCT_SIZE_F).floor().as_ivec2();
+        let area = bounds.intersect(IRect::from_corners(min, max + IVec2::ONE));
+        let mut precincts = Vec::new();
+        for z in area.min.y..area.max.y {
+            for x in area.min.x..area.max.x {
+                let Some(entity) = self.cache.peek(&PrecinctKey { realm, x, z }) else {
+                    return Some("precincts not loaded");
+                };
+                let Ok((_, precinct)) = self.precincts.get(entity) else {
+                    return Some("precincts not loaded");
+                };
+                if self.server.load_state(&precinct.asset).is_loading() {
+                    return Some("precinct assets");
+                }
+                if self.read.contains(entity) || self.fx.contains(entity) {
+                    return Some("precincts");
+                }
+                precincts.push(entity);
+            }
+        }
+        let building = self.aspects.iter().chain(&self.models).chain(&self.floors);
+        for entity in building {
+            if self
+                .precinct_of(entity)
+                .is_some_and(|precinct| precincts.contains(&precinct))
+            {
+                return Some("scenery elements");
+            }
+        }
+        None
     }
 
     /// Every loaded precinct and what it, and what it owns, still waits on.

@@ -7,6 +7,7 @@
 - Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
   Screenshots at a scenery element (walls, and the road from terrain effects) and at the origin
   (the tiered dungeon floors of precinct 0,0).
+- Actors: after that tour, which evicts the ground under the actors at the start, none is falling.
 - Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
   Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
@@ -50,6 +51,7 @@ INSET = "panoply_core::viewport::ViewportInset"
 GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
 TERRAIN_TOOL = "panoply_editor::mode_selector::TerrainTool"
+MOTION = "panoply_actors::actor_physics::ActorMotion"
 BUTTON_VARIANT = "bevy_feathers::controls::button::ButtonVariant"
 MODE_BUTTONS = ["RealmMode", "TerrainMode", "SceneryMode", "CatalogsMode", "PlayMode"]
 TOOL_BUTTONS = [
@@ -81,6 +83,8 @@ def run(driver):
     camera(driver)
     driver.caption("scenery")
     scenery(driver)
+    driver.caption("actors")
+    actors_hold(driver)
     driver.caption("editor")
     editor(driver)
     driver.caption("go to dialog")
@@ -159,6 +163,17 @@ def by_name(driver, prefix, components=(), with_=()):
         for row in named(driver, components, with_)
         if row["components"][NAME].startswith(prefix)
     ]
+
+
+def actors_hold(driver):
+    """After the tour, which evicts the parcels and precincts around the actors at the start, no
+    actor is falling: one whose ground is gone holds still until it is built again."""
+    driver.frames(10)
+    rows = named(driver, [MOTION], [MOTION])
+    falling = [row["components"][NAME] for row in rows if row["components"][MOTION]["falling"]]
+    print(f"{len(rows)} actors with physics, {len(falling)} falling")
+    assert rows, "no actor has physics"
+    assert not falling, f"actors falling after the tour: {falling}"
 
 
 def position(row):

@@ -360,12 +360,17 @@ def run(driver):
     skeletons = driver.select("Actor/hips")
     assert len(skeletons) == 1, f"{len(skeletons)} skeletons after the reload, not one"
 
-    # A precinct's actors despawn with it. Its colliders go too, which wakes the resting player
-    # for a tick, after which it rests again: as of a later change to the realm's colliders.
+    # A precinct's actors despawn with it, and its colliders go too. The player stands in it, so
+    # the ground under it is no longer built: it holds where it is, still resting as of before.
     before = wait_resting(driver, "Actor", True)["collider_changes"]
+    stood = driver.get("Actor", MOTION)["position"]
     driver.call("world.despawn_entity", {"entity": driver.select(FIRST_PRECINCT)[0]})
     driver.absent("Actor:Shopkeeper")
-    wait_resting(driver, "Actor", True, since=before)
+    driver.frames(10)
+    after = resting(driver, "Actor")
+    assert after and after["collider_changes"] == before, f"rested again without ground: {after}"
+    moved = driver.get("Actor", MOTION)["position"]
+    assert moved == stood, f"moved from {stood} to {moved} without ground"
     driver.exits("Escape")
 
 
@@ -549,16 +554,13 @@ def resting(driver, selector):
     return found.get(RESTING)
 
 
-def wait_resting(driver, selector, expected, since=None):
+def wait_resting(driver, selector, expected):
     """Waits until the actor `selector` matches rests, or does not, and returns its
-    `ActorResting`, or None. With `since`, a resting actor must have come to rest after that many
-    collider changes."""
+    `ActorResting`, or None."""
 
     def check():
         found = resting(driver, selector)
         done = (found is not None) == expected
-        if found is not None and since is not None:
-            done = done and found["collider_changes"] > since
         return done, lambda: f"{found} at {driver.get(selector, MOTION)}"
 
     state = "to rest" if expected else "not to rest"

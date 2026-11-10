@@ -238,27 +238,14 @@ dropped, not deferred. Numbers are never reused.
   (`4e2eb9911`; arbor_day's X48), which D34's commit includes. *Gate:* met; delete once a
   re-exported leaf color shows at every distance without a restart.
 - **X32** Outline widths from the model: `models::process_material_extras` reads only whether a
-  material has the `"outline"` extra, so every outline is drawn at `OutlineMaterial`'s default
-  width (0.015) and the width arbor_day exports has no effect. One outline material per distinct
-  width, cached by a key built from the material's parameters, as faery did: its
-  `ModelCatalog.getMaterial` (`packages/engine/src/models/ModelCatalog.ts`, over `MaterialPool`)
-  keyed each generated material by kind and parameters (`outline_<width>`,
-  `color_<color>_<map>`, `billboard_<map>`, `flame_…`), the outline width read from the node, its
-  parent or the material and rounded to 0.001 first, so near-equal widths share one material.
-  The same cache would serve Panoply's other generated materials. *Gate:* the first arbor_day species placed in the game.
-- **X33** Region readiness: one query, given an area, that is true when no part of it overlaps a
-  parcel or precinct still being built. Actors pass their footprint: an actor gets a physics
-  body only where the colliders under it are built. Built means inserted and the realm stepped
-  once since: rapier 0.36 adds an inserted collider to the broad phase, which queries and the
-  character controller use, only in `step`, and only the viewpoint's realm steps (D35). A
-  per-realm step count against each parcel's insert step would do; the collider itself is made
-  in the ground-mesh task, so construction needs no state of its own. Plans pass a point (the viewpoint) or the
-  camera's estimated view (the parcel show set, D20, already computes one). A loading screen
-  after a portal would use it too. Render readiness may need its own check, beside physics.
-  faery's version is in [faery.md](faery.md), Actors and navigation. The plans' half landed in
-  PAN9 as `ViewReady`, which covers every loaded parcel and precinct rather than an area; the
-  `*Pending` system params it combines (`TerrainPending`, `SceneryPending`, `ModelsPending`)
-  are where an area filter would go. *Gate:* actors (PAN3), for the footprint query.
+  material has the `"outline"` extra, so every outline is drawn at `OutlineMaterial`'s default width
+  (0.015) and the width arbor_day exports has no effect. One outline material per distinct width,
+  cached by a key built from the material's parameters, as faery did: its `ModelCatalog.getMaterial`
+  (`packages/engine/src/models/ModelCatalog.ts`, over `MaterialPool`) keyed each generated material
+  by kind and parameters (`outline_<width>`, `color_<color>_<map>`, `billboard_<map>`, `flame_…`),
+  the outline width read from the node, its parent or the material and rounded to 0.001 first, so
+  near-equal widths share one material. The same cache would serve Panoply's other generated
+  materials. *Gate:* the first arbor_day species placed in the game.
 - **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and others):
   the game loads every precinct position near the view, but only some exist. It needs to know which
   do, by a directory scan or a catalog file. A catalog works in packaged and web builds, where

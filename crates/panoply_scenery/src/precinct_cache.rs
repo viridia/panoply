@@ -31,6 +31,11 @@ impl PrecinctCache {
     pub fn get(&mut self, key: &PrecinctKey) -> Option<Entity> {
         self.precincts.get(key).cloned()
     }
+
+    /// The precinct at `key`, if loaded, without marking it used.
+    pub fn peek(&self, key: &PrecinctKey) -> Option<Entity> {
+        self.precincts.peek(key).cloned()
+    }
 }
 
 /// System that manages the spawning and despawning of Precincts (scenery units) based on proximity

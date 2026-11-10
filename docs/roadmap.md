@@ -20,12 +20,6 @@ PAN66, actor physics on missing ground, in lettered parts, each fixing its own c
 fall to 3 fps in `plans/smoke.py` (the diagnosis is in [notes.md](notes.md)). A slow fixed step
 could hide either of the first two, so each part checks its own fix, not the frame rate.
 
-- **PAN66b Actor physics readiness.** Physics ground follows the drawing cache: evicting a parcel
-  removes its colliders, while `move_actors` moves every actor in the realm, so actors far from the
-  view fall, and those whose ground stays missing loop through R27's put-back forever. An actor
-  moves only while its footprint (its parcel's ground and its precinct's scenery) is built, and
-  holds still as a resting actor does otherwise; `start_actor_physics` waits so once, at spawn
-  (`TODO(X33)`). Checked in `smoke.py` after its tour: no actor falling, none awake without intent.
 - **PAN66c Fixed-step spiral guard.** Bevy catches up by up to 250 ms of fixed steps a frame (16),
   so a step that costs more than its 15.6 ms freezes the game rather than slowing it. Lower the
   catch-up (`Time<Virtual>::set_max_delta`) to a few steps, so overload runs in slow motion; decide

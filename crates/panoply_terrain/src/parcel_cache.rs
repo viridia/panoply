@@ -53,6 +53,11 @@ impl ParcelCache {
         self.parcels.len()
     }
 
+    /// The parcel at `key`, if loaded, without marking it used.
+    pub fn peek(&self, key: &ParcelKey) -> Option<Entity> {
+        self.parcels.peek(key).copied()
+    }
+
     /// Query all parcels within a given rectangle.
     pub fn query(&self, realm: Entity, rect: IRect) -> ParcelRectIterator<'_> {
         ParcelRectIterator {

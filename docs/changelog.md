@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN66b** Actors away from the view hold still while their ground is unloaded, not falling.
 - **PAN66a** An actor caught inside the ground is pushed out and lands, rather than sticking there.
 - **PAN38a** Terrain mode has its panel, whose palette chooses a tool; later parts add the tools.
 - **PAN37** The realm panel's map size control grows or shrinks the map a parcel at a side.
