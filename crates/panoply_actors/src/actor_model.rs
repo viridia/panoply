@@ -19,9 +19,9 @@ pub struct ActorBody {
 
 /// Rebuilds the models of each actor whose character file was reloaded, rather than letting Bevy
 /// respawn its scenes in place: that would leave the features skinned to the old bones, spawn the
-/// features again, and lose the wielded items, whose scenes are children of the body's bones.
-/// Bevy's spawner also panics reloading a scene that holds another scene's root, as a bone holds
-/// a wielded item. Asset events reach `Update` a frame before the spawner reads them in
+/// features again, and lose the wielded items, whose scenes are children of the body's bones: the
+/// spawner despawns the old bones with the items under them, and forgets an instance whose parent
+/// is gone rather than respawning it. Asset events reach `Update` a frame before the spawner reads them in
 /// `SpawnScene`, so the old scenes are despawned, and forgotten by the spawner, before it would
 /// respawn them.
 pub fn rebuild_reloaded_actors(

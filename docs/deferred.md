@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X84.**
+**Next: X85.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -487,3 +487,10 @@ dropped, not deferred. Numbers are never reused.
 - **X83** Bevy's math types handed to rapier directly. Bevy is on glam 0.34 and rapier on 0.33
   (through `glamx`), so each crossing converts with `panoply_core::rapier_math`'s `to_rapier` and
   `to_bevy`. *Gate:* a rapier release on Bevy's glam; then delete the module and its calls.
+- **X84** The townsfolk stop's 1 ms lost to bevy#26371 (PAN68's bump): 11.61 and 11.82 ms in two
+  runs, against 10.40 to 10.94 before it (`docs/perf.csv`). It adds `Changed<GlobalTransform>` to
+  `check_entities_needing_specialization`, so every moving mesh is re-specialized each frame, though
+  only transparent items' cached sort centers needed refreshing; townsfolk has the most moving
+  meshes. Not confirmed by reverting it. Reported on Discord (2026-11-10); Bevy is tracking an
+  alternate fix, with no PR yet. *Gate:* that fix in the Bevy we build against; then compare
+  townsfolk in `perf.py`.

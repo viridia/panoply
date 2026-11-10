@@ -23,11 +23,6 @@ In order.
   around them, and add a double-click to the dialog's check in `plans/smoke.py`. Then placeholder
   text in the editor's text boxes, now in `EditableText` (bevy#25110): "Filter…" in the nav point
   list's filter, a hint in the text-entry dialog.
-- **PAN70 Nested scenes without the rebuild.** Bevy's spawner no longer panics reloading a scene
-  that holds another scene's root: an instance whose parent was despawned is unregistered
-  (bevy#26459). PAN49 avoided the panic by rebuilding actors whose file reloads
-  (`rebuild_reloaded_actors`); try wielded items reloading in place, and drop the rebuild if they
-  do.
 
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale

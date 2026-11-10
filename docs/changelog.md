@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN70** Checked that reloading a character file still needs a rebuild; nothing changes in play.
 - **PAN68** Built against a newer Bevy main, which brings fixes to the editor's lists and inputs.
 - **PAN67** Portals shimmer again: their glow drifts off the arch, as in the old engine.
 - **PAN38c** Terrain mode's sculpting tools show where they will act, and draw the parcel grid.
