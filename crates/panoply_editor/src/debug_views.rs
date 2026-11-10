@@ -10,7 +10,7 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_actors::{Actor, ActorMotion, ActorScale, CollisionSize};
-use panoply_core::{realm_physics::collision_groups, RealmPhysics, Viewpoint};
+use panoply_core::{realm_physics::collision_groups, RealmPhysics, ToBevy, ToRapier, Viewpoint};
 use panoply_terrain::Parcel;
 use rapier3d::{
     pipeline::{DebugColor, DebugRenderBackend, DebugRenderMode, DebugRenderObject},
@@ -167,11 +167,11 @@ fn draw_physics(
     }
 
     let origin = viewpoint.position + Vec3::Y * 1000.;
-    let ray = Ray::new(origin, Vec3::NEG_Y);
+    let ray = Ray::new(origin.to_rapier(), Vec3::NEG_Y.to_rapier());
     let hit = physics
         .world()
         .cast_ray(&ray, 2000., true, QueryFilter::default());
-    probe.hit = hit.map(|(_, distance)| ray.point_at(distance));
+    probe.hit = hit.map(|(_, distance)| ray.point_at(distance).to_bevy());
     probe.groups = hit
         .and_then(|(handle, _)| physics.world().colliders.get(handle))
         .map_or(0, |collider| collider.collision_groups().memberships.bits());
@@ -201,8 +201,17 @@ impl DebugRenderBackend for GizmoBackend<'_, '_, '_> {
         }
     }
 
-    fn draw_line(&mut self, _object: DebugRenderObject, a: Vec3, b: Vec3, color: DebugColor) {
-        self.gizmos
-            .line(a, b, Color::hsla(color[0], color[1], color[2], color[3]));
+    fn draw_line(
+        &mut self,
+        _object: DebugRenderObject,
+        a: rapier3d::math::Vec3,
+        b: rapier3d::math::Vec3,
+        color: DebugColor,
+    ) {
+        self.gizmos.line(
+            a.to_bevy(),
+            b.to_bevy(),
+            Color::hsla(color[0], color[1], color[2], color[3]),
+        );
     }
 }

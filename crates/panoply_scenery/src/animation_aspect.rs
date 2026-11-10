@@ -156,7 +156,7 @@ struct BoundTransition {
 
 /// One [`SceneryAnimation`] that follows an input, bound to its model.
 struct InputAnimation {
-    nodes: Vec<AnimationNodeIndex>,
+    nodes: Vec<BlendNodeIndex>,
     input: AnimationInput,
     on_true: BoundTransition,
     on_false: BoundTransition,
@@ -185,7 +185,7 @@ pub(crate) fn bind_scenery_animations(
     mut players: Query<&mut AnimationPlayer>,
     gltfs: Res<Assets<Gltf>>,
     clips: Res<Assets<AnimationClip>>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut graphs: ResMut<Assets<BlendGraph>>,
     asset_server: Res<AssetServer>,
 ) {
     let Ok((mesh, element)) = meshes.get(ready.entity) else {
@@ -208,7 +208,7 @@ pub(crate) fn bind_scenery_animations(
         return;
     };
 
-    let mut graph = AnimationGraph::new();
+    let mut graph = BlendGraph::new();
     let mut bound = Vec::new();
     for animation in &animations.0 {
         let value = animation
@@ -241,7 +241,7 @@ pub(crate) fn bind_scenery_animations(
     }
     commands
         .entity(player_entity)
-        .insert(AnimationGraphHandle(graphs.add(graph)));
+        .insert(BlendGraphHandle(graphs.add(graph)));
     commands.entity(element.parent()).insert(BoundAnimations {
         player: player_entity,
         animations: bound,

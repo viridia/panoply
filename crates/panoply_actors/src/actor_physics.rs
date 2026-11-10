@@ -5,7 +5,7 @@
 //! each other.
 
 use bevy::{ecs::system::SystemParam, prelude::*};
-use panoply_core::{RealmPhysics, Viewpoint};
+use panoply_core::{RealmPhysics, ToBevy, ToRapier, Viewpoint};
 use panoply_scenery::SceneryPending;
 use panoply_terrain::TerrainPending;
 use rapier3d::{
@@ -160,7 +160,7 @@ pub(crate) fn start_actor_physics(
             continue;
         }
         let facing = transform.rotation.to_euler(EulerRot::YXZ).0;
-        let ray = Ray::new(position + Vec3::Y * GROUND_RAY_RISE, Vec3::NEG_Y);
+        let ray = down_ray(position + Vec3::Y * GROUND_RAY_RISE);
         let ground =
             physics
                 .world()
@@ -250,16 +250,17 @@ pub(crate) fn move_actors(
             dt,
             &queries,
             &shape,
-            &Pose::from_translation(center),
-            (travel + Vec3::Y * motion.vertical_speed) * dt,
+            &Pose::from_translation(center.to_rapier()),
+            ((travel + Vec3::Y * motion.vertical_speed) * dt).to_rapier(),
             |_| {},
         );
-        motion.position += movement.translation;
+        let moved = movement.translation.to_bevy();
+        motion.position += moved;
         // The controller's `grounded` includes steep slopes, where the actor must keep falling to
         // slide down (R24). From the pose the next tick starts at, so it serves that tick too.
         let ground = movement
             .grounded
-            .then(|| walkable_ground(&queries, &shape, center + movement.translation))
+            .then(|| walkable_ground(&queries, &shape, center + moved))
             .flatten();
         motion.grounded = ground.is_some();
         if let Some(normal) = ground {
@@ -270,13 +271,13 @@ pub(crate) fn move_actors(
         } else if !motion.falling {
             // A ray from just above the feet, so it starts outside the ground the controller
             // keeps its gap from.
-            let ray = Ray::new(motion.position + Vec3::Y * GROUND_CAST_GAP, Vec3::NEG_Y);
+            let ray = down_ray(motion.position + Vec3::Y * GROUND_CAST_GAP);
             motion.falling = queries
                 .cast_ray(&ray, FALL_HEIGHT + GROUND_CAST_GAP, true)
                 .is_none();
         } else if motion.position.y < motion.last_stood.y - FALL_OUT_DEPTH {
             // Nothing under it: off the map's edge or through a hole, out of the world (R27).
-            let ray = Ray::new(motion.position, Vec3::NEG_Y);
+            let ray = down_ray(motion.position);
             if queries.cast_ray(&ray, GROUND_RAY_LENGTH, true).is_none() {
                 motion.position = motion.last_stood;
                 motion.previous = motion.last_stood;
@@ -308,21 +309,27 @@ fn push_out(
     center: Vec3,
     dt: f32,
 ) -> Vec3 {
-    let pose = Pose::from_translation(center);
+    let pose = Pose::from_translation(center.to_rapier());
     if queries.intersect_shape(pose, shape).next().is_none() {
         return Vec3::ZERO;
     }
     controller
-        .move_shape(dt, queries, shape, &pose, Vec3::ZERO, |_| {})
+        .move_shape(dt, queries, shape, &pose, Vec3::ZERO.to_rapier(), |_| {})
         .translation
+        .to_bevy()
+}
+
+/// A ray straight down from `origin`.
+fn down_ray(origin: Vec3) -> Ray {
+    Ray::new(origin.to_rapier(), Vec3::NEG_Y.to_rapier())
 }
 
 /// The normal of the ground just under a capsule centered at `center`, if it is gentle enough to
 /// walk on.
 fn walkable_ground(queries: &QueryPipeline, shape: &Capsule, center: Vec3) -> Option<Vec3> {
     let (_, hit) = queries.cast_shape(
-        &Pose::from_translation(center),
-        Vec3::NEG_Y,
+        &Pose::from_translation(center.to_rapier()),
+        Vec3::NEG_Y.to_rapier(),
         shape,
         ShapeCastOptions {
             target_distance: GROUND_CAST_GAP,
@@ -331,7 +338,7 @@ fn walkable_ground(queries: &QueryPipeline, shape: &Capsule, center: Vec3) -> Op
             compute_impact_geometry_on_penetration: true,
         },
     )?;
-    (hit.normal1.y >= WALKABLE_NORMAL_Y).then_some(hit.normal1)
+    (hit.normal1.y >= WALKABLE_NORMAL_Y).then_some(hit.normal1.to_bevy())
 }
 
 /// Draws each actor between its last two ticks' poses.
@@ -361,6 +368,7 @@ mod tests {
         let step = size / cells as f32;
         let vertices = (0..=cells)
             .flat_map(|z| (0..=cells).map(move |x| Vec3::new(x as f32, 0.0, z as f32) * step))
+            .map(ToRapier::to_rapier)
             .collect();
         let row = cells + 1;
         let indices = (0..cells)
@@ -399,17 +407,17 @@ mod tests {
                 DT,
                 &queries,
                 &shape,
-                &Pose::from_translation(center),
-                Vec3::Y * vertical_speed * DT,
+                &Pose::from_translation(center.to_rapier()),
+                (Vec3::Y * vertical_speed * DT).to_rapier(),
                 |_| {},
             );
-            center += movement.translation;
+            center += movement.translation.to_bevy();
             landed = movement.grounded;
         }
         let feet = center.y - shape.half_height() - shape.radius;
         assert!(landed, "not grounded, feet at {feet}");
         assert!((0.0..0.05).contains(&feet), "feet at {feet}, not on the ground");
-        let pose = Pose::from_translation(center);
+        let pose = Pose::from_translation(center.to_rapier());
         assert!(queries.intersect_shape(pose, &shape).next().is_none(), "still inside the ground");
     }
 

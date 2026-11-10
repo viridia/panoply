@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I31.**
+**Next: I32.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -92,3 +92,10 @@ confirmed by running something or only by reading. Numbers are never reused.
   the run logs hitches too, and the same plan run alone does not: `smoke.py` logged hitches in the
   directory run and none by itself. Candidates: set it only for `scroll.py`'s own launch, if the
   driver takes a per-plan environment, or turn it on for every plan. Confirmed by running.
+- **I31** The townsfolk stop slowed by about 1 ms with PAN68's Bevy bump (11.61 ms against 10.40 to
+  10.94 in the four runs before it, `docs/perf.csv`); 48_48 rose 0.5 ms and the editor 0.3 ms, the
+  other stops are flat. The suspect is bevy#26371, which adds `Changed<GlobalTransform>` to
+  `check_entities_needing_specialization`, so every mesh that moves is re-specialized each frame,
+  where the fix needed only sorted (transparent) items' cached centers refreshed; townsfolk is the
+  stop with the most moving meshes. One run, so not yet told apart from noise; next, `ablate.py` at
+  townsfolk, or a run with that commit reverted locally. If confirmed, worth reporting upstream.

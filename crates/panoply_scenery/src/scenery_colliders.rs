@@ -2,7 +2,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics};
+use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics, ToRapier};
 use panoply_exemplar::Exemplar;
 use rapier3d::prelude::{
     ColliderBuilder, Group, InteractionGroups, InteractionTestMode, Pose, SharedShape,
@@ -97,14 +97,22 @@ impl ColliderDesc {
                 let radius = size.max_element();
                 (SharedShape::ball(radius), radius)
             }
-            ColliderShape::Ellipsoid => (SharedShape::convex_hull(&ellipsoid_points(size))?, 0.),
+            ColliderShape::Ellipsoid => (convex_hull(ellipsoid_points(size))?, 0.),
             ColliderShape::Ramp => {
                 rotation = Quat::from_rotation_y(self.facing.unwrap_or(0.) * FRAC_PI_2);
-                (SharedShape::convex_hull(&ramp_points(size))?, size.y)
+                (convex_hull(ramp_points(size))?, size.y)
             }
         };
-        Some((shape, Pose::from_parts(offset + Vec3::Y * lift, rotation)))
+        Some((
+            shape,
+            Pose::from_parts((offset + Vec3::Y * lift).to_rapier(), rotation.to_rapier()),
+        ))
     }
+}
+
+fn convex_hull(points: impl IntoIterator<Item = Vec3>) -> Option<SharedShape> {
+    let points: Vec<_> = points.into_iter().map(ToRapier::to_rapier).collect();
+    SharedShape::convex_hull(&points)
 }
 
 /// A wedge in a box of half-extents `size`: the floor of the box, rising to its top at +z.
@@ -170,7 +178,10 @@ pub fn build_se_colliders(
             Some(exemplar) if exemplar.0.meta_type == WALL_TYPE => collision_groups::WALL,
             _ => collision_groups::FIXTURE,
         };
-        let placement = Pose::from_parts(element.position, Quat::from_rotation_y(element.facing));
+        let placement = Pose::from_parts(
+            element.position.to_rapier(),
+            Quat::from_rotation_y(element.facing).to_rapier(),
+        );
         let handles = colliders
             .0
             .iter()

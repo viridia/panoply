@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X83.**
+**Next: X84.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -382,22 +382,10 @@ dropped, not deferred. Numbers are never reused.
   the icon's position on the map where it differs from the point's, and `viewAngle`, the heading on
   arrival; add each to `NavPoint` when something reads it. *Gate:* the map is planned, or travel
   needs a heading.
-- **X57** Bevy widget bugs the author is fixing upstream (bevy#26444, bevy#26445), all seen in the
-  Go To dialog, which Panoply leaves alone meanwhile:
-  - A list's focus outline (`highlight_active` in feathers' `listview.rs`) is pickable and covers
-    its row, so the second click of a double-click lands on it and `PointerClick::count` restarts:
-    double-clicking a nav point does nothing.
-  - Feathers colors a text input's cursor only when the theme changes, so an input spawned later
-    keeps the default dark gray cursor.
-  - A modal makes focus visible as it opens (`modal_dialog_barrier_on_spawn` in `bevy_ui_widgets`'
-    `modal.rs`), so the filter box shows a focus ring with no keyboard navigation, which closes up
-    the gap between it and the list.
-  - bevy#26447: the list view's scrollbar positions itself against its container's edge
-    (`right: px(4)`), where in feathers the container owns the padding. Go To nests the list as
-    `group() > group_body()`, whose padding is lopsided by that inset until it is gone.
-
-  *Gate:* a Bevy bump that includes the fixes; then check each in the Go To dialog, and add a
-  double-click to its check in `plans/smoke.py`.
+- **X57** A modal makes focus visible as it opens (`modal_dialog_barrier_on_spawn` in
+  `bevy_ui_widgets`' `modal.rs`), so the Go To dialog's filter box shows a focus ring with no
+  keyboard navigation, which closes up the gap between it and the list. The author is fixing it
+  upstream (bevy#26445). *Gate:* a Bevy bump that includes the fix; then check it in the dialog.
 - **X58** The game UI's font in assets, not code: `panoply_core::fonts` loads Macondo Swash Caps and
   names its family. *Gate:* BSN assets (X1); then a game UI scene names the font, and the module
   goes.
@@ -405,10 +393,6 @@ dropped, not deferred. Numbers are never reused.
   the 3D view while its entry is selected, as faery's dialogue state machine editor did
   ([faery.md](faery.md), Editor, `catalogs-dialogue.png`). *Gate:* the first catalog kind whose
   entries do not fit the panel is taken up; dialogues are the likely first.
-- **X60** Placeholder text in the editor's text boxes ("Filter…" in the nav point list's filter, a
-  hint in the text-entry dialog). `EditableText` lists placeholders as planned but not implemented
-  (`bevy_text`'s `editing.rs`), and feathers' text input has none; an overlaid label was judged not
-  worth it. *Gate:* a Bevy bump whose `EditableText` or feathers text input has placeholders.
 - **X61** Audio beyond transition sounds (D63). The old engine had ambient sound emitters placed as
   a scenery aspect (`SoundSource`), music, water sounds and an audio-effect system (`AudioFx`,
   `AudioFxTemplate`). The proving slice: one ambient emitter aspect and music per realm, on Bevy's
@@ -440,8 +424,8 @@ dropped, not deferred. Numbers are never reused.
   PAN6's door opened by a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
 - **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
   ([modding.md](modding.md), Types a mod declares). Bevy plans that layer, for dynamic data, on
-  `bevy_reflect2` (bevy#26356); use Bevy's if it has landed. *Gate:* a mod needs an aspect that
-  native aspects, formulas and the generic variables aspect cannot express.
+  `bevy_reflect2`, whose MVP has landed (bevy#26356); use Bevy's if the layer has. *Gate:* a mod
+  needs an aspect that native aspects, formulas and the generic variables aspect cannot express.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
   `Sword` cannot collide; an order for packages that override the same exemplar; what a save keeps
   of a removed mod's aspects (X20 covers only the editor); and a mod built against an older version
@@ -451,13 +435,6 @@ dropped, not deferred. Numbers are never reused.
   dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
   decides what a package exports, as X63's precinct exports do. SAGA's imports and asset ids would
   share one scheme. *Gate:* a second package loads beside the game.
-- **X68** Scenes nested in scenes. Bevy's spawner panics reloading a scene that holds another
-  scene's root: the reload despawns the inner root inside the spawner's `resource_scope`, where the
-  hook that would forget its instance cannot reach the spawner, then reparents the instance to the
-  dead root (`world_asset_spawner.rs:372`, `:517`). Wielded items are the one nesting, each a child
-  of a body's bone, and PAN49 avoids it there by rebuilding actors whose file reloads
-  (`rebuild_reloaded_actors`). The author is reporting it upstream. *Gate:* another kind of scene is
-  nested in one (an item on a precinct's prop, say), or Bevy's fix lands.
 - **X69** Stop faery's precinct converter overwriting ([faery.md](faery.md), Migration scripts):
   once Panoply edits a precinct, a rerun would undo it. Freeze it as the realm map converter is, or
   make it merge as the archetype converter does, if faery's precincts still hold content Panoply has
@@ -507,3 +484,6 @@ dropped, not deferred. Numbers are never reused.
 - **X81** A switch for the selected parcel's overlay between the contour as edited, which it shows
   now, and the smoothed ground the game draws, as faery had. *Gate:* sculpting (PAN38c) that needs
   to see where the smoothed ground lies.
+- **X83** Bevy's math types handed to rapier directly. Bevy is on glam 0.34 and rapier on 0.33
+  (through `glamx`), so each crossing converts with `panoply_core::rapier_math`'s `to_rapier` and
+  `to_bevy`. *Gate:* a rapier release on Bevy's glam; then delete the module and its calls.

@@ -4,7 +4,7 @@
 
 use bevy::{
     prelude::*,
-    remote::{BrpResult, RemoteMethodSystemId, RemoteMethods},
+    remote::{BrpResult, RemoteMethodHandler, RemoteMethods},
 };
 use panoply_core::{Realm, Viewpoint};
 use panoply_render::ModelsPending;
@@ -22,10 +22,9 @@ pub(super) fn register(world: &mut World) {
     if !world.contains_resource::<RemoteMethods>() {
         return;
     }
-    let system = world.register_system(survey);
-    world
-        .resource_mut::<RemoteMethods>()
-        .insert(METHOD, RemoteMethodSystemId::Instant(system));
+    let method =
+        RemoteMethodHandler::Instant(Box::new(IntoSystem::into_system(survey))).register(world);
+    world.resource_mut::<RemoteMethods>().insert(METHOD, method);
 }
 
 fn survey(

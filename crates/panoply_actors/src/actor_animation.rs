@@ -160,7 +160,7 @@ pub(crate) struct ActorClips {
 
 #[derive(Debug, Clone)]
 struct StateClip {
-    node: AnimationNodeIndex,
+    node: BlendNodeIndex,
     clip: Handle<AnimationClip>,
 }
 
@@ -252,7 +252,7 @@ pub(crate) fn build_actor_graph(
     mut commands: Commands,
     mut query: Query<(Entity, &ActorArmature, &mut AnimationPlayer), Without<ActorClips>>,
     gltfs: Res<Assets<Gltf>>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut graphs: ResMut<Assets<BlendGraph>>,
 ) {
     for (entity, armature, mut player) in query.iter_mut() {
         let Some(gltf) = gltfs.get(&armature.clips) else {
@@ -275,7 +275,7 @@ pub(crate) fn build_actor_graph(
             let name = armature.clip_names.get(name).map_or(name, String::as_str);
             Some((name.to_owned(), gltf.named_animations.get(name)?.clone()))
         };
-        let mut graph = AnimationGraph::new();
+        let mut graph = BlendGraph::new();
         let root = graph.root;
         let mut nodes = HashMap::<String, StateClip>::new();
         let mut states = HashMap::new();
@@ -305,7 +305,7 @@ pub(crate) fn build_actor_graph(
             ActorClips { states },
             ActorAnimationState::Stand,
             transitions,
-            AnimationGraphHandle(graphs.add(graph)),
+            BlendGraphHandle(graphs.add(graph)),
         ));
     }
 }

@@ -394,7 +394,10 @@ fn compute_ground_mesh(
 
     // Fails only if every cell is a hole; the parcel then has ground to draw but none to stand on.
     let collider = ColliderBuilder::trimesh(
-        position.iter().map(|&vtx| Vec3::from_array(vtx)).collect(),
+        position
+            .iter()
+            .map(|&vtx| rapier3d::math::Vec3::from_array(vtx))
+            .collect(),
         collider_indices,
     )
     .ok()

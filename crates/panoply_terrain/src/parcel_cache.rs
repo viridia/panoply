@@ -14,7 +14,7 @@ use bevy::{
 };
 use rapier3d::prelude::{ColliderHandle, RigidBodyBuilder};
 
-use panoply_core::{Realm, RealmPhysics, Viewpoint};
+use panoply_core::{Realm, RealmPhysics, ToRapier, Viewpoint};
 
 use super::{
     terrain_map::{TerrainMap, TerrainMapAsset},
@@ -208,11 +208,10 @@ pub fn spawn_parcels(
                         None => {
                             // println!("Creating parcel {} {}; biomes: {:?}.", x, z, biomes);
                             // Insert new parcel
-                            let rb_builder = RigidBodyBuilder::fixed().translation(Vec3::new(
-                                x as f32 * PARCEL_SIZE_F,
-                                0.,
-                                z as f32 * PARCEL_SIZE_F,
-                            ));
+                            let rb_builder = RigidBodyBuilder::fixed().translation(
+                                Vec3::new(x as f32 * PARCEL_SIZE_F, 0., z as f32 * PARCEL_SIZE_F)
+                                    .to_rapier(),
+                            );
                             let rigid_body = rb_builder.build();
                             let rb_handle = realm_physics.insert_body(rigid_body);
                             // println!("Creating parcel {} {}; center shape {}", x, z, center.id);

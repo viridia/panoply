@@ -1,6 +1,6 @@
 use bevy::{math::IRect, prelude::*};
 
-use panoply_core::{Realm, RealmPhysics, Viewpoint};
+use panoply_core::{Realm, RealmPhysics, ToRapier, Viewpoint};
 use rapier3d::prelude::RigidBodyBuilder;
 
 use super::{
@@ -109,7 +109,9 @@ pub fn spawn_precincts(
                         let origin =
                             Vec3::new(x as f32 * PRECINCT_SIZE_F, 0., z as f32 * PRECINCT_SIZE_F);
                         let physics = realm_physics
-                            .insert_body(RigidBodyBuilder::fixed().translation(origin).build());
+                            .insert_body(
+                                RigidBodyBuilder::fixed().translation(origin.to_rapier()).build(),
+                            );
                         let entity = commands.spawn((
                             Name::new(format!("Precinct:{}:{}:{}", realm.name, x, z)),
                             Precinct {

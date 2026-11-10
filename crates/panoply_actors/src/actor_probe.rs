@@ -4,7 +4,8 @@
 use bevy::prelude::*;
 use bevy_action_map::prelude::*;
 use panoply_core::{
-    realm_physics::collision_groups, RealmPhysics, ViewOverlay, GAME_UI_FONT, KEY_PROMPT_FONT,
+    realm_physics::collision_groups, RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT,
+    KEY_PROMPT_FONT,
 };
 use panoply_exemplar::{perform_interaction, Interactions};
 use rapier3d::{
@@ -85,9 +86,12 @@ pub(crate) fn probe_interaction(
             InteractionTestMode::And,
         ));
         let (handle, hit) = world.cast_shape(
-            &Pose::from_parts(motion.position + Vec3::Y * half_height, rotation),
-            rotation * Vec3::Z,
-            &Cuboid::new(Vec3::new(PROBE_HALF_WIDTH, half_height, PROBE_HALF_DEPTH)),
+            &Pose::from_parts(
+                (motion.position + Vec3::Y * half_height).to_rapier(),
+                rotation.to_rapier(),
+            ),
+            (rotation * Vec3::Z).to_rapier(),
+            &Cuboid::new(Vec3::new(PROBE_HALF_WIDTH, half_height, PROBE_HALF_DEPTH).to_rapier()),
             ShapeCastOptions::with_max_time_of_impact(PROBE_REACH),
             filter,
         )?;

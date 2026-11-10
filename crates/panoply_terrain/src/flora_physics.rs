@@ -10,6 +10,7 @@
 //! a floor.
 
 use bevy::prelude::*;
+use panoply_core::ToRapier;
 use rapier3d::prelude::{Pose, SharedShape, TriMeshFlags};
 
 use crate::{
@@ -43,7 +44,7 @@ pub fn trunk_shape(trunks: &[(Vec3, f32)]) -> Option<SharedShape> {
             let radius = 0.35;
             let center = base + Vec3::Y * CANOPY_HEIGHT * 0.5;
             (
-                Pose::from_translation(center),
+                Pose::from_translation(center.to_rapier()),
                 SharedShape::capsule_y(CANOPY_HEIGHT * 0.5 - radius, radius),
             )
         })
@@ -143,12 +144,12 @@ fn canopy_cover(
 fn canopy_mesh(cover: &[bool], height: impl Fn(usize, usize) -> f32) -> Option<SharedShape> {
     const CORNERS: usize = PARCEL_SIZE_U + 1;
     let mut corner_index = vec![u32::MAX; CORNERS * CORNERS];
-    let mut vertices: Vec<Vec3> = Vec::new();
-    let mut corner = |x: usize, z: usize, vertices: &mut Vec<Vec3>| {
+    let mut vertices: Vec<rapier3d::math::Vec3> = Vec::new();
+    let mut corner = |x: usize, z: usize, vertices: &mut Vec<rapier3d::math::Vec3>| {
         let slot = &mut corner_index[x + z * CORNERS];
         if *slot == u32::MAX {
             *slot = vertices.len() as u32;
-            vertices.push(Vec3::new(x as f32, height(x, z), z as f32));
+            vertices.push(Vec3::new(x as f32, height(x, z), z as f32).to_rapier());
         }
         *slot
     };

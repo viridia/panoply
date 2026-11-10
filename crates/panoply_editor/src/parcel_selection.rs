@@ -22,7 +22,8 @@ use bevy::{
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
 use panoply_core::{
-    realm_physics::collision_groups, GameMode, PrimaryCamera, Realm, RealmPhysics, Viewpoint,
+    realm_physics::collision_groups, GameMode, PrimaryCamera, Realm, RealmPhysics, ToRapier,
+    Viewpoint,
 };
 use panoply_terrain::{
     Parcel, ParcelCache, ParcelKey, TerrainMap, TerrainMapAsset, PARCEL_SIZE_F, WATER_HEIGHT,
@@ -104,7 +105,12 @@ fn pick_ground(
             continue;
         };
         let ground = world
-            .cast_ray(&Ray::new(ray.origin, *ray.direction), PICK_RANGE, true, filter)
+            .cast_ray(
+                &Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier()),
+                PICK_RANGE,
+                true,
+                filter,
+            )
             .and_then(|(handle, distance)| {
                 let collider = world.colliders.get(handle)?;
                 Some((Entity::try_from_bits(collider.user_data as u64)?, distance))

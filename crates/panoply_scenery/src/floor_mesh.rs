@@ -12,7 +12,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task},
 };
 use futures_lite::future;
-use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics};
+use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics, ToRapier};
 use panoply_render::FloorNoisyMaterial;
 use rapier3d::prelude::{
     ColliderBuilder, Group, InteractionGroups, InteractionTestMode, SharedShape, TriMeshFlags,
@@ -235,6 +235,7 @@ fn compute_floor_mesh(params: FloorMeshParams) -> Option<FloorMeshResult> {
 /// oriented here, outward, whatever the winding of the rings and of earcut's output.
 fn compute_floor_collider(params: &FloorMeshParams, triangles: &[usize]) -> Option<SharedShape> {
     let (vertices, indices) = floor_collider_mesh(params, triangles);
+    let vertices = vertices.into_iter().map(ToRapier::to_rapier).collect();
     SharedShape::trimesh_with_flags(vertices, indices, TriMeshFlags::FIX_INTERNAL_EDGES).ok()
 }
 

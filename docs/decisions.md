@@ -240,14 +240,15 @@ never reused.
   libvips; zstd needs another npm package on Node 18. Size: 6.7 MB of KTX2 for 4.3 MB of PNG.
   Textures inside glTFs (flora leaves, scenery) still lack mips (X27).
 - **D34** Bevy is git main, not releases (supersedes D1): Panoply will not ship before 0.21 (BSN
-  assets), and main has what the editor needs (split pane, tabs, tree view, `bevy_inspector`).
-  Every repo in the family names it exactly `git = "https://github.com/bevyengine/bevy.git",
-  branch = "main"`: Cargo treats a `branch` and a `rev` as different sources even at the same
-  commit, so a `rev` would build a second Bevy beside the dependencies'. `Cargo.lock` holds the
-  commit, `784b85d`, the same as `arbor_day`, `bevy_action_map`, `bevy_immediate` and the
-  driver's testbed. `bevy_action_map` is its git `main` too (0.2.0-dev). Bump all repos together,
-  one chunk per bump, with `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update`
-  takes main's head. API source: Cargo's checkout of that commit, per AGENTS.md.
+  assets), and main has what the editor needs (split pane, tabs, tree view, `bevy_inspector`). Every
+  repo in the family names it exactly
+  `git = "https://github.com/bevyengine/bevy.git", branch = "main"`: Cargo treats a `branch` and a
+  `rev` as different sources even at the same commit, so a `rev` would build a second Bevy beside
+  the dependencies'. `Cargo.lock` holds the commit, `a35f1b5`, the same as `arbor_day`,
+  `bevy_action_map`, `bevy_immediate` and the driver's testbed. `bevy_action_map` is its git `main`
+  too (0.2.0-dev). Bump all repos together, one chunk per bump, with
+  `cargo update -p bevy_ecs --precise <commit>`; a plain `cargo update` takes main's head. API
+  source: Cargo's checkout of that commit, per AGENTS.md.
 - **D35** `rapier3d` 0.36, used directly (D22), not through `bevy_rapier`, so not tied to a Bevy
   version. Its math is glam, the same release as Bevy's (0.33), so `Vec3` passes without conversion.
   `RealmPhysics` wraps rapier's `PhysicsWorld`, which bundles the sets; queries go through

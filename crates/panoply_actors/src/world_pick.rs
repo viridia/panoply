@@ -12,7 +12,8 @@ use bevy::{
     window::{CursorOptions, CustomCursor, CustomCursorImage, PrimaryWindow},
 };
 use panoply_core::{
-    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
+    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, ToBevy, ToRapier,
+    Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
 use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
@@ -142,7 +143,7 @@ pub(crate) fn pick_world(
             vec![(*backstop, HitData::new(id.camera, 0., None, None))],
             BACKSTOP_ORDER,
         ));
-        let ray = Ray::new(ray.origin, *ray.direction);
+        let ray = Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier());
         let Some((handle, distance)) =
             world.and_then(|world| world.cast_ray(&ray, PICK_RANGE, true, filter))
         else {
@@ -164,7 +165,7 @@ pub(crate) fn pick_world(
         if current != Some(cursor) {
             commands.entity(target).try_insert(cursor.clone());
         }
-        let hit = HitData::new(id.camera, distance, Some(ray.point_at(distance)), None);
+        let hit = HitData::new(id.camera, distance, Some(ray.point_at(distance).to_bevy()), None);
         hits.write(PointerHits::new(
             id.pointer,
             vec![(target, hit)],
