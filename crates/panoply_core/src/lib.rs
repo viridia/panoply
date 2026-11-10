@@ -14,7 +14,10 @@ pub mod viewpoint;
 pub mod viewport;
 
 use bevy::{
-    app::{App, FixedUpdate, HierarchyPropagatePlugin, Plugin, PostUpdate, PropagateSet, Update},
+    app::{
+        App, FixedUpdate, HierarchyPropagatePlugin, Plugin, PostUpdate, PropagateSet, Startup,
+        Update,
+    },
     asset::AssetApp,
     camera::visibility::{RenderLayers, VisibilitySystems},
     prelude::{AppExtStates, Component, IntoScheduleConfigs},
@@ -29,7 +32,7 @@ pub use nav_point::{NavPoint, NavPointsAsset, NavPointsHandleResource};
 pub use quit::{QuitGate, QuitRequest};
 pub use realm::Realm;
 use realm::{load_realms, RealmData, RealmsHandleResource, RealmsLoader};
-use realm_physics::realm_physics_system;
+use realm_physics::{cap_catch_up, realm_physics_system};
 pub use realm_physics::{OwnedColliders, RealmPhysics};
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
@@ -78,6 +81,7 @@ impl Plugin for PanoplyCorePlugin {
                     sunlight::sync_sunlight,
                 ),
             )
+            .add_systems(Startup, cap_catch_up)
             .add_systems(FixedUpdate, realm_physics_system)
             // A scene instance (flora, scenery, model) carries `Propagate<RenderLayers>` with its
             // realm's layer, which reaches every descendant, including ones spawned later, such

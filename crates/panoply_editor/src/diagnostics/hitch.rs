@@ -172,12 +172,23 @@ fn count_spawns(
     log.history.push_back(spawns);
 }
 
-/// Runs first in a frame, when `Time<Real>` holds the length of the frame before it.
-fn log_hitch(log: Res<HitchLog>, time: Res<Time<Real>>) {
+/// Runs first in a frame, when `Time<Real>` holds the length of the frame before it. A frame longer
+/// than the fixed step's catch-up cap (D68) says how much game time it dropped, since a run of them
+/// is the game slowing under overload.
+fn log_hitch(log: Res<HitchLog>, time: Res<Time<Real>>, virt: Res<Time<Virtual>>) {
     let delta = time.delta();
     if log.frame < SKIP_FRAMES || delta < HITCH {
         return;
     }
+    let dropped = delta.saturating_sub(virt.max_delta());
+    let capped = if dropped.is_zero() {
+        String::new()
+    } else {
+        format!(
+            "; over the catch-up cap, {:.1} ms of game time dropped",
+            dropped.as_secs_f64() * 1000.
+        )
+    };
     let spawns = log
         .history
         .iter()
@@ -202,7 +213,7 @@ fn log_hitch(log: Res<HitchLog>, time: Res<Time<Real>>) {
         .collect::<Vec<_>>()
         .join(" ");
     info!(
-        "Hitch: frame {} took {:.1} ms; spawned {spawns}",
+        "Hitch: frame {} took {:.1} ms{capped}; spawned {spawns}",
         log.frame,
         delta.as_secs_f64() * 1000.
     );

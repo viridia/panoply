@@ -2,6 +2,7 @@
 
     bevy-remote-driver plans/smoke.py
 
+- Time: a frame catches up at most four fixed steps.
 - Camera: the arrows move, strafe and turn the view, which the editor's saved view tracks, and
   = and - zoom it.
 - Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
@@ -52,6 +53,7 @@ GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
 TERRAIN_TOOL = "panoply_editor::mode_selector::TerrainTool"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
+VIRTUAL = "bevy_time::time::Time<bevy_time::virt::Virtual>"
 BUTTON_VARIANT = "bevy_feathers::controls::button::ButtonVariant"
 MODE_BUTTONS = ["RealmMode", "TerrainMode", "SceneryMode", "CatalogsMode", "PlayMode"]
 TOOL_BUTTONS = [
@@ -79,6 +81,10 @@ CAMERA_SPEED = 10.0
 
 def run(driver):
     driver.present("PrimaryCamera")
+    # A frame catches up at most four fixed steps, 62.5 ms at 64 Hz, so overload slows the game
+    # rather than freezing it (D68).
+    cap = driver.get_resource(VIRTUAL, at="context.max_delta")
+    assert cap == {"secs": 0, "nanos": 62_500_000}, f"catch-up cap {cap}, not 62.5 ms"
     driver.caption("camera")
     camera(driver)
     driver.caption("scenery")

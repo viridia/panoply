@@ -16,15 +16,6 @@ changelog.
 
 In order.
 
-PAN66, actor physics on missing ground, in lettered parts, each fixing its own cause of the editor's
-fall to 3 fps in `plans/smoke.py` (the diagnosis is in [notes.md](notes.md)). A slow fixed step
-could hide either of the first two, so each part checks its own fix, not the frame rate.
-
-- **PAN66c Fixed-step spiral guard.** Bevy catches up by up to 250 ms of fixed steps a frame (16),
-  so a step that costs more than its 15.6 ms freezes the game rather than slowing it. Lower the
-  catch-up (`Time<Virtual>::set_max_delta`) to a few steps, so overload runs in slow motion; decide
-  here how many, and whether the hitch log reports frames that hit the cap.
-
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
 (existence, goals, planning, body, presentation) talk through components, with readiness as

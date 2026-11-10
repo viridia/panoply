@@ -124,6 +124,17 @@ impl RealmPhysics {
     }
 }
 
+/// Most fixed steps a frame catches up (D68). A frame that took longer than this many steps feeds
+/// only this many into the accumulator, and the rest of its time is dropped: under overload the
+/// game slows down rather than freezing, as it does when each frame owes more steps than the last.
+pub const MAX_CATCH_UP_STEPS: u32 = 4;
+
+/// Caps each frame's virtual time at [`MAX_CATCH_UP_STEPS`] fixed steps, in place of Bevy's 250 ms
+/// (16 steps at 64 Hz).
+pub fn cap_catch_up(fixed: Res<Time<Fixed>>, mut virt: ResMut<Time<Virtual>>) {
+    virt.set_max_delta(fixed.timestep() * MAX_CATCH_UP_STEPS);
+}
+
 /// Steps the viewpoint's realm by the fixed timestep. Other realms are not stepped.
 pub fn realm_physics_system(
     mut realm_query: Query<(&Realm, &mut RealmPhysics)>,

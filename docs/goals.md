@@ -39,6 +39,10 @@ What Panoply is for. For how far the earlier engine got, see `faery.md`.
   Retro is one item in the palette, not the theme.
 - Motion and the camera follow the same rule, verisimilitude over realism: they are judged by how
   they read on screen.
+- The homage is to the late-90s and early-2000s engines, built without their limits on CPU and
+  memory, not to the limits themselves: no pixelated art, no deliberately low frame rate.
+- 120 fps is the aim, because smooth motion feels good. It is polish, not play, which is never timed
+  finely: a heavy moment may slow down, but below about 12 fps it stops being watchable.
 - Characters and scenery are good enough at a distance. Close-up portraits are the weak spot.
 
 ## Modding

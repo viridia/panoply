@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I30.**
+**Next: I31.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -87,3 +87,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   extension is not registered on the `NodeIO`, so gltf-transform drops it on writing, with a warning
   the error-only logger hides. Those materials work only through their extras at runtime. Confirmed
   in the same writer path for anisotropy; the unlit case read, not run.
+- **I30** `plans/scroll.py` turns on the hitch log by setting `PANOPLY_HITCH_LOG` in `os.environ`
+  when it is imported. A directory run imports every plan into one process, so each plan after it in
+  the run logs hitches too, and the same plan run alone does not: `smoke.py` logged hitches in the
+  directory run and none by itself. Candidates: set it only for `scroll.py`'s own launch, if the
+  driver takes a per-plan environment, or turn it on for every plan. Confirmed by running.

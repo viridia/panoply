@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D68.**
+**Next: D69.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -528,3 +528,14 @@ never reused.
   caches. No step count is kept for new colliders: `move_actors` runs after the realm steps, and
   only the stepped realm's actors move. Reversing it means actors simulate on ground that may be
   gone. faery's `isPhysicsReady` was the same check (faery.md, Actors and navigation). (PAN66b)
+- **D68** A frame catches up at most four fixed steps (`MAX_CATCH_UP_STEPS`: `Time<Virtual>`'s
+  `max_delta` at 62.5 ms, in place of Bevy's 250 ms, 16 steps at 64 Hz); time past that is dropped.
+  A step that costs more than its 15.6 ms otherwise freezes the game: each frame owes more steps
+  than the last until the cap, which at 16 steps held the editor at 3 fps (notes, the 3 fps spiral).
+  Capped at four, overload slows the game instead, at R + 4c a frame for a step cost c and the rest
+  of the frame R. Play is not timed finely, and below about 12 fps the game stops being watchable
+  ([goals.md](goals.md), Art), so slowing is acceptable where freezing is not; four still absorbs an
+  ordinary hitch without losing time, where two would drop time on any frame over 31 ms. The clamp
+  is on virtual time, so animation, camera easing and the fixed steps slow together. The hitch log
+  names frames over the cap and the time each dropped. Reversing it means overload freezes the game.
+  (PAN66c)
