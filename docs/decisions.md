@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D66.**
+**Next: D67.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -511,3 +511,10 @@ never reused.
   only as files, and an asset with no path cannot go through `UnsavedAssets`. So creation is not on
   the undo stack. Reversing it means giving in-memory assets a path and letting realms load without
   a file. (PAN35)
+- **D66** Editor overlays are retained meshes from `panoply_overlays`, forked from
+  `bevy_reactor_gizmoids` without its reactive scope, which Panoply does not use; its `ShapeBuilder`
+  was rewritten to fix its stroke bugs. An overlay is a component holding just what its shape
+  depends on, written only on a difference, and the mesh is rebuilt when it changes: faery's many
+  tool overlays without a reactive framework, each a shape and a short update system. The crate
+  holds no Panoply types, so it can leave the workspace. Reversing it means immediate gizmos,
+  redrawn every frame and without the faint underlay where the scene hides them. (PAN36)

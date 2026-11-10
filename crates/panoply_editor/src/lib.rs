@@ -12,6 +12,7 @@ pub mod debug_views;
 pub mod diagnostics;
 pub mod goto;
 pub mod json;
+pub mod mode_overlays;
 pub mod mode_selector;
 pub mod nav_point_list;
 pub mod new_realm;
@@ -38,6 +39,8 @@ impl Plugin for EditorPlugin {
             zoom::EditorZoomPlugin,
             goto::GotoDialogPlugin,
             (
+                panoply_overlays::OverlaysPlugin,
+                mode_overlays::ModeOverlaysPlugin,
                 chooser::ChooserPlugin,
                 nav_point_list::NavPointListPlugin,
                 new_realm::NewRealmPlugin,

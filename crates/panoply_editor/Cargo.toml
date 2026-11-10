@@ -9,6 +9,7 @@ bevy_action_map = { workspace = true }
 bevy_immediate = { workspace = true }
 panoply_actors = { workspace = true }
 panoply_core = { workspace = true }
+panoply_overlays = { workspace = true }
 panoply_render = { workspace = true }
 panoply_scenery = { workspace = true }
 panoply_terrain = { workspace = true }

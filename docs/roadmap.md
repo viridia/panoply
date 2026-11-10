@@ -21,12 +21,6 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
 
-- **PAN36 Mode overlays.** Each editor mode draws its own overlays while active. Realm mode's first:
-  a grid on the ground at parcel and precinct boundaries, and the realm's border (faery's
-  `FlatGridOverlay` and `ParcelBoundsOverlay`, mounted by `MapEditPanel.tsx`); Panoply's Quill
-  editor drew it already (`src/editor/ui/overlays/map_bounds.rs`). Terrain mode's cursor and
-  selected parcel come with PAN38; the scenery mode's (faery's grid, floor cutaway, colliders, marks
-  and portals) with PAN5.
 - **PAN37 Map size control.** In the realm panel, eight buttons that grow or shrink the realm by a
   parcel on each of its four sides, two per side (faery's `MapSizeControl.tsx`; the pattern recurs
   elsewhere in faery). The control rotates with the camera's azimuth, so its sides match the map's
@@ -40,7 +34,9 @@ components and every layer restartable from saved state (R104).
   parcel's contour. Ported from the Quill editor (`REFERENCE(PAN5)`): `ui/mode_terrain.rs`,
   `ui/tool_terrain_edit.rs`, `ui/overlays/terrain_cursor.rs` and `selected_parcel.rs`,
   `terrain/terrain_map_undo.rs`. Edits mark the terrain map unsaved for PAN29's save button and go
-  on PAN42's undo stack.
+  on PAN42's undo stack. The cursor and selected parcel are mode overlays (`mode_overlays.rs`)
+  draped on the ground, which `panoply_overlays`' flat shapes cannot do: decide here between a
+  draping builder (gizmoids' `Line3dBuilder`, reviewed as `ShapeBuilder` was) and retained gizmos.
 - **PAN39 Contour chooser.** The terrain contours as a list of 3D thumbnails, choosing the selected
   parcel's contour, with controls to group and order the list (faery's + − ▲ ▼, `terrain.png`). From
   the Quill editor's `ui/controls/contour_chooser.rs`, `renderers/terrain_thumbnail.rs` and
@@ -178,14 +174,16 @@ components and every layer restartable from saved state (R104).
   changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
   while `follow_active_entity`'s far jump turns to the actor's facing.
 - **PAN5 Editor**, beyond PAN1's shell (see X3). `src/editor`, written for Quill, is reference
-  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The author has screenshots
-  of faery's editor. Its tools, modal (one per mode or submode button) or situational (the waypoint
-  tool, opened from a field), and its property editor's field widgets are surveyed in
-  [faery.md](faery.md), Editor; port each with the mode or field that needs it, the widgets chosen
-  by field type (D45). faery's other debug views (listed in [faery.md](faery.md), Editor) join the
-  Show menu with the features they show, not before. Among them, faery's parcel and precinct
-  readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
-  PAN10) when tuning load distances needs it on screen.
+  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. Scenery mode's overlays
+  (faery's grid, floor cutaway, colliders, marks and portals) are `panoply_overlays` shapes in
+  `mode_overlays.rs`. The author has screenshots of faery's editor. Its tools, modal (one per mode
+  or submode button) or situational (the waypoint tool, opened from a field), and its property
+  editor's field widgets are surveyed in [faery.md](faery.md), Editor; port each with the mode or
+  field that needs it, the widgets chosen by field type (D45). faery's other debug views (listed in
+  [faery.md](faery.md), Editor) join the Show menu with the features they show, not before. Among
+  them, faery's parcel and precinct readiness grid, drawn from the survey's data
+  (`TerrainPending::survey`, `SceneryPending::survey`, PAN10) when tuning load distances needs it on
+  screen.
 - **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
   what each needs are in [goals.md](goals.md).
 

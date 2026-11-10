@@ -14,6 +14,7 @@ members = [
   "crates/panoply_core",
   "crates/panoply_editor",
   "crates/panoply_exemplar",
+  "crates/panoply_overlays",
   "crates/panoply_precinct",
   "crates/panoply_render",
   "crates/panoply_scenery",
@@ -47,6 +48,7 @@ panoply_actors = { path = "crates/panoply_actors" }
 panoply_core = { path = "crates/panoply_core" }
 panoply_editor = { path = "crates/panoply_editor" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
+panoply_overlays = { path = "crates/panoply_overlays" }
 panoply_precinct = { path = "crates/panoply_precinct" }
 panoply_render = { path = "crates/panoply_render" }
 panoply_scenery = { path = "crates/panoply_scenery" }

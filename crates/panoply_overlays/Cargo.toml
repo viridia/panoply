@@ -1,0 +1,10 @@
+[package]
+name = "panoply_overlays"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"

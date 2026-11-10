@@ -4813,6 +4813,7 @@ dependencies = [
  "bevy_immediate",
  "panoply_actors",
  "panoply_core",
+ "panoply_overlays",
  "panoply_render",
  "panoply_scenery",
  "panoply_terrain",
@@ -4831,6 +4832,13 @@ dependencies = [
  "serde_json",
  "smallvec",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_overlays"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

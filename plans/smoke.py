@@ -7,7 +7,8 @@
 - Scenery: playground precincts spawn tiers, floor regions (with outlines) and scenery models.
   Screenshots at a scenery element (walls, and the road from terrain effects) and at the origin
   (the tiered dungeon floors of precinct 0,0).
-- Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes.
+- Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
+  Realm mode alone draws its grid.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -208,9 +209,12 @@ def editor(driver):
     # The starting mode has its panel too, not only a mode switched to.
     driver.present("RealmPanel")
     driver.screenshot("mode_selector")
+    # Realm mode's grid is drawn only in Realm mode.
+    driver.present("RealmGrid")
     driver.click("TerrainMode")
     wait_mode(driver, editor_mode, "Terrain")
     expect_highlight(driver, "TerrainMode")
+    driver.absent("RealmGrid")
     driver.click("PlayMode")
     wait_mode(driver, game_mode, "Play")
     driver.key("F2")
