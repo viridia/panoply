@@ -29,7 +29,7 @@ io.setLogger(new Logger(Logger.Verbosity.ERROR));
 
 // How far the crown sits behind the center of the hair, as a fraction of its depth. Characters
 // face -Z in their files, so behind is +Z.
-const HAIR_CROWN_BACK = 0.15;
+const HAIR_CROWN_BACK = 0.3;
 
 type Vec3 = [number, number, number];
 
@@ -73,7 +73,8 @@ function combHair(doc: Document, primitive: Primitive) {
 
   // gltf-transform rejects a `Float32Array` from this file's realm (overrun runs it in a VM
   // context), so the array is made with the constructor of one of its own. POSITION is always float.
-  const FloatArray = position.getArray()!.constructor as Float32ArrayConstructor;
+  const FloatArray = position.getArray()!
+    .constructor as Float32ArrayConstructor;
   const tangents = new FloatArray(position.getCount() * 4);
   const n: Vec3 = [0, 0, 0];
   for (let i = 0; i < position.getCount(); i++) {
@@ -92,7 +93,7 @@ function combHair(doc: Document, primitive: Primitive) {
       .createAccessor()
       .setType("VEC4")
       .setArray(tangents)
-      .setBuffer(position.getBuffer())
+      .setBuffer(position.getBuffer()),
   );
 }
 
@@ -140,7 +141,7 @@ const modelOpt = async (src: Buffer): Promise<Buffer> => {
       return doc;
     },
     resample(),
-    dedup()
+    dedup(),
   );
   return Buffer.from(await io.writeBinary(gltf));
 };
@@ -150,7 +151,7 @@ target(
   "characters",
   directory(srcRoot, "characters")
     .match("*.glb")
-    .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
+    .map((src) => src.transform(modelOpt).dest({ root: dstRoot })),
 );
 
 // Characters face -Z in their files, and actors face +Z at heading 0, so Bevy's loader turns each
@@ -176,8 +177,8 @@ target(
     .map((src) =>
       src
         .transform(() => characterMeta)
-        .dest((p) => p.withRoot(dstRoot).withExtension(".glb.meta"))
-    )
+        .dest((p) => p.withRoot(dstRoot).withExtension(".glb.meta")),
+    ),
 );
 
 // Prop files (weapons and tools), one named scene per prop.
@@ -185,7 +186,7 @@ target(
   "props",
   directory(srcRoot, "props")
     .match("*.glb")
-    .map((src) => src.transform(modelOpt).dest({ root: dstRoot }))
+    .map((src) => src.transform(modelOpt).dest({ root: dstRoot })),
 );
 
 // Scenery files.
@@ -194,8 +195,8 @@ target(
   directory({ root: `${srcRoot}/scenery` })
     .match("*.glb")
     .map((src) =>
-      src.transform(modelOpt).dest({ root: `${dstRoot}/scenery/models` })
-    )
+      src.transform(modelOpt).dest({ root: `${dstRoot}/scenery/models` }),
+    ),
 );
 
 // // Sound effects files.
@@ -245,7 +246,7 @@ function flora(targetName: string, relativeSrcDir: string, outFile: string) {
 
         return Buffer.from(await io.writeBinary(doc));
       })
-      .dest(dstRoot, outFile)
+      .dest(dstRoot, outFile),
   );
 }
 
@@ -253,7 +254,7 @@ function trees(group: string) {
   flora(
     `trees-${group}`,
     `flora/trees-${group}/`,
-    `terrain/models/${group}.glb`
+    `terrain/models/${group}.glb`,
   );
 }
 
@@ -278,7 +279,7 @@ function arborDayTrees(group: string) {
       // A document per run, as in flora().
       .reduce(null as unknown as Document, async (doc, next) =>
         // Read by path, not buffer, so the .bin and .png the .gltf references resolve.
-        (doc ?? new Document()).merge(await io.read(next.path.full))
+        (doc ?? new Document()).merge(await io.read(next.path.full)),
       )
       .transform(async (doc) => {
         await doc.transform(unpartition(), dedup());
@@ -293,7 +294,7 @@ function arborDayTrees(group: string) {
         }
         return Buffer.from(await io.writeBinary(doc));
       })
-      .dest(dstRoot, `terrain/models-new/${group}.glb`)
+      .dest(dstRoot, `terrain/models-new/${group}.glb`),
   );
 }
 
@@ -424,8 +425,8 @@ target(
     .map((src) =>
       src
         .transform(pngToKtx2)
-        .dest((p) => p.withRoot(dstRoot).withExtension(".ktx2"))
-    )
+        .dest((p) => p.withRoot(dstRoot).withExtension(".ktx2")),
+    ),
 );
 
 // // Textures
