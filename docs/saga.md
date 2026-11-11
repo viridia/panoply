@@ -74,6 +74,19 @@ What value slots change:
 - **Components are read through compiled accessors.** `self.transform.translation.x` is one
   instruction: the entity on the stack, an accessor built at registration that tracks the
   component and copies the fields read onto the stack.
+- **`self` is the entity a formula runs on**, an `Entity`. A component the host registers with the
+  aspect that gives it (`lock`, `LockState`, from `Lock`) is a property of every entity. A formula
+  is checked in two steps:
+  - Compiling checks its fields and types as if every component were there, and lists the components
+    it reads from `self`.
+  - Once an exemplar and its `extends` chain have loaded, each of those needs its aspect somewhere
+    along the chain, or the formula is an error naming it. A formula is checked only in the exemplar
+    that writes it, since one that extends it never loses an aspect, and an aspect that only
+    instances add does not count.
+
+  Another entity's components cannot be checked at load. A host type such as `Actor` that guarantees
+  them will prove them, or reading them gives an `Option` (below). Until then, a read of a component
+  the entity lacks fails the evaluation, logged once per formula.
 - **Native functions take and return slots** through a trait (`from_slots`, `to_slots`),
   implemented for the glam and Bevy types that matter, with a reflection fallback.
 - **References name things by stable id** (a fixture in the actor's precinct, the player), resolved
@@ -270,10 +283,9 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 
 ## Order of work
 
-1. Compiled component accessors for the chest's `when` (PAN45c).
-2. Imports (PAN71).
-3. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
-4. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
+1. Imports (PAN71).
+2. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
+3. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
    as the first native memos, for an animation's `when` (Early customers); measure with
    `plans/perf.py`. Each cell counts the reads its evaluation made and how many were repeats, the
    distribution shown in `perf.py`'s log, so whether tracking's dedup (a linear scan on insert)

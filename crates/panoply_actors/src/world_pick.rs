@@ -16,6 +16,7 @@ use panoply_core::{
     Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
+use panoply_saga::SagaHost;
 use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
 /// How far from the camera a pointer's ray can hit something, in meters.
@@ -122,9 +123,12 @@ pub(crate) fn pick_world(
     interactions: Query<(&Interactions, Option<&EntityCursor>)>,
     cursors: Res<WorldCursors>,
     backstop: Single<Entity, With<WorldBackstop>>,
-    mut hits: MessageWriter<PointerHits>,
+    host: Res<SagaHost>,
+    // Read for the interactions' `when`, so the hits are written through commands.
+    ecs: &World,
     mut commands: Commands,
 ) {
+    let host = host.get();
     let world = viewpoint
         .realm
         .and_then(|realm| realms.get(realm).ok())
@@ -138,7 +142,7 @@ pub(crate) fn pick_world(
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
-        hits.write(PointerHits::new(
+        commands.write_message(PointerHits::new(
             id.pointer,
             vec![(*backstop, HitData::new(id.camera, 0., None, None))],
             BACKSTOP_ORDER,
@@ -158,7 +162,7 @@ pub(crate) fn pick_world(
         let Ok((interactions, current)) = interactions.get(target) else {
             continue;
         };
-        let Some(name) = interactions.hover_cursor() else {
+        let Some(name) = interactions.hover_cursor(ecs, host, target) else {
             continue;
         };
         let cursor = cursors.get(name);
@@ -171,7 +175,7 @@ pub(crate) fn pick_world(
             Some(ray.point_at(distance).to_bevy()),
             None,
         );
-        hits.write(PointerHits::new(
+        commands.write_message(PointerHits::new(
             id.pointer,
             vec![(target, hit)],
             camera.order as f32,

@@ -6,11 +6,12 @@ use std::{
     marker::PhantomData,
     sync::{
         Arc, OnceLock,
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
 };
 
 use bevy::{
+    ecs::{entity::Entity, world::World},
     log::error,
     reflect::{
         CreateTypeData, PartialReflect, Reflect, ReflectSerialize, TypePath, TypeRegistration,
@@ -20,15 +21,22 @@ use bevy::{
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-    ExprType, HostState, NoImports, ScriptModule,
+    ExprType, HostState, NoImports, ScriptModule, ScriptVm, StackValue, TrackingScope,
     compiler::{compile_formula, format_error, format_span},
 };
 
 /// A compiled formula, or the message its compile error gave.
 type Compiled = Result<Arc<ScriptModule>, Arc<str>>;
 
-/// Where a formula and its clones keep their compiled form, set once as its asset loads.
-type CompiledCell = Arc<OnceLock<Compiled>>;
+/// What a formula and its clones share: their compiled form, set once as its asset loads, and
+/// whether an evaluation's failure has been logged.
+#[derive(Default)]
+struct FormulaCell {
+    result: OnceLock<Compiled>,
+    failure_logged: AtomicBool,
+}
+
+type CompiledCell = Arc<FormulaCell>;
 
 /// A formula returning a `T`, embedded in an asset. Its compiled form is shared by every clone.
 ///
@@ -59,16 +67,64 @@ impl<T: Typed + TypePath + Send + Sync> Formula<T> {
 
     /// The compiled formula, if it compiled.
     pub fn module(&self) -> Option<&Arc<ScriptModule>> {
-        self.compiled.get()?.as_ref().ok()
+        self.compiled.result.get()?.as_ref().ok()
     }
 
     /// Why the formula did not compile, located in its asset.
     pub fn error(&self) -> Option<&str> {
-        self.compiled
-            .get()?
-            .as_ref()
-            .err()
-            .map(|message| &**message)
+        compile_error(&self.compiled)
+    }
+}
+
+fn compile_error(cell: &FormulaCell) -> Option<&str> {
+    cell.result.get()?.as_ref().err().map(|message| &**message)
+}
+
+impl Formula<bool> {
+    /// The formula's value with `owner` as `self`. `None` if it did not compile or its evaluation
+    /// failed, as on an entity without a component it reads; a failure is logged the first time.
+    pub fn evaluate(&self, world: &World, host: &HostState, owner: Entity) -> Option<bool> {
+        let module = self.module()?;
+        let mut tracking = TrackingScope::default();
+        let mut vm = ScriptVm::new(world, host, &mut tracking);
+        vm.set_owner(owner);
+        let failure = match vm.run(module, ScriptModule::DEFAULT) {
+            Ok(StackValue::Bool(value)) => return Some(value),
+            Ok(other) => format!("returned {other:?}, not a bool"),
+            Err(err) => err.to_string(),
+        };
+        if !self.compiled.failure_logged.swap(true, Ordering::Relaxed) {
+            error!(
+                "{}: `{}` failed on {owner}: {failure}",
+                module.path, self.source
+            );
+        }
+        None
+    }
+}
+
+/// Any [`Formula`], whatever it returns: what a loader keeps to check its formulas after they
+/// compile. It shares the compiled form with the formula it was read as.
+#[derive(Clone)]
+pub struct FormulaRef {
+    source: Arc<str>,
+    compiled: CompiledCell,
+}
+
+impl FormulaRef {
+    /// The formula as written.
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    /// The compiled formula, once compiled, if it compiled.
+    pub fn module(&self) -> Option<&Arc<ScriptModule>> {
+        self.compiled.result.get()?.as_ref().ok()
+    }
+
+    /// Why the formula did not compile, located in its asset.
+    pub fn error(&self) -> Option<&str> {
+        compile_error(&self.compiled)
     }
 }
 
@@ -142,6 +198,22 @@ impl FormulaQueue {
         JsonReader { bytes, position }
     }
 
+    /// How many formulas have been read: a mark for [`FormulaQueue::read_since`].
+    pub fn mark(&self) -> usize {
+        self.pending.len()
+    }
+
+    /// The formulas read since `mark`, as the part of an asset that holds them was read.
+    pub fn read_since(&self, mark: usize) -> Vec<FormulaRef> {
+        self.pending[mark.min(self.pending.len())..]
+            .iter()
+            .map(|formula| FormulaRef {
+                source: formula.source.clone(),
+                compiled: formula.compiled.clone(),
+            })
+            .collect()
+    }
+
     /// Compiles every formula read, against `host`. A formula that fails stays uncompiled, with
     /// its error, which is also logged; the rest of the asset loads. `file` is the asset's bytes,
     /// which locate errors in a JSON file.
@@ -172,7 +244,7 @@ impl FormulaQueue {
                 }
             };
             // The cell was made for this formula, so it is empty.
-            let _ = formula.compiled.set(compiled);
+            let _ = formula.compiled.result.set(compiled);
         }
     }
 }

@@ -11,11 +11,12 @@ mod exemplar;
 mod instance_type;
 mod interaction;
 mod loader;
+mod script_components;
 /// Serialzation and deserialization functions.
 pub mod ser;
 
 use bevy::{
-    app::{App, Plugin},
+    app::{App, Plugin, Update},
     asset::AssetApp,
 };
 use panoply_saga::SagaPlugin;
@@ -29,6 +30,7 @@ pub use exemplar::Exemplar;
 use exemplar::ExemplarCatalog;
 pub use instance_type::InstanceType;
 pub use interaction::*;
+pub use script_components::{ScriptComponentAppExt, ScriptComponents};
 
 /// Bevy plugin for exemplars. Adds [`SagaPlugin`], which aspects' formulas compile with, if
 /// it is not added yet.
@@ -46,6 +48,7 @@ impl Plugin for ExemplarPlugin {
             .register_type::<Vec<InteractionDesc>>()
             .init_asset::<ExemplarCatalog>()
             .init_asset::<Exemplar>()
-            .init_asset_loader::<loader::ExemplarLoader>();
+            .init_asset_loader::<loader::ExemplarLoader>()
+            .add_systems(Update, script_components::check_script_components);
     }
 }

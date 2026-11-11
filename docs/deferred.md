@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X95.**
+**Next: X97.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -534,3 +534,12 @@ dropped, not deferred. Numbers are never reused.
 - **X94** An editor list of the formulas that failed to compile, each naming its asset and the
   object it belongs to, with a way to open it to fix. Each `Formula` keeps its error
   (`Formula::error`). *Gate:* PAN28's property editor, which edits a formula field.
+- **X95** JSON schemas for exemplar files, for VS Code's completion and validation when editing them
+  by hand. Generate them from the type registry, as `bevy_remote`'s `registry.schema` does for each
+  reflected type, so only the envelope (names to entries with `type` and `aspects`) is written by
+  hand. faery's schemas (`packages/schemas`) describe a format Panoply no longer has and are not
+  ported. *Gate:* hand-editing exemplar JSON becomes routine again.
+- **X96** Check the formulas in a precinct instance's own aspects, as exemplars' are (D71), against
+  the instance's aspects and its exemplar's chain, once the precinct's exemplars have loaded. Until
+  then such a formula is checked only as it runs: a missing component fails its evaluation, logged
+  once. *Gate:* the first precinct instance with a formula of its own.

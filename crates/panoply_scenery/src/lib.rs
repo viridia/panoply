@@ -1,6 +1,6 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
-use panoply_exemplar::{InstanceType, InteractionAppExt};
+use panoply_exemplar::{InstanceType, InteractionAppExt, ScriptComponentAppExt};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::{spawn_precincts, PrecinctCache};
@@ -13,6 +13,7 @@ use self::{
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
+    lock_aspect::{Lock, LockState},
     precinct::{mark_precinct_data, read_precinct_data},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{build_se_colliders, ColliderDesc, ColliderShape, ColliderType},
@@ -27,6 +28,7 @@ mod container_aspect;
 mod floor_mesh;
 pub mod floor_region;
 mod floor_surface;
+mod lock_aspect;
 mod pending;
 pub mod precinct;
 mod precinct_cache;
@@ -69,6 +71,10 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<LightSource>()
             .register_type::<Container>()
             .register_type::<ContainerState>()
+            .register_type::<Lock>()
+            .register_type::<LockState>()
+            .register_script_component::<Container, ContainerState>("container")
+            .register_script_component::<Lock, LockState>("lock")
             .register_interaction_action::<Container>("ContainerToggle", |world, entity| {
                 world.trigger(ContainerToggle { entity });
             })

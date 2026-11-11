@@ -51,6 +51,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
             alias: Vec::new(),
             aspects: Vec::new(),
             extends: None,
+            formulas: Vec::new(),
         };
         while let Some(key) = map.next_key()? {
             match key {
@@ -78,12 +79,14 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                     if !result.aspects.is_empty() {
                         return Err(de::Error::duplicate_field("aspects"));
                     }
+                    let mark = self.formulas.mark();
                     result.aspects = map.next_value_seed(AspectListDeserializer {
                         type_registry: self.type_registry,
                         load_context: self.load_context,
                         formulas: self.formulas,
                         label_prefix: self.exemplar_name,
                     })?;
+                    result.formulas = self.formulas.read_since(mark);
                 }
                 Field::Extends => {
                     if result.extends.is_some() {

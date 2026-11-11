@@ -35,9 +35,6 @@ Exemplars have the following features:
   - The properties of an aspect are modified.
 - **Reflection**: All aspects support reflection via the `bevy_reflect` crate. This allows their
   properties to be edited interactively in an editor via a property grid.
-- **Validation**: The JSON files that define an exemplar have comprehensive JSON-Schema files.
-  This allows interactive editing in editors like Visual Studio Code, which permits both
-  validation ("red squiggles") and autocompletion.
 
 Note that the design of exemplars is still evolving. The design of exemplars reflects the needs
 of Panoply, which is to have large game worlds with many interactive objects, many of whom share

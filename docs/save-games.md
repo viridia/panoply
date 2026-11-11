@@ -38,6 +38,51 @@ saves most chunks are unchanged, and saves share them rather than copying them.
 A quest with far-reaching effects is the exception to "only nearby state changes", and is handled
 as a special case (for example through the global chunk).
 
+## Chunk format
+
+A precinct's chunk is MessagePack: a map from `SceneryInstanceId` to that instance's entries, each a
+map from an aspect's name to the state that aspect saved.
+
+```text
+{ <iid>: { "Lock": { locked: false }, "Container": { open: true } }, ... }
+```
+
+- **Aspects save their own state.** `Aspect` has `save`, which writes an entry from the entity's
+  components, and `restore`, which applies one; both do nothing by default. The unit is the aspect,
+  not the component: `Container` saves `ContainerState`, which it inserted, and an aspect may
+  combine several components in one entry. Restoring runs after the aspects attach, over the state
+  they built from the asset.
+- **Entries are keyed by `Aspect::name()`,** not by type path, which is long and changes whenever
+  code moves between modules. Names are checked unique across every registered aspect at startup; a
+  mod's aspects carry its prefix ([modding.md](modding.md)). A renamed aspect keeps its old names as
+  aliases.
+- **An entry is written when its state changed in play:** its component's changed tick differs from
+  its added tick. An entry restored from a save counts as changed and is written again, which is
+  right, since it differs from the asset.
+- **Payloads are serde structs written with field names** (`rmp_serde::to_vec_named`; `to_vec`
+  writes structs as arrays, so adding a field would shift every field after it). Not reflection:
+  Bevy's reflect deserializer rejects a field it does not know, so a save from before a field was
+  removed would fail to load.
+- **State with no aspect,** such as an actor's position, goes under one built-in entry of the
+  instance.
+
+Old saves survive engine changes by the presence or absence of keys, as in protobuf, with no version
+number:
+
+| Since the save               | On load                                                |
+| ---------------------------- | ------------------------------------------------------ |
+| Aspect added                 | No entry: the instance keeps its authored state        |
+| Aspect gone, or name unknown | Entry ignored                                          |
+| Field added                  | The field's serde default                              |
+| Field removed                | Ignored                                                |
+| Field's type changed         | The entry fails to decode: logged, authored state kept |
+| Aspect renamed               | Found by its alias                                     |
+
+The chunk is read as untyped MessagePack values (`rmpv`) and each entry decoded on its own, so an
+entry that fails loses only itself. A missing field takes its type's default, not the authored
+value: a `LockState` saved before `locked` existed would read as unlocked. Patching the live
+component field by field would fix that, if it ever matters.
+
 ## What it asks of Panoply
 
 - **Persisted state is a delta over the authored asset.** A precinct's chunk holds only what

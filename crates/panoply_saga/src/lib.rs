@@ -17,13 +17,15 @@ pub use codegen::instr::disassemble;
 pub use compiler::{
     CompilationError, ModuleResolver, NoImports, compile_formula, compile_module, format_error,
 };
-pub use embed::{Formula, FormulaQueue, ReflectFormula};
+pub use embed::{Formula, FormulaQueue, FormulaRef, ReflectFormula};
 pub use host::HostState;
 pub use plugin::{SagaHost, SagaHostBuilder, SagaPlugin};
 pub use sema::types::{ExprType, HostParam};
 pub use syntax::location::TokenLocation;
 pub use tracking::TrackingScope;
 pub use vm::{InvocationContext, ScriptVm, StackValue, VMError};
+
+use std::any::TypeId;
 
 use sema::decl::DeclTable;
 
@@ -42,11 +44,20 @@ pub struct ScriptModule {
 
     /// Compiled functions, including both top-level and nested.
     pub(crate) functions: Vec<CompiledFunction>,
+
+    /// The components read from `self` through accessors (`self.lock`), once each.
+    pub(crate) self_components: Vec<TypeId>,
 }
 
 impl ScriptModule {
     /// The name of the default export.
     pub const DEFAULT: &str = ".default";
+
+    /// The components the module reads from `self` through accessors, which the entity it runs
+    /// on must have. A read through a local (`let s = self; s.lock`) is not listed.
+    pub fn self_components(&self) -> &[TypeId] {
+        &self.self_components
+    }
 
     /// The code of each function, disassembled, for debugging.
     pub fn disassemble(&self) -> String {

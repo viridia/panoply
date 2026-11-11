@@ -2309,12 +2309,22 @@
     "type": "Fixt",
     "aspects": {
       "Container": {},
+      "Lock": {},
       "Interactions": [
         {
           "id": "open",
           "caption": "Open",
           "cursor": "open-chest",
           "distance": 1,
+          "when": "!self.container.open && !self.lock.locked",
+          "action": "ContainerToggle"
+        },
+        {
+          "id": "close",
+          "caption": "Close",
+          "cursor": "open-chest",
+          "distance": 1,
+          "when": "self.container.open",
           "action": "ContainerToggle"
         }
       ]

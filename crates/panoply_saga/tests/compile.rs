@@ -19,8 +19,9 @@ struct Health(f32);
 #[derive(Component)]
 struct Position(Vec3);
 
-fn get_self(vm: &ScriptVm) -> Result<StackValue, VMError> {
-    Ok(StackValue::Entity(vm.owner))
+#[derive(Component, Reflect)]
+struct Lid {
+    open: bool,
 }
 
 fn entity_health(ctx: &mut InvocationContext, actor: StackValue) -> Result<StackValue, VMError> {
@@ -29,7 +30,7 @@ fn entity_health(ctx: &mut InvocationContext, actor: StackValue) -> Result<Stack
     };
     match ctx.component::<Health>(entity) {
         Some(&Health(h)) => Ok(StackValue::F32(h)),
-        None => Err(VMError::MissingComponent(core::any::TypeId::of::<Health>())),
+        None => Err(VMError::MissingComponent("Health")),
     }
 }
 
@@ -38,7 +39,7 @@ fn entity_heal(ctx: &mut InvocationContext) -> Result<StackValue, VMError> {
     let amount: f32 = ctx.argument(1)?;
     match ctx.component::<Health>(entity) {
         Some(&Health(h)) => Ok(StackValue::F32(h + amount)),
-        None => Err(VMError::MissingComponent(core::any::TypeId::of::<Health>())),
+        None => Err(VMError::MissingComponent("Health")),
     }
 }
 
@@ -48,9 +49,7 @@ fn entity_position(ctx: &mut InvocationContext, actor: StackValue) -> Result<Sta
     };
     match ctx.component::<Position>(entity) {
         Some(Position(p)) => Ok(ctx.create_world_ref(p.as_reflect())),
-        None => Err(VMError::MissingComponent(
-            core::any::TypeId::of::<Position>(),
-        )),
+        None => Err(VMError::MissingComponent("Position")),
     }
 }
 
@@ -68,10 +67,9 @@ fn param(name: &'static str, ty: ExprType) -> HostParam {
     }
 }
 
-/// A host with `self` and an `Entity` that has `health`, `position` and `heal(amount)`.
+/// A host whose `Entity` has `health`, `position` and `heal(amount)`.
 fn actor_host() -> HostState {
     let mut host = HostState::new();
-    host.add_global_prop("self", get_self, ExprType::Entity);
     host.get_host_type_mut::<Entity>()
         .unwrap()
         .add_property("health", entity_health, ExprType::F32)
@@ -333,6 +331,50 @@ fn compile_records_component_reads() {
     vm.run(&module, ScriptModule::DEFAULT).unwrap();
     let health = world.component_id::<Health>().unwrap();
     assert_eq!(tracking.components(), &[(actor, health, true)]);
+}
+
+#[test]
+fn self_is_the_owner() {
+    let mut world = World::new();
+    let actor = world.spawn(()).id();
+    let host = HostState::new();
+    let module = formula("self", &host, ExprType::Entity).unwrap();
+    let result = run(&module, ScriptModule::DEFAULT, &world, &host, actor);
+    assert_eq!(result, Ok(StackValue::Entity(actor)));
+}
+
+#[test]
+fn component_accessors_read_fields() {
+    let mut world = World::new();
+    let shut = world.spawn(Lid { open: false }).id();
+    let open = world.spawn(Lid { open: true }).id();
+    let lidless = world.spawn(()).id();
+    let mut host = HostState::new();
+    host.add_component::<Lid>("lid");
+    let module = formula("!self.lid.open", &host, ExprType::Boolean).unwrap();
+    let eval = |owner| run(&module, ScriptModule::DEFAULT, &world, &host, owner);
+    assert_eq!(eval(shut), Ok(StackValue::Bool(true)));
+    assert_eq!(eval(open), Ok(StackValue::Bool(false)));
+    assert_eq!(
+        eval(lidless),
+        Err(VMError::MissingComponent(core::any::type_name::<Lid>()))
+    );
+
+    let error = formula("self.lid.shut", &host, ExprType::Boolean).unwrap_err();
+    assert!(
+        matches!(error, CompilationError::UnknownField(..)),
+        "{error}"
+    );
+}
+
+#[test]
+fn self_components_lists_reads_through_self() {
+    let mut host = HostState::new();
+    host.add_component::<Lid>("lid");
+    let module = formula("self.lid.open || !self.lid.open", &host, ExprType::Boolean).unwrap();
+    assert_eq!(module.self_components(), &[core::any::TypeId::of::<Lid>()]);
+    let module = formula("let s = self; s.lid.open", &host, ExprType::Boolean).unwrap();
+    assert!(module.self_components().is_empty());
 }
 
 #[test]

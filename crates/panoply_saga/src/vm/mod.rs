@@ -1,9 +1,6 @@
 //! The bytecode interpreter, built per evaluation.
 
-use std::{
-    any::{Any, TypeId},
-    sync::Arc,
-};
+use std::{any::Any, sync::Arc};
 
 use bevy::{
     ecs::{component::Component, entity::Entity, world::World},
@@ -91,8 +88,9 @@ pub enum VMError {
     InvalidField(usize),
     #[error("Function not found: {0}")]
     MissingFunction(String),
-    #[error("Missing Component: {0:?}")]
-    MissingComponent(TypeId),
+    /// The entity lacks a component the script reads, named by its Rust type.
+    #[error("No component {0}")]
+    MissingComponent(&'static str),
     #[error("Function {0} expects {1} parameters, got {2}")]
     IncorrectParamCount(String, usize, usize),
     #[error("Division by zero")]

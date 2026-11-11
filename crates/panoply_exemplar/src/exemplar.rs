@@ -1,6 +1,8 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use panoply_saga::FormulaRef;
 use serde::Serialize;
+use std::any::TypeId;
 use std::sync::Arc;
 
 use crate::InstanceType;
@@ -23,6 +25,9 @@ pub struct ExemplarData {
 
     /// Inherited prototype for this exemplar.
     pub extends: Option<Handle<Exemplar>>,
+
+    /// The formulas written in this exemplar's aspects, checked once its chain has loaded.
+    pub(crate) formulas: Vec<FormulaRef>,
 }
 
 /// An exemplar is like a blueprint or template for an entity.
@@ -53,6 +58,27 @@ impl Exemplar {
                 .and_then(|handle| exemplars.get(handle));
         }
         None
+    }
+
+    /// Whether an instance of `exemplar` would get the aspect whose type is `aspect`, from it or
+    /// along its inheritance chain.
+    pub fn has_aspect(
+        exemplars: &Assets<Exemplar>,
+        exemplar: &ExemplarData,
+        aspect: TypeId,
+    ) -> bool {
+        let mut next = Some(exemplar);
+        while let Some(exemplar) = next {
+            if exemplar.aspects.iter().any(|a| a.id() == aspect) {
+                return true;
+            }
+            next = exemplar
+                .extends
+                .as_ref()
+                .and_then(|handle| exemplars.get(handle))
+                .map(|exemplar| &*exemplar.0);
+        }
+        false
     }
 }
 

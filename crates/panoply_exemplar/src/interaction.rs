@@ -1,7 +1,7 @@
 use std::any::TypeId;
 
 use bevy::{platform::collections::HashMap, prelude::*};
-use panoply_saga::Formula;
+use panoply_saga::{Formula, HostState};
 use serde::Serialize;
 
 use crate::{Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent};
@@ -41,18 +41,12 @@ pub struct InteractionDesc {
 }
 
 impl InteractionDesc {
-    /// Whether the interaction is offered now. Formulas are not evaluated yet, so an entry that
-    /// has one is an error and is not offered.
-    pub fn enabled(&self) -> bool {
-        // TODO(PAN45c): evaluate the formula.
-        if self.when.is_some() {
-            error_once!(
-                "Interaction '{}' has a `when`, which is not evaluated yet",
-                self.id
-            );
-            return false;
-        }
-        true
+    /// Whether the interaction is offered now on `entity`, by its `when`. A `when` that did not
+    /// compile, or whose evaluation fails, offers nothing.
+    pub fn enabled(&self, world: &World, host: &HostState, entity: Entity) -> bool {
+        self.when
+            .as_ref()
+            .is_none_or(|when| when.evaluate(world, host, entity).unwrap_or(false))
     }
 
     /// How close the interaction can be performed from, in meters.
@@ -67,17 +61,26 @@ impl InteractionDesc {
 pub struct Interactions(pub Vec<InteractionDesc>);
 
 impl Interactions {
-    /// The first entry offered now that reaches `distance`.
-    pub fn first_enabled(&self, distance: f32) -> Option<&InteractionDesc> {
+    /// The first entry `entity` offers now that reaches `distance`.
+    pub fn first_enabled(
+        &self,
+        distance: f32,
+        world: &World,
+        host: &HostState,
+        entity: Entity,
+    ) -> Option<&InteractionDesc> {
         self.0
             .iter()
-            .find(|entry| distance <= entry.reach() && entry.enabled())
+            .find(|entry| distance <= entry.reach() && entry.enabled(world, host, entity))
     }
 
-    /// The name of the cursor to show over the instance, however far away it is, if it offers
+    /// The name of the cursor to show over `entity`, however far away it is, if it offers
     /// anything now.
-    pub fn hover_cursor(&self) -> Option<&str> {
-        let mut enabled = self.0.iter().filter(|entry| entry.enabled());
+    pub fn hover_cursor(&self, world: &World, host: &HostState, entity: Entity) -> Option<&str> {
+        let mut enabled = self
+            .0
+            .iter()
+            .filter(|entry| entry.enabled(world, host, entity));
         let first = enabled.next()?;
         Some(match enabled.next() {
             Some(_) => DEFAULT_INTERACTION_CURSOR,
@@ -168,8 +171,49 @@ pub fn perform_interaction(world: &mut World, target: Entity, name: &str) {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
+    use bevy::reflect::{serde::TypedReflectDeserializer, FromReflect, GetTypeRegistration};
+    use panoply_saga::{FormulaQueue, FormulaRef};
+    use serde::de::DeserializeSeed;
+
     use super::*;
+
+    /// A lid, for formulas to read as `self.lid`.
+    #[derive(Component, Reflect, Default)]
+    pub(crate) struct Lid {
+        pub(crate) open: bool,
+    }
+
+    /// A host that has `self.lid`.
+    pub(crate) fn lid_host() -> HostState {
+        let mut host = HostState::new();
+        host.add_component::<Lid>("lid");
+        host
+    }
+
+    /// `Interactions` read from `json` as a loader reads them, compiled against `host`, with the
+    /// formulas read.
+    pub(crate) fn load_interactions(
+        json: &str,
+        host: &HostState,
+    ) -> (Interactions, Vec<FormulaRef>) {
+        let mut registry = bevy::reflect::TypeRegistry::new();
+        registry.register::<Interactions>();
+        let registration = registry
+            .get(Interactions::get_type_registration().type_id())
+            .unwrap();
+        let mut formulas = FormulaQueue::default();
+        let value = {
+            let reader = formulas.track_json(json.as_bytes());
+            let mut deserializer = serde_json::Deserializer::from_reader(reader);
+            TypedReflectDeserializer::with_processor(registration, &registry, &mut formulas)
+                .deserialize(&mut deserializer)
+                .unwrap()
+        };
+        let read = formulas.read_since(0);
+        futures_lite::future::block_on(formulas.compile("test.json", host, json.as_bytes()));
+        (Interactions::from_reflect(&*value).unwrap(), read)
+    }
 
     fn entry(id: &str, distance: f32, when: Option<&str>) -> InteractionDesc {
         InteractionDesc {
@@ -181,22 +225,51 @@ mod tests {
     }
 
     #[test]
-    fn no_when_is_enabled_and_a_when_is_not() {
-        assert!(entry("a", 1., None).enabled());
-        assert!(!entry("a", 1., Some("self.container.open")).enabled());
+    fn no_when_is_enabled_and_an_uncompiled_when_is_not() {
+        let (world, host) = (World::new(), HostState::new());
+        let e = Entity::PLACEHOLDER;
+        assert!(entry("a", 1., None).enabled(&world, &host, e));
+        assert!(!entry("a", 1., Some("true")).enabled(&world, &host, e));
+    }
+
+    #[test]
+    fn when_is_evaluated_on_the_entity() {
+        let host = lid_host();
+        let (list, _) = load_interactions(
+            r#"[
+  {"id": "open", "caption": "Open", "when": "!self.lid.open", "action": "a"},
+  {"id": "close", "caption": "Close", "when": "self.lid.open", "action": "a"}
+]"#,
+            &host,
+        );
+        let mut world = World::new();
+        let shut = world.spawn(Lid { open: false }).id();
+        let open = world.spawn(Lid { open: true }).id();
+        let lidless = world.spawn(()).id();
+        let first = |e| {
+            list.first_enabled(1., &world, &host, e)
+                .map(|d| d.id.as_str())
+        };
+        assert_eq!(first(shut), Some("open"));
+        assert_eq!(first(open), Some("close"));
+        // Without the component, the evaluation fails and nothing is offered.
+        assert_eq!(first(lidless), None);
     }
 
     #[test]
     fn first_enabled_in_reach_wins() {
+        let (world, host) = (World::new(), HostState::new());
+        let e = Entity::PLACEHOLDER;
         let list = Interactions(vec![
             entry("formula", 2., Some("true")),
             entry("near", 0.5, None),
             entry("far", 2., None),
             entry("later", 2., None),
         ]);
-        assert_eq!(list.first_enabled(0.4).unwrap().id, "near");
-        assert_eq!(list.first_enabled(1.).unwrap().id, "far");
-        assert!(list.first_enabled(3.).is_none());
+        let first = |distance| list.first_enabled(distance, &world, &host, e);
+        assert_eq!(first(0.4).unwrap().id, "near");
+        assert_eq!(first(1.).unwrap().id, "far");
+        assert!(first(3.).is_none());
     }
 
     #[test]
@@ -206,18 +279,24 @@ mod tests {
             ..entry("open", 1., None)
         };
         let disabled = entry("formula", 1., Some("true"));
+        let (world, host) = (World::new(), HostState::new());
+        let cursor = |list: Vec<InteractionDesc>| {
+            Interactions(list)
+                .hover_cursor(&world, &host, Entity::PLACEHOLDER)
+                .map(str::to_owned)
+        };
         assert_eq!(
-            Interactions(vec![chest.clone(), disabled.clone()]).hover_cursor(),
+            cursor(vec![chest.clone(), disabled.clone()]).as_deref(),
             Some("open-chest")
         );
         assert_eq!(
-            Interactions(vec![entry("a", 1., None)]).hover_cursor(),
+            cursor(vec![entry("a", 1., None)]).as_deref(),
             Some(DEFAULT_INTERACTION_CURSOR)
         );
         assert_eq!(
-            Interactions(vec![chest, entry("a", 1., None)]).hover_cursor(),
+            cursor(vec![chest, entry("a", 1., None)]).as_deref(),
             Some(DEFAULT_INTERACTION_CURSOR)
         );
-        assert_eq!(Interactions(vec![disabled]).hover_cursor(), None);
+        assert_eq!(cursor(vec![disabled]), None);
     }
 }

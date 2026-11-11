@@ -87,16 +87,6 @@ native.
   built and follows the animated glTF node its descriptor's `animation` names, as faery's
   `PhysicsMovable` did (X39's door part), so the leaf is solid and within the probe's reach through
   the whole swing. Closes I26.
-- **PAN45c The chest.** Its `when`, as formulas in `Proto.Container`, splits its one toggling entry
-  into Open and Close, and a locked chest offers no Open. Locks are new: a `Lock` aspect, whether an
-  instance starts locked, and a `LockState`, kept apart from it as `ContainerState` is from
-  `Container`, so reapplying aspects leaves it as it was. `LockState` is play state, what a save
-  holds ([save-games.md](save-games.md)); how a component is marked persisted is X18's. Nothing
-  unlocks a chest yet (keys are X42's). `ContainerState`'s `open` and `LockState`'s `locked` are
-  read through compiled component accessors, and `self` is type-checked against the exemplar's
-  resolved aspects. A formula compiles as its catalog loads, perhaps before an `extends` naming
-  another file has loaded (D69), so where that check runs is decided here. Checked in
-  `plans/actors.py`, which tests the chest, and locks one by setting its `LockState` remotely.
 - **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
   Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
   recompiles when one it imports reloads, and an import cycle is a compile error.

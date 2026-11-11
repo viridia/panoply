@@ -6,7 +6,11 @@ mod string;
 
 use std::{any::TypeId, sync::Arc};
 
-use bevy::{ecs::entity::Entity, platform::collections::HashMap, reflect::Typed};
+use bevy::{
+    ecs::{component::Component, entity::Entity},
+    platform::collections::HashMap,
+    reflect::{Reflect, Typed},
+};
 use smol_str::SmolStr;
 
 use crate::{
@@ -159,10 +163,17 @@ pub struct HostState {
 
     /// List of known native types
     pub(crate) types: HashMap<TypeId, HostType>,
+
+    /// The member index of `self`, if the host has it.
+    pub(crate) self_index: Option<usize>,
+
+    /// The component each component accessor reads, by member index.
+    pub(crate) component_members: HashMap<usize, TypeId>,
 }
 
 impl HostState {
-    /// A host with the primitive types, `Entity` and `String`, and `String`'s methods.
+    /// A host with the primitive types, `Entity` and `String`, `String`'s methods, and `self`,
+    /// the entity a script runs on.
     pub fn new() -> Self {
         let mut this = Self::default();
         this.add_type_alias("i32", ExprType::I32);
@@ -173,7 +184,20 @@ impl HostState {
         this.add_host_type::<Entity>("Entity");
         this.add_host_type::<String>("String");
         string::init_string_methods(&mut this);
+        this.self_index = Some(this.add_global_prop("self", read_self, ExprType::Entity));
         this
+    }
+
+    /// Adds `name`, a property of every entity that reads its component `C`, as `self.name`. It
+    /// tracks the read; on an entity without `C`, the evaluation fails. A formula's reads of it
+    /// through `self` are listed in [`ScriptModule::self_components`](crate::ScriptModule).
+    pub fn add_component<C: Component + Reflect + Typed>(&mut self, name: impl Into<SmolStr>) {
+        let typ = ExprType::from_type_info(C::type_info());
+        self.get_host_type_mut::<Entity>()
+            .expect("HostState::new adds Entity")
+            .add_property(name, read_component::<C>, typ);
+        self.component_members
+            .insert(self.members.len() - 1, TypeId::of::<C>());
     }
 
     fn add_global(&mut self, name: SmolStr, decl: Decl) {
@@ -275,4 +299,23 @@ impl HostState {
     pub fn get_host_type_by_id(&self, id: TypeId) -> Option<&HostType> {
         self.types.get(&id)
     }
+}
+
+/// `self`: the entity the script runs on.
+fn read_self(vm: &ScriptVm) -> Result<StackValue, VMError> {
+    Ok(StackValue::Entity(vm.owner))
+}
+
+/// The accessor [`HostState::add_component`] registers: entity `this`'s `C`, as a reference.
+fn read_component<C: Component + Reflect>(
+    ctx: &mut InvocationContext,
+    this: StackValue,
+) -> Result<StackValue, VMError> {
+    let StackValue::Entity(entity) = this else {
+        return Err(VMError::InvalidType(ExprType::Entity));
+    };
+    let component = ctx
+        .component::<C>(entity)
+        .ok_or(VMError::MissingComponent(core::any::type_name::<C>()))?;
+    Ok(ctx.create_world_ref(component))
 }

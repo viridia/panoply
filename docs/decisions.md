@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D70.**
+**Next: D72.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -549,3 +549,16 @@ never reused.
   not when a player first meets the formula. One that fails compiles alone and keeps its error,
   since a typo would otherwise drop every exemplar in its catalog, and the editor can list them
   (X94). Reversing it means a tagged form in the asset, or compiling on first use. (PAN45b)
+- **D70** A save chunk's entries are written by aspects, keyed by the aspect's name, with serde
+  payloads as MessagePack maps of named fields ([save-games.md](save-games.md), Chunk format). A
+  name is short and survives code moving between modules, where a type path does neither; named
+  fields give schema evolution by presence and absence, with no version number; and serde ignores a
+  field it does not know, where Bevy's reflect deserializer rejects it. Reversing it means a format
+  version with migrations, or saves that break on refactors. (PAN45c)
+- **D71** Whether a formula's `self` has the components it reads is checked once its exemplar's
+  `extends` chain has loaded, not as it compiles ([saga.md](saga.md), Values). A formula compiles as
+  its catalog loads (D69), before an `extends` naming another file may have, so the compiler checks
+  types and lists the components, and each exemplar's `LoadedWithDependencies` checks them against
+  the aspects along its chain. Checking when an instance spawns would find the error only once one
+  was placed; checking only at runtime would give up the check. Reversing it means compiling only
+  after every chain has loaded, or no check before play. (PAN45c)

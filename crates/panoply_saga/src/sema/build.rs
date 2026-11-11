@@ -1,6 +1,6 @@
 //! AST to typed tree: name resolution and type constraints.
 
-use std::sync::Arc;
+use std::{any::TypeId, sync::Arc};
 
 use bevy::{ecs::entity::Entity, reflect::TypeInfo};
 use bumpalo::Bump;
@@ -74,6 +74,7 @@ pub(crate) fn build_formula_exprs<'e>(
 
     let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
     let body = builder.build_block(ast, &module_scope, stmts, result)?;
+    builder.take_self_components(module);
     let function = builder.finish(body, ret_type.clone(), 0)?;
     exprs.functions.push(function);
 
@@ -263,6 +264,7 @@ fn build_function_bodies<'e>(
 
         let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
         let body_expr = builder.build_expr(body, &param_scope)?;
+        builder.take_self_components(module);
         exprs.functions[index] =
             builder.finish(body_expr, ftype.ret.clone(), ftype.params.len())?;
     }
@@ -281,6 +283,9 @@ struct FunctionBuilder<'h, 'e, 't> {
     /// How deeply `build_expr` has recursed: the tree's depth, which the passes after it recurse
     /// to as well.
     depth: usize,
+    /// The components the function reads from `self`, for its module's
+    /// [`ScriptModule::self_components`].
+    self_components: Vec<TypeId>,
 }
 
 /// How deep a typed tree may be. A long chain of binary operators is as deep as it is long.
@@ -297,6 +302,16 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             inference: TypeInference::default(),
             locals: Vec::new(),
             depth: 0,
+            self_components: Vec::new(),
+        }
+    }
+
+    /// Adds the components this function reads from `self` to `module`'s.
+    fn take_self_components(&mut self, module: &mut ScriptModule) {
+        for id in self.self_components.drain(..) {
+            if !module.self_components.contains(&id) {
+                module.self_components.push(id);
+            }
         }
     }
 
@@ -647,7 +662,16 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
         };
         if let Some(member) = host_type.and_then(|host_type| host_type.get(name)) {
             let kind = match member.kind {
-                DeclKind::Global { index, .. } => ExprKind::NativeProp(base, index),
+                DeclKind::Global { index, .. } => {
+                    if let ExprKind::GlobalRef(base_index) = &base.kind
+                        && Some(*base_index) == self.host.self_index
+                        && let Some(&id) = self.host.component_members.get(&index)
+                        && !self.self_components.contains(&id)
+                    {
+                        self.self_components.push(id);
+                    }
+                    ExprKind::NativeProp(base, index)
+                }
                 DeclKind::Function { index } => ExprKind::HostMethodRef(base, index),
                 _ => return Err(CompilationError::Internal(loc, "host type member")),
             };

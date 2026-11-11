@@ -8,6 +8,7 @@ use panoply_core::{
     KEY_PROMPT_FONT,
 };
 use panoply_exemplar::{perform_interaction, Interactions};
+use panoply_saga::SagaHost;
 use rapier3d::{
     parry::{query::details::ShapeCastOptions, shape::Cuboid},
     prelude::{Group, InteractionGroups, InteractionTestMode, Pose, QueryFilter},
@@ -71,9 +72,13 @@ pub(crate) fn probe_interaction(
     >,
     realms: Query<&RealmPhysics>,
     interactions: Query<&Interactions>,
-    mut probed: ResMut<ProbedInteraction>,
+    probed: Res<ProbedInteraction>,
+    host: Res<SagaHost>,
+    // Read for the interactions' `when`, so what is probed is written through commands.
+    ecs: &World,
     mut commands: Commands,
 ) {
+    let host = host.get();
     let found = players.single().ok().and_then(|player| {
         let (actor, motion, size, scale) = player;
         let world = realms.get(actor.realm).ok()?.world();
@@ -96,10 +101,11 @@ pub(crate) fn probe_interaction(
             filter,
         )?;
         let target = Entity::try_from_bits(world.colliders[handle].user_data as u64)?;
-        let entry = interactions
-            .get(target)
-            .ok()?
-            .first_enabled(hit.time_of_impact)?;
+        let entry =
+            interactions
+                .get(target)
+                .ok()?
+                .first_enabled(hit.time_of_impact, ecs, host, target)?;
         Some(Probed {
             target,
             caption: entry.caption.clone(),
@@ -111,7 +117,11 @@ pub(crate) fn probe_interaction(
             commands.queue(move |world: &mut World| perform_interaction(world, target, &action));
         }
     }
-    probed.set_if_neq(ProbedInteraction(found));
+    if probed.0 != found {
+        commands.queue(move |world: &mut World| {
+            world.resource_mut::<ProbedInteraction>().0 = found;
+        });
+    }
 }
 
 /// Forgets the probed interaction on leaving play, when the probe stops.

@@ -46,6 +46,7 @@ IDLE = "panoply_actors::actor_animation::ActorIdle"
 SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 CONTAINER_STATE = "panoply_scenery::container_aspect::ContainerState"
+LOCK_STATE = "panoply_scenery::lock_aspect::LockState"
 TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
 WINDOW = "bevy_window::window::Window"
@@ -383,7 +384,8 @@ def check_cursor(driver, chest):
     """In play, the pointer picks the chest, and the backstop off it; in the editor, neither, but
     the ground's parcel, with the system cursor. Scans
     outward from the middle of the view, which follows the player, standing beside the chest. BRP
-    cannot read a custom cursor, which holds an image handle: which one shows is checked by eye."""
+    cannot read a custom cursor, which holds an image handle: which one shows is checked by eye.
+    Returns a function that moves the pointer back over the chest and returns what it is over."""
     row = driver.call(
         "world.query", {"data": {"components": [WINDOW, CURSOR_ICON]}, "filter": {"with": [WINDOW]}}
     )[0]
@@ -424,6 +426,7 @@ def check_cursor(driver, chest):
         over = hover(middle[0] + x, middle[1] + y)
         if over == chest:
             print(f"chest picked {x}, {y} from the middle of the view")
+            found = (middle[0] + x, middle[1] + y)
             break
     else:
         raise AssertionError(f"chest not picked near the middle of the view; last over {over}")
@@ -451,11 +454,14 @@ def check_cursor(driver, chest):
     assert "Custom" not in icon["components"][CURSOR_ICON], f"the game's cursor: {icon}"
     driver.mode("Play")
     driver.frames(5)
+    return lambda: hover(*found)
 
 
 def check_chest(driver):
-    """Facing the chest nearest `SPOT`, the prompt offers it and E opens and shuts it; walking away
-    clears the prompt. Checked by eye in `chest_shut.png` and `chest_open.png`: the lid raised."""
+    """Facing the chest nearest `SPOT`, the prompt offers Open, E opens it, the prompt offers Close,
+    and E shuts it. Locked, it offers nothing: no prompt, E leaves it shut, and the pointer is not
+    over it. Walking away clears the prompt. Checked by eye in `chest_shut.png` and
+    `chest_open.png`: the lid raised."""
     rows = driver.call(
         "world.query",
         {
@@ -484,21 +490,40 @@ def check_chest(driver):
     print(f"chest at {center}, actor {driver.get('Actor', MOTION)}")
     assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r}"
     driver.screenshot("chest_shut")
-    check_cursor(driver, chest)
+    over_chest = check_cursor(driver, chest)
 
     def state():
         return driver.call(
             "world.get_components", {"entity": chest, "components": [CONTAINER_STATE]}
         )["components"][CONTAINER_STATE]
 
+    def lock(locked):
+        driver.call(
+            "world.insert_components",
+            {"entity": chest, "components": {LOCK_STATE: {"locked": locked}}},
+        )
+        driver.frames(5)
+
     driver.key("KeyE")
     driver.frames(5)
     assert state() == {"open": True}, f"E did not open it: {state()}"
+    assert prompt(driver) == "[E] Close", f"prompt {prompt(driver)!r} on the open chest"
     driver.seconds(2)
     driver.screenshot("chest_open")
     driver.key("KeyE")
     driver.frames(5)
     assert state() == {"open": False}, f"E did not shut it: {state()}"
+    assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r} on the shut chest"
+
+    lock(True)
+    assert prompt(driver) == "", f"prompt {prompt(driver)!r} on the locked chest"
+    driver.key("KeyE")
+    driver.frames(5)
+    assert state() == {"open": False}, f"E opened the locked chest: {state()}"
+    assert over_chest() != chest, "the pointer picked the locked chest"
+    lock(False)
+    assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r} on the unlocked chest"
+    assert over_chest() == chest, "the pointer did not pick the unlocked chest"
 
     motion = driver.get("Actor", MOTION)
     motion.update(facing=-math.pi / 2)
