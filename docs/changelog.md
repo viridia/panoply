@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN69** The editor's filter boxes say "Filter…" while empty; a double-click in Go To travels.
 - **PAN70** Checked that reloading a character file still needs a rebuild; nothing changes in play.
 - **PAN68** Built against a newer Bevy main, which brings fixes to the editor's lists and inputs.
 - **PAN67** Portals shimmer again: their glow drifts off the arch, as in the old engine.

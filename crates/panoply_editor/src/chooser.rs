@@ -17,7 +17,7 @@ use bevy::{
     input_focus::{AutoFocus, InputFocus},
     picking::{events::PointerClick, pointer::PointerButton},
     prelude::*,
-    text::EditableText,
+    text::{EditableText, FontStyle, Placeholder},
     ui::{InteractionDisabled, ScrollIntoView, ScrollIntoViewContainer, Selected},
     ui_widgets::{
         listbox_update_selection, Activate, ListBox, RequestClose, SetSelected, ValueChange,
@@ -114,7 +114,8 @@ impl Plugin for ChooserPlugin {
         })
         .add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ChooserRows>::new())
         .add_systems(Update, (filter_keys, enable_confirm))
-        .add_observer(name_row);
+        .add_observer(name_row)
+        .add_observer(hint_filter);
     }
 }
 
@@ -170,6 +171,16 @@ fn filter_input(autofocus: bool) -> Box<dyn Scene> {
     } else {
         Box::new(bsn! { @FeathersTextInput #Filter ChooserFilter })
     }
+}
+
+/// Gives the filter box its hint, dim and italic, from an observer since `bsn!` needs a `Default`
+/// that `Placeholder` lacks.
+// TODO(X85): spawned in `bsn!`, in feathers' own placeholder style.
+fn hint_filter(add: On<Add<ChooserFilter>>, mut commands: Commands) {
+    commands.entity(add.entity).insert(Placeholder {
+        font_style: Some(FontStyle::Italic),
+        ..Placeholder::new("Filter…")
+    });
 }
 
 /// A modal dialog choosing one of `items`. Esc, Cancel or a click outside closes it; the confirm

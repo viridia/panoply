@@ -16,14 +16,6 @@ changelog.
 
 In order.
 
-- **PAN69 Go To dialog, after Bevy's fixes.** Bevy now has three of the fixes the dialog waited on:
-  a list's focus outline no longer takes clicks, so double-clicking a nav point goes to it; a text
-  input spawned late takes the theme's cursor color; the list's scrollbar no longer insets itself
-  4px, so `group() > group_body()` padding is even. Check each in the dialog, drop what worked
-  around them, and add a double-click to the dialog's check in `plans/smoke.py`. Then placeholder
-  text in the editor's text boxes, now in `EditableText` (bevy#25110): "Filter…" in the nav point
-  list's filter, a hint in the text-entry dialog.
-
 PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
 (existence, goals, planning, body, presentation) talk through components, with readiness as

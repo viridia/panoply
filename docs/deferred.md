@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X85.**
+**Next: X86.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -494,3 +494,9 @@ dropped, not deferred. Numbers are never reused.
   meshes. Not confirmed by reverting it. Reported on Discord (2026-11-10); Bevy is tracking an
   alternate fix, with no PR yet. *Gate:* that fix in the Bevy we build against; then compare
   townsfolk in `perf.py`.
+- **X85** Placeholders through feathers (PAN69). Bevy's `Placeholder` has no `Default`, so `bsn!`
+  cannot spawn it and the chooser's filter box gets its hint from an observer (`hint_filter`), and
+  feathers has no placeholder style, so the hint sets its own: dim, by `Placeholder`'s default
+  alpha, and italic. The text-entry dialog's box has no hint yet; its openers would pass one.
+  Follow-up PRs to the placeholder are under discussion. *Gate:* a `Default` or a feathers style in
+  the Bevy we build against; then spawn the hint in `bsn!` with the theme's style.

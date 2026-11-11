@@ -24,7 +24,8 @@
   and saves; the playground's selected parcel does not count there, and a parcel selected there
   turns, undoably. Change Realm filters the realms and goes back, keeping the view's coordinates.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
-  Typing filters the list; Go travels to the point clicked, and in the filter box Up and Down
+  Typing filters the list; Go travels to the point clicked, a double-click to its point, and in
+  the filter box Up and Down
   move the selection and Enter travels, to the first point shown if none is selected. An arrow
   held there does not turn the view. An arrow
   held there leaves the view where it was.
@@ -642,6 +643,13 @@ def goto_dialog(driver):
     driver.screenshot("goto_dialog")
     driver.click("GotoDialog/Go")
     arrived(driver, TEST_INN, "click and Go")
+
+    # A double-click on a point travels to it: the list's focus outline does not take the clicks.
+    driver.key("KeyG")
+    driver.present("GotoDialog/warehouse")
+    driver.click("GotoDialog/warehouse")
+    driver.click("GotoDialog/warehouse")
+    arrived(driver, WAREHOUSE, "double-click")
 
     # In the filter box, Down and Up move the selection, and Enter travels.
     driver.key("KeyG")
