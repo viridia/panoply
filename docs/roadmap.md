@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN72.**
+**Next: PAN73.**
 
 ## Next
 
@@ -87,28 +87,27 @@ native.
   built and follows the animated glTF node its descriptor's `animation` names, as faery's
   `PhysicsMovable` did (X39's door part), so the leaf is solid and within the probe's reach through
   the whole swing. Closes I26.
-- **PAN45a Extract `panoply_saga`** from `../bevy_reactor_3/crates/bevy_reactor_formulae`, with the
-  recording half of `TrackingScope`, built against Bevy main, its tests passing and clippy clean.
-  First a survey, kept in the session's scratchpad: each language feature against each stage
-  (parser, name resolution, solver, type assignment, block generation, VM), with the `unsafe` blocks
-  and warnings beside it. A partial feature stays, compiling to an `Unsupported` error where a stage
-  is missing. No input panics the compiler: every `todo!()`, `panic!` and `unwrap()` on input
-  becomes an error, since a mod is untrusted. The arenas own no heap data, asserted at compile time
-  ([saga.md](saga.md), The prototype). Compiling stays `async` and takes a module resolver, which
-  the tests give one that refuses every import, so PAN71 leaves the API as it is. Primitive casts
-  (saga.md, Values). `.saga` as the extension, and the syntax grammar (saga.md, Editor support). The
-  game does not use it yet.
 - **PAN45b Formulas in assets.** Settle how an asset embeds a formula, which dialogue conditions and
   goals (X17) reuse, as a decision. Formulas compile in the asset loader against one `HostState`,
   built at startup and shared immutably. A compile error names the asset file and the line and
   column in it, not the offset in the formula.
 - **PAN45c The chest.** Its `when`, as formulas in `Proto.Container`, splits its one toggling entry
-  into Open and Close. `ContainerState`'s `open` is read through a compiled component accessor, and
-  `self` is type-checked against the exemplar's resolved aspects. Checked in `plans/actors.py`,
-  which tests the chest.
-- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). PAN45a's resolver, implemented on
+  into Open and Close, and a locked chest offers no Open. Locks are new: a `Lock` aspect, whether an
+  instance starts locked, and a `LockState`, kept apart from it as `ContainerState` is from
+  `Container`, so reapplying aspects leaves it as it was. `LockState` is play state, what a save
+  holds ([save-games.md](save-games.md)); how a component is marked persisted is X18's. Nothing
+  unlocks a chest yet (keys are X42's). `ContainerState`'s `open` and `LockState`'s `locked` are
+  read through compiled component accessors, and `self` is type-checked against the exemplar's
+  resolved aspects. Checked in `plans/actors.py`, which tests the chest, and locks one by setting
+  its `LockState` remotely.
+- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
   Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
   recompiles when one it imports reloads, and an import cycle is a compile error.
+- **PAN72 SAGA language reference**, for mod authors, in `docs/saga-language.md`: syntax, types,
+  literals and their suffixes, operators and casts, locals, `if`, functions, modules and imports,
+  how a formula embeds in an asset (PAN45b), and the host functions and component reads a formula
+  may use, each with a short example. It describes the language as it is, not [saga.md](saga.md)'s
+  plans, and later chunks that change the language update it.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

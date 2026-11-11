@@ -16,39 +16,44 @@ doc records the design; nothing here is implemented yet (X7).
 Dialogue conditions, like interactions' `when` (PAN21), are evaluated on demand, when the options
 are listed. Quest stages, goals and presence react to change.
 
-The first customer is the chest's `when` (PAN45c): its "Open" and "Close" are offered by whether its
-`ContainerState` is open, formulas in `Proto.Container`. An on-demand formula needs no cells or
-reaction passes, and PAN21's native action already has the effect, so SAGA only returns a boolean.
-The second is reactive: X63's door opened by a button, its `open` a formula over its source's
-`active`.
+The first customers each add one mechanism:
 
-## The prototype
+1. **An interaction's `when`** (PAN45c), on demand: a chest's "Open" and "Close" are offered by
+   whether its `ContainerState` is open, and "Open" not while it is locked, formulas in
+   `Proto.Container` over two aspects. It needs no cells or reaction passes, and PAN21's native
+   action already has the effect, so SAGA only returns a boolean.
+2. **An animation's `when`**, reactive: an object that changes state as the player comes near,
+   through the `proximity` memo (Memos). The first cells, memos and reaction pass.
+3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
+   memo driving a goal cursor.
 
-`../bevy_reactor_3/crates/bevy_reactor_formulae` is the starting point, to be extracted into a
-workspace crate, `panoply_saga`, without the rest of `bevy_reactor`. It has a Rust-like language, a
-PEG parser, basic blocks, a type inference solver, and a bytecode interpreter on a stack VM. From
-`bevy_reactor` it needs only the recording half of `TrackingScope`
-(`crates/bevy_reactor/src/tracking_scope.rs`): what a formula read, as a list (When reactions run).
+X63's mechanisms, such as a door opened by a button, follow.
 
-What it already gets right:
+## The crate
+
+`crates/panoply_saga` has a Rust-like language, a PEG parser, a type inference solver, basic blocks,
+and a bytecode interpreter on a stack VM. It came from `bevy_reactor`'s formulas
+(`../bevy_reactor_3/crates/bevy_reactor_formulae`), with only the recording half of its
+`TrackingScope`: what a formula read, as a list (When reactions run).
 
 - A VM is built per evaluation, so its heap of temporaries is freed when the call returns.
 - The VM holds `&World` only. A script's result is its effect, applied by the host as a command.
 - Host reads of components record dependencies in the tracking scope.
+- No script panics it, since a mod's is untrusted input. A feature not yet supported, a runtime
+  fault (division by zero) and even a compiler bug are errors; integer arithmetic wraps; nesting
+  deep enough to overflow the stack is refused before parsing.
+- Its arenas own nothing, since a `Bump` never runs destructors: names and strings are arena `&str`,
+  child lists arena slices, and a type in the typed tree is a handle into a table outside the arena.
+  A `needs_drop` assertion on each node type keeps it so.
 
-What it gets wrong:
+What value slots change:
 
 - Every non-primitive value is reflected. A `Vec3` returned by a host function is a
   `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when passed to another;
   `load_field` finds a field's type by a chain of runtime downcasts the type solver already
   resolved.
-- Its arenas own heap data: the typed tree's `Vec`s and `Arc`s, and the long `SmolStr`s in it and
-  the AST, are allocated in a `Bump`, which never drops them, so every compile leaks. Arena slices
-  and arena `&str` own nothing, and a type in the tree is a `Copy` handle into a type table outside
-  the arena, since a module's declarations and `HostState` outlive the arena and own their types. A
-  `needs_drop` assertion on each node type keeps it so at compile time.
-- Its unfinished stages panic (`todo!()`), and a mod's formula is untrusted input.
 - A string on the stack is an `Arc<String>`, so dropping a slot touches a reference count.
+- Each call allocates its frame's stack.
 
 ## Values
 
@@ -90,6 +95,23 @@ What it gets wrong:
   NULL does. Not until a puzzle needs it.
 - **Opaque values stay boxed or borrowed:** handles, names, collections. The per-call heap bounds
   them.
+- **Closures only go down (X92).** A lambda is only ever a call argument, never stored or returned,
+  so that a native aggregate can take a script predicate:
+  `count(hostiles(self), |e| e.distance(target) < 4.0)`. A closure is then a `Copy` pair of function
+  index and frame base, its captures read and written in place in the enclosing frame, with no heap.
+- **Nothing outlives the evaluation.** The per-call heap is the collector: a region freed when the
+  call returns. Should a value ever need to outlive it, as an escaping closure would, SAGA gets a
+  garbage collector, not reference counting. The stack already suits one, since every reference on
+  it is an id (a string's is an index into the evaluation's table), so a collector changes only
+  where ids point:
+  - one heap, moving and not generational: moving an object updates its id's entry, and short
+    evaluations leave no old generation to exploit;
+  - each object headed by a layout id, its runtime type: a host struct's layout comes from its
+    `TypeInfo` at registration, as for value slots, and marks which slots are ids; a string is a
+    layout with none, so the collector never traces into it. Strings need no heap of their own,
+    since a struct with a `String` field holds a string's id;
+  - the layout id checked against the compiler's static type on access, in debug builds;
+  - roots found by slot tags (Open, Untagged slots).
 - **Enums are not flattened.** Scripts see colors as `LinearRgba`, converted at the boundary. An
   enum scripts need is wrapped by the host in a newtype with access methods of its own.
 - **Sets of things are native aggregates, not collections.** "The hostiles near X" is asked through
@@ -120,10 +142,12 @@ and takes a resolver, which loads an imported module's exports; Bevy's asset loa
 
 ## Memos
 
-Most predicates call a memo rather than reading noisy state: `proximity(subject, object, min,
-max)` reads transforms that change every frame, but returns a boolean that rarely does;
-`isHourBetween(a, b)` reads a `GameHour` resource that changes once per game hour, not the clock.
-faery organized its predicates this way (`design/scripting/predicates.md` in faery).
+Most predicates call a memo rather than reading noisy state:
+`proximity(subject, object, enter, leave)` reads transforms that change every frame, but returns a
+boolean that rarely does. It turns true within `enter` and false only beyond `leave`, from its own
+last value, so an object at the edge does not flicker; `isHourBetween(a, b)` reads a `GameHour`
+resource that changes once per game hour, not the clock. faery organized its predicates this way
+(`design/scripting/predicates.md` in faery).
 
 - A memo is a cell: a value, the tick it last changed, and its own tracking scope. Its tick
   advances only when its value changes, so readers compare ticks as Bevy's change detection does.
@@ -216,7 +240,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 ## Editor support
 
 - **Syntax highlighting:** a VS Code TextMate grammar in `tools/vscode-saga/`, installed as a local
-  extension, for `.saga` files (the prototype's loader uses `.fmod`).
+  extension (its README), for `.saga` files.
 - **Formulas embedded in assets** (dialogue conditions, X17's goals) are highlighted by an injection
   grammar into the asset format, once that format is settled.
 - **Semantic tokens and diagnostics** need a language server over `panoply_saga`'s parser and type
@@ -227,14 +251,18 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 - Spatial predicates ("any enemy within 10 m") depend on a set of entities. First answer: depend on
   the spatial index as a whole, and let the memo's unchanged result stop the ripple.
 - Sharing memos across call sites and actors, if measured cost asks for it.
-- Untagged slots: `StackValue`'s tag repeats what the type solver proved.
+- Untagged slots: `StackValue`'s tag repeats what the type solver proved. But a collector's roots
+  are the slots that hold ids, and the tag finds them for free; without it, the compiler would emit
+  a map of each slot's type at every point a collection can happen. Decide the two together.
 
 ## Order of work
 
-1. Extract `panoply_saga` (PAN45a).
-2. Formulas embedded in assets (PAN45b), and compiled component accessors for the chest's `when`
+1. Formulas embedded in assets (PAN45b), and compiled component accessors for the chest's `when`
    (PAN45c).
-3. Imports (PAN71).
-4. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
-5. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
-   as the first native memos, for X63's button and door; measure with `plans/perf.py`.
+2. Imports (PAN71).
+3. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
+4. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
+   as the first native memos, for an animation's `when` (Early customers); measure with
+   `plans/perf.py`. Each cell counts the reads its evaluation made and how many were repeats, the
+   distribution shown in `perf.py`'s log, so whether tracking's dedup (a linear scan on insert)
+   matters is settled by data before any benchmark (X93).

@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I32.**
+**Next: I33.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -92,3 +92,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   the run logs hitches too, and the same plan run alone does not: `smoke.py` logged hitches in the
   directory run and none by itself. Candidates: set it only for `scroll.py`'s own launch, if the
   driver takes a per-plan environment, or turn it on for every plan. Confirmed by running.
+- **I32** SAGA's literals take no type from their context: `5` is always `i32` and `1.0` always
+  `f32`, so `let x: i64 = 5;` and `let y: f64 = 1.0;` are type errors without a suffix (`5i64`,
+  `1.0f64`). The fix: unsized integer and float literal types that unify with any integer or float,
+  defaulted to `i32` and `f32` after solving. Confirmed by running (`panoply_saga`'s tests).

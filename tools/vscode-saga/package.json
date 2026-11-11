@@ -1,0 +1,28 @@
+{
+  "name": "saga",
+  "displayName": "SAGA",
+  "description": "Syntax highlighting for SAGA, Panoply's scripting language.",
+  "version": "0.1.0",
+  "publisher": "viridia",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "saga",
+        "aliases": ["SAGA", "saga"],
+        "extensions": [".saga"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "saga",
+        "scopeName": "source.saga",
+        "path": "./syntaxes/saga.tmLanguage.json"
+      }
+    ]
+  }
+}

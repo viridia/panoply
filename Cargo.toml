@@ -17,6 +17,7 @@ members = [
   "crates/panoply_overlays",
   "crates/panoply_precinct",
   "crates/panoply_render",
+  "crates/panoply_saga",
   "crates/panoply_scenery",
   "crates/panoply_terrain",
 ]
@@ -51,6 +52,7 @@ panoply_exemplar = { path = "crates/panoply_exemplar" }
 panoply_overlays = { path = "crates/panoply_overlays" }
 panoply_precinct = { path = "crates/panoply_precinct" }
 panoply_render = { path = "crates/panoply_render" }
+panoply_saga = { path = "crates/panoply_saga" }
 panoply_scenery = { path = "crates/panoply_scenery" }
 panoply_terrain = { path = "crates/panoply_terrain" }
 rapier3d = { version = "0.36.1", features = ["debug-render"] }

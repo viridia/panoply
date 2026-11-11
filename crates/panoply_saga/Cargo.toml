@@ -1,0 +1,14 @@
+[package]
+name = "panoply_saga"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true }
+bumpalo = { version = "3.19.0", features = ["collections"] }
+peg = "0.8.5"
+smol_str = "0.3.2"
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-lite = { workspace = true }

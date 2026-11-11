@@ -71,9 +71,16 @@ def number(anchor):
 
 
 def prose(path):
-    """Yield (line number, text), skipping fenced code blocks."""
+    """Yield (line number, text), skipping fenced code blocks. Of a Rust file, only the comments:
+    its code has identifiers that look like ids (SAGA's `I32` type)."""
     fenced = False
+    rust = path.suffix == ".rs"
     for n, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        if rust:
+            start = line.find("//")
+            if start >= 0:
+                yield n, line[start:]
+            continue
         if line.lstrip().startswith("```"):
             fenced = not fenced
             continue

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X91.**
+**Next: X94.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -143,9 +143,10 @@ dropped, not deferred. Numbers are never reused.
   shared definition serves every actor running it, and a content edit reaches them all. Shared
   scenes need not be Bevy's: each definition asset can be spawned once into a hidden registry
   outside any realm, its state pointing in by id, and respawned on hot reload. Bevy's shared scene
-  assets (proposed by the author, received warmly, likely not first-tier) would only tidy that.
-  *Gate:* BSN assets, with shared scenes or a definition tree spawned once per asset, and SAGA
-  formulas in assets.
+  assets (proposed by the author, received warmly, likely not first-tier) would only tidy that. The
+  first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
+  customers). *Gate:* BSN assets, with shared scenes or a definition tree spawned once per asset,
+  and SAGA formulas in assets.
 - **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
   eviction; a save is only a root index of chunk versions. Design and what it asks of the engine in
   [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
@@ -517,3 +518,16 @@ dropped, not deferred. Numbers are never reused.
   a reverse index from `(Entity, ComponentId)` to cells, a `Changed<C>` system per watched type,
   `summary_tick` on rarely changing components, and observers for removals. *Gate:* the reaction
   pass's polling shows in `plans/perf.py`, or reactive cells number in the hundreds.
+- **X91** Module-level `let` and `const` in SAGA: constants a helper module shares among its
+  functions. They parse, and compile to an unsupported-feature error. *Gate:* a helper module needs
+  one.
+- **X92** Closures in SAGA, downward only ([saga.md](saga.md), Values): lambda syntax, function
+  types as parameter types, structural unification of function types, and host functions that call
+  back into the VM. After value slots, whose single stack makes a capture an absolute index. *Gate:*
+  the first native aggregate that wants a script predicate.
+- **X93** A corpus of realistic SAGA formulas, for benchmarks and as a regression suite: a few dozen
+  of faery's predicates (`design/scripting/predicates.md` in faery) and its aspects' conditions,
+  translated to `.saga` under `crates/panoply_saga/tests/corpus/`, run over a world of a few hundred
+  actors. It measures the reaction pass, tracking's dedup among its costs. *Gate:* the read counts
+  of the reactions step ([saga.md](saga.md), Order of work) show tracking as a cost, or X90's gate
+  fires.
