@@ -104,10 +104,16 @@ impl Plugin for ChooserPlugin {
     fn build(&self, app: &mut App) {
         app.add_context::<ChooserFilterKeys>(|context| {
             context.active_if(filter_focused);
-            context.bind::<SelectNextChooserItem>(KeyCode::ArrowDown).consume();
-            context.bind::<SelectPreviousChooserItem>(KeyCode::ArrowUp).consume();
+            context
+                .bind::<SelectNextChooserItem>(KeyCode::ArrowDown)
+                .consume();
+            context
+                .bind::<SelectPreviousChooserItem>(KeyCode::ArrowUp)
+                .consume();
             context.bind::<ChooseChooserItem>(KeyCode::Enter).consume();
-            context.bind::<ChooseChooserItem>(KeyCode::NumpadEnter).consume();
+            context
+                .bind::<ChooseChooserItem>(KeyCode::NumpadEnter)
+                .consume();
         })
         .add_systems(Startup, |mut commands: Commands| {
             commands.spawn((Name::new("ChooserFilterKeys"), ChooserFilterKeys));
@@ -350,7 +356,8 @@ impl ImmediateAttach<CapsUiFeathers> for ChooserRows {
         let shown = filtered_items(&state.items, &text);
         for item in &shown {
             let name = (*item).clone();
-            ui.ch_id(item.as_str()).on_spawn_apply_scene(move || row(name));
+            ui.ch_id(item.as_str())
+                .on_spawn_apply_scene(move || row(name));
         }
         let hidden = state
             .selected

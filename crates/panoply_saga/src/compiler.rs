@@ -140,16 +140,24 @@ impl ModuleResolver for NoImports {
 /// The error, with the line and its source token underlined.
 pub fn format_error(path: &str, src: &str, err: &CompilationError) -> String {
     let location = err.location();
+    format_span(path, src, location.start(), location.end(), err)
+}
+
+/// `err`, located at `start..end` in `text`, the file at `path`, with the line and the span
+/// underlined.
+pub(crate) fn format_span(
+    path: &str,
+    text: &str,
+    start: usize,
+    end: usize,
+    err: &impl std::fmt::Display,
+) -> String {
     let mut offset = 0;
-    for (line_index, line) in src.split('\n').enumerate() {
+    for (line_index, line) in text.split('\n').enumerate() {
         let end_offset = offset + line.len();
-        if offset <= location.start() && location.start() <= end_offset {
-            let column = location.start() - offset;
-            let width = location
-                .end()
-                .min(end_offset)
-                .saturating_sub(location.start())
-                .max(1);
+        if offset <= start && start <= end_offset {
+            let column = start - offset;
+            let width = end.min(end_offset).saturating_sub(start).max(1);
             return format!(
                 "{path}:{}:{} {err}\n{line}\n{}{}",
                 line_index + 1,
@@ -160,7 +168,7 @@ pub fn format_error(path: &str, src: &str, err: &CompilationError) -> String {
         }
         offset = end_offset + 1;
     }
-    format!("{path}:{} {err}", location.start())
+    format!("{path}:{start} {err}")
 }
 
 /// How deeply brackets and prefix operators may nest. The parser recurses on each, so without a

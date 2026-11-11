@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
+use panoply_saga::{FormulaQueue, SagaHost};
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -29,6 +30,7 @@ enum Field {
 struct ExemplarVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     exemplar_name: &'a str,
 }
 
@@ -79,6 +81,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                     result.aspects = map.next_value_seed(AspectListDeserializer {
                         type_registry: self.type_registry,
                         load_context: self.load_context,
+                        formulas: self.formulas,
                         label_prefix: self.exemplar_name,
                     })?;
                 }
@@ -113,6 +116,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
 struct ExemplarDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     exemplar_name: &'a str,
 }
 
@@ -126,6 +130,7 @@ impl<'de> DeserializeSeed<'de> for ExemplarDeserializer<'_, '_> {
         deserializer.deserialize_map(ExemplarVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             exemplar_name: self.exemplar_name,
         })
     }
@@ -134,6 +139,7 @@ impl<'de> DeserializeSeed<'de> for ExemplarDeserializer<'_, '_> {
 struct CatalogVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
 }
 
 impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
@@ -155,6 +161,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
             let sdata = map.next_value_seed(ExemplarDeserializer {
                 type_registry: self.type_registry,
                 load_context: &mut lc,
+                formulas: self.formulas,
                 exemplar_name: &key,
             })?;
             if let Some(label) = sdata
@@ -200,6 +207,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
 struct CatalogDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
 }
 
 impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
@@ -212,6 +220,7 @@ impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
         deserializer.deserialize_map(CatalogVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
         })
     }
 }
@@ -220,6 +229,7 @@ impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
 #[derive(TypePath)]
 pub struct ExemplarLoader {
     type_registry: TypeRegistryArc,
+    host: SagaHost,
 }
 
 #[non_exhaustive]
@@ -235,6 +245,7 @@ impl FromWorld for ExemplarLoader {
     fn from_world(world: &mut World) -> Self {
         ExemplarLoader {
             type_registry: world.resource::<AppTypeRegistry>().0.clone(),
+            host: world.resource::<SagaHost>().clone(),
         }
     }
 }
@@ -252,12 +263,19 @@ impl AssetLoader for ExemplarLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
-        let exemplar_deserializer = CatalogDeserializer {
-            type_registry: &self.type_registry.read(),
-            load_context,
+        let mut formulas = FormulaQueue::default();
+        let catalog = {
+            let mut deserializer =
+                serde_json::Deserializer::from_reader(formulas.track_json(&bytes));
+            CatalogDeserializer {
+                type_registry: &self.type_registry.read(),
+                load_context: &mut *load_context,
+                formulas: &mut formulas,
+            }
+            .deserialize(&mut deserializer)?
         };
-        let catalog: ExemplarCatalog = exemplar_deserializer.deserialize(&mut deserializer)?;
+        let path = load_context.path().to_string();
+        formulas.compile(&path, self.host.get(), &bytes).await;
         Ok(catalog)
     }
 

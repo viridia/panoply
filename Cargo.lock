@@ -4828,6 +4828,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "futures-lite",
+ "panoply_saga",
  "serde",
  "serde_json",
  "smallvec",
@@ -4848,6 +4849,7 @@ dependencies = [
  "bevy",
  "futures-lite",
  "panoply_exemplar",
+ "panoply_saga",
  "rmp-serde",
  "serde",
  "thiserror 1.0.69",
@@ -4871,6 +4873,8 @@ dependencies = [
  "bumpalo",
  "futures-lite",
  "peg",
+ "serde",
+ "serde_json",
  "smol_str 0.3.7",
  "thiserror 1.0.69",
 ]

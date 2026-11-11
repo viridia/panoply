@@ -18,6 +18,7 @@ use bevy::{
     app::{App, Plugin},
     asset::AssetApp,
 };
+use panoply_saga::SagaPlugin;
 
 pub use aspect::*;
 pub use aspect_list::AspectList;
@@ -29,11 +30,15 @@ use exemplar::ExemplarCatalog;
 pub use instance_type::InstanceType;
 pub use interaction::*;
 
-/// Bevy plugin for exemplars.
+/// Bevy plugin for exemplars. Adds [`SagaPlugin`], which aspects' formulas compile with, if
+/// it is not added yet.
 pub struct ExemplarPlugin;
 
 impl Plugin for ExemplarPlugin {
     fn build(&self, app: &mut App) {
+        if !app.is_plugin_added::<SagaPlugin>() {
+            app.add_plugins(SagaPlugin);
+        }
         app.init_resource::<ExemplarCatalogs>()
             .init_resource::<InteractionActions>()
             .register_type::<Interactions>()

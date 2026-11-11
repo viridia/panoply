@@ -10,9 +10,7 @@
 use std::path::{Path, PathBuf};
 
 use bevy::{
-    asset::{
-        io::file::FileAssetReader, io::AssetSourceId, AssetLoadFailedEvent, UntypedAssetId,
-    },
+    asset::{io::file::FileAssetReader, io::AssetSourceId, AssetLoadFailedEvent, UntypedAssetId},
     picking::cursor::{EntityCursor, OverrideCursor},
     platform::collections::HashSet,
     prelude::*,

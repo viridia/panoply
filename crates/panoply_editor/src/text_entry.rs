@@ -71,7 +71,9 @@ impl Plugin for TextEntryPlugin {
         app.add_context::<TextEntryKeys>(|context| {
             context.active_if(input_focused);
             context.bind::<AcceptTextEntry>(KeyCode::Enter).consume();
-            context.bind::<AcceptTextEntry>(KeyCode::NumpadEnter).consume();
+            context
+                .bind::<AcceptTextEntry>(KeyCode::NumpadEnter)
+                .consume();
         })
         .add_systems(Startup, |mut commands: Commands| {
             commands.spawn((Name::new("TextEntryKeys"), TextEntryKeys));
@@ -208,7 +210,11 @@ fn accept_on_ok(activate: On<Activate>, mut accept: Accept) {
 }
 
 /// Enter in the box accepts its text.
-fn accept_on_enter(input: ContextActions<TextEntryKeys>, focus: Res<InputFocus>, mut accept: Accept) {
+fn accept_on_enter(
+    input: ContextActions<TextEntryKeys>,
+    focus: Res<InputFocus>,
+    mut accept: Accept,
+) {
     if input.fired::<AcceptTextEntry>() {
         if let Some(focused) = focus.get() {
             accept.from(focused);

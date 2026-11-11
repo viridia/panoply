@@ -381,7 +381,10 @@ mod tests {
             .collect();
         let mut physics = RealmPhysics::default();
         let body = physics.insert_body(RigidBodyBuilder::fixed().build());
-        physics.insert_collider(body, ColliderBuilder::trimesh(vertices, indices).unwrap().build());
+        physics.insert_collider(
+            body,
+            ColliderBuilder::trimesh(vertices, indices).unwrap().build(),
+        );
         // The query pipeline takes in new colliders when the world steps.
         physics.step(DT);
         physics
@@ -416,9 +419,15 @@ mod tests {
         }
         let feet = center.y - shape.half_height() - shape.radius;
         assert!(landed, "not grounded, feet at {feet}");
-        assert!((0.0..0.05).contains(&feet), "feet at {feet}, not on the ground");
+        assert!(
+            (0.0..0.05).contains(&feet),
+            "feet at {feet}, not on the ground"
+        );
         let pose = Pose::from_translation(center.to_rapier());
-        assert!(queries.intersect_shape(pose, &shape).next().is_none(), "still inside the ground");
+        assert!(
+            queries.intersect_shape(pose, &shape).next().is_none(),
+            "still inside the ground"
+        );
     }
 
     #[test]
@@ -427,6 +436,9 @@ mod tests {
         let queries = physics.world().query_pipeline();
         let (controller, shape) = (controller(), capsule(None, None));
         let center = center_at(&shape, GROUND_CAST_GAP);
-        assert_eq!(push_out(&controller, &queries, &shape, center, DT), Vec3::ZERO);
+        assert_eq!(
+            push_out(&controller, &queries, &shape, center, DT),
+            Vec3::ZERO
+        );
     }
 }

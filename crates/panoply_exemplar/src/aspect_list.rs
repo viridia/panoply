@@ -1,4 +1,5 @@
 use bevy::{asset::LoadContext, log::warn, reflect::TypeRegistry};
+use panoply_saga::FormulaQueue;
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserializer,
@@ -13,6 +14,7 @@ use super::{aspect::Aspect, AspectDeserializer};
 struct AspectListVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     label_prefix: &'a str,
 }
 
@@ -42,6 +44,7 @@ impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
             let mut aspect = map.next_value_seed(AspectDeserializer {
                 type_registration,
                 type_registry: self.type_registry,
+                formulas: self.formulas,
             })?;
             aspect.load_dependencies(self.label_prefix, self.load_context);
             result.push(aspect);
@@ -58,6 +61,9 @@ pub struct AspectListDeserializer<'a, 'b> {
     /// Reference to the asset loader context.
     pub load_context: &'a mut LoadContext<'b>,
 
+    /// Collects the aspects' formulas, for the loader to compile.
+    pub formulas: &'a mut FormulaQueue,
+
     /// Prefix for created materials
     pub label_prefix: &'a str,
 }
@@ -72,6 +78,7 @@ impl<'de> DeserializeSeed<'de> for AspectListDeserializer<'_, '_> {
         deserializer.deserialize_map(AspectListVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             label_prefix: self.label_prefix,
         })
     }

@@ -189,9 +189,9 @@ fn update_terrain_cursor(
         let (vertices, height) = match (pointer.press, drag.as_mut()) {
             (None, _) => {
                 let vertex = local(pointer.hit?);
-                PARCEL_VERTICES.contains(vertex).then(|| {
-                    (IRect::from_corners(vertex, vertex), height(vertex))
-                })?
+                PARCEL_VERTICES
+                    .contains(vertex)
+                    .then(|| (IRect::from_corners(vertex, vertex), height(vertex)))?
             }
             (Some(press), None) => {
                 let anchor = local(press).clamp(PARCEL_VERTICES.min, PARCEL_VERTICES.max);
@@ -213,9 +213,10 @@ fn update_terrain_cursor(
                     drag.vertex = local(point).clamp(PARCEL_VERTICES.min, PARCEL_VERTICES.max);
                 }
                 match shape {
-                    CursorShape::Brush => {
-                        (IRect::from_corners(drag.vertex, drag.vertex), height(drag.vertex))
-                    }
+                    CursorShape::Brush => (
+                        IRect::from_corners(drag.vertex, drag.vertex),
+                        height(drag.vertex),
+                    ),
                     CursorShape::Rect => (
                         IRect::from_corners(drag.anchor, drag.vertex),
                         height(drag.anchor),
@@ -273,7 +274,10 @@ mod tests {
 
     #[test]
     fn a_ray_down_meets_the_level_plane_below_it() {
-        let ray = Ray3d::new(Vec3::new(0., 10., 0.), Dir3::new(Vec3::new(0.6, -0.8, 0.)).unwrap());
+        let ray = Ray3d::new(
+            Vec3::new(0., 10., 0.),
+            Dir3::new(Vec3::new(0.6, -0.8, 0.)).unwrap(),
+        );
         let point = level_point(ray, 2.).unwrap();
         assert!(point.distance(Vec3::new(6., 2., 0.)) < 1e-4, "{point}");
         assert_eq!(level_point(ray, 12.), None);

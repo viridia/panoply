@@ -377,7 +377,11 @@ mod tests {
 
     /// Every vertex is finite and every index names one; returns the number of quads.
     fn quads(builder: &ShapeBuilder) -> usize {
-        assert!(builder.vertices.iter().all(|v| v.is_finite()), "{:?}", builder.vertices);
+        assert!(
+            builder.vertices.iter().all(|v| v.is_finite()),
+            "{:?}",
+            builder.vertices
+        );
         let count = builder.vertices.len() as u32;
         assert!(builder.indices.iter().all(|&i| i < count));
         assert_eq!(builder.indices.len() % 6, 0, "not whole quads");
@@ -386,7 +390,9 @@ mod tests {
 
     fn stroke(points: &[Vec2], options: PolygonOptions) -> ShapeBuilder {
         let mut builder = ShapeBuilder::new();
-        builder.with_stroke_width(0.2).stroke_polygon(points, options);
+        builder
+            .with_stroke_width(0.2)
+            .stroke_polygon(points, options);
         builder
     }
 
@@ -422,14 +428,24 @@ mod tests {
 
     #[test]
     fn a_closed_square_has_four_quads_and_no_stray_vertex() {
-        let square = [Vec2::ZERO, Vec2::new(4., 0.), Vec2::new(4., 4.), Vec2::new(0., 4.)];
+        let square = [
+            Vec2::ZERO,
+            Vec2::new(4., 0.),
+            Vec2::new(4., 4.),
+            Vec2::new(0., 4.),
+        ];
         let mut builder = ShapeBuilder::new();
         // A shape drawn first, whose vertex 0 a stray index would reach.
         builder.fill_rect(Rect::new(100., 100., 101., 101.));
-        builder.with_stroke_width(0.2).stroke_polygon(&square, closed());
+        builder
+            .with_stroke_width(0.2)
+            .stroke_polygon(&square, closed());
         assert_eq!(quads(&builder), 5);
         let square_indices = &builder.indices[6..];
-        assert!(square_indices.iter().all(|&i| i >= 4), "the square used the rect's vertices");
+        assert!(
+            square_indices.iter().all(|&i| i >= 4),
+            "the square used the rect's vertices"
+        );
     }
 
     #[test]
@@ -457,7 +473,11 @@ mod tests {
         for points in [reversal, sharp] {
             let builder = stroke(&points, PolygonOptions::default());
             quads(&builder);
-            let far = builder.vertices.iter().map(|v| v.x).fold(f32::MIN, f32::max);
+            let far = builder
+                .vertices
+                .iter()
+                .map(|v| v.x)
+                .fold(f32::MIN, f32::max);
             assert!(far < 10.5, "a join spiked to x = {far}");
         }
     }
@@ -495,7 +515,11 @@ mod tests {
         builder
             .with_stroke_width(0.2)
             .stroke_polygon(&[Vec2::ZERO, Vec2::new(10., 0.)], options);
-        let tip = builder.vertices.iter().map(|v| v.x).fold(f32::MIN, f32::max);
+        let tip = builder
+            .vertices
+            .iter()
+            .map(|v| v.x)
+            .fold(f32::MIN, f32::max);
         assert!((tip - 10.).abs() < 1e-5, "the arrow's tip is at {tip}");
         assert_eq!(builder.indices.len(), 3 + 6);
     }
@@ -505,7 +529,10 @@ mod tests {
         let mut builder = ShapeBuilder::new();
         builder.fill_circle(Vec2::new(5., 5.), 1., 12);
         let center = Vec3::new(5., 5., 0.);
-        assert!(builder.vertices.iter().all(|v| v.distance(center) <= 1. + 1e-5));
+        assert!(builder
+            .vertices
+            .iter()
+            .all(|v| v.distance(center) <= 1. + 1e-5));
     }
 
     #[test]

@@ -211,9 +211,7 @@ pub(crate) fn bind_scenery_animations(
     let mut graph = BlendGraph::new();
     let mut bound = Vec::new();
     for animation in &animations.0 {
-        let value = animation
-            .input
-            .is_some_and(|input| input.read(container));
+        let value = animation.input.is_some_and(|input| input.read(container));
         let mut nodes = Vec::with_capacity(animation.clips.len());
         for name in &animation.clips {
             let Some(handle) = gltf.named_animations.get(name.as_str()) else {
@@ -300,9 +298,7 @@ pub(crate) fn drive_scenery_animations(
                 let time = active.seek_time().max(0.);
                 // A finished animation no longer advances; `replay` makes it run again.
                 active.replay();
-                active
-                    .seek_to(time)
-                    .set_speed(if value { 1. } else { -1. });
+                active.seek_to(time).set_speed(if value { 1. } else { -1. });
             }
         }
     }
@@ -356,17 +352,14 @@ pub(crate) fn start_pending_sounds(
             commands.entity(entity).despawn();
             continue;
         }
-        commands
-            .entity(entity)
-            .remove::<PendingSound>()
-            .insert((
-                AudioPlayer::new(sound.sound.source.clone()),
-                PlaybackSettings {
-                    volume: Volume::Linear(gain),
-                    spatial: true,
-                    spatial_scale: Some(SOUND_PAN_ONLY),
-                    ..PlaybackSettings::DESPAWN
-                },
-            ));
+        commands.entity(entity).remove::<PendingSound>().insert((
+            AudioPlayer::new(sound.sound.source.clone()),
+            PlaybackSettings {
+                volume: Volume::Linear(gain),
+                spatial: true,
+                spatial_scale: Some(SOUND_PAN_ONLY),
+                ..PlaybackSettings::DESPAWN
+            },
+        ));
     }
 }

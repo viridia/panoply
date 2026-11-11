@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D69.**
+**Next: D70.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -543,3 +543,9 @@ never reused.
   is on virtual time, so animation, camera easing and the fixed steps slow together. The hitch log
   names frames over the cap and the time each dropped. Reversing it means overload freezes the game.
   (PAN66c)
+- **D69** A formula in an asset is a string in the field it drives, typed `Formula<T>`, compiled as
+  the asset loads against one host frozen at startup ([saga.md](saga.md), Formulas in assets). A
+  string keeps assets plain JSON, and compiling at load reports an error when the content changes,
+  not when a player first meets the formula. One that fails compiles alone and keeps its error,
+  since a typo would otherwise drop every exemplar in its catalog, and the editor can list them
+  (X94). Reversing it means a tagged form in the asset, or compiling on first use. (PAN45b)

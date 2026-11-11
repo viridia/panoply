@@ -1,7 +1,8 @@
 use std::any::TypeId;
 
 use bevy::{platform::collections::HashMap, prelude::*};
-use serde::{Deserialize, Serialize};
+use panoply_saga::Formula;
+use serde::Serialize;
 
 use crate::{Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent};
 
@@ -11,9 +12,10 @@ pub const DEFAULT_INTERACTION_DISTANCE: f32 = 1.5;
 /// The cursor over an instance whose interaction names none, or that offers several.
 pub const DEFAULT_INTERACTION_CURSOR: &str = "interact";
 
-/// Something that can be done to an instance, as written in its exemplar.
-#[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Default, Serialize, Deserialize)]
+/// Something that can be done to an instance, as written in its exemplar. Not deserialized by
+/// serde, so that loaders reach its formula through reflection.
+#[derive(Debug, Reflect, Clone, Default, Serialize)]
+#[reflect(Default, Serialize)]
 pub struct InteractionDesc {
     /// Names the interaction. Entries may share one, each with its own `when`.
     pub id: String,
@@ -22,20 +24,16 @@ pub struct InteractionDesc {
     pub caption: String,
 
     /// Name of the mouse cursor to show.
-    #[serde(default)]
     pub cursor: Option<String>,
 
     /// Name of the icon to show.
-    #[serde(default)]
     pub icon: Option<String>,
 
     /// How close the interaction can be performed from, in meters.
-    #[serde(default)]
     pub distance: Option<f32>,
 
     /// Formula deciding whether the interaction is offered. `None` always offers it.
-    #[serde(default)]
-    pub when: Option<String>,
+    pub when: Option<Formula<bool>>,
 
     /// Name of the action to perform, registered with
     /// [`InteractionAppExt::register_interaction_action`].
@@ -43,11 +41,15 @@ pub struct InteractionDesc {
 }
 
 impl InteractionDesc {
-    /// Whether the interaction is offered now. Formulas cannot be evaluated yet, so an entry that
+    /// Whether the interaction is offered now. Formulas are not evaluated yet, so an entry that
     /// has one is an error and is not offered.
     pub fn enabled(&self) -> bool {
+        // TODO(PAN45c): evaluate the formula.
         if self.when.is_some() {
-            error_once!("Interaction '{}' has a `when`, which needs SAGA", self.id);
+            error_once!(
+                "Interaction '{}' has a `when`, which is not evaluated yet",
+                self.id
+            );
             return false;
         }
         true
@@ -60,8 +62,8 @@ impl InteractionDesc {
 }
 
 /// What can be done to an instance. An exemplar's list replaces any it inherits.
-#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize)]
+#[reflect(Aspect, Default, Serialize)]
 pub struct Interactions(pub Vec<InteractionDesc>);
 
 impl Interactions {
@@ -79,7 +81,10 @@ impl Interactions {
         let first = enabled.next()?;
         Some(match enabled.next() {
             Some(_) => DEFAULT_INTERACTION_CURSOR,
-            None => first.cursor.as_deref().unwrap_or(DEFAULT_INTERACTION_CURSOR),
+            None => first
+                .cursor
+                .as_deref()
+                .unwrap_or(DEFAULT_INTERACTION_CURSOR),
         })
     }
 }
@@ -170,7 +175,7 @@ mod tests {
         InteractionDesc {
             id: id.to_owned(),
             distance: Some(distance),
-            when: when.map(str::to_owned),
+            when: when.map(Formula::uncompiled),
             ..default()
         }
     }

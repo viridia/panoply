@@ -111,10 +111,7 @@ pub struct GotoLocation {
     pub azimuth: Option<f32>,
 }
 
-pub fn goto_location(
-    mut messages: MessageReader<GotoLocation>,
-    mut commands: Commands,
-) {
+pub fn goto_location(mut messages: MessageReader<GotoLocation>, mut commands: Commands) {
     for goto in messages.read() {
         commands.queue(SetViewpointCmd {
             position: goto.position,

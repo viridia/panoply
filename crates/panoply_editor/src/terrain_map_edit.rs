@@ -29,7 +29,10 @@ pub(crate) struct TerrainMapEdits<'w, 's> {
 impl TerrainMapEdits<'_, '_> {
     /// The view realm's map.
     pub(crate) fn map(&self) -> Option<&TerrainMapAsset> {
-        let terrain = self.viewpoint.realm.and_then(|e| self.terrain_maps.get(e).ok())?;
+        let terrain = self
+            .viewpoint
+            .realm
+            .and_then(|e| self.terrain_maps.get(e).ok())?;
         self.assets.get(&terrain.handle)
     }
 
@@ -43,7 +46,11 @@ impl TerrainMapEdits<'_, '_> {
         let Some(mode) = self.mode.as_ref().map(|mode| *mode.get()) else {
             return;
         };
-        let Some(terrain) = self.viewpoint.realm.and_then(|e| self.terrain_maps.get(e).ok()) else {
+        let Some(terrain) = self
+            .viewpoint
+            .realm
+            .and_then(|e| self.terrain_maps.get(e).ok())
+        else {
             warn!("{label} did nothing: the view realm has no terrain map");
             return;
         };

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X94.**
+**Next: X95.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -531,3 +531,6 @@ dropped, not deferred. Numbers are never reused.
   actors. It measures the reaction pass, tracking's dedup among its costs. *Gate:* the read counts
   of the reactions step ([saga.md](saga.md), Order of work) show tracking as a cost, or X90's gate
   fires.
+- **X94** An editor list of the formulas that failed to compile, each naming its asset and the
+  object it belongs to, with a way to open it to fix. Each `Formula` keeps its error
+  (`Formula::error`). *Gate:* PAN28's property editor, which edits a formula field.

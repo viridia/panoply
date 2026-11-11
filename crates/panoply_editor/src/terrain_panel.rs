@@ -57,16 +57,66 @@ enum PaletteAction {
 const BUTTONS: [(&str, &str, f32, PaletteAction); 12] = {
     use PaletteAction::{Rotate, Tool};
     [
-        ("RaiseDraw", "editor/icons/raise-draw.png", 32., Tool(TerrainTool::RaiseDraw)),
-        ("LowerDraw", "editor/icons/lower-draw.png", 32., Tool(TerrainTool::LowerDraw)),
-        ("FlattenDraw", "editor/icons/flatten-draw.png", 32., Tool(TerrainTool::FlattenDraw)),
-        ("RaiseRect", "editor/icons/raise-rect.png", 32., Tool(TerrainTool::RaiseRect)),
-        ("LowerRect", "editor/icons/lower-rect.png", 32., Tool(TerrainTool::LowerRect)),
-        ("FlattenRect", "editor/icons/flatten-rect.png", 32., Tool(TerrainTool::FlattenRect)),
-        ("DrawTrees", "editor/icons/pine.png", 32., Tool(TerrainTool::DrawTrees)),
-        ("DrawShrubs", "editor/icons/shrub.png", 32., Tool(TerrainTool::DrawShrubs)),
-        ("DrawHerbs", "editor/icons/herb.png", 32., Tool(TerrainTool::DrawHerbs)),
-        ("EraseFlora", "editor/icons/chop.png", 32., Tool(TerrainTool::EraseFlora)),
+        (
+            "RaiseDraw",
+            "editor/icons/raise-draw.png",
+            32.,
+            Tool(TerrainTool::RaiseDraw),
+        ),
+        (
+            "LowerDraw",
+            "editor/icons/lower-draw.png",
+            32.,
+            Tool(TerrainTool::LowerDraw),
+        ),
+        (
+            "FlattenDraw",
+            "editor/icons/flatten-draw.png",
+            32.,
+            Tool(TerrainTool::FlattenDraw),
+        ),
+        (
+            "RaiseRect",
+            "editor/icons/raise-rect.png",
+            32.,
+            Tool(TerrainTool::RaiseRect),
+        ),
+        (
+            "LowerRect",
+            "editor/icons/lower-rect.png",
+            32.,
+            Tool(TerrainTool::LowerRect),
+        ),
+        (
+            "FlattenRect",
+            "editor/icons/flatten-rect.png",
+            32.,
+            Tool(TerrainTool::FlattenRect),
+        ),
+        (
+            "DrawTrees",
+            "editor/icons/pine.png",
+            32.,
+            Tool(TerrainTool::DrawTrees),
+        ),
+        (
+            "DrawShrubs",
+            "editor/icons/shrub.png",
+            32.,
+            Tool(TerrainTool::DrawShrubs),
+        ),
+        (
+            "DrawHerbs",
+            "editor/icons/herb.png",
+            32.,
+            Tool(TerrainTool::DrawHerbs),
+        ),
+        (
+            "EraseFlora",
+            "editor/icons/chop.png",
+            32.,
+            Tool(TerrainTool::EraseFlora),
+        ),
         // Three quarter turns one way are one the other.
         ("RotateCcw", "editor/icons/rotate-ccw.png", 26., Rotate(3)),
         ("RotateCw", "editor/icons/rotate-cw.png", 26., Rotate(1)),

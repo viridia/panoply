@@ -143,7 +143,10 @@ impl ImmediateAttach<CapsUiFeathers> for RealmStats {
 
     /// A row per stat: the viewpoint's realm, its size in parcels, and the view position.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut RealmStatsParams) {
-        let realm = params.viewpoint.realm.and_then(|e| params.realms.get(e).ok());
+        let realm = params
+            .viewpoint
+            .realm
+            .and_then(|e| params.realms.get(e).ok());
         let position = params.viewpoint.position;
         let rows = [
             ("Realm", realm.map_or("--".into(), |r| r.name.clone())),

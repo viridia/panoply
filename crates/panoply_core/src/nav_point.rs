@@ -120,8 +120,18 @@ mod tests {
         let read: Vec<NavPoint> = serde_json::from_slice(&written).unwrap();
         assert_eq!(read.len(), points.len());
         for (read, point) in read.iter().zip(&points) {
-            assert!(read.pos.abs_diff_eq(point.pos, 0.005), "{} moved", point.name);
-            assert_eq!(NavPoint { pos: point.pos, ..read.clone() }, *point);
+            assert!(
+                read.pos.abs_diff_eq(point.pos, 0.005),
+                "{} moved",
+                point.name
+            );
+            assert_eq!(
+                NavPoint {
+                    pos: point.pos,
+                    ..read.clone()
+                },
+                *point
+            );
         }
     }
 

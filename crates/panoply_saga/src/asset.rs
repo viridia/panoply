@@ -1,7 +1,6 @@
 //! `.saga` modules as assets.
 
 use core::str;
-use std::sync::Arc;
 
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
@@ -10,7 +9,7 @@ use bevy::{
 use thiserror::Error;
 
 use crate::{
-    HostState, NoImports, ScriptModule,
+    NoImports, SagaHost, ScriptModule,
     compiler::{self, compile_module, format_error},
 };
 
@@ -33,7 +32,7 @@ pub enum ModuleLoaderError {
 /// Loads `.saga` modules, compiled against one host.
 #[derive(TypePath)]
 pub struct ScriptModuleLoader {
-    pub host: Arc<HostState>,
+    pub host: SagaHost,
 }
 
 impl AssetLoader for ScriptModuleLoader {
@@ -52,7 +51,7 @@ impl AssetLoader for ScriptModuleLoader {
         let path = load_context.path().to_string();
         let src = str::from_utf8(&bytes)?;
         // TODO(PAN71): a resolver that loads imports through the load context.
-        match compile_module(&path, src, &self.host, &NoImports).await {
+        match compile_module(&path, src, self.host.get(), &NoImports).await {
             Ok(module) => Ok(ScriptModuleAsset { module }),
             Err(err) => {
                 let message = format_error(&path, src, &err);

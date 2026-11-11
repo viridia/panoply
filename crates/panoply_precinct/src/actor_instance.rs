@@ -1,5 +1,6 @@
 use bevy::{asset::LoadContext, math::Vec3, reflect::TypeRegistry};
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
+use panoply_saga::FormulaQueue;
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     ser::SerializeMap,
@@ -64,6 +65,7 @@ enum Field {
 struct ActorInstanceVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -91,6 +93,7 @@ impl<'de> Visitor<'de> for ActorInstanceVisitor<'_, '_> {
                         InstanceAspects(map.next_value_seed(AspectListDeserializer {
                             type_registry: self.type_registry,
                             load_context: self.load_context,
+                            formulas: self.formulas,
                             label_prefix: self.parent_label,
                         })?);
                 }
@@ -104,6 +107,7 @@ impl<'de> Visitor<'de> for ActorInstanceVisitor<'_, '_> {
 struct ActorInstanceDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -117,6 +121,7 @@ impl<'de> DeserializeSeed<'de> for ActorInstanceDeserializer<'_, '_> {
         deserializer.deserialize_map(ActorInstanceVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             parent_label: self.parent_label,
         })
     }
@@ -125,6 +130,7 @@ impl<'de> DeserializeSeed<'de> for ActorInstanceDeserializer<'_, '_> {
 struct ActorInstanceListVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -143,6 +149,7 @@ impl<'de> Visitor<'de> for ActorInstanceListVisitor<'_, '_> {
         while let Some(instance) = seq.next_element_seed(ActorInstanceDeserializer {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             parent_label: self.parent_label,
         })? {
             result.push(instance);
@@ -154,6 +161,7 @@ impl<'de> Visitor<'de> for ActorInstanceListVisitor<'_, '_> {
 pub(crate) struct ActorInstanceListDeserializer<'a, 'b> {
     pub(crate) type_registry: &'a TypeRegistry,
     pub(crate) load_context: &'a mut LoadContext<'b>,
+    pub(crate) formulas: &'a mut FormulaQueue,
     pub(crate) parent_label: &'a str,
 }
 
@@ -167,6 +175,7 @@ impl<'de> DeserializeSeed<'de> for ActorInstanceListDeserializer<'_, '_> {
         deserializer.deserialize_seq(ActorInstanceListVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             parent_label: self.parent_label,
         })
     }

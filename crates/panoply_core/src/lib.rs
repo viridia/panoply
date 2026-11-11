@@ -23,9 +23,9 @@ use bevy::{
     camera::visibility::{RenderLayers, VisibilitySystems},
     prelude::{AppExtStates, Component, IntoScheduleConfigs},
 };
+use fonts::GameFonts;
 pub use fonts::{GAME_UI_FONT, KEY_PROMPT_FONT};
 pub use game_mode::GameMode;
-use fonts::GameFonts;
 pub use hex_color::HexColor;
 pub use layers::ReservedLayers;
 use nav_point::NavPointsLoader;

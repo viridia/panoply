@@ -165,7 +165,12 @@ pub(crate) fn pick_world(
         if current != Some(cursor) {
             commands.entity(target).try_insert(cursor.clone());
         }
-        let hit = HitData::new(id.camera, distance, Some(ray.point_at(distance).to_bevy()), None);
+        let hit = HitData::new(
+            id.camera,
+            distance,
+            Some(ray.point_at(distance).to_bevy()),
+            None,
+        );
         hits.write(PointerHits::new(
             id.pointer,
             vec![(target, hit)],

@@ -10,8 +10,8 @@ use bevy::{
     ecs::system::SystemParam,
     feathers::{
         controls::{
-            FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuPopup, FeathersMenuToolButton,
-            FeathersPane, FeathersSplitPane, FeathersSplitPaneHandle,
+            FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuPopup,
+            FeathersMenuToolButton, FeathersPane, FeathersSplitPane, FeathersSplitPaneHandle,
         },
         display::icon,
         theme::{ThemeBackgroundColor, ThemedText},
@@ -121,32 +121,32 @@ impl Plugin for EditorShellPlugin {
             BevyImmediateAttachPlugin::<CapsUiFeathers, ShowMenu>::new(),
             BevyImmediateAttachPlugin::<CapsUiFeathers, PanelBody>::new(),
         ))
-            .add_context::<EditorShellControl>(|context| {
-                context.bind::<TogglePanel>(KeyCode::KeyT);
-                context.bind::<OpenGotoDialog>(KeyCode::KeyG);
-                // Not Tab, which feathers' tab navigation takes.
-                context.bind::<ToggleGameMode>(KeyCode::F2);
-            })
-            .add_systems(
-                Startup,
-                (
-                    |mut commands: Commands| {
-                        commands.spawn((Name::new("EditorShellControl"), EditorShellControl));
-                    },
-                    shell.spawn(),
-                ),
-            )
-            .add_systems(
-                Update,
-                (
-                    toggle_panel,
-                    show_panel,
-                    fit_panel_width,
-                    adopt_view_overlays,
-                    enable_save.run_if(resource_changed::<UnsavedAssets>),
-                ),
-            )
-            .add_systems(PostUpdate, follow_view_pane.after(UiSystems::Layout));
+        .add_context::<EditorShellControl>(|context| {
+            context.bind::<TogglePanel>(KeyCode::KeyT);
+            context.bind::<OpenGotoDialog>(KeyCode::KeyG);
+            // Not Tab, which feathers' tab navigation takes.
+            context.bind::<ToggleGameMode>(KeyCode::F2);
+        })
+        .add_systems(
+            Startup,
+            (
+                |mut commands: Commands| {
+                    commands.spawn((Name::new("EditorShellControl"), EditorShellControl));
+                },
+                shell.spawn(),
+            ),
+        )
+        .add_systems(
+            Update,
+            (
+                toggle_panel,
+                show_panel,
+                fit_panel_width,
+                adopt_view_overlays,
+                enable_save.run_if(resource_changed::<UnsavedAssets>),
+            ),
+        )
+        .add_systems(PostUpdate, follow_view_pane.after(UiSystems::Layout));
     }
 }
 
@@ -299,7 +299,9 @@ fn fit_panel_width(
     }
     *last_total = total;
 
-    let width = settings.width.clamp(MIN_PANEL_WIDTH, total - MIN_PANE_WIDTH);
+    let width = settings
+        .width
+        .clamp(MIN_PANEL_WIDTH, total - MIN_PANE_WIDTH);
     if (panel.0.size - width).abs() >= 0.5 {
         panel.0.size = width;
     }

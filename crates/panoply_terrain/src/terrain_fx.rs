@@ -63,8 +63,9 @@ impl<'de> Deserialize<'de> for TerrainTypes {
                 A: SeqAccess<'de>,
             {
                 let mut flags = TerrainTypes::default();
-                while let Some(ty) = seq.next_element::<&str>()? {
-                    match ty {
+                // Owned: a deserializer reading from a stream cannot lend a `&str`.
+                while let Some(ty) = seq.next_element::<String>()? {
+                    match ty.as_str() {
                         "cobbles" => flags |= TerrainTypes::Cobbles,
                         "soil" => flags |= TerrainTypes::Soil,
                         "path" => flags |= TerrainTypes::Path,

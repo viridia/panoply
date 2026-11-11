@@ -50,13 +50,17 @@ impl OverlayShape for RealmGrid {
         let map = self.parcels.as_rect();
         let map = Rect::from_corners(map.min * PARCEL_SIZE as f32, map.max * PARCEL_SIZE as f32);
         // Just above flat ground at 0, where its depth would tie with the ground's.
-        builder.with_draw_plane(DrawPlane::XZ).with_offset(GRID_HEIGHT);
+        builder
+            .with_draw_plane(DrawPlane::XZ)
+            .with_offset(GRID_HEIGHT);
         builder.with_stroke_width(0.1).grid(map, PARCEL_SIZE as f32);
         if self.parcels_only {
             return;
         }
         // Over the parcel lines, so a precinct's are brighter as well as wider.
-        builder.with_stroke_width(0.3).grid(map, PRECINCT_SIZE as f32);
+        builder
+            .with_stroke_width(0.3)
+            .grid(map, PRECINCT_SIZE as f32);
         // Outside the map, so the border does not hide its outer parcels' edges.
         builder.with_stroke_width(0.5).stroke_rect(map.inflate(0.5));
     }
@@ -76,7 +80,9 @@ impl SelectedContour {
     /// while no parcel is selected.
     pub(crate) fn heights(&self) -> Option<(IVec2, impl Fn(IVec2) -> f32 + '_)> {
         (!self.heights.is_empty()).then_some((self.parcel, |vertex: IVec2| {
-            let vertex = vertex.clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE)).as_uvec2();
+            let vertex = vertex
+                .clamp(IVec2::ZERO, IVec2::splat(PARCEL_SIZE))
+                .as_uvec2();
             self.heights[vertex.y as usize * CONTOUR_STRIDE + vertex.x as usize]
         }))
     }
@@ -175,8 +181,14 @@ pub struct ModeOverlaysPlugin;
 impl Plugin for ModeOverlaysPlugin {
     fn build(&self, app: &mut App) {
         app.add_overlay::<RealmGrid>()
-            .add_systems(OnEnter(EditorMode::Realm), spawn_realm_grid(EditorMode::Realm))
-            .add_systems(OnEnter(EditorMode::Terrain), spawn_realm_grid(EditorMode::Terrain))
+            .add_systems(
+                OnEnter(EditorMode::Realm),
+                spawn_realm_grid(EditorMode::Realm),
+            )
+            .add_systems(
+                OnEnter(EditorMode::Terrain),
+                spawn_realm_grid(EditorMode::Terrain),
+            )
             .add_systems(
                 Update,
                 update_realm_grid.run_if(any_with_component::<RealmGrid>),
@@ -358,7 +370,10 @@ mod tests {
         // A ray rising toward the parcel from beside it, below its edge at height 2, and rising
         // more slowly than the parcel's slope.
         let slope = |v: IVec2| 2. + v.x as f32 * 0.25;
-        let ray = Ray3d::new(Vec3::new(-3., 1.5, 4.), Dir3::new(Vec3::new(1., 0.05, 0.)).unwrap());
+        let ray = Ray3d::new(
+            Vec3::new(-3., 1.5, 4.),
+            Dir3::new(Vec3::new(1., 0.05, 0.)).unwrap(),
+        );
         assert_eq!(cast_contour(slope, ray, 100.), None);
     }
 }

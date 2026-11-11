@@ -238,7 +238,10 @@ mod tests {
 
     #[test]
     fn growing_an_empty_map_makes_one_parcel() {
-        assert_eq!(GROW_EAST.resized(IRect::default()), Some(IRect::new(0, 0, 1, 1)));
+        assert_eq!(
+            GROW_EAST.resized(IRect::default()),
+            Some(IRect::new(0, 0, 1, 1))
+        );
     }
 
     #[test]

@@ -37,8 +37,8 @@ use self::actor_control::{drive_player, follow_player, goto_player};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
 use self::actor_probe::{
-    clear_probed_interaction, probe_interaction, spawn_interaction_prompt,
-    update_interaction_key, update_interaction_prompt, InteractionKey, ProbedInteraction,
+    clear_probed_interaction, probe_interaction, spawn_interaction_prompt, update_interaction_key,
+    update_interaction_prompt, InteractionKey, ProbedInteraction,
 };
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};

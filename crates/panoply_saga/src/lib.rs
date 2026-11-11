@@ -4,7 +4,9 @@
 pub mod asset;
 mod codegen;
 pub mod compiler;
+pub mod embed;
 pub mod host;
+mod plugin;
 mod sema;
 mod syntax;
 pub mod tracking;
@@ -15,7 +17,9 @@ pub use codegen::instr::disassemble;
 pub use compiler::{
     CompilationError, ModuleResolver, NoImports, compile_formula, compile_module, format_error,
 };
+pub use embed::{Formula, FormulaQueue, ReflectFormula};
 pub use host::HostState;
+pub use plugin::{SagaHost, SagaHostBuilder, SagaPlugin};
 pub use sema::types::{ExprType, HostParam};
 pub use syntax::location::TokenLocation;
 pub use tracking::TrackingScope;

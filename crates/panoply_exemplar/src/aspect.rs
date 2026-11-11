@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry},
 };
+use panoply_saga::FormulaQueue;
 use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
 use std::{
     any::TypeId,
@@ -113,6 +114,7 @@ impl<T: Component> DetachAspect for RemoveComponent<T> {
 pub(crate) struct AspectDeserializer<'a> {
     pub(crate) type_registration: &'a TypeRegistration,
     pub(crate) type_registry: &'a TypeRegistry,
+    pub(crate) formulas: &'a mut FormulaQueue,
 }
 
 impl<'de> DeserializeSeed<'de> for AspectDeserializer<'_> {
@@ -122,8 +124,11 @@ impl<'de> DeserializeSeed<'de> for AspectDeserializer<'_> {
     where
         D: Deserializer<'de>,
     {
-        let reflect_deserializer =
-            TypedReflectDeserializer::new(self.type_registration, self.type_registry);
+        let reflect_deserializer = TypedReflectDeserializer::with_processor(
+            self.type_registration,
+            self.type_registry,
+            self.formulas,
+        );
         let deserialized_value: Box<dyn PartialReflect> =
             match reflect_deserializer.deserialize(deserializer) {
                 Ok(value) => value,

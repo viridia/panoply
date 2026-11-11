@@ -86,10 +86,26 @@ pub(crate) const SELECTOR_WIDTH: f32 =
 
 /// The selector's buttons, in order: a name, its icon, and the mode it selects. Play is last.
 const BUTTONS: [(&str, &str, Option<EditorMode>); 5] = [
-    ("RealmMode", "editor/icons/world.png", Some(EditorMode::Realm)),
-    ("TerrainMode", "editor/icons/terrain.png", Some(EditorMode::Terrain)),
-    ("SceneryMode", "editor/icons/building.png", Some(EditorMode::Scenery)),
-    ("CatalogsMode", "editor/icons/quest.png", Some(EditorMode::Catalogs)),
+    (
+        "RealmMode",
+        "editor/icons/world.png",
+        Some(EditorMode::Realm),
+    ),
+    (
+        "TerrainMode",
+        "editor/icons/terrain.png",
+        Some(EditorMode::Terrain),
+    ),
+    (
+        "SceneryMode",
+        "editor/icons/building.png",
+        Some(EditorMode::Scenery),
+    ),
+    (
+        "CatalogsMode",
+        "editor/icons/quest.png",
+        Some(EditorMode::Catalogs),
+    ),
     ("PlayMode", "editor/icons/play.png", None),
 ];
 

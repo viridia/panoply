@@ -140,6 +140,19 @@ formulas call. Imports follow WESL's: `import package::actors::util::{near, flan
 and takes a resolver, which loads an imported module's exports; Bevy's asset loader implements it
 (PAN71).
 
+## Formulas in assets
+
+- A formula is a string in the field it drives, a `Formula<T>` in Rust returning a `T`:
+  `"when": "!self.container.open"`. A JSON string holds one line, so anything longer goes in a
+  `.saga` module that the formula calls.
+- It compiles as its asset loads, against one host, `SagaHost`. Plugins register types and functions
+  on `SagaHostBuilder` while they build, and `SagaPlugin` freezes it when the app finishes building.
+  A loader deserializes aspects through a `FormulaQueue`, a reflection processor that collects every
+  `Formula` field, and compiles them once the file is read.
+- A formula that fails to compile fails alone: it keeps its error, and the rest of the asset loads.
+  The error names the formula's line and column in a JSON file, through the string's escapes; in a
+  binary asset (a precinct), its line and column in the formula.
+
 ## Memos
 
 Most predicates call a memo rather than reading noisy state:
@@ -242,7 +255,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 - **Syntax highlighting:** a VS Code TextMate grammar in `tools/vscode-saga/`, installed as a local
   extension (its README), for `.saga` files.
 - **Formulas embedded in assets** (dialogue conditions, X17's goals) are highlighted by an injection
-  grammar into the asset format, once that format is settled.
+  grammar into JSON, for the keys that hold a formula (I33).
 - **Semantic tokens and diagnostics** need a language server over `panoply_saga`'s parser and type
   solver (X88).
 
@@ -257,8 +270,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 
 ## Order of work
 
-1. Formulas embedded in assets (PAN45b), and compiled component accessors for the chest's `when`
-   (PAN45c).
+1. Compiled component accessors for the chest's `when` (PAN45c).
 2. Imports (PAN71).
 3. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
 4. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate

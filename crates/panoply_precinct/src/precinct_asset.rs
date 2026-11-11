@@ -9,6 +9,7 @@ use bevy::{
 };
 use futures_lite::AsyncWriteExt;
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
+use panoply_saga::{FormulaQueue, SagaHost};
 use serde::{
     de::{DeserializeSeed, Visitor},
     ser::SerializeTuple,
@@ -227,6 +228,7 @@ impl Serialize for SceneryInstanceData {
 struct CompressedInstanceVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -264,6 +266,7 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
         if let Some(aspects) = seq.next_element_seed(AspectListDeserializer {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             label_prefix: self.parent_label,
         })? {
             result.aspects = InstanceAspects(aspects);
@@ -276,6 +279,7 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
 struct CompressedInstanceDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -289,6 +293,7 @@ impl<'de> DeserializeSeed<'de> for CompressedInstanceDeserializer<'_, '_> {
         deserializer.deserialize_seq(CompressedInstanceVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             parent_label: self.parent_label,
         })
     }
@@ -297,6 +302,7 @@ impl<'de> DeserializeSeed<'de> for CompressedInstanceDeserializer<'_, '_> {
 struct CompressedInstanceListVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -316,6 +322,7 @@ impl<'de> Visitor<'de> for CompressedInstanceListVisitor<'_, '_> {
             seq.next_element_seed(CompressedInstanceDeserializer {
                 type_registry: self.type_registry,
                 load_context: self.load_context,
+                formulas: self.formulas,
                 parent_label: self.parent_label,
             })?
         {
@@ -328,6 +335,7 @@ impl<'de> Visitor<'de> for CompressedInstanceListVisitor<'_, '_> {
 struct CompressedInstanceListDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
     parent_label: &'a str,
 }
 
@@ -341,6 +349,7 @@ impl<'de> DeserializeSeed<'de> for CompressedInstanceListDeserializer<'_, '_> {
         deserializer.deserialize_seq(CompressedInstanceListVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
             parent_label: self.parent_label,
         })
     }
@@ -349,6 +358,7 @@ impl<'de> DeserializeSeed<'de> for CompressedInstanceListDeserializer<'_, '_> {
 struct PrecinctAssetDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
+    formulas: &'a mut FormulaQueue,
 }
 
 impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
@@ -374,6 +384,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
         struct PrecinctVisitor<'a, 'b> {
             type_registry: &'a TypeRegistry,
             load_context: &'a mut LoadContext<'b>,
+            formulas: &'a mut FormulaQueue,
         }
 
         impl<'de> Visitor<'de> for PrecinctVisitor<'_, '_> {
@@ -401,6 +412,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                                 map.next_value_seed(CompressedInstanceListDeserializer {
                                     type_registry: self.type_registry,
                                     load_context: self.load_context,
+                                    formulas: self.formulas,
                                     parent_label: "scenery",
                                 })?;
                         }
@@ -418,6 +430,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                                 map.next_value_seed(ActorInstanceListDeserializer {
                                     type_registry: self.type_registry,
                                     load_context: self.load_context,
+                                    formulas: self.formulas,
                                     parent_label: "actors",
                                 })?;
                         }
@@ -434,6 +447,7 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
         deserializer.deserialize_map(PrecinctVisitor {
             type_registry: self.type_registry,
             load_context: self.load_context,
+            formulas: self.formulas,
         })
     }
 }
@@ -441,12 +455,14 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
 #[derive(TypePath)]
 pub struct PrecinctAssetLoader {
     type_registry: TypeRegistryArc,
+    host: SagaHost,
 }
 
 impl FromWorld for PrecinctAssetLoader {
     fn from_world(world: &mut World) -> Self {
         PrecinctAssetLoader {
             type_registry: world.resource::<AppTypeRegistry>().0.clone(),
+            host: world.resource::<SagaHost>().clone(),
         }
     }
 }
@@ -473,12 +489,15 @@ impl AssetLoader for PrecinctAssetLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let mut deserializer = rmps::Deserializer::from_read_ref(&bytes);
-        let precinct_deserializer = PrecinctAssetDeserializer {
+        let mut formulas = FormulaQueue::default();
+        let precinct = PrecinctAssetDeserializer {
             type_registry: &self.type_registry.read(),
-            load_context,
-        };
-        let precinct: PrecinctAsset = precinct_deserializer.deserialize(&mut deserializer)?;
+            load_context: &mut *load_context,
+            formulas: &mut formulas,
+        }
+        .deserialize(&mut rmps::Deserializer::from_read_ref(&bytes))?;
+        let path = load_context.path().to_string();
+        formulas.compile(&path, self.host.get(), &bytes).await;
         Ok(precinct)
     }
 
