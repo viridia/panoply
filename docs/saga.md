@@ -16,7 +16,7 @@ doc records the design; nothing here is implemented yet (X7).
 Dialogue conditions, like interactions' `when` (PAN21), are evaluated on demand, when the options
 are listed. Quest stages, goals and presence react to change.
 
-The first customer is the chest's `when` (PAN45): its "Open" and "Close" are offered by whether its
+The first customer is the chest's `when` (PAN45c): its "Open" and "Close" are offered by whether its
 `ContainerState` is open, formulas in `Proto.Container`. An on-demand formula needs no cells or
 reaction passes, and PAN21's native action already has the effect, so SAGA only returns a boolean.
 The second is reactive: X63's door opened by a button, its `open` a formula over its source's
@@ -27,8 +27,8 @@ The second is reactive: X63's door opened by a button, its `open` a formula over
 `../bevy_reactor_3/crates/bevy_reactor_formulae` is the starting point, to be extracted into a
 workspace crate, `panoply_saga`, without the rest of `bevy_reactor`. It has a Rust-like language, a
 PEG parser, basic blocks, a type inference solver, and a bytecode interpreter on a stack VM. From
-`bevy_reactor` it needs only `TrackingScope` (`crates/bevy_reactor/src/tracking_scope.rs`), which
-comes along, less its unused cleanups.
+`bevy_reactor` it needs only the recording half of `TrackingScope`
+(`crates/bevy_reactor/src/tracking_scope.rs`): what a formula read, as a list (When reactions run).
 
 What it already gets right:
 
@@ -36,16 +36,36 @@ What it already gets right:
 - The VM holds `&World` only. A script's result is its effect, applied by the host as a command.
 - Host reads of components record dependencies in the tracking scope.
 
-What it gets wrong: every non-primitive value is reflected. A `Vec3` returned by a host function is
-a `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when passed to another;
-`load_field` finds a field's type by a chain of runtime downcasts the type solver already resolved.
+What it gets wrong:
+
+- Every non-primitive value is reflected. A `Vec3` returned by a host function is a
+  `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when passed to another;
+  `load_field` finds a field's type by a chain of runtime downcasts the type solver already
+  resolved.
+- Its arenas own heap data: the typed tree's `Vec`s and `Arc`s, and the long `SmolStr`s in it and
+  the AST, are allocated in a `Bump`, which never drops them, so every compile leaks. Arena slices
+  and arena `&str` own nothing, and a type in the tree is a `Copy` handle into a type table outside
+  the arena, since a module's declarations and `HostState` outlive the arena and own their types. A
+  `needs_drop` assertion on each node type keeps it so at compile time.
+- Its unfinished stages panic (`todo!()`), and a mod's formula is untrusted input.
+- A string on the stack is an `Arc<String>`, so dropping a slot touches a reference count.
 
 ## Values
 
-- **Value types are flattened into stack slots.** A struct whose fields are all primitives or
-  value types is laid out from its `TypeInfo` when registered with the host: `Vec3` is 3 slots,
-  `Quat` 4, `Transform` 10. Field access is a slot offset fixed at compile time. Calls, returns and
-  local indices count slots, not values.
+- **Value types are flattened into stack slots.** A struct whose fields are all primitives or value
+  types is laid out from its `TypeInfo` when registered with the host: `Vec3` is 3 slots, `Quat` 4,
+  `Transform` 10. Field access is a slot offset fixed at compile time. Calls, returns and local
+  indices count slots, not values. Fixed-size arrays are laid out the same way (`[f32; 4]` is 4
+  slots), for passing data to helper functions. Struct types declared in scripts are X87, and
+  dynamic lists X86.
+- **The stack holds no owned data**, so slots are `Copy` and dropping one costs nothing. A string is
+  an index into the evaluation's table of `&str`, each pointing into the module's constants (a
+  literal), the world (a component's string) or a `Bump` the VM owns (a computed string), freed when
+  the evaluation ends. A value leaving the VM, as a result or a memo cell's value, is owned,
+  converted once at the boundary.
+- **Casts are between primitives only:** `as` among `i32`, `i64`, `f32` and `f64`, and from `bool`
+  to an integer. Numbers never convert implicitly, and converting other types would need traits,
+  which SAGA lacks.
 - **Components are read through compiled accessors.** `self.transform.translation.x` is one
   instruction: the entity on the stack, an accessor built at registration that tracks the
   component and copies the fields read onto the stack.
@@ -68,8 +88,8 @@ a `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when p
   instead. Kleene's three-valued logic, with unknown a value that propagates through every operator,
   would decide it, at the cost of a third case in every operator that leaks into scripts as SQL's
   NULL does. Not until a puzzle needs it.
-- **Opaque values stay boxed or borrowed:** handles, names, strings, collections. The per-call heap
-  bounds them.
+- **Opaque values stay boxed or borrowed:** handles, names, collections. The per-call heap bounds
+  them.
 - **Enums are not flattened.** Scripts see colors as `LinearRgba`, converted at the boundary. An
   enum scripts need is wrapped by the host in a newtype with access methods of its own.
 - **Sets of things are native aggregates, not collections.** "The hostiles near X" is asked through
@@ -89,6 +109,15 @@ a `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when p
 - Entry points take parameters: an ability's `on_hit(caster, target)` runs once per target.
 - Inside a script, locals and loops are ordinary and mutable.
 
+## Modules
+
+A formula is a module embedded in an asset; a `.saga` file is a module of helper functions that
+formulas call. Imports follow WESL's: `import package::actors::util::{near, flank};` names
+`actors/util.saga` in the current package's asset source ([modding.md](modding.md), Packages),
+`super::` the parent directory, and any other first segment another package. Compiling is `async`
+and takes a resolver, which loads an imported module's exports; Bevy's asset loader implements it
+(PAN71).
+
 ## Memos
 
 Most predicates call a memo rather than reading noisy state: `proximity(subject, object, min,
@@ -107,14 +136,33 @@ faery organized its predicates this way (`design/scripting/predicates.md` in fae
 ## When reactions run
 
 Bevy has no mutation hooks: a hook on every `&mut` would cost every writer
-(`bevy_ecs/src/component/mod.rs`, on `Mutability`). Polling each dependency's ticks, as
-`bevy_reactor` did once per frame, is random access per dependency per pass. Instead, changes are
-noticed on the read side at the world boundary and pushed inside the graph:
+(`bevy_ecs/src/component/mod.rs`, on `Mutability`). So changes in the world are noticed on the read
+side, and pushed inside the graph.
 
-- **World to cells: scans.** A system per watched component type runs a `Changed<C>` query and
-  looks up the dependent cells in a reverse index from `(Entity, ComponentId)`. Components scripts
-  watch that change rarely (health, inventory, quest and door state) take
-  `#[component(summary_tick)]`, so the scan skips tables unchanged since its last run.
+A tracking scope records what its formula read: a list of `(Entity, ComponentId, present)`,
+resources and memo cells. It checks nothing itself. World to cells comes in two stages:
+
+- **First, polling.** Each pass, every live cell compares its components' and resources' change
+  ticks with the tick it last ran at, as `bevy_reactor` did. A random access per dependency per
+  pass, cheap while reactive cells are few, as for X63's button and door.
+- **Later, scans (X90).** On commit, a cell's list is compared with its last, and any difference
+  applied to a reverse index from `(Entity, ComponentId)` to cells. A system per component type
+  scripts read, registered with its accessor, runs a `Changed<C>` query, skipped while no cell
+  watches `C`, and queues the cells the index names. Components that change rarely (health,
+  inventory, quest and door state) take `#[component(summary_tick)]`, so the scan skips tables
+  unchanged since it last ran. An `On<Remove, C>` observer catches removals and despawns, which
+  `Changed` misses; watched resources are polled, once per resource type. A pass then costs a lookup
+  per changed entity of a watched type, not an access per dependency. A type that changes on most of
+  its entities every frame (`Transform`) may still be cheaper polled, so the choice may be per type.
+
+The stages differ only in cost: both notice the same changes at the same point in the schedule, so
+neither the language nor the host's API changes between them, and a test can run both on one world
+and compare the cells they queue. What keeps them interchangeable is that a component type reaches
+scripts only through its typed registration with the host, never by `ComponentId` alone, so a scan
+has a typed system to attach to it.
+
+Inside the graph:
+
 - **Cell to cell: push.** A memo whose value changes queues its dependents.
 - **Effects: push.** Effects' writes go through the buffer, so each pass knows what it wrote and
   queues the dependents.
@@ -122,9 +170,9 @@ noticed on the read side at the world boundary and pushed inside the graph:
   deadline with a timer queue, which queues its dependents when it passes. Nothing reads the clock
   every frame.
 
-Pass one, at one point in the schedule after gameplay systems, starts from the scans. Later passes
-run the queue only, memos before formulas, until it is empty, with `run_reactions`'s divergence
-limit.
+Pass one, at one point in the schedule after gameplay systems, starts from the polls (later, the
+scans). Later passes run the queue only, memos before formulas, until it is empty, with
+`run_reactions`'s divergence limit.
 
 ## Worked example: an ice storm
 
@@ -172,7 +220,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 - **Formulas embedded in assets** (dialogue conditions, X17's goals) are highlighted by an injection
   grammar into the asset format, once that format is settled.
 - **Semantic tokens and diagnostics** need a language server over `panoply_saga`'s parser and type
-  solver; a chunk of its own, when scripts are long enough to want it.
+  solver (X88).
 
 ## Open
 
@@ -183,9 +231,10 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 
 ## Order of work
 
-1. Extract `panoply_saga`, its tests passing, with `.saga` as its extension and the syntax grammar
-   (PAN45).
-2. Formulas embedded in assets and compiled component accessors, for the chest's `when` (PAN45).
-3. Value types in slots.
-4. Cells, memos and the reaction passes, with `proximity` and an hour predicate as the first native
-   memos, for X63's button and door; measure with `plans/perf.py`.
+1. Extract `panoply_saga` (PAN45a).
+2. Formulas embedded in assets (PAN45b), and compiled component accessors for the chest's `when`
+   (PAN45c).
+3. Imports (PAN71).
+4. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
+5. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
+   as the first native memos, for X63's button and door; measure with `plans/perf.py`.

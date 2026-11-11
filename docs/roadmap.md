@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN71.**
+**Next: PAN72.**
 
 ## Next
 
@@ -25,6 +25,10 @@ PAN38, Terrain mode's panel, in lettered parts: its layout, then its tools. PAN3
 rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs`,
 `ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
 asset unsaved and goes on the undo stack.
+
+PAN45, First formula, in lettered parts: SAGA's first customer, the chest's `when`
+([saga.md](saga.md), Early customers). On demand only, with no cells or reactions; the action stays
+native.
 
 - **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
   terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
@@ -83,14 +87,28 @@ asset unsaved and goes on the undo stack.
   built and follows the animated glTF node its descriptor's `animation` names, as faery's
   `PhysicsMovable` did (X39's door part), so the leaf is solid and within the probe's reach through
   the whole swing. Closes I26.
-- **PAN45 First formula.** SAGA's first customer: the chest's `when`, as formulas in
-  `Proto.Container` ([saga.md](saga.md), Early customers), which splits its one toggling entry into
-  Open and Close. Extracts `panoply_saga` from `../bevy_reactor_3/crates/bevy_reactor_formulae`,
-  tests passing, with `.saga` files and the syntax grammar; settles how an asset embeds a formula,
-  which dialogue conditions and goals (X17) reuse; and reads `ContainerState`'s `open` through a
-  compiled component accessor, type-checking `self` against the exemplar's resolved aspects. On
-  demand only: no cells or reactions. The action stays native. Checked in `plans/actors.py`, which
-  tests the chest.
+- **PAN45a Extract `panoply_saga`** from `../bevy_reactor_3/crates/bevy_reactor_formulae`, with the
+  recording half of `TrackingScope`, built against Bevy main, its tests passing and clippy clean.
+  First a survey, kept in the session's scratchpad: each language feature against each stage
+  (parser, name resolution, solver, type assignment, block generation, VM), with the `unsafe` blocks
+  and warnings beside it. A partial feature stays, compiling to an `Unsupported` error where a stage
+  is missing. No input panics the compiler: every `todo!()`, `panic!` and `unwrap()` on input
+  becomes an error, since a mod is untrusted. The arenas own no heap data, asserted at compile time
+  ([saga.md](saga.md), The prototype). Compiling stays `async` and takes a module resolver, which
+  the tests give one that refuses every import, so PAN71 leaves the API as it is. Primitive casts
+  (saga.md, Values). `.saga` as the extension, and the syntax grammar (saga.md, Editor support). The
+  game does not use it yet.
+- **PAN45b Formulas in assets.** Settle how an asset embeds a formula, which dialogue conditions and
+  goals (X17) reuse, as a decision. Formulas compile in the asset loader against one `HostState`,
+  built at startup and shared immutably. A compile error names the asset file and the line and
+  column in it, not the offset in the formula.
+- **PAN45c The chest.** Its `when`, as formulas in `Proto.Container`, splits its one toggling entry
+  into Open and Close. `ContainerState`'s `open` is read through a compiled component accessor, and
+  `self` is type-checked against the exemplar's resolved aspects. Checked in `plans/actors.py`,
+  which tests the chest.
+- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). PAN45a's resolver, implemented on
+  Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
+  recompiles when one it imports reloads, and an import cycle is a compile error.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

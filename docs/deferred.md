@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X86.**
+**Next: X91.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -55,8 +55,8 @@ dropped, not deferred. Numbers are never reused.
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
-  [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula: value slots, then
-  cells and reactions for X63's button and door. *Gate:* PAN45.
+  [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula and PAN71's imports:
+  value slots, then cells and reactions for X63's button and door. *Gate:* PAN71.
 - **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
   `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
   camera. The sky itself is never in view; the skybox is only there to light. Without an environment
@@ -500,3 +500,20 @@ dropped, not deferred. Numbers are never reused.
   alpha, and italic. The text-entry dialog's box has no hint yet; its openers would pass one.
   Follow-up PRs to the placeholder are under discussion. *Gate:* a `Default` or a feathers style in
   the Bevy we build against; then spawn the hint in `bsn!` with the theme's style.
+- **X86** Dynamic lists in SAGA, beyond fixed-size arrays ([saga.md](saga.md), Values). Open: how
+  one lives on a stack that holds no owned data, and whether lists weaken the rule that sets of
+  entities are native aggregates. *Gate:* a helper module that needs a list whose length is not
+  fixed.
+- **X87** Struct types declared in SAGA, laid out in slots as host-declared ones are
+  ([saga.md](saga.md), Values). Not X64's aspect types, which the editor and saves see: these live
+  only within scripts. *Gate:* a helper module that needs one.
+- **X88** A SAGA language server, for semantic tokens and diagnostics ([saga.md](saga.md), Editor
+  support). The compiler stops at the first error; the server needs recovery, to report more than
+  one. *Gate:* modules long enough that fixing one error per compile slows writing them.
+- **X89** Kinds of host function: which a formula may call and which only an effect may
+  ([saga.md](saga.md), Formulas and effects), checked at compile time by a tag on each registration.
+  *Gate:* the first effect.
+- **X90** Scans in place of polling, for SAGA's reactions ([saga.md](saga.md), When reactions run):
+  a reverse index from `(Entity, ComponentId)` to cells, a `Changed<C>` system per watched type,
+  `summary_tick` on rarely changing components, and observers for removals. *Gate:* the reaction
+  pass's polling shows in `plans/perf.py`, or reactive cells number in the hundreds.
