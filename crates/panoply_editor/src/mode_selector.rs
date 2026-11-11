@@ -55,14 +55,30 @@ pub enum TerrainTool {
     EraseFlora,
 }
 
+/// Scenery mode's tool, chosen in its palette (`scenery_panel.rs`); a sub-state of scenery mode, so
+/// that a tool's systems run only while it is chosen there.
+#[derive(SubStates, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[source(EditorMode = EditorMode::Scenery)]
+pub enum SceneryTool {
+    #[default]
+    PlaceFloor,
+    PlaceWall,
+    PlaceFixture,
+    PlaceActor,
+    DrawTerrainFx,
+    Interact,
+    Layers,
+    RectSelect,
+}
+
 /// Switch between play and the last editor mode.
 #[derive(InputAction)]
 #[action(path = "editor.toggle_mode", output = bool, intent = Button)]
 pub struct ToggleGameMode;
 
 /// The mode chosen, saved between runs. The states follow it (`apply_mode`); while playing,
-/// `editor_mode` is the one F2 returns to, and outside terrain mode `terrain_tool` is the tool it
-/// returns to.
+/// `editor_mode` is the one F2 returns to, and outside terrain or scenery mode its tool is the one
+/// it returns to.
 #[derive(Resource, SettingsGroup, Reflect, Clone, Copy, PartialEq, Debug, Default)]
 #[reflect(Resource, SettingsGroup, Default)]
 #[settings_group(group = "editor_mode")]
@@ -70,6 +86,7 @@ pub struct EditorModeSettings {
     pub game_mode: GameMode,
     pub editor_mode: EditorMode,
     pub terrain_tool: TerrainTool,
+    pub scenery_tool: SceneryTool,
 }
 
 /// The root of the immediate-mode selector.
@@ -115,9 +132,11 @@ impl Plugin for ModeSelectorPlugin {
     fn build(&self, app: &mut App) {
         app.add_sub_state::<EditorMode>()
             .add_sub_state::<TerrainTool>()
-            // So plans can read the mode and tool.
+            .add_sub_state::<SceneryTool>()
+            // So plans can read the mode and tools.
             .register_type_mutable_state::<EditorMode>()
             .register_type_mutable_state::<TerrainTool>()
+            .register_type_mutable_state::<SceneryTool>()
             .add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ModeSelector>::new())
             .add_systems(
                 Update,
@@ -139,12 +158,15 @@ fn apply_mode(
     mut game_mode: ResMut<NextState<GameMode>>,
     mut editor_mode: ResMut<NextState<EditorMode>>,
     mut terrain_tool: ResMut<NextState<TerrainTool>>,
+    mut scenery_tool: ResMut<NextState<SceneryTool>>,
 ) {
     game_mode.set_if_different(settings.game_mode);
     if settings.game_mode == GameMode::Edit {
         editor_mode.set_if_different(settings.editor_mode);
-        if settings.editor_mode == EditorMode::Terrain {
-            terrain_tool.set_if_different(settings.terrain_tool);
+        match settings.editor_mode {
+            EditorMode::Terrain => terrain_tool.set_if_different(settings.terrain_tool),
+            EditorMode::Scenery => scenery_tool.set_if_different(settings.scenery_tool),
+            EditorMode::Realm | EditorMode::Catalogs => {}
         }
     }
 }

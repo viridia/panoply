@@ -22,6 +22,7 @@ pub mod parcel_selection;
 pub mod quit_dialog;
 pub mod realm_panel;
 pub mod saved_view;
+pub mod scenery_panel;
 pub mod search_filter;
 pub mod shell;
 pub mod terrain_cursor;
@@ -56,6 +57,7 @@ impl PluginGroup for EditorPlugins {
             .add(quit_dialog::QuitDialogPlugin)
             .add(realm_panel::RealmPanelPlugin)
             .add(terrain_panel::TerrainPanelPlugin)
+            .add(scenery_panel::SceneryPanelPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_entry::TextEntryPlugin)

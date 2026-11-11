@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN73.**
+**Next: PAN74.**
 
 ## Next
 
@@ -46,10 +46,11 @@ native.
 - **PAN40 Water and biome.** In terrain mode, buttons that toggle whether the selected plot is water
   or terrain, and a selector for the current parcel's biome (faery's `PlotEditPanel.tsx`,
   `terrain.png`).
-- **PAN41 Exemplar chooser.** Catalogs mode's first panel: the exemplar kinds (actor, wall, floor,
-  fixture), then the chosen kind's exemplars in a `chooser` (the Quill editor's
-  `ui/controls/exemplar_chooser.rs`). The same chooser serves later in scenery mode, for the
-  exemplar to place and an existing instance's exemplar (PAN5). PAN28 edits the chosen one.
+- **PAN41 Exemplar chooser.** The chosen scenery tool's exemplars (floors, walls with faery's
+  "(erase)" row, fixtures, actors) in a `chooser` with a filter box, in the scenery panel's
+  `#Exemplars` place (`scenery_panel.rs`, `TODO(PAN41)`), which enables New… and Clone… (the Quill
+  editor's `ui/controls/exemplar_chooser.rs`); later the exemplar to place and an existing
+  instance's exemplar (PAN5). PAN28 edits the chosen one.
 - **PAN28 Property editor.** For the exemplar chosen in PAN41 and the realm panel's selected nav
   point (faery's `NavPointEditor`). A fork of arbor_day's `properties.rs` into `panoply_editor`, so
   each develops for its own needs (sharing later is X48); its attributes replaced by

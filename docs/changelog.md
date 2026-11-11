@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN73** Scenery mode has its panel, whose palette chooses a tool; later chunks add the tools.
 - **PAN45c** A chest offers Open or Close as it is shut or open, and nothing while locked.
 - **PAN45b** Formulas in exemplars and precincts compile as they load; an error names its file line.
 - **PAN45a** SAGA's compiler is part of Panoply, hardened against mods' scripts; `.saga` highlights.

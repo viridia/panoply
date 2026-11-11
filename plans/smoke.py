@@ -56,6 +56,7 @@ INSET = "panoply_core::viewport::ViewportInset"
 GAME_MODE = "panoply_core::game_mode::GameMode"
 EDITOR_MODE = "panoply_editor::mode_selector::EditorMode"
 TERRAIN_TOOL = "panoply_editor::mode_selector::TerrainTool"
+SCENERY_TOOL = "panoply_editor::mode_selector::SceneryTool"
 SELECTION = "panoply_editor::parcel_selection::ParcelSelection"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
 VIRTUAL = "bevy_time::time::Time<bevy_time::virt::Virtual>"
@@ -64,6 +65,10 @@ MODE_BUTTONS = ["RealmMode", "TerrainMode", "SceneryMode", "CatalogsMode", "Play
 TOOL_BUTTONS = [
     "RaiseDraw", "LowerDraw", "FlattenDraw", "RaiseRect", "LowerRect", "FlattenRect",
     "DrawTrees", "DrawShrubs", "DrawHerbs", "EraseFlora", "RotateCcw", "RotateCw",
+]
+SCENERY_BUTTONS = [
+    "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "Interact",
+    "Layers", "RectSelect", "RotateCcw", "RotateCw",
 ]
 WAIT = {"frames": 900, "seconds": 45}
 # Forest, shoreline, water, grass and rocks.
@@ -277,6 +282,7 @@ def editor(driver):
     assert editor_mode(driver) == "Terrain", f"F2 returned to {editor_mode(driver)}"
     # Leaving terrain mode and returning keeps its tool.
     wait_mode(driver, terrain_tool, "DrawShrubs")
+    scenery_panel(driver)
     driver.click("RealmMode")
     wait_mode(driver, editor_mode, "Realm")
     expect_highlight(driver, "RealmMode")
@@ -285,6 +291,22 @@ def editor(driver):
     driver.key("KeyT")
     driver.frames(10)
     assert driver.get_resource(INSET, at="left") == 0.0, "view still inset with the panel hidden"
+
+
+def scenery_panel(driver):
+    """Scenery mode's palette starts on Floor and chooses the tool; the buttons that act on a
+    selection or an exemplar wait for them."""
+    driver.click("SceneryMode")
+    wait_mode(driver, editor_mode, "Scenery")
+    driver.present("SceneryPanel")
+    assert scenery_tool(driver) == "PlaceFloor", f"started with {scenery_tool(driver)}"
+    expect_highlight(driver, "PlaceFloor", SCENERY_BUTTONS)
+    driver.click("PlaceWall")
+    wait_mode(driver, scenery_tool, "PlaceWall")
+    expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
+    for button in ["RotateCw", "SceneryPanel/Cut", "SceneryPanel/New", "SceneryPanel/Clone"]:
+        expect_disabled(driver, button, True)
+    driver.screenshot("scenery_panel")
 
 
 def realm_panel(driver):
@@ -583,6 +605,10 @@ def editor_mode(driver):
 
 def terrain_tool(driver):
     return driver.get_resource(f"bevy_state::state::resources::State<{TERRAIN_TOOL}>")
+
+
+def scenery_tool(driver):
+    return driver.get_resource(f"bevy_state::state::resources::State<{SCENERY_TOOL}>")
 
 
 def wait_mode(driver, read, expected):

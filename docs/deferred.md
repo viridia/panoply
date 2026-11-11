@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X97.**
+**Next: X98.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -543,3 +543,8 @@ dropped, not deferred. Numbers are never reused.
   the instance's aspects and its exemplar's chain, once the precinct's exemplars have loaded. Until
   then such a formula is checked only as it runs: a missing component fails its evaluation, logged
   once. *Gate:* the first precinct instance with a formula of its own.
+- **X97** Catalogs mode's panel: faery's catalog kinds (quests, dialogues, remarks, books,
+  particles, items, item tables, spawn tables, cut scenes), the chosen kind's entries, New, Clone
+  and a filter (`catalogs-quests.png`). Some kinds may be exemplar-based and reuse PAN41's chooser;
+  which is decided once their data is in Panoply. *Gate:* the first catalog's data migrated from
+  faery.
