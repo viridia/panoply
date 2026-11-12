@@ -60,7 +60,8 @@ set an edit is one of (`EditKind`).
   textures.
 - **PAN28g Asset pickers.** A field that names an asset becomes a newtype for the kind it names
   (D45): `Skin(String)` holds a character model, so its row is a button opening a picker of
-  character models only, as faery's was (the author has a screenshot), not a text input.
+  character models only, as faery's was (`choose-model.png`, [faery.md](faery.md), Editor), not a
+  text input.
 - **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
   then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
   `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type

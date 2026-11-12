@@ -129,7 +129,9 @@ Migration scripts below, and X1), `artwork/`.
     in dim italics, where × reverts an overridden field to the inherited value; a color field opened
     to its wheel). Nested structs and arrays were its weakest part. `scenery-add-aspect.png`: the
     exemplar's Add menu, its absent fields then "aspects…", which opens `scenery-choose-aspect.png`,
-    a checklist of aspects grouped by package, with Cancel, Clear and Save.
+    a checklist of aspects grouped by package, with Cancel, Clear and Save. `choose-model.png`: a
+    model field's picker, a dialog listing "(no model)" then the models grouped under their `.glb`
+    files, each group a disclosure row, with Cancel and Save.
   - `catalogs-dialogue.png`: the dialogue state machine editor, which replaced the 3D view while a
     dialogue entry was selected: a box per state holding its intros and options, each in the
     property editor, with lines from a `go` field to the state it names.
