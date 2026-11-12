@@ -4814,6 +4814,7 @@ dependencies = [
  "bevy_immediate",
  "panoply_actors",
  "panoply_core",
+ "panoply_exemplar",
  "panoply_overlays",
  "panoply_render",
  "panoply_scenery",

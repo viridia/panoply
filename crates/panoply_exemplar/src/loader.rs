@@ -25,6 +25,7 @@ enum Field {
     Alias,
     Aspects,
     Extends,
+    Abstract,
 }
 
 struct ExemplarVisitor<'a, 'b> {
@@ -51,6 +52,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
             alias: Vec::new(),
             aspects: Vec::new(),
             extends: None,
+            is_abstract: false,
             formulas: Vec::new(),
         };
         while let Some(key) = map.next_key()? {
@@ -109,6 +111,9 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                         }
                         _ => self.load_context.load::<Exemplar>(extends_path),
                     });
+                }
+                Field::Abstract => {
+                    result.is_abstract = map.next_value()?;
                 }
             }
         }

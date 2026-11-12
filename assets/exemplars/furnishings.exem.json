@@ -2307,6 +2307,7 @@
   },
   "Proto.Container": {
     "type": "Fixt",
+    "abstract": true,
     "aspects": {
       "Container": {},
       "Lock": {},

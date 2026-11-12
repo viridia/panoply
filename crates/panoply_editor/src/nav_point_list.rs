@@ -21,7 +21,7 @@ impl Plugin for NavPointListPlugin {
 /// that move the view would type into it.
 pub fn nav_point_chooser() -> impl Scene {
     bsn! {
-        @chooser(false, Vec::new())
+        @chooser(false, Vec::new(), None)
         NavPointChooser
     }
 }

@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I34.**
+**Next: I36.**
 
 - **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
   run.
@@ -99,3 +99,11 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I33** Formulas in exemplar JSON are not highlighted: the `.saga` grammar (`tools/vscode-saga/`)
   needs an injection into JSON, which must know the keys that hold a formula (only `when` so far).
   Read, not run.
+- **I34** Bevy's `Selected` (`bevy_ui::interaction_states`) does not derive `Reflect`, so a plan
+  cannot read which list row is highlighted; `plans/smoke.py` checks the saved choice and leaves the
+  highlight to a screenshot. Likely an oversight upstream, worth a one-line PR. Confirmed by
+  running.
+- **I35** Feathers' list view scrolls its rows with `Overflow::scroll_y()` (`listview.rs`), which
+  leaves x visible, so a row's text wider than the row draws past the list's right edge. Measured:
+  rows 386 px wide, a long name's text 452. The chooser clips each row itself (`TODO(I35)` in
+  `chooser.rs`); upstream, the list's scrolling node would clip x as well. Confirmed by running.

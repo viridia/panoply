@@ -1,6 +1,7 @@
 {
   "Proto.NPC": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Colors": {},
       "Features": {}
@@ -8,6 +9,7 @@
   },
   "Proto.HumanoidMale": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "CollisionSize": {
         "height": 1.4,
@@ -43,6 +45,7 @@
   },
   "Proto.HumanoidFemale": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "CollisionSize": {
         "height": 1.4,
@@ -78,6 +81,7 @@
   },
   "Proto.CanineDomestic": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/canine.glb#Armature"
@@ -96,6 +100,7 @@
   },
   "Proto.Dabori": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/dabori.glb#Armature",
@@ -125,6 +130,7 @@
   },
   "Proto.Reshari": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/reshari.glb#Armature"
@@ -148,6 +154,7 @@
   },
   "Proto.Monster": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Colors": {},
       "Features": {}
@@ -155,6 +162,7 @@
   },
   "Proto.HumanMaleTunic": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithTunic",
       "ColorSlots": [
@@ -177,6 +185,7 @@
   },
   "Proto.HumanMaleRobe": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithRobe",
       "ColorSlots": [
@@ -198,6 +207,7 @@
   },
   "Proto.HumanMaleApron": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithApron",
       "ColorSlots": [
@@ -221,6 +231,7 @@
   },
   "Proto.HumanMaleJerkinHooded": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithJerkinHooded",
       "ColorSlots": [
@@ -241,6 +252,7 @@
   },
   "Proto.CityGuardMale": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#CityGuard",
       "ColorSlots": [
@@ -265,6 +277,7 @@
   },
   "Proto.HumanMaleTunicHeavy": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithTunicHeavy",
       "ColorSlots": [
@@ -287,6 +300,7 @@
   },
   "Proto.HumanMaleCoatHeavy": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithCoatHeavy",
       "ColorSlots": [
@@ -310,6 +324,7 @@
   },
   "Proto.HumanMaleLongCoat": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-male.glb#WithLongCoat",
       "ColorSlots": [
@@ -348,6 +363,7 @@
   },
   "Proto.HumanFemaleTunic": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-female.glb#WithTunic",
       "ColorSlots": [
@@ -370,6 +386,7 @@
   },
   "Proto.HumanFemaleDress": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-female.glb#WithDress",
       "ColorSlots": [
@@ -393,6 +410,7 @@
   },
   "Proto.HumanFemaleLightArmor": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-female.glb#WithLightArmor",
       "ColorSlots": [
@@ -416,6 +434,7 @@
   },
   "Proto.HumanFemaleFancyGown": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-female.glb#WithFancyGown",
       "ColorSlots": [
@@ -440,6 +459,7 @@
   },
   "Proto.HumanFemaleDressHeavy": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/humanoid-female.glb#WithDressHeavy",
       "ColorSlots": [
@@ -475,6 +495,7 @@
   },
   "Proto.DaboriArmored": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Skin": "characters/dabori.glb#DaboriArmored",
       "ColorSlots": [
@@ -698,6 +719,7 @@
   },
   "Proto.BanditMaleHooded": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {},
     "extends": "#Proto.HumanMaleJerkinHooded"
   },
@@ -782,6 +804,7 @@
   },
   "Proto.CrimsonWatchRecruit": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Crimson Watch Recruit",
     "aspects": {
       "Colors": {
@@ -981,6 +1004,7 @@
   },
   "Proto.BanditFemaleLightArmor": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {},
     "extends": "#Proto.HumanFemaleLightArmor"
   },
@@ -1049,6 +1073,7 @@
   },
   "Proto.Canine": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/canine.glb#Armature"
@@ -1067,6 +1092,7 @@
   },
   "Proto.Ursine": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/ursine.glb#Armature"
@@ -1085,6 +1111,7 @@
   },
   "Proto.Wasp": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/wasp.glb#Armature"
@@ -1105,6 +1132,7 @@
   },
   "Proto.Kreekin": {
     "type": "Actr",
+    "abstract": true,
     "aspects": {
       "Armature": {
         "armature": "characters/kreekin.glb#Armature"
@@ -1123,6 +1151,7 @@
   },
   "Proto.Skeleton": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Skeleton",
     "aspects": {
       "Armature": {
@@ -1316,6 +1345,7 @@
   },
   "Proto.FeralDog": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Feral Dog",
     "aspects": {},
     "extends": "#Proto.Canine"
@@ -1431,6 +1461,7 @@
   },
   "Proto.KreekinScout": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Kreekin Scout",
     "aspects": {
       "Colors": {
@@ -1622,6 +1653,7 @@
   },
   "Proto.ConvictMale": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Convict Laborer",
     "aspects": {
       "Colors": {
@@ -1645,6 +1677,7 @@
   },
   "Proto.ConvictFemale": {
     "type": "Actr",
+    "abstract": true,
     "display_name": "Convict Laborer",
     "aspects": {
       "Colors": {

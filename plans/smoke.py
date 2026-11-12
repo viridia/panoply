@@ -85,6 +85,7 @@ UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
 MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
+SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
 WINDOW = "bevy_window::window::Window"
@@ -306,7 +307,43 @@ def scenery_panel(driver):
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
     for button in ["RotateCw", "SceneryPanel/Cut", "SceneryPanel/New", "SceneryPanel/Clone"]:
         expect_disabled(driver, button, True)
+
+    # The wall tool lists the walls, after a row that erases, as the exemplars load.
+    driver.present("Exemplars/CottageWall", timeout=WAIT)
+    driver.present("Exemplars/(erase)")
+    # The list is longer than the panel: the filter brings the row into view.
+    driver.click("Exemplars/Filter")
+    driver.type("CottageWall")
+    driver.absent("Exemplars/BasementWall")
+    driver.click("Exemplars/CottageWall")
+    expect_choice(driver, "wall", "CottageWall")
     driver.screenshot("scenery_panel")
+    # The filter box's × empties it, showing every wall again.
+    driver.click("Exemplars/ClearFilter")
+    driver.present("Exemplars/BasementWall")
+    # The actor tool lists actors, leaving out the abstract ones they extend.
+    driver.click("PlaceActor")
+    driver.present("Exemplars/Marcus", timeout=WAIT)
+    driver.absent("Exemplars/Proto.HumanoidMale")
+    driver.absent("Exemplars/CottageWall")
+    # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
+    # reflected, so the plan cannot read it).
+    driver.click("PlaceWall")
+    driver.present("Exemplars/CottageWall")
+    expect_choice(driver, "wall", "CottageWall")
+    # The row highlights, then scrolls into view after a layout pass.
+    driver.frames(10)
+    driver.screenshot("scenery_choice_kept")
+
+
+def expect_choice(driver, tool, expected):
+    """Waits until scenery mode's saved choice for `tool` is `expected`."""
+
+    def check():
+        found = driver.get_resource(SCENERY_CHOICES)[tool]
+        return found == expected, lambda: f"{found}"
+
+    driver.wait(check, f"{tool} choice {expected}", {"seconds": 2})
 
 
 def realm_panel(driver):

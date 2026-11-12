@@ -7,7 +7,6 @@ use bevy::{
     ecs::system::SystemParam,
     feathers::{
         constants::icons,
-        containers::{group, group_body},
         controls::{ButtonVariant, FeathersButton},
         display::icon,
         rounded_corners::RoundedCorners,
@@ -24,6 +23,7 @@ use bevy_immediate::{
 };
 
 use crate::{
+    exemplar_list::{exemplar_chooser, placed_type, SceneryChoices},
     mode_selector::{EditorModeSettings, SceneryTool},
     shell::SAVE_DELAY,
 };
@@ -35,6 +35,10 @@ pub struct SceneryPanel;
 /// The root of the immediate-mode palette.
 #[derive(Component, Default, Clone)]
 struct SceneryPalette;
+
+/// The immediate-mode root holding the chosen tool's exemplars.
+#[derive(Component, Default, Clone)]
+struct SceneryExemplars;
 
 /// Each palette button's size, as terrain mode's.
 const BUTTON_WIDTH: f32 = 44.0;
@@ -110,13 +114,16 @@ pub struct SceneryPanelPlugin;
 
 impl Plugin for SceneryPanelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryPalette>::new());
+        app.add_plugins((
+            BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryPalette>::new(),
+            BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryExemplars>::new(),
+        ));
     }
 }
 
 /// The panel, which `PanelBody` shows while in scenery mode. Grid rows: the palette spans the
 /// first two, beside the tool's options and then the top of the exemplars, which reach down beside
-/// Cut ▲ ▼, New… and Clone…; the last row takes the rest of the panel's height.
+/// Cut ▲ ▼, New… and Clone… and through the last row, which takes the rest of the panel's height.
 pub(crate) fn scenery_panel() -> impl Scene {
     bsn! {
         #SceneryPanel
@@ -157,19 +164,17 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 height: px(32),
             }
             --
-            // TODO(PAN41): the chosen tool's exemplars.
-            @group()
+            // Into the last row, which flexes: an item spanning a flexible track gives its height
+            // to that track, so the list's length leaves the left column's rows alone.
+            SceneryExemplars
             #Exemplars
             Node {
                 grid_column: {GridPlacement::start(2)},
-                grid_row: {GridPlacement::start_end(2, 6)},
+                grid_row: {GridPlacement::start_end(2, -1)},
+                flex_direction: FlexDirection::Column,
                 min_width: px(0),
                 min_height: px(0),
             }
-            Children [
-                @group_body()
-                Node { flex_grow: 1.0, min_height: px(0) }
-            ]
             --
             // TODO(PAN5): the layer to cut at, and its Cut toggle.
             Node {
@@ -208,7 +213,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 InteractionDisabled
             ]
             --
-            // TODO(PAN41): New and Clone act on the chosen exemplar.
+            // TODO(PAN28): New and Clone act on the chosen exemplar.
             @FeathersButton { @caption: bsn! { Text("New…") ThemedText } }
             #New
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(4)} }
@@ -219,6 +224,28 @@ pub(crate) fn scenery_panel() -> impl Scene {
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(5)} }
             InteractionDisabled
         ]
+    }
+}
+
+#[derive(SystemParam)]
+struct SceneryExemplarsParams<'w> {
+    settings: Res<'w, EditorModeSettings>,
+    choices: Res<'w, SceneryChoices>,
+}
+
+impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
+    type Params = SceneryExemplarsParams<'static>;
+
+    /// The chosen tool's chooser, keyed by the tool, so choosing another replaces it; none for a
+    /// tool that places no exemplars.
+    fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut SceneryExemplarsParams) {
+        let tool = params.settings.scenery_tool;
+        if placed_type(tool).is_none() {
+            return;
+        }
+        let selected = params.choices.choice(tool);
+        ui.ch_id(tool)
+            .on_spawn_apply_scene(move || exemplar_chooser(tool, selected.clone()));
     }
 }
 

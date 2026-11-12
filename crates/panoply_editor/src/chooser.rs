@@ -1,27 +1,29 @@
-//! A list of named items, sorted by name, with a filter box below it (`search_filter`), and a modal
-//! dialog holding one. A click selects an item; a double-click triggers [`ActivateChooserItem`],
+//! A list of named items, sorted by name, with a filter box below it (`search_filter`) whose ×
+//! empties it, and a modal dialog holding one. A click selects an item; a double-click triggers [`ActivateChooserItem`],
 //! which bubbles up from the list to whatever holds it. While the filter box has focus, Up and Down
 //! move the selection and Enter activates the selected item, or the first shown if none is.
 
 use bevy::{
     ecs::system::SystemParam,
     feathers::{
+        constants::icons,
         containers::{group, group_body},
         controls::{
             ButtonVariant, FeathersButton, FeathersDialog, FeathersDialogBody, FeathersDialogClose,
             FeathersDialogFooter, FeathersDialogHeader, FeathersListRow, FeathersListView,
-            FeathersTextInput, FeathersTextInputContainer,
+            FeathersTextInput, FeathersTextInputContainer, FeathersToolButton,
         },
+        display::icon,
         theme::ThemedText,
     },
     input_focus::{AutoFocus, InputFocus},
     picking::{events::PointerClick, pointer::PointerButton},
     prelude::*,
     text::{EditableText, FontStyle, Placeholder},
-    ui::{InteractionDisabled, ScrollIntoView, ScrollIntoViewContainer, Selected},
-    ui_widgets::{
-        listbox_update_selection, Activate, ListBox, RequestClose, SetSelected, ValueChange,
+    ui::{
+        InteractionDisabled, OverflowClipMargin, ScrollIntoView, ScrollIntoViewContainer, Selected,
     },
+    ui_widgets::{listbox_update_selection, Activate, ListBox, RequestClose, ValueChange},
 };
 use bevy_action_map::prelude::*;
 use bevy_immediate::{
@@ -32,7 +34,8 @@ use bevy_immediate::{
 
 use crate::search_filter::SearchFilter;
 
-/// The list's root. A selected item the filter hides is deselected.
+/// The list's root. `selected` decides which row is highlighted, and a row that becomes highlighted
+/// scrolls into view. A selected item the filter hides is deselected.
 #[derive(Component, Default, Clone)]
 pub struct Chooser {
     pub items: Vec<String>,
@@ -50,6 +53,10 @@ struct ChooserFilter;
 /// A row, holding its item's name.
 #[derive(Component, Default, Clone)]
 struct ChooserRow(String);
+
+/// A row that became selected, to scroll into view once it has been laid out.
+#[derive(Component, Default, Clone)]
+struct ScrollToRow;
 
 /// A double-click on a row, or Enter in the filter box, triggered on the list's root; it bubbles
 /// up to its ancestors.
@@ -119,17 +126,24 @@ impl Plugin for ChooserPlugin {
             commands.spawn((Name::new("ChooserFilterKeys"), ChooserFilterKeys));
         })
         .add_plugins(BevyImmediateAttachPlugin::<CapsUiFeathers, ChooserRows>::new())
-        .add_systems(Update, (filter_keys, enable_confirm))
+        .add_systems(
+            Update,
+            (
+                filter_keys,
+                enable_confirm,
+                (highlight_selected, scroll_to_row).chain(),
+            ),
+        )
         .add_observer(name_row)
         .add_observer(hint_filter);
     }
 }
 
-/// The list; with `autofocus`, its filter box takes the focus as it spawns. A list in the panel
-/// must not, or the keys that move the view would type into it.
-pub fn chooser(autofocus: bool, items: Vec<String>) -> impl Scene {
+/// The list, with `selected` selected; with `autofocus`, its filter box takes the focus as it
+/// spawns. A list in the panel must not, or the keys that move the view would type into it.
+pub fn chooser(autofocus: bool, items: Vec<String>, selected: Option<String>) -> impl Scene {
     bsn! {
-        Chooser { items: {items.clone()} }
+        Chooser { items: {items.clone()}, selected: {selected.clone()} }
         Node {
             flex_direction: FlexDirection::Column,
             row_gap: px(4),
@@ -166,7 +180,16 @@ pub fn chooser(autofocus: bool, items: Vec<String>) -> impl Scene {
             // put the box first.
             @FeathersTextInputContainer
             Node { flex_grow: 0.0, flex_shrink: 0.0 }
-            Children [ @filter_input(autofocus) ]
+            Children [
+                @filter_input(autofocus)
+                --
+                @FeathersToolButton {
+                    @variant: ButtonVariant::Plain,
+                    @caption: bsn! { @icon(icons::X) },
+                }
+                #ClearFilter
+                on(clear_filter)
+            ]
         ]
     }
 }
@@ -176,6 +199,28 @@ fn filter_input(autofocus: bool) -> Box<dyn Scene> {
         Box::new(bsn! { @FeathersTextInput #Filter ChooserFilter AutoFocus })
     } else {
         Box::new(bsn! { @FeathersTextInput #Filter ChooserFilter })
+    }
+}
+
+/// Observer on the filter box's ×: empties the box, showing every item again.
+fn clear_filter(
+    activate: On<Activate>,
+    parents: Query<&ChildOf>,
+    children: Query<&Children>,
+    lists: Query<(), With<Chooser>>,
+    mut filters: Query<&mut EditableText, With<ChooserFilter>>,
+) {
+    let Some(list) = parents
+        .iter_ancestors(activate.event_target())
+        .find(|&e| lists.contains(e))
+    else {
+        return;
+    };
+    if let Some(filter) = children
+        .iter_descendants(list)
+        .find(|&e| filters.contains(e))
+    {
+        filters.get_mut(filter).unwrap().clear();
     }
 }
 
@@ -223,7 +268,7 @@ fn dialog_contents(title: String, confirm: String, items: Vec<String>) -> impl S
         --
         @FeathersDialogBody
         Node { height: vh(60), min_height: px(0) }
-        Children [ @chooser(true, items.clone()) ]
+        Children [ @chooser(true, items.clone(), None) ]
         --
         @FeathersDialogFooter Children [
             @FeathersButton { @caption: bsn! { Text("Cancel") ThemedText } }
@@ -359,10 +404,11 @@ impl ImmediateAttach<CapsUiFeathers> for ChooserRows {
             ui.ch_id(item.as_str())
                 .on_spawn_apply_scene(move || row(name));
         }
+        // Only an item the filter hides: a selection whose item has not arrived yet waits for it.
         let hidden = state
             .selected
             .as_ref()
-            .is_some_and(|selected| !shown.contains(&selected));
+            .is_some_and(|selected| state.items.contains(selected) && !shown.contains(&selected));
         if hidden {
             params.lists.get_mut(list).unwrap().selected = None;
         }
@@ -373,6 +419,19 @@ fn row(name: String) -> impl Scene {
     let label = name.clone();
     bsn! {
         @FeathersListRow
+        // The list view clips only vertically, and a name with nowhere to wrap is wider than the
+        // row: clip it at the row's content box.
+        // TODO(I35): drop once feathers' list view clips horizontally too.
+        Node {
+            overflow: Overflow::clip_x(),
+            overflow_clip_margin: OverflowClipMargin::content_box(),
+            padding: UiRect {
+                left: px(6),
+                right: px(0),
+                top: px(2),
+                bottom: px(2),
+            },
+        }
         ChooserRow({name.clone()})
         Children [ Text({label.clone()}) ThemedText ]
     }
@@ -435,6 +494,43 @@ fn activate_row(
     }
 }
 
+/// Highlights the row of each list's selected item, and only it. A click has the list box
+/// highlight the row itself, which agrees, since `select_row` records it as selected; a row
+/// highlighted here is one selected some other way (restored, or by Up and Down), so it scrolls
+/// into view.
+fn highlight_selected(
+    rows: Query<(Entity, &ChooserRow, Has<Selected>)>,
+    parents: Query<&ChildOf>,
+    lists: Query<&Chooser>,
+    mut commands: Commands,
+) {
+    for (row, item, highlighted) in &rows {
+        let Some(list) = parents.iter_ancestors(row).find_map(|e| lists.get(e).ok()) else {
+            continue;
+        };
+        let selected = list.selected.as_ref() == Some(&item.0);
+        if selected && !highlighted {
+            commands.entity(row).insert((Selected, ScrollToRow));
+        } else if !selected && highlighted {
+            commands.entity(row).remove::<Selected>();
+        }
+    }
+}
+
+/// Scrolls each row that became highlighted into view, once layout has given it a size:
+/// `ScrollIntoView` reads the laid-out positions.
+fn scroll_to_row(rows: Query<(Entity, &ComputedNode), With<ScrollToRow>>, mut commands: Commands) {
+    for (row, node) in &rows {
+        if node.size().y > 0.0 {
+            commands.entity(row).remove::<ScrollToRow>();
+            commands.trigger(ScrollIntoView {
+                entity: row,
+                container: ScrollIntoViewContainer::Nearest,
+            });
+        }
+    }
+}
+
 fn filter_focused(focus: Res<InputFocus>, filters: Query<(), With<ChooserFilter>>) -> bool {
     focus.get().is_some_and(|focused| filters.contains(focused))
 }
@@ -445,7 +541,7 @@ fn filter_keys(
     focus: Res<InputFocus>,
     parents: Query<&ChildOf>,
     children: Query<&Children>,
-    lists: Query<(), With<Chooser>>,
+    mut lists: Query<&mut Chooser>,
     listboxes: Query<(), With<ListBox>>,
     rows: Query<(&ChooserRow, Has<Selected>)>,
     mut commands: Commands,
@@ -495,15 +591,8 @@ fn filter_keys(
         None if step > 0 => 0,
         None => last,
     } as usize;
-    let row = shown[next].0;
-    commands.trigger(SetSelected {
-        entity: listbox,
-        row,
-    });
-    commands.trigger(ScrollIntoView {
-        entity: row,
-        container: ScrollIntoViewContainer::Nearest,
-    });
+    let (_, row, _) = shown[next];
+    lists.get_mut(list).unwrap().selected = Some(row.0.clone());
 }
 
 #[cfg(test)]

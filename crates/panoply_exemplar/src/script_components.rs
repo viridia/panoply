@@ -166,6 +166,7 @@ mod tests {
             alias: Vec::new(),
             aspects,
             extends,
+            is_abstract: false,
             formulas,
         }
     }

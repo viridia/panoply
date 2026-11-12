@@ -18,13 +18,17 @@ pub struct ExemplarData {
 
     /// List of alternate names for loading this exemplar, used when migrating a exemplar
     /// from an old name to a new one.
-    pub(crate) alias: Vec<String>,
+    pub alias: Vec<String>,
 
     /// List of aspects that this exemplar has.
     pub aspects: Vec<Box<dyn crate::Aspect>>,
 
     /// Inherited prototype for this exemplar.
     pub extends: Option<Handle<Exemplar>>,
+
+    /// Only extended, never placed: the editor leaves it out of the exemplars to place. Not
+    /// inherited.
+    pub is_abstract: bool,
 
     /// The formulas written in this exemplar's aspects, checked once its chain has loaded.
     pub(crate) formulas: Vec<FormulaRef>,

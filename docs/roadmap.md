@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN74.**
+**Next: PAN75.**
 
 ## Next
 
@@ -46,24 +46,24 @@ native.
 - **PAN40 Water and biome.** In terrain mode, buttons that toggle whether the selected plot is water
   or terrain, and a selector for the current parcel's biome (faery's `PlotEditPanel.tsx`,
   `terrain.png`).
-- **PAN41 Exemplar chooser.** The chosen scenery tool's exemplars (floors, walls with faery's
-  "(erase)" row, fixtures, actors) in a `chooser` with a filter box, in the scenery panel's
-  `#Exemplars` place (`scenery_panel.rs`, `TODO(PAN41)`), which enables New… and Clone… (the Quill
-  editor's `ui/controls/exemplar_chooser.rs`); later the exemplar to place and an existing
-  instance's exemplar (PAN5). PAN28 edits the chosen one.
-- **PAN28 Property editor.** For the exemplar chosen in PAN41 and the realm panel's selected nav
-  point (faery's `NavPointEditor`). A fork of arbor_day's `properties.rs` into `panoply_editor`, so
-  each develops for its own needs (sharing later is X48); its attributes replaced by
-  `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is in
-  [faery.md](faery.md), Editor, its screenshots included. Beyond arbor_day: nested structs and
-  arrays of structs (faery's weakest part, so its layout is a starting point only), and optional
-  fields as faery's aspects had them: a struct is a map whose keys may be absent; a `None` field has
-  no row, a `Some` row has an × button that removes it, and a boxed-plus menu in the panel header
-  lists the absent fields to add. A field's annotations apply through `Option` and `Vec` to their
-  contents, since the `f32` in `Option<f32>` cannot be annotated; Bevy's inspector does this, in a
-  commit after Panoply's locked Bevy, so this chunk may bump Bevy. Every edit is undoable in PAN42's
-  stack (D49): setting a value at an asset key and property path, adding or removing an optional
-  field, inserting or removing an array item; a drag's steps coalesce into one entry, with
+- **PAN74 Floor type chooser.** The floor tool's list in the scenery panel (`exemplar_list.rs`,
+  `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
+  exemplars, so listed from the directory rather than loaded, which would load every floor's
+  textures.
+- **PAN28 Property editor.** For the exemplar chosen in scenery mode's lists and the realm panel's
+  selected nav point (faery's `NavPointEditor`); with it the scenery panel's New… and Clone…
+  (`TODO(PAN28)`), which write catalogs and so need I2. A fork of arbor_day's `properties.rs` into
+  `panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes
+  replaced by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's
+  editor is in [faery.md](faery.md), Editor, its screenshots included. Beyond arbor_day: nested
+  structs and arrays of structs (faery's weakest part, so its layout is a starting point only), and
+  optional fields as faery's aspects had them: a struct is a map whose keys may be absent; a `None`
+  field has no row, a `Some` row has an × button that removes it, and a boxed-plus menu in the panel
+  header lists the absent fields to add. A field's annotations apply through `Option` and `Vec` to
+  their contents, since the `f32` in `Option<f32>` cannot be annotated; Bevy's inspector does this,
+  in a commit after Panoply's locked Bevy, so this chunk may bump Bevy. Every edit is undoable in
+  PAN42's stack (D49): setting a value at an asset key and property path, adding or removing an
+  optional field, inserting or removing an array item; a drag's steps coalesce into one entry, with
   `coalesce` added to `UndoAction` from bevy#23373, which PAN42 left out. Nesting must not squeeze
   the values: in faery, labels and values in separate columns, under nesting, cramped the labels and
   cut values off.

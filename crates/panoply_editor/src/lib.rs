@@ -11,6 +11,7 @@ use bevy::{
 pub mod chooser;
 pub mod debug_views;
 pub mod diagnostics;
+pub mod exemplar_list;
 pub mod goto;
 pub mod json;
 pub mod map_size;
@@ -58,6 +59,7 @@ impl PluginGroup for EditorPlugins {
             .add(realm_panel::RealmPanelPlugin)
             .add(terrain_panel::TerrainPanelPlugin)
             .add(scenery_panel::SceneryPanelPlugin)
+            .add(exemplar_list::ExemplarListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_entry::TextEntryPlugin)
