@@ -213,7 +213,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 InteractionDisabled
             ]
             --
-            // TODO(PAN28): New and Clone act on the chosen exemplar.
+            // TODO(PAN28c): New and Clone act on the chosen exemplar.
             @FeathersButton { @caption: bsn! { Text("New…") ThemedText } }
             #New
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(4)} }

@@ -30,6 +30,15 @@ PAN45, First formula, in lettered parts: SAGA's first customer, the chest's `whe
 ([saga.md](saga.md), Early customers). On demand only, with no cells or reactions; the action stays
 native.
 
+PAN28, Property editor, in lettered parts. A fork of arbor_day's `properties.rs` into
+`panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes replaced
+by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is
+in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Inspectable`
+(`crates/bevy_reactor_prop_inspect/src/inspectable.rs`) is a model for roots and field handles.
+Widgets read values and emit edits, never write them: an edit names a root and a path within it and
+is one of a closed set of operations, which one system applies and PAN42's stack (D49) records. Only
+the walk that draws the rows and the system that applies edits touch reflection.
+
 - **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
   terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
   the contours table becomes saveable here (`terrain/terrain_contour_undo.rs`).
@@ -50,23 +59,31 @@ native.
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28 Property editor.** For the exemplar chosen in scenery mode's lists and the realm panel's
-  selected nav point (faery's `NavPointEditor`); with it the scenery panel's New… and Clone…
-  (`TODO(PAN28)`), which write catalogs and so need I2. A fork of arbor_day's `properties.rs` into
-  `panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes
-  replaced by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's
-  editor is in [faery.md](faery.md), Editor, its screenshots included. Beyond arbor_day: nested
-  structs and arrays of structs (faery's weakest part, so its layout is a starting point only), and
-  optional fields as faery's aspects had them: a struct is a map whose keys may be absent; a `None`
-  field has no row, a `Some` row has an × button that removes it, and a boxed-plus menu in the panel
-  header lists the absent fields to add. A field's annotations apply through `Option` and `Vec` to
-  their contents, since the `f32` in `Option<f32>` cannot be annotated; Bevy's inspector does this,
-  in a commit after Panoply's locked Bevy, so this chunk may bump Bevy. Every edit is undoable in
-  PAN42's stack (D49): setting a value at an asset key and property path, adding or removing an
-  optional field, inserting or removing an array item; a drag's steps coalesce into one entry, with
-  `coalesce` added to `UndoAction` from bevy#23373, which PAN42 left out. Nesting must not squeeze
-  the values: in faery, labels and values in separate columns, under nesting, cramped the labels and
-  cut values off.
+- **PAN28a Values and undo.** The fork, showing the exemplar chosen in scenery mode's lists. A root
+  trait, as `InspectableRoot`, reads a value by path and applies an edit, with one implementation:
+  an aspect of an exemplar in a catalog, named by asset key. Its edits only set values: no closures,
+  which could not be undone, and the value replaced is kept for undo by `reflect_clone`. A drag's
+  steps coalesce into one entry, with `coalesce` added to `UndoAction` from bevy#23373, which PAN42
+  left out. Nested structs, laid out so nesting does not squeeze the values: in faery, labels and
+  values in separate columns, under nesting, cramped the labels and cut values off (faery's layout
+  is a starting point only).
+- **PAN28b Optional fields, arrays and variants.** Optional fields as faery's aspects had them: a
+  struct is a map whose keys may be absent; a `None` field has no row, a `Some` row has an × button
+  that removes it, and a boxed-plus menu in the panel header lists the absent fields to add. Arrays
+  of structs, whose items are inserted and removed, and enums switched between variants. Each
+  field's handle has two paths, as `Inspectable` has: its slot (the `Option` or the array item),
+  which adding and removing act on, and the value inside, which the widget edits and whose
+  annotations apply, since the `f32` in `Option<f32>` cannot be annotated. Bevy's inspector applies
+  annotations through `Option` and `Vec` in a commit after Panoply's locked Bevy, so this chunk may
+  bump Bevy. New values (`None`, an array item, a variant's fields) come from the type's
+  `ReflectDefault`, a real value of the type rather than a dynamic proxy. The test case is a scenery
+  element's colliders: `ColliderDesc`'s `shape` becomes an enum whose variants hold their own
+  dimensions (a sphere a radius, a box its half-extents) in place of the shared `size`, so the
+  fields a shape uses follow from its type (D45); whether catalogs migrate or serde reads the old
+  form is decided in the chunk.
+- **PAN28c Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
+  and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
+  and Clone… (`TODO(PAN28c)`), which write catalogs and so need I2.
 - **PAN43 Inherited fields.** Provisional. Fields an exemplar inherits through `extends` show apart
   from its own, as faery's did in dim italics (`scenery-actor-inherited.png`); editing one overrides
   it, and × on an override reverts it to the inherited value rather than removing the field. faery

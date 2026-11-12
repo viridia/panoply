@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X98.**
+**Next: X99.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -425,8 +425,10 @@ dropped, not deferred. Numbers are never reused.
   PAN6's door opened by a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
 - **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
   ([modding.md](modding.md), Types a mod declares). Bevy plans that layer, for dynamic data, on
-  `bevy_reflect2`, whose MVP has landed (bevy#26356); use Bevy's if the layer has. *Gate:* a mod
-  needs an aspect that native aspects, formulas and the generic variables aspect cannot express.
+  `bevy_reflect2`, whose MVP has landed (bevy#26356); use Bevy's if the layer has. In the editor
+  such a type needs its own walk of the rows and its own applying of edits, beside reflection's
+  (PAN28). *Gate:* a mod needs an aspect that native aspects, formulas and the generic variables
+  aspect cannot express.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
   `Sword` cannot collide; an order for packages that override the same exemplar; what a save keeps
   of a removed mod's aspects (X20 covers only the editor); and a mod built against an older version
@@ -548,3 +550,7 @@ dropped, not deferred. Numbers are never reused.
   and a filter (`catalogs-quests.png`). Some kinds may be exemplar-based and reuse PAN41's chooser;
   which is decided once their data is in Panoply. *Gate:* the first catalog's data migrated from
   faery.
+- **X98** Port the property editor's walk and apply (PAN28) to `bevy_reflect2`, as an early customer
+  whose findings go upstream. Worth it only while Bevy is still shaping the crate; once its own
+  crates have moved, Panoply follows with them. *Gate:* `bevy_reflect2` can reach a field by path,
+  read its attributes and make a default value, soon enough that a report can still change it.
