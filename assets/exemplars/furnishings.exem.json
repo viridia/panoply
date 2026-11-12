@@ -10,21 +10,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.35,
-            0.42,
-            0.45
-          ],
+          "size": [0.35, 0.42, 0.45],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0,
-            0.85,
-            0
-          ]
+          [0, 0.85, 0]
         ]
       }
     }
@@ -40,11 +32,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.43,
-            0.4
-          ]
+          "size": [0.4, 0.43, 0.4]
         }
       ]
     }
@@ -60,11 +48,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.47,
-            0.3
-          ]
+          "size": [0.3, 0.47, 0.3]
         }
       ]
     }
@@ -80,26 +64,14 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            1,
-            0.42,
-            0.45
-          ],
+          "size": [1, 0.42, 0.45],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.6,
-            0.85,
-            0
-          ],
-          [
-            0.6,
-            0.85,
-            0
-          ]
+          [-0.6, 0.85, 0],
+          [0.6, 0.85, 0]
         ]
       }
     }
@@ -115,81 +87,33 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.42
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.03
-          ]
+          "offset": [0, 0, 0.42],
+          "size": [0.2, 0.9, 0.03]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.42
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.03
-          ]
+          "offset": [0, 0, -0.42],
+          "size": [0.2, 0.9, 0.03]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.2,
-            0.4
-          ]
+          "offset": [0, 0, 0],
+          "size": [0.2, 0.2, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0.9,
-            0
-          ],
-          "size": [
-            0.2,
-            0.03,
-            0.4
-          ]
+          "offset": [0, 0.9, 0],
+          "size": [0.2, 0.03, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.3,
-            0
-          ],
-          "size": [
-            0.2,
-            0.03,
-            0.4
-          ]
+          "offset": [0, 1.3, 0],
+          "size": [0.2, 0.03, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.75,
-            0
-          ],
-          "size": [
-            0.2,
-            0.03,
-            0.4
-          ]
+          "offset": [0, 1.75, 0],
+          "size": [0.2, 0.03, 0.4]
         }
       ]
     }
@@ -205,11 +129,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.38,
-            0.3
-          ]
+          "size": [0.3, 0.38, 0.3]
         }
       ]
     }
@@ -225,11 +145,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            0.3,
-            0.25
-          ]
+          "size": [0.25, 0.3, 0.25]
         }
       ]
     }
@@ -245,11 +161,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.25,
-            0.25,
-            0.25
-          ]
+          "size": [0.25, 0.25, 0.25]
         }
       ]
     }
@@ -265,33 +177,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.2,
-            0.5
-          ],
+          "size": [0.2, 0.2, 0.5],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0.2,
-            0.4,
-            0
-          ]
+          [0.2, 0.4, 0]
         ],
         "enter": [
-          [
-            0.25,
-            0,
-            0.75
-          ],
-          [
-            0.25,
-            0,
-            -0.75
-          ]
+          [0.25, 0, 0.75],
+          [0.25, 0, -0.75]
         ]
       }
     }
@@ -308,38 +204,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.15,
-            0.25,
-            0.85
-          ],
+          "size": [0.15, 0.25, 0.85],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0.25,
-            0.5,
-            0.6
-          ],
-          [
-            0.25,
-            0.5,
-            -0.6
-          ]
+          [0.25, 0.5, 0.6],
+          [0.25, 0.5, -0.6]
         ],
         "enter": [
-          [
-            0.25,
-            0,
-            1.1
-          ],
-          [
-            0.25,
-            0,
-            -1.1
-          ]
+          [0.25, 0, 1.1],
+          [0.25, 0, -1.1]
         ]
       }
     }
@@ -355,32 +231,16 @@
       "SceneryColliders": [
         {
           "shape": "rbox",
-          "size": [
-            0.25,
-            0.25,
-            0.2
-          ]
+          "size": [0.25, 0.25, 0.2]
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0.25,
-            0.52,
-            0
-          ]
+          [0.25, 0.52, 0]
         ],
         "enter": [
-          [
-            0.25,
-            0,
-            -0.55
-          ],
-          [
-            0.25,
-            0,
-            0.55
-          ]
+          [0.25, 0, -0.55],
+          [0.25, 0, 0.55]
         ]
       }
     }
@@ -396,32 +256,16 @@
       "SceneryColliders": [
         {
           "shape": "rbox",
-          "size": [
-            0.25,
-            0.35,
-            0.25
-          ]
+          "size": [0.25, 0.35, 0.25]
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0.3,
-            0.5,
-            0
-          ]
+          [0.3, 0.5, 0]
         ],
         "enter": [
-          [
-            0.25,
-            0,
-            -0.6
-          ],
-          [
-            0.25,
-            0,
-            0.6
-          ]
+          [0.25, 0, -0.6],
+          [0.25, 0, 0.6]
         ]
       }
     }
@@ -437,11 +281,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.43,
-            0.5
-          ],
+          "size": [0.2, 0.43, 0.5],
           "margin": 0.2
         }
       ]
@@ -458,11 +298,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1.88,
-            0
-          ]
+          "size": [0.3, 1.88, 0]
         }
       ]
     }
@@ -478,19 +314,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.35,
-            0.05
-          ]
+          "size": [0.2, 0.35, 0.05]
         }
       ],
       "LightSource": {
-        "offset": [
-          0,
-          0.6,
-          0
-        ],
+        "offset": [0, 0.6, 0],
         "radius": 2,
         "color": "#fff4bd"
       }
@@ -507,19 +335,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.15,
-            0.8,
-            0.15
-          ]
+          "size": [0.15, 0.8, 0.15]
         }
       ],
       "LightSource": {
-        "offset": [
-          0,
-          1.5,
-          0
-        ],
+        "offset": [0, 1.5, 0],
         "radius": 2,
         "color": "#fff4bd"
       }
@@ -536,11 +356,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -556,11 +372,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.15,
-            0.25,
-            0.15
-          ]
+          "size": [0.15, 0.25, 0.15]
         }
       ]
     }
@@ -576,16 +388,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.5,
-            0.05
-          ],
-          "origin": [
-            0,
-            0.8,
-            0
-          ]
+          "size": [0.4, 0.5, 0.05],
+          "origin": [0, 0.8, 0]
         }
       ]
     }
@@ -596,11 +400,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#PaintingPortrait",
-          "offset": [
-            0,
-            0,
-            -0.13
-          ]
+          "offset": [0, 0, -0.13]
         }
       ]
     }
@@ -611,11 +411,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#PaintingSeascape",
-          "offset": [
-            0,
-            0,
-            -0.12
-          ]
+          "offset": [0, 0, -0.12]
         }
       ]
     }
@@ -626,26 +422,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#PaintingFruit",
-          "offset": [
-            0,
-            0,
-            -0.13
-          ]
+          "offset": [0, 0, -0.13]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0.9,
-            0
-          ],
-          "size": [
-            0.35,
-            0.45,
-            0
-          ]
+          "offset": [0, 0.9, 0],
+          "size": [0.35, 0.45, 0]
         }
       ]
     }
@@ -661,11 +445,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.4,
-            0.4,
-            0.4
-          ]
+          "size": [0.4, 0.4, 0.4]
         }
       ]
     }
@@ -681,11 +461,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.32,
-            0.3
-          ]
+          "size": [0.3, 0.32, 0.3]
         }
       ]
     }
@@ -701,11 +477,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.15,
-            0.5,
-            0.15
-          ]
+          "size": [0.15, 0.5, 0.15]
         }
       ]
     }
@@ -721,11 +493,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.15,
-            0.25,
-            0.1
-          ]
+          "size": [0.15, 0.25, 0.1]
         }
       ]
     }
@@ -742,11 +510,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.13,
-            0.2,
-            0.15
-          ]
+          "size": [0.13, 0.2, 0.15]
         }
       ]
     }
@@ -772,11 +536,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.2,
-            0.15,
-            0.2
-          ],
+          "size": [0.2, 0.15, 0.2],
           "margin": 0.2
         }
       ]
@@ -788,39 +548,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Crate",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ]
+          "offset": [0, 0, -0.45]
         },
         {
           "asset": "scenery/models/carpentry.glb#Crate",
           "y_rotation": 25,
-          "offset": [
-            0.05,
-            0,
-            0.2
-          ]
+          "offset": [0.05, 0, 0.2]
         },
         {
           "asset": "scenery/models/carpentry.glb#Crate",
           "y_rotation": 35,
-          "offset": [
-            0,
-            0.5,
-            -0.1
-          ]
+          "offset": [0, 0.5, -0.1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.35,
-            0.5,
-            0.55
-          ]
+          "size": [0.35, 0.5, 0.55]
         }
       ]
     }
@@ -837,33 +581,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.8,
-            0.25,
-            0.3
-          ],
+          "size": [0.8, 0.25, 0.3],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "sleep": [
-          [
-            0,
-            0.5,
-            0
-          ]
+          [0, 0.5, 0]
         ],
         "enter": [
-          [
-            0,
-            0,
-            0.61
-          ],
-          [
-            0,
-            0,
-            -0.61
-          ]
+          [0, 0, 0.61],
+          [0, 0, -0.61]
         ]
       }
     }
@@ -879,11 +607,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.25,
-            0.45
-          ]
+          "size": [0.3, 0.25, 0.45]
         }
       ]
     }
@@ -899,11 +623,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.65,
-            0.35
-          ]
+          "size": [0.2, 0.65, 0.35]
         }
       ]
     }
@@ -914,21 +634,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry-dark.glb#ShieldCross",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            1,
-            0.35
-          ]
+          "size": [0.05, 1, 0.35]
         }
       ]
     }
@@ -939,21 +651,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry-dark.glb#ShieldStar",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            1,
-            0.35
-          ]
+          "size": [0.05, 1, 0.35]
         }
       ]
     }
@@ -964,19 +668,11 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#CandleSconce",
-          "offset": [
-            0,
-            1.2,
-            -0.1
-          ]
+          "offset": [0, 1.2, -0.1]
         }
       ],
       "LightSource": {
-        "offset": [
-          0,
-          1,
-          0.3
-        ],
+        "offset": [0, 1, 0.3],
         "radius": 2,
         "color": "#fff4bd"
       }
@@ -993,11 +689,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.15,
-            0.1
-          ]
+          "size": [0.1, 0.15, 0.1]
         }
       ]
     }
@@ -1013,11 +705,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -1033,21 +721,13 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.2,
-            0.1
-          ],
+          "size": [0.3, 0.2, 0.1],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0,
-            0.65,
-            0
-          ]
+          [0, 0.65, 0]
         ]
       }
     }
@@ -1058,22 +738,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Trencher",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
           "type": "marker",
-          "size": [
-            0.15,
-            0.03,
-            0.2
-          ]
+          "size": [0.15, 0.03, 0.2]
         }
       ]
     }
@@ -1089,11 +761,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -1109,16 +777,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.1,
-            1.17,
-            0
-          ],
-          "size": [
-            0.25,
-            0.05,
-            0.75
-          ]
+          "offset": [0.1, 1.17, 0],
+          "size": [0.25, 0.05, 0.75]
         }
       ]
     }
@@ -1134,16 +794,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ],
-          "size": [
-            0.75,
-            0.43,
-            1.1
-          ]
+          "offset": [0, 0, -0.1],
+          "size": [0.75, 0.43, 1.1]
         }
       ]
     }
@@ -1159,11 +811,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.4,
-            0.4
-          ]
+          "size": [0.4, 0.4, 0.4]
         }
       ]
     }
@@ -1179,11 +827,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.25,
-            0.25,
-            0.5
-          ]
+          "size": [0.25, 0.25, 0.5]
         }
       ]
     }
@@ -1199,11 +843,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.75,
-            0.05,
-            0.45
-          ]
+          "size": [0.75, 0.05, 0.45]
         }
       ]
     }
@@ -1219,11 +859,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.35,
-            0.5
-          ]
+          "size": [0.3, 0.35, 0.5]
         }
       ]
     }
@@ -1239,11 +875,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.42,
-            0.5
-          ],
+          "size": [0.4, 0.42, 0.5],
           "margin": 0.2
         }
       ]
@@ -1260,32 +892,16 @@
       "SceneryColliders": [
         {
           "shape": "rbox",
-          "size": [
-            0.2,
-            0.35,
-            0.2
-          ]
+          "size": [0.2, 0.35, 0.2]
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0.25,
-            0.5,
-            0
-          ]
+          [0.25, 0.5, 0]
         ],
         "enter": [
-          [
-            0.25,
-            0,
-            -0.55
-          ],
-          [
-            0.25,
-            0,
-            0.55
-          ]
+          [0.25, 0, -0.55],
+          [0.25, 0, 0.55]
         ]
       }
     }
@@ -1301,11 +917,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.25,
-            0.88,
-            0.25
-          ],
+          "size": [0.25, 0.88, 0.25],
           "pickable": true
         }
       ]
@@ -1322,37 +934,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            1,
-            0.42,
-            0.8
-          ]
+          "size": [1, 0.42, 0.8]
         }
       ],
       "SceneryMarks": {
         "sleep": [
-          [
-            0,
-            0.5,
-            0.4
-          ],
-          [
-            0,
-            0.5,
-            -0.4
-          ]
+          [0, 0.5, 0.4],
+          [0, 0.5, -0.4]
         ],
         "enter": [
-          [
-            0,
-            0,
-            -1.2
-          ],
-          [
-            0,
-            0,
-            1.2
-          ]
+          [0, 0, -1.2],
+          [0, 0, 1.2]
         ]
       }
     }
@@ -1368,27 +960,15 @@
       "SceneryColliders": [
         {
           "shape": "rbox",
-          "size": [
-            0.2,
-            0.35,
-            0.6
-          ]
+          "size": [0.2, 0.35, 0.6]
         }
       ],
       "SceneryMarks": {
         "sit": [
-          [
-            0,
-            0.5,
-            0
-          ]
+          [0, 0.5, 0]
         ],
         "enter.front": [
-          [
-            0.5,
-            0,
-            0
-          ]
+          [0.5, 0, 0]
         ]
       }
     }
@@ -1404,25 +984,13 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.35,
-            0.5
-          ]
+          "size": [0.3, 0.35, 0.5]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0.65,
-            0.5,
-            0
-          ],
-          [
-            -0.65,
-            0.5,
-            0
-          ]
+          [0.65, 0.5, 0],
+          [-0.65, 0.5, 0]
         ]
       }
     }
@@ -1438,20 +1006,12 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.35,
-            0.5
-          ]
+          "size": [0.3, 0.35, 0.5]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0,
-            0.5,
-            0
-          ]
+          [0, 0.5, 0]
         ]
       }
     }
@@ -1467,21 +1027,13 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.3,
-            0.5
-          ],
+          "size": [0.3, 0.3, 0.5],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0,
-            0.6,
-            0
-          ]
+          [0, 0.6, 0]
         ]
       }
     }
@@ -1497,16 +1049,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0.6,
-            0
-          ],
-          "size": [
-            0.25,
-            0.18,
-            0.55
-          ]
+          "offset": [0, 0.6, 0],
+          "size": [0.25, 0.18, 0.55]
         }
       ]
     }
@@ -1517,21 +1061,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#CuttingBoard",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.25
-          ]
+          "size": [0.17, 0.04, 0.25]
         }
       ]
     }
@@ -1542,21 +1078,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.25
-          ]
+          "size": [0.17, 0.04, 0.25]
         }
       ]
     }
@@ -1572,11 +1100,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.15,
-            0.45,
-            0.15
-          ]
+          "size": [0.15, 0.45, 0.15]
         }
       ]
     }
@@ -1592,11 +1116,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -1612,11 +1132,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.06,
-            0.2
-          ]
+          "size": [0.3, 0.06, 0.2]
         }
       ]
     }
@@ -1628,26 +1144,14 @@
         {
           "asset": "scenery/models/decorations.glb#Sack",
           "z_rotation": 70,
-          "offset": [
-            0,
-            0.25,
-            0
-          ]
+          "offset": [0, 0.25, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.05,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            0.26,
-            0.2
-          ]
+          "offset": [-0.05, 0, 0],
+          "size": [0.1, 0.26, 0.2]
         }
       ]
     }
@@ -1663,11 +1167,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -1683,26 +1183,14 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            1.05,
-            0.42,
-            0.45
-          ],
+          "size": [1.05, 0.42, 0.45],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.6,
-            0.85,
-            0
-          ],
-          [
-            0.6,
-            0.85,
-            0
-          ]
+          [-0.6, 0.85, 0],
+          [0.6, 0.85, 0]
         ]
       }
     }
@@ -1713,21 +1201,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#CuttingBoardVeggies2",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.25
-          ]
+          "size": [0.17, 0.04, 0.25]
         }
       ]
     }
@@ -1738,21 +1218,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#CuttingBoardBread",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.25
-          ]
+          "size": [0.17, 0.04, 0.25]
         }
       ]
     }
@@ -1768,11 +1240,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.35,
-            0.43,
-            0.4
-          ]
+          "size": [0.35, 0.43, 0.4]
         }
       ]
     }
@@ -1788,16 +1256,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ],
-          "size": [
-            0.45,
-            0.33,
-            0.6
-          ]
+          "offset": [0, 0, -0.1],
+          "size": [0.45, 0.33, 0.6]
         }
       ]
     }
@@ -1813,16 +1273,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ],
-          "size": [
-            0.4,
-            0.33,
-            0.95
-          ]
+          "offset": [0, 0, -0.1],
+          "size": [0.4, 0.33, 0.95]
         }
       ]
     }
@@ -1838,11 +1290,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.38,
-            0.3
-          ]
+          "size": [0.3, 0.38, 0.3]
         }
       ]
     }
@@ -1858,11 +1306,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.38,
-            0.3
-          ]
+          "size": [0.3, 0.38, 0.3]
         }
       ]
     }
@@ -1886,11 +1330,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.3,
-            0.38,
-            0.3
-          ]
+          "size": [0.3, 0.38, 0.3]
         }
       ]
     }
@@ -1906,26 +1346,14 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            1.05,
-            0.44,
-            0.5
-          ],
+          "size": [1.05, 0.44, 0.5],
           "margin": 0.2
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.6,
-            0.85,
-            0
-          ],
-          [
-            0.6,
-            0.85,
-            0
-          ]
+          [-0.6, 0.85, 0],
+          [0.6, 0.85, 0]
         ]
       }
     }
@@ -1941,11 +1369,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.1,
-            0.2,
-            0.1
-          ]
+          "size": [0.1, 0.2, 0.1]
         }
       ]
     }
@@ -1962,11 +1386,7 @@
         {
           "shape": "box",
           "type": "marker",
-          "size": [
-            0.25,
-            0.1,
-            0.25
-          ]
+          "size": [0.25, 0.1, 0.25]
         }
       ]
     }
@@ -1982,11 +1402,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.55,
-            0.47,
-            1
-          ],
+          "size": [0.55, 0.47, 1],
           "margin": 0.2
         }
       ]
@@ -2003,11 +1419,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2023,11 +1435,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2043,11 +1451,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2063,11 +1467,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2083,11 +1483,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2103,11 +1499,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.06,
-            0.2
-          ]
+          "size": [0.5, 0.06, 0.2]
         }
       ]
     }
@@ -2118,11 +1510,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#PaintingPortraitMaleKing",
-          "offset": [
-            0,
-            0,
-            -0.13
-          ]
+          "offset": [0, 0, -0.13]
         }
       ]
     }
@@ -2134,11 +1522,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.15,
-            0.1,
-            0.1
-          ]
+          "size": [0.15, 0.1, 0.1]
         }
       ]
     }
@@ -2150,11 +1534,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.3,
-            0.15,
-            0.5
-          ]
+          "size": [0.3, 0.15, 0.5]
         }
       ]
     }
@@ -2166,11 +1546,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.25,
-            0.2,
-            0.1
-          ]
+          "size": [0.25, 0.2, 0.1]
         }
       ]
     }
@@ -2182,11 +1558,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.25,
-            0.2,
-            0.1
-          ]
+          "size": [0.25, 0.2, 0.1]
         }
       ]
     }
@@ -2198,11 +1570,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.2,
-            0.5,
-            0.2
-          ]
+          "size": [0.2, 0.5, 0.2]
         }
       ]
     }
@@ -2214,11 +1582,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.15,
-            0.1,
-            0.1
-          ]
+          "size": [0.15, 0.1, 0.1]
         }
       ]
     }
@@ -2230,11 +1594,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.25,
-            0.2,
-            0.1
-          ]
+          "size": [0.25, 0.2, 0.1]
         }
       ]
     }
@@ -2246,26 +1606,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#NoticeBoard",
-          "offset": [
-            -0.1,
-            0,
-            0
-          ]
+          "offset": [-0.1, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.15,
-            0.85,
-            0
-          ],
-          "size": [
-            0.05,
-            0.45,
-            0.5
-          ],
+          "offset": [-0.15, 0.85, 0],
+          "size": [0.05, 0.45, 0.5],
           "pickable": true
         }
       ]
@@ -2280,26 +1628,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-keep-1.glb#StonePlacard",
-          "offset": [
-            -0.1,
-            1.2,
-            0
-          ]
+          "offset": [-0.1, 1.2, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.1,
-            0
-          ],
-          "size": [
-            0.05,
-            0.2,
-            0.25
-          ],
+          "offset": [0, 1.1, 0],
+          "size": [0.05, 0.2, 0.25],
           "pickable": true
         }
       ]
@@ -2339,7 +1675,7 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "ChestLarge.Open"
+            "ChestLarge.Open"
           ],
           "input": "open",
           "transitions": [
@@ -2367,11 +1703,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.25,
-            0.4
-          ],
+          "size": [0.3, 0.25, 0.4],
           "pickable": true
         }
       ]
@@ -2385,7 +1717,7 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "ChestSmall.Open"
+            "ChestSmall.Open"
           ],
           "input": "open",
           "transitions": [
@@ -2412,11 +1744,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.25,
-            0.3
-          ],
+          "size": [0.3, 0.25, 0.3],
           "pickable": true
         }
       ]
@@ -2429,7 +1757,7 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "ChestSmaller.Open"
+            "ChestSmaller.Open"
           ],
           "input": "open",
           "transitions": [
@@ -2456,11 +1784,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.15,
-            0.15,
-            0.2
-          ],
+          "size": [0.15, 0.15, 0.2],
           "pickable": true
         }
       ]
@@ -2474,8 +1798,8 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "DresserDoorLeft.Open",
-              "DresserDoorRight.Open"
+            "DresserDoorLeft.Open",
+            "DresserDoorRight.Open"
           ],
           "input": "open",
           "transitions": [
@@ -2503,11 +1827,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.55,
-            0.4
-          ],
+          "size": [0.2, 0.55, 0.4],
           "pickable": true
         }
       ]
@@ -2519,26 +1839,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#SignPost",
-          "offset": [
-            -0.4,
-            0,
-            0
-          ]
+          "offset": [-0.4, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.3,
-            0,
-            -0.05
-          ],
-          "size": [
-            0.1,
-            0.9,
-            0.1
-          ],
+          "offset": [-0.3, 0, -0.05],
+          "size": [0.1, 0.9, 0.1],
           "pickable": true
         }
       ]
@@ -2566,11 +1874,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.77,
-            0.4
-          ],
+          "size": [0.2, 0.77, 0.4],
           "pickable": true
         }
       ]
@@ -2588,11 +1892,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.8,
-            0.4
-          ],
+          "size": [0.2, 0.8, 0.4],
           "pickable": true
         }
       ]
@@ -2605,11 +1905,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.15,
-            0.1,
-            0.1
-          ]
+          "size": [0.15, 0.1, 0.1]
         }
       ]
     }
@@ -2621,11 +1917,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.25,
-            0.2,
-            0.1
-          ]
+          "size": [0.25, 0.2, 0.1]
         }
       ]
     }
@@ -2637,11 +1929,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.2,
-            0.5,
-            0.2
-          ]
+          "size": [0.2, 0.5, 0.2]
         }
       ]
     }
@@ -2657,11 +1945,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.25,
-            0.88,
-            0.25
-          ],
+          "size": [0.25, 0.88, 0.25],
           "pickable": true
         }
       ]
@@ -2673,21 +1957,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#BookFlatOpenBrown",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.25
-          ],
+          "size": [0.17, 0.04, 0.25],
           "pickable": true
         }
       ]
@@ -2699,21 +1975,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.04,
-            0.15
-          ],
+          "size": [0.2, 0.04, 0.15],
           "pickable": true
         }
       ]
@@ -2725,21 +1993,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.22,
-            0.04,
-            0.2
-          ],
+          "size": [0.22, 0.04, 0.2],
           "pickable": true
         }
       ]
@@ -2751,21 +2011,13 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
-          "offset": [
-            0,
-            0.01,
-            0
-          ]
+          "offset": [0, 0.01, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.17,
-            0.04,
-            0.15
-          ],
+          "size": [0.17, 0.04, 0.15],
           "pickable": true
         }
       ]
@@ -2778,21 +2030,13 @@
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedBrown",
           "z_rotation": 90,
-          "offset": [
-            0.01,
-            0.22,
-            0
-          ]
+          "offset": [0.01, 0.22, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.22,
-            0.15
-          ],
+          "size": [0.05, 0.22, 0.15],
           "pickable": true
         }
       ]
@@ -2805,21 +2049,13 @@
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedGray",
           "z_rotation": 90,
-          "offset": [
-            0.01,
-            0.24,
-            0
-          ]
+          "offset": [0.01, 0.24, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.07,
-            0.24,
-            0.2
-          ],
+          "size": [0.07, 0.24, 0.2],
           "pickable": true
         }
       ]
@@ -2832,21 +2068,13 @@
         {
           "asset": "scenery/models/decorations.glb#BookFlatClosedSienna",
           "z_rotation": 90,
-          "offset": [
-            0.01,
-            0.21,
-            0
-          ]
+          "offset": [0.01, 0.21, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.19,
-            0.15
-          ],
+          "size": [0.05, 0.19, 0.15],
           "pickable": true
         }
       ]
@@ -2859,39 +2087,19 @@
         {
           "asset": "scenery/models/decorations.glb#SpellEmitter",
           "z_rotation": 90,
-          "offset": [
-            0.1,
-            1,
-            0
-          ]
+          "offset": [0.1, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.25,
-            0
-          ],
-          "size": [
-            0.1,
-            0.05,
-            0.3
-          ]
+          "offset": [0, 1.25, 0],
+          "size": [0.1, 0.05, 0.3]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0.7,
-            0
-          ],
-          "size": [
-            0.1,
-            0.05,
-            0.3
-          ]
+          "offset": [0, 0.7, 0],
+          "size": [0.1, 0.05, 0.3]
         }
       ]
     }
@@ -2903,11 +2111,7 @@
         {
           "shape": "cylinder",
           "type": "marker",
-          "size": [
-            0.35,
-            0.25,
-            0.5
-          ]
+          "size": [0.35, 0.25, 0.5]
         }
       ]
     }
@@ -2919,39 +2123,19 @@
         {
           "asset": "scenery/models/decorations.glb#SpellEmitter",
           "z_rotation": 90,
-          "offset": [
-            0.1,
-            1,
-            0
-          ]
+          "offset": [0.1, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.25,
-            0
-          ],
-          "size": [
-            0.1,
-            0.05,
-            0.3
-          ]
+          "offset": [0, 1.25, 0],
+          "size": [0.1, 0.05, 0.3]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0.7,
-            0
-          ],
-          "size": [
-            0.1,
-            0.05,
-            0.3
-          ]
+          "offset": [0, 0.7, 0],
+          "size": [0.1, 0.05, 0.3]
         }
       ]
     }
@@ -2967,16 +2151,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.5,
-            0.05
-          ],
-          "origin": [
-            0,
-            0.8,
-            0
-          ]
+          "size": [0.4, 0.5, 0.05],
+          "origin": [0, 0.8, 0]
         }
       ]
     }
@@ -2987,11 +2163,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/decorations.glb#PaintingCastle",
-          "offset": [
-            0,
-            0,
-            -0.13
-          ]
+          "offset": [0, 0, -0.13]
         }
       ]
     }
@@ -3007,11 +2179,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.15,
-            0.13,
-            0.15
-          ]
+          "size": [0.15, 0.13, 0.15]
         }
       ]
     }
@@ -3030,11 +2198,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.15,
-            0.13,
-            0.15
-          ]
+          "size": [0.15, 0.13, 0.15]
         }
       ]
     }
@@ -3053,11 +2217,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.15,
-            0.13,
-            0.15
-          ]
+          "size": [0.15, 0.13, 0.15]
         }
       ]
     }
@@ -3073,11 +2233,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.2,
-            0.15,
-            0.2
-          ],
+          "size": [0.2, 0.15, 0.2],
           "margin": 0.2
         }
       ]

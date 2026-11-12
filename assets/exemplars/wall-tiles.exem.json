@@ -30,11 +30,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -60,11 +56,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.6,
-            1,
-            0.6
-          ]
+          "size": [0.6, 1, 0.6]
         }
       ]
     }
@@ -80,16 +72,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.35
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0, 0, -0.35],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -108,42 +92,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.6
-          ],
-          "size": [
-            0.35,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.6],
+          "size": [0.35, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.55
-          ],
-          "size": [
-            0.35,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, -0.55],
+          "size": [0.35, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.7,
-            0
-          ],
-          "size": [
-            0.35,
-            0.15,
-            0.5
-          ]
+          "offset": [0, 1.7, 0],
+          "size": [0.35, 0.15, 0.5]
         }
       ]
     }
@@ -158,22 +118,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallTop"
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallTop",
-          "offset": [
-            0,
-            0,
-            1
-          ]
+          "offset": [0, 0, 1]
         }
       ]
     }
@@ -189,11 +141,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1,
-            0.3
-          ]
+          "size": [0.3, 1, 0.3]
         }
       ]
     }
@@ -209,11 +157,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.6,
-            0.3
-          ]
+          "size": [0.3, 0.6, 0.3]
         }
       ]
     }
@@ -230,11 +174,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -250,11 +190,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.75,
-            0.5
-          ]
+          "size": [0.2, 0.75, 0.5]
         }
       ]
     }
@@ -270,11 +206,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -291,16 +223,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.25,
-            1,
-            0.25
-          ]
+          "offset": [-0.25, 0, 0],
+          "size": [0.25, 1, 0.25]
         }
       ]
     }
@@ -319,24 +243,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.2,
-            1,
-            0.3
-          ]
+          "offset": [0, 0, -0.2],
+          "size": [0.2, 1, 0.3]
         },
         {
           "shape": "box",
-          "size": [
-            0.35,
-            1,
-            0.35
-          ]
+          "size": [0.35, 1, 0.35]
         }
       ]
     }
@@ -355,19 +267,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1,
-            0.3
-          ]
+          "size": [0.3, 1, 0.3]
         }
       ]
     }
@@ -390,32 +294,16 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.2,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            1,
-            0.2
-          ]
+          "offset": [-0.2, 0, 0],
+          "size": [0.3, 1, 0.2]
         },
         {
           "shape": "box",
-          "size": [
-            0.35,
-            1,
-            0.35
-          ]
+          "size": [0.35, 1, 0.35]
         }
       ]
     }
@@ -438,37 +326,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.15,
-            0,
-            0
-          ],
-          "size": [
-            0.35,
-            1,
-            0.2
-          ]
+          "offset": [-0.15, 0, 0],
+          "size": [0.35, 1, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, -0.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "size": [
-            0.35,
-            1,
-            0.35
-          ]
+          "size": [0.35, 1, 0.35]
         }
       ]
     }
@@ -491,27 +359,15 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.2
-          ]
+          "size": [0.5, 1, 0.2]
         },
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "size": [
-            0.35,
-            1,
-            0.35
-          ]
+          "size": [0.35, 1, 0.35]
         }
       ]
     }
@@ -527,11 +383,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.65,
-            0.25,
-            0.4
-          ]
+          "size": [0.65, 0.25, 0.4]
         }
       ]
     }
@@ -547,11 +399,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            0.25,
-            0.3
-          ]
+          "size": [0.3, 0.25, 0.3]
         }
       ]
     }
@@ -567,11 +415,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1,
-            0.3
-          ]
+          "size": [0.3, 1, 0.3]
         }
       ]
     }
@@ -587,11 +431,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -623,42 +463,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0],
+          "size": [0.2, 1, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0, 0, -0.3],
+          "size": [0.2, 1, 0.2]
         },
         {
           "shape": "cylinder",
-          "offset": [
-            0.15,
-            0,
-            -0.15
-          ],
-          "size": [
-            0.35,
-            1,
-            0
-          ]
+          "offset": [0.15, 0, -0.15],
+          "size": [0.35, 1, 0]
         }
       ]
     }
@@ -674,11 +490,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -694,11 +506,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "size": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -715,11 +523,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.8,
-            0.25,
-            0.55
-          ]
+          "size": [0.8, 0.25, 0.55]
         }
       ]
     }
@@ -738,16 +542,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -766,16 +562,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -794,16 +582,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -822,16 +602,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -847,16 +619,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -875,29 +639,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0.15,
-            0,
-            0.2
-          ],
-          "size": [
-            0.3,
-            0.35,
-            0.3
-          ]
+          "offset": [0.15, 0, 0.2],
+          "size": [0.3, 0.35, 0.3]
         }
       ]
     }
@@ -916,42 +664,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.15,
-            1,
-            0.5
-          ]
+          "offset": [0.25, 0, 0],
+          "size": [0.15, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -967,16 +691,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -1012,16 +728,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -1040,16 +748,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -1060,27 +760,15 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoof",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -1091,43 +779,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoof",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGable",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGable",
-          "offset": [
-            0,
-            0,
-            -0.11
-          ]
+          "offset": [0, 0, -0.11]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -1138,56 +806,28 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoof",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableTall",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableTall",
-          "offset": [
-            0,
-            0,
-            -0.11
-          ]
+          "offset": [0, 0, -0.11]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.45,
-            0,
-            0.55
-          ],
-          "size": [
-            1,
-            0.55,
-            0.3
-          ]
+          "offset": [-0.45, 0, 0.55],
+          "size": [1, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.2,
-            1.15,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.2, 1.15, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -1198,56 +838,28 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofHalf",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableTallHalf",
-          "offset": [
-            0,
-            0,
-            -0.51
-          ]
+          "offset": [0, 0, -0.51]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableTallHalf",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ]
+          "offset": [0, 0, -0.1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            0.3
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            0.25,
-            1.05,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.35,
-            0.75
-          ]
+          "offset": [0.25, 1.05, 0.5],
+          "size": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -1258,20 +870,12 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
-          "offset": [
-            0.5,
-            -0.27,
-            0
-          ]
+          "offset": [0.5, -0.27, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
           "y_rotation": 180,
-          "offset": [
-            -0.5,
-            -0.27,
-            0
-          ]
+          "offset": [-0.5, -0.27, 0]
         }
       ]
     }
@@ -1292,11 +896,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofRidge",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ]
     }
@@ -1307,11 +907,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofRidgeEnd",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ]
     }
@@ -1327,16 +923,8 @@
       "SceneryColliders": [
         {
           "shape": "ellipsoid",
-          "offset": [
-            0,
-            -0.3,
-            0.1
-          ],
-          "size": [
-            0.95,
-            0.75,
-            0.95
-          ]
+          "offset": [0, -0.3, 0.1],
+          "size": [0.95, 0.75, 0.95]
         }
       ]
     }
@@ -1352,16 +940,8 @@
       "SceneryColliders": [
         {
           "shape": "ellipsoid",
-          "offset": [
-            0,
-            -0.1,
-            0
-          ],
-          "size": [
-            0.8,
-            0.55,
-            0.8
-          ]
+          "offset": [0, -0.1, 0],
+          "size": [0.8, 0.55, 0.8]
         }
       ]
     }
@@ -1377,16 +957,8 @@
       "SceneryColliders": [
         {
           "shape": "ellipsoid",
-          "offset": [
-            0,
-            -0.05,
-            0
-          ],
-          "size": [
-            0.5,
-            0.4,
-            0.5
-          ]
+          "offset": [0, -0.05, 0],
+          "size": [0.5, 0.4, 0.5]
         }
       ]
     }
@@ -1402,11 +974,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1422,11 +990,7 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.4,
-            1,
-            0.5
-          ]
+          "size": [0.4, 1, 0.5]
         }
       ]
     }
@@ -1441,11 +1005,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/stonework.glb#CaveEntrance",
-          "offset": [
-            0,
-            0,
-            0.9
-          ]
+          "offset": [0, 0, 0.9]
         }
       ]
     }
@@ -1461,11 +1021,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.3
-          ]
+          "size": [0.5, 1, 0.3]
         }
       ]
     }
@@ -1481,16 +1037,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.25,
-            1,
-            0.3
-          ]
+          "offset": [0.25, 0, 0],
+          "size": [0.25, 1, 0.3]
         }
       ]
     }
@@ -1506,11 +1054,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            1,
-            0.4
-          ]
+          "size": [0.4, 1, 0.4]
         }
       ]
     }
@@ -1529,11 +1073,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1552,11 +1092,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.45
-          ]
+          "size": [0.5, 1, 0.45]
         }
       ]
     }
@@ -1579,11 +1115,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1606,11 +1138,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1626,11 +1154,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.4,
-            0.3
-          ]
+          "size": [0.5, 0.4, 0.3]
         }
       ]
     }
@@ -1646,16 +1170,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.25,
-            0.45,
-            0.3
-          ]
+          "offset": [0.25, 0, 0],
+          "size": [0.25, 0.45, 0.3]
         }
       ]
     }
@@ -1671,11 +1187,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.4,
-            0.45,
-            0.4
-          ]
+          "size": [0.4, 0.45, 0.4]
         }
       ]
     }
@@ -1694,11 +1206,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.45,
-            0.5
-          ]
+          "size": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1717,11 +1225,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.45,
-            0.45
-          ]
+          "size": [0.5, 0.45, 0.45]
         }
       ]
     }
@@ -1744,11 +1248,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.45,
-            0.5
-          ]
+          "size": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1771,11 +1271,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.45,
-            0.5
-          ]
+          "size": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1791,24 +1287,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.5,
-            1,
-            0.3
-          ]
+          "offset": [0, 0, -0.2],
+          "size": [0.5, 1, 0.3]
         }
       ],
       "LightSource": {
-        "offset": [
-          0,
-          0.3,
-          0.55
-        ],
+        "offset": [0, 0.3, 0.55],
         "radius": 3,
         "color": "#f6952d"
       }
@@ -1823,26 +1307,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#Chimney",
-          "offset": [
-            0,
-            2,
-            0
-          ]
+          "offset": [0, 2, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.3,
-            2,
-            0.3
-          ]
+          "offset": [0, 0, -0.2],
+          "size": [0.3, 2, 0.3]
         }
       ]
     }
@@ -1857,26 +1329,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#WoodenCounterWide",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.25,
-            0.43,
-            1
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.25, 0.43, 1]
         }
       ]
     }
@@ -1891,26 +1351,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Trough",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.25,
-            0.3,
-            0.9
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.25, 0.3, 0.9]
         }
       ]
     }
@@ -1926,16 +1374,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.42,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            1,
-            0.05
-          ]
+          "offset": [-0.42, 0, 0.42],
+          "size": [0.05, 1, 0.05]
         }
       ]
     }
@@ -1951,16 +1391,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.42,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            1,
-            0.05
-          ]
+          "offset": [-0.42, 0, 0.42],
+          "size": [0.05, 1, 0.05]
         }
       ]
     }
@@ -1976,16 +1408,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.42,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            1,
-            0.05
-          ]
+          "offset": [-0.42, 0, 0.42],
+          "size": [0.05, 1, 0.05]
         }
       ]
     }
@@ -2001,11 +1425,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -2024,11 +1444,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.4,
-            1
-          ]
+          "size": [0.05, 0.4, 1]
         }
       ]
     }
@@ -2044,11 +1460,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.35,
-            1
-          ]
+          "size": [0.05, 0.35, 1]
         }
       ]
     }
@@ -2067,16 +1479,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.05,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -2092,16 +1496,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.05,
-            0.35,
-            0.5
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.05, 0.35, 0.5]
         }
       ]
     }
@@ -2117,16 +1513,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2147,43 +1535,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofSteep",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableSteep",
-          "offset": [
-            0,
-            0,
-            -0.51
-          ]
+          "offset": [0, 0, -0.51]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageGableSteep",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ]
+          "offset": [0, 0, -0.1]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            0.25,
-            -0.05,
-            -0.5
-          ],
-          "size": [
-            0.5,
-            0.65,
-            0.75
-          ]
+          "offset": [0.25, -0.05, -0.5],
+          "size": [0.5, 0.65, 0.75]
         }
       ]
     }
@@ -2196,26 +1564,14 @@
           "asset": "scenery/models/stonework.glb#HeadstoneSmall",
           "y_rotation_variance": 30.4,
           "z_rotation_variance": 10.4,
-          "offset": [
-            -0.3,
-            0,
-            0
-          ]
+          "offset": [-0.3, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.3,
-            0,
-            0
-          ],
-          "size": [
-            0.05,
-            0.35,
-            0.3
-          ]
+          "offset": [-0.3, 0, 0],
+          "size": [0.05, 0.35, 0.3]
         }
       ]
     }
@@ -2227,26 +1583,14 @@
         {
           "asset": "scenery/models/stonework.glb#HeadstoneMed",
           "x_rotation_variance": 16.1,
-          "offset": [
-            -0.3,
-            0,
-            0
-          ]
+          "offset": [-0.3, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.35,
-            0,
-            0
-          ],
-          "size": [
-            0.05,
-            0.45,
-            0.3
-          ]
+          "offset": [-0.35, 0, 0],
+          "size": [0.05, 0.45, 0.3]
         }
       ]
     }
@@ -2262,25 +1606,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.3
-          ],
-          "size": [
-            0.75,
-            0.25,
-            0.65
-          ]
+          "offset": [0, 0, 0.3],
+          "size": [0.75, 0.25, 0.65]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0,
-            0.5,
-            0.8
-          ]
+          [0, 0.5, 0.8]
         ]
       }
     }
@@ -2306,11 +1638,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.8,
-            0.5
-          ]
+          "size": [0.05, 0.8, 0.5]
         }
       ]
     }
@@ -2321,26 +1649,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWall",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.1, 1, 0.5]
         }
       ]
     }
@@ -2351,48 +1667,24 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWall",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#StickWall",
           "y_rotation": 90,
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.5,
-            1,
-            0.1
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.5, 1, 0.1]
         }
       ]
     }
@@ -2403,26 +1695,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWallWindow",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            0.35,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.1, 0.35, 0.5]
         }
       ]
     }
@@ -2433,26 +1713,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#Palisade",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.1, 1, 0.5]
         }
       ]
     }
@@ -2464,22 +1732,14 @@
         {
           "asset": "terrain/models/temperate.glb#poplar-green",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            1,
-            0.5
-          ]
+          "size": [0.25, 1, 0.5]
         }
       ]
     }
@@ -2491,22 +1751,14 @@
         {
           "asset": "terrain/models/temperate.glb#poplar-green2",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            1,
-            0.4
-          ]
+          "size": [0.25, 1, 0.4]
         }
       ]
     }
@@ -2518,22 +1770,14 @@
         {
           "asset": "terrain/models/temperate.glb#poplar-orange",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            1,
-            0.5
-          ]
+          "size": [0.25, 1, 0.5]
         }
       ]
     }
@@ -2545,22 +1789,14 @@
         {
           "asset": "terrain/models/temperate.glb#poplar-yellow",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            1,
-            0.5
-          ]
+          "size": [0.25, 1, 0.5]
         }
       ]
     }
@@ -2572,22 +1808,14 @@
         {
           "asset": "terrain/models/bushes.glb#spiky1",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            0.6,
-            0.5
-          ]
+          "size": [0.25, 0.6, 0.5]
         }
       ]
     }
@@ -2599,22 +1827,14 @@
         {
           "asset": "terrain/models/bushes.glb#spiky2",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            0.55,
-            0.5
-          ]
+          "size": [0.25, 0.55, 0.5]
         }
       ]
     }
@@ -2626,22 +1846,14 @@
         {
           "asset": "terrain/models/bushes.glb#fluffy",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale_variance": 0.2
         }
       ],
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.25,
-            1,
-            0.5
-          ]
+          "size": [0.25, 1, 0.5]
         }
       ]
     }
@@ -2653,11 +1865,7 @@
         {
           "asset": "terrain/models/crops.glb#fogroot",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.1,
-            0
-          ],
+          "offset": [0, -0.1, 0],
           "scale": 0.7,
           "scale_variance": 0.3
         }
@@ -2684,11 +1892,7 @@
         {
           "asset": "terrain/models/crops.glb#moonblush",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale": 0.8,
           "scale_variance": 0.2
         }
@@ -2702,11 +1906,7 @@
         {
           "asset": "terrain/models/crops.glb#shadowfoil",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale": 0.8,
           "scale_variance": 0.2
         }
@@ -2720,11 +1920,7 @@
         {
           "asset": "terrain/models/crops.glb#millsprout",
           "y_rotation_variance": 360,
-          "offset": [
-            0,
-            -0.2,
-            0
-          ],
+          "offset": [0, -0.2, 0],
           "scale": 0.8,
           "scale_variance": 0.2
         }
@@ -2737,11 +1933,7 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/thatch.glb#ThatchRoof",
-          "offset": [
-            0,
-            0.3,
-            0
-          ]
+          "offset": [0, 0.3, 0]
         }
       ]
     }
@@ -2752,48 +1944,24 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#Palisade",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#Palisade",
           "y_rotation": 90,
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.5,
-            1,
-            0.1
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.5, 1, 0.1]
         }
       ]
     }
@@ -2809,16 +1977,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.42,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            0.5,
-            0.05
-          ]
+          "offset": [-0.42, 0, 0.42],
+          "size": [0.05, 0.5, 0.05]
         }
       ]
     }
@@ -2833,65 +1993,30 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, 1.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.75,
-            0.5
-          ],
-          "size": [
-            0.35,
-            0.1,
-            0.9
-          ]
+          "offset": [0, 1.75, 0.5],
+          "size": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          2,
-          1.6
-        ],
-        "offset": [
-          0.3,
-          0.8,
-          0.5
-        ]
+        "size": [2, 1.6],
+        "offset": [0.3, 0.8, 0.5]
       }
     }
   },
@@ -2909,19 +2034,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.95,
-            0.2
-          ]
+          "size": [0.2, 0.95, 0.2]
         },
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.8,
-            0.5
-          ]
+          "size": [0.05, 0.8, 0.5]
         }
       ]
     }
@@ -2944,37 +2061,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            0.95,
-            0.2
-          ]
+          "size": [0.2, 0.95, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.3
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.2
-          ]
+          "offset": [0, 0, 0.3],
+          "size": [0.05, 0.8, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.8,
-            0.05
-          ]
+          "offset": [0.3, 0, 0],
+          "size": [0.2, 0.8, 0.05]
         }
       ]
     }
@@ -2985,29 +2082,17 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/thatch.glb#ThatchRoof",
-          "offset": [
-            0,
-            0.3,
-            0
-          ]
+          "offset": [0, 0.3, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#StickWallGable",
           "y_rotation": 270,
-          "offset": [
-            1,
-            0,
-            0.5
-          ]
+          "offset": [1, 0, 0.5]
         },
         {
           "asset": "scenery/models/palisade.glb#StickWallGable",
           "y_rotation": 270,
-          "offset": [
-            0.95,
-            0,
-            -0.5
-          ]
+          "offset": [0.95, 0, -0.5]
         }
       ]
     }
@@ -3018,42 +2103,22 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWallSquare",
-          "offset": [
-            0.4,
-            0,
-            0
-          ]
+          "offset": [0.4, 0, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#StickWallSquare",
-          "offset": [
-            -0.4,
-            0,
-            0
-          ]
+          "offset": [-0.4, 0, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#RoughPlanks",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "offset": [0, 0, 0],
+          "size": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -3070,11 +2135,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ]
+          "size": [0.5, 0.5, 0.5]
         }
       ]
     }
@@ -3090,11 +2151,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [
-            0.75,
-            0.5,
-            0.5
-          ]
+          "size": [0.75, 0.5, 0.5]
         }
       ]
     }
@@ -3110,25 +2167,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ]
+          "size": [0.5, 0.5, 0.5]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            0,
-            1,
-            0
-          ],
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ]
+          "offset": [0, 1, 0],
+          "size": [0.5, 0.5, 0.5]
         }
       ]
     }
@@ -3144,11 +2189,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.55,
-            0.35
-          ]
+          "size": [0.5, 0.55, 0.35]
         }
       ]
     }
@@ -3164,29 +2205,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ],
-          "size": [
-            0.35,
-            0.55,
-            0.45
-          ]
+          "offset": [0, 0, -0.1],
+          "size": [0.35, 0.55, 0.45]
         },
         {
           "shape": "box",
-          "offset": [
-            0.1,
-            0,
-            0
-          ],
-          "size": [
-            0.45,
-            0.55,
-            0.35
-          ]
+          "offset": [0.1, 0, 0],
+          "size": [0.45, 0.55, 0.35]
         }
       ]
     }
@@ -3202,11 +2227,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.6,
-            0.5
-          ]
+          "size": [0.5, 0.6, 0.5]
         }
       ]
     }
@@ -3217,34 +2238,18 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWallSquare",
-          "offset": [
-            0.4,
-            -0.1,
-            0
-          ]
+          "offset": [0.4, -0.1, 0]
         },
         {
           "asset": "scenery/models/palisade.glb#StickWallSquare",
-          "offset": [
-            -0.4,
-            -0.1,
-            0
-          ]
+          "offset": [-0.4, -0.1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "offset": [0, 0, 0],
+          "size": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -3256,26 +2261,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWallSquare",
-          "offset": [
-            0.4,
-            -0.1,
-            0
-          ]
+          "offset": [0.4, -0.1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.4,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            0.5,
-            0.5
-          ],
+          "offset": [0.4, 0, 0],
+          "size": [0.1, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -3287,38 +2280,22 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickPillar",
-          "offset": [
-            0.15,
-            0,
-            0
-          ]
+          "offset": [0.15, 0, 0]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickArchedSupport",
-          "offset": [
-            0.2,
-            0.3,
-            0.5
-          ]
+          "offset": [0.2, 0.3, 0.5]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickArchedSupport",
           "y_rotation": 180,
-          "offset": [
-            0.2,
-            0.3,
-            -0.5
-          ]
+          "offset": [0.2, 0.3, -0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1,
-            0.3
-          ]
+          "size": [0.3, 1, 0.3]
         }
       ]
     }
@@ -3329,26 +2306,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.2, 0.4, 0.5]
         }
       ]
     }
@@ -3359,47 +2324,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.5
-          ]
+          "offset": [0.5, 0, 0],
+          "size": [0.2, 0.4, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0.45,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            0.4,
-            0.3
-          ]
+          "offset": [0.45, 0, 0],
+          "size": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -3410,47 +2351,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickPillarSquat",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallSquatHalf",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            -0.15
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.35
-          ]
+          "offset": [0.5, 0, -0.15],
+          "size": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0.45,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            0.4,
-            0.3
-          ]
+          "offset": [0.45, 0, 0],
+          "size": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -3462,11 +2379,7 @@
         {
           "shape": "box",
           "type": "hint",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -3482,11 +2395,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -3502,11 +2411,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -3525,24 +2430,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.05,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -3561,16 +2454,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3584,26 +2469,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#CottageWallSupport",
-          "offset": [
-            0,
-            -2,
-            0.4
-          ]
+          "offset": [0, -2, 0.4]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3617,26 +2490,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#CottageWallSupport",
-          "offset": [
-            0,
-            -2,
-            0.4
-          ]
+          "offset": [0, -2, 0.4]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3650,26 +2511,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#CottageWallSupport",
-          "offset": [
-            0,
-            -2,
-            0.4
-          ]
+          "offset": [0, -2, 0.4]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3683,26 +2532,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#CottageWallSupport",
-          "offset": [
-            0,
-            -2,
-            0.4
-          ]
+          "offset": [0, -2, 0.4]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3716,26 +2553,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#CottageWallSupport",
-          "offset": [
-            0,
-            -2,
-            0.4
-          ]
+          "offset": [0, -2, 0.4]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3746,28 +2571,16 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
-          "offset": [
-            0.5,
-            -0.27,
-            0
-          ]
+          "offset": [0.5, -0.27, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
           "y_rotation": 180,
-          "offset": [
-            -0.5,
-            -0.27,
-            0
-          ]
+          "offset": [-0.5, -0.27, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageRoofRidge",
-          "offset": [
-            0,
-            0.3,
-            0
-          ]
+          "offset": [0, 0.3, 0]
         }
       ]
     }
@@ -3778,28 +2591,16 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
-          "offset": [
-            0.5,
-            -0.27,
-            0
-          ]
+          "offset": [0.5, -0.27, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageRoofQuarter",
           "y_rotation": 180,
-          "offset": [
-            -0.5,
-            -0.27,
-            0
-          ]
+          "offset": [-0.5, -0.27, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageRoofRidgeEnd",
-          "offset": [
-            0,
-            0.3,
-            0
-          ]
+          "offset": [0, 0.3, 0]
         }
       ]
     }
@@ -3810,27 +2611,15 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofWide2",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0
-          ],
-          "size": [
-            1,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0],
+          "size": [1, 0.55, 1.25]
         }
       ]
     }
@@ -3841,27 +2630,15 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofWide3",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0
-          ],
-          "size": [
-            1.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0],
+          "size": [1.5, 0.55, 1.25]
         }
       ]
     }
@@ -3872,27 +2649,15 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofConvex",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -3903,27 +2668,15 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofConcave",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -3934,40 +2687,20 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofHalf",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            0.3
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            0.25,
-            1.05,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.35,
-            0.75
-          ]
+          "offset": [0.25, 1.05, 0.5],
+          "size": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -3983,42 +2716,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.15,
-            1,
-            0.5
-          ]
+          "offset": [0.25, 0, 0],
+          "size": [0.15, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -4034,16 +2743,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4059,16 +2760,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4084,16 +2777,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.3,
-            0,
-            0.3
-          ],
-          "size": [
-            0.2,
-            1,
-            0.2
-          ]
+          "offset": [0.3, 0, 0.3],
+          "size": [0.2, 1, 0.2]
         }
       ]
     }
@@ -4114,43 +2799,23 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoof",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGable",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGable",
-          "offset": [
-            0,
-            0,
-            -0.11
-          ]
+          "offset": [0, 0, -0.11]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.25,
-            0.1,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.25, 0.1, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -4161,56 +2826,28 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoof",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGableTall",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ]
+          "offset": [0, 0, -0.5]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGableTall",
-          "offset": [
-            0,
-            0,
-            -0.11
-          ]
+          "offset": [0, 0, -0.11]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.45,
-            0,
-            0.55
-          ],
-          "size": [
-            1,
-            0.55,
-            0.3
-          ]
+          "offset": [-0.45, 0, 0.55],
+          "size": [1, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            -0.2,
-            1.15,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            1.25
-          ]
+          "offset": [-0.2, 1.15, 0.5],
+          "size": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -4221,56 +2858,28 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageRoofHalf",
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGableTallHalf",
-          "offset": [
-            0,
-            0,
-            -0.51
-          ]
+          "offset": [0, 0, -0.51]
         },
         {
           "asset": "scenery/models/cottage.glb#CottageStoneGableTallHalf",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ]
+          "offset": [0, 0, -0.1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.55,
-            0.3
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            0.25,
-            1.05,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.35,
-            0.75
-          ]
+          "offset": [0.25, 1.05, 0.5],
+          "size": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -4281,26 +2890,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#VerticalBraceSingle",
-          "offset": [
-            0,
-            0,
-            -0.1
-          ]
+          "offset": [0, 0, -0.1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.42,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            1,
-            0.05
-          ]
+          "offset": [-0.42, 0, 0.42],
+          "size": [0.05, 1, 0.05]
         }
       ]
     }
@@ -4316,19 +2913,11 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [
-            0.73,
-            0.37,
-            0.95
-          ]
+          "size": [0.73, 0.37, 0.95]
         },
         {
           "shape": "cylinder",
-          "size": [
-            1,
-            0.05,
-            0.5
-          ]
+          "size": [1, 0.05, 0.5]
         }
       ]
     }
@@ -4344,24 +2933,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.5,
-            1,
-            0.3
-          ]
+          "offset": [0, 0, -0.2],
+          "size": [0.5, 1, 0.3]
         }
       ],
       "LightSource": {
-        "offset": [
-          0,
-          0.2,
-          0.25
-        ],
+        "offset": [0, 0.2, 0.25],
         "radius": 2.7,
         "color": "#f46f15"
       }
@@ -4373,26 +2950,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#VerticalBraceDouble",
-          "offset": [
-            0.7,
-            0.1,
-            0
-          ]
+          "offset": [0.7, 0.1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.26,
-            0,
-            0.42
-          ],
-          "size": [
-            0.05,
-            1,
-            0.05
-          ]
+          "offset": [0.26, 0, 0.42],
+          "size": [0.05, 1, 0.05]
         }
       ]
     }
@@ -4408,16 +2973,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.3,
-            2,
-            0.3
-          ]
+          "offset": [0, 0, -0.2],
+          "size": [0.3, 2, 0.3]
         }
       ]
     }
@@ -4436,24 +2993,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.05,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -4472,24 +3017,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.05,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -4505,11 +3038,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -4528,24 +3057,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.05,
-            0.45,
-            0.05
-          ]
+          "size": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.05,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -4561,11 +3078,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            0.4,
-            0.3
-          ]
+          "size": [0.5, 0.4, 0.3]
         }
       ]
     }
@@ -4585,29 +3098,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0.25,
-            0,
-            0
-          ],
-          "size": [
-            0.15,
-            1,
-            0.5
-          ]
+          "offset": [0.25, 0, 0],
+          "size": [0.15, 1, 0.5]
         }
       ]
     }
@@ -4618,26 +3115,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallSquat",
-          "offset": [
-            0,
-            0,
-            0
-          ]
+          "offset": [0, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, 0],
+          "size": [0.2, 0.4, 0.5]
         }
       ]
     }
@@ -4656,29 +3141,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.15
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.35
-          ]
+          "offset": [0, 0, -0.15],
+          "size": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.05,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            0.4,
-            0.3
-          ]
+          "offset": [-0.05, 0, 0],
+          "size": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -4701,42 +3170,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.15
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.35
-          ]
+          "offset": [0, 0, -0.15],
+          "size": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            0.4,
-            0.3
-          ]
+          "offset": [0, 0, 0],
+          "size": [0.3, 0.4, 0.3]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.15,
-            0,
-            0.05
-          ],
-          "size": [
-            0.35,
-            0.4,
-            0.2
-          ]
+          "offset": [-0.15, 0, 0.05],
+          "size": [0.35, 0.4, 0.2]
         }
       ]
     }
@@ -4755,29 +3200,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.2,
-            0.4,
-            0.5
-          ]
+          "offset": [0, 0, 0],
+          "size": [0.2, 0.4, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.05,
-            0,
-            0
-          ],
-          "size": [
-            0.3,
-            0.4,
-            0.3
-          ]
+          "offset": [-0.05, 0, 0],
+          "size": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -4793,16 +3222,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4818,16 +3239,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4843,16 +3256,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4871,16 +3276,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4894,26 +3291,14 @@
         },
         {
           "asset": "scenery/models/cottage.glb#FittedStoneWallCornerTee",
-          "offset": [
-            -0.6,
-            0,
-            0
-          ]
+          "offset": [-0.6, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -4929,11 +3314,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.25,
-            0.43,
-            0.5
-          ]
+          "size": [0.25, 0.43, 0.5]
         }
       ]
     }
@@ -4949,16 +3330,8 @@
       "SceneryColliders": [
         {
           "shape": "rbox",
-          "offset": [
-            -0.15,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.35,
-            0.4,
-            0.35
-          ]
+          "offset": [-0.15, 0, -0.2],
+          "size": [0.35, 0.4, 0.35]
         }
       ]
     }
@@ -4969,34 +3342,18 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#FittedStoneWallQuarter",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         },
         {
           "asset": "scenery/models/cottage.glb#FittedStoneWallCornerConvex",
-          "offset": [
-            -0.6,
-            0,
-            0
-          ]
+          "offset": [-0.6, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.5,
-            1,
-            0.15
-          ]
+          "offset": [0, 0, 0.25],
+          "size": [0.5, 1, 0.15]
         }
       ]
     }
@@ -5012,31 +3369,15 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.05,
-            0,
-            -0.05
-          ],
-          "size": [
-            0.05,
-            0.85,
-            0.05
-          ],
+          "offset": [0.05, 0, -0.05],
+          "size": [0.05, 0.85, 0.05],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "marker",
-          "offset": [
-            0.05,
-            1.3,
-            -0.05
-          ],
-          "size": [
-            0.4,
-            0.2,
-            0.05
-          ],
+          "offset": [0.05, 1.3, -0.05],
+          "size": [0.4, 0.2, 0.05],
           "pickable": true
         }
       ]
@@ -5051,44 +3392,24 @@
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#WallSwitch2",
-          "offset": [
-            -0.2,
-            1.3,
-            0
-          ]
+          "offset": [-0.2, 1.3, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.25,
-            1.05,
-            0
-          ],
-          "size": [
-            0.15,
-            0.2,
-            0.15
-          ],
+          "offset": [-0.25, 1.05, 0],
+          "size": [0.15, 0.2, 0.15],
           "pickable": true
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.7,
-            0,
-            0
-          ]
+          [-0.7, 0, 0]
         ]
       }
     }
@@ -5103,44 +3424,24 @@
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#WallSwitch",
-          "offset": [
-            -0.2,
-            1.3,
-            0
-          ]
+          "offset": [-0.2, 1.3, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.25,
-            1.05,
-            0
-          ],
-          "size": [
-            0.15,
-            0.2,
-            0.15
-          ],
+          "offset": [-0.25, 1.05, 0],
+          "size": [0.15, 0.2, 0.15],
           "pickable": true
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.7,
-            0,
-            0
-          ]
+          [-0.7, 0, 0]
         ]
       }
     }
@@ -5156,77 +3457,33 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            0.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.35
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.4
-          ],
-          "origin": [
-            -0.1,
-            0,
-            -0.35
-          ],
+          "offset": [0, 0, 0.35],
+          "size": [0.05, 0.8, 0.4],
+          "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door2"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.8,
-            0,
-            0.2
-          ],
-          [
-            0.8,
-            0,
-            0.2
-          ]
+          [-0.8, 0, 0.2],
+          [0.8, 0, 0.2]
         ]
       }
     }
@@ -5242,61 +3499,25 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            0.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.35
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.4
-          ],
-          "origin": [
-            -0.1,
-            0,
-            -0.35
-          ],
+          "offset": [0, 0, 0.35],
+          "size": [0.05, 0.8, 0.4],
+          "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door2"
         }
@@ -5313,76 +3534,37 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallTop"
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallTop",
-          "offset": [
-            0,
-            0,
-            1
-          ]
+          "offset": [0, 0, 1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, 1.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.75,
-            0.5
-          ],
-          "size": [
-            0.35,
-            0.1,
-            0.9
-          ]
+          "offset": [0, 1.75, 0.5],
+          "size": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          2.1,
-          1.6
-        ],
-        "offset": [
-          0.3,
-          0.8,
-          0.5
-        ]
+        "size": [2.1, 1.6],
+        "offset": [0.3, 0.8, 0.5]
       }
     }
   },
@@ -5397,77 +3579,33 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            0.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.35
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.35
-          ],
-          "origin": [
-            -0.1,
-            0,
-            -0.35
-          ],
+          "offset": [0, 0, 0.35],
+          "size": [0.05, 0.8, 0.35],
+          "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.8,
-            0,
-            0.2
-          ],
-          [
-            0.8,
-            0,
-            0.2
-          ]
+          [-0.8, 0, 0.2],
+          [0.8, 0, 0.2]
         ]
       }
     }
@@ -5480,7 +3618,7 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "OpenLid2"
+            "OpenLid2"
           ],
           "input": "open",
           "transitions": [
@@ -5508,41 +3646,21 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyStoneSarcophagus",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.85,
-            0.4,
-            0.4
-          ],
+          "offset": [0.5, 0, 0],
+          "size": [0.85, 0.4, 0.4],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0.5,
-            0,
-            0.4
-          ],
-          "size": [
-            0.85,
-            0.4,
-            0.4
-          ]
+          "offset": [0.5, 0, 0.4],
+          "size": [0.85, 0.4, 0.4]
         }
       ]
     }
@@ -5558,11 +3676,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "size": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         }
@@ -5582,44 +3696,24 @@
         },
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyStoneStairs",
-          "offset": [
-            0,
-            1,
-            1
-          ]
+          "offset": [0, 1, 1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.5,
-            1,
-            1
-          ],
+          "offset": [0, 0, 0.5],
+          "size": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         }
       ],
       "SceneryMarks": {
         "top": [
-          [
-            0,
-            2,
-            2
-          ]
+          [0, 2, 2]
         ],
         "bottom": [
-          [
-            0,
-            0,
-            -1
-          ]
+          [0, 0, -1]
         ]
       }
     }
@@ -5645,11 +3739,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "size": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         }
@@ -5664,7 +3754,7 @@
       "SceneryAnimations": [
         {
           "clips": [
-              "OpenLid"
+            "OpenLid"
           ],
           "input": "open",
           "transitions": [
@@ -5692,41 +3782,21 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#RoughStoneSarcophagus",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.85,
-            0.4,
-            0.4
-          ],
+          "offset": [0.5, 0, 0],
+          "size": [0.85, 0.4, 0.4],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0.5,
-            0,
-            0.4
-          ],
-          "size": [
-            0.85,
-            0.4,
-            0.4
-          ]
+          "offset": [0.5, 0, 0.4],
+          "size": [0.85, 0.4, 0.4]
         }
       ]
     }
@@ -5745,34 +3815,18 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.1,
-            0.55,
-            0
-          ],
-          "size": [
-            0.15,
-            0.4,
-            0.3
-          ],
+          "offset": [-0.1, 0.55, 0],
+          "size": [0.15, 0.4, 0.3],
           "pickable": true
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.7,
-            0,
-            0
-          ]
+          [-0.7, 0, 0]
         ]
       }
     }
@@ -5788,91 +3842,39 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.45,
-            0,
-            0.25
-          ],
-          "size": [
-            0.05,
-            1,
-            0.15
-          ]
+          "offset": [-0.45, 0, 0.25],
+          "size": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0.45,
-            0,
-            0.25
-          ],
-          "size": [
-            0.05,
-            1,
-            0.15
-          ]
+          "offset": [0.45, 0, 0.25],
+          "size": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.9,
-            0.25
-          ],
-          "size": [
-            0.4,
-            0.05,
-            0.15
-          ]
+          "offset": [0, 1.9, 0.25],
+          "size": [0.4, 0.05, 0.15]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            -0.4,
-            0,
-            0
-          ],
-          "size": [
-            0.35,
-            0.9,
-            0.05
-          ],
-          "origin": [
-            0.4,
-            0,
-            0.3
-          ],
+          "offset": [-0.4, 0, 0],
+          "size": [0.35, 0.9, 0.05],
+          "origin": [0.4, 0, 0.3],
           "pickable": true,
           "animation": "WoodenDoor"
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0.45,
-            0,
-            0.15
-          ],
-          "size": [
-            0.05,
-            1,
-            0.5
-          ]
+          "offset": [0.45, 0, 0.15],
+          "size": [0.05, 1, 0.5]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.2,
-            0,
-            -0.6
-          ],
-          [
-            -0.2,
-            0,
-            1
-          ]
+          [-0.2, 0, -0.6],
+          [-0.2, 0, 1]
         ]
       }
     }
@@ -5893,86 +3895,38 @@
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0.4,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.92,
-            0.1
-          ],
-          "origin": [
-            -0.4,
-            0,
-            0
-          ],
+          "offset": [0.4, 0, 0],
+          "size": [0.5, 0.92, 0.1],
+          "origin": [-0.4, 0, 0],
           "pickable": true,
           "animation": "HeavyGateLeft"
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            -0.4,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.92,
-            0.1
-          ],
-          "origin": [
-            1.4,
-            0,
-            0
-          ],
+          "offset": [-0.4, 0, 0],
+          "size": [0.5, 0.92, 0.1],
+          "origin": [1.4, 0, 0],
           "pickable": true,
           "animation": "HeavyGateRight"
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            -0.45,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [-0.45, 0, -0.2],
+          "size": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            1.3,
-            0,
-            -0.2
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ]
+          "offset": [1.3, 0, -0.2],
+          "size": [0.1, 1, 0.5]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0.5,
-            0,
-            0.9
-          ],
-          [
-            0.5,
-            0,
-            -0.9
-          ]
+          [0.5, 0, 0.9],
+          [0.5, 0, -0.9]
         ]
       }
     }
@@ -5987,96 +3941,45 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/stonework.glb#Portal",
-          "offset": [
-            1,
-            0,
-            1
-          ]
+          "offset": [1, 0, 1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            1,
-            0,
-            1
-          ],
-          "size": [
-            0.5,
-            0.4,
-            0.5
-          ],
+          "offset": [1, 0, 1],
+          "size": [0.5, 0.4, 0.5],
           "walkable": true
         },
         {
           "facing": 3,
           "shape": "ramp",
-          "offset": [
-            2,
-            0,
-            1
-          ],
-          "size": [
-            0.7,
-            0.4,
-            0.5
-          ],
+          "offset": [2, 0, 1],
+          "size": [0.7, 0.4, 0.5],
           "walkable": true
         },
         {
           "facing": 1,
           "shape": "ramp",
-          "offset": [
-            0,
-            0,
-            1
-          ],
-          "size": [
-            0.6,
-            0.4,
-            0.5
-          ],
+          "offset": [0, 0, 1],
+          "size": [0.6, 0.4, 0.5],
           "walkable": true
         },
         {
           "shape": "box",
-          "offset": [
-            1,
-            0,
-            2
-          ],
-          "size": [
-            0.5,
-            1.2,
-            0.5
-          ]
+          "offset": [1, 0, 2],
+          "size": [0.5, 1.2, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            1,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            1.2,
-            0.5
-          ]
+          "offset": [1, 0, 0],
+          "size": [0.5, 1.2, 0.5]
         }
       ],
       "Portal": {
         "side": "both",
-        "size": [
-          1.2,
-          1.8
-        ],
-        "offset": [
-          1,
-          1.6,
-          1
-        ]
+        "size": [1.2, 1.8],
+        "offset": [1, 1.6, 1]
       }
     }
   },
@@ -6086,44 +3989,24 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/carpentry.glb#Ladder",
-          "offset": [
-            -0.3,
-            0,
-            0
-          ]
+          "offset": [-0.3, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
           "type": "ladder",
-          "offset": [
-            -0.3,
-            0,
-            0
-          ],
-          "size": [
-            0.1,
-            1,
-            0.25
-          ],
+          "offset": [-0.3, 0, 0],
+          "size": [0.1, 1, 0.25],
           "pickable": true
         }
       ],
       "SceneryMarks": {
         "top": [
-          [
-            -0.5,
-            2,
-            0
-          ]
+          [-0.5, 2, 0]
         ],
         "bottom": [
-          [
-            0,
-            0,
-            0
-          ]
+          [0, 0, 0]
         ]
       }
     }
@@ -6145,61 +4028,29 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            1,
-            1
-          ],
+          "offset": [0.5, 0, 0],
+          "size": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0.5,
-            0,
-            -0.45
-          ],
-          "size": [
-            1,
-            1.2,
-            0.05
-          ]
+          "offset": [0.5, 0, -0.45],
+          "size": [1, 1.2, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0.45
-          ],
-          "size": [
-            1,
-            1.2,
-            0.05
-          ]
+          "offset": [0.5, 0, 0.45],
+          "size": [1, 1.2, 0.05]
         }
       ],
       "SceneryMarks": {
         "bottom": [
-          [
-            -1,
-            0,
-            0
-          ]
+          [-1, 0, 0]
         ],
         "top": [
-          [
-            1.8,
-            2,
-            0
-          ]
+          [1.8, 2, 0]
         ]
       }
     }
@@ -6214,97 +4065,45 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/iron-fence.glb#IronFenceGate",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.45
-          ],
-          "origin": [
-            0,
-            0,
-            -0.5
-          ],
+          "offset": [0, 0, 0.45],
+          "size": [0.05, 0.8, 0.45],
+          "origin": [0, 0, -0.5],
           "pickable": true,
           "animation": "IronFenceGateRight"
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.45
-          ],
-          "origin": [
-            0,
-            0,
-            1.5
-          ],
+          "offset": [0, 0, -0.5],
+          "size": [0.05, 0.8, 0.45],
+          "origin": [0, 0, 1.5],
           "pickable": true,
           "animation": "IronFenceGateLeft"
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            -0.4,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.5,
-            0.8,
-            0.05
-          ]
+          "offset": [-0.4, 0, -0.5],
+          "size": [0.5, 0.8, 0.05]
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            -0.45,
-            0,
-            1.4
-          ],
-          "size": [
-            0.5,
-            0.8,
-            0.05
-          ]
+          "offset": [-0.45, 0, 1.4],
+          "size": [0.5, 0.8, 0.05]
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0.8,
-            0,
-            0.5
-          ],
-          [
-            -0.8,
-            0,
-            0.5
-          ]
+          [0.8, 0, 0.5],
+          [-0.8, 0, 0.5]
         ]
       }
     }
@@ -6315,48 +4114,24 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/palisade.glb#StickWallDoor",
-          "offset": [
-            0.5,
-            0,
-            0
-          ]
+          "offset": [0.5, 0, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.1,
-            1,
-            0.5
-          ],
-          "origin": [
-            0.5,
-            0,
-            -0.5
-          ],
+          "offset": [0, 0, 0.5],
+          "size": [0.1, 1, 0.5],
+          "origin": [0.5, 0, -0.5],
           "pickable": true,
           "animation": "StickWallDoorSwing"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.4,
-            0,
-            0.2
-          ],
-          [
-            1.4,
-            0,
-            0.2
-          ]
+          [-0.4, 0, 0.2],
+          [1.4, 0, 0.2]
         ]
       }
     }
@@ -6374,41 +4149,21 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [
-            0.5,
-            0.5,
-            0.5
-          ],
+          "size": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.5,
-            1,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.5, 1, 0.05]
         },
         {
           "shape": "box",
           "type": "hint",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.5,
-            1,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.5, 1, 0.05]
         }
       ]
     }
@@ -6423,65 +4178,30 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickDoorwayHeavyWide",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, -0.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.5
-          ],
-          "size": [
-            0.35,
-            0.85,
-            0.2
-          ]
+          "offset": [0, 0, 1.5],
+          "size": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.75,
-            0.5
-          ],
-          "size": [
-            0.35,
-            0.1,
-            0.9
-          ]
+          "offset": [0, 1.75, 0.5],
+          "size": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          2,
-          1.6
-        ],
-        "offset": [
-          0.3,
-          0.8,
-          0.5
-        ]
+        "size": [2, 1.6],
+        "offset": [0.3, 0.8, 0.5]
       }
     }
   },
@@ -6495,79 +4215,36 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/stonework.glb#CavePortal",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.6
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, 1.6],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.15,
-            1.35
-          ]
+          "offset": [0, 1.8, 0.45],
+          "size": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.45
-          ],
-          "size": [
-            0.85,
-            0.05,
-            1.1
-          ],
+          "offset": [0, -0.1, 0.45],
+          "size": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          6.75,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [6.75, 0.8, 0.5],
         "displacement": 0.25
       }
     }
@@ -6583,79 +4260,36 @@
         {
           "asset": "scenery/models/stonework.glb#CavePortal",
           "y_rotation": 0,
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.5,
-            1,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.65
-          ],
-          "size": [
-            0.55,
-            0.85,
-            0.4
-          ]
+          "offset": [0, 0, 1.65],
+          "size": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.7,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.25,
-            1.35
-          ]
+          "offset": [0, 1.7, 0.45],
+          "size": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.55
-          ],
-          "size": [
-            0.9,
-            0.05,
-            1.2
-          ],
+          "offset": [0, -0.1, 0.55],
+          "size": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [0, 0.8, 0.5],
         "displacement": 0.2
       }
     }
@@ -6670,79 +4304,36 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cave-portal.glb#CavePortal",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.6
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, 1.6],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.15,
-            1.35
-          ]
+          "offset": [0, 1.8, 0.45],
+          "size": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.45
-          ],
-          "size": [
-            0.85,
-            0.05,
-            1.1
-          ],
+          "offset": [0, -0.1, 0.45],
+          "size": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [0, 0.8, 0.5],
         "displacement": 0.25
       }
     }
@@ -6758,79 +4349,36 @@
         {
           "asset": "scenery/models/cave-portal.glb#CavePortalClipped",
           "y_rotation": 0,
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.5,
-            1,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.65
-          ],
-          "size": [
-            0.55,
-            0.85,
-            0.4
-          ]
+          "offset": [0, 0, 1.65],
+          "size": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.7,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.25,
-            1.35
-          ]
+          "offset": [0, 1.7, 0.45],
+          "size": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.55
-          ],
-          "size": [
-            0.9,
-            0.05,
-            1.2
-          ],
+          "offset": [0, -0.1, 0.55],
+          "size": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "back",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          -0.2,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [-0.2, 0.8, 0.5],
         "displacement": 0.3
       }
     }
@@ -6847,16 +4395,8 @@
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.8,
-            0.15
-          ],
+          "offset": [0, 0, 0],
+          "size": [0.5, 0.8, 0.15],
           "animation": "Spears"
         }
       ]
@@ -6868,52 +4408,24 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#CottageWallDoorway",
-          "offset": [
-            0,
-            0,
-            -0.3
-          ]
+          "offset": [0, 0, -0.3]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.45,
-            0,
-            0
-          ],
-          "size": [
-            0.05,
-            1,
-            0.15
-          ]
+          "offset": [-0.45, 0, 0],
+          "size": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0.45,
-            0,
-            0
-          ],
-          "size": [
-            0.05,
-            1,
-            0.15
-          ]
+          "offset": [0.45, 0, 0],
+          "size": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.9,
-            0
-          ],
-          "size": [
-            0.4,
-            0.05,
-            0.15
-          ]
+          "offset": [0, 1.9, 0],
+          "size": [0.4, 0.05, 0.15]
         }
       ]
     }
@@ -6929,79 +4441,36 @@
         {
           "asset": "scenery/models/cave-portal.glb#CavePortalClipped",
           "y_rotation": 180,
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.5,
-            1,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.65
-          ],
-          "size": [
-            0.55,
-            0.85,
-            0.4
-          ]
+          "offset": [0, 0, 1.65],
+          "size": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.7,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.25,
-            1.35
-          ]
+          "offset": [0, 1.7, 0.45],
+          "size": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.55
-          ],
-          "size": [
-            0.9,
-            0.05,
-            1.2
-          ],
+          "offset": [0, -0.1, 0.55],
+          "size": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [0, 0.8, 0.5],
         "displacement": 0.2
       }
     }
@@ -7016,79 +4485,36 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#MineEntrance",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.65
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, -0.65],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.6
-          ],
-          "size": [
-            0.55,
-            0.9,
-            0.4
-          ]
+          "offset": [0, 0, 1.6],
+          "size": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0.45
-          ],
-          "size": [
-            0.55,
-            0.15,
-            1.35
-          ]
+          "offset": [0, 1.8, 0.45],
+          "size": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            -0.1,
-            0.45
-          ],
-          "size": [
-            0.85,
-            0.05,
-            1.1
-          ],
+          "offset": [0, -0.1, 0.45],
+          "size": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
       "Portal": {
         "side": "front",
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.8,
-          0.5
-        ],
+        "size": [1.8, 1.6],
+        "offset": [0, 0.8, 0.5],
         "displacement": 0.25
       }
     }
@@ -7105,11 +4531,7 @@
         {
           "shape": "box",
           "type": "sensor",
-          "size": [
-            0.51,
-            0.1,
-            0.51
-          ]
+          "size": [0.51, 0.1, 0.51]
         }
       ]
     }
@@ -7125,11 +4547,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -7146,24 +4564,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "ramp",
-          "offset": [
-            0,
-            2,
-            0
-          ],
-          "size": [
-            0.2,
-            0.5,
-            0.5
-          ]
+          "offset": [0, 2, 0],
+          "size": [0.2, 0.5, 0.5]
         }
       ]
     }
@@ -7179,11 +4585,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1.5,
-            0.3
-          ]
+          "size": [0.3, 1.5, 0.3]
         }
       ]
     }
@@ -7201,21 +4603,13 @@
         {
           "asset": "scenery/models/walls-dungeon.glb#MossyBrickWallHalf",
           "y_rotation": 180,
-          "offset": [
-            0,
-            1,
-            0
-          ]
+          "offset": [0, 1, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.3,
-            1.5,
-            0.3
-          ]
+          "size": [0.3, 1.5, 0.3]
         }
       ]
     }
@@ -7232,16 +4626,8 @@
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            0.8,
-            0.03
-          ],
+          "offset": [0, 0, 0],
+          "size": [0.5, 0.8, 0.03],
           "animation": "Spears"
         }
       ]
@@ -7258,16 +4644,8 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.1,
-            0,
-            0.25
-          ],
-          "size": [
-            0.45,
-            1,
-            0.15
-          ]
+          "offset": [-0.1, 0, 0.25],
+          "size": [0.45, 1, 0.15]
         }
       ]
     }
@@ -7278,26 +4656,14 @@
       "SceneryModels": [
         {
           "asset": "scenery/models/cottage.glb#FittedStoneWall34",
-          "offset": [
-            0,
-            0,
-            -0.6
-          ]
+          "offset": [0, 0, -0.6]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            -0.12,
-            0,
-            -0.25
-          ],
-          "size": [
-            0.4,
-            1,
-            0.15
-          ]
+          "offset": [-0.12, 0, -0.25],
+          "size": [0.4, 1, 0.15]
         }
       ]
     }

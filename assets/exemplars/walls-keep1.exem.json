@@ -11,11 +11,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -32,11 +28,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -52,11 +44,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -72,11 +60,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -96,11 +80,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -124,11 +104,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -147,11 +123,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -174,11 +146,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -194,11 +162,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -214,11 +178,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -230,26 +190,14 @@
         {
           "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
           "y_rotation": 0,
-          "offset": [
-            0.5,
-            0,
-            0.5
-          ]
+          "offset": [0.5, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0.5
-          ],
-          "size": [
-            0.1,
-            0.5,
-            0.1
-          ]
+          "offset": [0.5, 0, 0.5],
+          "size": [0.1, 0.5, 0.1]
         }
       ]
     }
@@ -261,47 +209,23 @@
         {
           "asset": "scenery/models/walls-keep-1.glb#RailingPostLight",
           "y_rotation": 0,
-          "offset": [
-            0.5,
-            0,
-            0.5
-          ]
+          "offset": [0.5, 0, 0.5]
         },
         {
           "asset": "scenery/models/walls-keep-1.glb#RailingSectionLight",
-          "offset": [
-            0,
-            0,
-            0.5
-          ]
+          "offset": [0, 0, 0.5]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0.5
-          ],
-          "size": [
-            0.1,
-            0.5,
-            0.1
-          ]
+          "offset": [0.5, 0, 0.5],
+          "size": [0.1, 0.5, 0.1]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.5
-          ],
-          "size": [
-            0.5,
-            0.4,
-            0.05
-          ]
+          "offset": [0, 0, 0.5],
+          "size": [0.5, 0.4, 0.05]
         }
       ]
     }
@@ -317,11 +241,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -337,11 +257,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -357,11 +273,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         }
       ]
     }
@@ -384,11 +296,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -412,11 +320,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.5,
-            1,
-            0.5
-          ]
+          "size": [0.5, 1, 0.5]
         }
       ]
     }
@@ -431,79 +335,39 @@
         },
         {
           "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
-          "offset": [
-            -0.1,
-            0,
-            0.45
-          ]
+          "offset": [-0.1, 0, 0.45]
         },
         {
           "asset": "scenery/models/walls-keep-1.glb#WoodenBannister",
-          "offset": [
-            -0.1,
-            0,
-            -0.45
-          ]
+          "offset": [-0.1, 0, -0.45]
         }
       ],
       "SceneryColliders": [
         {
           "facing": 1,
           "shape": "ramp",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            1,
-            1
-          ],
+          "offset": [0.5, 0, 0],
+          "size": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
-          "offset": [
-            0.5,
-            0,
-            0.45
-          ],
-          "size": [
-            1,
-            1.4,
-            0.05
-          ]
+          "offset": [0.5, 0, 0.45],
+          "size": [1, 1.4, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0.45,
-            0,
-            -0.45
-          ],
-          "size": [
-            1,
-            1.4,
-            0.05
-          ]
+          "offset": [0.45, 0, -0.45],
+          "size": [1, 1.4, 0.05]
         }
       ],
       "SceneryMarks": {
         "bottom": [
-          [
-            -1,
-            0,
-            0
-          ]
+          [-1, 0, 0]
         ],
         "top": [
-          [
-            1.8,
-            2,
-            0
-          ]
+          [1.8, 2, 0]
         ]
       }
     }
@@ -521,16 +385,8 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "offset": [
-            0.5,
-            0,
-            0
-          ],
-          "size": [
-            0.5,
-            1,
-            1
-          ],
+          "offset": [0.5, 0, 0],
+          "size": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         }
@@ -548,77 +404,33 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            0.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.35
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.4
-          ],
-          "origin": [
-            -0.1,
-            0,
-            -0.35
-          ],
+          "offset": [0, 0, 0.35],
+          "size": [0.05, 0.8, 0.4],
+          "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "DoorSingle"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.85,
-            0,
-            0.2
-          ],
-          [
-            0.85,
-            0,
-            0.2
-          ]
+          [-0.85, 0, 0.2],
+          [0.85, 0, 0.2]
         ]
       }
     }
@@ -634,98 +446,42 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            1.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 1.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, 1.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, -1.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.4
-          ],
-          "size": [
-            0.05,
-            0.75,
-            0.4
-          ],
-          "origin": [
-            0,
-            0,
-            -0.5
-          ],
+          "offset": [0, 0, 0.4],
+          "size": [0.05, 0.75, 0.4],
+          "origin": [0, 0, -0.5],
           "pickable": true,
           "animation": "DoorRight"
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            0.25
-          ],
-          "size": [
-            0.05,
-            0.75,
-            0.4
-          ],
-          "origin": [
-            0,
-            0,
-            1.5
-          ],
+          "offset": [0, 0, 0.25],
+          "size": [0.05, 0.75, 0.4],
+          "origin": [0, 0, 1.5],
           "pickable": true,
           "animation": "DoorLeft"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            0.85,
-            0,
-            0.05
-          ],
-          [
-            -0.9,
-            0,
-            0.05
-          ]
+          [0.85, 0, 0.05],
+          [-0.9, 0, 0.05]
         ]
       }
     }
@@ -741,54 +497,23 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            1.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 1.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, -1.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, 1.15],
+          "size": [0.2, 1, 0.35]
         }
       ],
       "Portal": {
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.75,
-          0
-        ]
+        "size": [1.8, 1.6],
+        "offset": [0, 0.75, 0]
       }
     }
   },
@@ -801,80 +526,37 @@
         },
         {
           "asset": "scenery/models/blackout.glb#BlackoutThin",
-          "offset": [
-            0.55,
-            0,
-            0
-          ]
+          "offset": [0.55, 0, 0]
         },
         {
           "asset": "scenery/models/blackout.glb#BlackoutThin",
-          "offset": [
-            0.55,
-            0,
-            1
-          ]
+          "offset": [0.55, 0, 1]
         },
         {
           "asset": "scenery/models/blackout.glb#BlackoutThin",
-          "offset": [
-            0.55,
-            0,
-            -1
-          ]
+          "offset": [0.55, 0, -1]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            1.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 1.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, -1.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, 1.15],
+          "size": [0.2, 1, 0.35]
         }
       ],
       "Portal": {
-        "size": [
-          1.8,
-          1.6
-        ],
-        "offset": [
-          0,
-          0.75,
-          0
-        ]
+        "size": [1.8, 1.6],
+        "offset": [0, 0.75, 0]
       }
     }
   },
@@ -889,77 +571,33 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            0.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, 0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -0.45
-          ],
-          "size": [
-            0.2,
-            0.9,
-            0.05
-          ]
+          "offset": [0, 0, -0.45],
+          "size": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "type": "door",
-          "offset": [
-            0,
-            0,
-            -0.35
-          ],
-          "size": [
-            0.05,
-            0.8,
-            0.4
-          ],
-          "origin": [
-            -0.1,
-            0,
-            -0.35
-          ],
+          "offset": [0, 0, -0.35],
+          "size": [0.05, 0.8, 0.4],
+          "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "MetalDoor"
         }
       ],
       "SceneryMarks": {
         "use": [
-          [
-            -0.85,
-            0,
-            0.2
-          ],
-          [
-            0.85,
-            0,
-            0.2
-          ]
+          [-0.85, 0, 0.2],
+          [0.85, 0, 0.2]
         ]
       }
     }
@@ -973,34 +611,18 @@
         },
         {
           "asset": "scenery/models/walls-keep-1.glb#StoneSwitch",
-          "offset": [
-            0.15,
-            1.15,
-            0
-          ]
+          "offset": [0.15, 1.15, 0]
         }
       ],
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [
-            0.2,
-            1,
-            0.5
-          ]
+          "size": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "offset": [
-            -0.25,
-            1.05,
-            0
-          ],
-          "size": [
-            0.15,
-            0.2,
-            0.15
-          ],
+          "offset": [-0.25, 1.05, 0],
+          "size": [0.15, 0.2, 0.15],
           "pickable": true
         }
       ]
@@ -1017,49 +639,22 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "offset": [
-            0,
-            1.8,
-            0
-          ],
-          "size": [
-            0.2,
-            0.1,
-            1.5
-          ]
+          "offset": [0, 1.8, 0],
+          "size": [0.2, 0.1, 1.5]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            -1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, -1.15],
+          "size": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "offset": [
-            0,
-            0,
-            1.15
-          ],
-          "size": [
-            0.2,
-            1,
-            0.35
-          ]
+          "offset": [0, 0, 1.15],
+          "size": [0.2, 1, 0.35]
         }
       ],
       "Portal": {
-        "size": [
-          1,
-          1
-        ]
+        "size": [1, 1]
       }
     }
   }
