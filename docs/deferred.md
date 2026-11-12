@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X99.**
+**Next: X101.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -554,3 +554,13 @@ dropped, not deferred. Numbers are never reused.
   whose findings go upstream. Worth it only while Bevy is still shaping the crate; once its own
   crates have moved, Panoply follows with them. *Gate:* `bevy_reflect2` can reach a field by path,
   read its attributes and make a default value, soon enough that a report can still change it.
+- **X99** Inheritance of single fields within an aspect, which faery had for its archetypes' own
+  fields through JavaScript prototypes. An aspect that wants it bears the cost: a field of type
+  `Inherit<T>`, whose `Inherited` is a key the file omits, `Absent` a `null`, and `Present(v)` a
+  value, resolved where the chain is, at evaluation: an `Aspect::inherit` hook that `UpdateAspects`
+  calls with each farther aspect of the type. The editor shows an `Inherited` field dimmed with the
+  value it resolves to. An exemplar's `display_name` is the plain case, an `Option` read along the
+  chain. *Gate:* an aspect that needs one field overridden and the rest inherited, likely colors.
+- **X100** A report of the fields catalogs hold that no type reads, to adopt (as PAN28b adopted
+  colliders' `margin`) or retire: the keys in a file's JSON missing from its exemplars serialized as
+  loaded, which is half of what saving does (D73). *Gate:* the first pass to retire fields.

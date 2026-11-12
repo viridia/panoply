@@ -164,6 +164,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
         let mut entries: HashMap<String, Handle<Exemplar>> =
             HashMap::with_capacity(map.size_hint().unwrap_or(0));
         let mut local_extends: Vec<(String, String)> = Vec::new();
+        let mut loaded = Vec::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             let mut lc = self.load_context.begin_labeled_asset();
             let sdata = map.next_value_seed(ExemplarDeserializer {
@@ -183,6 +184,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
             }
             let aliases = sdata.alias.clone();
             let exemplar = Arc::new(sdata);
+            loaded.push((key.clone(), exemplar.clone()));
             let handle = lc.finish(Exemplar(exemplar.clone()));
             let handle = self
                 .load_context
@@ -208,7 +210,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
             }
         }
 
-        Ok(ExemplarCatalog { entries })
+        Ok(ExemplarCatalog { entries, loaded })
     }
 }
 

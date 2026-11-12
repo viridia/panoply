@@ -58,11 +58,6 @@ set an edit is one of.
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28b Saving catalogs.** Edited exemplars written back to their catalogs, so PAN28a's edits
-  persist: each edit marks its catalog unsaved. `ExemplarData` serializes (today its `Serialize` is
-  `todo!()`): aspects through reflection, formulas as their source text, aliases, and `extends` as
-  the path it was read from, keeping the file's order of exemplars and fields so a save's diff shows
-  only the edit. Tested by a round trip: every catalog loaded and written unchanged.
 - **PAN28c Optional fields, arrays and variants.** Optional fields as faery's aspects had them: a
   struct is a map whose keys may be absent; a `None` field has no row, a `Some` row has an × button
   that removes it, and a boxed-plus menu in the panel header lists the absent fields to add. Arrays
@@ -76,13 +71,14 @@ set an edit is one of.
   element's colliders: `ColliderDesc`'s `shape` becomes an enum whose variants hold their own
   dimensions (a sphere a radius, a box its half-extents) in place of the shared `size`, so the
   fields a shape uses follow from its type (D45); whether catalogs migrate or serde reads the old
-  form is decided in the chunk. Text fields, read-only until here, edited and committed on Enter or
-  on leaving the field: Bevy's text input reports no commit, and an edit per keystroke would rebuild
-  instances for every half-typed model path. The commit is general, not the property editor's: one
-  observer pair on every `TextInput` (Enter and `FocusLost`, as the feathers number input has, with
-  Escape reverting) triggers a text-edit-finished event carrying the text, which the panel, the
-  exemplar filter and later dialogs listen for. It stays free of Panoply types, since an upstream
-  ticket asks for the same; when Bevy gains one, Panoply moves to it.
+  form is decided in the chunk. A collider edit is saved and its diff checked: the first save of a
+  scenery aspect, since PAN28b's test saved an actor's. Text fields, read-only until here, edited
+  and committed on Enter or on leaving the field: Bevy's text input reports no commit, and an edit
+  per keystroke would rebuild instances for every half-typed model path. The commit is general, not
+  the property editor's: one observer pair on every `TextInput` (Enter and `FocusLost`, as the
+  feathers number input has, with Escape reverting) triggers a text-edit-finished event carrying the
+  text, which the panel, the exemplar filter and later dialogs listen for. It stays free of Panoply
+  types, since an upstream ticket asks for the same; when Bevy gains one, Panoply moves to it.
 - **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
   then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
   `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type
@@ -95,13 +91,16 @@ set an edit is one of.
   a cycle.
 - **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
   and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
-  and Clone… (`TODO(PAN28e)`), which write catalogs, as PAN28b does.
-- **PAN43 Inherited fields.** Provisional. Fields an exemplar inherits through `extends` show apart
-  from its own, as faery's did in dim italics (`scenery-actor-inherited.png`); editing one overrides
-  it, and × on an override reverts it to the inherited value rather than removing the field. faery
-  had this from JavaScript prototypes; in Panoply `extends` is a handle to the parent exemplar
-  (D27), so how the editor tells own fields from inherited ones is decided in the chunk. X1's move
-  to BSN would make `extends` scene inheritance.
+  and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
+  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
+  `alias` list, so that precincts naming it keep working until they are saved again.
+- **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
+  apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
+  Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts
+  to the inherited one. Inheritance in Panoply is by whole aspect, resolved when the chain is read
+  (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
+  its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
+  scene inheritance.
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
   rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where

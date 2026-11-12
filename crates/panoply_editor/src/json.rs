@@ -1,4 +1,4 @@
-//! JSON as the editor writes assets, nav points now and exemplars later, in the form faery's
+//! JSON as the editor writes assets, nav points and exemplar catalogs, in the form faery's
 //! `JSON.stringify` wrote the authored files: serde_json's pretty printing, two-space indented,
 //! except that an array holding only numbers stays on one line (`"pos": [41.6, 0, 41.5]`) and a
 //! float with no fraction is written as an integer. Saving a file then changes only what was
@@ -138,6 +138,45 @@ mod tests {
         scale: f64,
         tags: Vec<&'static str>,
         empty: Vec<f32>,
+    }
+
+    /// Every exemplar catalog, with its path: `assets/exemplars` and the folders in it.
+    fn catalogs() -> Vec<(std::path::PathBuf, String)> {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/exemplars");
+        let mut folders = vec![root];
+        let mut found = Vec::new();
+        while let Some(folder) = folders.pop() {
+            for entry in std::fs::read_dir(&folder).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    folders.push(path);
+                } else if path.to_string_lossy().ends_with(".exem.json") {
+                    let text = std::fs::read_to_string(&path).unwrap();
+                    // An empty file is no catalog.
+                    if !text.is_empty() {
+                        found.push((path, text));
+                    }
+                }
+            }
+        }
+        found
+    }
+
+    /// A catalog's text as the editor writes it.
+    fn rewritten(text: &str) -> String {
+        to_asset_json(&serde_json::from_str::<serde_json::Value>(text).unwrap()).unwrap()
+    }
+
+    /// So that saving a catalog changes only what was edited.
+    #[test]
+    fn catalogs_are_written_as_the_editor_writes_them() {
+        for (path, text) in catalogs() {
+            assert!(
+                rewritten(&text) == text,
+                "{} is not as the editor writes it",
+                path.display()
+            );
+        }
     }
 
     #[test]

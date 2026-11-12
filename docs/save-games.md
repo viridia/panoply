@@ -56,9 +56,10 @@ map from an aspect's name to the state that aspect saved.
   code moves between modules. Names are checked unique across every registered aspect at startup; a
   mod's aspects carry its prefix ([modding.md](modding.md)). A renamed aspect keeps its old names as
   aliases.
-- **An entry is written when its state changed in play:** its component's changed tick differs from
-  its added tick. An entry restored from a save counts as changed and is written again, which is
-  right, since it differs from the asset.
+- **An entry is written when its state differs from the authored state** (D74): the aspect is the
+  authored state, and the state play changes is a component apart from it. A chest opened and shut
+  again writes nothing, and an entry restored from a save is written again only while it still
+  differs from the asset.
 - **Payloads are serde structs written with field names** (`rmp_serde::to_vec_named`; `to_vec`
   writes structs as arrays, so adding a field would shift every field after it). Not reflection:
   Bevy's reflect deserializer rejects a field it does not know, so a save from before a field was

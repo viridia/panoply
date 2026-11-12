@@ -69,6 +69,11 @@ pub struct ColliderDesc {
 
     /** Means we can walk on top of this collider. Affects pathfinding and physics. */
     pub walkable: Option<bool>,
+
+    /// Extra clearance kept around the collider when navigation maps are built: its footprint
+    /// grows by this much before the maps' boolean operations.
+    // TODO(PAN16): read when building navigation maps.
+    pub margin: Option<f32>,
 }
 
 /// Half-extents when a descriptor has no size.

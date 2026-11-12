@@ -11,6 +11,7 @@ mod exemplar;
 mod instance_type;
 mod interaction;
 mod loader;
+mod save;
 mod script_components;
 /// Serialzation and deserialization functions.
 pub mod ser;
@@ -26,8 +27,7 @@ pub use aspect_list::AspectList;
 pub use aspect_list::AspectListDeserializer;
 pub use catalogs::{ExemplarCatalogs, ExemplarServer};
 pub use command::UpdateAspects;
-pub use exemplar::Exemplar;
-use exemplar::ExemplarCatalog;
+pub use exemplar::{Exemplar, ExemplarCatalog};
 pub use instance_type::InstanceType;
 pub use interaction::*;
 pub use script_components::{ScriptComponentAppExt, ScriptComponents};

@@ -13,7 +13,8 @@
   Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play;
   its rotate buttons wait for a selected parcel, whose contour is drawn. A brush tool's cursor
   follows the pointer over that parcel and stays on its edge while dragged off it. Scenery mode
-  shows the chosen exemplar's properties, and a number typed there changes it, undoably.
+  shows the chosen exemplar's properties, and a number typed there changes it, undoably; Save
+  writes that one line into its catalog (restored afterwards).
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -93,6 +94,7 @@ WINDOW = "bevy_window::window::Window"
 WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
+CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 
@@ -359,7 +361,33 @@ def exemplar_properties(driver):
     driver.expect(scale, NUMERIC, loaded)
     undo(driver, redo=True)
     driver.expect(scale, NUMERIC, edited)
-    undo(driver)
+
+    # Save writes the edit into the catalog, changing that line and no other. The original goes
+    # back however the checks end.
+    original = CHARACTERS.read_bytes()
+    try:
+        expect_disabled(driver, "Save", False)
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        changed = [
+            (before, after)
+            for before, after in zip(original.decode().splitlines(), CHARACTERS.read_text().splitlines())
+            if before != after
+        ]
+        assert changed == [('      "ActorScale": 1.2', '      "ActorScale": 1.5')], changed
+        # The reload brings the edit back from the file.
+        driver.expect(scale, NUMERIC, edited)
+        # Undone and saved again, the file is as it was.
+        driver.click("Exemplars/FeralDogAlpha")
+        undo(driver)
+        driver.expect(scale, NUMERIC, loaded)
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert CHARACTERS.read_bytes() == original, "saving the undone edit changed the catalog"
+    finally:
+        CHARACTERS.write_bytes(original)
     driver.click("Exemplars/ClearFilter")
 
 

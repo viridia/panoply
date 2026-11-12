@@ -1,7 +1,6 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use panoply_saga::FormulaRef;
-use serde::Serialize;
 use std::any::TypeId;
 use std::sync::Arc;
 
@@ -149,20 +148,16 @@ impl Exemplar {
     }
 }
 
-impl Serialize for ExemplarData {
-    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        todo!();
-    }
-}
-
 /// An asset that stores multiple exemplars.
 #[derive(TypePath, Asset)]
 pub struct ExemplarCatalog {
-    #[allow(dead_code)]
+    /// Every exemplar in the catalog by label, aliases included.
     pub(crate) entries: HashMap<String, Handle<Exemplar>>,
+
+    /// Each exemplar's data as loaded, by its own name, aliases left out. An edit replaces an
+    /// exemplar's data rather than changing it, so this stays as the file says; saving compares
+    /// it with the exemplar's data now to find what was edited.
+    pub(crate) loaded: Vec<(String, Arc<ExemplarData>)>,
 }
 
 #[cfg(test)]

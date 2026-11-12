@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D73.**
+**Next: D75.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -571,3 +571,18 @@ never reused.
   and moving to `bevy_reflect2` (X98) touches those alone. arbor_day's panel, which it forked, wrote
   through `&mut dyn PartialReflect` as it drew, which undo could not record. Reversing it means
   widgets bound to the data again, with undo snapshotting whole values. (PAN28a)
+- **D73** Saving a catalog writes its edits into the file's own JSON, read again at save time,
+  rather than writing the exemplars out. Each edited exemplar is serialized as loaded and as it is
+  now, and only where the two differ does the file change. The exemplars are not the whole file: the
+  loader skips aspect types no plugin registers, serde ignores fields no type has, and the file
+  omits defaults and writes `extends` relative to itself. What they never held is in neither
+  serialization, so it survives, and a save's diff shows only the edit. Reversing it means saving
+  the model and losing all of that, or a model that keeps every unknown. Creating an exemplar
+  (PAN28e) needs an insert path beside the merge. (PAN28b)
+- **D74** A stateful aspect is its authored state, serialized in the exemplar or the authored
+  instance; the state play changes is a separate component the aspect inserts, saved in the save
+  game, and left out when it equals the authored state ([save-games.md](save-games.md), Chunk
+  format). The asset stays the author's, editable while the game runs, and a save holds only what
+  play changed. `Container` and `ContainerState` already work so; it is the rule for every stateful
+  aspect. Reversing it means aspects whose fields play overwrites, so saves must hold whole aspects
+  and an edited asset cannot reach a saved game. (PAN28b)

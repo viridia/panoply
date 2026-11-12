@@ -17,8 +17,10 @@ use bevy::{
     ui::{FixedNode, OverrideClip},
     window::SystemCursorIcon,
 };
+use bevy::ecs::message::MessageCursor;
 use bevy_action_map::prelude::*;
 use panoply_core::NavPointsAsset;
+use panoply_exemplar::{Exemplar, ExemplarCatalog};
 use panoply_terrain::TerrainMapAsset;
 
 use crate::{json::to_asset_json, toast::ShowToast};
@@ -82,19 +84,33 @@ pub(crate) enum SaveSystems {
 
 /// An asset type the editor can write back to its file.
 pub trait SaveableAsset: Asset {
-    /// The file's contents.
-    fn to_bytes(&self) -> Result<Vec<u8>, BevyError>;
+    /// The file's contents. `file` is where they go, and `world` holds what else they need.
+    fn to_bytes(&self, file: &Path, world: &World) -> Result<Vec<u8>, BevyError>;
 }
 
 impl SaveableAsset for NavPointsAsset {
-    fn to_bytes(&self) -> Result<Vec<u8>, BevyError> {
+    fn to_bytes(&self, _file: &Path, _world: &World) -> Result<Vec<u8>, BevyError> {
         Ok(to_asset_json(&self.0)?.into_bytes())
     }
 }
 
 impl SaveableAsset for TerrainMapAsset {
-    fn to_bytes(&self) -> Result<Vec<u8>, BevyError> {
+    fn to_bytes(&self, _file: &Path, _world: &World) -> Result<Vec<u8>, BevyError> {
         Ok(TerrainMapAsset::to_bytes(self)?)
+    }
+}
+
+/// The catalog's file as it is, with its edits written in (`ExemplarCatalog::merge_into`).
+impl SaveableAsset for ExemplarCatalog {
+    fn to_bytes(&self, file: &Path, world: &World) -> Result<Vec<u8>, BevyError> {
+        let mut json: serde_json::Value = serde_json::from_slice(&std::fs::read(file)?)?;
+        self.merge_into(
+            &mut json,
+            world.resource::<Assets<Exemplar>>(),
+            &world.resource::<AppTypeRegistry>().read(),
+            world.resource::<AssetServer>(),
+        )?;
+        Ok(to_asset_json(&json)?.into_bytes())
     }
 }
 
@@ -134,7 +150,8 @@ impl Plugin for UnsavedAssetsPlugin {
                 commands.spawn((Name::new("SaveWaitKeys"), SaveWaitKeys));
             })
             .register_saveable::<NavPointsAsset>()
-            .register_saveable::<TerrainMapAsset>();
+            .register_saveable::<TerrainMapAsset>()
+            .register_saveable::<ExemplarCatalog>();
     }
 }
 
@@ -209,37 +226,40 @@ fn update_save_barrier(
 
 /// Writes each unsaved asset of type `A` on [`SaveAssets`]. Synchronous: the files saved so far
 /// are small. A failed write is logged and leaves the asset unsaved, and is not waited for.
+/// Exclusive, since an asset's contents may need anything in the world.
 fn save_assets<A: SaveableAsset>(
-    mut requests: MessageReader<SaveAssets>,
-    mut unsaved: ResMut<UnsavedAssets>,
-    mut wait: ResMut<SaveWait>,
-    mut toasts: MessageWriter<ShowToast>,
-    assets: Res<Assets<A>>,
-    server: Res<AssetServer>,
+    world: &mut World,
+    mut requests: Local<MessageCursor<SaveAssets>>,
 ) {
-    if requests.read().count() == 0 {
+    if requests
+        .read(world.resource::<Messages<SaveAssets>>())
+        .count()
+        == 0
+    {
         return;
     }
-    let ids: Vec<AssetId<A>> = unsaved
+    let ids: Vec<AssetId<A>> = world
+        .resource::<UnsavedAssets>()
         .0
         .iter()
         .filter_map(|id| id.try_typed::<A>().ok())
         .collect();
     for id in ids {
-        match save(id, &assets, &server) {
+        match save(id, world) {
             Ok(path) => {
                 info!("Saved {}", path.display());
-                unsaved.0.remove(&id.untyped());
-                if server.watching_for_changes() {
-                    wait.ids.insert(id.untyped());
+                world.resource_mut::<UnsavedAssets>().0.remove(&id.untyped());
+                if world.resource::<AssetServer>().watching_for_changes() {
+                    world.resource_mut::<SaveWait>().ids.insert(id.untyped());
                 }
             }
             Err(error) => {
                 error!("Could not save {id:?}: {error}");
-                let name = server
+                let name = world
+                    .resource::<AssetServer>()
                     .get_path(id)
                     .map_or_else(|| "an asset".to_string(), |path| path.to_string());
-                toasts.write(ShowToast(format!("Could not save {name}").into()));
+                world.write_message(ShowToast(format!("Could not save {name}").into()));
             }
         }
     }
@@ -254,20 +274,22 @@ pub(crate) fn asset_file(path: &Path) -> PathBuf {
 
 /// Writes the asset `id` to a temporary file beside its own, then renames it over the original,
 /// so a failed write leaves the original whole. Returns the file's path.
-fn save<A: SaveableAsset>(
-    id: AssetId<A>,
-    assets: &Assets<A>,
-    server: &AssetServer,
-) -> Result<PathBuf, BevyError> {
-    let asset = assets.get(id).ok_or("the asset is not loaded")?;
-    let path = server.get_path(id).ok_or("the asset has no path")?;
+fn save<A: SaveableAsset>(id: AssetId<A>, world: &World) -> Result<PathBuf, BevyError> {
+    let asset = world
+        .resource::<Assets<A>>()
+        .get(id)
+        .ok_or("the asset is not loaded")?;
+    let path = world
+        .resource::<AssetServer>()
+        .get_path(id)
+        .ok_or("the asset has no path")?;
     if path.source() != &AssetSourceId::Default {
         return Err(format!("{path} is not in the assets folder").into());
     }
     let file = asset_file(path.path());
     let mut temporary = file.clone().into_os_string();
     temporary.push(".new");
-    std::fs::write(&temporary, asset.to_bytes()?)?;
+    std::fs::write(&temporary, asset.to_bytes(&file, world)?)?;
     std::fs::rename(&temporary, &file)?;
     Ok(file)
 }

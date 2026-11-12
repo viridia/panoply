@@ -13,6 +13,7 @@ use panoply_exemplar::Exemplar;
 use crate::{
     mode_selector::EditorModeSettings,
     undo::{UndoAction, UndoStack},
+    unsaved::UnsavedAssets,
 };
 
 /// Where an inspected value lives: an aspect of an exemplar, and later an instance or a nav point.
@@ -213,7 +214,11 @@ impl PropertyRoot for ExemplarAspect {
         let id = self
             .exemplar_id(world)
             .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
-        world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
+        let catalog = world
+            .resource::<AssetServer>()
+            .get_path_id(self.exemplar.without_label())
+            .ok_or_else(|| format!("{} has no catalog", self.exemplar))?;
+        let replaced = world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
             Exemplar::edit(&mut exemplars, id, |data| {
                 let aspect = data
                     .aspects
@@ -228,7 +233,9 @@ impl PropertyRoot for ExemplarAspect {
                 field.try_apply(value)?;
                 Ok(replaced)
             })
-        })
+        })?;
+        world.resource_mut::<UnsavedAssets>().mark(catalog);
+        Ok(replaced)
     }
 }
 
