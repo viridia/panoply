@@ -1,6 +1,8 @@
-//! The exemplars a scenery tool places, in a [`Chooser`]. Every catalog under `exemplars/` loads
-//! when scenery mode is first entered, since the game loads exemplars only as precincts name them.
-//! Each tool's choice is saved, so returning to the tool, or restarting, keeps it.
+//! The exemplars of the type a scenery tool places, in a [`Chooser`]: abstract ones too, in
+//! italics, so they can be edited, though they cannot be placed. Every catalog under `exemplars/`
+//! loads when scenery mode is first entered, since the game loads exemplars only as precincts name
+//! them. Each tool's choice is saved, so returning to the tool, or restarting, keeps it.
+// TODO(PAN5): the placing tools refuse an abstract exemplar.
 
 use bevy::{
     asset::LoadedFolder,
@@ -127,28 +129,21 @@ fn list_exemplars(
         let Some(instance_type) = placed_type(list.tool) else {
             continue;
         };
-        let mut items = exemplar_names(&server, &exemplars, instance_type);
+        let named = named_exemplars(&server, &exemplars, instance_type);
+        let mut items: Vec<String> = named.iter().map(|(name, _)| name.clone()).collect();
+        let italic: Vec<String> = named
+            .iter()
+            .filter(|(_, id)| exemplars.get(*id).is_some_and(|ex| ex.0.is_abstract))
+            .map(|(name, _)| name.clone())
+            .collect();
         if list.tool == SceneryTool::PlaceWall {
             items.insert(0, ERASE.to_string());
         }
-        if chooser.items != items {
+        if chooser.items != items || chooser.italic != italic {
             chooser.items = items;
+            chooser.italic = italic;
         }
     }
-}
-
-/// The names of the exemplars of `instance_type` that can be placed: each one's label, or, where
-/// two catalogs use the same label, the label and its catalog's name. Abstract exemplars, and the
-/// old names an exemplar keeps as aliases, are left out.
-fn exemplar_names(
-    server: &AssetServer,
-    exemplars: &Assets<Exemplar>,
-    instance_type: InstanceType,
-) -> Vec<String> {
-    named_exemplars(server, exemplars, instance_type)
-        .into_iter()
-        .map(|(name, _)| name)
-        .collect()
 }
 
 /// The exemplar named `name` in `tool`'s list.
@@ -163,8 +158,9 @@ pub fn chosen_exemplar(
         .find_map(|(found, id)| (found == name).then_some(id))
 }
 
-/// The exemplars of `instance_type` that can be placed, each with its name in the list, as
-/// [`exemplar_names`] gives them.
+/// The exemplars of `instance_type`, each with its name in the list: its label, or, where two
+/// catalogs use the same label, the label and its catalog's name. The old names an exemplar keeps
+/// as aliases are left out.
 fn named_exemplars(
     server: &AssetServer,
     exemplars: &Assets<Exemplar>,
@@ -172,7 +168,7 @@ fn named_exemplars(
 ) -> Vec<(String, AssetId<Exemplar>)> {
     let entries: Vec<(String, String, AssetId<Exemplar>)> = exemplars
         .iter()
-        .filter(|(_, exemplar)| exemplar.0.meta_type == instance_type && !exemplar.0.is_abstract)
+        .filter(|(_, exemplar)| exemplar.0.meta_type == instance_type)
         .filter_map(|(id, exemplar)| {
             let path = server.get_path(id)?;
             let label = path.label()?.to_string();

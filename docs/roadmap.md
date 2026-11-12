@@ -36,7 +36,7 @@ by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own.
 in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Inspectable`
 (`crates/bevy_reactor_prop_inspect/src/inspectable.rs`) is a model for roots and field handles.
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
-set an edit is one of.
+set an edit is one of (`EditKind`).
 
 - **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
   terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
@@ -58,27 +58,21 @@ set an edit is one of.
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28c Optional fields, arrays and variants.** Optional fields as faery's aspects had them: a
-  struct is a map whose keys may be absent; a `None` field has no row, a `Some` row has an × button
-  that removes it, and a boxed-plus menu in the panel header lists the absent fields to add. Arrays
-  of structs, whose items are inserted and removed, and enums switched between variants. Each
-  field's handle has two paths, as `Inspectable` has: its slot (the `Option` or the array item),
-  which adding and removing act on, and the value inside, which the widget edits and whose
-  annotations apply, since the `f32` in `Option<f32>` cannot be annotated. Bevy's inspector applies
-  annotations through `Option` and `Vec` in a commit after Panoply's locked Bevy, so this chunk may
-  bump Bevy. New values (`None`, an array item, a variant's fields) come from the type's
-  `ReflectDefault`, a real value of the type rather than a dynamic proxy. The test case is a scenery
-  element's colliders: `ColliderDesc`'s `shape` becomes an enum whose variants hold their own
-  dimensions (a sphere a radius, a box its half-extents) in place of the shared `size`, so the
-  fields a shape uses follow from its type (D45); whether catalogs migrate or serde reads the old
-  form is decided in the chunk. A collider edit is saved and its diff checked: the first save of a
-  scenery aspect, since PAN28b's test saved an actor's. Text fields, read-only until here, edited
-  and committed on Enter or on leaving the field: Bevy's text input reports no commit, and an edit
-  per keystroke would rebuild instances for every half-typed model path. The commit is general, not
-  the property editor's: one observer pair on every `TextInput` (Enter and `FocusLost`, as the
-  feathers number input has, with Escape reverting) triggers a text-edit-finished event carrying the
-  text, which the panel, the exemplar filter and later dialogs listen for. It stays free of Panoply
-  types, since an upstream ticket asks for the same; when Bevy gains one, Panoply moves to it.
+- **PAN28f Arrays, variants and colliders.** Arrays of structs, whose items are inserted and
+  removed: edits of their own, since Bevy's list `apply` never shortens a list. Enums switched
+  between variants with a select, as arbor_day's panel has; fields of the same name and type carry
+  over, the rest come from their types' `ReflectDefault`. The test case is a scenery element's
+  colliders: `ColliderShape`'s variants hold their own dimensions (`Box`, `Rbox` and `Ramp` half
+  extents, `Cylinder` a radius and half height, `Sphere` a radius, `Ellipsoid` radii), in place of
+  the shared `size`, so the fields a shape uses follow from its type (D45); `facing` moves into
+  `Ramp`, the only shape that reads it. The enum is internally tagged and flattened into
+  `ColliderDesc`, so `"shape": "box"` stays a key beside the dimensions, and a one-time script
+  migrates the catalogs (a missing size becomes the old default, half extents 0.5, 1, 0.5).
+  Dimensions and `offset` take `@Step(0.05)`, so colliders nudged on adjacent walls line up. A
+  collider edit is saved and its diff checked: the first save of a scenery array.
+- **PAN28g Asset pickers.** A field that names an asset becomes a newtype for the kind it names
+  (D45): `Skin(String)` holds a character model, so its row is a button opening a picker of
+  character models only, as faery's was (the author has a screenshot), not a text input.
 - **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
   then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
   `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type

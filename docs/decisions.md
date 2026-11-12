@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D75.**
+**Next: D76.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -586,3 +586,9 @@ never reused.
   play changed. `Container` and `ContainerState` already work so; it is the rule for every stateful
   aspect. Reversing it means aspects whose fields play overwrites, so saves must hold whole aspects
   and an edited asset cannot reach a saved game. (PAN28b)
+- **D75** A text input's edit is committed on Enter or on losing focus, and Escape puts its text
+  back, through one observer pair on every Bevy `TextInput` (`text_commit.rs`), which triggers
+  Bevy's own `ValueChange<String>` with `is_final` set, the event whose doc already covers "input
+  lost focus". Bevy's text input reports only keystrokes, and an edit per keystroke would rebuild
+  instances for every half-typed path. The module holds no Panoply types, so when Bevy commits text
+  itself, it goes. Reversing it means each widget handling Enter and focus on its own. (PAN28c)

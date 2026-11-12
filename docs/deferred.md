@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X101.**
+**Next: X102.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -564,3 +564,6 @@ dropped, not deferred. Numbers are never reused.
 - **X100** A report of the fields catalogs hold that no type reads, to adopt (as PAN28b adopted
   colliders' `margin`) or retire: the keys in a file's JSON missing from its exemplars serialized as
   loaded, which is half of what saving does (D73). *Gate:* the first pass to retire fields.
+- **X101** Gizmos in the view for the field being edited, such as a collider's box or an offset's
+  point, dragged to fit the visible mesh, where today the numbers are nudged in the panel. *Gate:*
+  the property editor has a selected field, which a gizmo would follow.

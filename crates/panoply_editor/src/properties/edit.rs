@@ -37,10 +37,30 @@ pub trait PropertyRoot: Any + Send + Sync {
     ) -> Result<Box<dyn PartialReflect>, BevyError>;
 }
 
+/// What an edit does, as the undo history names it. Each is a value written at a path: adding an
+/// optional field writes `Some` at its `Option`, and removing it writes `None`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EditKind {
+    Set,
+    Add,
+    Remove,
+}
+
+impl EditKind {
+    fn verb(self) -> &'static str {
+        match self {
+            EditKind::Set => "Set",
+            EditKind::Add => "Add",
+            EditKind::Remove => "Remove",
+        }
+    }
+}
+
 /// An edit a widget asks for: `value` written at `path` within `root`'s value.
 pub struct PropertyEdit {
     pub root: Arc<dyn PropertyRoot>,
     pub path: String,
+    pub kind: EditKind,
     pub value: Box<dyn PartialReflect>,
 }
 
@@ -51,10 +71,22 @@ pub struct PropertyEdits(pub Vec<PropertyEdit>);
 impl PropertyEdits {
     /// Asks for `value` to be written at `path` within `root`'s value.
     pub fn set(&mut self, root: &Arc<dyn PropertyRoot>, path: String, value: impl PartialReflect) {
+        self.push(root, path, EditKind::Set, Box::new(value));
+    }
+
+    /// Asks for `value` to be written at `path` within `root`'s value, as a `kind` of edit.
+    pub fn push(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        path: String,
+        kind: EditKind,
+        value: Box<dyn PartialReflect>,
+    ) {
         self.0.push(PropertyEdit {
             root: root.clone(),
             path,
-            value: Box::new(value),
+            kind,
+            value,
         });
     }
 }
@@ -80,6 +112,7 @@ pub struct InspectedRoots {
 struct SetProperty {
     root: Arc<dyn PropertyRoot>,
     path: String,
+    kind: EditKind,
     value: Box<dyn PartialReflect>,
     gesture: u32,
 }
@@ -98,10 +131,10 @@ impl UndoAction for SetProperty {
         }
     }
 
-    /// "Set LightSource.radius": the path's field names, leaving out the steps into an `Option` or
-    /// a newtype, which the panel does not show either.
+    /// "Set LightSource.radius", or "Add" or "Remove": the path's field names, leaving out the
+    /// steps into an `Option` or a newtype, which the panel does not show either.
     fn label(&self) -> Cow<'static, str> {
-        let mut label = format!("Set {}", self.root.caption());
+        let mut label = format!("{} {}", self.kind.verb(), self.root.caption());
         for name in self.path.split('.') {
             if !name.is_empty() && !name.bytes().all(|byte| byte.is_ascii_digit()) {
                 label.push('.');
@@ -116,6 +149,7 @@ impl UndoAction for SetProperty {
             .downcast_ref::<SetProperty>()
             .is_some_and(|earlier| {
                 earlier.gesture == self.gesture
+                    && earlier.kind == self.kind
                     && earlier.path == self.path
                     && earlier.root.key() == self.root.key()
             })
@@ -140,13 +174,20 @@ pub fn apply_property_edits(world: &mut World) {
     }
     let gesture = world.resource::<EditGesture>().0;
     let mode = world.resource::<EditorModeSettings>().editor_mode;
-    for PropertyEdit { root, path, value } in edits {
+    for PropertyEdit {
+        root,
+        path,
+        kind,
+        value,
+    } in edits
+    {
         match root.set(world, &path, value.as_ref()) {
             Ok(replaced) => world.resource_mut::<UndoStack>().push(
                 mode,
                 SetProperty {
                     root,
                     path,
+                    kind,
                     value: replaced,
                     gesture,
                 },
@@ -241,12 +282,16 @@ impl PropertyRoot for ExemplarAspect {
 
 #[cfg(test)]
 mod tests {
+    use bevy::reflect::TypeRegistry;
+
     use super::*;
+    use crate::properties::option_value;
 
     #[derive(Reflect, Clone, Default, Debug, PartialEq)]
     struct Size {
         width: f32,
         height: f32,
+        depth: Option<f32>,
     }
 
     #[derive(Resource, Default)]
@@ -352,9 +397,44 @@ mod tests {
             world.resource::<Held>().0,
             Size {
                 width: 2.,
-                height: 0.
+                height: 0.,
+                depth: None,
             }
         );
+    }
+
+    /// Asks for `depth` to be added or removed, with the value the panel would build, and
+    /// applies it.
+    fn add_or_remove_depth(world: &mut World, gesture: u32, kind: EditKind) {
+        world.resource_mut::<EditGesture>().0 = gesture;
+        let mut registry = TypeRegistry::default();
+        registry.register::<Size>();
+        let info = <Option<f32> as bevy::reflect::Typed>::type_info();
+        let value = option_value(&registry, info, kind == EditKind::Add).unwrap();
+        let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
+        world
+            .resource_mut::<PropertyEdits>()
+            .push(&root, ".depth".into(), kind, value);
+        apply_property_edits(world);
+    }
+
+    fn depth(world: &World) -> Option<f32> {
+        world.resource::<Held>().0.depth
+    }
+
+    #[test]
+    fn an_optional_field_is_added_and_removed() {
+        let mut world = world();
+        add_or_remove_depth(&mut world, 1, EditKind::Add);
+        assert_eq!(depth(&world), Some(0.));
+        add_or_remove_depth(&mut world, 2, EditKind::Remove);
+        assert_eq!(depth(&world), None);
+        undo(&mut world);
+        assert_eq!(depth(&world), Some(0.));
+        undo(&mut world);
+        assert_eq!(depth(&world), None);
+        redo(&mut world);
+        assert_eq!(depth(&world), Some(0.));
     }
 
     #[test]
@@ -362,6 +442,7 @@ mod tests {
         let action = SetProperty {
             root: Arc::new(HeldRoot),
             path: ".width".into(),
+            kind: EditKind::Set,
             value: Box::new(0.0f32),
             gesture: 0,
         };
@@ -371,5 +452,11 @@ mod tests {
             ..action
         };
         assert_eq!(through_option.label(), "Set Size.radius");
+        let added = SetProperty {
+            path: ".depth".into(),
+            kind: EditKind::Add,
+            ..through_option
+        };
+        assert_eq!(added.label(), "Add Size.depth");
     }
 }

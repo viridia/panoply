@@ -4,9 +4,10 @@
 //! move the selection and Enter activates the selected item, or the first shown if none is.
 
 use bevy::{
+    app::PropagateOver,
     ecs::system::SystemParam,
     feathers::{
-        constants::icons,
+        constants::{fonts, icons},
         containers::{group, group_body},
         controls::{
             ButtonVariant, FeathersButton, FeathersDialog, FeathersDialogBody, FeathersDialogClose,
@@ -19,7 +20,7 @@ use bevy::{
     input_focus::{AutoFocus, InputFocus},
     picking::{events::PointerClick, pointer::PointerButton},
     prelude::*,
-    text::{EditableText, FontStyle, Placeholder},
+    text::{EditableText, FontSize, FontSourceTemplate, FontStyle, Placeholder},
     ui::{
         InteractionDisabled, OverflowClipMargin, ScrollIntoView, ScrollIntoViewContainer, Selected,
     },
@@ -35,11 +36,13 @@ use bevy_immediate::{
 use crate::search_filter::SearchFilter;
 
 /// The list's root. `selected` decides which row is highlighted, and a row that becomes highlighted
-/// scrolls into view. A selected item the filter hides is deselected.
+/// scrolls into view. A selected item the filter hides is deselected. The items in `italic` are
+/// set in italics, to tell a kind of item apart.
 #[derive(Component, Default, Clone)]
 pub struct Chooser {
     pub items: Vec<String>,
     pub selected: Option<String>,
+    pub italic: Vec<String>,
 }
 
 /// The immediate-mode root that holds the rows.
@@ -401,8 +404,10 @@ impl ImmediateAttach<CapsUiFeathers> for ChooserRows {
         let shown = filtered_items(&state.items, &text);
         for item in &shown {
             let name = (*item).clone();
-            ui.ch_id(item.as_str())
-                .on_spawn_apply_scene(move || row(name));
+            let italic = state.italic.contains(item);
+            // Keyed by its style too, so a row that changes style is built again.
+            ui.ch_id((item.as_str(), italic))
+                .on_spawn_apply_scene(move || row(name, italic));
         }
         // Only an item the filter hides: a selection whose item has not arrived yet waits for it.
         let hidden = state
@@ -415,8 +420,13 @@ impl ImmediateAttach<CapsUiFeathers> for ChooserRows {
     }
 }
 
-fn row(name: String) -> impl Scene {
+fn row(name: String, italic: bool) -> impl Scene {
     let label = name.clone();
+    let style = if italic {
+        FontStyle::Italic
+    } else {
+        FontStyle::Normal
+    };
     bsn! {
         @FeathersListRow
         // The list view clips only vertically, and a name with nowhere to wrap is wider than the
@@ -433,7 +443,17 @@ fn row(name: String) -> impl Scene {
             },
         }
         ChooserRow({name.clone()})
-        Children [ Text({label.clone()}) ThemedText ]
+        Children [
+            Text({label.clone()})
+            ThemedText
+            // The list view's font, in the row's style.
+            TextFont {
+                font: FontSourceTemplate::Families(fonts::SANS),
+                font_size: FontSize::Px(14.0),
+                style: {style},
+            }
+            PropagateOver<TextFont>
+        ]
     }
 }
 

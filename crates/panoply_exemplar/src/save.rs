@@ -53,10 +53,11 @@ fn exemplar_json(
     Ok(entry.into())
 }
 
-/// Writes into `original` the changes from `base` to `new`. An object's key that `new` dropped is
-/// removed, one it added is inserted, and one whose value changed is merged in turn, so the keys
-/// `original` holds that neither knows are kept. Arrays of one length merge item by item, for the
-/// same reason; anything else that changed is replaced.
+/// Writes into `original` the changes from `base` to `new`. An object's key that `new` dropped, or
+/// changed to `null` (a field now `None`, which the file leaves out), is removed, one it added is
+/// inserted, and one whose value changed is merged in turn, so the keys `original` holds that
+/// neither knows are kept. Arrays of one length merge item by item, for the same reason; anything
+/// else that changed is replaced.
 pub fn merge(original: &mut Value, base: &Value, new: &Value) {
     if base == new {
         return;
@@ -71,9 +72,21 @@ pub fn merge(original: &mut Value, base: &Value, new: &Value) {
             for (key, value) in new {
                 match (base.get(key), original.get_mut(key)) {
                     (Some(was), _) if was == value => {}
+                    _ if value.is_null() => {
+                        original.shift_remove(key);
+                    }
                     (Some(was), Some(written)) => merge(written, was, value),
-                    _ => {
-                        original.insert(key.clone(), value.clone());
+                    (_, Some(written)) => *written = value.clone(),
+                    (_, None) => {
+                        // Where the type puts it: after the nearest key before it in `new` that
+                        // the file has, so a field removed and added back returns to its place.
+                        let index = new
+                            .keys()
+                            .take_while(|earlier| *earlier != key)
+                            .filter_map(|earlier| original.keys().position(|had| had == earlier))
+                            .last()
+                            .map_or(0, |index| index + 1);
+                        original.shift_insert(index, key.clone(), value.clone());
                     }
                 }
             }
@@ -162,6 +175,31 @@ mod tests {
             merged(original, base, new),
             json!({ "shape": "box", "offset": [0, 1, 0] })
         );
+    }
+
+    #[test]
+    fn a_field_now_none_leaves_the_file() {
+        let original = json!({ "offset": [0, 1, 0], "radius": 2, "color": "#fff" });
+        let base = json!({ "offset": [0, 1, 0], "radius": 2.0, "intensity": null });
+        let new = json!({ "offset": [0, 1, 0], "radius": null, "intensity": null });
+        assert_eq!(
+            merged(original, base, new),
+            json!({ "offset": [0, 1, 0], "color": "#fff" })
+        );
+    }
+
+    #[test]
+    fn an_added_field_goes_where_the_type_puts_it() {
+        let original = json!({ "offset": [0, 1, 0], "unknown": 1, "color": "#fff" });
+        let base = json!({ "offset": [0, 1, 0], "radius": null, "color": "#fff" });
+        let new = json!({ "offset": [0, 1, 0], "radius": 2.0, "color": "#fff" });
+        let keys: Vec<String> = merged(original, base, new)
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect();
+        assert_eq!(keys, ["offset", "radius", "unknown", "color"]);
     }
 
     #[test]

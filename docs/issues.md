@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I36.**
+**Next: I39.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -105,3 +105,20 @@ confirmed by running something or only by reading. Numbers are never reused.
   leaves x visible, so a row's text wider than the row draws past the list's right edge. Measured:
   rows 386 px wide, a long name's text 452. The chooser clips each row itself (`TODO(I35)` in
   `chooser.rs`); upstream, the list's scrolling node would clip x as well. Confirmed by running.
+- **I36** Feathers' number input has no Up and Down keys: faery's nudged a focused number by its
+  step, a hundred steps with Cmd (`obsidian/src/components/NumberInput.tsx`), which aligning
+  colliders leaned on. Feathers has drag and chevrons, snapped to the step since PAN28c. Candidates:
+  an upstream PR, or an observer in Panoply until then. Read, not run.
+- **I37** Feathers' number input draws its label (the X, Y and Z beside an axis's sigil) in the same
+  gray as its input area in the property editor, where the label should be a different gray: the
+  surface level (`ThemeContext`) adjusts the input's background but not the label's
+  (`TEXT_INPUT_LABEL_BG`). Likely a feathers bug, worth an upstream fix. Seen by the author; the
+  cause not confirmed.
+- **I38** Feathers' number input drags a step's worth only every 100 logical pixels: with a
+  `NumberInputStep`, the drag speed is the step times `BASE_DRAG_SPEED` (0.01) per pixel
+  (`scrubber_on_drag_start`, `number_input.rs`), and an integer drags as step 1 at the same rate.
+  With `NumberInputSnapToStep` the value stays put for about an inch, then jumps one step, so
+  `LightSource.offset` at `@Step(0.05)` is hard to nudge. faery dragged one step per pixel. Shift
+  already slows a drag tenfold. Candidates upstream: a factor near 0.1 to 0.25 for a stepped input,
+  or a drag speed the input can be given. Panoply cannot set it meanwhile (`DragState` is set as the
+  drag starts). Seen by the author; the rate read in the code.

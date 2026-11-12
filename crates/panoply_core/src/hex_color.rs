@@ -5,7 +5,7 @@ use bevy::reflect::{Reflect, ReflectDeserialize, ReflectSerialize};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, PartialEq, Clone, Copy, Reflect)]
-#[reflect(PartialEq, Serialize, Deserialize)]
+#[reflect(Default, PartialEq, Serialize, Deserialize)]
 pub struct HexColor(pub Srgba);
 
 impl Serialize for HexColor {

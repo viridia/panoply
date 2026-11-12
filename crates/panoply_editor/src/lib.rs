@@ -31,6 +31,7 @@ pub mod shell;
 pub mod terrain_cursor;
 pub mod terrain_map_edit;
 pub mod terrain_panel;
+pub mod text_commit;
 pub mod text_entry;
 pub mod toast;
 pub mod undo;
@@ -65,6 +66,7 @@ impl PluginGroup for EditorPlugins {
             .add(exemplar_list::ExemplarListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
+            .add(text_commit::TextCommitPlugin)
             .add(text_entry::TextEntryPlugin)
             .add(toast::ToastPlugin)
             .add(undo::UndoPlugin)

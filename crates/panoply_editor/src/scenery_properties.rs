@@ -17,6 +17,7 @@ use bevy::{
     },
     text::FontSourceTemplate,
     prelude::*,
+    reflect::TypeRegistry,
     ui_widgets::{ControlOrientation, NumericValue, ScrollArea},
 };
 use bevy_immediate::{
@@ -184,6 +185,7 @@ fn inspect_chosen_exemplar(
 pub(crate) struct SceneryPropertiesParams<'w> {
     inspected: Res<'w, InspectedValues>,
     edits: ResMut<'w, PropertyEdits>,
+    registry: Res<'w, AppTypeRegistry>,
 }
 
 impl ImmediateAttach<CapsPanel> for SceneryProperties {
@@ -194,6 +196,7 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
     /// the rest. The exemplar holds its aspects.
     fn construct(ui: &mut Imm<CapsPanel>, params: &mut SceneryPropertiesParams) {
         let edits = params.edits.as_mut();
+        let registry = params.registry.read();
         let Some(((exemplar, fields), aspects)) = params.inspected.values.split_first() else {
             return;
         };
@@ -242,7 +245,16 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                                     ScrollbarGutter(px(14)),
                                 )
                             })
-                            .add(|ui| scrolled_rows(ui, exemplar, fields.as_ref(), aspects, edits));
+                            .add(|ui| {
+                                scrolled_rows(
+                                    ui,
+                                    exemplar,
+                                    fields.as_ref(),
+                                    aspects,
+                                    &registry,
+                                    edits,
+                                )
+                            });
                     });
             });
     }
@@ -270,6 +282,7 @@ fn scrolled_rows(
     exemplar: &Arc<dyn PropertyRoot>,
     fields: &dyn PartialReflect,
     aspects: &[(Arc<dyn PropertyRoot>, Box<dyn PartialReflect>)],
+    registry: &TypeRegistry,
     edits: &mut PropertyEdits,
 ) {
     let rows = ui
@@ -289,9 +302,9 @@ fn scrolled_rows(
             )
         })
         .add(|ui| {
-            root_rows(ui, exemplar, fields, edits);
+            root_rows(ui, exemplar, fields, registry, edits);
             for (root, value) in aspects {
-                root_pane(ui, root, value.as_ref(), edits);
+                root_pane(ui, root, value.as_ref(), registry, edits);
             }
         });
     let target = rows.entity();

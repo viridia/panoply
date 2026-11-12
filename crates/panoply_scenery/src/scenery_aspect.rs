@@ -1,4 +1,4 @@
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::{annotations::Step, platform::collections::HashMap, prelude::*};
 use panoply_core::HexColor;
 use panoply_exemplar::*;
 use serde::{Deserialize, Serialize};
@@ -31,6 +31,7 @@ pub struct ModelComponent {
     pub z_rotation_variance: Option<f32>,
 
     /// Model translation from tile center.
+    #[reflect(@Step(0.05))]
     pub offset: Option<Vec3>,
 
     /// Model scale.
@@ -122,9 +123,11 @@ impl Aspect for SceneryMarks {
 #[reflect(Aspect, Default)]
 pub struct LightSource {
     /// Position of the effect relative to the fixture or wall.
+    #[reflect(@Step(0.05))]
     offset: Option<Vec3>,
 
     /// Radius of point light (max distance).
+    #[reflect(@Step(0.05))]
     radius: Option<f32>,
 
     /// Color of the light.

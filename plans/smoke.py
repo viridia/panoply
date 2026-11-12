@@ -13,8 +13,10 @@
   Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play;
   its rotate buttons wait for a selected parcel, whose contour is drawn. A brush tool's cursor
   follows the pointer over that parcel and stays on its edge while dragged off it. Scenery mode
-  shows the chosen exemplar's properties, and a number typed there changes it, undoably; Save
-  writes that one line into its catalog (restored afterwards).
+  lists abstract exemplars too, and shows the chosen exemplar's properties: a number typed there
+  changes it, undoably, and Save writes that one line into its catalog (restored afterwards). A
+  text field edits on Enter and Escape reverts it; an optional field's × removes it and the
+  heading's menu adds one; each saves as its own line.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -36,6 +38,7 @@
 Settings start empty, so the panel starts hidden.
 """
 
+import difflib
 from pathlib import Path
 
 from bevy_remote_driver import Between
@@ -95,6 +98,7 @@ WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
 CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
+FURNISHINGS = ASSETS / "exemplars" / "furnishings.exem.json"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 
@@ -316,12 +320,16 @@ def scenery_panel(driver):
     # The filter box's × empties it, showing every wall again.
     driver.click("Exemplars/ClearFilter")
     driver.present("Exemplars/BasementWall")
-    # The actor tool lists actors, leaving out the abstract ones they extend.
+    # The actor tool lists actors, the abstract ones they extend too, so they can be edited.
     driver.click("PlaceActor")
     driver.present("Exemplars/Marcus", timeout=WAIT)
-    driver.absent("Exemplars/Proto.HumanoidMale")
+    driver.present("Exemplars/Proto.HumanoidMale")
     driver.absent("Exemplars/CottageWall")
     exemplar_properties(driver)
+    text_property(driver)
+    driver.click("PlaceFixture")
+    optional_property(driver)
+    driver.click("Exemplars/ClearFilter")
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
     driver.click("PlaceWall")
@@ -389,6 +397,106 @@ def exemplar_properties(driver):
     finally:
         CHARACTERS.write_bytes(original)
     driver.click("Exemplars/ClearFilter")
+
+
+def text_property(driver):
+    """A text field's edit is made when Enter commits it; Escape puts the text back, editing
+    nothing. Saved, the edit is that one line."""
+    choose(driver, "actor", "SergeantStone")
+    skin = "Properties/Skin/input"
+    old = "characters/humanoid-male.glb#WithCoatHeavy"
+    new = "characters/humanoid-male.glb#WithRobe"
+    retype(driver, skin, "not a skin")
+    driver.key("Escape")
+    driver.frames(2)
+    expect_disabled(driver, "Save", True)
+    retype(driver, skin, new)
+    driver.key("Enter")
+    expect_disabled(driver, "Save", False)
+    driver.click("Exemplars/SergeantStone")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set Skin")
+    undo(driver, redo=True)
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/SergeantStone",
+        [f'-      "Skin": "{old}",', f'+      "Skin": "{new}",'],
+    )
+
+
+def optional_property(driver):
+    """An optional field's × removes it and the heading's menu adds it back, with its type's
+    default; each undoes. Saved, the removal is that key's line."""
+    choose(driver, "fixture", "CandleHolder")
+    radius = "Properties/LightSource/radius/input"
+    driver.expect(radius, NUMERIC, {"F32": 2.0})
+    driver.screenshot("optional_property")
+    driver.click("Properties/LightSource/radius/remove")
+    driver.absent(radius)
+    driver.click("Exemplars/CandleHolder")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Remove LightSource.radius")
+    driver.expect(radius, NUMERIC, {"F32": 2.0})
+    # `intensity` is absent: the menu adds it at its default.
+    intensity = "Properties/LightSource/intensity/input"
+    driver.absent(intensity)
+    driver.click("Properties/LightSource/add")
+    driver.screenshot("optional_property_menu")
+    driver.click("Properties/LightSource/add_intensity")
+    driver.expect(intensity, NUMERIC, {"F32": 0.0})
+    driver.click("Exemplars/CandleHolder")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add LightSource.intensity")
+    driver.absent(intensity)
+    driver.click("Properties/LightSource/radius/remove")
+    driver.absent(radius)
+    saved_diff(driver, FURNISHINGS, "Exemplars/CandleHolder", ['-        "radius": 2,'])
+
+
+def choose(driver, tool, name):
+    """Chooses the exemplar `name` in the current tool's list, through its filter."""
+    driver.click("Exemplars/ClearFilter")
+    driver.click("Exemplars/Filter")
+    driver.type(name)
+    driver.click(f"Exemplars/{name}")
+    expect_choice(driver, tool, name)
+
+
+def retype(driver, selector, text):
+    """Replaces the text in the text input `selector` with `text`."""
+    driver.click(selector)
+    driver.key("End")
+    for _ in range(60):
+        driver.key("Backspace")
+    driver.type(text)
+
+
+def saved_diff(driver, catalog, row, expected):
+    """Saves, checks that `catalog` changed by the diff lines `expected` alone, then undoes the
+    edit, choosing `row` to take the keys, and saves again, leaving the file as it was. The
+    original goes back however the checks end."""
+    original = catalog.read_text()
+    try:
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        changed = [
+            line
+            for line in difflib.unified_diff(
+                original.splitlines(), catalog.read_text().splitlines(), lineterm="", n=0
+            )
+            if line[:1] in "+-" and line[:3] not in ("+++", "---")
+        ]
+        assert changed == expected, changed
+        driver.click(row)
+        undo(driver)
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert catalog.read_text() == original, "saving the undone edit changed the catalog"
+    finally:
+        catalog.write_text(original)
 
 
 def expect_choice(driver, tool, expected):
