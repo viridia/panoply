@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D76.**
+**Next: D77.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -592,3 +592,10 @@ never reused.
   lost focus". Bevy's text input reports only keystrokes, and an edit per keystroke would rebuild
   instances for every half-typed path. The module holds no Panoply types, so when Bevy commits text
   itself, it goes. Reversing it means each widget handling Enter and focus on its own. (PAN28c)
+- **D76** A property root lends its value to the edit (`PropertyRoot::modify`) rather than writing
+  values itself, and the editor makes every kind of edit in one place (`EditOp`): a write, an item
+  put into a list, an item taken out, each returning the edit that undoes it. Bevy's `apply` never
+  shortens a list, so a list needs edits of its own, and with the operations in one place each new
+  root (an instance, a nav point) gets them all by lending its value. A variant switch is a write of
+  the whole enum, built from the fields the variants share and the rest's defaults. Reversing it
+  means every root implementing every operation. (PAN28f)

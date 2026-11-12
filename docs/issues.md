@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I39.**
+**Next: I41.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -122,3 +122,14 @@ confirmed by running something or only by reading. Numbers are never reused.
   already slows a drag tenfold. Candidates upstream: a factor near 0.1 to 0.25 for a stepped input,
   or a drag speed the input can be given. Panoply cannot set it meanwhile (`DragState` is set as the
   drag starts). Seen by the author; the rate read in the code.
+- **I39** Feathers' number input chevrons stick on some values of an `f32` input snapped to its
+  step: `step_snapped_f64` (`number_input.rs`) allows 1e-9 of a step for rounding, and an `f32`
+  widened to `f64` is off by about 1e-7 relative. 0.35f32 is 0.3499999940, 6.9999999 steps of 0.05,
+  so the next multiple up is 7 steps, 0.35 again; 0.3f32 going down stays at 0.3 the same way. The
+  fix upstream: a tolerance for the value's format (near 1e-6 relative for `F32`), with a test
+  stepping `0.35f32`. Meanwhile the property editor gives the input an `f32` field as the `f64` of
+  its shortest decimal (`shown_f32`, `TODO(I39)`). Seen by the author on collider dimensions; the
+  arithmetic reproduced in Python.
+- **I40** The property editor's nested values need a design pass on their look and composition, as
+  seen in a collider list (items, each a struct holding an enum holding a `Vec3`); the panel works,
+  the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`).

@@ -56,8 +56,9 @@ fn exemplar_json(
 /// Writes into `original` the changes from `base` to `new`. An object's key that `new` dropped, or
 /// changed to `null` (a field now `None`, which the file leaves out), is removed, one it added is
 /// inserted, and one whose value changed is merged in turn, so the keys `original` holds that
-/// neither knows are kept. Arrays of one length merge item by item, for the same reason; anything
-/// else that changed is replaced.
+/// neither knows are kept. Arrays merge item by item for the same reason, an item put in or taken
+/// out found by the items that did not change before and after it. Anything else that changed is
+/// replaced, leaving out its `null` fields.
 pub fn merge(original: &mut Value, base: &Value, new: &Value) {
     if base == new {
         return;
@@ -76,7 +77,7 @@ pub fn merge(original: &mut Value, base: &Value, new: &Value) {
                         original.shift_remove(key);
                     }
                     (Some(was), Some(written)) => merge(written, was, value),
-                    (_, Some(written)) => *written = value.clone(),
+                    (_, Some(written)) => *written = without_nulls(value),
                     (_, None) => {
                         // Where the type puts it: after the nearest key before it in `new` that
                         // the file has, so a field removed and added back returns to its place.
@@ -86,19 +87,54 @@ pub fn merge(original: &mut Value, base: &Value, new: &Value) {
                             .filter_map(|earlier| original.keys().position(|had| had == earlier))
                             .last()
                             .map_or(0, |index| index + 1);
-                        original.shift_insert(index, key.clone(), value.clone());
+                        original.shift_insert(index, key.clone(), without_nulls(value));
                     }
                 }
             }
         }
         (Value::Array(original), Value::Array(base), Value::Array(new))
-            if original.len() == base.len() && base.len() == new.len() =>
+            if original.len() == base.len() =>
         {
-            for ((written, was), value) in original.iter_mut().zip(base).zip(new) {
-                merge(written, was, value);
-            }
+            merge_items(original, base, new)
         }
-        (original, _, new) => *original = new.clone(),
+        (original, _, new) => *original = without_nulls(new),
+    }
+}
+
+/// Merges arrays item by item: the items alike in `base` and `new` at the start and at the end
+/// stay as `original` has them, and between them each item merges with the one at its place,
+/// `new`'s extra items going in and `base`'s extra items coming out. One item put in or taken
+/// out, as the editor's edits do, leaves every other item as the file had it.
+fn merge_items(original: &mut Vec<Value>, base: &[Value], new: &[Value]) {
+    let shorter = base.len().min(new.len());
+    let head = (0..shorter).take_while(|&i| base[i] == new[i]).count();
+    let tail = (0..shorter - head)
+        .take_while(|&i| base[base.len() - 1 - i] == new[new.len() - 1 - i])
+        .count();
+    let (was, now) = (&base[head..base.len() - tail], &new[head..new.len() - tail]);
+    let paired = was.len().min(now.len());
+    for i in 0..paired {
+        merge(&mut original[head + i], &was[i], &now[i]);
+    }
+    let at = head + paired;
+    original.splice(
+        at..at + (was.len() - paired),
+        now[paired..].iter().map(without_nulls),
+    );
+}
+
+/// `value` with every object's `null` fields left out, as the file leaves out `None`.
+fn without_nulls(value: &Value) -> Value {
+    match value {
+        Value::Object(object) => Value::Object(
+            object
+                .iter()
+                .filter(|(_, value)| !value.is_null())
+                .map(|(key, value)| (key.clone(), without_nulls(value)))
+                .collect(),
+        ),
+        Value::Array(items) => Value::Array(items.iter().map(without_nulls).collect()),
+        other => other.clone(),
     }
 }
 
@@ -230,6 +266,51 @@ mod tests {
         let base = json!({ "use": [[0, 1, 0]] });
         let new = json!({ "use": [[0, 1, 0], [1, 1, 0]] });
         assert_eq!(merged(original, base, new.clone()), new);
+    }
+
+    #[test]
+    fn an_item_put_in_leaves_the_others_as_they_were() {
+        let original = json!([{ "a": 1, "margin": 0.2 }, { "a": 2, "margin": 0.3 }]);
+        let base = json!([{ "a": 1 }, { "a": 2 }]);
+        let new = json!([{ "a": 1 }, { "a": 5, "offset": null }, { "a": 2 }]);
+        assert_eq!(
+            merged(original, base, new),
+            json!([{ "a": 1, "margin": 0.2 }, { "a": 5 }, { "a": 2, "margin": 0.3 }])
+        );
+    }
+
+    #[test]
+    fn an_item_taken_out_leaves_the_others_as_they_were() {
+        let original = json!([{ "a": 1, "m": 1 }, { "a": 2, "m": 2 }, { "a": 3, "m": 3 }]);
+        let base = json!([{ "a": 1 }, { "a": 2 }, { "a": 3 }]);
+        let new = json!([{ "a": 1 }, { "a": 3 }]);
+        assert_eq!(
+            merged(original, base, new),
+            json!([{ "a": 1, "m": 1 }, { "a": 3, "m": 3 }])
+        );
+    }
+
+    #[test]
+    fn an_item_taken_out_and_another_edited_merge_together() {
+        let original = json!([{ "a": 1, "m": 1 }, { "a": 2, "m": 2 }, { "a": 3, "m": 3 }]);
+        let base = json!([{ "a": 1 }, { "a": 2 }, { "a": 3 }]);
+        let new = json!([{ "a": 9 }, { "a": 3 }]);
+        assert_eq!(
+            merged(original, base, new),
+            json!([{ "a": 9, "m": 1 }, { "a": 3, "m": 3 }])
+        );
+    }
+
+    #[test]
+    fn a_changed_variant_writes_its_own_fields() {
+        let original = json!({ "shape": "box", "half_extents": [1, 1, 1], "margin": 0.2 });
+        let base = json!({ "shape": "box", "half_extents": [1, 1, 1], "offset": null });
+        let new = json!({ "shape": "cylinder", "radius": 0, "half_height": 0, "offset": null });
+        let merged = merged(original, base, new);
+        assert_eq!(
+            merged,
+            json!({ "shape": "cylinder", "margin": 0.2, "radius": 0, "half_height": 0 })
+        );
     }
 
     #[test]

@@ -115,14 +115,13 @@ impl PropertyRoot for ExemplarRoot {
         }))
     }
 
-    fn set(
+    fn modify(
         &self,
         _world: &mut World,
-        path: &str,
-        _value: &dyn PartialReflect,
-    ) -> Result<Box<dyn PartialReflect>, BevyError> {
+        _change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError> {
         // TODO(PAN28d): the exemplar's own fields become editable.
-        Err(format!("{path} cannot be edited").into())
+        Err("the exemplar's own fields cannot be edited".into())
     }
 }
 

@@ -1,7 +1,10 @@
 //! Physics colliders for scenery elements.
 use std::f32::consts::FRAC_PI_2;
 
-use bevy::prelude::*;
+use bevy::{
+    annotations::{DisplayName, Step},
+    prelude::*,
+};
 use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics, ToRapier};
 use panoply_exemplar::Exemplar;
 use rapier3d::prelude::{
@@ -16,17 +19,52 @@ use crate::{
     WALL_TYPE,
 };
 
-#[derive(Debug, Default, Reflect, Clone, PartialEq, Serialize, Deserialize)]
+/// A collider's shape and its dimensions, which differ by shape. Every shape but the ellipsoid
+/// rests on the descriptor's `offset`, the center of its base.
+#[derive(Debug, Reflect, Clone, PartialEq, Serialize, Deserialize)]
 #[reflect(Default, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "shape", rename_all = "snake_case")]
 pub enum ColliderShape {
-    #[default]
-    Box,
-    Rbox,
-    Sphere,
-    Ellipsoid,
-    Ramp,
-    Cylinder,
+    Box {
+        #[reflect(@Step(0.05))]
+        half_extents: Vec3,
+    },
+    /// A box with rounded edges, built as a plain box for now.
+    Rbox {
+        #[reflect(@Step(0.05))]
+        half_extents: Vec3,
+    },
+    Sphere {
+        #[reflect(@Step(0.05))]
+        radius: f32,
+    },
+    /// Centered on the offset, not resting on it.
+    Ellipsoid {
+        #[reflect(@Step(0.05))]
+        radii: Vec3,
+    },
+    /// A wedge in a box of these half extents: the floor of the box, rising to its top at +z.
+    Ramp {
+        #[reflect(@Step(0.05))]
+        half_extents: Vec3,
+        /// Quarter turns about y, relative to the element.
+        #[serde(default)]
+        facing: f32,
+    },
+    Cylinder {
+        #[reflect(@Step(0.05))]
+        radius: f32,
+        #[reflect(@Step(0.05))]
+        half_height: f32,
+    },
+}
+
+impl Default for ColliderShape {
+    fn default() -> Self {
+        Self::Box {
+            half_extents: Vec3::new(0.5, 1., 0.5),
+        }
+    }
 }
 
 #[derive(Debug, Reflect, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -47,16 +85,16 @@ pub enum ColliderType {
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Default, Serialize, Deserialize)]
 pub struct ColliderDesc {
+    #[serde(flatten)]
     pub shape: ColliderShape,
 
-    #[serde(default)]
-    pub r#type: ColliderType,
+    /// Named `type` in a catalog. Not `r#type` here: a reflect path reads `#` as a field index.
+    #[serde(rename = "type", default, skip_serializing_if = "is_solid")]
+    #[reflect(@DisplayName("type"))]
+    pub kind: ColliderType,
 
-    pub size: Option<Vec3>, // Note that for spheres, only y is used.
+    #[reflect(@Step(0.05))]
     pub offset: Option<Vec3>,
-
-    // Direction facing (0-3) relative to wall tile.
-    pub facing: Option<f32>,
 
     /** Whether this collider receives mouse events. */
     pub pickable: Option<bool>,
@@ -76,36 +114,39 @@ pub struct ColliderDesc {
     pub margin: Option<f32>,
 }
 
-/// Half-extents when a descriptor has no size.
-const DEFAULT_SIZE: Vec3 = Vec3::new(0.5, 1., 0.5);
+/// Whether a collider is the default type, which a catalog leaves out.
+fn is_solid(kind: &ColliderType) -> bool {
+    *kind == ColliderType::Solid
+}
 
 impl ColliderDesc {
     /// The shape and its pose relative to the element, placed as faery's `createCollider.ts`
-    /// placed it, since the content was authored against that: `size` holds half-extents and
-    /// `offset` the bottom center, so shapes other than ellipsoids are raised by their
-    /// half-height; the offset turns with the element; only ramps turn by `facing`. `None` for
-    /// descriptors that are not static solids (doors, sensors, hints, markers and the rest come
-    /// with the features that use them) and for hulls that fail.
+    /// placed it, since the content was authored against that: `offset` is the bottom center, so
+    /// shapes other than ellipsoids are raised by their half-height; the offset turns with the
+    /// element. `None` for descriptors that are not static solids (doors, sensors, hints, markers
+    /// and the rest come with the features that use them) and for hulls that fail.
     pub fn shape(&self) -> Option<(SharedShape, Pose)> {
-        if self.r#type != ColliderType::Solid || self.animation.is_some() {
+        if self.kind != ColliderType::Solid || self.animation.is_some() {
             return None;
         }
-        let size = self.size.unwrap_or(DEFAULT_SIZE);
         let offset = self.offset.unwrap_or_default();
         let mut rotation = Quat::IDENTITY;
         let (shape, lift) = match self.shape {
-            ColliderShape::Box | ColliderShape::Rbox => {
+            ColliderShape::Box { half_extents: size } | ColliderShape::Rbox { half_extents: size } => {
                 (SharedShape::cuboid(size.x, size.y, size.z), size.y)
             }
-            ColliderShape::Cylinder => (SharedShape::cylinder(size.y, size.x), size.y),
-            ColliderShape::Sphere => {
-                let radius = size.max_element();
-                (SharedShape::ball(radius), radius)
-            }
-            ColliderShape::Ellipsoid => (convex_hull(ellipsoid_points(size))?, 0.),
-            ColliderShape::Ramp => {
-                rotation = Quat::from_rotation_y(self.facing.unwrap_or(0.) * FRAC_PI_2);
-                (convex_hull(ramp_points(size))?, size.y)
+            ColliderShape::Cylinder {
+                radius,
+                half_height,
+            } => (SharedShape::cylinder(half_height, radius), half_height),
+            ColliderShape::Sphere { radius } => (SharedShape::ball(radius), radius),
+            ColliderShape::Ellipsoid { radii } => (convex_hull(ellipsoid_points(radii))?, 0.),
+            ColliderShape::Ramp {
+                half_extents,
+                facing,
+            } => {
+                rotation = Quat::from_rotation_y(facing * FRAC_PI_2);
+                (convex_hull(ramp_points(half_extents))?, half_extents.y)
             }
         };
         Some((
@@ -208,5 +249,36 @@ pub fn build_se_colliders(
             realm: precinct.realm,
             handles,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_shape_is_a_key_beside_its_dimensions() {
+        let text = r#"{"shape":"ramp","half_extents":[1,0.5,1],"facing":2,"offset":[0,0,1]}"#;
+        let desc: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert_eq!(
+            desc.shape,
+            ColliderShape::Ramp {
+                half_extents: Vec3::new(1., 0.5, 1.),
+                facing: 2.,
+            }
+        );
+        let written = serde_json::to_value(&desc).unwrap();
+        assert_eq!(written["shape"], "ramp");
+        assert_eq!(written["facing"], 2.0);
+        // A solid collider, the default, leaves its type out.
+        assert!(written.get("type").is_none());
+    }
+
+    #[test]
+    fn the_type_is_read_and_written_as_type() {
+        let text = r#"{"shape":"box","half_extents":[1,1,1],"type":"door"}"#;
+        let desc: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert_eq!(desc.kind, ColliderType::Door);
+        assert_eq!(serde_json::to_value(&desc).unwrap()["type"], "door");
     }
 }

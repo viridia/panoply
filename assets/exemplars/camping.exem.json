@@ -10,7 +10,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 0.27, 0.5]
+          "radius": 0.4,
+          "half_height": 0.27
         }
       ]
     }
@@ -26,7 +27,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 0.27, 0.5]
+          "radius": 0.4,
+          "half_height": 0.27
         }
       ]
     }
@@ -42,7 +44,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 0.27, 0.5]
+          "radius": 0.4,
+          "half_height": 0.27
         }
       ]
     }
@@ -58,7 +61,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 0.27, 0.5]
+          "radius": 0.4,
+          "half_height": 0.27
         }
       ]
     }
@@ -74,7 +78,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 0.27, 0.5]
+          "radius": 0.4,
+          "half_height": 0.27
         }
       ]
     }

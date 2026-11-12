@@ -11,7 +11,7 @@
         {
           "shape": "box",
           "offset": [0.35, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -28,7 +28,7 @@
         {
           "shape": "box",
           "offset": [0.35, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -45,7 +45,7 @@
         {
           "shape": "box",
           "offset": [0.35, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -62,12 +62,12 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.35],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.35, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -84,12 +84,12 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.35],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.35, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -106,7 +106,8 @@
         {
           "shape": "cylinder",
           "offset": [0.45, 0, 0.45],
-          "size": [0.25, 1, 0.15]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }

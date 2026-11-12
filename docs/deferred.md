@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X102.**
+**Next: X103.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -567,3 +567,8 @@ dropped, not deferred. Numbers are never reused.
 - **X101** Gizmos in the view for the field being edited, such as a collider's box or an offset's
   point, dragged to fit the visible mesh, where today the numbers are nudged in the panel. *Gate:*
   the property editor has a selected field, which a gizmo would follow.
+- **X102** A collider switched to another shape starts the dimensions it does not share at their
+  types' default, 0, so a box made a sphere has no size, and the physics drawing shows nothing of
+  it. Candidates: dimension newtypes with sizable defaults (`Radius`, `HalfExtents`, D45), judged
+  clutter for now; or marking a collider of no size where colliders are drawn. *Gate:* the editor
+  draws colliders itself (X101, or I12's retained gizmos).

@@ -22,28 +22,31 @@ use bevy::{
         constants::{fonts, icons, size},
         containers::{subpane, subpane_body, subpane_header},
         controls::{
-            ButtonVariant, ColorInputValue, FeathersCheckbox, FeathersColorInput, FeathersMenu,
-            FeathersMenuItem, FeathersMenuPopup, FeathersMenuToolButton, FeathersNumberInput,
-            FeathersTextInput, FeathersTextInputContainer, FeathersToolButton, HardLimit,
-            NumberInputSnapToStep, NumberInputStep,
+            ButtonVariant, ColorInputValue, FeathersCheckbox, FeathersColorInput,
+            FeathersListRow, FeathersMenu, FeathersMenuItem, FeathersMenuPopup,
+            FeathersMenuToolButton, FeathersNumberInput, FeathersSelect, FeathersTextInput,
+            FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputSnapToStep,
+            NumberInputStep, OptionIndex,
         },
-        display::{icon, label},
-        theme::{ThemeTextColor, ThemeToken, ThemedText},
+        display::{caption as option_caption, icon, label},
+        theme::{ThemeBorderColor, ThemeTextColor, ThemeToken, ThemedText},
         tokens,
     },
     input_focus::InputFocus,
     prelude::*,
     reflect::{
         attributes::CustomAttributes,
-        enums::{DynamicEnum, DynamicVariant, VariantInfo},
+        enums::{DynamicEnum, DynamicVariant, Enum, VariantInfo, VariantType},
         std_traits::ReflectDefault,
+        structs::DynamicStruct,
         tuple::DynamicTuple,
         ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
     },
     text::FontSourceTemplate,
+    ui::Selected,
     ui_widgets::{
         popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
-        NumericRange, ValueChange,
+        NumericRange, SetSelected, ValueChange,
     },
 };
 use bevy_immediate::{
@@ -93,8 +96,26 @@ impl_capability_set!(
         color_plane::CapabilityUiColorPlane,
         CapabilityColorInput,
         CapabilityTextCommit,
+        CapabilityEnumSelect,
     )
 );
+
+/// Lets the panel read and clear an enum select's [`PickedVariant`].
+pub struct CapabilityEnumSelect;
+
+impl ImmCapability for CapabilityEnumSelect {
+    fn build<Caps: CapSet>(app: &mut App, cap_req: &mut ImmCapAccessRequests<Caps>) {
+        cap_req.request_component_write::<PickedVariant>(app.world_mut());
+    }
+}
+
+/// On an enum's select: the variant the user last picked, until the panel takes it, and the
+/// variant the select shows.
+#[derive(Component)]
+pub struct PickedVariant {
+    picked: Option<usize>,
+    shown: usize,
+}
 
 /// Lets the panel bind a feathers color input: read the color it shows, and take the color the
 /// user last picked.
@@ -189,6 +210,8 @@ pub fn root_pane(
                     bsn! { Text({caption.clone()}) ThemeTextColor(HEADER_TEXT) }
                 });
                 rows.add_menu(ui, value, "");
+                let (inner, path) = through_newtypes(value, String::new());
+                rows.add_item_button(ui, inner, &path);
             });
             ui.ch()
                 .on_spawn_apply_scene(subpane_body)
@@ -239,15 +262,18 @@ impl Rows<'_> {
     fn add_or_remove(&mut self, path: &str, option: &TypeInfo, add: bool) {
         let kind = if add { EditKind::Add } else { EditKind::Remove };
         match option_value(self.registry, option, add) {
-            Some(value) => self.edits.push(self.root, path.to_string(), kind, value),
+            Some(value) => self.edits.push(self.root, path.to_string(), kind, Some(value)),
             None => error!("Cannot make a {} value", option.type_path()),
         }
     }
 
-    /// The rows of the root's value: a struct's fields, or another value's one row.
+    /// The rows of the root's value: a struct's fields, a list's items (through newtypes), or
+    /// another value's one row.
     fn root(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect) {
-        match value.reflect_ref() {
-            ReflectRef::Struct(_) => self.fields(ui, value, ""),
+        let (inner, path) = through_newtypes(value, String::new());
+        match (value.reflect_ref(), inner.reflect_ref()) {
+            (ReflectRef::Struct(_), _) => self.fields(ui, value, ""),
+            (_, ReflectRef::List(_)) => self.items(ui, inner, &path),
             _ => self.row(
                 ui,
                 short_type_name(value),
@@ -299,7 +325,7 @@ impl Rows<'_> {
                     bsn! {
                         @FeathersMenuToolButton {
                             @caption: bsn! {
-                                @icon("editor/icons/add_box.png") Node { height: px(18) }
+                                @icon(ADD_ICON) Node { height: px(18) }
                             },
                             @arrow: false,
                         }
@@ -405,13 +431,22 @@ impl Rows<'_> {
                 self.set(&path, edited);
             }
         } else if let Some(&number) = value.try_downcast_ref::<f32>() {
-            self.number_row(row, caption, attrs, number, &path, remove);
+            let shown = shown_f32(number);
+            if let Some(edited) = self.number_row(row, caption, attrs, shown, remove) {
+                self.set(&path, edited as f32);
+            }
         } else if let Some(&number) = value.try_downcast_ref::<f64>() {
-            self.number_row(row, caption, attrs, number, &path, remove);
+            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+                self.set(&path, edited);
+            }
         } else if let Some(&number) = value.try_downcast_ref::<i32>() {
-            self.number_row(row, caption, attrs, number, &path, remove);
+            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+                self.set(&path, edited);
+            }
         } else if let Some(&number) = value.try_downcast_ref::<i64>() {
-            self.number_row(row, caption, attrs, number, &path, remove);
+            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+                self.set(&path, edited);
+            }
         } else if let Some(&vector) = value.try_downcast_ref::<Vec3>() {
             self.vec3_row(row, caption, attrs, vector, &path, remove);
         } else if let Some(&color) = value.try_downcast_ref::<HexColor>() {
@@ -424,6 +459,24 @@ impl Rows<'_> {
             if let Some(edited) = text_row(row, caption, text, remove) {
                 self.set(&path, edited);
             }
+        } else if let ReflectRef::Enum(_) = value.reflect_ref() {
+            self.enum_row(row, caption, value, &path, remove);
+        } else if let ReflectRef::List(_) = value.reflect_ref() {
+            row.on_spawn_insert(move || (Name::new(caption), heading_node()))
+                .add(|ui| {
+                    ui.ch().on_spawn_insert(caption_line).add(|ui| {
+                        ui.ch().on_spawn_apply_scene(move || {
+                            heading_text(caption, tokens::TEXT_MAIN)
+                        });
+                        ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                            self.add_item_button(ui, value, &path);
+                            remove_button(ui, remove);
+                        });
+                    });
+                    ui.ch().on_spawn_apply_scene(indented_node).add(|ui| {
+                        self.items(ui, value, &path);
+                    });
+                });
         } else if let ReflectRef::Struct(_) = value.reflect_ref() {
             row.on_spawn_insert(move || (Name::new(caption), heading_node()))
                 .add(|ui| {
@@ -436,7 +489,7 @@ impl Rows<'_> {
                             remove_button(ui, remove);
                         });
                     });
-                    ui.ch().on_spawn_insert(indented_node).add(|ui| {
+                    ui.ch().on_spawn_apply_scene(indented_node).add(|ui| {
                         self.fields(ui, value, &path);
                     });
                 });
@@ -445,16 +498,16 @@ impl Rows<'_> {
         }
     }
 
-    /// A number input captioned inside, named `input` so plans can read its value.
+    /// A number input captioned inside, named `input` so plans can read its value. Returns the
+    /// number edited in it, if it changed.
     fn number_row<T: NumberField>(
         &mut self,
         row: ImmEntity<CapsPanel>,
         caption: &'static str,
         attrs: &CustomAttributes,
         value: T,
-        path: &str,
         remove: Option<&mut bool>,
-    ) {
+    ) -> Option<T> {
         let look = NumberLook::from_attributes::<T>(attrs);
         let mut edited = value;
         row.on_spawn_insert(move || (Name::new(caption), widget_line()))
@@ -469,9 +522,7 @@ impl Rows<'_> {
                 );
                 remove_button(ui, remove);
             });
-        if edited != value {
-            self.set(path, edited);
-        }
+        (edited != value).then_some(edited)
     }
 
     /// Three number inputs on one line, labeled X, Y and Z beside their axes' colored sigils,
@@ -485,15 +536,17 @@ impl Rows<'_> {
         path: &str,
         remove: Option<&mut bool>,
     ) {
-        let look = NumberLook::from_attributes::<f32>(attrs);
-        let mut edited = value;
+        let look = NumberLook::from_attributes::<f64>(attrs);
+        let shown = value.to_array().map(shown_f32);
+        let mut edited = shown;
         row.on_spawn_insert(move || row_node(caption)).add(|ui| {
             ui.ch().on_spawn_apply_scene(move || label(caption));
             ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                let [x, y, z] = &mut edited;
                 let axes = [
-                    ("x", "X", tokens::TEXT_INPUT_X_AXIS, &mut edited.x),
-                    ("y", "Y", tokens::TEXT_INPUT_Y_AXIS, &mut edited.y),
-                    ("z", "Z", tokens::TEXT_INPUT_Z_AXIS, &mut edited.z),
+                    ("x", "X", tokens::TEXT_INPUT_X_AXIS, x),
+                    ("y", "Y", tokens::TEXT_INPUT_Y_AXIS, y),
+                    ("z", "Z", tokens::TEXT_INPUT_Z_AXIS, z),
                 ];
                 for (name, label, sigil, component) in axes {
                     number_input(
@@ -508,15 +561,310 @@ impl Rows<'_> {
                 remove_button(ui, remove);
             });
         });
-        for (axis, old, new) in [
-            ("x", value.x, edited.x),
-            ("y", value.y, edited.y),
-            ("z", value.z, edited.z),
-        ] {
+        for ((axis, old), new) in ["x", "y", "z"].into_iter().zip(shown).zip(edited) {
             if new != old {
-                self.set(&format!("{path}.{axis}"), new);
+                self.set(&format!("{path}.{axis}"), new as f32);
             }
         }
+    }
+
+    /// The rows of the items of `value`, a list at `path`, captioned "Item 1" and on, each with a
+    /// × that removes it.
+    fn items(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+        let ReflectRef::List(list) = value.reflect_ref() else {
+            return;
+        };
+        let mut removed = None;
+        for (index, item) in list.iter().enumerate() {
+            let mut remove = false;
+            self.row(
+                ui,
+                item_caption(index),
+                &CustomAttributes::default(),
+                item,
+                format!("{path}[{index}]"),
+                Some(&mut remove),
+            );
+            if remove {
+                removed = Some(index);
+            }
+        }
+        if let Some(index) = removed {
+            let kind = EditKind::RemoveItem(index);
+            self.edits.push(self.root, path.to_string(), kind, None);
+        }
+    }
+
+    /// If `value`, at `path`, is a list, a boxed plus, named `add_item`, that adds an item at its
+    /// end, its type's default.
+    fn add_item_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+        let (ReflectRef::List(list), Some(TypeInfo::List(info))) =
+            (value.reflect_ref(), value.get_represented_type_info())
+        else {
+            return;
+        };
+        if !icon_button(ui, "add_item", ADD_ICON, px(18), tokens::TEXT_MAIN) {
+            return;
+        }
+        let item = self
+            .registry
+            .get_type_data::<ReflectDefault>(info.item_ty().id())
+            .map(|default| default.default().into_partial_reflect());
+        match item {
+            Some(item) => {
+                let kind = EditKind::AddItem(list.len());
+                self.edits.push(self.root, path.to_string(), kind, Some(item));
+            }
+            None => error!("Cannot make a {} item", info.item_ty().path()),
+        }
+    }
+
+    /// A caption with a select of the variants of `value`, an enum at `path`; below it, the
+    /// fields of the variant chosen, set in. Picking another variant asks for it, carrying over
+    /// the fields of the same name and type.
+    fn enum_row(
+        &mut self,
+        row: ImmEntity<CapsPanel>,
+        caption: &'static str,
+        value: &dyn PartialReflect,
+        path: &str,
+        remove: Option<&mut bool>,
+    ) {
+        let (ReflectRef::Enum(current), Some(TypeInfo::Enum(info))) =
+            (value.reflect_ref(), value.get_represented_type_info())
+        else {
+            return;
+        };
+        let index = current.variant_index();
+        let mut picked = None;
+        row.on_spawn_insert(move || (Name::new(caption), heading_node()))
+            .add(|ui| {
+                ui.ch().on_spawn_insert(caption_line).add(|ui| {
+                    ui.ch().on_spawn_apply_scene(move || label(caption));
+                    ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                        picked = variant_select(ui, info.variant_names(), index);
+                        remove_button(ui, remove);
+                    });
+                });
+                if current.field_len() > 0 {
+                    // Keyed by variant, so another variant's fields get rows of their own.
+                    ui.ch_id(current.variant_name())
+                        .on_spawn_apply_scene(indented_node)
+                        .add(|ui| self.variant_fields(ui, current, info, path));
+                }
+            });
+        let Some(picked) = picked.filter(|&picked| picked != index) else {
+            return;
+        };
+        let name = info.variant_names()[picked];
+        match variant_value(self.registry, current, name) {
+            Some(value) => {
+                self.edits
+                    .push(self.root, path.to_string(), EditKind::Set, Some(value))
+            }
+            None => error!("Cannot make a {}::{name}", info.type_path()),
+        }
+    }
+
+    /// The rows of the fields of `value`'s variant, `value` an enum of type `info` at `path`.
+    fn variant_fields(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        value: &dyn Enum,
+        info: &bevy::reflect::enums::EnumInfo,
+        path: &str,
+    ) {
+        let Some(variant) = info.variant(value.variant_name()) else {
+            return;
+        };
+        for index in 0..value.field_len() {
+            let Some(field) = value.field_at(index) else {
+                continue;
+            };
+            let (caption, attrs, field_path) = match variant {
+                VariantInfo::Struct(variant) => {
+                    let Some(field_info) = variant.field_at(index) else {
+                        continue;
+                    };
+                    let name = field_info.name();
+                    (name, field_info.custom_attributes(), format!("{path}.{name}"))
+                }
+                VariantInfo::Tuple(variant) => {
+                    let Some(field_info) = variant.field_at(index) else {
+                        continue;
+                    };
+                    let caption = short_type_name(field);
+                    (caption, field_info.custom_attributes(), format!("{path}.{index}"))
+                }
+                VariantInfo::Unit(_) => return,
+            };
+            self.row(ui, caption, attrs, field, field_path, None);
+        }
+    }
+}
+
+/// An `f32` as the number input is given it: the `f64` of its shortest decimal, 0.35 rather than
+/// 0.3499999940395355, so the input's chevrons step off it.
+// TODO(I39): give the input the `f32` once feathers' chevrons allow for an `f32`'s error.
+fn shown_f32(value: f32) -> f64 {
+    value.to_string().parse().unwrap_or(value.into())
+}
+
+/// The boxed plus that adds a field or an item.
+const ADD_ICON: &str = "editor/icons/add_box.png";
+
+/// "Item 1", "Item 2" and on: a list item's caption, for its `index`. Each is made once and kept,
+/// since rows take their captions for good.
+fn item_caption(index: usize) -> &'static str {
+    static CAPTIONS: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
+    let mut captions = CAPTIONS.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    while captions.len() <= index {
+        let caption = format!("Item {}", captions.len() + 1);
+        captions.push(Box::leak(caption.into_boxed_str()));
+    }
+    captions[index]
+}
+
+/// `value` and its `path` within the root, or, while it is a newtype other than a color, its one
+/// field and that field's path.
+fn through_newtypes(value: &dyn PartialReflect, path: String) -> (&dyn PartialReflect, String) {
+    match newtype_field(value) {
+        Some(inner) if value.try_downcast_ref::<HexColor>().is_none() => {
+            through_newtypes(inner, format!("{path}.0"))
+        }
+        _ => (value, path),
+    }
+}
+
+/// The value of `current`'s enum type as its variant `name`: its fields carried over from
+/// `current` where it has one of the same name (or, in a tuple variant, place) and type, the rest
+/// their types' defaults. A real value of the type, built through `registry`.
+pub(crate) fn variant_value(
+    registry: &TypeRegistry,
+    current: &dyn Enum,
+    name: &str,
+) -> Option<Box<dyn PartialReflect>> {
+    let info = current.get_represented_type_info()?;
+    let variant = info.as_enum().ok()?.variant(name)?;
+    let field = |old: Option<&dyn PartialReflect>, type_id| -> Option<Box<dyn PartialReflect>> {
+        let same_type = |old: &&dyn PartialReflect| {
+            old.get_represented_type_info()
+                .is_some_and(|info| info.type_id() == type_id)
+        };
+        match old.filter(same_type) {
+            Some(old) => Some(old.reflect_clone().ok()?.into_partial_reflect()),
+            None => Some(
+                registry
+                    .get_type_data::<ReflectDefault>(type_id)?
+                    .default()
+                    .into_partial_reflect(),
+            ),
+        }
+    };
+    let dynamic = match variant {
+        VariantInfo::Unit(_) => DynamicVariant::Unit,
+        VariantInfo::Struct(variant) => {
+            let mut fields = DynamicStruct::default();
+            for info in variant.iter() {
+                let old = current.field(info.name());
+                fields.insert_boxed(info.name(), field(old, info.type_id())?);
+            }
+            DynamicVariant::Struct(fields)
+        }
+        VariantInfo::Tuple(variant) => {
+            let mut fields = DynamicTuple::default();
+            for (index, info) in variant.iter().enumerate() {
+                let old = (current.variant_type() == VariantType::Tuple)
+                    .then(|| current.field_at(index))
+                    .flatten();
+                fields.insert_boxed(field(old, info.type_id())?);
+            }
+            DynamicVariant::Tuple(fields)
+        }
+    };
+    let value = registry
+        .get(info.type_id())?
+        .data::<ReflectFromReflect>()?
+        .from_reflect(&DynamicEnum::new(name, dynamic))?;
+    Some(value.into_partial_reflect())
+}
+
+/// A select, named `select`, of the variants `names`, showing the one at `index`, each option
+/// named after its variant so plans can pick one. Returns the index of the variant picked.
+fn variant_select(
+    ui: &mut Imm<CapsPanel>,
+    names: &'static [&'static str],
+    index: usize,
+) -> Option<usize> {
+    let mut select = ui
+        .ch_id("select")
+        .on_spawn_insert(move || PickedVariant {
+            picked: None,
+            shown: index,
+        })
+        .on_spawn_observe(pick_variant)
+        .on_spawn_apply_scene(move || {
+            let rows: Vec<Box<dyn SceneList>> = names
+                .iter()
+                .enumerate()
+                .map(|(option, &name)| -> Box<dyn SceneList> {
+                    if option == index {
+                        bsn! { @FeathersListRow Selected OptionIndex(option) Name(name) Children [ @option_caption(name) ] }.into()
+                    } else {
+                        bsn! { @FeathersListRow OptionIndex(option) Name(name) Children [ @option_caption(name) ] }.into()
+                    }
+                })
+                .collect();
+            let rows: Box<dyn SceneList> = Box::new(rows);
+            bsn! { @FeathersSelect { @options: {rows} } #select Node { min_width: px(96) } }
+        });
+    let Ok(Some(mut state)) = select.cap_get_component_mut::<PickedVariant>() else {
+        return None;
+    };
+    let picked = state.picked.take();
+    if picked.is_none() && state.shown != index {
+        // Changed elsewhere, by undo: select the matching option.
+        state.shown = index;
+        let entity = select.entity();
+        select
+            .commands()
+            .queue(move |world: &mut World| show_variant(world, entity, index));
+    }
+    picked
+}
+
+/// Records the variant picked in an enum's select, for the panel to take on its next pass.
+fn pick_variant(
+    change: On<ValueChange<Entity>>,
+    options: Query<&OptionIndex>,
+    mut selects: Query<&mut PickedVariant>,
+) {
+    let (Ok(option), Ok(mut state)) = (
+        options.get(change.value),
+        selects.get_mut(change.event_target()),
+    ) else {
+        return;
+    };
+    state.picked = Some(option.0);
+    state.shown = option.0;
+}
+
+/// Selects the option for variant `index` in the enum select `select`.
+fn show_variant(world: &mut World, select: Entity, index: usize) {
+    let mut options = world.query::<(Entity, &OptionIndex)>();
+    let mut parents = world.query::<&ChildOf>();
+    let row = options.iter(world).find_map(|(row, option)| {
+        let mut ancestor = row;
+        while let Ok(parent) = parents.get(world, ancestor) {
+            ancestor = parent.parent();
+            if ancestor == select {
+                return (option.0 == index).then_some(row);
+            }
+        }
+        None
+    });
+    if let Some(row) = row {
+        world.trigger(SetSelected { entity: select, row });
     }
 }
 
@@ -766,14 +1114,18 @@ fn heading_node() -> Node {
     }
 }
 
-/// A nested struct's rows, set in a little from its heading. The step is small and the same at
-/// every depth, so nesting leaves the values most of the panel's width.
-fn indented_node() -> Node {
-    Node {
-        flex_direction: FlexDirection::Column,
-        row_gap: px(4),
-        padding: UiRect::left(px(8)),
-        ..default()
+/// A nested value's rows, set in a little from its heading behind a dim stripe, which shows how
+/// deep they are. The step is small and the same at every depth, so nesting leaves the values
+/// most of the panel's width.
+fn indented_node() -> impl Scene {
+    bsn! {
+        Node {
+            flex_direction: FlexDirection::Column,
+            row_gap: px(4),
+            border: UiRect::left(px(4)),
+            padding: UiRect::left(px(4)),
+        }
+        ThemeBorderColor(tokens::SUBPANE_HEADER_BORDER)
     }
 }
 
@@ -892,5 +1244,18 @@ fn color_input(ui: &mut Imm<CapsPanel>, color: &mut Color) {
         .map(|value| value.0);
     if shown != Some(*color) {
         input.entity_commands().insert(ColorInputValue(*color));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::shown_f32;
+
+    #[test]
+    fn an_f32_is_shown_as_its_decimal() {
+        assert_eq!(shown_f32(0.35), 0.35);
+        assert_eq!(shown_f32(0.3), 0.3);
+        assert_eq!(shown_f32(-1.5e-7), -1.5e-7);
+        assert_eq!(shown_f32(2.0), 2.0);
     }
 }

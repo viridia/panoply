@@ -1,13 +1,17 @@
 //! What the property editor edits, and how its edits are made. A [`PropertyRoot`] is where a value
 //! lives, named by a stable key (D49). The panel never writes a value: each widget emits a
-//! [`PropertyEdit`], a root, a path within it and the new value, and [`apply_property_edits`] makes
-//! the edits after the panel has run and records each in the undo history. Then
+//! [`PropertyEdit`], a root, a path within it and what to do there, and [`apply_property_edits`]
+//! makes the edits after the panel has run and records each in the undo history. Then
 //! [`InspectedValues`] takes a fresh copy of each value the panel shows, so the next frame's panel
-//! draws what the edits left. Only the panel's walk and the roots touch reflection.
+//! draws what the edits left. Only the panel's walk, the edits and the roots touch reflection.
 
 use std::{any::Any, borrow::Cow, sync::Arc};
 
-use bevy::{asset::AssetPath, prelude::*, reflect::GetPath};
+use bevy::{
+    asset::AssetPath,
+    prelude::*,
+    reflect::{ReflectMut, ReflectPath},
+};
 use panoply_exemplar::Exemplar;
 
 use crate::{
@@ -27,41 +31,121 @@ pub trait PropertyRoot: Any + Send + Sync {
     /// A copy of the value, or `None` if it is gone.
     fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>>;
 
-    /// Writes `value` at `path` within the value, in [`GetPath`] syntax, and returns the value it
-    /// replaced.
-    fn set(
+    /// Lends the value to `change`, keeping what it does unless it fails, and marks where the
+    /// value is kept as unsaved.
+    fn modify(
         &self,
         world: &mut World,
-        path: &str,
-        value: &dyn PartialReflect,
-    ) -> Result<Box<dyn PartialReflect>, BevyError>;
+        change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError>;
 }
 
-/// What an edit does, as the undo history names it. Each is a value written at a path: adding an
-/// optional field writes `Some` at its `Option`, and removing it writes `None`.
+/// What an edit does, as the undo history names it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EditKind {
+    /// A new value for a field, or a new variant for an enum.
     Set,
+    /// An optional field given its value: `Some` written at its `Option`.
     Add,
+    /// An optional field's value taken away: `None` written at its `Option`.
     Remove,
+    /// An item, its index given, put into a list.
+    AddItem(usize),
+    /// An item, its index given, taken out of a list.
+    RemoveItem(usize),
 }
 
 impl EditKind {
-    fn verb(self) -> &'static str {
+    /// The kind's words in the undo history, around the root's caption and the path.
+    fn label(self, field: &str) -> String {
         match self {
-            EditKind::Set => "Set",
-            EditKind::Add => "Add",
-            EditKind::Remove => "Remove",
+            EditKind::Set => format!("Set {field}"),
+            EditKind::Add => format!("Add {field}"),
+            EditKind::Remove => format!("Remove {field}"),
+            EditKind::AddItem(index) => format!("Add {field} item {}", index + 1),
+            EditKind::RemoveItem(index) => format!("Remove {field} item {}", index + 1),
         }
+    }
+
+    /// What the edit does to the value at its path, given `value` for a kind that writes or
+    /// inserts one.
+    fn op(self, value: Option<Box<dyn PartialReflect>>) -> Option<EditOp> {
+        Some(match self {
+            EditKind::Set | EditKind::Add | EditKind::Remove => EditOp::Write(value?),
+            EditKind::AddItem(index) => EditOp::Insert(index, value?),
+            EditKind::RemoveItem(index) => EditOp::Delete(index),
+        })
     }
 }
 
-/// An edit a widget asks for: `value` written at `path` within `root`'s value.
+/// What an edit does at its path, and what its undo does. Bevy's `apply` on a list never shortens
+/// it, so items are put in and taken out by edits of their own.
+enum EditOp {
+    /// Writes a value over the one at the path.
+    Write(Box<dyn PartialReflect>),
+    /// Puts an item into the list at the path, at an index.
+    Insert(usize, Box<dyn PartialReflect>),
+    /// Takes the item at an index out of the list at the path.
+    Delete(usize),
+}
+
+impl EditOp {
+    /// Does the edit to the value at `path` within `root`, and returns the edit that undoes it.
+    fn apply(&self, root: &mut dyn PartialReflect, path: &str) -> Result<EditOp, BevyError> {
+        let target = path
+            .reflect_element_mut(root)
+            .map_err(|error| error.to_string())?;
+        match self {
+            EditOp::Write(value) => {
+                let replaced = target.reflect_clone()?.into_partial_reflect();
+                target.try_apply(value.as_ref())?;
+                Ok(EditOp::Write(replaced))
+            }
+            EditOp::Insert(index, item) => {
+                let ReflectMut::List(list) = target.reflect_mut() else {
+                    return Err(format!("{path} is not a list").into());
+                };
+                if *index > list.len() {
+                    return Err(format!("{path} has no place {index}").into());
+                }
+                list.insert(*index, item.reflect_clone()?.into_partial_reflect());
+                Ok(EditOp::Delete(*index))
+            }
+            EditOp::Delete(index) => {
+                let ReflectMut::List(list) = target.reflect_mut() else {
+                    return Err(format!("{path} is not a list").into());
+                };
+                if *index >= list.len() {
+                    return Err(format!("{path} has no item {index}").into());
+                }
+                Ok(EditOp::Insert(*index, list.remove(*index)))
+            }
+        }
+    }
+
+    /// Does the edit to `root`'s value at `path`, and returns the edit that undoes it.
+    fn apply_to(
+        &self,
+        root: &dyn PropertyRoot,
+        world: &mut World,
+        path: &str,
+    ) -> Result<EditOp, BevyError> {
+        let mut undo = None;
+        root.modify(world, &mut |value| {
+            undo = Some(self.apply(value, path)?);
+            Ok(())
+        })?;
+        undo.ok_or_else(|| "the edit was not made".into())
+    }
+}
+
+/// An edit a widget asks for: a `kind` of edit at `path` within `root`'s value, writing or
+/// inserting `value` for the kinds that need one.
 pub struct PropertyEdit {
     pub root: Arc<dyn PropertyRoot>,
     pub path: String,
     pub kind: EditKind,
-    pub value: Box<dyn PartialReflect>,
+    pub value: Option<Box<dyn PartialReflect>>,
 }
 
 /// The edits asked for this frame, made by [`apply_property_edits`].
@@ -71,16 +155,17 @@ pub struct PropertyEdits(pub Vec<PropertyEdit>);
 impl PropertyEdits {
     /// Asks for `value` to be written at `path` within `root`'s value.
     pub fn set(&mut self, root: &Arc<dyn PropertyRoot>, path: String, value: impl PartialReflect) {
-        self.push(root, path, EditKind::Set, Box::new(value));
+        self.push(root, path, EditKind::Set, Some(Box::new(value)));
     }
 
-    /// Asks for `value` to be written at `path` within `root`'s value, as a `kind` of edit.
+    /// Asks for a `kind` of edit at `path` within `root`'s value, with `value` for the kinds that
+    /// write or insert one.
     pub fn push(
         &mut self,
         root: &Arc<dyn PropertyRoot>,
         path: String,
         kind: EditKind,
-        value: Box<dyn PartialReflect>,
+        value: Option<Box<dyn PartialReflect>>,
     ) {
         self.0.push(PropertyEdit {
             root: root.clone(),
@@ -108,47 +193,48 @@ pub struct InspectedRoots {
     pub roots: Vec<Arc<dyn PropertyRoot>>,
 }
 
-/// Writes a value at a path within a root, and reverses to the value it replaced.
-struct SetProperty {
+/// An edit within a root, in the undo history: undoing it makes the edit that reverses it, which
+/// takes its place, so redo undoes that in turn. Its `kind` names it either way.
+struct PropertyAction {
     root: Arc<dyn PropertyRoot>,
     path: String,
     kind: EditKind,
-    value: Box<dyn PartialReflect>,
+    op: EditOp,
     gesture: u32,
 }
 
-impl UndoAction for SetProperty {
+impl UndoAction for PropertyAction {
     fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction> {
-        match self.root.set(world, &self.path, self.value.as_ref()) {
-            Ok(replaced) => Box::new(SetProperty {
-                value: replaced,
-                ..*self
-            }),
+        match self.op.apply_to(self.root.as_ref(), world, &self.path) {
+            Ok(op) => Box::new(PropertyAction { op, ..*self }),
             Err(error) => {
-                error!("Could not set {}: {error}", self.label());
+                error!("Could not undo or redo {}: {error}", self.label());
                 self
             }
         }
     }
 
-    /// "Set LightSource.radius", or "Add" or "Remove": the path's field names, leaving out the
-    /// steps into an `Option` or a newtype, which the panel does not show either.
+    /// "Set LightSource.radius", "Add SceneryColliders item 2": the path's field names, leaving
+    /// out the steps into an `Option`, a newtype or a list, which the panel does not show either.
     fn label(&self) -> Cow<'static, str> {
-        let mut label = format!("{} {}", self.kind.verb(), self.root.caption());
+        let mut field = self.root.caption();
         for name in self.path.split('.') {
+            let name = name.split('[').next().unwrap_or_default();
             if !name.is_empty() && !name.bytes().all(|byte| byte.is_ascii_digit()) {
-                label.push('.');
-                label.push_str(name);
+                field.push('.');
+                field.push_str(name);
             }
         }
-        label.into()
+        self.kind.label(&field).into()
     }
 
+    /// The edits of one drag, writing the same field, undo as one.
     fn coalesces_into(&self, earlier: &dyn UndoAction) -> bool {
         (earlier as &dyn Any)
-            .downcast_ref::<SetProperty>()
+            .downcast_ref::<PropertyAction>()
             .is_some_and(|earlier| {
-                earlier.gesture == self.gesture
+                matches!(self.kind, EditKind::Set | EditKind::Add | EditKind::Remove)
+                    && earlier.gesture == self.gesture
                     && earlier.kind == self.kind
                     && earlier.path == self.path
                     && earlier.root.key() == self.root.key()
@@ -181,18 +267,22 @@ pub fn apply_property_edits(world: &mut World) {
         value,
     } in edits
     {
-        match root.set(world, &path, value.as_ref()) {
-            Ok(replaced) => world.resource_mut::<UndoStack>().push(
+        let Some(op) = kind.op(value) else {
+            error!("{kind:?} of {}{path} needs a value", root.caption());
+            continue;
+        };
+        match op.apply_to(root.as_ref(), world, &path) {
+            Ok(undo) => world.resource_mut::<UndoStack>().push(
                 mode,
-                SetProperty {
+                PropertyAction {
                     root,
                     path,
                     kind,
-                    value: replaced,
+                    op: undo,
                     gesture,
                 },
             ),
-            Err(error) => error!("Could not set {}{path}: {error}", root.caption()),
+            Err(error) => error!("Could not edit {}{path}: {error}", root.caption()),
         }
     }
 }
@@ -246,12 +336,11 @@ impl PropertyRoot for ExemplarAspect {
         Some(aspect.clone_boxed().into_partial_reflect())
     }
 
-    fn set(
+    fn modify(
         &self,
         world: &mut World,
-        path: &str,
-        value: &dyn PartialReflect,
-    ) -> Result<Box<dyn PartialReflect>, BevyError> {
+        change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError> {
         let id = self
             .exemplar_id(world)
             .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
@@ -259,30 +348,24 @@ impl PropertyRoot for ExemplarAspect {
             .resource::<AssetServer>()
             .get_path_id(self.exemplar.without_label())
             .ok_or_else(|| format!("{} has no catalog", self.exemplar))?;
-        let replaced = world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
+        world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
             Exemplar::edit(&mut exemplars, id, |data| {
                 let aspect = data
                     .aspects
                     .iter_mut()
                     .find(|aspect| aspect.reflect_short_type_path() == self.aspect)
                     .ok_or_else(|| format!("{} has no {}", self.exemplar, self.aspect))?;
-                let field = aspect
-                    .as_reflect_mut()
-                    .reflect_path_mut(path)
-                    .map_err(|error| error.to_string())?;
-                let replaced = field.reflect_clone()?.into_partial_reflect();
-                field.try_apply(value)?;
-                Ok(replaced)
+                change(aspect.as_partial_reflect_mut())
             })
         })?;
         world.resource_mut::<UnsavedAssets>().mark(catalog);
-        Ok(replaced)
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use bevy::reflect::TypeRegistry;
+    use bevy::reflect::{ReflectRef, TypeRegistry};
 
     use super::*;
     use crate::properties::option_value;
@@ -292,6 +375,7 @@ mod tests {
         width: f32,
         height: f32,
         depth: Option<f32>,
+        parts: Vec<f32>,
     }
 
     #[derive(Resource, Default)]
@@ -313,17 +397,12 @@ mod tests {
             Some(Box::new(world.resource::<Held>().0.clone()))
         }
 
-        fn set(
+        fn modify(
             &self,
             world: &mut World,
-            path: &str,
-            value: &dyn PartialReflect,
-        ) -> Result<Box<dyn PartialReflect>, BevyError> {
-            let mut held = world.resource_mut::<Held>();
-            let field = held.0.reflect_path_mut(path).map_err(|e| e.to_string())?;
-            let replaced = field.reflect_clone()?.into_partial_reflect();
-            field.try_apply(value)?;
-            Ok(replaced)
+            change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+        ) -> Result<(), BevyError> {
+            change(&mut world.resource_mut::<Held>().0)
         }
     }
 
@@ -399,6 +478,7 @@ mod tests {
                 width: 2.,
                 height: 0.,
                 depth: None,
+                parts: Vec::new(),
             }
         );
     }
@@ -414,7 +494,7 @@ mod tests {
         let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
         world
             .resource_mut::<PropertyEdits>()
-            .push(&root, ".depth".into(), kind, value);
+            .push(&root, ".depth".into(), kind, Some(value));
         apply_property_edits(world);
     }
 
@@ -437,26 +517,118 @@ mod tests {
         assert_eq!(depth(&world), Some(0.));
     }
 
+    /// Asks for a list edit of `parts`, and applies it.
+    fn edit_parts(world: &mut World, kind: EditKind, value: Option<f32>) {
+        let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
+        let value = value.map(|value| Box::new(value) as Box<dyn PartialReflect>);
+        world
+            .resource_mut::<PropertyEdits>()
+            .push(&root, ".parts".into(), kind, value);
+        apply_property_edits(world);
+    }
+
+    fn parts(world: &World) -> Vec<f32> {
+        world.resource::<Held>().0.parts.clone()
+    }
+
+    #[test]
+    fn list_items_are_added_and_removed() {
+        let mut world = world();
+        world.resource_mut::<Held>().0.parts = vec![1., 2.];
+        edit_parts(&mut world, EditKind::AddItem(2), Some(3.));
+        assert_eq!(parts(&world), [1., 2., 3.]);
+        edit_parts(&mut world, EditKind::RemoveItem(0), None);
+        assert_eq!(parts(&world), [2., 3.]);
+        undo(&mut world);
+        assert_eq!(parts(&world), [1., 2., 3.]);
+        undo(&mut world);
+        assert_eq!(parts(&world), [1., 2.]);
+        redo(&mut world);
+        redo(&mut world);
+        assert_eq!(parts(&world), [2., 3.]);
+    }
+
+    #[test]
+    fn a_failed_edit_is_not_in_the_history() {
+        let mut world = world();
+        edit_width(&mut world, 1, 2.);
+        edit_parts(&mut world, EditKind::RemoveItem(0), None);
+        assert!(parts(&world).is_empty());
+        undo(&mut world);
+        assert_eq!(width(&world), 0.);
+    }
+
+    #[derive(Reflect, Clone, Debug, PartialEq)]
+    enum Shape {
+        Box { half_extents: Vec3 },
+        Ramp { half_extents: Vec3, facing: f32 },
+        Sphere { radius: f32 },
+        Ball(f32),
+    }
+
+    /// `shape` as its variant `name`, as the panel would build it.
+    fn switched(shape: Shape, name: &str) -> Shape {
+        let mut registry = TypeRegistry::default();
+        registry.register::<Shape>();
+        registry.register::<Vec3>();
+        registry.register::<f32>();
+        let ReflectRef::Enum(current) = shape.reflect_ref() else {
+            unreachable!()
+        };
+        let value = crate::properties::variant_value(&registry, current, name).unwrap();
+        Shape::from_reflect(value.as_ref()).unwrap()
+    }
+
+    #[test]
+    fn a_new_variant_keeps_the_fields_it_shares() {
+        let half_extents = Vec3::new(1., 2., 3.);
+        assert_eq!(
+            switched(Shape::Box { half_extents }, "Ramp"),
+            Shape::Ramp {
+                half_extents,
+                facing: 0.
+            }
+        );
+        assert_eq!(
+            switched(Shape::Box { half_extents }, "Sphere"),
+            Shape::Sphere { radius: 0. }
+        );
+        assert_eq!(switched(Shape::Ball(2.), "Sphere"), Shape::Sphere { radius: 0. });
+        assert_eq!(switched(Shape::Sphere { radius: 2. }, "Ball"), Shape::Ball(0.));
+    }
+
     #[test]
     fn the_label_names_the_field() {
-        let action = SetProperty {
+        let action = PropertyAction {
             root: Arc::new(HeldRoot),
             path: ".width".into(),
             kind: EditKind::Set,
-            value: Box::new(0.0f32),
+            op: EditOp::Write(Box::new(0.0f32)),
             gesture: 0,
         };
         assert_eq!(action.label(), "Set Size.width");
-        let through_option = SetProperty {
+        let through_option = PropertyAction {
             path: ".0.radius.0".into(),
             ..action
         };
         assert_eq!(through_option.label(), "Set Size.radius");
-        let added = SetProperty {
+        let added = PropertyAction {
             path: ".depth".into(),
             kind: EditKind::Add,
             ..through_option
         };
         assert_eq!(added.label(), "Add Size.depth");
+        let item = PropertyAction {
+            path: ".0".into(),
+            kind: EditKind::RemoveItem(1),
+            ..added
+        };
+        assert_eq!(item.label(), "Remove Size item 2");
+        let in_item = PropertyAction {
+            path: ".0[1].shape".into(),
+            kind: EditKind::Set,
+            ..item
+        };
+        assert_eq!(in_item.label(), "Set Size.shape");
     }
 }

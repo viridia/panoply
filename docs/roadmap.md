@@ -58,18 +58,6 @@ set an edit is one of (`EditKind`).
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28f Arrays, variants and colliders.** Arrays of structs, whose items are inserted and
-  removed: edits of their own, since Bevy's list `apply` never shortens a list. Enums switched
-  between variants with a select, as arbor_day's panel has; fields of the same name and type carry
-  over, the rest come from their types' `ReflectDefault`. The test case is a scenery element's
-  colliders: `ColliderShape`'s variants hold their own dimensions (`Box`, `Rbox` and `Ramp` half
-  extents, `Cylinder` a radius and half height, `Sphere` a radius, `Ellipsoid` radii), in place of
-  the shared `size`, so the fields a shape uses follow from its type (D45); `facing` moves into
-  `Ramp`, the only shape that reads it. The enum is internally tagged and flattened into
-  `ColliderDesc`, so `"shape": "box"` stays a key beside the dimensions, and a one-time script
-  migrates the catalogs (a missing size becomes the old default, half extents 0.5, 1, 0.5).
-  Dimensions and `offset` take `@Step(0.05)`, so colliders nudged on adjacent walls line up. A
-  collider edit is saved and its diff checked: the first save of a scenery array.
 - **PAN28g Asset pickers.** A field that names an asset becomes a newtype for the kind it names
   (D45): `Skin(String)` holds a character model, so its row is a button opening a picker of
   character models only, as faery's was (the author has a screenshot), not a text input.

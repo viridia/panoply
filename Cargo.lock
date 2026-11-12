@@ -4898,6 +4898,7 @@ dependencies = [
  "rmp-serde",
  "ron 0.8.1",
  "serde",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 

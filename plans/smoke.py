@@ -16,7 +16,8 @@
   lists abstract exemplars too, and shows the chosen exemplar's properties: a number typed there
   changes it, undoably, and Save writes that one line into its catalog (restored afterwards). A
   text field edits on Enter and Escape reverts it; an optional field's × removes it and the
-  heading's menu adds one; each saves as its own line.
+  heading's menu adds one; each saves as its own line. A collider list adds and removes items,
+  a collider's shape select switches its variant, and an added collider saves into the array.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -329,6 +330,7 @@ def scenery_panel(driver):
     text_property(driver)
     driver.click("PlaceFixture")
     optional_property(driver)
+    collider_property(driver)
     driver.click("Exemplars/ClearFilter")
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
@@ -349,9 +351,9 @@ def exemplar_properties(driver):
     expect_choice(driver, "actor", "FeralDogAlpha")
     driver.present("Properties/extends")
     scale = "Properties/ActorScale/input"
-    # As an f32 reads back, near its decimal.
-    loaded = {"F32": Between(1.19, 1.21)}
-    edited = {"F32": Between(1.49, 1.51)}
+    # An f32 field's input holds its shortest decimal (I39).
+    loaded = {"F64": 1.2}
+    edited = {"F64": 1.5}
     driver.expect(scale, NUMERIC, loaded)
     driver.screenshot("exemplar_properties")
     driver.click(scale)
@@ -430,21 +432,21 @@ def optional_property(driver):
     default; each undoes. Saved, the removal is that key's line."""
     choose(driver, "fixture", "CandleHolder")
     radius = "Properties/LightSource/radius/input"
-    driver.expect(radius, NUMERIC, {"F32": 2.0})
+    driver.expect(radius, NUMERIC, {"F64": 2.0})
     driver.screenshot("optional_property")
     driver.click("Properties/LightSource/radius/remove")
     driver.absent(radius)
     driver.click("Exemplars/CandleHolder")
     undo(driver)
     driver.expect("Toast/ToastText", TEXT, "Undo: Remove LightSource.radius")
-    driver.expect(radius, NUMERIC, {"F32": 2.0})
+    driver.expect(radius, NUMERIC, {"F64": 2.0})
     # `intensity` is absent: the menu adds it at its default.
     intensity = "Properties/LightSource/intensity/input"
     driver.absent(intensity)
     driver.click("Properties/LightSource/add")
     driver.screenshot("optional_property_menu")
     driver.click("Properties/LightSource/add_intensity")
-    driver.expect(intensity, NUMERIC, {"F32": 0.0})
+    driver.expect(intensity, NUMERIC, {"F64": 0.0})
     driver.click("Exemplars/CandleHolder")
     undo(driver)
     driver.expect("Toast/ToastText", TEXT, "Undo: Add LightSource.intensity")
@@ -452,6 +454,57 @@ def optional_property(driver):
     driver.click("Properties/LightSource/radius/remove")
     driver.absent(radius)
     saved_diff(driver, FURNISHINGS, "Exemplars/CandleHolder", ['-        "radius": 2,'])
+
+
+def collider_property(driver):
+    """A list's items: the pane's boxed plus adds one, its × removes it, each undoably. An enum's
+    select switches its variant, keeping the fields the variants share. Saved, an added collider
+    goes into the catalog's array, leaving the item that was there as it was."""
+    choose(driver, "fixture", "CandleHolder")
+    item = "Properties/SceneryColliders/Item 1"
+    second = "Properties/SceneryColliders/Item 2"
+    driver.expect(f"{item}/half_extents/x", NUMERIC, {"F64": 0.2})
+    driver.absent(second)
+    driver.click("Properties/SceneryColliders/add_item")
+    driver.present(f"{second}/half_extents/y")
+    driver.expect(f"{second}/half_extents/y", NUMERIC, {"F64": 1.0})
+    driver.screenshot("collider_items")
+    driver.click(f"{second}/remove")
+    driver.absent(second)
+    driver.click("Exemplars/CandleHolder")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Remove SceneryColliders item 2")
+    driver.present(second)
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add SceneryColliders item 2")
+    driver.absent(second)
+
+    # A box becomes a ramp, keeping its half extents and taking a facing of 0.
+    facing = f"{item}/facing/input"
+    driver.absent(facing)
+    driver.click(f"{item}/shape/select")
+    driver.click(f"{item}/shape/select/Ramp")
+    driver.expect(facing, NUMERIC, {"F64": 0.0})
+    driver.expect(f"{item}/half_extents/x", NUMERIC, {"F64": 0.2})
+    driver.screenshot("collider_variant")
+    driver.click("Exemplars/CandleHolder")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set SceneryColliders.shape")
+    driver.absent(facing)
+
+    driver.click("Properties/SceneryColliders/add_item")
+    driver.present(second)
+    saved_diff(
+        driver,
+        FURNISHINGS,
+        "Exemplars/CandleHolder",
+        [
+            "+        },",
+            "+        {",
+            '+          "shape": "box",',
+            '+          "half_extents": [0.5, 1, 0.5]',
+        ],
+    )
 
 
 def choose(driver, tool, name):

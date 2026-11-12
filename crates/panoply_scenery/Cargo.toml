@@ -19,6 +19,9 @@ ron = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 
+[dev-dependencies]
+serde_json = { workspace = true }
+
 [lints.clippy]
 type_complexity = "allow"
 too_many_arguments = "allow"

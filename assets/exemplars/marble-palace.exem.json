@@ -10,7 +10,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -26,7 +26,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -43,7 +43,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.25],
-          "size": [0.3, 1, 0.25]
+          "half_extents": [0.3, 1, 0.25]
         }
       ]
     }
@@ -59,7 +59,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         }
       ]
     }
@@ -78,11 +78,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         },
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -105,17 +105,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         },
         {
           "shape": "box",
           "offset": [-0.1, 0, 0],
-          "size": [0.4, 1, 0.3]
+          "half_extents": [0.4, 1, 0.3]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.1],
-          "size": [0.3, 1, 0.4]
+          "half_extents": [0.3, 1, 0.4]
         }
       ]
     }
@@ -138,16 +138,16 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         },
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.1, 0, 0],
-          "size": [0.4, 1, 0.3]
+          "half_extents": [0.4, 1, 0.3]
         }
       ]
     }
@@ -166,12 +166,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.1],
-          "size": [0.3, 1, 0.4]
+          "half_extents": [0.3, 1, 0.4]
         }
       ]
     }
@@ -188,17 +188,17 @@
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.35, 0.1, 0.5]
+          "half_extents": [0.35, 0.1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         }
       ]
     }
@@ -214,7 +214,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         }
       ]
     }
@@ -231,7 +231,7 @@
         {
           "shape": "box",
           "offset": [-0.3, 0, 0],
-          "size": [0.1, 0.4, 0.5]
+          "half_extents": [0.1, 0.4, 0.5]
         }
       ]
     }
@@ -248,12 +248,12 @@
         {
           "shape": "box",
           "offset": [0.1, 0, -0.3],
-          "size": [0.4, 0.4, 0.1]
+          "half_extents": [0.4, 0.4, 0.1]
         },
         {
           "shape": "box",
           "offset": [-0.3, 0, 0.1],
-          "size": [0.1, 0.4, 0.4]
+          "half_extents": [0.1, 0.4, 0.4]
         }
       ]
     }
@@ -269,7 +269,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.5, 0.5]
+          "half_extents": [0.5, 0.5, 0.5]
         }
       ]
     }
@@ -284,7 +284,8 @@
       ],
       "SceneryColliders": [
         {
-          "shape": "box"
+          "shape": "box",
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -312,7 +313,7 @@
         {
           "shape": "ramp",
           "offset": [0, 0, 0.5],
-          "size": [0.3, 0.5, 1]
+          "half_extents": [0.3, 0.5, 1]
         }
       ]
     }
@@ -331,7 +332,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -350,7 +351,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -372,11 +373,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         },
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -394,12 +395,12 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.3, 0.5, 1]
+          "half_extents": [0.3, 0.5, 1]
         },
         {
           "shape": "ramp",
           "offset": [0, 1, 0.5],
-          "size": [0.3, 0.5, 1]
+          "half_extents": [0.3, 0.5, 1]
         }
       ]
     }
@@ -422,16 +423,16 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         },
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0.1, 0, 0],
-          "size": [0.4, 1, 0.3]
+          "half_extents": [0.4, 1, 0.3]
         }
       ]
     }
@@ -454,17 +455,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         },
         {
           "shape": "box",
           "offset": [0.1, 0, 0],
-          "size": [0.4, 1, 0.3]
+          "half_extents": [0.4, 1, 0.3]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.1],
-          "size": [0.3, 1, 0.4]
+          "half_extents": [0.3, 1, 0.4]
         }
       ]
     }
@@ -483,12 +484,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.1],
-          "size": [0.3, 1, 0.4]
+          "half_extents": [0.3, 1, 0.4]
         }
       ]
     }
@@ -506,7 +507,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.1],
-          "size": [0.5, 0.8, 0.25]
+          "half_extents": [0.5, 0.8, 0.25]
         }
       ]
     }
@@ -525,7 +526,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -621,7 +622,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.5]
+          "half_extents": [0.3, 1, 0.5]
         }
       ]
     }
@@ -638,17 +639,17 @@
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.35, 0.1, 0.5]
+          "half_extents": [0.35, 0.1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         }
       ]
     }
@@ -665,7 +666,7 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         }
@@ -688,20 +689,20 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.4],
-          "size": [0.5, 0.4, 0.1]
+          "half_extents": [0.5, 0.4, 0.1]
         },
         {
           "facing": 1,
           "shape": "ramp",
           "offset": [0, 0.8, -0.4],
-          "size": [0.1, 0.5, 0.5]
+          "half_extents": [0.1, 0.5, 0.5]
         }
       ]
     }
@@ -722,20 +723,20 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.4],
-          "size": [0.5, 0.4, 0.1]
+          "half_extents": [0.5, 0.4, 0.1]
         },
         {
           "facing": 1,
           "shape": "ramp",
           "offset": [0, 0.8, 0.4],
-          "size": [0.1, 0.5, 0.5]
+          "half_extents": [0.1, 0.5, 0.5]
         }
       ]
     }
@@ -756,20 +757,20 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.4],
-          "size": [0.5, 0.4, 0.1]
+          "half_extents": [0.5, 0.4, 0.1]
         },
         {
           "facing": 1,
           "shape": "ramp",
           "offset": [0, 0.8, -0.4],
-          "size": [0.1, 0.5, 0.5]
+          "half_extents": [0.1, 0.5, 0.5]
         }
       ]
     }
@@ -790,20 +791,20 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.4],
-          "size": [0.5, 0.4, 0.1]
+          "half_extents": [0.5, 0.4, 0.1]
         },
         {
           "facing": 1,
           "shape": "ramp",
           "offset": [0, 0.8, 0.4],
-          "size": [0.1, 0.5, 0.5]
+          "half_extents": [0.1, 0.5, 0.5]
         }
       ]
     }
@@ -820,17 +821,17 @@
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.35, 0.1, 0.5]
+          "half_extents": [0.35, 0.1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         }
       ]
     }
@@ -847,17 +848,17 @@
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.35, 0.1, 0.5]
+          "half_extents": [0.35, 0.1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.35, 1, 0.05]
+          "half_extents": [0.35, 1, 0.05]
         }
       ]
     }

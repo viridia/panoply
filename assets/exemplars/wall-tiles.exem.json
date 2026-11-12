@@ -30,7 +30,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -56,7 +56,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.6, 1, 0.6]
+          "half_extents": [0.6, 1, 0.6]
         }
       ]
     }
@@ -73,7 +73,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.35],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -93,17 +93,17 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.6],
-          "size": [0.35, 1, 0.15]
+          "half_extents": [0.35, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.55],
-          "size": [0.35, 1, 0.15]
+          "half_extents": [0.35, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0, 1.7, 0],
-          "size": [0.35, 0.15, 0.5]
+          "half_extents": [0.35, 0.15, 0.5]
         }
       ]
     }
@@ -141,7 +141,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.3]
+          "half_extents": [0.3, 1, 0.3]
         }
       ]
     }
@@ -157,7 +157,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 0.6, 0.3]
+          "half_extents": [0.3, 0.6, 0.3]
         }
       ]
     }
@@ -174,7 +174,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         }
       ]
     }
@@ -190,7 +190,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 0.75, 0.5]
+          "half_extents": [0.2, 0.75, 0.5]
         }
       ]
     }
@@ -206,7 +206,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         }
       ]
     }
@@ -224,7 +224,7 @@
         {
           "shape": "box",
           "offset": [-0.25, 0, 0],
-          "size": [0.25, 1, 0.25]
+          "half_extents": [0.25, 1, 0.25]
         }
       ]
     }
@@ -244,11 +244,11 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.2],
-          "size": [0.2, 1, 0.3]
+          "half_extents": [0.2, 1, 0.3]
         },
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -267,11 +267,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "size": [0.3, 1, 0.3]
+          "half_extents": [0.3, 1, 0.3]
         }
       ]
     }
@@ -294,16 +294,16 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.2, 0, 0],
-          "size": [0.3, 1, 0.2]
+          "half_extents": [0.3, 1, 0.2]
         },
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -327,16 +327,16 @@
         {
           "shape": "box",
           "offset": [-0.15, 0, 0],
-          "size": [0.35, 1, 0.2]
+          "half_extents": [0.35, 1, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.15],
-          "size": [0.2, 1, 0.35]
+          "half_extents": [0.2, 1, 0.35]
         },
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -359,15 +359,15 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.2]
+          "half_extents": [0.5, 1, 0.2]
         },
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
-          "size": [0.35, 1, 0.35]
+          "half_extents": [0.35, 1, 0.35]
         }
       ]
     }
@@ -383,7 +383,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.65, 0.25, 0.4]
+          "half_extents": [0.65, 0.25, 0.4]
         }
       ]
     }
@@ -399,7 +399,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 0.25, 0.3]
+          "half_extents": [0.3, 0.25, 0.3]
         }
       ]
     }
@@ -415,7 +415,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.3]
+          "half_extents": [0.3, 1, 0.3]
         }
       ]
     }
@@ -431,7 +431,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         }
       ]
     }
@@ -447,6 +447,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
+          "half_extents": [0.5, 1, 0.5],
           "walkable": true
         }
       ]
@@ -464,17 +465,18 @@
         {
           "shape": "box",
           "offset": [0.3, 0, 0],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         },
         {
           "shape": "cylinder",
           "offset": [0.15, 0, -0.15],
-          "size": [0.35, 1, 0]
+          "radius": 0.35,
+          "half_height": 1
         }
       ]
     }
@@ -490,7 +492,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         }
       ]
     }
@@ -506,7 +508,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -523,7 +525,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.8, 0.25, 0.55]
+          "radius": 0.8,
+          "half_height": 0.25
         }
       ]
     }
@@ -543,7 +546,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -563,7 +566,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -583,7 +586,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -603,7 +606,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -620,7 +623,7 @@
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -640,12 +643,12 @@
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         },
         {
           "shape": "box",
           "offset": [0.15, 0, 0.2],
-          "size": [0.3, 0.35, 0.3]
+          "half_extents": [0.3, 0.35, 0.3]
         }
       ]
     }
@@ -665,17 +668,17 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.25, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -692,7 +695,7 @@
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -729,7 +732,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -749,7 +752,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -768,7 +771,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -795,7 +798,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -821,13 +824,13 @@
         {
           "shape": "box",
           "offset": [-0.45, 0, 0.55],
-          "size": [1, 0.55, 0.3]
+          "half_extents": [1, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.2, 1.15, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -853,13 +856,13 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.5, 0.55, 0.3]
+          "half_extents": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [0.25, 1.05, 0.5],
-          "size": [0.5, 0.35, 0.75]
+          "half_extents": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -924,7 +927,7 @@
         {
           "shape": "ellipsoid",
           "offset": [0, -0.3, 0.1],
-          "size": [0.95, 0.75, 0.95]
+          "radii": [0.95, 0.75, 0.95]
         }
       ]
     }
@@ -941,7 +944,7 @@
         {
           "shape": "ellipsoid",
           "offset": [0, -0.1, 0],
-          "size": [0.8, 0.55, 0.8]
+          "radii": [0.8, 0.55, 0.8]
         }
       ]
     }
@@ -958,7 +961,7 @@
         {
           "shape": "ellipsoid",
           "offset": [0, -0.05, 0],
-          "size": [0.5, 0.4, 0.5]
+          "radii": [0.5, 0.4, 0.5]
         }
       ]
     }
@@ -974,7 +977,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.5, 1, 0.5]
+          "radius": 0.5,
+          "half_height": 1
         }
       ]
     }
@@ -990,7 +994,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.4, 1, 0.5]
+          "radius": 0.4,
+          "half_height": 1
         }
       ]
     }
@@ -1021,7 +1026,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.3]
+          "half_extents": [0.5, 1, 0.3]
         }
       ]
     }
@@ -1038,7 +1043,7 @@
         {
           "shape": "box",
           "offset": [0.25, 0, 0],
-          "size": [0.25, 1, 0.3]
+          "half_extents": [0.25, 1, 0.3]
         }
       ]
     }
@@ -1054,7 +1059,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 1, 0.4]
+          "half_extents": [0.4, 1, 0.4]
         }
       ]
     }
@@ -1073,7 +1078,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1092,7 +1097,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.45]
+          "half_extents": [0.5, 1, 0.45]
         }
       ]
     }
@@ -1115,7 +1120,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1138,7 +1143,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -1154,7 +1159,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.4, 0.3]
+          "half_extents": [0.5, 0.4, 0.3]
         }
       ]
     }
@@ -1171,7 +1176,7 @@
         {
           "shape": "box",
           "offset": [0.25, 0, 0],
-          "size": [0.25, 0.45, 0.3]
+          "half_extents": [0.25, 0.45, 0.3]
         }
       ]
     }
@@ -1187,7 +1192,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.4, 0.45, 0.4]
+          "half_extents": [0.4, 0.45, 0.4]
         }
       ]
     }
@@ -1206,7 +1211,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.45, 0.5]
+          "half_extents": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1225,7 +1230,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.45, 0.45]
+          "half_extents": [0.5, 0.45, 0.45]
         }
       ]
     }
@@ -1248,7 +1253,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.45, 0.5]
+          "half_extents": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1271,7 +1276,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.45, 0.5]
+          "half_extents": [0.5, 0.45, 0.5]
         }
       ]
     }
@@ -1288,7 +1293,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.2],
-          "size": [0.5, 1, 0.3]
+          "half_extents": [0.5, 1, 0.3]
         }
       ],
       "LightSource": {
@@ -1314,7 +1319,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.2],
-          "size": [0.3, 2, 0.3]
+          "half_extents": [0.3, 2, 0.3]
         }
       ]
     }
@@ -1336,7 +1341,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.25, 0.43, 1]
+          "half_extents": [0.25, 0.43, 1]
         }
       ]
     }
@@ -1358,7 +1363,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.25, 0.3, 0.9]
+          "half_extents": [0.25, 0.3, 0.9]
         }
       ]
     }
@@ -1375,7 +1380,7 @@
         {
           "shape": "box",
           "offset": [-0.42, 0, 0.42],
-          "size": [0.05, 1, 0.05]
+          "half_extents": [0.05, 1, 0.05]
         }
       ]
     }
@@ -1392,7 +1397,7 @@
         {
           "shape": "box",
           "offset": [-0.42, 0, 0.42],
-          "size": [0.05, 1, 0.05]
+          "half_extents": [0.05, 1, 0.05]
         }
       ]
     }
@@ -1409,7 +1414,7 @@
         {
           "shape": "box",
           "offset": [-0.42, 0, 0.42],
-          "size": [0.05, 1, 0.05]
+          "half_extents": [0.05, 1, 0.05]
         }
       ]
     }
@@ -1425,7 +1430,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -1444,7 +1449,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.4, 1]
+          "half_extents": [0.05, 0.4, 1]
         }
       ]
     }
@@ -1460,7 +1465,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.35, 1]
+          "half_extents": [0.05, 0.35, 1]
         }
       ]
     }
@@ -1480,7 +1485,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.05, 0.4, 0.5]
+          "half_extents": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -1497,7 +1502,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.05, 0.35, 0.5]
+          "half_extents": [0.05, 0.35, 0.5]
         }
       ]
     }
@@ -1514,7 +1519,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -1551,7 +1556,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [0.25, -0.05, -0.5],
-          "size": [0.5, 0.65, 0.75]
+          "half_extents": [0.5, 0.65, 0.75]
         }
       ]
     }
@@ -1571,7 +1576,7 @@
         {
           "shape": "box",
           "offset": [-0.3, 0, 0],
-          "size": [0.05, 0.35, 0.3]
+          "half_extents": [0.05, 0.35, 0.3]
         }
       ]
     }
@@ -1590,7 +1595,7 @@
         {
           "shape": "box",
           "offset": [-0.35, 0, 0],
-          "size": [0.05, 0.45, 0.3]
+          "half_extents": [0.05, 0.45, 0.3]
         }
       ]
     }
@@ -1607,7 +1612,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.3],
-          "size": [0.75, 0.25, 0.65]
+          "half_extents": [0.75, 0.25, 0.65]
         }
       ],
       "SceneryMarks": {
@@ -1638,7 +1643,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.8, 0.5]
+          "half_extents": [0.05, 0.8, 0.5]
         }
       ]
     }
@@ -1656,7 +1661,7 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         }
       ]
     }
@@ -1679,12 +1684,12 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.5, 1, 0.1]
+          "half_extents": [0.5, 1, 0.1]
         }
       ]
     }
@@ -1702,7 +1707,7 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.1, 0.35, 0.5]
+          "half_extents": [0.1, 0.35, 0.5]
         }
       ]
     }
@@ -1720,7 +1725,7 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         }
       ]
     }
@@ -1739,7 +1744,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 1, 0.5]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }
@@ -1758,7 +1764,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 1, 0.4]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }
@@ -1777,7 +1784,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 1, 0.5]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }
@@ -1796,7 +1804,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 1, 0.5]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }
@@ -1815,7 +1824,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 0.6, 0.5]
+          "radius": 0.25,
+          "half_height": 0.6
         }
       ]
     }
@@ -1834,7 +1844,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 0.55, 0.5]
+          "radius": 0.25,
+          "half_height": 0.55
         }
       ]
     }
@@ -1853,7 +1864,8 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.25, 1, 0.5]
+          "radius": 0.25,
+          "half_height": 1
         }
       ]
     }
@@ -1956,12 +1968,12 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.5, 1, 0.1]
+          "half_extents": [0.5, 1, 0.1]
         }
       ]
     }
@@ -1978,7 +1990,7 @@
         {
           "shape": "box",
           "offset": [-0.42, 0, 0.42],
-          "size": [0.05, 0.5, 0.05]
+          "half_extents": [0.05, 0.5, 0.05]
         }
       ]
     }
@@ -2000,17 +2012,17 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 1.75, 0.5],
-          "size": [0.35, 0.1, 0.9]
+          "half_extents": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
@@ -2034,11 +2046,11 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 0.95, 0.2]
+          "half_extents": [0.2, 0.95, 0.2]
         },
         {
           "shape": "box",
-          "size": [0.05, 0.8, 0.5]
+          "half_extents": [0.05, 0.8, 0.5]
         }
       ]
     }
@@ -2061,17 +2073,17 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 0.95, 0.2]
+          "half_extents": [0.2, 0.95, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.3],
-          "size": [0.05, 0.8, 0.2]
+          "half_extents": [0.05, 0.8, 0.2]
         },
         {
           "shape": "box",
           "offset": [0.3, 0, 0],
-          "size": [0.2, 0.8, 0.05]
+          "half_extents": [0.2, 0.8, 0.05]
         }
       ]
     }
@@ -2118,7 +2130,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0],
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -2135,7 +2147,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5]
+          "half_extents": [0.5, 0.5, 0.5]
         }
       ]
     }
@@ -2151,7 +2163,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [0.75, 0.5, 0.5]
+          "half_extents": [0.75, 0.5, 0.5]
         }
       ]
     }
@@ -2167,13 +2179,13 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.5, 0.5]
+          "half_extents": [0.5, 0.5, 0.5]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [0, 1, 0],
-          "size": [0.5, 0.5, 0.5]
+          "half_extents": [0.5, 0.5, 0.5]
         }
       ]
     }
@@ -2189,7 +2201,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.55, 0.35]
+          "half_extents": [0.5, 0.55, 0.35]
         }
       ]
     }
@@ -2206,12 +2218,12 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.1],
-          "size": [0.35, 0.55, 0.45]
+          "half_extents": [0.35, 0.55, 0.45]
         },
         {
           "shape": "box",
           "offset": [0.1, 0, 0],
-          "size": [0.45, 0.55, 0.35]
+          "half_extents": [0.45, 0.55, 0.35]
         }
       ]
     }
@@ -2227,7 +2239,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.6, 0.5]
+          "half_extents": [0.5, 0.6, 0.5]
         }
       ]
     }
@@ -2249,7 +2261,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0],
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -2268,7 +2280,7 @@
         {
           "shape": "box",
           "offset": [0.4, 0, 0],
-          "size": [0.1, 0.5, 0.5],
+          "half_extents": [0.1, 0.5, 0.5],
           "walkable": true
         }
       ]
@@ -2295,7 +2307,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1, 0.3]
+          "half_extents": [0.3, 1, 0.3]
         }
       ]
     }
@@ -2313,7 +2325,7 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.2, 0.4, 0.5]
+          "half_extents": [0.2, 0.4, 0.5]
         }
       ]
     }
@@ -2335,12 +2347,12 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.2, 0.4, 0.5]
+          "half_extents": [0.2, 0.4, 0.5]
         },
         {
           "shape": "box",
           "offset": [0.45, 0, 0],
-          "size": [0.3, 0.4, 0.3]
+          "half_extents": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -2362,12 +2374,12 @@
         {
           "shape": "box",
           "offset": [0.5, 0, -0.15],
-          "size": [0.2, 0.4, 0.35]
+          "half_extents": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
           "offset": [0.45, 0, 0],
-          "size": [0.3, 0.4, 0.3]
+          "half_extents": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -2379,7 +2391,7 @@
         {
           "shape": "box",
           "type": "hint",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -2395,7 +2407,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -2411,7 +2423,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -2430,12 +2442,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.05, 0.4, 0.5]
+          "half_extents": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -2455,7 +2467,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2476,7 +2488,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2497,7 +2509,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2518,7 +2530,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2539,7 +2551,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2560,7 +2572,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2619,7 +2631,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0],
-          "size": [1, 0.55, 1.25]
+          "half_extents": [1, 0.55, 1.25]
         }
       ]
     }
@@ -2638,7 +2650,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0],
-          "size": [1.5, 0.55, 1.25]
+          "half_extents": [1.5, 0.55, 1.25]
         }
       ]
     }
@@ -2657,7 +2669,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -2676,7 +2688,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -2694,13 +2706,13 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.5, 0.55, 0.3]
+          "half_extents": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [0.25, 1.05, 0.5],
-          "size": [0.5, 0.35, 0.75]
+          "half_extents": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -2717,17 +2729,17 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.25, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -2744,7 +2756,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2761,7 +2773,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -2778,7 +2790,7 @@
         {
           "shape": "box",
           "offset": [0.3, 0, 0.3],
-          "size": [0.2, 1, 0.2]
+          "half_extents": [0.2, 1, 0.2]
         }
       ]
     }
@@ -2815,7 +2827,7 @@
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.25, 0.1, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -2841,13 +2853,13 @@
         {
           "shape": "box",
           "offset": [-0.45, 0, 0.55],
-          "size": [1, 0.55, 0.3]
+          "half_extents": [1, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [-0.2, 1.15, 0.5],
-          "size": [0.5, 0.55, 1.25]
+          "half_extents": [0.5, 0.55, 1.25]
         }
       ]
     }
@@ -2873,13 +2885,13 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.5],
-          "size": [0.5, 0.55, 0.3]
+          "half_extents": [0.5, 0.55, 0.3]
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [0.25, 1.05, 0.5],
-          "size": [0.5, 0.35, 0.75]
+          "half_extents": [0.5, 0.35, 0.75]
         }
       ]
     }
@@ -2897,7 +2909,7 @@
         {
           "shape": "box",
           "offset": [-0.42, 0, 0.42],
-          "size": [0.05, 1, 0.05]
+          "half_extents": [0.05, 1, 0.05]
         }
       ]
     }
@@ -2913,11 +2925,13 @@
       "SceneryColliders": [
         {
           "shape": "cylinder",
-          "size": [0.73, 0.37, 0.95]
+          "radius": 0.73,
+          "half_height": 0.37
         },
         {
           "shape": "cylinder",
-          "size": [1, 0.05, 0.5]
+          "radius": 1,
+          "half_height": 0.05
         }
       ]
     }
@@ -2934,7 +2948,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.2],
-          "size": [0.5, 1, 0.3]
+          "half_extents": [0.5, 1, 0.3]
         }
       ],
       "LightSource": {
@@ -2957,7 +2971,7 @@
         {
           "shape": "box",
           "offset": [0.26, 0, 0.42],
-          "size": [0.05, 1, 0.05]
+          "half_extents": [0.05, 1, 0.05]
         }
       ]
     }
@@ -2974,7 +2988,7 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.2],
-          "size": [0.3, 2, 0.3]
+          "half_extents": [0.3, 2, 0.3]
         }
       ]
     }
@@ -2993,12 +3007,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.05, 0.4, 0.5]
+          "half_extents": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -3017,12 +3031,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.05, 0.4, 0.5]
+          "half_extents": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -3038,7 +3052,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         }
       ]
     }
@@ -3057,12 +3071,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.05, 0.45, 0.05]
+          "half_extents": [0.05, 0.45, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.05, 0.4, 0.5]
+          "half_extents": [0.05, 0.4, 0.5]
         }
       ]
     }
@@ -3078,7 +3092,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 0.4, 0.3]
+          "half_extents": [0.5, 0.4, 0.3]
         }
       ]
     }
@@ -3099,12 +3113,12 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.25, 0, 0],
-          "size": [0.15, 1, 0.5]
+          "half_extents": [0.15, 1, 0.5]
         }
       ]
     }
@@ -3122,7 +3136,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0],
-          "size": [0.2, 0.4, 0.5]
+          "half_extents": [0.2, 0.4, 0.5]
         }
       ]
     }
@@ -3142,12 +3156,12 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.15],
-          "size": [0.2, 0.4, 0.35]
+          "half_extents": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
           "offset": [-0.05, 0, 0],
-          "size": [0.3, 0.4, 0.3]
+          "half_extents": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -3171,17 +3185,17 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.15],
-          "size": [0.2, 0.4, 0.35]
+          "half_extents": [0.2, 0.4, 0.35]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0],
-          "size": [0.3, 0.4, 0.3]
+          "half_extents": [0.3, 0.4, 0.3]
         },
         {
           "shape": "box",
           "offset": [-0.15, 0, 0.05],
-          "size": [0.35, 0.4, 0.2]
+          "half_extents": [0.35, 0.4, 0.2]
         }
       ]
     }
@@ -3201,12 +3215,12 @@
         {
           "shape": "box",
           "offset": [0, 0, 0],
-          "size": [0.2, 0.4, 0.5]
+          "half_extents": [0.2, 0.4, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.05, 0, 0],
-          "size": [0.3, 0.4, 0.3]
+          "half_extents": [0.3, 0.4, 0.3]
         }
       ]
     }
@@ -3223,7 +3237,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3240,7 +3254,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3257,7 +3271,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3277,7 +3291,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3298,7 +3312,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3314,7 +3328,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.25, 0.43, 0.5]
+          "half_extents": [0.25, 0.43, 0.5]
         }
       ]
     }
@@ -3331,7 +3345,7 @@
         {
           "shape": "rbox",
           "offset": [-0.15, 0, -0.2],
-          "size": [0.35, 0.4, 0.35]
+          "half_extents": [0.35, 0.4, 0.35]
         }
       ]
     }
@@ -3353,7 +3367,7 @@
         {
           "shape": "box",
           "offset": [0, 0, 0.25],
-          "size": [0.5, 1, 0.15]
+          "half_extents": [0.5, 1, 0.15]
         }
       ]
     }
@@ -3370,14 +3384,14 @@
         {
           "shape": "box",
           "offset": [0.05, 0, -0.05],
-          "size": [0.05, 0.85, 0.05],
+          "half_extents": [0.05, 0.85, 0.05],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "marker",
           "offset": [0.05, 1.3, -0.05],
-          "size": [0.4, 0.2, 0.05],
+          "half_extents": [0.4, 0.2, 0.05],
           "pickable": true
         }
       ]
@@ -3398,12 +3412,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.25, 1.05, 0],
-          "size": [0.15, 0.2, 0.15],
+          "half_extents": [0.15, 0.2, 0.15],
           "pickable": true
         }
       ],
@@ -3430,12 +3444,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.25, 1.05, 0],
-          "size": [0.15, 0.2, 0.15],
+          "half_extents": [0.15, 0.2, 0.15],
           "pickable": true
         }
       ],
@@ -3458,23 +3472,23 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.2, 0.1, 0.5]
+          "half_extents": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0.35],
-          "size": [0.05, 0.8, 0.4],
+          "half_extents": [0.05, 0.8, 0.4],
           "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door2"
@@ -3500,23 +3514,23 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.2, 0.1, 0.5]
+          "half_extents": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0.35],
-          "size": [0.05, 0.8, 0.4],
+          "half_extents": [0.05, 0.8, 0.4],
           "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door2"
@@ -3548,17 +3562,17 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 1.75, 0.5],
-          "size": [0.35, 0.1, 0.9]
+          "half_extents": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
@@ -3580,23 +3594,23 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 0, 0.45],
-          "size": [0.2, 0.9, 0.05]
+          "half_extents": [0.2, 0.9, 0.05]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0],
-          "size": [0.2, 0.1, 0.5]
+          "half_extents": [0.2, 0.1, 0.5]
         },
         {
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0.35],
-          "size": [0.05, 0.8, 0.35],
+          "half_extents": [0.05, 0.8, 0.35],
           "origin": [-0.1, 0, -0.35],
           "pickable": true,
           "animation": "Door"
@@ -3653,14 +3667,14 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.85, 0.4, 0.4],
+          "half_extents": [0.85, 0.4, 0.4],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "hint",
           "offset": [0.5, 0, 0.4],
-          "size": [0.85, 0.4, 0.4]
+          "half_extents": [0.85, 0.4, 0.4]
         }
       ]
     }
@@ -3676,7 +3690,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         }
@@ -3703,7 +3717,7 @@
         {
           "shape": "ramp",
           "offset": [0, 0, 0.5],
-          "size": [0.5, 1, 1],
+          "half_extents": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         }
@@ -3739,7 +3753,7 @@
       "SceneryColliders": [
         {
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         }
@@ -3789,14 +3803,14 @@
         {
           "shape": "box",
           "offset": [0.5, 0, 0],
-          "size": [0.85, 0.4, 0.4],
+          "half_extents": [0.85, 0.4, 0.4],
           "pickable": true
         },
         {
           "shape": "box",
           "type": "hint",
           "offset": [0.5, 0, 0.4],
-          "size": [0.85, 0.4, 0.4]
+          "half_extents": [0.85, 0.4, 0.4]
         }
       ]
     }
@@ -3815,12 +3829,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "box",
           "offset": [-0.1, 0.55, 0],
-          "size": [0.15, 0.4, 0.3],
+          "half_extents": [0.15, 0.4, 0.3],
           "pickable": true
         }
       ],
@@ -3843,23 +3857,23 @@
         {
           "shape": "box",
           "offset": [-0.45, 0, 0.25],
-          "size": [0.05, 1, 0.15]
+          "half_extents": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.45, 0, 0.25],
-          "size": [0.05, 1, 0.15]
+          "half_extents": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0, 1.9, 0.25],
-          "size": [0.4, 0.05, 0.15]
+          "half_extents": [0.4, 0.05, 0.15]
         },
         {
           "shape": "box",
           "type": "door",
           "offset": [-0.4, 0, 0],
-          "size": [0.35, 0.9, 0.05],
+          "half_extents": [0.35, 0.9, 0.05],
           "origin": [0.4, 0, 0.3],
           "pickable": true,
           "animation": "WoodenDoor"
@@ -3868,7 +3882,7 @@
           "shape": "box",
           "type": "hint",
           "offset": [0.45, 0, 0.15],
-          "size": [0.05, 1, 0.5]
+          "half_extents": [0.05, 1, 0.5]
         }
       ],
       "SceneryMarks": {
@@ -3896,7 +3910,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0.4, 0, 0],
-          "size": [0.5, 0.92, 0.1],
+          "half_extents": [0.5, 0.92, 0.1],
           "origin": [-0.4, 0, 0],
           "pickable": true,
           "animation": "HeavyGateLeft"
@@ -3905,7 +3919,7 @@
           "shape": "box",
           "type": "door",
           "offset": [-0.4, 0, 0],
-          "size": [0.5, 0.92, 0.1],
+          "half_extents": [0.5, 0.92, 0.1],
           "origin": [1.4, 0, 0],
           "pickable": true,
           "animation": "HeavyGateRight"
@@ -3914,13 +3928,13 @@
           "shape": "box",
           "type": "hint",
           "offset": [-0.45, 0, -0.2],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         },
         {
           "shape": "box",
           "type": "hint",
           "offset": [1.3, 0, -0.2],
-          "size": [0.1, 1, 0.5]
+          "half_extents": [0.1, 1, 0.5]
         }
       ],
       "SceneryMarks": {
@@ -3948,32 +3962,32 @@
         {
           "shape": "box",
           "offset": [1, 0, 1],
-          "size": [0.5, 0.4, 0.5],
+          "half_extents": [0.5, 0.4, 0.5],
           "walkable": true
         },
         {
           "facing": 3,
           "shape": "ramp",
           "offset": [2, 0, 1],
-          "size": [0.7, 0.4, 0.5],
+          "half_extents": [0.7, 0.4, 0.5],
           "walkable": true
         },
         {
           "facing": 1,
           "shape": "ramp",
           "offset": [0, 0, 1],
-          "size": [0.6, 0.4, 0.5],
+          "half_extents": [0.6, 0.4, 0.5],
           "walkable": true
         },
         {
           "shape": "box",
           "offset": [1, 0, 2],
-          "size": [0.5, 1.2, 0.5]
+          "half_extents": [0.5, 1.2, 0.5]
         },
         {
           "shape": "box",
           "offset": [1, 0, 0],
-          "size": [0.5, 1.2, 0.5]
+          "half_extents": [0.5, 1.2, 0.5]
         }
       ],
       "Portal": {
@@ -3997,7 +4011,7 @@
           "shape": "box",
           "type": "ladder",
           "offset": [-0.3, 0, 0],
-          "size": [0.1, 1, 0.25],
+          "half_extents": [0.1, 1, 0.25],
           "pickable": true
         }
       ],
@@ -4029,7 +4043,7 @@
           "facing": 1,
           "shape": "ramp",
           "offset": [0.5, 0, 0],
-          "size": [0.5, 1, 1],
+          "half_extents": [0.5, 1, 1],
           "pickable": true,
           "walkable": true
         },
@@ -4037,12 +4051,12 @@
           "shape": "box",
           "type": "hint",
           "offset": [0.5, 0, -0.45],
-          "size": [1, 1.2, 0.05]
+          "half_extents": [1, 1.2, 0.05]
         },
         {
           "shape": "box",
           "offset": [0.5, 0, 0.45],
-          "size": [1, 1.2, 0.05]
+          "half_extents": [1, 1.2, 0.05]
         }
       ],
       "SceneryMarks": {
@@ -4073,7 +4087,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0.45],
-          "size": [0.05, 0.8, 0.45],
+          "half_extents": [0.05, 0.8, 0.45],
           "origin": [0, 0, -0.5],
           "pickable": true,
           "animation": "IronFenceGateRight"
@@ -4082,7 +4096,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0, 0, -0.5],
-          "size": [0.05, 0.8, 0.45],
+          "half_extents": [0.05, 0.8, 0.45],
           "origin": [0, 0, 1.5],
           "pickable": true,
           "animation": "IronFenceGateLeft"
@@ -4091,13 +4105,13 @@
           "shape": "box",
           "type": "hint",
           "offset": [-0.4, 0, -0.5],
-          "size": [0.5, 0.8, 0.05]
+          "half_extents": [0.5, 0.8, 0.05]
         },
         {
           "shape": "box",
           "type": "hint",
           "offset": [-0.45, 0, 1.4],
-          "size": [0.5, 0.8, 0.05]
+          "half_extents": [0.5, 0.8, 0.05]
         }
       ],
       "SceneryMarks": {
@@ -4122,7 +4136,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0.5],
-          "size": [0.1, 1, 0.5],
+          "half_extents": [0.1, 1, 0.5],
           "origin": [0.5, 0, -0.5],
           "pickable": true,
           "animation": "StickWallDoorSwing"
@@ -4149,7 +4163,7 @@
         {
           "facing": 1,
           "shape": "ramp",
-          "size": [0.5, 0.5, 0.5],
+          "half_extents": [0.5, 0.5, 0.5],
           "pickable": true,
           "walkable": true
         },
@@ -4157,13 +4171,13 @@
           "shape": "box",
           "type": "hint",
           "offset": [0, 0, -0.45],
-          "size": [0.5, 1, 0.05]
+          "half_extents": [0.5, 1, 0.05]
         },
         {
           "shape": "box",
           "type": "hint",
           "offset": [0, 0, 0.45],
-          "size": [0.5, 1, 0.05]
+          "half_extents": [0.5, 1, 0.05]
         }
       ]
     }
@@ -4185,17 +4199,17 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.5],
-          "size": [0.35, 0.85, 0.2]
+          "half_extents": [0.35, 0.85, 0.2]
         },
         {
           "shape": "box",
           "offset": [0, 1.75, 0.5],
-          "size": [0.35, 0.1, 0.9]
+          "half_extents": [0.35, 0.1, 0.9]
         }
       ],
       "Portal": {
@@ -4222,22 +4236,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.6],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0.45],
-          "size": [0.55, 0.15, 1.35]
+          "half_extents": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.45],
-          "size": [0.85, 0.05, 1.1],
+          "half_extents": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
@@ -4267,22 +4281,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.5, 1, 0.4]
+          "half_extents": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.65],
-          "size": [0.55, 0.85, 0.4]
+          "half_extents": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.7, 0.45],
-          "size": [0.55, 0.25, 1.35]
+          "half_extents": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.55],
-          "size": [0.9, 0.05, 1.2],
+          "half_extents": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
@@ -4311,22 +4325,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.6],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0.45],
-          "size": [0.55, 0.15, 1.35]
+          "half_extents": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.45],
-          "size": [0.85, 0.05, 1.1],
+          "half_extents": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
@@ -4356,22 +4370,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.5, 1, 0.4]
+          "half_extents": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.65],
-          "size": [0.55, 0.85, 0.4]
+          "half_extents": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.7, 0.45],
-          "size": [0.55, 0.25, 1.35]
+          "half_extents": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.55],
-          "size": [0.9, 0.05, 1.2],
+          "half_extents": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
@@ -4396,7 +4410,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0],
-          "size": [0.5, 0.8, 0.15],
+          "half_extents": [0.5, 0.8, 0.15],
           "animation": "Spears"
         }
       ]
@@ -4415,17 +4429,17 @@
         {
           "shape": "box",
           "offset": [-0.45, 0, 0],
-          "size": [0.05, 1, 0.15]
+          "half_extents": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0.45, 0, 0],
-          "size": [0.05, 1, 0.15]
+          "half_extents": [0.05, 1, 0.15]
         },
         {
           "shape": "box",
           "offset": [0, 1.9, 0],
-          "size": [0.4, 0.05, 0.15]
+          "half_extents": [0.4, 0.05, 0.15]
         }
       ]
     }
@@ -4448,22 +4462,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.5, 1, 0.4]
+          "half_extents": [0.5, 1, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.65],
-          "size": [0.55, 0.85, 0.4]
+          "half_extents": [0.55, 0.85, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.7, 0.45],
-          "size": [0.55, 0.25, 1.35]
+          "half_extents": [0.55, 0.25, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.55],
-          "size": [0.9, 0.05, 1.2],
+          "half_extents": [0.9, 0.05, 1.2],
           "walkable": true
         }
       ],
@@ -4492,22 +4506,22 @@
         {
           "shape": "box",
           "offset": [0, 0, -0.65],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 0, 1.6],
-          "size": [0.55, 0.9, 0.4]
+          "half_extents": [0.55, 0.9, 0.4]
         },
         {
           "shape": "box",
           "offset": [0, 1.8, 0.45],
-          "size": [0.55, 0.15, 1.35]
+          "half_extents": [0.55, 0.15, 1.35]
         },
         {
           "shape": "box",
           "offset": [0, -0.1, 0.45],
-          "size": [0.85, 0.05, 1.1],
+          "half_extents": [0.85, 0.05, 1.1],
           "walkable": true
         }
       ],
@@ -4531,7 +4545,7 @@
         {
           "shape": "box",
           "type": "sensor",
-          "size": [0.51, 0.1, 0.51]
+          "half_extents": [0.51, 0.1, 0.51]
         }
       ]
     }
@@ -4547,7 +4561,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.5, 1, 0.5]
+          "half_extents": [0.5, 1, 0.5]
         }
       ]
     }
@@ -4564,12 +4578,12 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.2, 1, 0.5]
+          "half_extents": [0.2, 1, 0.5]
         },
         {
           "shape": "ramp",
           "offset": [0, 2, 0],
-          "size": [0.2, 0.5, 0.5]
+          "half_extents": [0.2, 0.5, 0.5]
         }
       ]
     }
@@ -4585,7 +4599,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1.5, 0.3]
+          "half_extents": [0.3, 1.5, 0.3]
         }
       ]
     }
@@ -4609,7 +4623,7 @@
       "SceneryColliders": [
         {
           "shape": "box",
-          "size": [0.3, 1.5, 0.3]
+          "half_extents": [0.3, 1.5, 0.3]
         }
       ]
     }
@@ -4627,7 +4641,7 @@
           "shape": "box",
           "type": "door",
           "offset": [0, 0, 0],
-          "size": [0.5, 0.8, 0.03],
+          "half_extents": [0.5, 0.8, 0.03],
           "animation": "Spears"
         }
       ]
@@ -4645,7 +4659,7 @@
         {
           "shape": "box",
           "offset": [-0.1, 0, 0.25],
-          "size": [0.45, 1, 0.15]
+          "half_extents": [0.45, 1, 0.15]
         }
       ]
     }
@@ -4663,7 +4677,7 @@
         {
           "shape": "box",
           "offset": [-0.12, 0, -0.25],
-          "size": [0.4, 1, 0.15]
+          "half_extents": [0.4, 1, 0.15]
         }
       ]
     }
