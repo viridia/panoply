@@ -18,8 +18,8 @@ opens and shuts it.
 
 Looks at it from camera distance 20, mid-clip, so the outlines can be seen to
 follow the pose. Checked by eye in `actor.png`: tan tunic, gold sleeves, brown hair and legs,
-not the file's default materials; the hair, outlined, sits on the head. In `actor_capsule.png`,
-a cyan capsule encloses the actor, its bottom on the ground. In `walked.png`, the actor stands
+not the file's default materials; the hair, outlined, sits on the head. Its capsule is in
+`physics_views.py`, its hair's shine in `lighting.py`. In `walked.png`, the actor stands
 in the view's center facing away from the camera; in `slope.png`, at the foot of the hill's
 face. In `creatures.png` (kreekin, feral dogs, bears, bandits; the alpha dog and the black bear
 larger than the rest), `townsfolk.png` and `avatars.png`, each group's actors face as placed.
@@ -147,16 +147,6 @@ def run(driver):
     wait_resting(driver, "Actor", True)
     driver.screenshot("actor")
 
-    # F3 draws the actor's capsule with the colliders.
-    driver.key("F3")
-    driver.frames(10)
-    driver.screenshot("actor_capsule")
-    driver.key("F3")
-
-    # Close enough to judge the hair's shine, a band across the strands (D29).
-    driver.goto([landed["position"][0], landed["position"][1] + 1.6, landed["position"][2]], 2.5)
-    driver.screenshot("hair")
-
     # In editing, W moves the free camera, not the actor.
     driver.goto(SPOT, 20.0, azimuth=math.pi / 2)
     start = driver.get("Actor", MOTION)["position"]
@@ -186,9 +176,7 @@ def run(driver):
     assert walked["position"][2] - start[2] == Between(0.0, 1.0), f"{start} to {walked}"
     assert walked["grounded"], f"not grounded: {walked}"
     # The camera trails the actor and catches up once it stops, to within its slack (0.25 m).
-    driver.seconds(2)
-    view = driver.get_resource(VIEW_READY, at="position")
-    assert flat_distance(view, walked["position"]) < 0.3, f"view at {view}, not the actor"
+    view_reaches(driver, walked["position"])
 
     driver.screenshot("walked")
 
@@ -229,11 +217,14 @@ def run(driver):
 
     # Dropped onto the face, the actor slides down it rather than standing there.
     place(driver, HILL_FACE)
-    driver.seconds(2)
-    slid = driver.get("Actor", MOTION)
-    print(f"slid: {slid}")
-    assert slid["position"][1] < 0.3, f"stayed on the slope: {slid}"
-    assert slid["position"][2] > HILL_FACE[2], f"did not slide down the face: {slid}"
+
+    def slid():
+        motion = driver.get("Actor", MOTION)
+        down = motion["position"][1] < 0.3 and motion["position"][2] > HILL_FACE[2]
+        return down, lambda: f"stayed on the slope: {motion}"
+
+    driver.wait(slid, "the actor to slide down the face", {"seconds": 2})
+    print(f"slid: {driver.get('Actor', MOTION)}")
 
     # Dropped from 3 m, the actor falls, lands on touchdown, and stands once the landing ends.
     place(driver, [SPOT[0], 3.0, SPOT[2]])
@@ -322,9 +313,7 @@ def run(driver):
     moved = driver.get("Actor", MOTION)
     print(f"went to: {moved}")
     assert flat_distance(moved["position"], TRAVEL_TARGET) < 0.1, f"not moved there: {moved}"
-    driver.seconds(1)
-    view = driver.get_resource(VIEW_READY, at="position")
-    assert flat_distance(view, moved["position"]) < 0.3, f"view at {view}, not the actor"
+    view_reaches(driver, moved["position"])
     driver.mode("Edit")
 
     # Walked west over the lip, the actor falls into the playground's hole with
@@ -439,8 +428,12 @@ def check_cursor(driver, chest):
         )["components"][CURSOR_OPTIONS]["visible"]
 
     assert cursor_visible(), "the cursor hid while moving"
-    driver.seconds(1.5)
-    assert not cursor_visible(), "the cursor did not hide at rest"
+    # It hides after a second at rest (`CURSOR_IDLE_SECONDS`).
+    driver.wait(
+        lambda: (not cursor_visible(), lambda: "still visible"),
+        "the cursor to hide at rest",
+        {"seconds": 2},
+    )
     hover(inset["left"] + 50, inset["top"] + height - 40)
     assert cursor_visible(), "the cursor did not return on moving"
     driver.mode("Edit")
@@ -508,7 +501,8 @@ def check_chest(driver):
     driver.frames(5)
     assert state() == {"open": True}, f"E did not open it: {state()}"
     assert prompt(driver) == "[E] Close", f"prompt {prompt(driver)!r} on the open chest"
-    driver.seconds(2)
+    # The sarcophagus's lid clip, `OpenLid2`, runs 1.25 s.
+    driver.seconds(1.25)
     driver.screenshot("chest_open")
     driver.key("KeyE")
     driver.frames(5)
@@ -619,6 +613,16 @@ def wait_put_back(driver):
 
     driver.wait(check, "the actor to be put back", {"seconds": 5})
     return driver.get("Actor", MOTION)
+
+
+def view_reaches(driver, position):
+    """Waits until the view is within the camera's slack (0.25 m) of `position`."""
+
+    def check():
+        view = driver.get_resource(VIEW_READY, at="position")
+        return flat_distance(view, position) < 0.3, lambda: f"view at {view}, not {position}"
+
+    driver.wait(check, "the view to reach the actor", {"seconds": 3})
 
 
 def travelling(driver):

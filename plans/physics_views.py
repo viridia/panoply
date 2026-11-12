@@ -6,7 +6,8 @@ suspect.
 
 - F3 draws the colliders; a ray cast down at the view center hits the ground, then a floor's, a
   fixture's and a tree's canopy colliders. `GroundProbe` holds where the ray hit, drawn as a white
-  sphere.
+  sphere. In `actor_capsule.png`, a cyan capsule encloses the player's actor, its bottom on the
+  ground.
 - The Show menu turns a collider group off, and Space toggles the checkbox just clicked, so keys
   reach widgets; Physics turns the drawing off. The menu is clicked twice: the second click lands
   only if the first left the menu open.
@@ -24,8 +25,11 @@ TAGS = ["manual"]
 VIEWS = "panoply_editor::debug_views::DebugViews"
 PROBE = "panoply_editor::debug_views::GroundProbe"
 PANEL = "panoply_editor::shell::EditorPanelSettings"
+MOTION = "panoply_actors::actor_physics::ActorMotion"
 # Forest, shoreline, water, grass and rocks.
 SPOT = [110.0, 0.0, 150.0]
+# Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
+ACTOR_SPOT = [37.0, 0.0, 47.0]
 TERRAIN_GROUP = 1
 FLOOR_GROUP = 2
 FIXTURE_GROUP = 8
@@ -81,6 +85,11 @@ def probe(driver):
         if label == "table":
             driver.screenshot("scenery_colliders")
     driver.screenshot("tree_colliders")
+
+    # The player's actor, landed where it spawns, drawn with its capsule.
+    driver.goto(ACTOR_SPOT, 20.0)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.screenshot("actor_capsule")
 
 
 def show_menu(driver):

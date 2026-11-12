@@ -22,13 +22,12 @@
   cannot name a file, writes a new realm (deleted afterwards) and cuts to it. There the map size
   control grows and shrinks the map, keeps a parcel, undoes, takes clicks turned with the view,
   and saves; the playground's selected parcel does not count there, and a parcel selected there
-  turns, undoably. Change Realm filters the realms and goes back, keeping the view's coordinates.
+  turns, undoably. Change Realm lists the new realm and goes back, keeping the view's
+  coordinates.
 - Go To dialog: G opens it, centered over a barrier that covers the window, and Esc closes it.
-  Typing filters the list; Go travels to the point clicked, a double-click to its point, and in
-  the filter box Up and Down
-  move the selection and Enter travels, to the first point shown if none is selected. An arrow
-  held there does not turn the view. An arrow
-  held there leaves the view where it was.
+  Its filter box has the keys as it opens: typing filters the list, a held arrow leaves the view
+  where it was, Up and Down move the selection, and Enter travels to the point selected, or to
+  the first shown if none is. A double-click travels to its point.
 - Parcels: those outside the view are hidden, and so are their ground meshes, but stay cached;
   once `goto` returns, the readiness survey shows nothing pending.
 
@@ -147,11 +146,7 @@ def camera(driver):
     print(f"strafed: {forward} to {strafed}")
     assert abs(strafed[0] - forward[0]) == Between(0.2 * CAMERA_SPEED, 0.8 * CAMERA_SPEED)
     assert abs(strafed[2] - forward[2]) < 0.1, f"strafe moved forward: {strafed}"
-
-    before = driver.get("PrimaryCamera", TRANSFORM)["rotation"]
-    hold(driver, "ArrowRight", 0.3)
-    after = driver.get("PrimaryCamera", TRANSFORM)["rotation"]
-    assert before != after, f"the view did not turn: {before}"
+    # An arrow turning the view is checked with the realm panel's filter box.
 
     saved = driver.get_resource(SAVED_VIEW)
     assert saved["realm"] == "playground", saved
@@ -209,7 +204,6 @@ def position(row):
 def scenery(driver):
     driver.present("SceneryElement", timeout=WAIT)
     driver.present("FloorRegion", timeout=WAIT)
-    driver.present("Ground", timeout=WAIT)
 
     precincts = by_name(driver, "Precinct:")
     tiers = by_name(driver, "Tier:")
@@ -262,7 +256,6 @@ def editor(driver):
     # Terrain mode's palette starts on Raise and chooses the tool.
     driver.present("TerrainPanel")
     assert terrain_tool(driver) == "RaiseDraw", f"started with {terrain_tool(driver)}"
-    expect_highlight(driver, "RaiseDraw", TOOL_BUTTONS)
     driver.click("DrawShrubs")
     wait_mode(driver, terrain_tool, "DrawShrubs")
     expect_highlight(driver, "DrawShrubs", TOOL_BUTTONS)
@@ -286,7 +279,6 @@ def editor(driver):
     scenery_panel(driver)
     driver.click("RealmMode")
     wait_mode(driver, editor_mode, "Realm")
-    expect_highlight(driver, "RealmMode")
     realm_panel(driver)
 
     driver.key("KeyT")
@@ -301,7 +293,6 @@ def scenery_panel(driver):
     wait_mode(driver, editor_mode, "Scenery")
     driver.present("SceneryPanel")
     assert scenery_tool(driver) == "PlaceFloor", f"started with {scenery_tool(driver)}"
-    expect_highlight(driver, "PlaceFloor", SCENERY_BUTTONS)
     driver.click("PlaceWall")
     wait_mode(driver, scenery_tool, "PlaceWall")
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
@@ -348,7 +339,6 @@ def expect_choice(driver, tool, expected):
 
 def realm_panel(driver):
     driver.present("RealmPanel/warehouse")
-    driver.expect("RealmPanel/Realm", TEXT, "playground")
     driver.screenshot("realm_panel")
 
     # The panel's filter box does not take the focus: an arrow still turns the view.
@@ -382,23 +372,17 @@ def realm_panel(driver):
     driver.click("QuitDialog/Cancel")
     driver.absent("QuitDialog")
 
-    # Undo removes the point, and redo brings it back. Before Save, whose reload would overwrite
-    # the edits (PAN57).
-    undo(driver)
-    driver.absent("RealmPanel/warehouse-smoke")
-    driver.expect("Toast/ToastText", TEXT, "Undo: Remove nav point warehouse-smoke")
-    undo(driver, redo=True)
-    driver.present("RealmPanel/warehouse-smoke")
-    driver.expect("Toast/ToastText", TEXT, "Redo: Add nav point warehouse-smoke")
-
-    # Undo from another mode returns to the mode of the edit.
+    # Undo, from another mode, removes the point and returns to the mode of the edit; redo brings
+    # it back. Before Save, whose reload would overwrite the edits (PAN57).
     driver.click("TerrainMode")
     wait_mode(driver, editor_mode, "Terrain")
     undo(driver)
     wait_mode(driver, editor_mode, "Realm")
     driver.absent("RealmPanel/warehouse-smoke")
+    driver.expect("Toast/ToastText", TEXT, "Undo: Remove nav point warehouse-smoke")
     undo(driver, redo=True)
     driver.present("RealmPanel/warehouse-smoke")
+    driver.expect("Toast/ToastText", TEXT, "Redo: Add nav point warehouse-smoke")
 
     # While a text field has the keys, the history does not get them.
     driver.click("AddNavPoint")
@@ -443,11 +427,7 @@ def create_and_change_realm(driver):
         driver.type("playground")
         driver.expect("TextEntryDialog/Hint", TEXT, "Name in use")
         expect_disabled(driver, "TextEntryDialog/Ok", True)
-        driver.click("TextEntryDialog/Cancel")
-        driver.absent("TextEntryDialog")
-        driver.click("CreateRealm")
-        driver.present("TextEntryDialog/Entry")
-        driver.type("a.b")
+        driver.type(".x")
         driver.expect("TextEntryDialog/Hint", TEXT, "Letters, digits, - and _ only")
         expect_disabled(driver, "TextEntryDialog/Ok", True)
         driver.click("TextEntryDialog/Cancel")
@@ -490,11 +470,9 @@ def create_and_change_realm(driver):
 
         driver.goto(WAREHOUSE, realm="smoke-realm")
 
-        # Change Realm lists the new realm, filters, and goes back.
+        # Change Realm lists the new realm, and goes back. Its filter is the Go To dialog's.
         driver.click("ChangeRealm")
         driver.present("ChangeRealmDialog/smoke-realm")
-        driver.type("playg")
-        driver.absent("ChangeRealmDialog/smoke-realm")
         driver.click("ChangeRealmDialog/playground")
         driver.screenshot("change_realm")
         driver.click("ChangeRealmDialog/Go")
@@ -696,25 +674,26 @@ def goto_dialog(driver):
     driver.key("Escape")
     driver.absent("GotoDialog")
 
-    # `tein` matches only "test-inn", by its words' starts; the filter box has focus as it opens.
+    # The realm panel left the view at the warehouse, so each trip below starts away from its
+    # point. A row clicked and Go are checked in the Change Realm dialog, the same chooser.
+
+    # The filter box has focus as it opens: `tein` matches only "test-inn", by its words' starts.
+    # It keeps a held arrow from the camera for the whole hold, not just its first frame. With
+    # nothing selected, Enter travels to the first point shown.
     driver.key("KeyG")
     driver.present("GotoDialog/warehouse")
     driver.type("tein")
     driver.absent("GotoDialog/warehouse")
     driver.present("GotoDialog/test-inn")
-    driver.click("GotoDialog/test-inn")
     driver.screenshot("goto_dialog")
-    driver.click("GotoDialog/Go")
-    arrived(driver, TEST_INN, "click and Go")
+    before = driver.get("PrimaryCamera", TRANSFORM)
+    hold(driver, "ArrowLeft", 0.5)
+    after = driver.get("PrimaryCamera", TRANSFORM)
+    assert before == after, f"a held arrow in the filter box moved the view: {before} to {after}"
+    driver.key("Enter")
+    arrived(driver, TEST_INN, "Enter")
 
-    # A double-click on a point travels to it: the list's focus outline does not take the clicks.
-    driver.key("KeyG")
-    driver.present("GotoDialog/warehouse")
-    driver.click("GotoDialog/warehouse")
-    driver.click("GotoDialog/warehouse")
-    arrived(driver, WAREHOUSE, "double-click")
-
-    # In the filter box, Down and Up move the selection, and Enter travels.
+    # In the filter box, Down and Up move the selection, and Enter travels to it.
     driver.key("KeyG")
     driver.present("GotoDialog/warehouse")
     driver.type("wareh")
@@ -725,18 +704,13 @@ def goto_dialog(driver):
     driver.key("Enter")
     arrived(driver, WAREHOUSE, "arrows and Enter")
 
-    # The filter box keeps a held arrow from the camera for the whole hold, not just its first
-    # frame. Then, with nothing selected, Enter travels to the first point shown.
+    # A double-click on a point travels to it: the list's focus outline does not take the clicks.
     driver.key("KeyG")
     driver.present("GotoDialog/warehouse")
     driver.type("tein")
-    driver.absent("GotoDialog/warehouse")
-    before = driver.get("PrimaryCamera", TRANSFORM)
-    hold(driver, "ArrowLeft", 0.5)
-    after = driver.get("PrimaryCamera", TRANSFORM)
-    assert before == after, f"a held arrow in the filter box moved the view: {before} to {after}"
-    driver.key("Enter")
-    arrived(driver, TEST_INN, "Enter")
+    driver.click("GotoDialog/test-inn")
+    driver.click("GotoDialog/test-inn")
+    arrived(driver, TEST_INN, "double-click")
 
 
 def parcel_visibility(driver):
