@@ -17,7 +17,9 @@ use self::{
     precinct::{mark_precinct_data, read_precinct_data},
     scenery_aspect::{LightSource, ModelComponent, SceneryColliders, SceneryMarks, SceneryModels},
     scenery_colliders::{build_se_colliders, ColliderDesc, ColliderShape, ColliderType},
-    scenery_element::{spawn_se_model_instances, spawn_se_models, update_se_aspects},
+    scenery_element::{
+        rebuild_changed_se_aspects, spawn_se_model_instances, spawn_se_models, update_se_aspects,
+    },
     terrain_fx_aspect::{TerrainEffect, TerrainHole},
     terrain_fx_map::{rebuild_parcel_terrain_fx, rebuild_terrain_fx_vertex_attrs},
     wall_aspect::WallSize,
@@ -106,7 +108,10 @@ impl Plugin for PanoplySceneryPlugin {
                     update_floor_aspects.after(read_precinct_data),
                     gen_floor_meshes.after(update_floor_aspects),
                     // Wall and fixture processing
-                    update_se_aspects.after(read_precinct_data),
+                    rebuild_changed_se_aspects,
+                    update_se_aspects
+                        .after(read_precinct_data)
+                        .after(rebuild_changed_se_aspects),
                     spawn_se_models.after(update_se_aspects),
                     build_se_colliders.after(update_se_aspects),
                     // TerrainFx processing

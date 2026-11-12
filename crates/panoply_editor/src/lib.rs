@@ -20,10 +20,12 @@ pub mod mode_selector;
 pub mod nav_point_list;
 pub mod new_realm;
 pub mod parcel_selection;
+pub mod properties;
 pub mod quit_dialog;
 pub mod realm_panel;
 pub mod saved_view;
 pub mod scenery_panel;
+pub mod scenery_properties;
 pub mod search_filter;
 pub mod shell;
 pub mod terrain_cursor;
@@ -59,6 +61,7 @@ impl PluginGroup for EditorPlugins {
             .add(realm_panel::RealmPanelPlugin)
             .add(terrain_panel::TerrainPanelPlugin)
             .add(scenery_panel::SceneryPanelPlugin)
+            .add(scenery_properties::SceneryPropertiesPlugin)
             .add(exemplar_list::ExemplarListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)

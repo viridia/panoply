@@ -143,6 +143,7 @@ impl Plugin for ActorsPlugin {
                     spawn_player,
                     mark_precinct_actors,
                     spawn_precinct_actors,
+                    rebuild_changed_actor_aspects,
                     update_actor_aspects,
                     rebuild_reloaded_actors,
                     spawn_actor_bodies,
@@ -219,6 +220,35 @@ fn spawn_player(
         viewpoint.follow = Some(actor.id());
     }
     *spawned = true;
+}
+
+/// Applies the aspects again to each actor whose exemplar, or one it extends, changed: edited, or
+/// reloaded from its file.
+fn rebuild_changed_actor_aspects(
+    mut commands: Commands,
+    mut events: MessageReader<AssetEvent<Exemplar>>,
+    actors: Query<(Entity, &Actor)>,
+    exemplars: Res<Assets<Exemplar>>,
+) {
+    let changed: Vec<AssetId<Exemplar>> = events
+        .read()
+        .filter_map(|event| match event {
+            AssetEvent::Modified { id } => Some(*id),
+            _ => None,
+        })
+        .collect();
+    if changed.is_empty() {
+        return;
+    }
+    for (entity, actor) in &actors {
+        let exemplar = actor.exemplar.id();
+        if changed
+            .iter()
+            .any(|&id| Exemplar::chain_contains(&exemplars, exemplar, id))
+        {
+            commands.entity(entity).insert(ActorRebuildAspects);
+        }
+    }
 }
 
 fn update_actor_aspects(

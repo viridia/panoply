@@ -35,9 +35,8 @@ PAN28, Property editor, in lettered parts. A fork of arbor_day's `properties.rs`
 by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is
 in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Inspectable`
 (`crates/bevy_reactor_prop_inspect/src/inspectable.rs`) is a model for roots and field handles.
-Widgets read values and emit edits, never write them: an edit names a root and a path within it and
-is one of a closed set of operations, which one system applies and PAN42's stack (D49) records. Only
-the walk that draws the rows and the system that applies edits touch reflection.
+Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
+set an edit is one of.
 
 - **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
   terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
@@ -59,15 +58,12 @@ the walk that draws the rows and the system that applies edits touch reflection.
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28a Values and undo.** The fork, showing the exemplar chosen in scenery mode's lists. A root
-  trait, as `InspectableRoot`, reads a value by path and applies an edit, with one implementation:
-  an aspect of an exemplar in a catalog, named by asset key. Its edits only set values: no closures,
-  which could not be undone, and the value replaced is kept for undo by `reflect_clone`. A drag's
-  steps coalesce into one entry, with `coalesce` added to `UndoAction` from bevy#23373, which PAN42
-  left out. Nested structs, laid out so nesting does not squeeze the values: in faery, labels and
-  values in separate columns, under nesting, cramped the labels and cut values off (faery's layout
-  is a starting point only).
-- **PAN28b Optional fields, arrays and variants.** Optional fields as faery's aspects had them: a
+- **PAN28b Saving catalogs.** Edited exemplars written back to their catalogs, so PAN28a's edits
+  persist: each edit marks its catalog unsaved. `ExemplarData` serializes (today its `Serialize` is
+  `todo!()`): aspects through reflection, formulas as their source text, aliases, and `extends` as
+  the path it was read from, keeping the file's order of exemplars and fields so a save's diff shows
+  only the edit. Tested by a round trip: every catalog loaded and written unchanged.
+- **PAN28c Optional fields, arrays and variants.** Optional fields as faery's aspects had them: a
   struct is a map whose keys may be absent; a `None` field has no row, a `Some` row has an × button
   that removes it, and a boxed-plus menu in the panel header lists the absent fields to add. Arrays
   of structs, whose items are inserted and removed, and enums switched between variants. Each
@@ -80,10 +76,26 @@ the walk that draws the rows and the system that applies edits touch reflection.
   element's colliders: `ColliderDesc`'s `shape` becomes an enum whose variants hold their own
   dimensions (a sphere a radius, a box its half-extents) in place of the shared `size`, so the
   fields a shape uses follow from its type (D45); whether catalogs migrate or serde reads the old
-  form is decided in the chunk.
-- **PAN28c Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
+  form is decided in the chunk. Text fields, read-only until here, edited and committed on Enter or
+  on leaving the field: Bevy's text input reports no commit, and an edit per keystroke would rebuild
+  instances for every half-typed model path. The commit is general, not the property editor's: one
+  observer pair on every `TextInput` (Enter and `FocusLost`, as the feathers number input has, with
+  Escape reverting) triggers a text-edit-finished event carrying the text, which the panel, the
+  exemplar filter and later dialogs listen for. It stays free of Panoply types, since an upstream
+  ticket asks for the same; when Bevy gains one, Panoply moves to it.
+- **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
+  then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
+  `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type
+  (`ReflectAspect`, `can_attach`), checked where the exemplar has it, grouped by crate until mods
+  have packages (X65); Save adds and removes them as one undo entry, new aspects from
+  `ReflectDefault`. An × on each aspect pane's header removes that aspect, as Blender's modifier
+  panels have. The exemplar's own fields become editable. `extends` is a button naming the
+  prototype, not a text input; it opens the exemplar chooser scenery mode already has, listing
+  exemplars of the same type, abstract ones included, and leaving out any that would make the chain
+  a cycle.
+- **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
   and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
-  and Clone… (`TODO(PAN28c)`), which write catalogs and so need I2.
+  and Clone… (`TODO(PAN28e)`), which write catalogs, as PAN28b does.
 - **PAN43 Inherited fields.** Provisional. Fields an exemplar inherits through `extends` show apart
   from its own, as faery's did in dim italics (`scenery-actor-inherited.png`); editing one overrides
   it, and × on an override reverts it to the inherited value rather than removing the field. faery

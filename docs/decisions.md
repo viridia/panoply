@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D72.**
+**Next: D73.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -562,3 +562,12 @@ never reused.
   the aspects along its chain. Checking when an instance spawns would find the error only once one
   was placed; checking only at runtime would give up the check. Reversing it means compiling only
   after every chain has loaded, or no check before play. (PAN45c)
+- **D72** The property editor's widgets read values and never write them. Each changed widget asks
+  for an edit, a root (where the value lives, named by a stable key, D49), a path within it and a
+  new value of the field's real type; one system makes the frame's edits after the panel has run,
+  records each in the undo history, then copies the shown values for the next frame. Only the walk
+  that draws the rows and the roots touch reflection, so a new place to edit (an instance, a nav
+  point) is a new root, a type a mod declares (X64) is another walk and root beside reflection's,
+  and moving to `bevy_reflect2` (X98) touches those alone. arbor_day's panel, which it forked, wrote
+  through `&mut dyn PartialReflect` as it drew, which undo could not record. Reversing it means
+  widgets bound to the data again, with undo snapshotting whole values. (PAN28a)

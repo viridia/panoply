@@ -6,8 +6,6 @@ confirmed by running something or only by reading. Numbers are never reused.
 
 **Next: I36.**
 
-- **I2** `ExemplarData`'s `Serialize` impl is `todo!()`; serializing an exemplar panics. Read, not
-  run.
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
   Undecided whether a Bevy version is worth it. If so, a candidate home is the editor's catalogs

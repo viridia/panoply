@@ -25,6 +25,7 @@ use bevy_immediate::{
 use crate::{
     exemplar_list::{exemplar_chooser, placed_type, SceneryChoices},
     mode_selector::{EditorModeSettings, SceneryTool},
+    scenery_properties::SceneryProperties,
     shell::SAVE_DELAY,
 };
 
@@ -164,16 +165,20 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 height: px(32),
             }
             --
-            // Into the last row, which flexes: an item spanning a flexible track gives its height
-            // to that track, so the list's length leaves the left column's rows alone.
+            // Down to the bottom of Clone…. An auto row grows to the max-content height of what
+            // spans it before a flexible row gets any space, so the list would push the
+            // properties out; `min_height: 0` does not stop that, since it lowers only the
+            // minimum. A zero height keeps the list out of the rows' sizing, and the percentage
+            // minimum, resolved against the grid area once the rows are sized, fills the area.
             SceneryExemplars
             #Exemplars
             Node {
                 grid_column: {GridPlacement::start(2)},
-                grid_row: {GridPlacement::start_end(2, -1)},
+                grid_row: {GridPlacement::start_end(2, 6)},
                 flex_direction: FlexDirection::Column,
                 min_width: px(0),
-                min_height: px(0),
+                min_height: percent(100),
+                height: px(0),
             }
             --
             // TODO(PAN5): the layer to cut at, and its Cut toggle.
@@ -213,7 +218,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 InteractionDisabled
             ]
             --
-            // TODO(PAN28c): New and Clone act on the chosen exemplar.
+            // TODO(PAN28e): New and Clone act on the chosen exemplar.
             @FeathersButton { @caption: bsn! { Text("New…") ThemedText } }
             #New
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(4)} }
@@ -223,6 +228,17 @@ pub(crate) fn scenery_panel() -> impl Scene {
             #Clone
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(5)} }
             InteractionDisabled
+            --
+            // The chosen exemplar's properties, across both columns in the last row, which takes
+            // the rest of the panel's height.
+            #Properties
+            SceneryProperties
+            Node {
+                grid_column: {GridPlacement::start_end(1, -1)},
+                grid_row: {GridPlacement::start(6)},
+                flex_direction: FlexDirection::Column,
+                min_height: px(0),
+            }
         ]
     }
 }

@@ -36,6 +36,35 @@ pub struct SceneryElementMesh {
     pub placement: ModelComponent,
 }
 
+/// Applies the aspects again to each element whose exemplar, or one it extends, changed: edited,
+/// or reloaded from its file.
+pub fn rebuild_changed_se_aspects(
+    mut commands: Commands,
+    mut events: MessageReader<AssetEvent<Exemplar>>,
+    elements: Query<(Entity, &SceneryElement)>,
+    exemplars: Res<Assets<Exemplar>>,
+) {
+    let changed: Vec<AssetId<Exemplar>> = events
+        .read()
+        .filter_map(|event| match event {
+            AssetEvent::Modified { id } => Some(*id),
+            _ => None,
+        })
+        .collect();
+    if changed.is_empty() {
+        return;
+    }
+    for (entity, element) in &elements {
+        let exemplar = element.exemplar.id();
+        if changed
+            .iter()
+            .any(|&id| Exemplar::chain_contains(&exemplars, exemplar, id))
+        {
+            commands.entity(entity).insert(SceneryElementRebuildAspects);
+        }
+    }
+}
+
 pub fn update_se_aspects(
     mut commands: Commands,
     mut q_elements: Query<(Entity, &SceneryElement), With<SceneryElementRebuildAspects>>,

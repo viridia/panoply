@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN28a** Scenery mode shows the chosen exemplar's properties; its numbers edit live, undoably.
 - **PAN41** Scenery mode lists the walls, fixtures, actors and terrain effects to place, each kept.
 - **PAN73** Scenery mode has its panel, whose palette chooses a tool; later chunks add the tools.
 - **PAN45c** A chest offers Open or Close as it is shut or open, and nothing while locked.

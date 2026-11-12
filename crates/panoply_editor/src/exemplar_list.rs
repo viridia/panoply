@@ -145,7 +145,32 @@ fn exemplar_names(
     exemplars: &Assets<Exemplar>,
     instance_type: InstanceType,
 ) -> Vec<String> {
-    let entries: Vec<(String, String)> = exemplars
+    named_exemplars(server, exemplars, instance_type)
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect()
+}
+
+/// The exemplar named `name` in `tool`'s list.
+pub fn chosen_exemplar(
+    server: &AssetServer,
+    exemplars: &Assets<Exemplar>,
+    tool: SceneryTool,
+    name: &str,
+) -> Option<AssetId<Exemplar>> {
+    named_exemplars(server, exemplars, placed_type(tool)?)
+        .into_iter()
+        .find_map(|(found, id)| (found == name).then_some(id))
+}
+
+/// The exemplars of `instance_type` that can be placed, each with its name in the list, as
+/// [`exemplar_names`] gives them.
+fn named_exemplars(
+    server: &AssetServer,
+    exemplars: &Assets<Exemplar>,
+    instance_type: InstanceType,
+) -> Vec<(String, AssetId<Exemplar>)> {
+    let entries: Vec<(String, String, AssetId<Exemplar>)> = exemplars
         .iter()
         .filter(|(_, exemplar)| exemplar.0.meta_type == instance_type && !exemplar.0.is_abstract)
         .filter_map(|(id, exemplar)| {
@@ -156,18 +181,18 @@ fn exemplar_names(
             }
             let file = path.path().file_name()?.to_string_lossy();
             let catalog = file.strip_suffix(".exem.json").unwrap_or(&file).to_string();
-            Some((label, catalog))
+            Some((label, catalog, id))
         })
         .collect();
     let mut counts = HashMap::<&str, usize>::default();
-    for (label, _) in &entries {
+    for (label, ..) in &entries {
         *counts.entry(label.as_str()).or_default() += 1;
     }
     entries
         .iter()
-        .map(|(label, catalog)| match counts[label.as_str()] {
-            1 => label.clone(),
-            _ => format!("{label} ({catalog})"),
+        .map(|(label, catalog, id)| match counts[label.as_str()] {
+            1 => (label.clone(), *id),
+            _ => (format!("{label} ({catalog})"), *id),
         })
         .collect()
 }

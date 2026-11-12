@@ -12,7 +12,8 @@
 - Editor: T shows the editor panel beside the view, and its mode selector and F2 switch modes;
   Realm mode alone draws its grid. Terrain mode's palette chooses its tool, kept through play;
   its rotate buttons wait for a selected parcel, whose contour is drawn. A brush tool's cursor
-  follows the pointer over that parcel and stays on its edge while dragged off it.
+  follows the pointer over that parcel and stays on its edge while dragged off it. Scenery mode
+  shows the chosen exemplar's properties, and a number typed there changes it, undoably.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -84,6 +85,7 @@ UI_GLOBAL = "bevy_ui::ui_transform::UiGlobalTransform"
 MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
+NUMERIC = "bevy_ui_widgets::numeric::NumericValue"
 SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
@@ -317,6 +319,7 @@ def scenery_panel(driver):
     driver.present("Exemplars/Marcus", timeout=WAIT)
     driver.absent("Exemplars/Proto.HumanoidMale")
     driver.absent("Exemplars/CottageWall")
+    exemplar_properties(driver)
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
     driver.click("PlaceWall")
@@ -325,6 +328,39 @@ def scenery_panel(driver):
     # The row highlights, then scrolls into view after a layout pass.
     driver.frames(10)
     driver.screenshot("scenery_choice_kept")
+
+
+def exemplar_properties(driver):
+    """The chosen exemplar's properties show below the list: its own pane, then one per aspect. A
+    number typed into one changes the exemplar, undoably."""
+    driver.click("Exemplars/Filter")
+    driver.type("FeralDogAlpha")
+    driver.click("Exemplars/FeralDogAlpha")
+    expect_choice(driver, "actor", "FeralDogAlpha")
+    driver.present("Properties/extends")
+    scale = "Properties/ActorScale/input"
+    # As an f32 reads back, near its decimal.
+    loaded = {"F32": Between(1.19, 1.21)}
+    edited = {"F32": Between(1.49, 1.51)}
+    driver.expect(scale, NUMERIC, loaded)
+    driver.screenshot("exemplar_properties")
+    driver.click(scale)
+    driver.key("End")
+    for _ in range(8):
+        driver.key("Backspace")
+    driver.type("1.5")
+    driver.key("Enter")
+    driver.expect(scale, NUMERIC, edited)
+    # Undo goes back to the value before the edit, and redo forward again. The input keeps the
+    # keys, which the history waits for: the list takes them back.
+    driver.click("Exemplars/FeralDogAlpha")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set ActorScale")
+    driver.expect(scale, NUMERIC, loaded)
+    undo(driver, redo=True)
+    driver.expect(scale, NUMERIC, edited)
+    undo(driver)
+    driver.click("Exemplars/ClearFilter")
 
 
 def expect_choice(driver, tool, expected):

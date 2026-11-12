@@ -3,7 +3,7 @@
 //! Undoing or redoing returns to the mode the edit was made in, so the change lands where it can be
 //! seen; switching modes is not itself an edit, and leaves the history alone.
 
-use std::borrow::Cow;
+use std::{any::Any, borrow::Cow};
 
 use bevy::{prelude::*, settings::SaveSettingsDeferred};
 use bevy_action_map::prelude::*;
@@ -17,12 +17,20 @@ use crate::{
 
 /// A change that can be applied to the world, and that yields its inverse: applying an undo gives
 /// the redo, and applying that gives the undo again.
-pub trait UndoAction: Send + Sync + 'static {
+pub trait UndoAction: Any + Send + Sync {
     /// Makes the change and returns the action that reverses it.
     fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction>;
 
     /// What applying this does, as "Remove nav point inn".
     fn label(&self) -> Cow<'static, str>;
+
+    /// Whether this action, just recorded, belongs to the same step as `earlier`, the latest
+    /// entry: the steps of one drag. The history keeps `earlier` alone, since it already reverses
+    /// to before the first step.
+    fn coalesces_into(&self, earlier: &dyn UndoAction) -> bool {
+        let _ = earlier;
+        false
+    }
 }
 
 /// An action and the mode its edit was made in.
@@ -62,14 +70,20 @@ pub struct UndoStack {
 }
 
 impl UndoStack {
-    /// Records an edit just made in `mode`, given the action that reverses it. Clears the redo
-    /// history.
+    /// Records an edit just made in `mode`, given the action that reverses it, unless it
+    /// coalesces into the latest entry. Clears the redo history.
     pub fn push(&mut self, mode: EditorMode, action: impl UndoAction) {
+        self.redo.clear();
+        let coalesces = self.undo.last().is_some_and(|latest| {
+            latest.mode == mode && action.coalesces_into(latest.action.as_ref())
+        });
+        if coalesces {
+            return;
+        }
         self.undo.push(UndoEntry {
             mode,
             action: Box::new(action),
         });
-        self.redo.clear();
     }
 
     /// Reverses the latest edit, if there is one.
@@ -217,6 +231,64 @@ mod tests {
         stack.undo(&mut world);
         stack.redo(&mut world);
         assert_eq!(count(&world), 0);
+    }
+
+    /// Sets the counter as one step of drag `gesture`, and coalesces with the other steps of it.
+    struct DragCount {
+        gesture: u32,
+        value: u32,
+    }
+
+    impl UndoAction for DragCount {
+        fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction> {
+            let mut count = world.resource_mut::<Count>();
+            let previous = count.0;
+            count.0 = self.value;
+            Box::new(DragCount {
+                gesture: self.gesture,
+                value: previous,
+            })
+        }
+
+        fn label(&self) -> Cow<'static, str> {
+            "Drag count".into()
+        }
+
+        fn coalesces_into(&self, earlier: &dyn UndoAction) -> bool {
+            (earlier as &dyn Any)
+                .downcast_ref::<DragCount>()
+                .is_some_and(|earlier| earlier.gesture == self.gesture)
+        }
+    }
+
+    fn drag(world: &mut World, stack: &mut UndoStack, gesture: u32, value: u32) {
+        let mut count = world.resource_mut::<Count>();
+        let previous = count.0;
+        count.0 = value;
+        stack.push(
+            EditorMode::Scenery,
+            DragCount {
+                gesture,
+                value: previous,
+            },
+        );
+    }
+
+    #[test]
+    fn the_steps_of_one_drag_undo_together() {
+        let mut world = world();
+        let mut stack = UndoStack::default();
+        drag(&mut world, &mut stack, 1, 1);
+        drag(&mut world, &mut stack, 1, 2);
+        drag(&mut world, &mut stack, 1, 3);
+        drag(&mut world, &mut stack, 2, 4);
+
+        stack.undo(&mut world);
+        assert_eq!(count(&world), 3);
+        stack.undo(&mut world);
+        assert_eq!(count(&world), 0);
+        stack.redo(&mut world);
+        assert_eq!(count(&world), 3);
     }
 
     #[test]

@@ -140,6 +140,10 @@ calls for work becomes an issue in [issues.md](issues.md).
   buttons draw and pick where they are shown; the smoke plan clicks them turned by 237°. A node's
   `UiTransform` scales before it rotates, so a squash applied after a turn takes a parent node of
   its own. Layout ignores the transforms, so a turning node's parent reserves the space it sweeps.
+- A grid item spanning only `auto` rows grows them to its max-content height before any `fr` row
+  gets space, as CSS grid does (Maximize Tracks precedes Expand Flexible Tracks); `min_height: 0`
+  lowers only its minimum. Recipe: `height: px(0)` with `min_height: percent(100)`, which taffy
+  resolves against the grid area, as the scenery panel's exemplar list does (PAN28a).
 - The editor's fall to 3 fps in `plans/smoke.py` (2026-11-09; the fixes are PAN66), measured with
   temporary probes: frame time grew linearly with fixed steps, about 13 ms plus 20 ms a step, up to
   Bevy's 16-step catch-up (250 ms at the default 64 Hz). The realm step took 0.3 ms; `move_actors`
