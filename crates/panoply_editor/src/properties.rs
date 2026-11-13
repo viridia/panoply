@@ -1,7 +1,8 @@
 //! The property editor's rows: a subpane per inspected value, and in it a row per field, named
 //! after its field. Booleans get a checkbox, numbers a number input carrying its caption inside, a
 //! `Vec3` three of them, colors a swatch that opens a picker, strings a text input committed on
-//! Enter or on leaving it, nested structs a heading over their own rows, indented. A newtype shows
+//! Enter or on leaving it, a model (`Skin`, `SceneryModel`) a button that opens a picker of models
+//! of its kind, nested structs a heading over their own rows, indented. Any other newtype shows
 //! its one field's row. An `Option` is its value's row, with a × that removes the value, or no row
 //! while it is `None`: a struct's heading has a menu of its absent fields, which adds one with its
 //! type's default. Every other field is a row that shows its value without editing it. Annotations
@@ -22,7 +23,7 @@ use bevy::{
         constants::{fonts, icons, size},
         containers::{subpane, subpane_body, subpane_header},
         controls::{
-            ButtonVariant, ColorInputValue, FeathersCheckbox, FeathersColorInput,
+            ButtonVariant, ColorInputValue, FeathersButton, FeathersCheckbox, FeathersColorInput,
             FeathersListRow, FeathersMenu, FeathersMenuItem, FeathersMenuPopup,
             FeathersMenuToolButton, FeathersNumberInput, FeathersSelect, FeathersTextInput,
             FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputSnapToStep,
@@ -57,7 +58,8 @@ use bevy_immediate::{
         activated::ImmUiActivated,
         clicked, color_plane, color_swatch, disabled, interaction, layout_order, look,
         number_input::{self, ImmUiNumberInput, ImmUiNumericValue},
-        selected, slider_base_color, slider_value, text,
+        selected, slider_base_color, slider_value,
+        text::{self, ImmUiText},
         text_input::{self, ImmUiTextInput},
         track_value_change_plugin::{NewValueChange, TrackValueChangePlugin},
         ImplCapsUiFeathers,
@@ -66,6 +68,7 @@ use bevy_immediate::{
 };
 use panoply_core::HexColor;
 
+use crate::model_picker::{model_field, open_model_picker, ChosenModel, ModelKind};
 use edit::{EditKind, PropertyEdits, PropertyRoot};
 
 /// The panel's capabilities: `bevy_immediate`'s for feathers, and binding a color input and a
@@ -97,8 +100,18 @@ impl_capability_set!(
         CapabilityColorInput,
         CapabilityTextCommit,
         CapabilityEnumSelect,
+        CapabilityModelPicker,
     )
 );
+
+/// Lets the panel take the model a model field's picker last chose.
+pub struct CapabilityModelPicker;
+
+impl ImmCapability for CapabilityModelPicker {
+    fn build<Caps: CapSet>(app: &mut App, cap_req: &mut ImmCapAccessRequests<Caps>) {
+        cap_req.request_component_write::<ChosenModel>(app.world_mut());
+    }
+}
 
 /// Lets the panel read and clear an enum select's [`PickedVariant`].
 pub struct CapabilityEnumSelect;
@@ -400,6 +413,16 @@ impl Rows<'_> {
                 self.add_or_remove(&path, info, false);
             }
             return;
+        }
+        // A model, picked from a list of its kind rather than typed.
+        if let Some((kind, model)) = model_field(value) {
+            if attrs.get::<ReadOnly>().is_none() {
+                let row = ui.ch_id(path.clone());
+                if let Some(chosen) = model_row(row, caption, kind, model, remove) {
+                    self.set(&format!("{path}.0"), chosen);
+                }
+                return;
+            }
         }
         // A newtype is its field's row.
         if let Some(inner) = newtype_field(value) {
@@ -952,6 +975,53 @@ fn text_row(
             remove_button(ui, remove);
         });
     committed.filter(|text| text != value)
+}
+
+/// A caption with a button, named `pick`, whose text, named `model`, is the model `value` names
+/// without its folders. The button opens a picker of `kind`'s models (`model_picker`). Returns
+/// the model chosen in it. With `remove`, a × ends the row.
+fn model_row(
+    row: ImmEntity<CapsPanel>,
+    caption: &'static str,
+    kind: ModelKind,
+    value: &str,
+    remove: Option<&mut bool>,
+) -> Option<String> {
+    let mut chosen = None;
+    let shown = value.rsplit_once('/').map_or(value, |(_, file)| file).to_string();
+    row.on_spawn_insert(move || (Name::new(caption), widget_line()))
+        .add(|ui| {
+            ui.ch().on_spawn_apply_scene(move || label(caption));
+            let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
+                bsn! {
+                    @FeathersButton
+                    #pick
+                    ChosenModel
+                    Node {
+                        flex_grow: 1.0,
+                        min_width: px(0),
+                        justify_content: JustifyContent::Start,
+                        overflow: Overflow::clip_x(),
+                    }
+                }
+            });
+            if let Ok(Some(mut model)) = button.cap_get_component_mut::<ChosenModel>() {
+                chosen = model.0.take();
+            }
+            if button.activated() {
+                let (entity, current) = (button.entity(), value.to_string());
+                button
+                    .commands()
+                    .run_system_cached_with(open_model_picker, (entity, kind, current));
+            }
+            button.add(|ui| {
+                ui.ch()
+                    .on_spawn_apply_scene(|| bsn! { Text("") ThemedText Name("model") })
+                    .on_hash_change_text_fn(&shown, || shown.clone());
+            });
+            remove_button(ui, remove);
+        });
+    chosen.filter(|model| model != value)
 }
 
 /// With `remove`, a dim ×, named `remove`, at the end of a row's widget line, which sets it when

@@ -58,10 +58,12 @@ set an edit is one of (`EditKind`).
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28g Asset pickers.** A field that names an asset becomes a newtype for the kind it names
-  (D45): `Skin(String)` holds a character model, so its row is a button opening a picker of
-  character models only, as faery's was (`choose-model.png`, [faery.md](faery.md), Editor), not a
-  text input.
+- **PAN28h Armature fields that say what they mean.** `Armature.armature` holds a `file#Node` path
+  but only its node is used, looked up in the Skin's scene; `animations` holds one too but only its
+  file is used (`actor_model.rs`, `actor_animation.rs`). The first becomes the node's name,
+  defaulting to the Skin file's one armature where it has one; the second, a clips file, defaulting
+  to the Skin's file, picked from the character files with clips (the model picker, listing files).
+  The 11 exemplars rewritten to match, and the archetype converter with them.
 - **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
   then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
   `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type

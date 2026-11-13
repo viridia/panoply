@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D77.**
+**Next: D78.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -599,3 +599,9 @@ never reused.
   root (an instance, a nav point) gets them all by lending its value. A variant switch is a write of
   the whole enum, built from the fields the variants share and the rest's defaults. Reversing it
   means every root implementing every operation. (PAN28f)
+- **D77** A model picker lists every named scene of its kind's folders under a row per file, as
+  faery's grouped them: `characters/` for a `Skin`, `scenery/models/` and `terrain/models/` for a
+  `SceneryModel`. A `Skin`'s list includes the features (hair, hats). Bodies and features are
+  sibling scenes, and nothing in the glTF tells them apart. Leaving out the scenes that archetypes
+  list as features, or matching name prefixes, would guess. Reversing it means marking body scenes
+  in Blender, as scene extras, and re-exporting every character file. (PAN28g)

@@ -15,8 +15,10 @@
   follows the pointer over that parcel and stays on its edge while dragged off it. Scenery mode
   lists abstract exemplars too, and shows the chosen exemplar's properties: a number typed there
   changes it, undoably, and Save writes that one line into its catalog (restored afterwards). A
-  text field edits on Enter and Escape reverts it; an optional field's × removes it and the
-  heading's menu adds one; each saves as its own line. A collider list adds and removes items,
+  text field edits on Enter and Escape reverts it; a model field's button (an actor's skin, a
+  fixture's model) opens a picker of its kind's models by file, its model selected, and Save or a
+  double-click sets it; an optional
+  field's × removes it and the heading's menu adds one; each saves as its own line. A collider list adds and removes items,
   a collider's shape select switches its variant, and an added collider saves into the array.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
@@ -91,6 +93,8 @@ MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
 NUMERIC = "bevy_ui_widgets::numeric::NumericValue"
+SELECTED_TREE_ITEM = "bevy_ui_widgets::tree::SelectedTreeItem"
+EXPANDED = "bevy_ui::interaction_states::Expanded"
 SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
@@ -328,7 +332,9 @@ def scenery_panel(driver):
     driver.absent("Exemplars/CottageWall")
     exemplar_properties(driver)
     text_property(driver)
+    model_property(driver)
     driver.click("PlaceFixture")
+    scenery_model_property(driver)
     optional_property(driver)
     collider_property(driver)
     driver.click("Exemplars/ClearFilter")
@@ -404,26 +410,106 @@ def exemplar_properties(driver):
 def text_property(driver):
     """A text field's edit is made when Enter commits it; Escape puts the text back, editing
     nothing. Saved, the edit is that one line."""
-    choose(driver, "actor", "SergeantStone")
-    skin = "Properties/Skin/input"
-    old = "characters/humanoid-male.glb#WithCoatHeavy"
-    new = "characters/humanoid-male.glb#WithRobe"
-    retype(driver, skin, "not a skin")
+    choose(driver, "actor", "Proto.Wasp")
+    armature = "Properties/Armature/armature/input"
+    old = "characters/wasp.glb#Armature"
+    new = "characters/wasp.glb#Rig"
+    retype(driver, armature, "not an armature")
     driver.key("Escape")
     driver.frames(2)
     expect_disabled(driver, "Save", True)
-    retype(driver, skin, new)
+    retype(driver, armature, new)
     driver.key("Enter")
     expect_disabled(driver, "Save", False)
+    driver.click("Exemplars/Proto.Wasp")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set Armature.armature")
+    undo(driver, redo=True)
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/Proto.Wasp",
+        [f'-        "armature": "{old}"', f'+        "armature": "{new}"'],
+    )
+
+
+def model_property(driver):
+    """A model field's button opens a picker of the character models, a row per file holding a
+    row per model, with the field's model selected and its file open. A click on a file's row
+    opens it; Cancel changes nothing; Save sets the field, undoably, as does a double-click.
+    Saved, the edit is that one line."""
+    choose(driver, "actor", "SergeantStone")
+    pick = "Properties/Skin/pick"
+    old = "characters/humanoid-male.glb#WithCoatHeavy"
+    new = "characters/humanoid-male.glb#WithRobe"
+    driver.expect(f"{pick}/model", TEXT, "humanoid-male.glb#WithCoatHeavy")
+    driver.click(pick)
+    current = "ModelPicker/humanoid-male/WithCoatHeavy"
+    driver.present(current)
+    (row,) = driver.select(current)
+    driver.expect("ModelPicker/Tree", SELECTED_TREE_ITEM, row)
+    driver.expect("ModelPicker/humanoid-male", EXPANDED, {})
+    # Every named scene is listed, features too, but not the default scene.
+    driver.present("ModelPicker/humanoid-male/HairLong")
+    driver.absent("ModelPicker/humanoid-male/Scene")
+    driver.screenshot("model_picker")
+    # A file's row opens on a click.
+    driver.click("ModelPicker/canine")
+    driver.expect("ModelPicker/canine", EXPANDED, {})
+    driver.click("ModelPicker/Cancel")
+    driver.absent("ModelPicker")
+    expect_disabled(driver, "Save", True)
+
+    driver.click(pick)
+    driver.click("ModelPicker/humanoid-male/WithRobe")
+    driver.click("ModelPicker/Save")
+    driver.absent("ModelPicker")
+    driver.expect(f"{pick}/model", TEXT, "humanoid-male.glb#WithRobe")
     driver.click("Exemplars/SergeantStone")
     undo(driver)
     driver.expect("Toast/ToastText", TEXT, "Undo: Set Skin")
-    undo(driver, redo=True)
+    driver.expect(f"{pick}/model", TEXT, "humanoid-male.glb#WithCoatHeavy")
+
+    # A double-click chooses too.
+    driver.click(pick)
+    driver.click("ModelPicker/humanoid-male/WithRobe")
+    driver.click("ModelPicker/humanoid-male/WithRobe")
+    driver.absent("ModelPicker")
+    driver.expect(f"{pick}/model", TEXT, "humanoid-male.glb#WithRobe")
     saved_diff(
         driver,
         CHARACTERS,
         "Exemplars/SergeantStone",
         [f'-      "Skin": "{old}",', f'+      "Skin": "{new}",'],
+    )
+
+
+def scenery_model_property(driver):
+    """A fixture's model, in its models list, is picked the same way, from the scenery and
+    terrain models. Saved, it is that one line, still a plain string."""
+    choose(driver, "fixture", "CandleHolder")
+    pick = "Properties/SceneryModels/Item 1/asset/pick"
+    driver.expect(f"{pick}/model", TEXT, "decorations.glb#CandleHolder")
+    driver.click(pick)
+    current = "ModelPicker/decorations/CandleHolder"
+    driver.present(current)
+    (row,) = driver.select(current)
+    driver.expect("ModelPicker/Tree", SELECTED_TREE_ITEM, row)
+    driver.present("ModelPicker/carpentry")
+    driver.present("ModelPicker/bushes")
+    driver.absent("ModelPicker/canine")
+    driver.click("ModelPicker/decorations/CandleStand")
+    driver.click("ModelPicker/Save")
+    driver.absent("ModelPicker")
+    driver.expect(f"{pick}/model", TEXT, "decorations.glb#CandleStand")
+    saved_diff(
+        driver,
+        FURNISHINGS,
+        "Exemplars/CandleHolder",
+        [
+            '-          "asset": "scenery/models/decorations.glb#CandleHolder"',
+            '+          "asset": "scenery/models/decorations.glb#CandleStand"',
+        ],
     )
 
 

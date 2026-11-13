@@ -20,7 +20,7 @@ mod precinct_actors;
 mod world_pick;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
-pub use actor_aspect::{ActorScale, CollisionSize};
+pub use actor_aspect::{ActorScale, CollisionSize, Skin};
 pub use actor_control::{
     ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerTurn, PlayerWalk,
 };
@@ -46,7 +46,7 @@ use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
 use self::world_pick::{hide_idle_cursor, pick_world, spawn_world_backstop, WorldCursors};
 
 use self::actor_aspect::{
-    Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, Skin, WieldedItems,
+    Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, WieldedItems,
 };
 use self::item_aspect::{EquipSlot, ItemModel};
 

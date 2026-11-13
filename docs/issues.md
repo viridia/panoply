@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I41.**
+**Next: I42.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -133,3 +133,9 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I40** The property editor's nested values need a design pass on their look and composition, as
   seen in a collider list (items, each a struct holding an enum holding a `Vec3`); the panel works,
   the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`).
+- **I41** Feathers' tree view (`FeathersTreeView`, `tree_view.rs`) puts its rows under an inner
+  scrolling node, but the headless tree (`bevy_ui_widgets`' `tree.rs`) looks for rows only among the
+  `TreeView` entity's own children, both to derive each row's indent level and to list the visible
+  rows that Up and Down step through. So nested rows would not indent, and the arrow keys would do
+  nothing. The model picker puts `TreeView` on its scrolling node itself (`model_picker.rs`), and
+  there rows indent. Likely worth an upstream fix. Read, not run.

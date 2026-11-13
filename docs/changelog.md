@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN28g** Actors' skins and walls' and fixtures' models are picked from lists by file, not typed.
 - **PAN28f** Lists add and remove items, enums switch variant; colliders' sizes follow their shape.
 - **PAN28c** Optional fields: × removes, a menu adds; text edits on Enter; abstract exemplars list.
 - **PAN28b** Save writes edited exemplars to their catalogs, changing only the lines edited.

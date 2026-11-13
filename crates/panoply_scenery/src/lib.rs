@@ -44,6 +44,7 @@ mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
 pub use pending::{PrecinctStatus, SceneryPending};
+pub use scenery_aspect::SceneryModel;
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
@@ -87,6 +88,7 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<WallSize>()
             .register_type::<TerrainEffect>()
             .register_type::<TerrainHole>()
+            .register_type::<SceneryModel>()
             .register_type::<ModelComponent>()
             .register_type::<Vec<ModelComponent>>()
             .register_type::<ColliderDesc>()

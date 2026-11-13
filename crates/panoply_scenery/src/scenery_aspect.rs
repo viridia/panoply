@@ -5,12 +5,18 @@ use serde::{Deserialize, Serialize};
 
 use super::{scenery_colliders::ColliderDesc, FIXTURE_TYPE, WALL_TYPE};
 
+/// A scenery model: a `file#Scene` path to a named scene of a glTF file in `scenery/models` or
+/// `terrain/models`.
+#[derive(Debug, Reflect, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[reflect(Default, Serialize, Deserialize)]
+pub struct SceneryModel(pub String);
+
 /** Used in archetypes to define the set of models displayed by that entity. */
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Default, Serialize, Deserialize)]
 pub struct ModelComponent {
-    /// ID of the model to display.
-    pub asset: String,
+    /// The model to display.
+    pub asset: SceneryModel,
 
     /// Model rotation in x-axis.
     pub x_rotation: Option<f32>,
