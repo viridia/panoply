@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X105.**
+**Next: X106.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -589,3 +589,9 @@ dropped, not deferred. Numbers are never reused.
   computed from the situation (threat, range, health, what is ready). The score is a memo, so it
   wakes goals only when it changes (R49), and a rival tactic takes over only when it leads by a
   margin, so close scores do not flap. *Gate:* X17's goals run, and an NPC fights back.
+- **X105** Sweep the game's per-frame systems for workarounds that satisfy the borrow checker at a
+  cost: a query collected into a `Vec` before mutating, a cloned handle or asset, `mem::take` or
+  `resource_scope` around a resource. Each is fine alone; many in a hot path stand in for a split of
+  the data. The editor (`panoply_editor`) is exempt, as its performance matters little. Read only: a
+  list for the author, ranked by how often each runs. *Gate:* game-side performance work begins, or
+  a frame-time regression in `docs/perf.csv` that a profile does not explain.

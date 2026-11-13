@@ -140,7 +140,7 @@ mod tests {
         let point = NavPoint {
             name: "warehouse".into(),
             realm: "playground".into(),
-            pos: Vec3::new(41.59800604609949, 4.733259878704557e-15, -1e-9),
+            pos: Vec3::new(41.598_007, 4.733_26e-15, -1e-9),
             caption: None,
             icon: None,
         };
