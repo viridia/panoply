@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X103.**
+**Next: X104.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -571,3 +571,6 @@ dropped, not deferred. Numbers are never reused.
   it. Candidates: dimension newtypes with sizable defaults (`Radius`, `HalfExtents`, D45), judged
   clutter for now; or marking a collider of no size where colliders are drawn. *Gate:* the editor
   draws colliders itself (X101, or I12's retained gizmos).
+- **X103** Style sheets for the game UI's widgets, as designed in
+  [widget-styles.md](widget-styles.md). *Gate:* the first game-UI widget beyond the interaction
+  prompt.
