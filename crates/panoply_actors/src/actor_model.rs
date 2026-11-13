@@ -79,7 +79,8 @@ pub fn spawn_actor_bodies(
         let armature = armature.map(|armature| {
             let clips = armature.clips.as_ref().map_or(file, |clips| clips.0.as_str());
             ArmatureSource {
-                node: armature.node.clone(),
+                // An empty name, as the editor's menu adds the field, is the default too.
+                node: armature.node.clone().filter(|node| !node.is_empty()),
                 clips: server.load(clips.to_owned()),
                 clip_names: clip_names.map(|names| names.0.clone()).unwrap_or_default(),
             }

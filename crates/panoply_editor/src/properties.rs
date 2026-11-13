@@ -1,8 +1,10 @@
 //! The property editor's rows: a subpane per inspected value, and in it a row per field, named
 //! after its field. Booleans get a checkbox, numbers a number input carrying its caption inside, a
 //! `Vec3` three of them, colors a swatch that opens a picker, strings a text input committed on
-//! Enter or on leaving it, a model (`Skin`, `SceneryModel`) a button that opens a picker of models
-//! of its kind, nested structs a heading over their own rows, indented. Any other newtype shows
+//! Enter or on leaving it, a model (`Skin`, `SceneryModel`, `ClipsFile`) a button that opens a
+//! picker of models of its kind, an exemplar's `extends` a button that opens a chooser of the
+//! exemplars it may extend, nested structs a heading over their own rows, indented. Any other
+//! newtype shows
 //! its one field's row. An `Option` is its value's row, with a × that removes the value, or no row
 //! while it is `None`: a struct's heading has a menu of its absent fields, which adds one with its
 //! type's default. Every other field is a row that shows its value without editing it. Annotations
@@ -41,7 +43,7 @@ use bevy::{
         std_traits::ReflectDefault,
         structs::DynamicStruct,
         tuple::DynamicTuple,
-        ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
+        ParsedPath, ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
     },
     text::FontSourceTemplate,
     ui::Selected,
@@ -68,8 +70,11 @@ use bevy_immediate::{
 };
 use panoply_core::HexColor;
 
-use crate::model_picker::{model_field, open_model_picker, ChosenModel, ModelKind};
-use edit::{EditKind, PropertyEdits, PropertyRoot};
+use crate::{
+    model_picker::{model_field, open_model_picker, ChosenModel, ModelKind},
+    scenery_properties::{open_extends_chooser, ExemplarRef},
+};
+use edit::{EditKind, PathSteps, PropertyEdits, PropertyRoot};
 
 /// The panel's capabilities: `bevy_immediate`'s for feathers, and binding a color input and a
 /// text input's commits.
@@ -198,14 +203,16 @@ impl NumberField for i64 {
 pub const HEADER_TEXT: ThemeToken = tokens::LISTROW_TEXT;
 
 /// A subpane captioned with `root`'s caption, holding the rows of `value`, `root`'s value; a
-/// struct's absent fields are in a menu at the caption's right. The edits its widgets ask for go
-/// to `edits`; new values are built from the types in `registry`.
+/// struct's absent fields are in a menu at the caption's right. With `remove`, a × ends the
+/// header, which sets it. The edits its widgets ask for go to `edits`; new values are built from
+/// the types in `registry`.
 pub fn root_pane(
     ui: &mut Imm<CapsPanel>,
     root: &Arc<dyn PropertyRoot>,
     value: &dyn PartialReflect,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
+    remove: Option<&mut bool>,
 ) {
     let caption = root.caption();
     let mut rows = Rows {
@@ -222,14 +229,74 @@ pub fn root_pane(
                 ui.ch().on_spawn_apply_scene(move || {
                     bsn! { Text({caption.clone()}) ThemeTextColor(HEADER_TEXT) }
                 });
-                rows.add_menu(ui, value, "");
-                let (inner, path) = through_newtypes(value, String::new());
-                rows.add_item_button(ui, inner, &path);
+                ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                    rows.add_menu(ui, value, &ParsedPath::empty(), None);
+                    let (inner, path) = through_newtypes(value, ParsedPath::empty());
+                    rows.add_item_button(ui, inner, &path);
+                    remove_button(ui, remove);
+                });
             });
-            ui.ch()
-                .on_spawn_apply_scene(subpane_body)
-                .add(|ui| rows.root(ui, value));
+            ui.ch().on_spawn_apply_scene(subpane_body).add(|ui| {
+                if let Some(note) = no_rows_note(value) {
+                    ui.ch_id(note).on_spawn_apply_scene(move || placeholder(note));
+                }
+                rows.root(ui, value);
+            });
         });
+}
+
+/// What a pane says in place of rows when `value` has none to show: a struct with no fields, or
+/// one whose fields are all absent, which is in effect at their defaults (an `Armature` whose
+/// skeleton and clips are those of the actor's own file).
+fn no_rows_note(value: &dyn PartialReflect) -> Option<&'static str> {
+    let ReflectRef::Struct(fields) = value.reflect_ref() else {
+        return None;
+    };
+    if fields.field_len() == 0 {
+        return Some("No fields");
+    }
+    let absent = |field: &dyn PartialReflect| {
+        is_option(field)
+            && matches!(field.reflect_ref(), ReflectRef::Enum(option) if option.variant_name() == "None")
+    };
+    (0..fields.field_len())
+        .filter_map(|index| fields.field_at(index))
+        .all(absent)
+        .then_some("All defaults")
+}
+
+/// `text`, dim and italic, named `placeholder`, standing in for rows.
+fn placeholder(text: &'static str) -> impl Scene {
+    bsn! {
+        Text(text)
+        TextFont {
+            font: FontSourceTemplate::Families(fonts::SANS),
+            font_size: size::MEDIUM_FONT,
+            style: FontStyle::Italic,
+        }
+        PropagateOver<TextFont>
+        ThemeTextColor(tokens::TEXT_DIM)
+        Name("placeholder")
+    }
+}
+
+/// The menu of `value`'s absent fields, `value` being `root`'s value, ending in an item named
+/// `more.0` and captioned `more.1`, for whatever else the root's pane can add. Returns whether
+/// that item was picked. The edits its items ask for go to `edits`.
+pub fn root_add_menu(
+    ui: &mut Imm<CapsPanel>,
+    root: &Arc<dyn PropertyRoot>,
+    value: &dyn PartialReflect,
+    registry: &TypeRegistry,
+    edits: &mut PropertyEdits,
+    more: (&'static str, &'static str),
+) -> bool {
+    Rows {
+        root,
+        registry,
+        edits,
+    }
+    .add_menu(ui, value, &ParsedPath::empty(), Some(more))
 }
 
 /// The rows of `value`, `root`'s value, in whatever holds them: a struct's fields with no heading
@@ -266,16 +333,16 @@ struct Rows<'a> {
 
 impl Rows<'_> {
     /// Asks for `value` to be written at `path`.
-    fn set(&mut self, path: &str, value: impl PartialReflect) {
-        self.edits.set(self.root, path.to_string(), value);
+    fn set(&mut self, path: &ParsedPath, value: impl PartialReflect) {
+        self.edits.set(self.root, path.clone(), value);
     }
 
     /// Asks for the `Option` of type `option` at `path` to be set to `Some` holding its value
     /// type's default (`add`), or to `None`.
-    fn add_or_remove(&mut self, path: &str, option: &TypeInfo, add: bool) {
+    fn add_or_remove(&mut self, path: &ParsedPath, option: &TypeInfo, add: bool) {
         let kind = if add { EditKind::Add } else { EditKind::Remove };
         match option_value(self.registry, option, add) {
-            Some(value) => self.edits.push(self.root, path.to_string(), kind, Some(value)),
+            Some(value) => self.edits.push(self.root, path.clone(), kind, Some(value)),
             None => error!("Cannot make a {} value", option.type_path()),
         }
     }
@@ -283,28 +350,36 @@ impl Rows<'_> {
     /// The rows of the root's value: a struct's fields, a list's items (through newtypes), or
     /// another value's one row.
     fn root(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect) {
-        let (inner, path) = through_newtypes(value, String::new());
+        let (inner, path) = through_newtypes(value, ParsedPath::empty());
         match (value.reflect_ref(), inner.reflect_ref()) {
-            (ReflectRef::Struct(_), _) => self.fields(ui, value, ""),
+            (ReflectRef::Struct(_), _) => self.fields(ui, value, &ParsedPath::empty()),
             (_, ReflectRef::List(_)) => self.items(ui, inner, &path),
             _ => self.row(
                 ui,
                 short_type_name(value),
                 &CustomAttributes::default(),
                 value,
-                String::new(),
+                ParsedPath::empty(),
                 None,
             ),
         }
     }
 
     /// A boxed-plus menu of the absent fields of `value`, a struct at `path`: its `Option`
-    /// fields that are `None` and can be edited. Picking one adds it. Nothing if none are absent.
-    fn add_menu(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+    /// fields that are `None` and can be edited. Picking one adds it. With `more`, an item named
+    /// `more.0` and captioned `more.1` ends the menu; returns whether it was picked. Nothing if
+    /// the menu would be empty.
+    fn add_menu(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        value: &dyn PartialReflect,
+        path: &ParsedPath,
+        more: Option<(&'static str, &'static str)>,
+    ) -> bool {
         let (Some(TypeInfo::Struct(info)), ReflectRef::Struct(fields)) =
             (value.get_represented_type_info(), value.reflect_ref())
         else {
-            return;
+            return false;
         };
         let absent: Vec<_> = info
             .iter()
@@ -327,10 +402,11 @@ impl Rows<'_> {
                 Some((field_info.name(), caption, field.get_represented_type_info()?))
             })
             .collect();
-        if absent.is_empty() {
-            return;
+        if absent.is_empty() && more.is_none() {
+            return false;
         }
         let mut picked = None;
+        let mut more_picked = false;
         ui.ch_id("add")
             .on_spawn_apply_scene(|| bsn! { @FeathersMenu #add })
             .add(|ui| {
@@ -350,15 +426,19 @@ impl Rows<'_> {
                             picked = Some((name, option));
                         }
                     }
+                    if let Some((name, caption)) = more {
+                        more_picked = menu_item(ui.ch_id(name), caption, format!("add_{name}"));
+                    }
                 });
             });
         if let Some((name, option)) = picked {
-            self.add_or_remove(&format!("{path}.{name}"), option, true);
+            self.add_or_remove(&path.with_field(name), option, true);
         }
+        more_picked
     }
 
     /// The rows of the fields of `value`, a struct at `path`.
-    fn fields(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+    fn fields(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
         let (Some(TypeInfo::Struct(info)), ReflectRef::Struct(fields)) =
             (value.get_represented_type_info(), value.reflect_ref())
         else {
@@ -372,7 +452,7 @@ impl Rows<'_> {
                     name,
                     field_info.custom_attributes(),
                     field,
-                    format!("{path}.{name}"),
+                    path.with_field(name),
                     None,
                 );
             }
@@ -387,7 +467,7 @@ impl Rows<'_> {
         caption: &'static str,
         attrs: &CustomAttributes,
         value: &dyn PartialReflect,
-        path: String,
+        path: ParsedPath,
         remove: Option<&mut bool>,
     ) {
         let caption = attrs.get::<DisplayName>().map_or(caption, |name| name.0);
@@ -402,7 +482,7 @@ impl Rows<'_> {
             let Some(inner) = option.field_at(0) else {
                 return;
             };
-            let inner_path = format!("{path}.0");
+            let inner_path = path.with_tuple(0);
             if attrs.get::<ReadOnly>().is_some() {
                 self.row(ui, caption, attrs, inner, inner_path, remove);
                 return;
@@ -419,7 +499,20 @@ impl Rows<'_> {
             if attrs.get::<ReadOnly>().is_none() {
                 let row = ui.ch_id(path.clone());
                 if let Some(chosen) = model_row(row, caption, kind, model, remove) {
-                    self.set(&format!("{path}.0"), chosen);
+                    self.set(&path.with_tuple(0), chosen);
+                }
+                return;
+            }
+        }
+        // The exemplar another extends, chosen from a list of them.
+        if let Some(reference) = value.try_downcast_ref::<ExemplarRef>() {
+            if attrs.get::<ReadOnly>().is_none() {
+                let row = ui.ch_id(path.clone());
+                let mut clear = false;
+                let clearable = reference.0.is_some().then_some(&mut clear);
+                exemplar_ref_row(row, caption, reference, self.root, clearable);
+                if clear {
+                    self.set(&path, ExemplarRef(None));
                 }
                 return;
             }
@@ -427,7 +520,7 @@ impl Rows<'_> {
         // A newtype is its field's row.
         if let Some(inner) = newtype_field(value) {
             if value.try_downcast_ref::<HexColor>().is_none() {
-                self.row(ui, caption, attrs, inner, format!("{path}.0"), remove);
+                self.row(ui, caption, attrs, inner, path.with_tuple(0), remove);
                 return;
             }
         }
@@ -445,6 +538,7 @@ impl Rows<'_> {
                         .on_spawn_apply_scene(move || {
                             bsn! {
                                 @FeathersCheckbox { @caption: bsn! { Text(caption) ThemedText } }
+                                #check
                             }
                         })
                         .checked(&mut edited);
@@ -508,7 +602,7 @@ impl Rows<'_> {
                             heading_text(caption, tokens::TEXT_MAIN)
                         });
                         ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                            self.add_menu(ui, value, &path);
+                            self.add_menu(ui, value, &path, None);
                             remove_button(ui, remove);
                         });
                     });
@@ -556,7 +650,7 @@ impl Rows<'_> {
         caption: &'static str,
         attrs: &CustomAttributes,
         value: Vec3,
-        path: &str,
+        path: &ParsedPath,
         remove: Option<&mut bool>,
     ) {
         let look = NumberLook::from_attributes::<f64>(attrs);
@@ -586,14 +680,14 @@ impl Rows<'_> {
         });
         for ((axis, old), new) in ["x", "y", "z"].into_iter().zip(shown).zip(edited) {
             if new != old {
-                self.set(&format!("{path}.{axis}"), new as f32);
+                self.set(&path.with_field(axis), new as f32);
             }
         }
     }
 
     /// The rows of the items of `value`, a list at `path`, captioned "Item 1" and on, each with a
     /// × that removes it.
-    fn items(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+    fn items(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
         let ReflectRef::List(list) = value.reflect_ref() else {
             return;
         };
@@ -605,7 +699,7 @@ impl Rows<'_> {
                 item_caption(index),
                 &CustomAttributes::default(),
                 item,
-                format!("{path}[{index}]"),
+                path.with_item(index),
                 Some(&mut remove),
             );
             if remove {
@@ -614,13 +708,13 @@ impl Rows<'_> {
         }
         if let Some(index) = removed {
             let kind = EditKind::RemoveItem(index);
-            self.edits.push(self.root, path.to_string(), kind, None);
+            self.edits.push(self.root, path.clone(), kind, None);
         }
     }
 
     /// If `value`, at `path`, is a list, a boxed plus, named `add_item`, that adds an item at its
     /// end, its type's default.
-    fn add_item_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &str) {
+    fn add_item_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
         let (ReflectRef::List(list), Some(TypeInfo::List(info))) =
             (value.reflect_ref(), value.get_represented_type_info())
         else {
@@ -636,7 +730,7 @@ impl Rows<'_> {
         match item {
             Some(item) => {
                 let kind = EditKind::AddItem(list.len());
-                self.edits.push(self.root, path.to_string(), kind, Some(item));
+                self.edits.push(self.root, path.clone(), kind, Some(item));
             }
             None => error!("Cannot make a {} item", info.item_ty().path()),
         }
@@ -650,7 +744,7 @@ impl Rows<'_> {
         row: ImmEntity<CapsPanel>,
         caption: &'static str,
         value: &dyn PartialReflect,
-        path: &str,
+        path: &ParsedPath,
         remove: Option<&mut bool>,
     ) {
         let (ReflectRef::Enum(current), Some(TypeInfo::Enum(info))) =
@@ -683,7 +777,7 @@ impl Rows<'_> {
         match variant_value(self.registry, current, name) {
             Some(value) => {
                 self.edits
-                    .push(self.root, path.to_string(), EditKind::Set, Some(value))
+                    .push(self.root, path.clone(), EditKind::Set, Some(value))
             }
             None => error!("Cannot make a {}::{name}", info.type_path()),
         }
@@ -695,7 +789,7 @@ impl Rows<'_> {
         ui: &mut Imm<CapsPanel>,
         value: &dyn Enum,
         info: &bevy::reflect::enums::EnumInfo,
-        path: &str,
+        path: &ParsedPath,
     ) {
         let Some(variant) = info.variant(value.variant_name()) else {
             return;
@@ -710,14 +804,14 @@ impl Rows<'_> {
                         continue;
                     };
                     let name = field_info.name();
-                    (name, field_info.custom_attributes(), format!("{path}.{name}"))
+                    (name, field_info.custom_attributes(), path.with_field(name))
                 }
                 VariantInfo::Tuple(variant) => {
                     let Some(field_info) = variant.field_at(index) else {
                         continue;
                     };
                     let caption = short_type_name(field);
-                    (caption, field_info.custom_attributes(), format!("{path}.{index}"))
+                    (caption, field_info.custom_attributes(), path.with_tuple(index))
                 }
                 VariantInfo::Unit(_) => return,
             };
@@ -750,10 +844,10 @@ fn item_caption(index: usize) -> &'static str {
 
 /// `value` and its `path` within the root, or, while it is a newtype other than a color, its one
 /// field and that field's path.
-fn through_newtypes(value: &dyn PartialReflect, path: String) -> (&dyn PartialReflect, String) {
+fn through_newtypes(value: &dyn PartialReflect, path: ParsedPath) -> (&dyn PartialReflect, ParsedPath) {
     match newtype_field(value) {
         Some(inner) if value.try_downcast_ref::<HexColor>().is_none() => {
-            through_newtypes(inner, format!("{path}.0"))
+            through_newtypes(inner, path.with_tuple(0))
         }
         _ => (value, path),
     }
@@ -1022,6 +1116,51 @@ fn model_row(
             remove_button(ui, remove);
         });
     chosen.filter(|model| model != value)
+}
+
+/// A caption with a button, named `pick`, whose text, named `name`, is the label of the exemplar
+/// `value` names, or "none". The button opens a chooser of the exemplars `root` may extend
+/// (`open_extends_chooser`), which sets the field itself. With `remove`, a × ends the row.
+fn exemplar_ref_row(
+    row: ImmEntity<CapsPanel>,
+    caption: &'static str,
+    value: &ExemplarRef,
+    root: &Arc<dyn PropertyRoot>,
+    remove: Option<&mut bool>,
+) {
+    let shown = value
+        .0
+        .as_deref()
+        .map_or("none", |path| path.rsplit_once('#').map_or(path, |(_, label)| label))
+        .to_string();
+    row.on_spawn_insert(move || (Name::new(caption), widget_line()))
+        .add(|ui| {
+            ui.ch().on_spawn_apply_scene(move || label(caption));
+            let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
+                bsn! {
+                    @FeathersButton
+                    #pick
+                    Node {
+                        flex_grow: 1.0,
+                        min_width: px(0),
+                        justify_content: JustifyContent::Start,
+                        overflow: Overflow::clip_x(),
+                    }
+                }
+            });
+            if button.activated() {
+                let root = root.clone();
+                button
+                    .commands()
+                    .run_system_cached_with(open_extends_chooser, root);
+            }
+            button.add(|ui| {
+                ui.ch()
+                    .on_spawn_apply_scene(|| bsn! { Text("") ThemedText Name("name") })
+                    .on_hash_change_text_fn(&shown, || shown.clone());
+            });
+            remove_button(ui, remove);
+        });
 }
 
 /// With `remove`, a dim ×, named `remove`, at the end of a row's widget line, which sets it when

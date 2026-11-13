@@ -99,6 +99,12 @@ impl UndoStack {
             self.undo.push(entry.apply(world, "Redo"));
         }
     }
+
+    /// The name of the latest edit, which undo would reverse.
+    #[cfg(test)]
+    pub fn latest_label(&self) -> Option<String> {
+        self.undo.last().map(|entry| entry.action.label().into_owned())
+    }
 }
 
 /// The history's keys, while editing. A focused text field or a modal dialog holds the keys

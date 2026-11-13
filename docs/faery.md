@@ -248,7 +248,10 @@ fields and aspects Panoply lacks, and keeps those it has, so hand edits survive 
 PAN3f; humanoids' `"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). `--dry-run` reports
 without writing; `--replace <Aspect>` rewrites that aspect wherever it differs. An exemplar deleted
 in Panoply returns on the next run, so a deletion is made in the converter. From `meta/regional/` it
-takes actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs.
+takes actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs. It
+writes each catalog back whole as `JSON.stringify` lays it out, so a run reformats every catalog
+that keeps short arrays on one line (eight, the wall and fixture catalogs among them), even when it
+adds nothing; `--dry-run` writes nothing.
 
 The precinct converter overwrites, which is safe while nothing in Panoply edits a precinct (X69). It
 resolves each exemplar name against Panoply's catalogs: a name its catalog lacks moves to the one

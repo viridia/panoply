@@ -8,6 +8,7 @@ use bevy::{
     prelude::*,
 };
 
+pub mod aspect_chooser;
 pub mod chooser;
 pub mod debug_views;
 pub mod diagnostics;

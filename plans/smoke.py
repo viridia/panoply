@@ -95,6 +95,7 @@ DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
 NUMERIC = "bevy_ui_widgets::numeric::NumericValue"
 SELECTED_TREE_ITEM = "bevy_ui_widgets::tree::SelectedTreeItem"
 EXPANDED = "bevy_ui::interaction_states::Expanded"
+CHECKED = "bevy_ui::interaction_states::Checked"
 SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
@@ -335,6 +336,8 @@ def scenery_panel(driver):
     exemplar_properties(driver)
     model_property(driver)
     clips_property(driver)
+    aspect_property(driver)
+    exemplar_fields(driver)
     driver.click("PlaceFixture")
     scenery_model_property(driver)
     optional_property(driver)
@@ -512,6 +515,89 @@ def model_property(driver):
         CHARACTERS,
         "Exemplars/SergeantStone",
         [f'-      "Skin": "{old}",', f'+      "Skin": "{new}",'],
+    )
+
+
+def aspect_property(driver):
+    """An aspect pane's × removes the aspect, undoably, putting it back in its place. The
+    exemplar pane's menu opens a chooser of the aspects an actor can have, checked where it has
+    them; Save adds and removes them as one edit. Saved, a removal is the aspect's lines."""
+    choose(driver, "actor", "FeralDogAlpha")
+    scale = "Properties/ActorScale"
+    driver.click(f"{scale}/remove")
+    driver.absent(scale)
+    driver.click("Exemplars/FeralDogAlpha")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Remove FeralDogAlpha.ActorScale")
+    driver.present(scale)
+
+    driver.click("ExemplarHeader/add")
+    driver.click("ExemplarHeader/add_aspects")
+    driver.present("AspectChooser")
+    expect_checked(driver, "AspectChooser/ActorScale", True)
+    expect_checked(driver, "AspectChooser/WieldedItems", False)
+    # Only the aspects an actor can have.
+    driver.absent("AspectChooser/SceneryModels")
+    driver.screenshot("aspect_chooser")
+    driver.click("AspectChooser/ActorScale")
+    driver.click("AspectChooser/WieldedItems")
+    driver.click("AspectChooser/Save")
+    driver.absent("AspectChooser")
+    driver.absent(scale)
+    driver.present("Properties/WieldedItems")
+    driver.click("Exemplars/FeralDogAlpha")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Change FeralDogAlpha.aspects")
+    driver.present(scale)
+    driver.absent("Properties/WieldedItems")
+
+    driver.click(f"{scale}/remove")
+    driver.absent(scale)
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/FeralDogAlpha",
+        ['-      },', '-      "ActorScale": 1.2', "+      }"],
+    )
+
+
+def exemplar_fields(driver):
+    """The exemplar's own fields edit as an aspect's do. `extends` is a button naming the
+    prototype, which opens a chooser of the exemplars it may extend: of its type, leaving out
+    itself and those that extend it. Saved, the prototype is named relative to the catalog."""
+    choose(driver, "actor", "Spooksy")
+    name = "Properties/display name/input"
+    retype(driver, name, "Spooks")
+    driver.key("Enter")
+    driver.click("Exemplars/Spooksy")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set Spooksy.display_name")
+
+    choose(driver, "actor", "Proto.CanineDomestic")
+    # An aspect whose fields are all absent says so, rather than showing an empty pane.
+    driver.expect("Properties/Armature/placeholder", TEXT, "All defaults")
+    driver.click("Properties/abstract/check")
+    driver.click("Exemplars/Proto.CanineDomestic")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set Proto.CanineDomestic.is_abstract")
+
+    pick = "Properties/extends/pick"
+    driver.expect(f"{pick}/name", TEXT, "Proto.NPC")
+    driver.click(pick)
+    driver.present("ExtendsChooser/Proto.NPC")
+    driver.absent("ExtendsChooser/Proto.CanineDomestic")
+    driver.absent("ExtendsChooser/Spooksy")
+    driver.screenshot("extends_chooser")
+    driver.type("Proto.Monster")
+    driver.click("ExtendsChooser/Proto.Monster")
+    driver.click("ExtendsChooser/Go")
+    driver.absent("ExtendsChooser")
+    driver.expect(f"{pick}/name", TEXT, "Proto.Monster")
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/Proto.CanineDomestic",
+        ['-    "extends": "#Proto.NPC"', '+    "extends": "#Proto.Monster"'],
     )
 
 
@@ -937,19 +1023,29 @@ def undo(driver, redo=False):
     driver.release("ControlLeft")
 
 
-def expect_disabled(driver, selector, disabled):
-    """Waits until the widget `selector` is disabled, or enabled."""
+def expect_marker(driver, selector, component, wanted, words):
+    """Waits until the entity `selector` has the marker `component`, or lacks it if not `wanted`;
+    `words` name the two states, as ("disabled", "enabled")."""
 
     def check():
         (entity,) = driver.select(selector)
         found = driver.call(
-            "world.get_components", {"entity": entity, "components": [DISABLED], "strict": False}
+            "world.get_components", {"entity": entity, "components": [component], "strict": False}
         )
-        has = DISABLED in found["components"]
-        return has == disabled, lambda: "disabled" if has else "enabled"
+        has = component in found["components"]
+        return has == wanted, lambda: words[0] if has else words[1]
 
-    state = "disabled" if disabled else "enabled"
-    driver.wait(check, f"{selector} {state}", {"seconds": 2})
+    driver.wait(check, f"{selector} {words[0] if wanted else words[1]}", {"seconds": 2})
+
+
+def expect_disabled(driver, selector, disabled):
+    """Waits until the widget `selector` is disabled, or enabled."""
+    expect_marker(driver, selector, DISABLED, disabled, ("disabled", "enabled"))
+
+
+def expect_checked(driver, selector, checked):
+    """Waits until the checkbox `selector` is checked, or unchecked."""
+    expect_marker(driver, selector, CHECKED, checked, ("checked", "unchecked"))
 
 
 def game_mode(driver):

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN28d** Aspects are added and removed, and an exemplar's extends, name and abstract edited.
 - **PAN28h** An Armature names its node and clips file, each defaulting to the Skin's; clips picked.
 - **PAN28g** Actors' skins and walls' and fixtures' models are picked from lists by file, not typed.
 - **PAN28f** Lists add and remove items, enums switch variant; colliders' sizes follow their shape.

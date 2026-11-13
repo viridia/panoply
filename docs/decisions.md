@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D78.**
+**Next: D80.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -605,3 +605,16 @@ never reused.
   sibling scenes, and nothing in the glTF tells them apart. Leaving out the scenes that archetypes
   list as features, or matching name prefixes, would guess. Reversing it means marking body scenes
   in Blender, as scene extras, and re-exporting every character file. (PAN28g)
+- **D78** What a property editor root can do beyond `PropertyRoot` is a trait of its own, found on
+  the root by a cast through reflection (`#[reflect_trait]`, as the loader finds `Aspect`): roots
+  derive `Reflect` and are registered, and an exemplar's root registers `AspectHolder`, which adds
+  and removes aspects. A root that lacks the trait refuses the edit. Methods on `PropertyRoot` with
+  failing defaults would put each kind of root's operations on every root: nav points, quests and
+  dialogues hold no aspects. Reversing it means those methods. (PAN28d)
+- **D79** An asset type is an exemplar when its instances may differ in which parts they have, and
+  gain from composing aspects: walls, fixtures, actors, items, terrain effects, and floors (PAN74).
+  A sequence or a state machine, as a quest or a dialogue, is an asset type of its own, since
+  aspects would not compose it. Floors were made assets in 2024, when a floor's only aspect was its
+  material; as exemplars they get the list, the property editor and saving that exemplars have, and
+  room for footsteps, slipperiness and depressions. Reversing it means an editor of its own for each
+  asset type that is not an exemplar. (PAN28d)

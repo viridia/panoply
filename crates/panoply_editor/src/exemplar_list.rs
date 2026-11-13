@@ -161,7 +161,7 @@ pub fn chosen_exemplar(
 /// The exemplars of `instance_type`, each with its name in the list: its label, or, where two
 /// catalogs use the same label, the label and its catalog's name. The old names an exemplar keeps
 /// as aliases are left out.
-fn named_exemplars(
+pub(crate) fn named_exemplars(
     server: &AssetServer,
     exemplars: &Assets<Exemplar>,
     instance_type: InstanceType,

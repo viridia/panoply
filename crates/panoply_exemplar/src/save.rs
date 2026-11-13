@@ -5,9 +5,13 @@
 //! loaded and as it is now are serialized, and only where they differ does the file change
 //! ([`merge`]). What the exemplars never held is never in either, and stays as the file has it.
 
-use std::sync::Arc;
+use std::{
+    path::{Component as PathPart, Path},
+    sync::Arc,
+};
 
 use bevy::{
+    asset::AssetPath,
     prelude::*,
     reflect::{serde::TypedReflectSerializer, TypeRegistry},
 };
@@ -15,9 +19,35 @@ use serde_json::{Map, Value};
 
 use crate::{exemplar::ExemplarData, Exemplar, ExemplarCatalog};
 
-/// `exemplar` as a catalog entry, with each field the file would omit left out.
+/// `to`, an exemplar's path, as a catalog at `from` names it: `#Label` within the same file, else
+/// the file's path relative to the catalog's folder, as `../characters.exem.json#Label`.
+fn relative_reference(from: &Path, to: &AssetPath) -> String {
+    let label = to.label().unwrap_or_default();
+    let target = to.path();
+    if target == from {
+        return format!("#{label}");
+    }
+    let folder: Vec<PathPart> = from.parent().map_or(Vec::new(), |dir| dir.components().collect());
+    let parts: Vec<PathPart> = target.components().collect();
+    let shared = folder
+        .iter()
+        .zip(&parts)
+        .take_while(|(a, b)| a == b)
+        .count();
+    let mut relative: Vec<String> = vec!["..".to_string(); folder.len() - shared];
+    relative.extend(
+        parts[shared..]
+            .iter()
+            .map(|part| part.as_os_str().to_string_lossy().into_owned()),
+    );
+    format!("{}#{label}", relative.join("/"))
+}
+
+/// `exemplar`, whose own path is `own`, as a catalog entry, with each field the file would omit
+/// left out.
 fn exemplar_json(
     exemplar: &ExemplarData,
+    own: &AssetPath,
     registry: &TypeRegistry,
     server: &AssetServer,
 ) -> Result<Value, BevyError> {
@@ -36,7 +66,10 @@ fn exemplar_json(
         let path = server
             .get_path(extends)
             .ok_or("the exemplar it extends has no path")?;
-        entry.insert("extends".into(), path.to_string().into());
+        entry.insert(
+            "extends".into(),
+            relative_reference(own.path(), &path).into(),
+        );
     }
     let mut aspects = Map::new();
     for aspect in &exemplar.aspects {
@@ -150,18 +183,18 @@ impl ExemplarCatalog {
     ) -> Result<(), BevyError> {
         let entries = file.as_object_mut().ok_or("the catalog is not a JSON object")?;
         for (name, loaded) in &self.loaded {
-            let Some(now) = self
-                .entries
-                .get(name)
-                .and_then(|handle| exemplars.get(handle))
-            else {
+            let Some(handle) = self.entries.get(name) else {
+                continue;
+            };
+            let Some(now) = exemplars.get(handle) else {
                 continue;
             };
             if Arc::ptr_eq(&now.0, loaded) {
                 continue;
             }
-            let base = exemplar_json(loaded, registry, server)?;
-            let new = exemplar_json(&now.0, registry, server)?;
+            let own = server.get_path(handle).ok_or("the exemplar has no path")?;
+            let base = exemplar_json(loaded, &own, registry, server)?;
+            let new = exemplar_json(&now.0, &own, registry, server)?;
             match entries.get_mut(name) {
                 Some(original) => merge(original, &base, &new),
                 None => {
@@ -310,6 +343,24 @@ mod tests {
         assert_eq!(
             merged,
             json!({ "shape": "cylinder", "margin": 0.2, "radius": 0, "half_height": 0 })
+        );
+    }
+
+    #[test]
+    fn extends_is_written_relative_to_the_catalog() {
+        let from = Path::new("exemplars/regional/marheim.exem.json");
+        let to = |path: &'static str| AssetPath::parse(path);
+        assert_eq!(
+            relative_reference(from, &to("exemplars/regional/marheim.exem.json#Proto.Guard")),
+            "#Proto.Guard"
+        );
+        assert_eq!(
+            relative_reference(from, &to("exemplars/regional/demo.exem.json#Proto.Guard")),
+            "demo.exem.json#Proto.Guard"
+        );
+        assert_eq!(
+            relative_reference(from, &to("exemplars/characters.exem.json#Proto.NPC")),
+            "../characters.exem.json#Proto.NPC"
         );
     }
 

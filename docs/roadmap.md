@@ -54,20 +54,12 @@ set an edit is one of (`EditKind`).
 - **PAN40 Water and biome.** In terrain mode, buttons that toggle whether the selected plot is water
   or terrain, and a selector for the current parcel's biome (faery's `PlotEditPanel.tsx`,
   `terrain.png`).
-- **PAN74 Floor type chooser.** The floor tool's list in the scenery panel (`exemplar_list.rs`,
-  `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
-  exemplars, so listed from the directory rather than loaded, which would load every floor's
-  textures.
-- **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
-  then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
-  `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type
-  (`ReflectAspect`, `can_attach`), checked where the exemplar has it, grouped by crate until mods
-  have packages (X65); Save adds and removes them as one undo entry, new aspects from
-  `ReflectDefault`. An × on each aspect pane's header removes that aspect, as Blender's modifier
-  panels have. The exemplar's own fields become editable. `extends` is a button naming the
-  prototype, not a text input; it opens the exemplar chooser scenery mode already has, listing
-  exemplars of the same type, abstract ones included, and leaving out any that would make the chain
-  a cycle.
+- **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
+  `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
+  Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
+  it checks other exemplars. The floor tool lists them through the exemplar list
+  (`exemplar_list.rs`, `TODO(PAN74)`), and the property editor edits them. Check what a precinct
+  naming one floor loads: the catalog's every texture.
 - **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
   rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
   it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
@@ -75,6 +67,21 @@ set an edit is one of (`EditKind`).
   key that is empty or already in the map isn't committed. `Colors` and `Features` get custom
   editors later, as faery's `ColorMap` and `FeatureSelection` were (from `ColorSlots` and
   `FeatureSlots`).
+- **PAN28j Editor polish.** A `Precision` annotation, as arbor_day's (`properties.rs`): the decimal
+  places a number input rounds to while dragging, given to feathers as `NumberInputPrecision`, in a
+  crate the aspect crates see; `ActorScale` gets one, since dragging it shows nine places. List
+  items captioned "#1", "#2" rather than "Item 1" (`item_caption`, and the plans' selectors). The
+  aspects chooser opens from a button of its own on the exemplar pane's header, as Blender's Add
+  Modifier is, rather than from the end of the fields menu; its icon still to choose (a puzzle
+  piece, say; `layers.png` is the Layers tool's).
+- **PAN28k Features and colors.** `Features` and `Colors` edited as faery's `FeatureSelection` and
+  `ColorMap` were: a checkbox per slot of the actor's `FeatureSlots`, a color per slot of its
+  `ColorSlots`, each resolved through `extends`, never an arbitrary key. A key outside the slots,
+  left by a change of prototype, stays in the file and is skipped: the editor does not show it, and
+  spawning an actor leaves it out without an error, so switching back restores it. A feature borrows
+  its colors from the body, so none are lost. The mismatch a change of `Skin` alone leaves, slots
+  naming scenes the skin's file lacks (SergeantStone's male facial hair on a female skin), is the
+  validator's to report (`asset_xref.py` today).
 - **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
   and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
   and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
@@ -129,7 +136,9 @@ set an edit is one of (`EditKind`).
   edges and open cracks at hard corners, while a Solidify alone offsets along unsplit vertex normals
   and would hide them. Check the preview against the game on one model with a hard corner, including
   flat-shaded faces, which the Edge Split may not split. Exports must leave the hull out, with Apply
-  Modifiers on (D55), by a means this chunk settles.
+  Modifiers on (D55), by a means this chunk settles. In the same pass, each character file marks its
+  body scenes apart from its features with a scene extra, so the model picker can leave features out
+  of a `Skin`'s list (D77's reversal).
 - **PAN24 Clip repairs.** With PAN23, as one Blender session. `Punch` keys `upper_arm.R` rolled
   about 140° from its roll in `Stand` (and 70-90° from the mirrored left arm), wringing the
   shoulder; the keys hold no quaternion sign flips, so the poses themselves are wrong. A Blender
@@ -159,7 +168,9 @@ set an edit is one of (`EditKind`).
   `k = 1` a constant screen width; try values between. Depth to the mesh's origin rather than each
   vertex, so a long model's outline does not taper along it. `k` and the reference as one setting
   for every outline material, tuned by eye in the editor at several zooms; in play the camera
-  distance is fixed (11), so there it only evens out the near and far rows of the view.
+  distance is fixed (11), so there it only evens out the near and far rows of the view. Divide the
+  extrusion by the model's scale too, so an actor's outline keeps its width under `ActorScale`,
+  which today thickens it.
 - **PAN19 New game.** Resets every precinct, and the actors in it, to its authored state: despawn
   them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
   play changed (X18), so loading a save is a new game with the save's changes applied. After PAN3l,

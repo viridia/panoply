@@ -27,7 +27,7 @@ pub use aspect_list::AspectList;
 pub use aspect_list::AspectListDeserializer;
 pub use catalogs::{ExemplarCatalogs, ExemplarServer};
 pub use command::UpdateAspects;
-pub use exemplar::{Exemplar, ExemplarCatalog};
+pub use exemplar::{Exemplar, ExemplarCatalog, ExemplarData};
 pub use instance_type::InstanceType;
 pub use interaction::*;
 pub use script_components::{ScriptComponentAppExt, ScriptComponents};

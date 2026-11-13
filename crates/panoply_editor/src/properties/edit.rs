@@ -4,15 +4,19 @@
 //! makes the edits after the panel has run and records each in the undo history. Then
 //! [`InspectedValues`] takes a fresh copy of each value the panel shows, so the next frame's panel
 //! draws what the edits left. Only the panel's walk, the edits and the roots touch reflection.
+//!
+//! What a root can do beyond [`PropertyRoot`] is a trait of its own, found on the root by a cast
+//! through reflection (`#[reflect_trait]`), as [`AspectHolder`] is: a root that cannot do it
+//! refuses the edit, and `PropertyRoot` stays the same for every kind of root.
 
 use std::{any::Any, borrow::Cow, sync::Arc};
 
 use bevy::{
     asset::AssetPath,
     prelude::*,
-    reflect::{ReflectMut, ReflectPath},
+    reflect::{Access, ParsedPath, ReflectMut, ReflectPath},
 };
-use panoply_exemplar::Exemplar;
+use panoply_exemplar::{Aspect, Exemplar};
 
 use crate::{
     mode_selector::EditorModeSettings,
@@ -20,8 +24,40 @@ use crate::{
     unsaved::UnsavedAssets,
 };
 
-/// Where an inspected value lives: an aspect of an exemplar, and later an instance or a nav point.
-pub trait PropertyRoot: Any + Send + Sync {
+/// Building a path a step at a time, as the panel walks into a value.
+pub trait PathSteps {
+    /// The path into the field `name` of the struct, or struct variant, at this one.
+    fn with_field(&self, name: &'static str) -> ParsedPath;
+    /// The path into field `index` of the tuple, tuple struct or tuple variant at this one.
+    fn with_tuple(&self, index: usize) -> ParsedPath;
+    /// The path into item `index` of the list at this one.
+    fn with_item(&self, index: usize) -> ParsedPath;
+}
+
+impl PathSteps for ParsedPath {
+    fn with_field(&self, name: &'static str) -> ParsedPath {
+        then(self, Access::Field(name.into()))
+    }
+
+    fn with_tuple(&self, index: usize) -> ParsedPath {
+        then(self, Access::TupleIndex(index))
+    }
+
+    fn with_item(&self, index: usize) -> ParsedPath {
+        then(self, Access::ListIndex(index))
+    }
+}
+
+fn then(path: &ParsedPath, access: Access<'static>) -> ParsedPath {
+    let mut path = path.clone();
+    path.0.push(access.into());
+    path
+}
+
+/// Where an inspected value lives: an aspect of an exemplar, the exemplar itself, and later an
+/// instance or a nav point. Each type is registered, so that what else it can do is found by a
+/// cast (see the module's documentation).
+pub trait PropertyRoot: Reflect {
     /// The value's name in the panel and in the undo history, as "SceneryColliders".
     fn caption(&self) -> String;
 
@@ -40,6 +76,18 @@ pub trait PropertyRoot: Any + Send + Sync {
     ) -> Result<(), BevyError>;
 }
 
+/// A root that holds aspects, which can be added and removed: an exemplar.
+#[reflect_trait]
+pub trait AspectHolder {
+    /// Lends the aspects to `change`, keeping what it does unless it fails, and marks where they
+    /// are kept as unsaved.
+    fn modify_aspects(
+        &self,
+        world: &mut World,
+        change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError>;
+}
+
 /// What an edit does, as the undo history names it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EditKind {
@@ -53,6 +101,8 @@ pub enum EditKind {
     AddItem(usize),
     /// An item, its index given, taken out of a list.
     RemoveItem(usize),
+    /// Aspects added to and taken from an [`AspectHolder`] root.
+    Aspects,
 }
 
 impl EditKind {
@@ -64,6 +114,7 @@ impl EditKind {
             EditKind::Remove => format!("Remove {field}"),
             EditKind::AddItem(index) => format!("Add {field} item {}", index + 1),
             EditKind::RemoveItem(index) => format!("Remove {field} item {}", index + 1),
+            EditKind::Aspects => format!("Change {field}.aspects"),
         }
     }
 
@@ -74,6 +125,7 @@ impl EditKind {
             EditKind::Set | EditKind::Add | EditKind::Remove => EditOp::Write(value?),
             EditKind::AddItem(index) => EditOp::Insert(index, value?),
             EditKind::RemoveItem(index) => EditOp::Delete(index),
+            EditKind::Aspects => return None,
         })
     }
 }
@@ -87,11 +139,17 @@ enum EditOp {
     Insert(usize, Box<dyn PartialReflect>),
     /// Takes the item at an index out of the list at the path.
     Delete(usize),
+    /// Takes the aspects named (by short type path) out of an [`AspectHolder`] root, then puts
+    /// the others in at their indices: an undone removal puts an aspect back where it was.
+    Aspects {
+        add: Vec<(usize, Box<dyn Aspect>)>,
+        remove: Vec<String>,
+    },
 }
 
 impl EditOp {
     /// Does the edit to the value at `path` within `root`, and returns the edit that undoes it.
-    fn apply(&self, root: &mut dyn PartialReflect, path: &str) -> Result<EditOp, BevyError> {
+    fn apply(&self, root: &mut dyn PartialReflect, path: &ParsedPath) -> Result<EditOp, BevyError> {
         let target = path
             .reflect_element_mut(root)
             .map_err(|error| error.to_string())?;
@@ -120,7 +178,47 @@ impl EditOp {
                 }
                 Ok(EditOp::Insert(*index, list.remove(*index)))
             }
+            EditOp::Aspects { .. } => Err("an aspects edit has no path".into()),
         }
+    }
+
+    /// Does the edit to `aspects`, and returns the edit that undoes it: the removed aspects put
+    /// back at their indices, the added ones taken out.
+    fn apply_aspects(
+        aspects: &mut Vec<Box<dyn Aspect>>,
+        add: &[(usize, Box<dyn Aspect>)],
+        remove: &[String],
+    ) -> Result<EditOp, BevyError> {
+        let mut removed = Vec::new();
+        for name in remove {
+            let index = aspects
+                .iter()
+                .position(|aspect| aspect.reflect_short_type_path() == name)
+                .ok_or_else(|| format!("there is no {name} to remove"))?;
+            removed.push((index, name.clone()));
+        }
+        // Taken out from the last, so the indices kept are those before any came out.
+        removed.sort_by_key(|(index, _)| std::cmp::Reverse(*index));
+        let mut undo_add: Vec<(usize, Box<dyn Aspect>)> = removed
+            .iter()
+            .map(|(index, _)| (*index, aspects.remove(*index)))
+            .collect();
+        undo_add.reverse();
+        let mut undo_remove = Vec::new();
+        let mut add: Vec<_> = add.iter().collect();
+        add.sort_by_key(|(index, _)| *index);
+        for (index, aspect) in add {
+            let name = aspect.reflect_short_type_path();
+            if aspects.iter().any(|had| had.reflect_short_type_path() == name) {
+                return Err(format!("there is a {name} already").into());
+            }
+            aspects.insert((*index).min(aspects.len()), aspect.clone_boxed());
+            undo_remove.push(name.to_string());
+        }
+        Ok(EditOp::Aspects {
+            add: undo_add,
+            remove: undo_remove,
+        })
     }
 
     /// Does the edit to `root`'s value at `path`, and returns the edit that undoes it.
@@ -128,33 +226,51 @@ impl EditOp {
         &self,
         root: &dyn PropertyRoot,
         world: &mut World,
-        path: &str,
+        path: &ParsedPath,
     ) -> Result<EditOp, BevyError> {
         let mut undo = None;
-        root.modify(world, &mut |value| {
-            undo = Some(self.apply(value, path)?);
-            Ok(())
-        })?;
+        if let EditOp::Aspects { add, remove } = self {
+            let registry = world.resource::<AppTypeRegistry>().clone();
+            let registry = registry.read();
+            let root: &dyn Reflect = root;
+            let holder = registry
+                .get_type_data::<ReflectAspectHolder>(Any::type_id(root))
+                .and_then(|holder| holder.get(root))
+                .ok_or("it holds no aspects")?;
+            holder.modify_aspects(world, &mut |aspects| {
+                undo = Some(Self::apply_aspects(aspects, add, remove)?);
+                Ok(())
+            })?;
+        } else {
+            root.modify(world, &mut |value| {
+                undo = Some(self.apply(value, path)?);
+                Ok(())
+            })?;
+        }
         undo.ok_or_else(|| "the edit was not made".into())
     }
 }
 
-/// An edit a widget asks for: a `kind` of edit at `path` within `root`'s value, writing or
-/// inserting `value` for the kinds that need one.
+/// An edit a widget asks for: a `kind` of edit at `path` within `root`'s value, which `op` does.
 pub struct PropertyEdit {
-    pub root: Arc<dyn PropertyRoot>,
-    pub path: String,
-    pub kind: EditKind,
-    pub value: Option<Box<dyn PartialReflect>>,
+    root: Arc<dyn PropertyRoot>,
+    path: ParsedPath,
+    kind: EditKind,
+    op: EditOp,
 }
 
 /// The edits asked for this frame, made by [`apply_property_edits`].
 #[derive(Resource, Default)]
-pub struct PropertyEdits(pub Vec<PropertyEdit>);
+pub struct PropertyEdits(Vec<PropertyEdit>);
 
 impl PropertyEdits {
     /// Asks for `value` to be written at `path` within `root`'s value.
-    pub fn set(&mut self, root: &Arc<dyn PropertyRoot>, path: String, value: impl PartialReflect) {
+    pub fn set(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        path: ParsedPath,
+        value: impl PartialReflect,
+    ) {
         self.push(root, path, EditKind::Set, Some(Box::new(value)));
     }
 
@@ -163,15 +279,42 @@ impl PropertyEdits {
     pub fn push(
         &mut self,
         root: &Arc<dyn PropertyRoot>,
-        path: String,
+        path: ParsedPath,
         kind: EditKind,
         value: Option<Box<dyn PartialReflect>>,
     ) {
+        let Some(op) = kind.op(value) else {
+            error!("{kind:?} of {}{path} needs a value", root.caption());
+            return;
+        };
         self.0.push(PropertyEdit {
             root: root.clone(),
             path,
             kind,
-            value,
+            op,
+        });
+    }
+
+    /// Asks for the aspects `add` to be added to `root`, after those it has, and those named
+    /// `remove` (by short type path) to be taken from it, as one edit.
+    pub fn change_aspects(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        add: Vec<Box<dyn Aspect>>,
+        remove: Vec<String>,
+    ) {
+        if add.is_empty() && remove.is_empty() {
+            return;
+        }
+        self.0.push(PropertyEdit {
+            root: root.clone(),
+            path: ParsedPath::empty(),
+            kind: EditKind::Aspects,
+            // Appended: an index past the end inserts at the end.
+            op: EditOp::Aspects {
+                add: add.into_iter().map(|aspect| (usize::MAX, aspect)).collect(),
+                remove,
+            },
         });
     }
 }
@@ -197,10 +340,36 @@ pub struct InspectedRoots {
 /// takes its place, so redo undoes that in turn. Its `kind` names it either way.
 struct PropertyAction {
     root: Arc<dyn PropertyRoot>,
-    path: String,
+    path: ParsedPath,
     kind: EditKind,
     op: EditOp,
     gesture: u32,
+    /// Its name in the undo history, taken from the edit as first made: `op` turns each way.
+    label: String,
+}
+
+/// An edit's name in the undo history, from `op`, the edit as asked for: "Set LightSource.radius",
+/// "Add SceneryColliders item 2", the path's field names, leaving out the steps into an `Option`,
+/// a newtype or a list, which the panel does not show either. An aspects edit that adds or removes
+/// one aspect names it: "Remove Marcus.Skin".
+fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &EditOp) -> String {
+    let mut field = root.caption();
+    if let EditOp::Aspects { add, remove } = op {
+        match (add.as_slice(), remove.as_slice()) {
+            ([(_, aspect)], []) => {
+                return format!("Add {field}.{}", aspect.reflect_short_type_path())
+            }
+            ([], [name]) => return format!("Remove {field}.{name}"),
+            _ => {}
+        }
+    }
+    for step in &path.0 {
+        if let Access::Field(name) = &step.access {
+            field.push('.');
+            field.push_str(name);
+        }
+    }
+    kind.label(&field)
 }
 
 impl UndoAction for PropertyAction {
@@ -208,24 +377,14 @@ impl UndoAction for PropertyAction {
         match self.op.apply_to(self.root.as_ref(), world, &self.path) {
             Ok(op) => Box::new(PropertyAction { op, ..*self }),
             Err(error) => {
-                error!("Could not undo or redo {}: {error}", self.label());
+                error!("Could not undo or redo {}: {error}", self.label);
                 self
             }
         }
     }
 
-    /// "Set LightSource.radius", "Add SceneryColliders item 2": the path's field names, leaving
-    /// out the steps into an `Option`, a newtype or a list, which the panel does not show either.
     fn label(&self) -> Cow<'static, str> {
-        let mut field = self.root.caption();
-        for name in self.path.split('.') {
-            let name = name.split('[').next().unwrap_or_default();
-            if !name.is_empty() && !name.bytes().all(|byte| byte.is_ascii_digit()) {
-                field.push('.');
-                field.push_str(name);
-            }
-        }
-        self.kind.label(&field).into()
+        self.label.clone().into()
     }
 
     /// The edits of one drag, writing the same field, undo as one.
@@ -264,13 +423,10 @@ pub fn apply_property_edits(world: &mut World) {
         root,
         path,
         kind,
-        value,
+        op,
     } in edits
     {
-        let Some(op) = kind.op(value) else {
-            error!("{kind:?} of {}{path} needs a value", root.caption());
-            continue;
-        };
+        let label = edit_label(root.as_ref(), &path, kind, &op);
         match op.apply_to(root.as_ref(), world, &path) {
             Ok(undo) => world.resource_mut::<UndoStack>().push(
                 mode,
@@ -280,9 +436,10 @@ pub fn apply_property_edits(world: &mut World) {
                     kind,
                     op: undo,
                     gesture,
+                    label,
                 },
             ),
-            Err(error) => error!("Could not edit {}{path}: {error}", root.caption()),
+            Err(error) => error!("{label} failed: {error}"),
         }
     }
 }
@@ -299,7 +456,7 @@ pub fn read_inspected_values(world: &mut World) {
 }
 
 /// An aspect of an exemplar, named by the exemplar's asset path and the aspect's short type path.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
 pub struct ExemplarAspect {
     pub exemplar: AssetPath<'static>,
     pub aspect: String,
@@ -381,7 +538,13 @@ mod tests {
     #[derive(Resource, Default)]
     struct Held(Size);
 
+    /// `text` as a path.
+    fn path(text: &str) -> ParsedPath {
+        ParsedPath::parse(text).unwrap()
+    }
+
     /// The [`Size`] in [`Held`].
+    #[derive(Reflect)]
     struct HeldRoot;
 
     impl PropertyRoot for HeldRoot {
@@ -422,7 +585,7 @@ mod tests {
         let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
         world
             .resource_mut::<PropertyEdits>()
-            .set(&root, ".width".into(), width);
+            .set(&root, path(".width"), width);
         apply_property_edits(world);
     }
 
@@ -469,7 +632,7 @@ mod tests {
         let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
         world
             .resource_mut::<PropertyEdits>()
-            .set(&root, ".height".into(), 5.0f32);
+            .set(&root, path(".height"), 5.0f32);
         apply_property_edits(&mut world);
         undo(&mut world);
         assert_eq!(
@@ -494,7 +657,7 @@ mod tests {
         let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
         world
             .resource_mut::<PropertyEdits>()
-            .push(&root, ".depth".into(), kind, Some(value));
+            .push(&root, path(".depth"), kind, Some(value));
         apply_property_edits(world);
     }
 
@@ -523,7 +686,7 @@ mod tests {
         let value = value.map(|value| Box::new(value) as Box<dyn PartialReflect>);
         world
             .resource_mut::<PropertyEdits>()
-            .push(&root, ".parts".into(), kind, value);
+            .push(&root, path(".parts"), kind, value);
         apply_property_edits(world);
     }
 
@@ -599,36 +762,173 @@ mod tests {
 
     #[test]
     fn the_label_names_the_field() {
-        let action = PropertyAction {
-            root: Arc::new(HeldRoot),
-            path: ".width".into(),
-            kind: EditKind::Set,
-            op: EditOp::Write(Box::new(0.0f32)),
-            gesture: 0,
+        let label = |text: &str, kind| {
+            let op = EditOp::Write(Box::new(0.0f32));
+            edit_label(&HeldRoot, &path(text), kind, &op)
         };
-        assert_eq!(action.label(), "Set Size.width");
-        let through_option = PropertyAction {
-            path: ".0.radius.0".into(),
-            ..action
+        assert_eq!(label(".width", EditKind::Set), "Set Size.width");
+        assert_eq!(label(".0.radius.0", EditKind::Set), "Set Size.radius");
+        assert_eq!(label(".depth", EditKind::Add), "Add Size.depth");
+        assert_eq!(label(".0", EditKind::RemoveItem(1)), "Remove Size item 2");
+        assert_eq!(label(".0[1].shape", EditKind::Set), "Set Size.shape");
+    }
+
+    #[derive(Component, Reflect, Clone, Default, Debug, PartialEq)]
+    struct Wings(f32);
+
+    #[derive(Component, Reflect, Clone, Default, Debug, PartialEq)]
+    struct Horns;
+
+    #[derive(Component, Reflect, Clone, Default, Debug, PartialEq)]
+    struct Tail;
+
+    macro_rules! test_aspect {
+        ($type:ident) => {
+            impl Aspect for $type {
+                fn name(&self) -> &str {
+                    stringify!($type)
+                }
+
+                fn can_attach(&self, _meta_type: panoply_exemplar::InstanceType) -> bool {
+                    true
+                }
+
+                fn attach(
+                    &self,
+                    entity: &mut EntityWorldMut,
+                ) -> &'static dyn panoply_exemplar::DetachAspect {
+                    static DETACH: panoply_exemplar::RemoveComponent<$type> =
+                        panoply_exemplar::RemoveComponent::<$type>::new();
+                    entity.insert(self.clone());
+                    &DETACH
+                }
+
+                fn clone_boxed(&self) -> Box<dyn Aspect> {
+                    Box::new(self.clone())
+                }
+            }
         };
-        assert_eq!(through_option.label(), "Set Size.radius");
-        let added = PropertyAction {
-            path: ".depth".into(),
-            kind: EditKind::Add,
-            ..through_option
-        };
-        assert_eq!(added.label(), "Add Size.depth");
-        let item = PropertyAction {
-            path: ".0".into(),
-            kind: EditKind::RemoveItem(1),
-            ..added
-        };
-        assert_eq!(item.label(), "Remove Size item 2");
-        let in_item = PropertyAction {
-            path: ".0[1].shape".into(),
-            kind: EditKind::Set,
-            ..item
-        };
-        assert_eq!(in_item.label(), "Set Size.shape");
+    }
+
+    test_aspect!(Wings);
+    test_aspect!(Horns);
+    test_aspect!(Tail);
+
+    #[derive(Resource, Default)]
+    struct HeldAspects(Vec<Box<dyn Aspect>>);
+
+    /// The aspects in [`HeldAspects`], as an exemplar named Marcus.
+    #[derive(Reflect)]
+    #[reflect(AspectHolder)]
+    struct AspectsRoot;
+
+    impl PropertyRoot for AspectsRoot {
+        fn caption(&self) -> String {
+            "Marcus".into()
+        }
+
+        fn key(&self) -> String {
+            "aspects".into()
+        }
+
+        fn read(&self, _world: &World) -> Option<Box<dyn PartialReflect>> {
+            None
+        }
+
+        fn modify(
+            &self,
+            _world: &mut World,
+            _change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+        ) -> Result<(), BevyError> {
+            Err("no fields".into())
+        }
+    }
+
+    impl AspectHolder for AspectsRoot {
+        fn modify_aspects(
+            &self,
+            world: &mut World,
+            change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
+        ) -> Result<(), BevyError> {
+            change(&mut world.resource_mut::<HeldAspects>().0)
+        }
+    }
+
+    /// A world holding Wings, Horns and Tail, in that order, with the roots registered.
+    fn aspects_world() -> World {
+        let mut world = world();
+        world.insert_resource(HeldAspects(vec![
+            Box::new(Wings(2.)),
+            Box::new(Horns),
+            Box::new(Tail),
+        ]));
+        world.init_resource::<AppTypeRegistry>();
+        {
+            let registry = world.resource::<AppTypeRegistry>();
+            let mut registry = registry.write();
+            registry.register::<AspectsRoot>();
+            registry.register::<HeldRoot>();
+        }
+        world
+    }
+
+    fn held_aspects(world: &World) -> Vec<String> {
+        world
+            .resource::<HeldAspects>()
+            .0
+            .iter()
+            .map(|aspect| aspect.reflect_short_type_path().to_string())
+            .collect()
+    }
+
+    fn change_aspects(world: &mut World, root: impl PropertyRoot, add: Vec<Box<dyn Aspect>>, remove: &[&str]) {
+        let root: Arc<dyn PropertyRoot> = Arc::new(root);
+        let remove = remove.iter().map(|name| name.to_string()).collect();
+        world
+            .resource_mut::<PropertyEdits>()
+            .change_aspects(&root, add, remove);
+        apply_property_edits(world);
+    }
+
+    fn last_label(world: &World) -> String {
+        world.resource::<UndoStack>().latest_label().unwrap()
+    }
+
+    #[test]
+    fn aspects_are_added_and_removed_and_undo_in_place() {
+        let mut world = aspects_world();
+        change_aspects(&mut world, AspectsRoot, Vec::new(), &["Horns"]);
+        assert_eq!(held_aspects(&world), ["Wings", "Tail"]);
+        assert_eq!(last_label(&world), "Remove Marcus.Horns");
+        undo(&mut world);
+        assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
+        assert_eq!(world.resource::<HeldAspects>().0[0].reflect_short_type_path(), "Wings");
+        redo(&mut world);
+        assert_eq!(held_aspects(&world), ["Wings", "Tail"]);
+
+        // Several at once, one undo entry; an added aspect goes last.
+        change_aspects(&mut world, AspectsRoot, vec![Box::new(Horns)], &["Wings", "Tail"]);
+        assert_eq!(held_aspects(&world), ["Horns"]);
+        assert_eq!(last_label(&world), "Change Marcus.aspects");
+        undo(&mut world);
+        assert_eq!(held_aspects(&world), ["Wings", "Tail"]);
+        undo(&mut world);
+        assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
+    }
+
+    #[test]
+    fn an_aspect_already_held_is_not_added_again() {
+        let mut world = aspects_world();
+        change_aspects(&mut world, AspectsRoot, vec![Box::new(Tail)], &[]);
+        assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
+        assert!(world.resource::<UndoStack>().latest_label().is_none());
+    }
+
+    #[test]
+    fn a_root_without_aspects_refuses_an_aspects_edit() {
+        let mut world = aspects_world();
+        change_aspects(&mut world, HeldRoot, Vec::new(), &["Horns"]);
+        assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
+        assert!(world.resource::<UndoStack>().latest_label().is_none());
     }
 }
