@@ -204,9 +204,12 @@ Goals are reworked (X17); these are the capabilities faery's goals provided.
   and on a timer a goal requests (wake in N seconds); not every tick.
 - **R50** A goal can have a condition; while it is false the goal is skipped, and when it turns
   true again the goal restarts.
-- **R51** Composites: sequence (optionally looping or repeating N times), random (weighted,
-  re-chosen on restart), ranked (the first that does not fail), contingent (each step a
-  prerequisite of the next, rechecked as conditions change, with a fallback when one fails).
+- **R51** Composites: sequence (each step once, in order, never back), repeat (its child N times or
+  forever, stopping on a failure), random (weighted, re-chosen on restart, optionally never the same
+  twice running, as Ivy's work is in R99), ranked (the first that does not fail), contingent (each
+  step a prerequisite of the next, rechecked as conditions change, so a step that stops holding is
+  returned to; a fallback when one fails). New in Panoply: timeout (fails its child after N s) and
+  cooldown (its child cannot restart within N s of finishing).
 - **R52** Leaves: travel to a point (preferred distance, minimum distance, tolerance), pursue
   a moving target (replans when it moves 1 m; walks when near, trots under 4 m, runs beyond, or
   always runs when chasing; can open doors; can avoid actors), wander (a random reachable

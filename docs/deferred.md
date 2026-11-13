@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X104.**
+**Next: X105.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -133,20 +133,30 @@ dropped, not deferred. Numbers are never reused.
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
   between worlds (an actor crossing a portal); and a release supports the Bevy in use.
 - **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`) move to
-  ECS and BSN assets: each goal's hierarchy of elements becomes a hierarchy of entities and
-  components. Most reactions pair a condition with an effect. Conditions are reactive formulas; an
-  effect is usually a Rust type with parameters, but can be a formula. So SAGA (X7) needs a way to
-  embed formulas in assets. The same holds for the other hierarchical assets (quests, dialogues).
-  Definitions are shared, not instanced per actor, and an actor's goal state is kept apart from
-  them: a small cursor (step, timers, bindings) that names definition nodes by stable id, not
-  `Entity`. A cursor is what a sparse save holds (X18) and what a layer restarts from (R104); one
-  shared definition serves every actor running it, and a content edit reaches them all. Shared
-  scenes need not be Bevy's: each definition asset can be spawned once into a hidden registry
-  outside any realm, its state pointing in by id, and respawned on hot reload. Bevy's shared scene
-  assets (proposed by the author, received warmly, likely not first-tier) would only tidy that. The
-  first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
-  customers). *Gate:* BSN assets, with shared scenes or a definition tree spawned once per asset,
-  and SAGA formulas in assets.
+  ECS and BSN assets. Goals are not aspects, since an actor can hold several goals of one type with
+  different parameters. Aspects own goals (R47), and owning goals is most of what a mod's aspects
+  are for ([modding.md](modding.md)).
+  - **Instanced trees.** Each actor spawns its own copy of each goal tree its aspects own: an entity
+    per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside transform
+    propagation) and rooted at the actor by `GoalOf`.
+  - **Definition apart from state.** Each goal type is its own component of immutable parameters
+    (`Wander { radius }`), so BSN writes a tree as components and `Subgoals [ ... ]`. It requires
+    its state, a separate reflected component whose default is the reset state, and a
+    `GoalEval::of::<Self>()`: a function pointer, monomorphized for the type, that fetches both and
+    evaluates them. One system walks each tree from the top through those pointers, because a
+    combinator calls its active child and acts on the result in the same pass. The Rust goal types
+    are a closed set per build; mods compose them.
+  - **Formulas.** A goal's condition is a reactive formula; an effect is usually a Rust type with
+    parameters, but can be a formula. So SAGA (X7) needs a way to embed formulas in assets, as
+    quests and dialogues do. A node's memo cells live on its entity.
+  - **Saves** (X18) hold only state that differs from the reset state: per aspect, a hash of its
+    goal definition and each changed node's state, keyed by its path of child indices. When the hash
+    no longer matches (a mod or content edit changed the tree), that aspect's state is dropped and
+    its goals restart, which goals tolerate (R50). The same read-out, respawn and write-back is hot
+    reload, so an edit reaches every actor, and it is what an actor recovers from (R104).
+
+  The first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
+  customers). *Gate:* BSN assets, and SAGA formulas in assets.
 - **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
   eviction; a save is only a root index of chunk versions. Design and what it asks of the engine in
   [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
@@ -574,3 +584,8 @@ dropped, not deferred. Numbers are never reused.
 - **X103** Style sheets for the game UI's widgets, as designed in
   [widget-styles.md](widget-styles.md). *Gate:* the first game-UI widget beyond the interaction
   prompt.
+- **X104** Combat strategy in goals, faery's weakest area. Priorities stay fixed, so a band still
+  wins over the bands below it; goals of equal priority are ordered by a utility score, a formula
+  computed from the situation (threat, range, health, what is ready). The score is a memo, so it
+  wakes goals only when it changes (R49), and a rival tactic takes over only when it leads by a
+  margin, so close scores do not flap. *Gate:* X17's goals run, and an NPC fights back.

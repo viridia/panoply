@@ -25,7 +25,7 @@ The first customers each add one mechanism:
 2. **An animation's `when`**, reactive: an object that changes state as the player comes near,
    through the `proximity` memo (Memos). The first cells, memos and reaction pass.
 3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
-   memo driving a goal cursor.
+   memo driving a goal.
 
 X63's mechanisms, such as a door opened by a button, follow.
 
@@ -90,7 +90,7 @@ What value slots change:
 - **Native functions take and return slots** through a trait (`from_slots`, `to_slots`),
   implemented for the glam and Bevy types that matter, with a reflection fallback.
 - **References name things by stable id** (a fixture in the actor's precinct, the player), resolved
-  to an `Entity` when read, as X17's cursors name definition nodes.
+  to an `Entity` when read.
 - **Absent is `Option`.** A field nobody set, or a reference with no target, is `None`; the type
   solver makes scripts handle it. `??` is sugar for `unwrap_or`, and `?.` for mapping to a field.
   There is no null.
@@ -178,9 +178,9 @@ resource that changes once per game hour, not the clock. faery organized its pre
 - A memo is a cell: a value, the tick it last changed, and its own tracking scope. Its tick
   advances only when its value changes, so readers compare ticks as Bevy's change detection does.
 - Native memos are formulas written in Rust; script formulas are cells too, compiled.
-- An actor's cells live beside its goal cursors (X17), indexed by call site. They go when the
-  cursor goes, so they need no entity, relation or reference count. Two call sites with the same
-  arguments compute twice.
+- An actor's cells live on its goal nodes (X17), indexed by call site. They go when the node goes,
+  so they need no relation or reference count of their own. Two call sites with the same arguments
+  compute twice.
 - A tracking scope depends on components, resources and memo cells.
 
 ## When reactions run
