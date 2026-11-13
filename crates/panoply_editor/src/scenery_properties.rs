@@ -41,7 +41,7 @@ use crate::{
             EditGesture, ExemplarAspect, InspectedRoots, InspectedValues, PathSteps,
             PropertyEdits, PropertyRoot, ReflectAspectHolder,
         },
-        root_add_menu, root_pane, root_rows, CapsPanel, HEADER_TEXT,
+        root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows, HEADER_TEXT,
     },
     unsaved::UnsavedAssets,
 };
@@ -59,6 +59,7 @@ impl Plugin for SceneryPropertiesPlugin {
             .init_resource::<EditGesture>()
             .init_resource::<InspectedRoots>()
             .init_resource::<InspectedValues>()
+            .init_resource::<CollapsedRows>()
             // So an edit can find what each root can do (`AspectHolder`).
             .register_type::<ExemplarRoot>()
             .register_type::<ExemplarAspect>()
@@ -83,10 +84,11 @@ impl Plugin for SceneryPropertiesPlugin {
 /// An exemplar's own fields, as its pane shows them: `ExemplarData` is not reflected.
 #[derive(Reflect, Clone, Debug)]
 struct ExemplarFields {
+    #[reflect(@DisplayName("Extends"))]
     extends: ExemplarRef,
-    #[reflect(@DisplayName("display name"))]
+    #[reflect(@DisplayName("Display name"))]
     display_name: Option<String>,
-    #[reflect(@DisplayName("abstract"))]
+    #[reflect(@DisplayName("Abstract"))]
     is_abstract: bool,
 }
 
@@ -296,6 +298,7 @@ fn inspect_chosen_exemplar(
 pub(crate) struct SceneryPropertiesParams<'w> {
     inspected: Res<'w, InspectedValues>,
     edits: ResMut<'w, PropertyEdits>,
+    collapsed: ResMut<'w, CollapsedRows>,
     registry: Res<'w, AppTypeRegistry>,
 }
 
@@ -307,6 +310,7 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
     /// the rest. The exemplar holds its aspects.
     fn construct(ui: &mut Imm<CapsPanel>, params: &mut SceneryPropertiesParams) {
         let edits = params.edits.as_mut();
+        let collapsed = params.collapsed.as_mut();
         let registry = params.registry.read();
         let Some(((exemplar, fields), aspects)) = params.inspected.values.split_first() else {
             return;
@@ -342,7 +346,8 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                                     .on_hash_change_text_fn(name, || name.clone());
                             });
                         let more = ("aspects", "Aspects…");
-                        if root_add_menu(ui, exemplar, fields.as_ref(), &registry, edits, more) {
+                        let fields = fields.as_ref();
+                        if root_add_menu(ui, exemplar, fields, &registry, edits, collapsed, more) {
                             let root = exemplar.clone();
                             ui.commands_mut()
                                 .run_system_cached_with(open_aspect_chooser, root);
@@ -376,6 +381,7 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                                     aspects,
                                     &registry,
                                     edits,
+                                    collapsed,
                                 )
                             });
                     });
@@ -407,6 +413,7 @@ fn scrolled_rows(
     aspects: &[(Arc<dyn PropertyRoot>, Box<dyn PartialReflect>)],
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
+    collapsed: &mut CollapsedRows,
 ) {
     let rows = ui
         .ch_id("rows")
@@ -425,10 +432,11 @@ fn scrolled_rows(
             )
         })
         .add(|ui| {
-            root_rows(ui, exemplar, fields, registry, edits);
+            root_rows(ui, exemplar, fields, registry, edits, collapsed);
             for (root, value) in aspects {
                 let mut remove = false;
-                root_pane(ui, root, value.as_ref(), registry, edits, Some(&mut remove));
+                let value = value.as_ref();
+                root_pane(ui, root, value, registry, edits, collapsed, Some(&mut remove));
                 if remove {
                     edits.change_aspects(exemplar, Vec::new(), vec![root.caption()]);
                 }

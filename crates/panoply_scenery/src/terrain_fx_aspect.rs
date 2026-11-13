@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use panoply_exemplar::*;
+use bevy::{annotations::DisplayName, prelude::*};
+use panoply_exemplar::{annotations::AspectIcon, *};
 use panoply_terrain::TerrainTypes;
 
 use super::TERRAIN_FX_TYPE;
@@ -8,11 +8,17 @@ use super::TERRAIN_FX_TYPE;
 /// applied to terrain parcels.
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
+#[reflect(@AspectIcon("editor/icons/lucide/brush.png"))]
 pub struct TerrainEffect {
+    #[reflect(@DisplayName("Effect"))]
     pub effect: TerrainTypes,
+    #[reflect(@DisplayName("Effect strength"))]
     pub effect_strength: Option<f32>,
+    #[reflect(@DisplayName("Elevation"))]
     pub elevation: Option<f32>,
+    #[reflect(@DisplayName("Continuous x"))]
     pub continuous_x: Option<bool>,
+    #[reflect(@DisplayName("Continuous y"))]
     pub continuous_y: Option<bool>,
 }
 
@@ -39,6 +45,7 @@ impl Aspect for TerrainEffect {
 /// Indicates a hole in the terrain.
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
+#[reflect(@AspectIcon("editor/icons/lucide/circle-dashed.png"))]
 pub struct TerrainHole;
 
 impl Aspect for TerrainHole {

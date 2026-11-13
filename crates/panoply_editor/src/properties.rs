@@ -1,15 +1,22 @@
-//! The property editor's rows: a subpane per inspected value, and in it a row per field, named
-//! after its field. Booleans get a checkbox, numbers a number input carrying its caption inside, a
-//! `Vec3` three of them, colors a swatch that opens a picker, strings a text input committed on
-//! Enter or on leaving it, a model (`Skin`, `SceneryModel`, `ClipsFile`) a button that opens a
-//! picker of models of its kind, an exemplar's `extends` a button that opens a chooser of the
-//! exemplars it may extend, nested structs a heading over their own rows, indented. Any other
-//! newtype shows
-//! its one field's row. An `Option` is its value's row, with a × that removes the value, or no row
-//! while it is `None`: a struct's heading has a menu of its absent fields, which adds one with its
-//! type's default. Every other field is a row that shows its value without editing it. Annotations
-//! from `bevy::annotations` set a row's caption, a number's range and step, and whether it can be
-//! edited; on an `Option`, they apply to its value.
+//! The property editor's rows (D83): a subpane per inspected value, headed by its aspect's icon
+//! (`AspectIcon`) and caption, and in it a row per field. A row is a caption in a column of fixed
+//! width, then its widget, then a column for its ×, empty if it has none, so widgets and ×s line
+//! up down the panel. Booleans get a checkbox, numbers a number input, a `Vec3` three of them on
+//! one line, colors a swatch that opens a picker, strings a text input committed on Enter or on
+//! leaving it, a model (`Skin`, `SceneryModel`, `ClipsFile`) a button that opens a picker of models
+//! of its kind, an exemplar's `extends` a button that opens a chooser of the exemplars it may
+//! extend, an enum a select of its variants with the variant's fields below it. Nested structs and
+//! list items are a heading over their own rows, set in behind a stripe; a heading, and a pane's
+//! header, collapse their rows behind a chevron and then show a summary: a list's length, or the
+//! value's `PropertySummary`. Any other newtype shows its one field's row. An `Option` is its
+//! value's row, with a × that removes the value, or no row while it is `None`: a struct's heading
+//! has a menu of its absent fields, which adds one with its type's default. Every other field is a
+//! row that shows its value without editing it. Annotations from `bevy::annotations` set a row's
+//! caption, a number's range and step, and whether it can be edited; on an `Option`, they apply to
+//! its value.
+//!
+//! A row is named after its field, never its caption, and a list item "#1", "#2", so plans' paths
+//! keep working when captions change.
 //!
 //! Forked from arbor_day's property editor (X48). The rows read values and never write them: a
 //! widget edits a copy, and a changed copy becomes an edit (see [`edit`]).
@@ -26,7 +33,8 @@ use bevy::{
         containers::{subpane, subpane_body, subpane_header},
         controls::{
             ButtonVariant, ColorInputValue, FeathersButton, FeathersCheckbox, FeathersColorInput,
-            FeathersListRow, FeathersMenu, FeathersMenuItem, FeathersMenuPopup,
+            FeathersDisclosureToggle, FeathersListRow, FeathersMenu, FeathersMenuItem,
+            FeathersMenuPopup,
             FeathersMenuToolButton, FeathersNumberInput, FeathersSelect, FeathersTextInput,
             FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputSnapToStep,
             NumberInputStep, OptionIndex,
@@ -45,7 +53,8 @@ use bevy::{
         tuple::DynamicTuple,
         ParsedPath, ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
     },
-    text::FontSourceTemplate,
+    platform::collections::HashSet,
+    text::{FontSourceTemplate, LineBreak, TextLayout},
     ui::Selected,
     ui_widgets::{
         popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
@@ -69,6 +78,7 @@ use bevy_immediate::{
     CapSet, Imm, ImmCapAccessRequests, ImmCapability, ImmEntity,
 };
 use panoply_core::HexColor;
+use panoply_exemplar::annotations::{AspectIcon, ReflectPropertySummary};
 
 use crate::{
     model_picker::{model_field, open_model_picker, ChosenModel, ModelKind},
@@ -202,32 +212,72 @@ impl NumberField for i64 {
 // TODO: a feathers token of its own for bright text.
 pub const HEADER_TEXT: ThemeToken = tokens::LISTROW_TEXT;
 
-/// A subpane captioned with `root`'s caption, holding the rows of `value`, `root`'s value; a
-/// struct's absent fields are in a menu at the caption's right. With `remove`, a × ends the
-/// header, which sets it. The edits its widgets ask for go to `edits`; new values are built from
-/// the types in `registry`.
+/// The width of a row's caption column at the top level. A nested row's is narrower by its
+/// indent, so widgets line up at every depth.
+const CAPTION_WIDTH: f32 = 88.0;
+
+/// How far each level of nesting sets its rows in: the stripe and the gap after it
+/// (`indented_node`).
+const INDENT: f32 = 8.0;
+
+/// The width of the column every row ends in, holding its × or nothing.
+const REMOVE_WIDTH: f32 = 16.0;
+
+/// The pane icon of an aspect type with no `AspectIcon`.
+const DEFAULT_ASPECT_ICON: &str = "editor/icons/lucide/puzzle.png";
+
+/// The panes, headings and items whose rows are collapsed, by key: a pane by its caption, so an
+/// aspect stays collapsed from exemplar to exemplar, as Blender's panels do; a heading by its
+/// root's key and path. Everything starts expanded.
+#[derive(Resource, Default)]
+pub struct CollapsedRows(HashSet<String>);
+
+/// A subpane captioned with `root`'s caption beside its type's icon, holding the rows of `value`,
+/// `root`'s value; a struct's absent fields are in a menu at the caption's right. Its chevron
+/// collapses the rows, which `collapsed` remembers; collapsed, the header shows a summary. With
+/// `remove`, a × ends the header, which sets it. The edits its widgets ask for go to `edits`; new
+/// values are built from the types in `registry`.
 pub fn root_pane(
     ui: &mut Imm<CapsPanel>,
     root: &Arc<dyn PropertyRoot>,
     value: &dyn PartialReflect,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
+    collapsed: &mut CollapsedRows,
     remove: Option<&mut bool>,
 ) {
     let caption = root.caption();
+    let image = aspect_icon(value);
+    let key = format!("pane {caption}");
     let mut rows = Rows {
         root,
         registry,
         edits,
+        collapsed,
+        depth: 0,
     };
     let name = caption.clone();
+    let mut expanded = true;
     ui.ch_id(root.key())
         .on_spawn_apply_scene(subpane)
         .on_spawn_insert(move || Name::new(name.clone()))
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(subpane_header).add(|ui| {
-                ui.ch().on_spawn_apply_scene(move || {
-                    bsn! { Text({caption.clone()}) ThemeTextColor(HEADER_TEXT) }
+            // The header's right end padded as the body is, so its × lines up with the rows'.
+            let header = || {
+                bsn! {
+                    @subpane_header()
+                    Node { padding: UiRect { left: px(4), right: px(6), top: px(0), bottom: px(0) } }
+                    Name("header")
+                }
+            };
+            ui.ch().on_spawn_apply_scene(header).add(|ui| {
+                ui.ch().on_spawn_insert(heading_start).add(|ui| {
+                    expanded = disclosure(ui, rows.collapsed, key);
+                    ui.ch()
+                        .on_spawn_apply_scene(move || bsn! { @icon(image) Node { height: px(14) } });
+                    ui.ch()
+                        .on_spawn_apply_scene(move || header_caption(caption.clone()));
+                    rows.summary(ui, value, expanded);
                 });
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
                     rows.add_menu(ui, value, &ParsedPath::empty(), None);
@@ -236,6 +286,9 @@ pub fn root_pane(
                     remove_button(ui, remove);
                 });
             });
+            if !expanded {
+                return;
+            }
             ui.ch().on_spawn_apply_scene(subpane_body).add(|ui| {
                 if let Some(note) = no_rows_note(value) {
                     ui.ch_id(note).on_spawn_apply_scene(move || placeholder(note));
@@ -243,6 +296,53 @@ pub fn root_pane(
                 rows.root(ui, value);
             });
         });
+}
+
+/// A pane's caption, in the header's font: the header's own font reaches only its direct
+/// children, and the caption sits in a nested node beside its chevron and icon.
+fn header_caption(caption: String) -> impl Scene {
+    bsn! {
+        Text(caption)
+        TextFont {
+            font: FontSourceTemplate::Families(fonts::SANS),
+            font_size: size::MEDIUM_FONT,
+            weight: FontWeight::NORMAL,
+        }
+        PropagateOver<TextFont>
+        TextLayout { linebreak: LineBreak::NoWrap }
+        ThemeTextColor(HEADER_TEXT)
+    }
+}
+
+/// The icon `value`'s type names in its `AspectIcon`, or the default.
+fn aspect_icon(value: &dyn PartialReflect) -> &'static str {
+    let attributes = match value.get_represented_type_info() {
+        Some(TypeInfo::Struct(info)) => info.custom_attributes(),
+        Some(TypeInfo::TupleStruct(info)) => info.custom_attributes(),
+        Some(TypeInfo::Enum(info)) => info.custom_attributes(),
+        _ => return DEFAULT_ASPECT_ICON,
+    };
+    attributes
+        .get::<AspectIcon>()
+        .map_or(DEFAULT_ASPECT_ICON, |icon| icon.0)
+}
+
+/// A chevron, named `toggle`, that collapses the rows under the header or heading it starts,
+/// remembered in `collapsed` by `key`. Returns whether the rows show.
+fn disclosure(ui: &mut Imm<CapsPanel>, collapsed: &mut CollapsedRows, key: String) -> bool {
+    let shown = !collapsed.0.contains(&key);
+    let mut expanded = shown;
+    ui.ch_id("toggle")
+        .on_spawn_apply_scene(|| bsn! { @FeathersDisclosureToggle #toggle })
+        .checked(&mut expanded);
+    if expanded != shown {
+        if expanded {
+            collapsed.0.remove(&key);
+        } else {
+            collapsed.0.insert(key);
+        }
+    }
+    expanded
 }
 
 /// What a pane says in place of rows when `value` has none to show: a struct with no fields, or
@@ -289,30 +389,36 @@ pub fn root_add_menu(
     value: &dyn PartialReflect,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
+    collapsed: &mut CollapsedRows,
     more: (&'static str, &'static str),
 ) -> bool {
     Rows {
         root,
         registry,
         edits,
+        collapsed,
+        depth: 0,
     }
     .add_menu(ui, value, &ParsedPath::empty(), Some(more))
 }
 
 /// The rows of `value`, `root`'s value, in whatever holds them: a struct's fields with no heading
 /// of their own, or another value's one row. The edits its widgets ask for go to `edits`; new
-/// values are built from the types in `registry`.
+/// values are built from the types in `registry`; `collapsed` holds the headings collapsed.
 pub fn root_rows(
     ui: &mut Imm<CapsPanel>,
     root: &Arc<dyn PropertyRoot>,
     value: &dyn PartialReflect,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
+    collapsed: &mut CollapsedRows,
 ) {
     Rows {
         root,
         registry,
         edits,
+        collapsed,
+        depth: 0,
     }
     .root(ui, value);
 }
@@ -329,9 +435,102 @@ struct Rows<'a> {
     root: &'a Arc<dyn PropertyRoot>,
     registry: &'a TypeRegistry,
     edits: &'a mut PropertyEdits,
+    collapsed: &'a mut CollapsedRows,
+    /// How many headings the rows being built are nested under.
+    depth: usize,
 }
 
 impl Rows<'_> {
+    /// The width of the caption column at the current depth.
+    fn caption_width(&self) -> f32 {
+        caption_width(self.depth)
+    }
+
+    /// While the rows under a header are collapsed, a dim summary of `value`, named `summary`: a
+    /// list's length, or its type's `PropertySummary`. Nothing while they show, or for a value with
+    /// no summary.
+    fn summary(&self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, expanded: bool) {
+        let Some(text) = (!expanded).then(|| self.summary_text(value)).flatten() else {
+            return;
+        };
+        ui.ch_id("summary")
+            .on_spawn_apply_scene(|| {
+                bsn! {
+                    Text("")
+                    TextFont {
+                        font: FontSourceTemplate::Families(fonts::SANS),
+                        font_size: size::MEDIUM_FONT,
+                        weight: FontWeight::NORMAL,
+                    }
+                    PropagateOver<TextFont>
+                    TextLayout { linebreak: LineBreak::NoWrap }
+                    ThemeTextColor(tokens::TEXT_DIM)
+                    Name("summary")
+                    Node { min_width: px(0), overflow: Overflow::clip_x() }
+                }
+            })
+            .on_hash_change_text_fn(&text, || text.clone());
+    }
+
+    /// The words that stand for `value` while its rows are collapsed, if any.
+    fn summary_text(&self, value: &dyn PartialReflect) -> Option<String> {
+        let (inner, _) = through_newtypes(value, ParsedPath::empty());
+        if let ReflectRef::List(list) = inner.reflect_ref() {
+            return Some(match list.len() {
+                1 => "1 item".to_string(),
+                count => format!("{count} items"),
+            });
+        }
+        let reflect = value.try_as_reflect()?;
+        let summary = self
+            .registry
+            .get_type_data::<ReflectPropertySummary>(reflect.reflect_type_info().type_id())?;
+        Some(summary.get(reflect)?.property_summary())
+    }
+
+    /// A heading over rows, named `name`, keyed by `path`: on a line named `heading`, a chevron that
+    /// collapses them, the heading's caption, and its summary while collapsed, then `widgets` and
+    /// the × column at its right; below it, while expanded, `body`'s rows, set in behind a stripe,
+    /// one level deeper.
+    #[expect(clippy::too_many_arguments, reason = "a heading's parts, each used once")]
+    fn heading(
+        &mut self,
+        row: ImmEntity<CapsPanel>,
+        name: &'static str,
+        caption: &'static str,
+        value: &dyn PartialReflect,
+        path: &ParsedPath,
+        remove: Option<&mut bool>,
+        widgets: impl FnOnce(&mut Self, &mut Imm<CapsPanel>),
+        body: impl FnOnce(&mut Self, &mut Imm<CapsPanel>),
+    ) {
+        let key = format!("{} {path}", self.root.key());
+        row.on_spawn_insert(move || (Name::new(name), heading_node()))
+            .add(|ui| {
+                let mut expanded = true;
+                let line = || (Name::new("heading"), caption_line());
+                ui.ch().on_spawn_insert(line).add(|ui| {
+                    ui.ch().on_spawn_insert(heading_start).add(|ui| {
+                        expanded = disclosure(ui, self.collapsed, key);
+                        ui.ch().on_spawn_apply_scene(move || {
+                            heading_text(caption, tokens::TEXT_MAIN)
+                        });
+                        self.summary(ui, value, expanded);
+                    });
+                    ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                        widgets(self, ui);
+                        remove_button(ui, remove);
+                    });
+                });
+                if expanded {
+                    ui.ch_id("rows").on_spawn_apply_scene(indented_node).add(|ui| {
+                        self.depth += 1;
+                        body(self, ui);
+                        self.depth -= 1;
+                    });
+                }
+            });
+    }
     /// Asks for `value` to be written at `path`.
     fn set(&mut self, path: &ParsedPath, value: impl PartialReflect) {
         self.edits.set(self.root, path.clone(), value);
@@ -418,6 +617,9 @@ impl Rows<'_> {
                             },
                             @arrow: false,
                         }
+                        // The menu tool button is always Normal, boxed; plain, as the list's
+                        // boxed plus is.
+                        ButtonVariant::Plain
                     }
                 });
                 ui.ch().on_spawn_apply_scene(right_aligned_popup).add(|ui| {
@@ -459,18 +661,17 @@ impl Rows<'_> {
         }
     }
 
-    /// The row of `value`, at `path`, captioned `caption` unless its attributes `attrs` name it.
-    /// With `remove`, the row ends its widgets' line with a × that sets it.
+    /// The row of `value`, at `path`, named `name`, and captioned so unless its attributes `attrs`
+    /// name it. With `remove`, the row's × column holds a × that sets it.
     fn row(
         &mut self,
         ui: &mut Imm<CapsPanel>,
-        caption: &'static str,
+        name: &'static str,
         attrs: &CustomAttributes,
         value: &dyn PartialReflect,
         path: ParsedPath,
         remove: Option<&mut bool>,
     ) {
-        let caption = attrs.get::<DisplayName>().map_or(caption, |name| name.0);
         // An `Option` is its value's row, ending in a × that removes the value, or no row while
         // it has none.
         if is_option(value) {
@@ -484,21 +685,26 @@ impl Rows<'_> {
             };
             let inner_path = path.with_tuple(0);
             if attrs.get::<ReadOnly>().is_some() {
-                self.row(ui, caption, attrs, inner, inner_path, remove);
+                self.row(ui, name, attrs, inner, inner_path, remove);
                 return;
             }
             let mut removed = false;
-            self.row(ui, caption, attrs, inner, inner_path, Some(&mut removed));
+            self.row(ui, name, attrs, inner, inner_path, Some(&mut removed));
             if removed {
                 self.add_or_remove(&path, info, false);
             }
             return;
         }
+        let head = RowHead {
+            name,
+            caption: attrs.get::<DisplayName>().map_or(name, |name| name.0),
+            width: self.caption_width(),
+        };
         // A model, picked from a list of its kind rather than typed.
         if let Some((kind, model)) = model_field(value) {
             if attrs.get::<ReadOnly>().is_none() {
                 let row = ui.ch_id(path.clone());
-                if let Some(chosen) = model_row(row, caption, kind, model, remove) {
+                if let Some(chosen) = model_row(row, head, kind, model, remove) {
                     self.set(&path.with_tuple(0), chosen);
                 }
                 return;
@@ -510,7 +716,7 @@ impl Rows<'_> {
                 let row = ui.ch_id(path.clone());
                 let mut clear = false;
                 let clearable = reference.0.is_some().then_some(&mut clear);
-                exemplar_ref_row(row, caption, reference, self.root, clearable);
+                exemplar_ref_row(row, head, reference, self.root, clearable);
                 if clear {
                     self.set(&path, ExemplarRef(None));
                 }
@@ -520,134 +726,115 @@ impl Rows<'_> {
         // A newtype is its field's row.
         if let Some(inner) = newtype_field(value) {
             if value.try_downcast_ref::<HexColor>().is_none() {
-                self.row(ui, caption, attrs, inner, path.with_tuple(0), remove);
+                self.row(ui, name, attrs, inner, path.with_tuple(0), remove);
                 return;
             }
         }
         // Rows are keyed by path, so they keep their entities from frame to frame.
         let row = ui.ch_id(path.clone());
         if attrs.get::<ReadOnly>().is_some() {
-            read_only_row(row, caption, value, remove);
+            read_only_row(row, head, value, remove);
             return;
         }
         if let Some(&flag) = value.try_downcast_ref::<bool>() {
             let mut edited = flag;
-            row.on_spawn_insert(move || (Name::new(caption), caption_line()))
-                .add(|ui| {
-                    ui.ch()
-                        .on_spawn_apply_scene(move || {
-                            bsn! {
-                                @FeathersCheckbox { @caption: bsn! { Text(caption) ThemedText } }
-                                #check
-                            }
-                        })
-                        .checked(&mut edited);
-                    remove_button(ui, remove);
-                });
+            row.on_spawn_insert(move || head.node()).add(|ui| {
+                ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+                ui.ch()
+                    .on_spawn_apply_scene(|| bsn! { @FeathersCheckbox #check })
+                    .checked(&mut edited);
+                ui.ch().on_spawn_insert(spacer);
+                remove_button(ui, remove);
+            });
             if edited != flag {
                 self.set(&path, edited);
             }
         } else if let Some(&number) = value.try_downcast_ref::<f32>() {
             let shown = shown_f32(number);
-            if let Some(edited) = self.number_row(row, caption, attrs, shown, remove) {
+            if let Some(edited) = self.number_row(row, head, attrs, shown, remove) {
                 self.set(&path, edited as f32);
             }
         } else if let Some(&number) = value.try_downcast_ref::<f64>() {
-            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+            if let Some(edited) = self.number_row(row, head, attrs, number, remove) {
                 self.set(&path, edited);
             }
         } else if let Some(&number) = value.try_downcast_ref::<i32>() {
-            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+            if let Some(edited) = self.number_row(row, head, attrs, number, remove) {
                 self.set(&path, edited);
             }
         } else if let Some(&number) = value.try_downcast_ref::<i64>() {
-            if let Some(edited) = self.number_row(row, caption, attrs, number, remove) {
+            if let Some(edited) = self.number_row(row, head, attrs, number, remove) {
                 self.set(&path, edited);
             }
         } else if let Some(&vector) = value.try_downcast_ref::<Vec3>() {
-            self.vec3_row(row, caption, attrs, vector, &path, remove);
+            self.vec3_row(row, head, attrs, vector, &path, remove);
         } else if let Some(&color) = value.try_downcast_ref::<HexColor>() {
             let mut edited = Color::Srgba(color.0);
-            color_row(row, caption, &mut edited, remove);
+            color_row(row, head, &mut edited, remove);
             if edited != Color::Srgba(color.0) {
                 self.set(&path, HexColor(edited.to_srgba()));
             }
         } else if let Some(text) = value.try_downcast_ref::<String>() {
-            if let Some(edited) = text_row(row, caption, text, remove) {
+            if let Some(edited) = text_row(row, head, text, remove) {
                 self.set(&path, edited);
             }
         } else if let ReflectRef::Enum(_) = value.reflect_ref() {
-            self.enum_row(row, caption, value, &path, remove);
+            self.enum_row(row, head, value, &path, remove);
         } else if let ReflectRef::List(_) = value.reflect_ref() {
-            row.on_spawn_insert(move || (Name::new(caption), heading_node()))
-                .add(|ui| {
-                    ui.ch().on_spawn_insert(caption_line).add(|ui| {
-                        ui.ch().on_spawn_apply_scene(move || {
-                            heading_text(caption, tokens::TEXT_MAIN)
-                        });
-                        ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                            self.add_item_button(ui, value, &path);
-                            remove_button(ui, remove);
-                        });
-                    });
-                    ui.ch().on_spawn_apply_scene(indented_node).add(|ui| {
-                        self.items(ui, value, &path);
-                    });
-                });
+            self.heading(
+                row,
+                name,
+                head.caption,
+                value,
+                &path,
+                remove,
+                |rows, ui| rows.add_item_button(ui, value, &path),
+                |rows, ui| rows.items(ui, value, &path),
+            );
         } else if let ReflectRef::Struct(_) = value.reflect_ref() {
-            row.on_spawn_insert(move || (Name::new(caption), heading_node()))
-                .add(|ui| {
-                    ui.ch().on_spawn_insert(caption_line).add(|ui| {
-                        ui.ch().on_spawn_apply_scene(move || {
-                            heading_text(caption, tokens::TEXT_MAIN)
-                        });
-                        ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                            self.add_menu(ui, value, &path, None);
-                            remove_button(ui, remove);
-                        });
-                    });
-                    ui.ch().on_spawn_apply_scene(indented_node).add(|ui| {
-                        self.fields(ui, value, &path);
-                    });
-                });
+            self.heading(
+                row,
+                name,
+                head.caption,
+                value,
+                &path,
+                remove,
+                |rows, ui| {
+                    rows.add_menu(ui, value, &path, None);
+                },
+                |rows, ui| rows.fields(ui, value, &path),
+            );
         } else {
-            read_only_row(row, caption, value, remove);
+            read_only_row(row, head, value, remove);
         }
     }
 
-    /// A number input captioned inside, named `input` so plans can read its value. Returns the
-    /// number edited in it, if it changed.
+    /// A number input, named `input` so plans can read its value, after the row's caption.
+    /// Returns the number edited in it, if it changed.
     fn number_row<T: NumberField>(
         &mut self,
         row: ImmEntity<CapsPanel>,
-        caption: &'static str,
+        head: RowHead,
         attrs: &CustomAttributes,
         value: T,
         remove: Option<&mut bool>,
     ) -> Option<T> {
         let look = NumberLook::from_attributes::<T>(attrs);
         let mut edited = value;
-        row.on_spawn_insert(move || (Name::new(caption), widget_line()))
-            .add(|ui| {
-                number_input(
-                    ui.ch(),
-                    "input",
-                    NumberCaption::Inside(caption),
-                    look,
-                    Val::Auto,
-                    &mut edited,
-                );
-                remove_button(ui, remove);
-            });
+        row.on_spawn_insert(move || head.node()).add(|ui| {
+            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            number_input(ui.ch(), "input", None, look, &mut edited);
+            remove_button(ui, remove);
+        });
         (edited != value).then_some(edited)
     }
 
-    /// Three number inputs on one line, labeled X, Y and Z beside their axes' colored sigils,
-    /// under the row's caption.
+    /// Three number inputs after the row's caption, labeled X, Y and Z beside their axes' colored
+    /// sigils.
     fn vec3_row(
         &mut self,
         row: ImmEntity<CapsPanel>,
-        caption: &'static str,
+        head: RowHead,
         attrs: &CustomAttributes,
         value: Vec3,
         path: &ParsedPath,
@@ -656,27 +843,18 @@ impl Rows<'_> {
         let look = NumberLook::from_attributes::<f64>(attrs);
         let shown = value.to_array().map(shown_f32);
         let mut edited = shown;
-        row.on_spawn_insert(move || row_node(caption)).add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || label(caption));
-            ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                let [x, y, z] = &mut edited;
-                let axes = [
-                    ("x", "X", tokens::TEXT_INPUT_X_AXIS, x),
-                    ("y", "Y", tokens::TEXT_INPUT_Y_AXIS, y),
-                    ("z", "Z", tokens::TEXT_INPUT_Z_AXIS, z),
-                ];
-                for (name, label, sigil, component) in axes {
-                    number_input(
-                        ui.ch(),
-                        name,
-                        NumberCaption::Sigil(label, sigil),
-                        look.clone(),
-                        Val::Auto,
-                        component,
-                    );
-                }
-                remove_button(ui, remove);
-            });
+        row.on_spawn_insert(move || head.node()).add(|ui| {
+            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            let [x, y, z] = &mut edited;
+            let axes = [
+                ("x", "X", tokens::TEXT_INPUT_X_AXIS, x),
+                ("y", "Y", tokens::TEXT_INPUT_Y_AXIS, y),
+                ("z", "Z", tokens::TEXT_INPUT_Z_AXIS, z),
+            ];
+            for (name, label, sigil, component) in axes {
+                number_input(ui.ch(), name, Some((label, sigil)), look.clone(), component);
+            }
+            remove_button(ui, remove);
         });
         for ((axis, old), new) in ["x", "y", "z"].into_iter().zip(shown).zip(edited) {
             if new != old {
@@ -685,8 +863,8 @@ impl Rows<'_> {
         }
     }
 
-    /// The rows of the items of `value`, a list at `path`, captioned "Item 1" and on, each with a
-    /// × that removes it.
+    /// The rows of the items of `value`, a list at `path`, captioned and named "#1" and on, each
+    /// with a × that removes it.
     fn items(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
         let ReflectRef::List(list) = value.reflect_ref() else {
             return;
@@ -736,13 +914,14 @@ impl Rows<'_> {
         }
     }
 
-    /// A caption with a select of the variants of `value`, an enum at `path`; below it, the
-    /// fields of the variant chosen, set in. Picking another variant asks for it, carrying over
-    /// the fields of the same name and type.
+    /// The row's caption with a select of the variants of `value`, an enum at `path`; below it,
+    /// the fields of the variant chosen, as its siblings, not set in: they are the enum's value,
+    /// not a part of it. Picking another variant asks for it, carrying over the fields of the same
+    /// name and type.
     fn enum_row(
         &mut self,
         row: ImmEntity<CapsPanel>,
-        caption: &'static str,
+        head: RowHead,
         value: &dyn PartialReflect,
         path: &ParsedPath,
         remove: Option<&mut bool>,
@@ -754,19 +933,17 @@ impl Rows<'_> {
         };
         let index = current.variant_index();
         let mut picked = None;
-        row.on_spawn_insert(move || (Name::new(caption), heading_node()))
+        row.on_spawn_insert(move || (Name::new(head.name), heading_node()))
             .add(|ui| {
-                ui.ch().on_spawn_insert(caption_line).add(|ui| {
-                    ui.ch().on_spawn_apply_scene(move || label(caption));
-                    ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                        picked = variant_select(ui, info.variant_names(), index);
-                        remove_button(ui, remove);
-                    });
+                ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                    ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+                    picked = variant_select(ui, info.variant_names(), index);
+                    remove_button(ui, remove);
                 });
                 if current.field_len() > 0 {
                     // Keyed by variant, so another variant's fields get rows of their own.
                     ui.ch_id(current.variant_name())
-                        .on_spawn_apply_scene(indented_node)
+                        .on_spawn_insert(column)
                         .add(|ui| self.variant_fields(ui, current, info, path));
                 }
             });
@@ -798,7 +975,7 @@ impl Rows<'_> {
             let Some(field) = value.field_at(index) else {
                 continue;
             };
-            let (caption, attrs, field_path) = match variant {
+            let (name, attrs, field_path) = match variant {
                 VariantInfo::Struct(variant) => {
                     let Some(field_info) = variant.field_at(index) else {
                         continue;
@@ -810,12 +987,12 @@ impl Rows<'_> {
                     let Some(field_info) = variant.field_at(index) else {
                         continue;
                     };
-                    let caption = short_type_name(field);
-                    (caption, field_info.custom_attributes(), path.with_tuple(index))
+                    let name = short_type_name(field);
+                    (name, field_info.custom_attributes(), path.with_tuple(index))
                 }
                 VariantInfo::Unit(_) => return,
             };
-            self.row(ui, caption, attrs, field, field_path, None);
+            self.row(ui, name, attrs, field, field_path, None);
         }
     }
 }
@@ -830,13 +1007,13 @@ fn shown_f32(value: f32) -> f64 {
 /// The boxed plus that adds a field or an item.
 const ADD_ICON: &str = "editor/icons/add_box.png";
 
-/// "Item 1", "Item 2" and on: a list item's caption, for its `index`. Each is made once and kept,
-/// since rows take their captions for good.
+/// "#1", "#2" and on: a list item's caption and name, for its `index`. Each is made once and
+/// kept, since rows take their captions for good.
 fn item_caption(index: usize) -> &'static str {
     static CAPTIONS: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
     let mut captions = CAPTIONS.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     while captions.len() <= index {
-        let caption = format!("Item {}", captions.len() + 1);
+        let caption = format!("#{}", captions.len() + 1);
         captions.push(Box::leak(caption.into_boxed_str()));
     }
     captions[index]
@@ -933,7 +1110,7 @@ fn variant_select(
                 })
                 .collect();
             let rows: Box<dyn SceneList> = Box::new(rows);
-            bsn! { @FeathersSelect { @options: {rows} } #select Node { min_width: px(96) } }
+            bsn! { @FeathersSelect { @options: {rows} } #select Node { flex_grow: 1.0, min_width: px(0) } }
         });
     let Ok(Some(mut state)) = select.cap_get_component_mut::<PickedVariant>() else {
         return None;
@@ -1032,14 +1209,14 @@ fn newtype_field(value: &dyn PartialReflect) -> Option<&dyn PartialReflect> {
 /// elsewhere, by undo, only while it is not being edited. With `remove`, a × ends the row.
 fn text_row(
     row: ImmEntity<CapsPanel>,
-    caption: &'static str,
+    head: RowHead,
     value: &str,
     remove: Option<&mut bool>,
 ) -> Option<String> {
     let mut committed = None;
-    row.on_spawn_insert(move || (Name::new(caption), widget_line()))
+    row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || label(caption));
+            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
             ui.ch()
                 .on_spawn_apply_scene(|| {
                     bsn! { @FeathersTextInputContainer Node { flex_grow: 1.0, min_width: px(0) } }
@@ -1076,16 +1253,16 @@ fn text_row(
 /// the model chosen in it. With `remove`, a × ends the row.
 fn model_row(
     row: ImmEntity<CapsPanel>,
-    caption: &'static str,
+    head: RowHead,
     kind: ModelKind,
     value: &str,
     remove: Option<&mut bool>,
 ) -> Option<String> {
     let mut chosen = None;
     let shown = value.rsplit_once('/').map_or(value, |(_, file)| file).to_string();
-    row.on_spawn_insert(move || (Name::new(caption), widget_line()))
+    row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || label(caption));
+            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
             let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
                 bsn! {
                     @FeathersButton
@@ -1110,7 +1287,7 @@ fn model_row(
             }
             button.add(|ui| {
                 ui.ch()
-                    .on_spawn_apply_scene(|| bsn! { Text("") ThemedText Name("model") })
+                    .on_spawn_apply_scene(|| button_text("model"))
                     .on_hash_change_text_fn(&shown, || shown.clone());
             });
             remove_button(ui, remove);
@@ -1123,7 +1300,7 @@ fn model_row(
 /// (`open_extends_chooser`), which sets the field itself. With `remove`, a × ends the row.
 fn exemplar_ref_row(
     row: ImmEntity<CapsPanel>,
-    caption: &'static str,
+    head: RowHead,
     value: &ExemplarRef,
     root: &Arc<dyn PropertyRoot>,
     remove: Option<&mut bool>,
@@ -1133,9 +1310,9 @@ fn exemplar_ref_row(
         .as_deref()
         .map_or("none", |path| path.rsplit_once('#').map_or(path, |(_, label)| label))
         .to_string();
-    row.on_spawn_insert(move || (Name::new(caption), widget_line()))
+    row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || label(caption));
+            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
             let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
                 bsn! {
                     @FeathersButton
@@ -1156,19 +1333,61 @@ fn exemplar_ref_row(
             }
             button.add(|ui| {
                 ui.ch()
-                    .on_spawn_apply_scene(|| bsn! { Text("") ThemedText Name("name") })
+                    .on_spawn_apply_scene(|| button_text("name"))
                     .on_hash_change_text_fn(&shown, || shown.clone());
             });
             remove_button(ui, remove);
         });
 }
 
-/// With `remove`, a dim ×, named `remove`, at the end of a row's widget line, which sets it when
-/// clicked: every optional row's × lines up at the panel's right.
-fn remove_button(ui: &mut Imm<CapsPanel>, remove: Option<&mut bool>) {
-    if let Some(remove) = remove {
-        *remove |= icon_button(ui, "remove", icons::X, px(12), tokens::TEXT_DIM);
+/// The text of a picker's button, named `name`: regular, since it is a value rather than an
+/// action, and on one line, since a model path has hyphens to break at and a second line would
+/// spill out of the button, which clips only its sides.
+fn button_text(name: &'static str) -> impl Scene {
+    bsn! {
+        Text("")
+        ThemedText
+        TextFont {
+            font: FontSourceTemplate::Handle(fonts::REGULAR),
+            font_size: size::MEDIUM_FONT,
+            weight: FontWeight::NORMAL,
+        }
+        PropagateOver<TextFont>
+        TextLayout { linebreak: LineBreak::NoWrap }
+        Name(name)
     }
+}
+
+/// The × column that ends a row or heading: with `remove`, a dim ×, named `remove`, which sets it
+/// when clicked; without, the column empty, so the widgets before it end where every other row's
+/// do.
+fn remove_button(ui: &mut Imm<CapsPanel>, remove: Option<&mut bool>) {
+    let Some(remove) = remove else {
+        ui.ch_id("no_remove").on_spawn_insert(|| Node {
+            width: px(REMOVE_WIDTH),
+            flex_shrink: 0.0,
+            ..default()
+        });
+        return;
+    };
+    let mut button = ui.ch_id("remove").on_spawn_apply_scene(|| {
+        bsn! {
+            @FeathersToolButton { @variant: {ButtonVariant::Plain} }
+            Name("remove")
+            Node {
+                padding: UiRect::ZERO,
+                min_width: px(REMOVE_WIDTH),
+                width: px(REMOVE_WIDTH),
+                flex_shrink: 0.0,
+            }
+        }
+    });
+    *remove |= button.activated();
+    button.add(|ui| {
+        ui.ch_id(icons::X).on_spawn_apply_scene(|| {
+            bsn! { @icon(icons::X) Node { height: px(12) } TextColor ThemeTextColor(tokens::TEXT_DIM) }
+        });
+    });
 }
 
 /// A plain tool button named `name` showing the icon `image`, `height` high, tinted `color`.
@@ -1236,17 +1455,17 @@ fn menu_item(item: ImmEntity<CapsPanel>, caption: &'static str, name: String) ->
 /// With `remove`, a × ends the row.
 fn read_only_row(
     row: ImmEntity<CapsPanel>,
-    caption: &'static str,
+    head: RowHead,
     value: &dyn PartialReflect,
     remove: Option<&mut bool>,
 ) {
-    let text = format!("{caption}: {}", summary(value));
-    row.on_spawn_insert(move || (Name::new(caption), caption_line()))
-        .add(|ui| {
-            ui.ch_id(text.clone())
-                .on_spawn_apply_scene(move || label(text.clone()));
-            remove_button(ui, remove);
-        });
+    let text = summary(value);
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+        ui.ch_id(text.clone())
+            .on_spawn_apply_scene(move || bsn! { @label(text.clone()) Node { flex_grow: 1.0 } });
+        remove_button(ui, remove);
+    });
 }
 
 /// `value` in a few words: a variant's name, a collection's length, a string or a number as
@@ -1289,15 +1508,71 @@ impl NumberLook {
     }
 }
 
-/// A row node named after its field, holding widgets that carry their caption inside.
-fn row_node(name: &'static str) -> (Name, Node) {
-    (
-        Name::new(name),
-        Node {
-            flex_direction: FlexDirection::Column,
-            ..default()
-        },
-    )
+/// What a row is named and shows at its left: its field's name, its caption, and the width of
+/// the caption column at its depth.
+#[derive(Clone, Copy)]
+struct RowHead {
+    name: &'static str,
+    caption: &'static str,
+    width: f32,
+}
+
+impl RowHead {
+    /// The row's node, named after its field, laying out caption, widget and × column in a line.
+    fn node(self) -> (Name, Node) {
+        (Name::new(self.name), widget_line())
+    }
+
+    /// The caption in its column, clipped rather than wrapped when it is too long.
+    fn caption_cell(self) -> impl Scene {
+        let caption = self.caption;
+        let width = self.width;
+        bsn! {
+            Node {
+                width: px(width),
+                flex_shrink: 0.0,
+                overflow: Overflow::clip_x(),
+            }
+            Children [
+                @label(caption)
+                TextLayout { linebreak: LineBreak::NoWrap }
+            ]
+        }
+    }
+}
+
+/// The caption column's width `depth` headings deep: narrower by each level's indent, so the
+/// widgets after it line up at every depth.
+fn caption_width(depth: usize) -> f32 {
+    (CAPTION_WIDTH - depth as f32 * INDENT).max(INDENT)
+}
+
+/// Takes a line's spare width, so the widgets after it sit at its right end.
+fn spacer() -> Node {
+    Node {
+        flex_grow: 1.0,
+        ..default()
+    }
+}
+
+/// Rows stacked, spaced as a pane's rows are.
+fn column() -> Node {
+    Node {
+        flex_direction: FlexDirection::Column,
+        row_gap: px(4),
+        ..default()
+    }
+}
+
+/// The left of a header or heading: its chevron, caption and summary, taking the spare width and
+/// clipping a long summary.
+fn heading_start() -> Node {
+    Node {
+        flex_grow: 1.0,
+        min_width: px(0),
+        overflow: Overflow::clip_x(),
+        ..widget_line()
+    }
 }
 
 /// A heading's text, bold, in `color`.
@@ -1357,29 +1632,18 @@ fn caption_line() -> Node {
     }
 }
 
-/// Where a number input shows its caption.
-#[derive(Clone)]
-enum NumberCaption {
-    /// Inside the input, at its left end.
-    Inside(&'static str),
-    /// At its left, beside a sigil strip in the token's color, as for an axis.
-    Sigil(&'static str, ThemeToken),
-}
-
-/// A number input named `name`, captioned as `caption` says, `width` wide, or taking a widget
-/// line's spare width if `Val::Auto`.
+/// A number input named `name`, taking its line's spare width. With `axis`, it is labeled at its
+/// left beside a sigil strip in the token's color, as X, Y and Z are.
 fn number_input<T: NumberField>(
     input: ImmEntity<CapsPanel>,
     name: &'static str,
-    caption: NumberCaption,
+    axis: Option<(&'static str, ThemeToken)>,
     look: NumberLook,
-    width: Val,
     value: &mut T,
 ) {
-    let grow: f32 = if width == Val::Auto { 1.0 } else { 0.0 };
-    let (interior, label, sigil) = match caption {
-        NumberCaption::Inside(text) => (Some(text), None, tokens::TEXT_INPUT_LABEL_BG),
-        NumberCaption::Sigil(text, sigil) => (None, Some(text), sigil),
+    let (label, sigil) = match axis {
+        Some((text, sigil)) => (Some(text), sigil),
+        None => (None, tokens::TEXT_INPUT_LABEL_BG),
     };
     let initial = value.to_number_input_value();
     // The input writes its text from the components present when its text field spawns, so the
@@ -1400,11 +1664,10 @@ fn number_input<T: NumberField>(
         .on_spawn_apply_scene(move || {
             bsn! {
                 @FeathersNumberInput {
-                    @interior_label_text: {interior},
                     @label_text: {label},
                     @sigil_color: {sigil},
                 }
-                Node { flex_grow: {grow}, width: {width} }
+                Node { flex_grow: 1.0, min_width: px(0) }
             }
         });
     if !input.will_be_spawned() {
@@ -1416,18 +1679,16 @@ fn number_input<T: NumberField>(
 /// The input is named `input`.
 fn color_row(
     row: ImmEntity<CapsPanel>,
-    caption: &'static str,
+    head: RowHead,
     color: &mut Color,
     remove: Option<&mut bool>,
 ) {
-    row.on_spawn_insert(move || (Name::new(caption), caption_line()))
-        .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || label(caption));
-            ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                color_input(ui, color);
-                remove_button(ui, remove);
-            });
-        });
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+        color_input(ui, color);
+        ui.ch().on_spawn_insert(spacer);
+        remove_button(ui, remove);
+    });
 }
 
 /// A feathers color input named `input`, showing `color`, and setting it to the color picked.
@@ -1458,7 +1719,14 @@ fn color_input(ui: &mut Imm<CapsPanel>, color: &mut Color) {
 
 #[cfg(test)]
 mod tests {
-    use super::shown_f32;
+    use super::{caption_width, shown_f32, CAPTION_WIDTH, INDENT};
+
+    #[test]
+    fn a_nested_caption_column_ends_where_the_top_level_one_does() {
+        for depth in 0..4 {
+            assert_eq!(caption_width(depth) + depth as f32 * INDENT, CAPTION_WIDTH);
+        }
+    }
 
     #[test]
     fn an_f32_is_shown_as_its_decimal() {

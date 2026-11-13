@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use panoply_exemplar::*;
+use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 use super::{FIXTURE_TYPE, WALL_TYPE};
@@ -8,6 +8,7 @@ use super::{FIXTURE_TYPE, WALL_TYPE};
 /// doing so is its `SceneryAnimations`, on the input `open`.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/package-open.png"))]
 pub struct Container {}
 
 impl Aspect for Container {

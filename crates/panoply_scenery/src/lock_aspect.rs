@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use panoply_exemplar::*;
+use bevy::{annotations::DisplayName, prelude::*};
+use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 use super::{FIXTURE_TYPE, WALL_TYPE};
@@ -8,9 +8,11 @@ use super::{FIXTURE_TYPE, WALL_TYPE};
 /// instance that does overrides its exemplar's with its own.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/lock.png"))]
 #[serde(default)]
 pub struct Lock {
     /// True if an instance starts locked.
+    #[reflect(@DisplayName("Locked"))]
     pub locked: bool,
 }
 

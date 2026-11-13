@@ -1,16 +1,19 @@
-use bevy::prelude::*;
-use panoply_exemplar::*;
+use bevy::{annotations::DisplayName, prelude::*};
+use panoply_exemplar::{annotations::AspectIcon, *};
 
 use super::WALL_TYPE;
 
 /// Wall Size aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
+#[reflect(@AspectIcon("editor/icons/lucide/ruler.png"))]
 pub struct WallSize {
     /// How many tile spaces does this wall take up in the x direction
+    #[reflect(@DisplayName("Width"))]
     x: u32,
 
     /// How many tile spaces does this wall take up in the y (actually z) direction
+    #[reflect(@DisplayName("Depth"))]
     y: u32,
 }
 

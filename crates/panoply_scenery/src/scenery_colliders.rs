@@ -6,7 +6,10 @@ use bevy::{
     prelude::*,
 };
 use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics, ToRapier};
-use panoply_exemplar::Exemplar;
+use panoply_exemplar::{
+    annotations::{PropertySummary, ReflectPropertySummary},
+    Exemplar,
+};
 use rapier3d::prelude::{
     ColliderBuilder, Group, InteractionGroups, InteractionTestMode, Pose, SharedShape,
 };
@@ -26,35 +29,36 @@ use crate::{
 #[serde(tag = "shape", rename_all = "snake_case")]
 pub enum ColliderShape {
     Box {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Half extents"))]
         half_extents: Vec3,
     },
     /// A box with rounded edges, built as a plain box for now.
     Rbox {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Half extents"))]
         half_extents: Vec3,
     },
     Sphere {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Radius"))]
         radius: f32,
     },
     /// Centered on the offset, not resting on it.
     Ellipsoid {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Radii"))]
         radii: Vec3,
     },
     /// A wedge in a box of these half extents: the floor of the box, rising to its top at +z.
     Ramp {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Half extents"))]
         half_extents: Vec3,
         /// Quarter turns about y, relative to the element.
         #[serde(default)]
+        #[reflect(@DisplayName("Facing"))]
         facing: f32,
     },
     Cylinder {
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Radius"))]
         radius: f32,
-        #[reflect(@Step(0.05))]
+        #[reflect(@Step(0.05), @DisplayName("Half height"))]
         half_height: f32,
     },
 }
@@ -83,35 +87,63 @@ pub enum ColliderType {
 
 /// Describes a physics collider on a scenery element.
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Default, Serialize, Deserialize)]
+#[reflect(Default, Serialize, Deserialize, PropertySummary)]
 pub struct ColliderDesc {
     #[serde(flatten)]
+    #[reflect(@DisplayName("Shape"))]
     pub shape: ColliderShape,
 
     /// Named `type` in a catalog. Not `r#type` here: a reflect path reads `#` as a field index.
     #[serde(rename = "type", default, skip_serializing_if = "is_solid")]
-    #[reflect(@DisplayName("type"))]
+    #[reflect(@DisplayName("Type"))]
     pub kind: ColliderType,
 
-    #[reflect(@Step(0.05))]
+    #[reflect(@Step(0.05), @DisplayName("Offset"))]
     pub offset: Option<Vec3>,
 
     /** Whether this collider receives mouse events. */
+    #[reflect(@DisplayName("Pickable"))]
     pub pickable: Option<bool>,
 
     /** If true, this is an animated collider that is attached to a sub-component of the tile. */
+    #[reflect(@DisplayName("Animation"))]
     pub animation: Option<String>,
 
     /** For animated tiles,. */
+    #[reflect(@DisplayName("Origin"))]
     pub origin: Option<Vec3>,
 
     /** Means we can walk on top of this collider. Affects pathfinding and physics. */
+    #[reflect(@DisplayName("Walkable"))]
     pub walkable: Option<bool>,
 
     /// Extra clearance kept around the collider when navigation maps are built: its footprint
     /// grows by this much before the maps' boolean operations.
     // TODO(PAN16): read when building navigation maps.
+    #[reflect(@DisplayName("Margin"))]
     pub margin: Option<f32>,
+}
+
+impl PropertySummary for ColliderDesc {
+    /// The shape and its dimensions, as "Box 0.3 × 1 × 0.2", and the type unless it is solid.
+    fn property_summary(&self) -> String {
+        let size = |v: Vec3| format!("{} × {} × {}", v.x, v.y, v.z);
+        let shape = match self.shape {
+            ColliderShape::Box { half_extents } => format!("Box {}", size(half_extents)),
+            ColliderShape::Rbox { half_extents } => format!("Rbox {}", size(half_extents)),
+            ColliderShape::Ramp { half_extents, .. } => format!("Ramp {}", size(half_extents)),
+            ColliderShape::Ellipsoid { radii } => format!("Ellipsoid {}", size(radii)),
+            ColliderShape::Sphere { radius } => format!("Sphere r {radius}"),
+            ColliderShape::Cylinder {
+                radius,
+                half_height,
+            } => format!("Cylinder r {radius}, h {half_height}"),
+        };
+        match &self.kind {
+            ColliderType::Solid => shape,
+            kind => format!("{shape}, {kind:?}"),
+        }
+    }
 }
 
 /// Whether a collider is the default type, which a catalog leaves out.
@@ -272,6 +304,16 @@ mod tests {
         assert_eq!(written["facing"], 2.0);
         // A solid collider, the default, leaves its type out.
         assert!(written.get("type").is_none());
+    }
+
+    #[test]
+    fn a_summary_is_the_shape_and_its_size_and_any_type_but_solid() {
+        let text = r#"{"shape":"box","half_extents":[0.3,1,0.2],"offset":[-0.2,0,0]}"#;
+        let desc: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert_eq!(desc.property_summary(), "Box 0.3 × 1 × 0.2");
+        let text = r#"{"shape":"cylinder","radius":0.5,"half_height":1,"type":"door"}"#;
+        let desc: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert_eq!(desc.property_summary(), "Cylinder r 0.5, h 1, Door");
     }
 
     #[test]

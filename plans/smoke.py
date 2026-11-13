@@ -20,6 +20,9 @@
   double-click sets it; an optional
   field's × removes it and the heading's menu adds one; each saves as its own line. A collider list adds and removes items,
   a collider's shape select switches its variant, and an added collider saves into the array.
+  Every × lines up, a pane's header's with its rows', and widgets end at one edge with or
+  without one; a collapsed item shows its summary, and a collapsed pane stays so for the next
+  exemplar.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -342,6 +345,7 @@ def scenery_panel(driver):
     scenery_model_property(driver)
     optional_property(driver)
     collider_property(driver)
+    collider_layout(driver)
     driver.click("Exemplars/ClearFilter")
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
@@ -416,7 +420,7 @@ def text_property(driver):
     """A text field's edit is made when Enter commits it; Escape puts the text back, editing
     nothing. Saved, the edit is that one line. The wall tool's choice goes back to CottageWall."""
     choose(driver, "wall", "SpearTrap")
-    animation = "Properties/SceneryColliders/Item 1/animation/input"
+    animation = "Properties/SceneryColliders/#1/animation/input"
     retype(driver, animation, "not an animation")
     driver.key("Escape")
     driver.frames(2)
@@ -566,7 +570,7 @@ def exemplar_fields(driver):
     prototype, which opens a chooser of the exemplars it may extend: of its type, leaving out
     itself and those that extend it. Saved, the prototype is named relative to the catalog."""
     choose(driver, "actor", "Spooksy")
-    name = "Properties/display name/input"
+    name = "Properties/display_name/input"
     retype(driver, name, "Spooks")
     driver.key("Enter")
     driver.click("Exemplars/Spooksy")
@@ -576,7 +580,7 @@ def exemplar_fields(driver):
     choose(driver, "actor", "Proto.CanineDomestic")
     # An aspect whose fields are all absent says so, rather than showing an empty pane.
     driver.expect("Properties/Armature/placeholder", TEXT, "All defaults")
-    driver.click("Properties/abstract/check")
+    driver.click("Properties/is_abstract/check")
     driver.click("Exemplars/Proto.CanineDomestic")
     undo(driver)
     driver.expect("Toast/ToastText", TEXT, "Undo: Set Proto.CanineDomestic.is_abstract")
@@ -605,7 +609,7 @@ def scenery_model_property(driver):
     """A fixture's model, in its models list, is picked the same way, from the scenery and
     terrain models. Saved, it is that one line, still a plain string."""
     choose(driver, "fixture", "CandleHolder")
-    pick = "Properties/SceneryModels/Item 1/asset/pick"
+    pick = "Properties/SceneryModels/#1/asset/pick"
     driver.expect(f"{pick}/model", TEXT, "decorations.glb#CandleHolder")
     driver.click(pick)
     current = "ModelPicker/decorations/CandleHolder"
@@ -664,8 +668,8 @@ def collider_property(driver):
     select switches its variant, keeping the fields the variants share. Saved, an added collider
     goes into the catalog's array, leaving the item that was there as it was."""
     choose(driver, "fixture", "CandleHolder")
-    item = "Properties/SceneryColliders/Item 1"
-    second = "Properties/SceneryColliders/Item 2"
+    item = "Properties/SceneryColliders/#1"
+    second = "Properties/SceneryColliders/#2"
     driver.expect(f"{item}/half_extents/x", NUMERIC, {"F64": 0.2})
     driver.absent(second)
     driver.click("Properties/SceneryColliders/add_item")
@@ -708,6 +712,52 @@ def collider_property(driver):
             '+          "half_extents": [0.5, 1, 0.5]',
         ],
     )
+
+
+def collider_layout(driver):
+    """D83's layout, on a wall whose colliders nest a variant and an optional vector. The pane
+    header's ×, an item's and an optional field's share a right edge, and a vector's inputs end at
+    one edge whether its row has a × or not. A collapsed item shows its summary in place of its
+    rows; a collapsed pane shows its length, and stays collapsed for the next wall. The wall tool's
+    choice goes back to CottageWall."""
+    driver.click("PlaceWall")
+    choose(driver, "wall", "MossyBrickWallTee")
+    colliders = "Properties/SceneryColliders"
+    second = f"{colliders}/#2"
+    driver.present(f"{second}/offset/z")
+    edges = {
+        "header": right_edge(driver, f"{colliders}/header/remove"),
+        "item": right_edge(driver, f"{second}/heading/remove"),
+        "field": right_edge(driver, f"{second}/offset/remove"),
+    }
+    assert max(edges.values()) - min(edges.values()) < 1, f"× columns differ: {edges}"
+    without = right_edge(driver, f"{second}/half_extents/z")
+    with_remove = right_edge(driver, f"{second}/offset/z")
+    assert abs(without - with_remove) < 1, f"inputs end at {without} and {with_remove}"
+    driver.screenshot("collider_layout")
+
+    driver.click(f"{second}/toggle")
+    driver.absent(f"{second}/offset")
+    driver.expect(f"{second}/summary", TEXT, "Box 0.3 × 1 × 0.2")
+    driver.screenshot("collider_collapsed")
+    driver.click(f"{second}/toggle")
+    driver.present(f"{second}/offset/z")
+
+    driver.click(f"{colliders}/header/toggle")
+    driver.absent(f"{colliders}/#1")
+    driver.expect(f"{colliders}/header/summary", TEXT, "3 items")
+    choose(driver, "wall", "MossyBrickWallCorner")
+    driver.expect(f"{colliders}/header/summary", TEXT, "3 items")
+    driver.absent(f"{colliders}/#1")
+    driver.click(f"{colliders}/header/toggle")
+    driver.present(f"{colliders}/#1")
+    choose(driver, "wall", "CottageWall")
+
+
+def right_edge(driver, selector):
+    """The x of `selector`'s right edge, in physical pixels."""
+    width = driver.get(selector, COMPUTED, at="size")[0]
+    return driver.get(selector, UI_GLOBAL)[-2] + width / 2
 
 
 def choose(driver, tool, name):

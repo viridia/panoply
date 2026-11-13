@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X111.**
+**Next: X112.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -478,3 +478,10 @@ dropped, not deferred. Numbers are never reused.
   whichever comes first.
 - **X107** Ladders. The `Ladder` wall tile (`wall-tiles.exem.json`) has a `ladder` collider and
   `top` and `bottom` marks, the climb's ends; nothing reads either. *Gate:* actors climb.
+- **X111** Reordering list items in the property editor. No list edited so far has an order that
+  matters (colliders, models); dialogue responses and a book's contents will. Only on lists marked
+  as ordered, by an annotation on the field, so others never show it. "Move up" and "Move down" in
+  the item heading's menu, as faery's ▲ ▼ did, with no button of its own; each one edit, a new
+  `EditKind` moving an item from one index to another, saved as the array reordered. Dragging by a
+  grip (feathers has `GRIP_VERTICAL`) is more work for something used rarely, and finds no room on
+  the heading. *Gate:* the first list whose order matters is edited (PAN78's books, or dialogue).

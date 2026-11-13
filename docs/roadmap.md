@@ -156,13 +156,6 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28m Layout.** D83's layout applied to the existing widgets, before PAN28i, PAN28k and PAN43
-  add rows built to it. `DisplayName` annotations on the aspects' fields, which also replace
-  `r#type`, a raw identifier shown as a caption (`ColliderType`'s field). The header's buttons miss
-  the rows' × column today (the author's screenshot); if feathers' subpane header pads its right end
-  more than the body, a Panoply override, or a fix upstream. Where a collapsed item's summary comes
-  from (a trait an aspect type implements, or a general one from its first fields) and where each
-  aspect's icon is named (an annotation on the type, with a default) are decided here. Closes I40.
 - **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
   rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
   it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
@@ -172,11 +165,10 @@ set an edit is one of (`EditKind`).
   `FeatureSlots`).
 - **PAN28j Editor polish.** A `Precision` annotation, as arbor_day's (`properties.rs`): the decimal
   places a number input rounds to while dragging, given to feathers as `NumberInputPrecision`, in a
-  crate the aspect crates see; `ActorScale` gets one, since dragging it shows nine places. List
-  items captioned "#1", "#2" rather than "Item 1" (`item_caption`, and the plans' selectors). The
-  aspects chooser opens from a button of its own on the exemplar pane's header, as Blender's Add
-  Modifier is, rather than from the end of the fields menu; its icon still to choose (a puzzle
-  piece, say; `layers.png` is the Layers tool's).
+  crate the aspect crates see (`panoply_exemplar::annotations`); `ActorScale` gets one, since
+  dragging it shows nine places. The aspects chooser opens from a button of its own on the exemplar
+  pane's header, as Blender's Add Modifier is, rather than from the end of the fields menu; its icon
+  still to choose (a puzzle piece is aspects' default pane icon).
 - **PAN28k Features and colors.** `Features` and `Colors` edited as faery's `FeatureSelection` and
   `ColorMap` were: a checkbox per slot of the actor's `FeatureSlots`, a color per slot of its
   `ColorSlots`, each resolved through `extends`, never an arbitrary key. A key outside the slots,

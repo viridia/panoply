@@ -39,6 +39,8 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 - `blend_cleanup.py`: repairs what the inventory reports; a dry run unless `--apply`, which saves
   `.blend` files, so it has no allow rule.
 - `glb_compare.py`: what a re-export changed, clip by clip and pose by pose, against git `HEAD`.
+- `lucide_icons.sh <name>…`: fetches Lucide icons and writes them as the editor's 48 px white PNGs
+  into `assets/editor/icons/lucide/`. It downloads, so it has no allow rule.
 - `devfmt.py --diff`: rewraps changed Markdown paragraphs to 100 columns (`--preview` to read
   first). Markdown only: the source trees are exempt, since Rust here still holds commented-out
   code. After editing `devfmt.py`, run `python3 <absolute path>/scripts/test_devfmt.py`.

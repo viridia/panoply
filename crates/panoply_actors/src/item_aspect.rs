@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use panoply_exemplar::*;
+use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 use super::ITEM_TYPE;
@@ -7,6 +7,7 @@ use super::ITEM_TYPE;
 /// The item's model: a `file#Scene` path to a named scene of a props glTF.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/gem.png"))]
 pub struct ItemModel(pub String);
 
 impl Aspect for ItemModel {
@@ -32,6 +33,7 @@ impl Aspect for ItemModel {
 /// Where the item is held: the name of the bone its model attaches to (R14).
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/backpack.png"))]
 pub struct EquipSlot(pub String);
 
 impl Aspect for EquipSlot {

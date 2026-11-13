@@ -1,5 +1,5 @@
-use bevy::{platform::collections::HashMap, prelude::*};
-use panoply_exemplar::*;
+use bevy::{annotations::DisplayName, platform::collections::HashMap, prelude::*};
+use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 use panoply_core::HexColor;
@@ -9,14 +9,17 @@ use super::ACTOR_TYPE;
 /// The species' skeleton, which the engine animates, and the file holding its clips.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/bone.png"))]
 #[serde(default)]
 pub struct Armature {
     /// The skeleton's root node in the `Skin`'s scene; by default the `Skin` file's one armature.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[reflect(@DisplayName("Node"))]
     pub node: Option<String>,
     /// The character glTF holding the species' clips, often shared by several species; by
     /// default the `Skin`'s own file.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[reflect(@DisplayName("Clips"))]
     pub clips: Option<ClipsFile>,
 }
 
@@ -49,6 +52,7 @@ impl Aspect for Armature {
 /// one clips file whose gaits are named by gender (`"Walk": "WalkMale"`).
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/film.png"))]
 pub struct ClipNames(pub HashMap<String, String>);
 
 impl Aspect for ClipNames {
@@ -74,8 +78,11 @@ impl Aspect for ClipNames {
 /// The actor's collision capsule (R4), in meters: its whole height, and its radius.
 #[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/cylinder.png"))]
 pub struct CollisionSize {
+    #[reflect(@DisplayName("Height"))]
     pub height: f32,
+    #[reflect(@DisplayName("Radius"))]
     pub radius: f32,
 }
 
@@ -123,6 +130,7 @@ impl Aspect for CollisionSize {
 /// match: one species' model serves a large or small individual.
 #[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/scale-3d.png"))]
 pub struct ActorScale(pub f32);
 
 impl Default for ActorScale {
@@ -155,6 +163,7 @@ impl Aspect for ActorScale {
 /// body mesh and the skeleton it is bound to.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/shirt.png"))]
 pub struct Skin(pub String);
 
 impl Aspect for Skin {
@@ -180,6 +189,7 @@ impl Aspect for Skin {
 /// Color assignments for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/palette.png"))]
 pub struct Colors(pub HashMap<String, HexColor>);
 
 impl Aspect for Colors {
@@ -205,6 +215,7 @@ impl Aspect for Colors {
 /// Available color slots for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/swatch-book.png"))]
 pub struct ColorSlots(pub Vec<String>);
 
 impl Aspect for ColorSlots {
@@ -230,6 +241,7 @@ impl Aspect for ColorSlots {
 /// Enabled features for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/sparkles.png"))]
 pub struct Features(pub HashMap<String, bool>);
 
 impl Aspect for Features {
@@ -256,6 +268,7 @@ impl Aspect for Features {
 /// TODO(X42): replaced by what the actor has equipped from its inventory.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/sword.png"))]
 pub struct WieldedItems(pub Vec<String>);
 
 impl Aspect for WieldedItems {
@@ -281,6 +294,7 @@ impl Aspect for WieldedItems {
 /// Available feature slots for this actor.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/list-checks.png"))]
 pub struct FeatureSlots(pub Vec<String>);
 
 impl Aspect for FeatureSlots {

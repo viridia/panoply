@@ -630,12 +630,13 @@ never reused.
   world that waits for the player.
 - **D81** Code and content are licensed apart, by path, in one repo: code stays MIT or Apache 2.0,
   so others can build on the engine, and content (`assets/`, `artwork/`: models, textures, sounds,
-  music, maps, exemplars, writing) is CC BY-NC-SA 4.0, so it can be remixed but not sold. The game's
-  name is kept, so a fork renames itself and the name always means the official, free release. The
-  threat is a stranger selling the game, or a copy carrying malware, abroad where a lawsuit cannot
-  reach; the stores they sell through act on a takedown notice, which a non-commercial licence makes
-  clean and MIT does not. One repo, since a content repo of its own would slow every chunk that
-  touches both. Reversing it means the content is anyone's to sell.
+  music, maps, exemplars, writing) is CC BY-NC-SA 4.0, so it can be remixed but not sold. Content
+  made by others keeps its own licence, listed in [CREDITS.md](../CREDITS.md), as Bevy lists its
+  assets. The game's name is kept, so a fork renames itself and the name always means the official,
+  free release. The threat is a stranger selling the game, or a copy carrying malware, abroad where
+  a lawsuit cannot reach; the stores they sell through act on a takedown notice, which a
+  non-commercial licence makes clean and MIT does not. One repo, since a content repo of its own
+  would slow every chunk that touches both. Reversing it means the content is anyone's to sell.
 - **D82** A mod is data and SAGA, never native code or shaders: no plugins, no dynamic libraries, no
   WESL ([modding.md](modding.md), What a mod can do). SAGA has no file or network access, so a mod
   cannot reach the player's machine; a shader can still hang the GPU, so mods ship none. A mod's

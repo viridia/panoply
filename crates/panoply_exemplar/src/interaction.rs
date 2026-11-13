@@ -1,10 +1,13 @@
 use std::any::TypeId;
 
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::{annotations::DisplayName, platform::collections::HashMap, prelude::*};
 use panoply_saga::{Formula, HostState};
 use serde::Serialize;
 
-use crate::{Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent};
+use crate::{
+    annotations::{AspectIcon, PropertySummary, ReflectPropertySummary},
+    Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent,
+};
 
 /// How close an interaction can be performed from, when its entry does not say.
 pub const DEFAULT_INTERACTION_DISTANCE: f32 = 1.5;
@@ -15,29 +18,43 @@ pub const DEFAULT_INTERACTION_CURSOR: &str = "interact";
 /// Something that can be done to an instance, as written in its exemplar. Not deserialized by
 /// serde, so that loaders reach its formula through reflection.
 #[derive(Debug, Reflect, Clone, Default, Serialize)]
-#[reflect(Default, Serialize)]
+#[reflect(Default, Serialize, PropertySummary)]
 pub struct InteractionDesc {
     /// Names the interaction. Entries may share one, each with its own `when`.
+    #[reflect(@DisplayName("Id"))]
     pub id: String,
 
     /// Shown to the player while the interaction is available.
+    #[reflect(@DisplayName("Caption"))]
     pub caption: String,
 
     /// Name of the mouse cursor to show.
+    #[reflect(@DisplayName("Cursor"))]
     pub cursor: Option<String>,
 
     /// Name of the icon to show.
+    #[reflect(@DisplayName("Icon"))]
     pub icon: Option<String>,
 
     /// How close the interaction can be performed from, in meters.
+    #[reflect(@DisplayName("Distance"))]
     pub distance: Option<f32>,
 
     /// Formula deciding whether the interaction is offered. `None` always offers it.
+    #[reflect(@DisplayName("When"))]
     pub when: Option<Formula<bool>>,
 
     /// Name of the action to perform, registered with
     /// [`InteractionAppExt::register_interaction_action`].
+    #[reflect(@DisplayName("Action"))]
     pub action: String,
+}
+
+impl PropertySummary for InteractionDesc {
+    /// What the player is shown, as "Open".
+    fn property_summary(&self) -> String {
+        self.caption.clone()
+    }
 }
 
 impl InteractionDesc {
@@ -58,6 +75,7 @@ impl InteractionDesc {
 /// What can be done to an instance. An exemplar's list replaces any it inherits.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize)]
 #[reflect(Aspect, Default, Serialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/hand.png"))]
 pub struct Interactions(pub Vec<InteractionDesc>);
 
 impl Interactions {

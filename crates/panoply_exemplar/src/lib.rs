@@ -3,6 +3,7 @@
 
 #![warn(missing_docs)]
 
+pub mod annotations;
 mod aspect;
 mod aspect_list;
 mod catalogs;

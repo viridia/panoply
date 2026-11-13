@@ -1,11 +1,12 @@
 use bevy::{
     audio::{SpatialScale, Volume},
+    annotations::DisplayName,
     gltf::Gltf,
     prelude::*,
     world_serialization::WorldInstanceReady,
 };
 use panoply_core::Viewpoint;
-use panoply_exemplar::*;
+use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -34,14 +35,17 @@ impl AnimationInput {
 #[reflect(Default, Serialize, Deserialize)]
 pub struct AnimationTransition {
     /// The value being changed to.
+    #[reflect(@DisplayName("To"))]
     pub to: bool,
 
     /// How long to wait before playing, in seconds.
     #[serde(default)]
+    #[reflect(@DisplayName("Delay"))]
     pub delay: f32,
 
     /// Heard when the clips start.
     #[serde(default)]
+    #[reflect(@DisplayName("Sound"))]
     pub sound: Option<TransitionSound>,
 }
 
@@ -50,14 +54,17 @@ pub struct AnimationTransition {
 #[reflect(Default, Serialize, Deserialize)]
 pub struct TransitionSound {
     /// The audio file.
+    #[reflect(@DisplayName("Audio file"))]
     pub asset: String,
 
     /// How long after the clips start to play it, in seconds.
     #[serde(default)]
+    #[reflect(@DisplayName("Delay"))]
     pub delay: f32,
 
     /// Linear gain at close range.
     #[serde(default = "full_volume")]
+    #[reflect(@DisplayName("Volume"))]
     pub volume: f32,
 }
 
@@ -80,17 +87,21 @@ fn full_volume() -> f32 {
 #[reflect(Default, Serialize, Deserialize)]
 pub struct SceneryAnimation {
     /// Names of the clips, in the file of the model.
+    #[reflect(@DisplayName("Clips"))]
     pub clips: Vec<String>,
 
     /// The state that plays the clips forward when true and backward when false.
     #[serde(default)]
+    #[reflect(@DisplayName("Input"))]
     pub input: Option<AnimationInput>,
 
     /// Plays the clips repeatedly from spawn, instead of following an input.
     #[serde(default, rename = "loop")]
+    #[reflect(@DisplayName("Loop"))]
     pub looping: bool,
 
     #[serde(default)]
+    #[reflect(@DisplayName("Transitions"))]
     pub transitions: Vec<AnimationTransition>,
 }
 
@@ -116,6 +127,7 @@ impl SceneryAnimation {
 /// How the parts of a fixture or wall tile's model move.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(@AspectIcon("editor/icons/lucide/clapperboard.png"))]
 pub struct SceneryAnimations(pub Vec<SceneryAnimation>);
 
 impl Aspect for SceneryAnimations {
