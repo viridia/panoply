@@ -27,7 +27,7 @@ The first customers each add one mechanism:
 3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
    memo driving a goal.
 
-X63's mechanisms, such as a door opened by a button, follow.
+PAN79's mechanisms, such as a door opened by a button, follow.
 
 ## The crate
 
@@ -194,7 +194,7 @@ resources and memo cells. It checks nothing itself. World to cells comes in two 
 
 - **First, polling.** Each pass, every live cell compares its components' and resources' change
   ticks with the tick it last ran at, as `bevy_reactor` did. A random access per dependency per
-  pass, cheap while reactive cells are few, as for X63's button and door.
+  pass, cheap while reactive cells are few, as for PAN79's button and door.
 - **Later, scans (X90).** On commit, a cell's list is compared with its last, and any difference
   applied to a reverse index from `(Entity, ComponentId)` to cells. A system per component type
   scripts read, registered with its accessor, runs a `Changed<C>` query, skipped while no cell
@@ -241,18 +241,18 @@ is Panoply's Rust. Combat timing follows faery's combat clocks (`design/combat.m
 3. **It commits.** *Native:* its clock advances 3 s and the action locks. The executor walks it
    into range, faces the target and starts the wind-up. The frost circle shows on the ground before
    the storm lands: the audience sees the blow coming.
-4. **The timeline.** *Native:* the channel animation at 0 s, particles (X38) at 1.2 s, the hit at
+4. **The timeline.** *Native:* the channel animation at 0 s, particles (PAN86) at 1.2 s, the hit at
    1.5 s.
 5. **The hit.** *Native:* finds the actors in the circle. *Formula, effect:* `on_hit(caster,
    target)` runs per target, buffering `damage(target, Frost, roll(8, 14) * caster.stat(Intellect) /
    10)` and `apply(target, Chilled, 6.0)`. *Native, with formulas from the ruleset asset:*
    interceptors rewrite the buffer: absorption from a talent lowers the damage, frost resistance (a
    derived-stat cell, already current) scales it, and a party member's evade reaction leaps clear.
-6. **Application and reactions.** *Native:* the buffer applies; `Health` changes, `Chilled`
-   attaches with an expiry deadline. *Formula, reactive:* on the next pass the victims' speed cells
-   recompute and locomotion reads them; `badly_hurt(ally)` flips for one victim, waking the healer's
-   goal; threat from the damage retargets the party's AI. *Native:* hit reactions (X47), damage
-   numbers, a frost tint from the status. A death wakes any quest condition watching it.
+6. **Application and reactions.** *Native:* the buffer applies; `Health` changes, `Chilled` attaches
+   with an expiry deadline. *Formula, reactive:* on the next pass the victims' speed cells recompute
+   and locomotion reads them; `badly_hurt(ally)` flips for one victim, waking the healer's goal;
+   threat from the damage retargets the party's AI. *Native:* hit reactions (X108), damage numbers,
+   a frost tint from the status. A death wakes any quest condition watching it.
 7. **Six seconds later.** *Native:* `Chilled`'s deadline passes; the modifier goes and the speed
    cells recompute. The global clock moves on to the party's turn.
 

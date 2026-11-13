@@ -4,9 +4,9 @@ What actors must do, taken from faery's actor module (`packages/engine/src/world
 `goals/`, and `physics/PhysicsActor.ts`). These are behaviors, not designs: animation, the character
 controller and goals are being re-engineered, and state moves onto entities. Numbers are faery's
 values, starting points to tune. Decisions already made elsewhere are linked, not restated:
-ownership (D24), models and colors (D28), hair (D29), goals as entities (X17), saves (X18), cutaways
-(X19), footprint readiness (D67). Ids are never reused; a new requirement takes the next unused
-number, so ids within a section are not always in order.
+ownership (D24), models and colors (D28), hair (D29), goals as entities (X17), saves (PAN82),
+cutaways (PAN76a), footprint readiness (D67). Ids are never reused; a new requirement takes the next
+unused number, so ids within a section are not always in order.
 
 ## Definition
 
@@ -57,8 +57,8 @@ ballistic motion.
 - **R14** An equipped item shows its model attached to the bone named by its equip slot (default
   slots `weapon.L`, `weapon.R`, the bones' names in the glTF), and changes as equipment changes. A
   missing bone is reported with the nearest bone name.
-- **R15** An actor on a cut-away floor is hidden (X19), and a hidden actor cannot be picked.
-  The player's own actor is never pickable.
+- **R15** An actor on a cut-away floor is hidden (PAN76a), and a hidden actor cannot be picked. The
+  player's own actor is never pickable.
 - **R16** Editing an archetype in the editor updates colors live, and rebuilds the model when
   features change.
 
@@ -356,9 +356,10 @@ fireplace with a spoon, Poul alternating between the anvil and the forge.
 
 ## Saving
 
-- **R75** Saved per actor (X18): position if moved from home, realm if not home, facing if
-  changed, inventory if changed, instance variables, parking (R58). A transient actor also
-  saves its archetype, aspects and group, so it can be re-created.
+- **R75** Saved per actor (PAN82): realm if not home, inventory if changed, instance variables. An
+  actor at home starts at its authored place and its goals move it on (D80); only followers save
+  position, facing and parking (R58). A transient actor also saves its archetype, aspects and group,
+  so it can be re-created.
 - **R76** Loading a save removes transient actors the save does not mention.
 
 ## Diagnostics

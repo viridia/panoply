@@ -72,7 +72,7 @@ Of the 24 aspects loaded as scripts:
 
 - 15, one per character, declare no fields: only goals, interactions and presence.
 - 7 logic doors declare instance references (`source`, `source2`), a `toggle`, and a formula for
-  `open`. Their wiring is X63's.
+  `open`. Their wiring is PAN79's.
 - `encounter`, a spawner with 8 fields, and `waterFx`, with 2, are the only ones with data of their
   own. Both belong in the engine: a spawner serves any game of the genre, and water is
   presentation.
@@ -92,7 +92,8 @@ So faery's mods needed:
 
 None declared a type of its own. Panoply needs no `config` and `properties` split either: an aspect
 attached in an exemplar and overridden per instance (PAN43) covers where a value is set, and runtime
-state (`health`, timers, `open`) is components outside the asset, saved as X18 plans.
+state (`health`, timers, `open`) is components outside the asset, saved as
+[save-games.md](save-games.md) plans.
 
 ## Types a mod declares
 

@@ -152,8 +152,8 @@ pub fn spawn_precincts(
     }
 }
 
-/// Removes a precinct that has left the cache, with everything it owns. When save games arrive
-/// (X18), this is where the precinct's changed state is collected and written first.
+/// Removes a precinct that has left the cache, with everything it owns.
+// TODO(PAN82): collect and write the precinct's changed state here first.
 fn evict_precinct(commands: &mut Commands, entity: Entity, precinct: &Precinct) {
     debug!(
         "Despawning precinct {:?} {} {}.",

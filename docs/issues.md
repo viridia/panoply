@@ -9,11 +9,11 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
   Undecided whether a Bevy version is worth it. If so, a candidate home is the editor's catalogs
-  mode (X3), previewing an archetype as the game assembles it, colors and features included, rather
-  than a separate tool. PAN24's repairs and X45's outside clips make it more pressing. A smaller
-  step: a component that plays a named clip on an actor in the game, set through the remote protocol
-  (as `TravelTo` is) or a debug key, which shows a clip with the game's outlines, crossfades and
-  layers, which catwalk cannot.
+  mode, previewing an archetype as the game assembles it, colors and features included, rather than
+  a separate tool. PAN24's repairs and X45's outside clips make it more pressing. A smaller step: a
+  component that plays a named clip on an actor in the game, set through the remote protocol (as
+  `TravelTo` is) or a debug key, which shows a clip with the game's outlines, crossfades and layers,
+  which catwalk cannot.
 - **I5** Landing from a fall feels like stepping onto a shock absorber. The fall itself is right: a
   probe of a 4 m drop showed speed growing at the set gravity until touchdown. The likely cause is
   the camera's chase (D42), which also trails in height and eases out over its last half metre, so

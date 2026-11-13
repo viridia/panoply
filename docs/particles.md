@@ -1,9 +1,8 @@
 # Particles
 
-Visual effects split in two (X38 in the ledger): particles, purely visual, instanced and drawn in
-bulk; and missiles, entities that collide, light, sound and emit particles. This doc records what
-particles must do, the engines considered, and the design Panoply leans toward. Nothing here is
-implemented, and no chunk is planned.
+Visual effects split in two: particles, purely visual, instanced and drawn in bulk (PAN86); and
+missiles, entities that collide, light, sound and emit particles (PAN87). This doc records what
+particles must do, the engines considered, and the design Panoply leans toward.
 
 ## Uses
 
@@ -69,8 +68,8 @@ The lower layer is unopinionated only if two different consumers fit it, so two 
 - **Compiled:** WGSL generated from a description, warmed up at load. This one tests the
   boundary and is also the escape hatch for a one-off effect.
 
-The first slice is the snoring Z's on the CPU path: an attached emitter, one rate, one set of
-curves, one blend mode.
+The first slice is the campfire's smoke on the CPU path: an emitter on a fixture, one rate, one set
+of curves, one blend mode. The snoring Z's follow, on an actor.
 
 ## Shaders
 

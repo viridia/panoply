@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D80.**
+**Next: D83.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -113,21 +113,21 @@ never reused.
   polling where observers or change detection fit) and recommend keeping or restructuring it;
   restructuring is proposed before code. From the three.js version take the design, not the
   structure.
-- **D24** A precinct is the unit of authored content: one asset holds all of a 64 m area's
-  scenery, floors, terrain effects and actors (everything but terrain). The goal is open worlds
-  larger than fit in memory, built by a solo creator: walls, floors and fixtures are placed on a
-  grid (an homage to isometric tile games, with perspective and looser quantization), and
-  floors are extruded polygons that the editor stamps and merges like tiles, with free vertex
-  editing when wanted. So actors are owned by their home precinct and despawn when it leaves
-  the cache; most NPCs stay near their spawn point. Followers (global asset) and random
-  monsters (transient, per encounter) are the exceptions. Ownership is a relationship whose
-  despawn is linked, replacing `Precinct.actors`. Within a precinct, each tier (a floor level
-  with its own cutaways) is an entity, a child of the precinct, with its floor regions as its
-  children. Persisted play state follows the same unit (X18).
+- **D24** A precinct is the unit of authored content: one asset holds all of a 64 m area's scenery,
+  floors, terrain effects and actors (everything but terrain). The goal is open worlds larger than
+  fit in memory, built by a solo creator: walls, floors and fixtures are placed on a grid (an homage
+  to isometric tile games, with perspective and looser quantization), and floors are extruded
+  polygons that the editor stamps and merges like tiles, with free vertex editing when wanted. So
+  actors are owned by their home precinct and despawn when it leaves the cache; most NPCs stay near
+  their spawn point. Followers (global asset) and random monsters (transient, per encounter) are the
+  exceptions. Ownership is a relationship whose despawn is linked, replacing `Precinct.actors`.
+  Within a precinct, each tier (a floor level with its own cutaways) is an entity, a child of the
+  precinct, with its floor regions as its children. Persisted play state follows the same unit
+  (PAN82).
 - **D25** An aspect type no plugin has registered is skipped with a warning
   (`panoply_exemplar::aspect_list`), not an error that fails the whole catalog or precinct, so
-  modules can be restored one at a time (the wall-tile catalog uses portals' `Portal`). Saving
-  such an asset drops the skipped aspects; see X20.
+  modules can be restored one at a time (the wall-tile catalog uses portals' `Portal`). Saving such
+  a precinct drops the skipped aspects; see X20.
 - **D26** No pipeline compiles while scrolling. Bevy 0.20 creates render pipelines
   synchronously on macOS (`bevy_render` `create_pipeline_task`), about 35 ms each, the first
   time a material and mesh-layout combination is drawn. `panoply_render`'s warm-up loads the model folders
@@ -169,10 +169,10 @@ never reused.
   material names; an actor's `Colors` replace a slot material's base color with a clone cached by
   (material, color). Exemplar hex colors are sRGB (`Srgba::hex`); glTF `baseColorFactor` is linear.
   Colors for slots a mesh lacks are ignored. Expect little sharing: nearly every actor has its own
-  colors (see X23). *Revisit* (with X6) if actors gain real textures, or a character file passes
-  about 10 MB. `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder
-  was never registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output
-  was unchanged.
+  colors. *Revisit* (with X6) if actors gain real textures, or a character file passes about 10 MB.
+  `pipeline.ts` ran gltf-transform's `draco()`, but no output used Draco (the encoder was never
+  registered); the call is removed, since Bevy's glTF loader cannot decode Draco. Output was
+  unchanged.
 - **D29** Hair shine uses Kajiya-Kay (specular from strand direction T: `sin(T, H)^shininess`, a
   band across the strands) with Scheuermann's two lobes (a bright primary, a hair-tinted secondary),
   in an `ExtendedMaterial` (`hair.wesl`). The three.js `HairMaterial` approximated a band with
@@ -284,26 +284,25 @@ never reused.
   marked `ViewOverlay` move into the view pane. The Show menu's popup holds checkboxes, not menu
   items: picking an item closes a menu, and a checkbox takes the focus without closing it, so
   several views toggle in one visit.
-- **D38** Static scenery colliders come from the exemplars' `SceneryColliders` descriptors, not
-  the glTFs (X36). Each precinct has one fixed body at its origin (`Precinct::physics`, removed
-  with the precinct); not one per tier, since elements are the precinct's children and
-  cutaways (X19) test each element anyway. Each element and floor region owns its colliders
-  through `panoply_core::OwnedColliders`, an immutable component whose discard hook removes
-  them, so a moved or replaced element rebuilds alone (`SceneryElementRebuildColliders`).
-  `ColliderDesc::shape` places shapes exactly as faery's `createCollider.ts` did, since the
-  content was authored against it: `size` is half-extents, `offset` the bottom center, shapes
-  other than ellipsoids are raised by their half-height, and only ramps turn by `facing`.
-  Ellipsoids and ramps are convex hulls. Only static solids are built (walkable or not);
-  shapes are built per instance, not cached per exemplar, since only hulls cost anything and
-  3 of 580 descriptors are ellipsoids. A floor region is one closed trimesh with
-  `FIX_INTERNAL_EDGES`, built in its mesh task: `PHYSICS_FLOOR_THICKNESS` thick under the drawn
-  top (`level + raise + TIER_OFFSET`), holes included, faces oriented in code whatever the
-  rings' winding (unit test in `floor_mesh.rs`). One shape per region leaves no seams on its
-  top for the controller to catch on; faery's convex pieces did, and dropped holes. Floor
-  depressions (planned, for sliding-block puzzles: a property of the floor surface) move the
-  top, so the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's
-  `meta_type`). Colliders' `user_data` is the owning entity, for picking later; the F3 view
-  draws every scenery collider, and ground only for shown parcels.
+- **D38** Static scenery colliders come from the exemplars' `SceneryColliders` descriptors, not the
+  glTFs (X36). Each precinct has one fixed body at its origin (`Precinct::physics`, removed with the
+  precinct); not one per tier, since elements are the precinct's children and cutaways (PAN76a) test
+  each element anyway. Each element and floor region owns its colliders through
+  `panoply_core::OwnedColliders`, an immutable component whose discard hook removes them, so a moved
+  or replaced element rebuilds alone (`SceneryElementRebuildColliders`). `ColliderDesc::shape`
+  places shapes exactly as faery's `createCollider.ts` did, since the content was authored against
+  it: `size` is half-extents, `offset` the bottom center, shapes other than ellipsoids are raised by
+  their half-height, and only ramps turn by `facing`. Ellipsoids and ramps are convex hulls. Only
+  static solids are built (walkable or not); shapes are built per instance, not cached per exemplar,
+  since only hulls cost anything and 3 of 580 descriptors are ellipsoids. A floor region is one
+  closed trimesh with `FIX_INTERNAL_EDGES`, built in its mesh task: `PHYSICS_FLOOR_THICKNESS` thick
+  under the drawn top (`level + raise + TIER_OFFSET`), holes included, faces oriented in code
+  whatever the rings' winding (unit test in `floor_mesh.rs`). One shape per region leaves no seams
+  on its top for the controller to catch on; faery's convex pieces did, and dropped holes. Floor
+  depressions (planned, for sliding-block puzzles: a property of the floor surface) move the top, so
+  the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's `meta_type`).
+  Colliders' `user_data` is the owning entity, for picking later; the F3 view draws every scenery
+  collider, and ground only for shown parcels.
 - **D39** Generated trees get a trunk capsule each (blocks walking) and a canopy over the forest
   (catches what falls onto it, so an actor dropped there cannot land in a pocket between trunks 0.4
   m apart). Design in `panoply_terrain::flora_physics`'s module doc: the canopy is quantized to the
@@ -315,7 +314,7 @@ never reused.
   branches packed around it; scaled with the instance); shrubs and herbs have none. Trees placed as
   fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket among
   them is an authoring error. The canopy collides with everything for now: when picking and sight
-  rays arrive (X3, PAN3), their query filters exclude `CANOPY`.
+  rays arrive (PAN5, PAN3), their query filters exclude `CANOPY`.
 - **D40** Actors are a crate, `panoply_actors`, since the editor sees only engine crates (D37) and
   will edit actors. The precinct file format is a crate of its own, `panoply_precinct`
   (`PrecinctAsset`, its loader and saver, and the instance data it holds), which `panoply_scenery`
@@ -410,12 +409,12 @@ never reused.
   type and can move to `bevy_action_map` (its X14). Reversing it lets typing reach game actions
   again. (PAN33)
 - **D53** The app's mode is a Bevy state, `GameMode`, of two values, play and edit; the editor's
-  modes (realm, terrain, scenery, catalogs; X3) will be sub-states of edit, not siblings of play
-  with a computed state for what the editor modes share. A build without the editor has only play,
-  and what every editor mode shares (the free camera, Go To moving the view) is then the parent
-  state itself. Each mode's keys are a context active only in it (`active_in_state`), so WASD and
-  the arrows drive the free camera in edit and the player's actor in play, as in faery. Reversing it
-  means the computed state and an editor-modes list kept in step with it. (PAN22)
+  modes (realm, terrain, scenery, catalogs) will be sub-states of edit, not siblings of play with a
+  computed state for what the editor modes share. A build without the editor has only play, and what
+  every editor mode shares (the free camera, Go To moving the view) is then the parent state itself.
+  Each mode's keys are a context active only in it (`active_in_state`), so WASD and the arrows drive
+  the free camera in edit and the player's actor in play, as in faery. Reversing it means the
+  computed state and an editor-modes list kept in step with it. (PAN22)
 - **D54** The editor edits assets in memory and saves them only when asked. An edit changes the
   loaded asset (`Assets::get_mut`), so the world shows it at once, and marks it in `UnsavedAssets`;
   the save button writes every marked asset, each type registered with `register_saveable`, through
@@ -618,3 +617,26 @@ never reused.
   material; as exemplars they get the list, the property editor and saving that exemplars have, and
   room for footsteps, slipperiness and depressions. Reversing it means an editor of its own for each
   asset type that is not an exemplar. (PAN28d)
+- **D80** An actor's place is not saved with its home precinct, on eviction or on save: when the
+  precinct loads again, or a save is loaded, its actors start at their authored places and their
+  goals take them to wherever the hour puts them. Time passes while a precinct is away, and its
+  people go about their day rather than wait, frozen, where the player left them; arriving at night
+  may find someone already in bed. A load is a hard cut (D64), so actors moving back across it does
+  not read as vanishing in view, and a saved place can never come back stale, inside scenery a later
+  phase added (X109). What play changed that goals cannot redo (a death, an inventory, an actor's
+  home) is still saved ([save-games.md](save-games.md)). Followers travel with the player and keep
+  their places in the player's chunk. Reversing it means saving every moved actor's place, and a
+  world that waits for the player.
+- **D81** Code and content are licensed apart, by path, in one repo: code stays MIT or Apache 2.0,
+  so others can build on the engine, and content (`assets/`, `artwork/`: models, textures, sounds,
+  music, maps, exemplars, writing) is CC BY-NC-SA 4.0, so it can be remixed but not sold. The game's
+  name is kept, so a fork renames itself and the name always means the official, free release. The
+  threat is a stranger selling the game, or a copy carrying malware, abroad where a lawsuit cannot
+  reach; the stores they sell through act on a takedown notice, which a non-commercial licence makes
+  clean and MIT does not. One repo, since a content repo of its own would slow every chunk that
+  touches both. Reversing it means the content is anyone's to sell.
+- **D82** A mod is data and SAGA, never native code or shaders: no plugins, no dynamic libraries, no
+  WESL ([modding.md](modding.md), What a mod can do). SAGA has no file or network access, so a mod
+  cannot reach the player's machine; a shader can still hang the GPU, so mods ship none. A mod's
+  files are untrusted input: each loader rejects a malformed one without panicking, as SAGA's
+  compiler does. Reversing it means vetting every mod as a program.

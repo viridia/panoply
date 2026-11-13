@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X106.**
+**Next: X111.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -14,40 +14,8 @@ dropped, not deferred. Numbers are never reused.
   and serialize it to BSN, not the spawned entities, which lose imports, type names and loading
   directives. Open: use that AST in Panoply's editor, or keep exemplars as an editor-only AST of our
   own that the editor compiles to BSN.
-- **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them.
-  Consider deterministic `AssetId`s from hashed params instead of a fake asset source.
-- **X3** Editor restoration and its UI. Widgets: `bevy_feathers` (on `bevy_ui_widgets`).
-  Update 2026-10-11: going with `bevy_immediate` on the fork (`viridia/bevy_immediate`, branch
-  `bevy-main`: only its Bevy-main fixes, rebased on upstream, offered upstream, dropped at
-  0.21), tried first in the
-  `arbor_day` shell (X28) rather than on X26's sliders. Earlier notes: reactivity was undecided: Quill is dead; `bevy_reactor` (the author's; last on 0.17 and
-  Cart's `next-gen-scenes` branch, so a fork means porting off a BSN prototype) is
-  experimental; `bevy_immediate` (0.9 targets Bevy 0.20, integrates feathers and
-  `bevy_scene`) gives widgets an immediate-mode API. Recommended: `bevy_immediate` for the
-  editor (dev-only forms, inspectors, palettes), tried first as a spike on X26's water
-  sliders; reactivity for game UI decided separately. Much of the editor's design can be
-  taken from faery's editor (`packages/editor`; see [faery.md](faery.md), Editor, and
-  `design/Editor.md`): read it before designing modes and tools. Design, from the author:
-  - The editor is its own crate, `panoply_editor` (D37). Its shell landed in PAN1: the panel,
-    its splitter and key, and the viewport following the view pane. The old editor,
-    `src/editor` (disabled), moves into the crate mode by mode.
-  - Modes: realm, terrain, scenery, catalogs, play (icons in the old repo).
-  - All editor state is saved in `bevy_settings` (mode, selections, panel width, view), so a
-    restart returns to where work stopped; the edit-run loop restarts often. Plans start
-    from empty settings already (D15), so runs do not depend on the previous run.
-  - Editor and game keys use separate `bevy_action_map` contexts; picking keeps panel clicks
-    from the game.
-  - The editor takes over the pointer in the world. A resource in `panoply_core` says whether
-    the game or the editor handles world clicks; the game's click handling (PAN3) runs only
-    while the game has it. Each editor tool (terrain sculpting, floor editing, scenery
-    placement) is a mode that observes the pointer events it needs, on world meshes or on
-    virtual planes aligned with the world axes, through a picking backend of the editor's own
-    (the old `PlanePickBackend`, `src/editor/lib`), beside mesh picking. Each tool has its own
-    action context, and the game's are off while a tool has the pointer. The mode decides, not
-    the panel: Play mode hands the pointer back to the game, and hiding the panel keeps the
-    tool.
-  Also replace `bevy_mod_picking` with `bevy_picking`, `@PreferencesGroup` with
-  `SettingsGroup`. *Gate:* editor restoration.
+- **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them. Consider
+  deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X5** `bevy-inspector-egui` (pinned bevy 0.15). Bevy main's `bevy_inspector` crate may
   replace it. *Gate:* a compatible release is needed.
 - **X6** Revisit asset bundling. The GLTF layout carries three.js-era assumptions, made to cut
@@ -56,13 +24,7 @@ dropped, not deferred. Numbers are never reused.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
   [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula and PAN71's imports:
-  value slots, then cells and reactions for X63's button and door. *Gate:* PAN71.
-- **X10** Reflections for shiny objects: `LightProbe` volumes with `EnvironmentMapLight` (using
-  `skybox_diffuse_32.ktx2` and `skybox_specular.ktx2`) where shiny objects are, instead of on the
-  camera. The sky itself is never in view; the skybox is only there to light. Without an environment
-  map, mirrored surfaces look flat, and environment maps have proved expensive, so this is an
-  experiment in cost: measure each probe layout with `plans/perf.py`. *Gate:* scenery or actors with
-  shiny materials restored.
+  value slots, then cells and reactions for PAN79's button and door. *Gate:* PAN71.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about
@@ -111,11 +73,11 @@ dropped, not deferred. Numbers are never reused.
   restoration. A first-pass map, with pointers per roadmap chunk, is [faery.md](faery.md); read the relevant
   section before restoring a module, and add to it rather than rescanning.
 - **X14** Herb picking: picking a herb hides that instance for a while, then it regrows. Pick by
-  grid cell (at most one herb per 1 m cell; a ray hit gives the cell), not by entity. Picked
-  cells live in a per-realm resource keyed by world cell with a regrow time, outside the parcel
-  so eviction does not regrow them (and in the save game if they must survive a reload). Flora
-  placement skips picked cells. With merged flora (X15), hide an instance by collapsing its
-  vertex range in the parcel's herb mesh. *Gate:* `bevy_picking` (X3) and gameplay input.
+  grid cell (at most one herb per 1 m cell; a ray hit gives the cell), not by entity. Picked cells
+  live in a per-realm resource keyed by world cell with a regrow time, outside the parcel so
+  eviction does not regrow them (and in the save game if they must survive a reload). Flora
+  placement skips picked cells. With merged flora (X15), hide an instance by collapsing its vertex
+  range in the parcel's herb mesh. *Gate:* `bevy_picking` (PAN5) and gameplay input.
 - **X15** Merge flora into per-parcel meshes. Flora costs about 1.5 ms at distance 20 and about
   5 ms at 40 ([notes.md](notes.md)); hiding and the show set (D19, D20) cut little, so the cost
   is the shown flora entities. Plan: cache each model once as a template (part meshes, transforms, material
@@ -148,8 +110,9 @@ dropped, not deferred. Numbers are never reused.
     are a closed set per build; mods compose them.
   - **Formulas.** A goal's condition is a reactive formula; an effect is usually a Rust type with
     parameters, but can be a formula. So SAGA (X7) needs a way to embed formulas in assets, as
-    quests and dialogues do. A node's memo cells live on its entity.
-  - **Saves** (X18) hold only state that differs from the reset state: per aspect, a hash of its
+    quests and dialogues do. A node's memo cells live on its entity. Landing re-evaluates an actor's
+    goals (R37).
+  - **Saves** (PAN82) hold only state that differs from the reset state: per aspect, a hash of its
     goal definition and each changed node's state, keyed by its path of child indices. When the hash
     no longer matches (a mod or content edit changed the tree), that aspect's state is dropped and
     its goals restart, which goals tolerate (R50). The same read-out, respawn and write-back is hot
@@ -157,23 +120,9 @@ dropped, not deferred. Numbers are never reused.
 
   The first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
   customers). *Gate:* BSN assets, and SAGA formulas in assets.
-- **X18** Save games with structural sharing: one chunk of play changes per precinct, written on
-  eviction; a save is only a root index of chunk versions. Design and what it asks of the engine in
-  [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
-  angle is saved too; a load follows the player with `Viewpoint::follow_snapped`, which keeps it.
-  *Gate:* actors restored (the first content with real mutable state).
-- **X19** Cutaways: when the player is under a ceiling, scenery above them is hidden, including
-  actors on those floors. Rects are authored per tier (`TierSer.cutaways`); choosing them and the 3D
-  test against element and actor bounds follow the three.js version ([faery.md](faery.md), Scenery).
-  Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
-  `Visibility::Hidden` so descendants inherit it (D19). Once interiors show, check outlines on
-  glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
-  drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
-  behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
-  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant). *Gate:* scenery and
-  actors restored.
-- **X20** Keep unknown aspects lossless (D25): hold each as an opaque value that saves back
-  unchanged, so the editor cannot drop data a disabled module owns. *Gate:* editor restored.
+- **X20** Keep unknown aspects lossless (D25) in precincts: hold each as an opaque value that saves
+  back unchanged, so the editor cannot drop data a disabled module owns. Catalogs already keep them,
+  since a save merges edits into the file (D73). *Gate:* the editor saves a precinct (PAN5).
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller than
   D20's 4 m allowance also needs its own); hot reload of `FloorSurface` assets (floors do not
   rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
@@ -181,62 +130,20 @@ dropped, not deferred. Numbers are never reused.
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
   are instantiated (D26 budgets spread them over frames), and the shown parcels have ground and
-  flora; later, actors too. A teleport (`GotoLocation`, portals) could reuse it. Startup's
-  pipeline warm-up (D26) moves behind the title screen or lobby (new game, continue, load),
-  which covers it, instead of running under the first view. Low priority;
-  the loading aesthetics come much later, but a placeholder (a plain loading indicator over a
-  black screen) is fine before then. *Gate:* a game-entry flow (title screen or save loading)
-  to put it in front of.
-- **X23** Actor palette merge: join each actor mesh's primitives into one, with a per-vertex
-  color-slot index, so an actor draws as one primitive (and one outline) with one material
-  holding its palette. An actor is now about 10 primitives plus an outline child each, and
-  per-entity work is the CPU floor ([notes.md](notes.md)); a crowd like the three.js test lineup
-  (20-odd actors, nearly all colored differently) is about 600 skinned draws before shadows. Needs a
-  gltf-transform step and a small shader; slot names must stay consistent per file (D28).
-  *Gate:* actors restored, and a crowd scene measured.
-- **X24** Realms without terrain. `underworld` (in `world.locations.json`) is floors only, with
-  black everywhere else; the three.js version needed a placeholder terrain map for it (a 3x3
-  stub, which `convert_realm_maps.mts` writes; deleted here). Check that a realm with no
-  `.terrain` file spawns no parcels and no errors, and that parcels' wait for precinct effects
-  (D11) does not hang; make a stub map only if it must. *Gate:* portals (the way in).
-- **X25** Water currents, for rivers; partly built. Flow cannot move vertices, which would
-  stretch or compress where a current meets still water. Instead the fragment shader mixes
-  noise layers, each scrolling in its own direction (`FRAGMENT_WAVES` in `water.wesl`: four
-  directions, +x, +z, -x, -z, three frequencies each), and the current vector varies each
-  layer's amplitude: still water weights all directions equally (standing chop), and a current
-  boosts the layers that agree with it, e.g. a base weight plus `max(0, dot(direction,
-  current))`. Normalizing by the total weight, as the loop already does, keeps ripple strength
-  even across the boundary. The current is meant to be the water mesh's `depth_motion.yz`
-  (written as zero in `water_mesh.rs`; `.x` is depth); the unused `motion` variable and the
-  commented strength gate in the loop are the start. With four axis directions, a diagonal
-  current may read as two crossing patterns; six or eight directions would cover angles
-  better, at more texture samples (now 12). The ripples are the only carrier of flow, so
-  water shading changes (X11) must keep them readable as moving bumps. *Gate:* rivers (a
-  source of current vectors in the terrain data).
-- **X26** Live tuning of surface looks: a reflected resource (like `Sunlight` and
-  `HemisphereLight`) holding the water's look (water and sky colors, sky scale and weight,
-  alpha, chop, glint) and the seabed tint, copied into the materials on change, with sliders
-  in the editor panel, in a sub-mode (e.g. of terrain or realm). Tuning water (X11) one
-  rebuild and screenshot at a time was slow; shaders now hot-reload (D32), but uniforms set
-  from Rust do not. *Gate:* the editor panel and the choice of UI reactivity (X3).
-- **X27** Mipmaps for textures inside glTFs (flora leaves, scenery), which D33 does not
-  cover: Bevy's glTF loader generates none. Bevy 0.20's loader takes D33's plain KTX2 either
-  way, without `KHR_texture_basisu`: an image URI loads through the asset server by extension,
-  and an embedded image decodes by its `mimeType` (`image/ktx2`); `gltf-json` does not check
-  MIME types. `arborDayTrees` embeds its leaf textures this way, through `pngToKtx2`, and they
-  render. Embedded is the choice: arbor_day textures are unique per tree, so a separate file
-  gains no sharing. Left: the other flora and scenery; alpha coverage per mip (averaged alpha
-  thins cutouts at distance); and clamping, not wrapping, at the edges when downsampling
-  non-tiling textures. *Gate:* flora shimmer or scenery texture aliasing worth fixing, judged
-  once actors make whole scenes (X12).
-- **X28** `arbor_day` (`../arbor_day`): port the tree generator (`../seedling`, TypeScript) to
-  Rust, in its own workspace, with a new growth model; no backward compatibility. All 48 flora
-  models come from seedling. Requirements, the algorithm survey to do first, and open questions
-  are in its `docs/requirements.md` (moved from here 2026-10-11); its progress in its
-  `docs/ledger.md`. Its output should let X15 merge flora and X27 mip leaf textures without
-  pipeline patching. On Bevy main like Panoply (D34). Its authoring app shares X3's UI
-  architecture, and its shell, built first, serves as X3's `bevy_immediate` spike, replacing
-  the water sliders. *Gate for the generator:* the growth-model survey and a recommendation.
+  flora; later, actors too. A teleport (`GotoLocation`, portals) could reuse it. Startup's pipeline
+  warm-up (D26) moves behind the title screen or lobby (new game, continue, load), which covers it,
+  instead of running under the first view. Low priority; the loading aesthetics come much later, but
+  a placeholder (a plain loading indicator over a black screen) is fine before then. *Gate:* a
+  game-entry flow (title screen or save loading) to put it in front of.
+- **X27** Mipmaps for textures inside glTFs (flora leaves, scenery), which D33 does not cover:
+  Bevy's glTF loader generates none. Bevy 0.20's loader takes D33's plain KTX2 either way, without
+  `KHR_texture_basisu`: an image URI loads through the asset server by extension, and an embedded
+  image decodes by its `mimeType` (`image/ktx2`); `gltf-json` does not check MIME types.
+  `arborDayTrees` embeds its leaf textures this way, through `pngToKtx2`, and they render. Embedded
+  is the choice: arbor_day textures are unique per tree, so a separate file gains no sharing. Left:
+  the other flora and scenery; alpha coverage per mip (averaged alpha thins cutouts at distance);
+  and clamping, not wrapping, at the edges when downsampling non-tiling textures. *Gate:* flora
+  shimmer or scenery texture aliasing worth fixing, judged once actors make whole scenes (X12).
 - **X29** Restore a maximized window as maximized. `window_settings.rs` saves the size and
   position a maximized window has, so a restart gives a window of that size that the OS does not
   treat as maximized (the macOS green button does not restore it). Save the state too (winit's
@@ -258,40 +165,23 @@ dropped, not deferred. Numbers are never reused.
   materials. *Gate:* the first arbor_day species placed in the game.
 - **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and others):
   the game loads every precinct position near the view, but only some exist. It needs to know which
-  do, by a directory scan or a catalog file. A catalog works in packaged and web builds, where
-  folder loading may not. It could be a `pipeline.ts` target that lists
-  `assets/scenery/precincts/<realm>/` into a catalog: unusual in reading from `assets/` rather than
-  `artwork/`, but rerun by overrun whenever the editor saves a precinct. *Gate:* the editor creates
-  precincts (X3), or the errors hide a real one.
-- **X35** Tunnels and cave entrances, which must be navigable: the ground can have holes
-  (`TerrainHole`, per 1 m cell, in the mesh and the collider), but `TerrainOptions::Flatten`
-  is declared and never set or read, here or in faery (`TerrainEffect.ts`, commented out), and
-  nothing builds flat passageways with near-vertical side walls; that is outside the height
-  field. Decide whether they are terrain or scenery (floor regions and wall pieces in a hole).
-  *Gate:* the first cave or mine entrance in a map.
-- **X36** Colliders authored in the glTF, beside the exemplar descriptors (D38): a
-  model that carries its own colliders uses them, and any other keeps its `SceneryColliders`,
-  so old content needs no rework, new models can be authored in Blender, and an old one moves
-  when next touched. Moving all of them would mean re-authoring every scenery model. Carrier
-  undecided: Skein components (untried here) or specially named collision meshes read by
-  `pipeline.ts`. Descriptors and Skein both become components once exemplars are BSN (X1).
-  Placing descriptors by hand was workable in faery; how well it goes here depends on the
-  editor's property grid (translation and scale of standard shapes, X3) with the F3 view
-  live. *Gate:* the author tries Skein, or the first model whose colliders are authored in
-  Blender.
-- **X38** Particles and missiles. faery's particles interacted with the world: they despawned on
-  collision, could be light and sound sources, and spawned other particles (a fireball or cannonball
-  trailing smoke). Third-party Bevy particle engines lack these, and a port of faery's could not do
-  them on the GPU either. So effects split in two: particles, instanced and GPU-driven, purely
-  visual; and missiles, entities without automatic instancing that collide, light, sound and emit
-  particles. Requirements, the engines considered and the design Panoply leans toward are in
-  [particles.md](particles.md). *Gate:* the first effect: snoring (R36 in
-  [actor-requirements.md](actor-requirements.md)) or a missile.
-- **X39** Scenery colliders beyond D38's static solids: doors (a kinematic body following the
-  glTF node the descriptor's `animation` names, moved by the model's own animation, with no
-  separate animation data), sensors, ladders, `hint` and `marker` colliders (the editor's
-  picking proxies), portal volumes, and faery's slab under the world. Trees are D39.
-  *Gate:* the actor feature or editor tool that uses each (PAN3, X3).
+  do. A list works in packaged and web builds, where folder loading may not: per realm, beside the
+  precincts it lists (`scenery/precincts/<realm>/index.json`), a sorted JSON array of `[x, y]`
+  coordinates, one per line so a diff shows each precinct added or removed (serde_json's pretty
+  printer would split each pair over four lines, so the writer formats it). A finished realm may
+  hold about 500 precincts; at that size JSON costs nothing over msgpack and reads in a diff and a
+  text editor. The editor rewrites it whenever it creates or deletes a precinct, and `asset_xref.py`
+  checks it against the folder, so a file added or removed by hand fails `verify.sh`. *Gate:* the
+  editor creates precincts (PAN5), or the errors hide a real one.
+- **X36** Colliders authored in the glTF, beside the exemplar descriptors (D38): a model that
+  carries its own colliders uses them, and any other keeps its `SceneryColliders`, so old content
+  needs no rework, new models can be authored in Blender, and an old one moves when next touched.
+  Moving all of them would mean re-authoring every scenery model. Carrier undecided: Skein
+  components (untried here) or specially named collision meshes read by `pipeline.ts`. Descriptors
+  and Skein both become components once exemplars are BSN (X1). Placing descriptors by hand was
+  workable in faery; how well it goes here depends on the editor's property grid (translation and
+  scale of standard shapes, PAN28) with the F3 view live. *Gate:* the author tries Skein, or the
+  first model whose colliders are authored in Blender.
 - **X40** `docs/guidelines.md`, after `../ldd_template`: judgement a maintainer would otherwise
   learn by correction, for guidance that outgrows `AGENTS.md` or is project-specific enough to
   keep in git rather than the agent's memory. *Gate:* `AGENTS.md` grows long enough that its
@@ -299,7 +189,7 @@ dropped, not deferred. Numbers are never reused.
 - **X41** Archery. `RecurveBow` in `artwork/props/weapons.blend` is a static mesh: it needs a string
   bone and a draw clip of its own, played in step with the archer's, which the shared humanoid clips
   also lack (draw, aim, release). An arrow model too, held on the string while drawn, then a missile
-  (X38). Until then the bow is wielded as a static prop (PAN3o). *Gate:* ranged combat.
+  (PAN87). Until then the bow is wielded as a static prop (PAN3o). *Gate:* ranged combat.
 - **X42** Inventory and equipment: an actor's items (R5), and the ones it has equipped, shown on
   their slots' bones (R14) in place of the `WieldedItems` aspect. Item exemplars keep only their
   model and slot; the rest of faery's item fields (stats, price, weight, icon) are dropped
@@ -310,8 +200,10 @@ dropped, not deferred. Numbers are never reused.
   offer both close and lock, but nothing in the game calls for locking one), so E performs the one
   enabled. *Gate:* content with an object that has two interactions enabled at once.
 - **X44** The precise move (R32): to an exact point, height included, with collisions off. PAN3h's
-  travel (`TravelTo`) goes through the character controller, so furniture would stop it. *Gate:* the
-  pose action (R43), or the first actor to sit or lie down (R82).
+  travel (`TravelTo`) goes through the character controller, so furniture would stop it. With it, an
+  actor lies down in a bed (`BedSingle`, `FancyDoubleBed`) and plays R33's sleep state, held on its
+  last frame (R35), with PAN86's snoring; a pose action finishes when its animation does (R37).
+  *Gate:* the pose action (R43), or the first actor to sit or lie down (R82).
 - **X45** Clips from outside sources, so the author's animation time stops limiting combat moves and
   poses, as it has so far. Candidates: Mixamo (royalty-free in projects, but no redistribution of
   the files, which a public repo or extractable assets may break) and CC0 sets such as Quaternius's;
@@ -322,28 +214,12 @@ dropped, not deferred. Numbers are never reused.
 - **X46** The player's start: a new game offers four avatars (a limited customization), then an
   opening cut scene places the chosen one at the start. Until then `spawn_player` drops a fixed
   avatar into the playground. Not a precinct actor (D47). *Gate:* cut scenes.
-- **X47** R33's other animation states (stumble, blocked, take damage, dying, dead, sleep), R35's
-  play-once-and-hold, and R37's behavior on a one-shot's completion. PAN3j plays only the states
-  something in the game can cause (D48). *Gate:* each with what causes it: pushing (R28), blocked
-  travel (R22), combat, death, sleeping fixtures.
 - **X48** One property editor for Panoply and arbor_day, in a crate both use. PAN28 forks
   arbor_day's instead, so each grows without satisfying the other. *Gate:* both have settled, or the
   same fix has to be made in both.
-- **X49** Actor capsules as colliders, so a ray can hit an actor. Today an actor's capsule is only a
-  query shape that `move_actors` sweeps. A collider in the realm's rapier world, in a new `ACTOR`
-  collision group that the character controller's filter leaves out, so actors never collide through
-  rapier (R86); the probe and picking include it. Only an actor that moved updates its collider, so
-  resting actors (PAN3p) cost nothing. Check whether a collider without a body must be a sensor to
-  stay out of contact generation. faery also had an inflated capsule for picking
-  ([faery.md](faery.md), Physics); one capsule serves both until picking feels fiddly. *Gate:* the
-  first thing that must hit an actor: picking (X3) or the probe (PAN21).
-- **X50** Repulsion between actors (R23, R86): the aura is added to an actor's travel before the
-  controller moves it, so a pushed actor is still swept against the world and is never pushed
-  through a wall. A smoothed velocity rather than a force, so it does not jitter; a weight per
-  actor, so NPCs yield to the player more than the player to them; and a small sideways bias, so two
-  actors meeting head-on do not stall. Its radius leaves melee in reach. An actor inside another's
-  space wakes (PAN3p). Neighbours by testing every pair in the realm until a grid is needed. *Gate:*
-  NPCs travel among each other (PAN16, X17).
+- **X50** NPCs steering apart while they travel (R23, R86), on PAN90's repulsion: a small sideways
+  bias, so two actors meeting head-on do not stall, and allies' wider spacing (0.5 m). *Gate:* NPCs
+  travel among each other (PAN16, X17).
 - **X51** Wake only the resting actors near a collider change. Today any insertion or removal wakes
   every resting actor in the realm for a tick (PAN3p), so while precincts and parcels stream in, the
   count changes on most ticks and a crowd stays awake. Instead, `RealmPhysics`, through which every
@@ -351,10 +227,10 @@ dropped, not deferred. Numbers are never reused.
   `SmallVec`, so the common case allocates nothing; `move_actors` wakes the resting actors whose
   capsules overlap one, and clears it. The search starts as a test of each resting actor against
   each box; a spatial hash grid or a BVH when actor counts need one, or rapier's own once actors are
-  colliders (X49), an intersection query in the `ACTOR` group. Or, before the exact test, a filter:
-  a bitmask of x and z cells taken modulo its width, whose aliasing only wakes extra actors, though
-  a parcel's ground fills much of it. *Gate:* a frame-time hitch measured while walking into a crowd
-  as its precincts load.
+  colliders (PAN89), an intersection query in the `ACTOR` group. Or, before the exact test, a
+  filter: a bitmask of x and z cells taken modulo its width, whose aliasing only wakes extra actors,
+  though a parcel's ground fills much of it. *Gate:* a frame-time hitch measured while walking into
+  a crowd as its precincts load.
 - **X52** An actor that falls out of the world goes back to the last save point, where a respawn
   after death puts it, rather than to the last place it stood (R27, PAN3m). *Gate:* save points.
 - **X53** Skill trees as assets, so skills and spells are content, not engine code
@@ -409,29 +285,6 @@ dropped, not deferred. Numbers are never reused.
   built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry: his
   hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
   takes up sound.
-- **X62** Signs and books: things to read. A sign is a scenery aspect whose interaction shows its
-  text; a document is an inventory item that links to text content and a page style (faery's book
-  aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
-  since its action needs only a reading view. *Gate:* PAN21.
-- **X63** Mechanisms: the stock elements puzzles are built from, and how they are wired together.
-  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
-  automatic doors and spear traps, wired by reactive formulas so that elaborate puzzles combine
-  simple parts ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under
-  Migration scripts). Beside them: triggers (a circle or rectangle the player enters), encounter
-  zones, and waymarks for scripted NPC events. To decide: how one element signals another (an entity
-  event, as PAN21's actions are, or a formula over the other's state), and which parts are native
-  aspects and which are SAGA (X7). The hard part is referencing and naming. A precinct is named by
-  its realm and coordinates, and is like a module: its walls and fixtures that others can refer to
-  are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy to type
-  into a text box, so the field for a signal source browses the available signals with a filter, as
-  PAN35's chooser does. A reference into a precinct that is not loaded suspends the formula reading
-  it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to differ from
-  what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance` observable that
-  is null while its target is not loaded, a `StructureRefNode` watching structures load and unload,
-  and global variables or lazily loaded scope objects for long-range wiring; global references by
-  realm and coordinates in `design/scripting/predicates.md`; animated instances (moving parts) kept
-  apart from static instancing in `engine/src/models/InstancedModels.ts`. The first customer is
-  PAN6's door opened by a button ([goals.md](goals.md), step 4). *Gate:* PAN21; before PAN6.
 - **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
   ([modding.md](modding.md), Types a mod declares). Bevy plans that layer, for dynamic data, on
   `bevy_reflect2`, whose MVP has landed (bevy#26356); use Bevy's if the layer has. In the editor
@@ -445,7 +298,7 @@ dropped, not deferred. Numbers are never reused.
   ([spec](https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md)), which Panoply's
   shaders already use: `package::` names the package's own items, any other first segment names a
   dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
-  decides what a package exports, as X63's precinct exports do. SAGA's imports and asset ids would
+  decides what a package exports, as PAN79's precinct exports do. SAGA's imports and asset ids would
   share one scheme. *Gate:* a second package loads beside the game.
 - **X69** Stop faery's precinct converter overwriting ([faery.md](faery.md), Migration scripts):
   once Panoply edits a precinct, a rerun would undo it. Freeze it as the realm map converter is, or
@@ -456,13 +309,6 @@ dropped, not deferred. Numbers are never reused.
   biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
   they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
   editor places scenery (PAN5).
-- **X71** Biome blend properties as data, with sliders: move `BiomeSurfaceAttrs` out of the
-  constants in `ground_material.rs` into `terrain.biomes.json`, reflectable and live-editable, so a
-  surface's transition can be tuned by eye. The file lists biomes, several sharing a surface (the
-  meadows), and the properties are per surface, so where they sit in it is to be decided.
-  `blend_var` sets how much of a parcel the transition spans and the gap between `blend_t0` and
-  `blend_t1` the sharpness of a clump's border; separate fields for the two would suit sliders
-  better. *Gate:* the property editor (PAN28).
 - **X72** Undo of an edit that is off-screen: the camera does not move on undo, so the change can
   happen out of sight. Candidate: an action optionally reports where it happened, and the camera
   moves only if that is off-screen or in another realm. *Gate:* PAN38 or PAN5, the first edits with
@@ -481,9 +327,20 @@ dropped, not deferred. Numbers are never reused.
 - **X76** A layout for the HUD, so its on-screen controls have a place each and do not stomp on one
   another; the interaction prompt is the first, centred at the bottom of the view. *Gate:* the
   second on-screen control in play.
-- **X77** Localizing captions: `InteractionDesc::caption` is literal text in the exemplar, as are
-  other strings the player reads. How assets name text and where translations live is undecided.
-  *Gate:* before captions and other player-facing text are authored in quantity.
+- **X77** Localization. Player-facing text stays English in the assets, where it is authored: a
+  catalog of ids would make dialogue trees unwritable. A script, as `asset_xref.py` is, extracts it
+  into gettext `.po` catalogs, one per language, from a list of the fields that hold such text (an
+  exemplar's `display_name`, `InteractionDesc::caption`, later a dialogue line and a book's
+  content), which grows in the chunk that adds a field. Each string is keyed by where it lives
+  (asset, object, field path; a dialogue's node and line), so nothing is written back into the
+  assets, and renaming an exemplar follows its aliases (PAN28e). Each entry keeps the English it was
+  translated from, so a changed line is marked stale, not lost; the extractor attaches what its
+  place knows (speaker, quest, asset) for the translator. Lines are fixed, with no variables,
+  plurals or gender, so every line can be voiced: a voice file is named by its line's key and goes
+  stale with it, and a line that would need a variable is written as variants, a branch per form, as
+  voiced RPGs do. Interface text avoids sentences ("Coins: 3"). The English game reads its assets
+  directly; another language looks each key up and falls back to English. *Gate:* before captions
+  and other player-facing text are authored in quantity.
 - **X78** The rest of faery's hover feedback (PAN60, `SceneView.tsx`): the disabled cursor over an
   instance offering nothing, and an actor's nameplate on hover. Its other cursors are in `../faery`,
   to copy as entries name them. *Gate:* content or play that misses each.
@@ -595,3 +452,28 @@ dropped, not deferred. Numbers are never reused.
   the data. The editor (`panoply_editor`) is exempt, as its performance matters little. Read only: a
   list for the author, ranked by how often each runs. *Gate:* game-side performance work begins, or
   a frame-time regression in `docs/perf.csv` that a profile does not explain.
+- **X108** Combat's animation states: R33's take damage, dying and dead, the last two held on their
+  last frame (R35), and taking damage re-evaluating goals (R37). PAN3j plays only the states
+  something in the game can cause (D48). *Gate:* actors have health: PAN87's fireballs or PAN6's
+  fights, whichever deals damage first.
+- **X109** Scenery phasing, by layers: scenery that appears with a quest stage, such as the harvest
+  festival's booths. A realm has named layers, each with a reactive `when` formula (SAGA's cells,
+  X7). A layer's content is a patch of walls, fixtures and floors, kept with the precinct or apart
+  from it, and only ever adds: a layer never removes what the base or another layer placed. Actors
+  phase by their own aspect (R10). A layer that switches applies only while its precinct is off
+  screen or behind a cut, as R10 has actors do, so nothing appears or vanishes in view. In the
+  editor, layers are shown or hidden for authoring, and a control picks the current layer, to which
+  every wall, fixture and floor placed then belongs; the scenery palette's Layers button
+  (`SceneryTool::Layers`) is its place. faery had layers too (`engine/src/world/structures/`), not
+  ported. No phased terrain or terrain effects: possible, with no customer. A mod's scenery is the
+  same additive patch: it adds walls, fixtures and actors to the game's precincts, and precincts
+  where the game has none, so a mod ships its own precinct index (X34), joined with the game's.
+  *Gate:* the first quest stage that changes scenery, or the first mod that adds scenery.
+- **X110** The game UI's typeface (`GAME_UI_FONT`, Macondo Swash Caps). Plain Macondo reads better,
+  its capital E most of all (X75); the choice is to switch to it, or to make a font of the author's
+  own that combines the best of both. Neither has bold or italics, so emphasis in a book's text or a
+  line of dialogue needs another face, or another means: a colour, small caps. *Gate:* the first
+  player-facing text that needs emphasis (PAN78's books are likely), or the HUD's visual pass (X75),
+  whichever comes first.
+- **X107** Ladders. The `Ladder` wall tile (`wall-tiles.exem.json`) has a `ladder` collider and
+  `top` and `bottom` marks, the climb's ends; nothing reads either. *Gate:* actors climb.

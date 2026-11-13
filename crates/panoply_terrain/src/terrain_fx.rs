@@ -97,8 +97,6 @@ bitflags! {
         const ContinuousY = 1 << 1;
         /// A hole in the terrain, used for caves or mine entrances.
         const Hole = 1 << 2;
-        /// Override the normal smoothing and make the terrain mesh flat.
-        const Flatten = 1 << 3;
     }
 }
 

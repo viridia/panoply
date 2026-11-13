@@ -64,8 +64,8 @@ map from an aspect's name to the state that aspect saved.
   writes structs as arrays, so adding a field would shift every field after it). Not reflection:
   Bevy's reflect deserializer rejects a field it does not know, so a save from before a field was
   removed would fail to load.
-- **State with no aspect,** such as an actor's position, goes under one built-in entry of the
-  instance.
+- **State with no aspect,** such as an actor's home when a quest moves it, goes under one built-in
+  entry of the instance.
 
 Old saves survive engine changes by the presence or absence of keys, as in protobuf, with no version
 number:
@@ -97,8 +97,9 @@ component field by field would fix that, if it ever matters.
   precincts are written.
 - **The precinct cache can be cleared** on load, and precincts rebuild cleanly from nothing.
 - **Actors belong to a home precinct** (a relationship whose despawn is linked), so their state is
-  part of that precinct's chunk. Followers are global, persisted in the player or global chunks.
-  Random monsters are transient and not persisted.
+  part of that precinct's chunk, except their places: a precinct that loads again starts its actors
+  where they were authored, and their goals move them on (D80). Followers are global, persisted in
+  the player or global chunks, places included. Random monsters are transient and not persisted.
 - **Parcels hold no persisted state.** Parcels repeat across the world; precincts are unique to a
   place. State tied to a world location, such as picked herbs (ledger X14), goes in the
   precinct's chunk.
