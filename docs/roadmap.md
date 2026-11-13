@@ -12,45 +12,15 @@ changelog.
 
 **Next: PAN91.**
 
-## Next
+Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
+first; a chunk that needs another thread's says so.
 
-In order.
-
-PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
-[actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
-(existence, goals, planning, body, presentation) talk through components, with readiness as
-components and every layer restartable from saved state (R104).
+## Terrain
 
 PAN38, Terrain mode's panel, in lettered parts: its layout, then its tools. PAN39 and PAN40 fill the
 rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs`,
 `ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
 asset unsaved and goes on the undo stack.
-
-PAN45, First formula, in lettered parts: SAGA's first customer, the chest's `when`
-([saga.md](saga.md), Early customers). On demand only, with no cells or reactions; the action stays
-native.
-
-PAN28, Property editor, in lettered parts. A fork of arbor_day's `properties.rs` into
-`panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes replaced
-by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is
-in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Inspectable`
-(`crates/bevy_reactor_prop_inspect/src/inspectable.rs`) is a model for roots and field handles.
-Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
-set an edit is one of (`EditKind`).
-
-PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/portals` is reference
-(`REFERENCE(PAN4)`), deleted when PAN4c lands.
-
-PAN85, Water currents, for rivers, in lettered parts; partly built. Flow cannot move vertices, which
-would stretch or compress where a current meets still water. Instead the fragment shader mixes noise
-layers, each scrolling in its own direction (`FRAGMENT_WAVES` in `water.wesl`: four directions, +x,
-+z, -x, -z, three frequencies each), and the current vector varies each layer's amplitude: still
-water weights all directions equally (standing chop), and a current boosts the layers that agree
-with it, e.g. a base weight plus `max(0, dot(direction, current))`. Normalizing by the total weight,
-as the loop already does, keeps ripple strength even across the boundary. The current is the water
-mesh's `depth_motion.yz` (written as zero in `water_mesh.rs`; `.x` is depth); the unused `motion`
-variable and the commented strength gate in the loop are the start. The ripples are the only carrier
-of flow, so water shading changes (X11) must keep them readable as moving bumps.
 
 - **PAN38d Terrain sculpting.** Raise, lower and flatten, each by brush or by rectangle, through the
   terrain cursor (`terrain_cursor.rs`). They edit the contour, so every parcel that uses it changes:
@@ -75,16 +45,30 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   sit in it is to be decided. `blend_var` sets how much of a parcel the transition spans and the gap
   between `blend_t0` and `blend_t1` the sharpness of a clump's border; separate fields for the two
   would suit sliders better.
-- **PAN81 Surface tuning.** Live tuning of surface looks: a reflected resource (like `Sunlight` and
-  `HemisphereLight`) holding the water's look (water and sky colors, sky scale and weight, alpha,
-  chop, glint) and the seabed tint, copied into the materials on change, with sliders in the editor
-  panel, in a sub-mode (e.g. of terrain or realm). Tuning water (X11) one rebuild and screenshot at
-  a time was slow; shaders now hot-reload (D32), but uniforms set from Rust do not.
 - **PAN84 Realms without terrain.** `underworld` (in `world.locations.json`) is floors only, with
   black everywhere else; the three.js version needed a placeholder terrain map for it (a 3x3 stub,
   which `convert_realm_maps.mts` writes; deleted here). Go To's `underworld` nav point is the way
   in. Check that a realm with no `.terrain` file spawns no parcels and no errors, and that parcels'
   wait for precinct effects (D11) does not hang; make a stub map only if it must.
+
+## Water
+
+PAN85, Water currents, for rivers, in lettered parts; partly built. Flow cannot move vertices, which
+would stretch or compress where a current meets still water. Instead the fragment shader mixes noise
+layers, each scrolling in its own direction (`FRAGMENT_WAVES` in `water.wesl`: four directions, +x,
++z, -x, -z, three frequencies each), and the current vector varies each layer's amplitude: still
+water weights all directions equally (standing chop), and a current boosts the layers that agree
+with it, e.g. a base weight plus `max(0, dot(direction, current))`. Normalizing by the total weight,
+as the loop already does, keeps ripple strength even across the boundary. The current is the water
+mesh's `depth_motion.yz` (written as zero in `water_mesh.rs`; `.x` is depth); the unused `motion`
+variable and the commented strength gate in the loop are the start. The ripples are the only carrier
+of flow, so water shading changes (X11) must keep them readable as moving bumps.
+
+- **PAN81 Surface tuning.** Live tuning of surface looks: a reflected resource (like `Sunlight` and
+  `HemisphereLight`) holding the water's look (water and sky colors, sky scale and weight, alpha,
+  chop, glint) and the seabed tint, copied into the materials on change, with sliders in the editor
+  panel, in a sub-mode (e.g. of terrain or realm). Tuning water (X11) one rebuild and screenshot at
+  a time was slow; shaders now hot-reload (D32), but uniforms set from Rust do not.
 - **PAN85a Current shading.** The effect, on test data: `water_mesh.rs` writes currents from a test
   function of position into `depth_motion.yz` (a straight channel, a bend, and a still edge), judged
   by eye in motion at a plan spot. With four axis directions, a diagonal current may read as two
@@ -95,12 +79,83 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   crossing parcels likely needs data per parcel or per realm map, not per contour.
 - **PAN85c Currents in the water.** `water_mesh.rs` reads PAN85b's currents in place of the test
   function, and a water mesh rebuilds when they are edited.
+
+## Scenery
+
 - **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
   `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
   Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
   it checks other exemplars. The floor tool lists them through the exemplar list
   (`exemplar_list.rs`, `TODO(PAN74)`), and the property editor edits them. Check what a precinct
   naming one floor loads: the catalog's every texture.
+- **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
+  actors on those floors (R15). Rects are authored per tier (`TierSer.cutaways`); choosing them and
+  the 3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
+  Scenery). Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
+  `Visibility::Hidden` so descendants inherit it (D19). Once interiors show, check outlines on
+  glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
+  drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
+  behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
+  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant).
+- **PAN77 Scenery rect selection.** The RectSelect tool, whose button does nothing yet: drag out a
+  rect on the current tier of the precinct under the pointer, snapped to the wall snap size, drawn
+  as an overlay and kept as the scenery selection with its precinct. As faery's
+  `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
+  rect to include it.
+- **PAN88 Instance picking.** A click in scenery mode selects the wall, fixture or actor under the
+  pointer, as faery's `SelectSceneryInstanceMode` did, kept as the scenery selection; PAN28e's
+  instance properties are its first customer. Small or invisible things are picked through their
+  `hint` and `marker` colliders (about 15 of each in `furnishings.exem.json` and
+  `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries.
+- **PAN76b Cutaway editing**, on PAN77's selection. Adding, removing and resizing a tier's cutaway
+  rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
+  faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
+  a rect into a cutaway is read in the chunk.
+
+## Interaction
+
+- **PAN59 Door.** A `Door` aspect on the cottage door (`CottageWallDoorway`), played by its
+  `OpenDoor` clip through `SceneryAnimations` and offered through `Interactions`. Its collider is
+  built and follows the animated glTF node its descriptor's `animation` names, as faery's
+  `PhysicsMovable` did (a kinematic body moved by the model's own animation, with no separate
+  animation data), so the leaf is solid and within the probe's reach through the whole swing. Closes
+  I26.
+- **PAN78 Signs and books**: things to read. A sign is a scenery aspect whose interaction shows its
+  text; a document is an inventory item that links to text content and a page style (faery's book
+  aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
+  since its action needs only a reading view.
+- **PAN79 Mechanisms**: the stock elements puzzles are built from, and how they are wired together,
+  on SAGA's cells and reactions (X7). faery had doors, push and toggle buttons, pressure plates,
+  remotely controlled openables, automatic doors, spear traps and fireball traps (whose fixed
+  period, PAN87, becomes scripted: when a trap fires), wired by reactive formulas so that elaborate
+  puzzles combine simple parts ([faery.md](faery.md), How far faery got; the aspects the converter
+  dropped are under Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
+  (`wall-tiles.exem.json`). Beside them: triggers (a circle or rectangle the player enters),
+  encounter zones, and waymarks for scripted NPC events. To decide: how one element signals another
+  (an entity event, as PAN21's actions are, or a formula over the other's state), and which parts
+  are native aspects and which are SAGA. The hard part is referencing and naming. A precinct is
+  named by its realm and coordinates, and is like a module: its walls and fixtures that others can
+  refer to are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy
+  to type into a text box, so the field for a signal source browses the available signals with a
+  filter, as PAN35's chooser does. A reference into a precinct that is not loaded suspends the
+  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
+  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
+  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
+  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
+  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
+  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
+  first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
+
+## Editor
+
+PAN28, Property editor, in lettered parts. A fork of arbor_day's `properties.rs` into
+`panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes replaced
+by `bevy::annotations` where they overlap, as arbor_day's X25 plans for its own. faery's editor is
+in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Inspectable`
+(`crates/bevy_reactor_prop_inspect/src/inspectable.rs`) is a model for roots and field handles.
+Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
+set an edit is one of (`EditKind`).
+
 - **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
   rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
   it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
@@ -135,6 +190,30 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
   its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
   scene inheritance.
+- **PAN5 Editor**, beyond PAN1's shell. `src/editor`, written for Quill, is reference
+  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The design is faery's
+  editor (`packages/editor`, `design/Editor.md`; [faery.md](faery.md), Editor): read it before
+  designing a mode or tool. Two things the shell lacks: a resource in `panoply_core` saying whether
+  the game or the editor handles world clicks, so the game's (PAN17) run only while the game has the
+  pointer, where the mode decides, not the panel (play hands the pointer back, hiding the panel
+  keeps the tool); and the editor's selections saved in `bevy_settings` with its other state, so a
+  restart returns to where work stopped. Scenery mode's overlays (faery's grid, floor cutaway,
+  colliders, marks and portals) are `panoply_overlays` shapes in `mode_overlays.rs`. The author has
+  screenshots of faery's editor. Its tools, modal (one per mode or submode button) or situational
+  (the waypoint tool, opened from a field), and its property editor's field widgets are surveyed in
+  [faery.md](faery.md), Editor; port each with the mode or field that needs it, the widgets chosen
+  by field type (D45). faery's other debug views (listed in [faery.md](faery.md), Editor) join the
+  Show menu with the features they show, not before. Among them, faery's parcel and precinct
+  readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
+  PAN10) when tuning load distances needs it on screen.
+
+## Actors
+
+PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
+[actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
+(existence, goals, planning, body, presentation) talk through components, with readiness as
+components and every layer restartable from saved state (R104).
+
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
   rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where
@@ -155,16 +234,57 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   to them. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
   Neighbours by testing every pair in the realm until a grid is needed. The playground's townsfolk
   are the test. X50 builds NPCs' steering on it.
-- **PAN59 Door.** A `Door` aspect on the cottage door (`CottageWallDoorway`), played by its
-  `OpenDoor` clip through `SceneryAnimations` and offered through `Interactions`. Its collider is
-  built and follows the animated glTF node its descriptor's `animation` names, as faery's
-  `PhysicsMovable` did (a kinematic body moved by the model's own animation, with no separate
-  animation data), so the leaf is solid and within the probe's reach through the whole swing. Closes
-  I26.
-- **PAN78 Signs and books**: things to read. A sign is a scenery aspect whose interaction shows its
-  text; a document is an inventory item that links to text content and a page style (faery's book
-  aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
-  since its action needs only a reading view.
+- **PAN89 Actor colliders**, so a ray can hit an actor: PAN88's picking, the probe (PAN21) and
+  PAN17's clicks. Today an actor's capsule is only a query shape that `move_actors` sweeps. A
+  collider in the realm's rapier world, in a new `ACTOR` collision group that the character
+  controller's filter leaves out, so actors never collide through rapier (R86). Only an actor that
+  moved updates its collider, so resting actors (PAN3p) cost nothing; check it in `plans/perf.py`.
+  Check whether a collider without a body must be a sensor to stay out of contact generation. faery
+  also had an inflated capsule for picking ([faery.md](faery.md), Physics); one capsule serves both
+  until picking feels fiddly.
+- **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
+  it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
+  `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
+- **PAN16 Navigation.** Panoply has none; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
+  First evaluate [rerecast](https://crates.io/crates/rerecast): navigation mesh generation is hard
+  to maintain alone, which outweighs the cost of a fork (D36); check whether its generator works
+  without Bevy, which would need none. Test it against Panoply's idiosyncratic needs: a mesh only
+  around loaded precincts, built as they stream in (R83); door regions (R98); exclusion zones cut
+  where actors stand (R86); and whatever else faery's `nav` does that rerecast lacks. A missing
+  feature may be upstreamed rather than forked: the author has talked with rerecast's author. Crowd
+  and follower behavior (R86, R87) needs test scenarios: driver plans that stage, for example, eight
+  skeletons rushing the player, or two followers through a doorway. An actor that cannot advance
+  plays R33's blocked state and replans (R22).
+- **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
+  (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
+  own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
+  game's click handling runs only while the game has the pointer (PAN5). A click that misses every
+  interactive thing lands on `WorldBackstop` (D61), and a ground click needs the ground point, which
+  it does not report.
+
+## Portals
+
+PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/portals` is reference
+(`REFERENCE(PAN4)`), deleted when PAN4c lands.
+
+- **PAN4a Portal aspects.** The old code's `Portal` (the aperture, on a wall or fixture exemplar)
+  and `PortalTarget` (per instance: the far end's realm and place), loaded from precincts, and
+  gizmos showing each aperture. Portals go in a crate, since the editor places them (D37, D40):
+  first candidate, `panoply_portals`, over scenery and actors, which crossing needs (PAN4c).
+- **PAN4b Portal view.** What the aperture shows: the far end, rendered by a camera of its own (D21:
+  off-axis projection fitted to the aperture, its own load region). Bevy's `examples/3d/mirror.rs`
+  (a second camera on a render target) and `examples/camera/custom_projection.rs` (an oblique clip
+  plane) are the starting point, replacing the old `active_portal.rs`.
+- **PAN4c Crossing.** The player crosses a portal into the target realm, keeping offset and velocity
+  (R31), detected by a volume at the aperture. Decide here, once crossing can be felt, how the view
+  changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
+  while `follow_active_entity`'s far jump turns to the actor's facing.
+- **PAN4d Portal editing.** Helpers that keep a portal's two ends in step: a portal chooser
+  (`chooser_dialog`) to pick the far end, which sets both ends' `PortalTarget`, and whatever else
+  syncing them needs, decided in the chunk.
+
+## Effects
+
 - **PAN75 Point lights.** A `LightSource` (walls and fixtures; three lit fixtures so far, each 2 m)
   spawns a Bevy `PointLight` as a child of its instance, so it streams in and out with the precinct:
   `range` from `radius`, `color`, `intensity` (none set yet, so a default chosen by eye), at
@@ -197,48 +317,18 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   `maxParticles` 1, a shot every 2 s); here launching is the trap's own, not a particle setting: a
   fixed period on its aspect for now, scripted in PAN79. Its fire damage waits for actors to have
   health, in PAN6's combat.
-- **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
-  actors on those floors (R15). Rects are authored per tier (`TierSer.cutaways`); choosing them and
-  the 3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
-  Scenery). Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
-  `Visibility::Hidden` so descendants inherit it (D19). Once interiors show, check outlines on
-  glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
-  drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
-  behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
-  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant).
-- **PAN77 Scenery rect selection.** The RectSelect tool, whose button does nothing yet: drag out a
-  rect on the current tier of the precinct under the pointer, snapped to the wall snap size, drawn
-  as an overlay and kept as the scenery selection with its precinct. As faery's
-  `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
-  rect to include it.
-- **PAN89 Actor colliders**, so a ray can hit an actor: PAN88's picking, the probe (PAN21) and
-  PAN17's clicks. Today an actor's capsule is only a query shape that `move_actors` sweeps. A
-  collider in the realm's rapier world, in a new `ACTOR` collision group that the character
-  controller's filter leaves out, so actors never collide through rapier (R86). Only an actor that
-  moved updates its collider, so resting actors (PAN3p) cost nothing; check it in `plans/perf.py`.
-  Check whether a collider without a body must be a sensor to stay out of contact generation. faery
-  also had an inflated capsule for picking ([faery.md](faery.md), Physics); one capsule serves both
-  until picking feels fiddly.
-- **PAN88 Instance picking.** A click in scenery mode selects the wall, fixture or actor under the
-  pointer, as faery's `SelectSceneryInstanceMode` did, kept as the scenery selection; PAN28e's
-  instance properties are its first customer. Small or invisible things are picked through their
-  `hint` and `marker` colliders (about 15 of each in `furnishings.exem.json` and
-  `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries.
-- **PAN76b Cutaway editing**, on PAN77's selection. Adding, removing and resizing a tier's cutaway
-  rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
-  faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
-  a rect into a cutaway is read in the chunk.
-- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
-  Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
-  recompiles when one it imports reloads, and an import cycle is a compile error.
-- **PAN72 SAGA language reference**, for mod authors, in `docs/saga-language.md`: syntax, types,
-  literals and their suffixes, operators and casts, locals, `if`, functions, modules and imports,
-  how a formula embeds in an asset (PAN45b), and the host functions and component reads a formula
-  may use, each with a short example. It describes the language as it is, not [saga.md](saga.md)'s
-  plans, and later chunks that change the language update it.
-- **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
-  it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
-  `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
+- **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
+  distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
+  the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
+  `k = 1` a constant screen width; try values between. Depth to the mesh's origin rather than each
+  vertex, so a long model's outline does not taper along it. `k` and the reference as one setting
+  for every outline material, tuned by eye in the editor at several zooms; in play the camera
+  distance is fixed (11), so there it only evens out the near and far rows of the view. Divide the
+  extrusion by the model's scale too, so an actor's outline keeps its width under `ActorScale`,
+  which today thickens it.
+
+## Outlines and clips
+
 - **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
   `outline`; faery read the node's extras first, then the parent node's, then the material's, and
   outlined every skinned mesh by default (`SkinnedModel.ts`, `ModelCatalog.ts`). Male hair, much
@@ -281,15 +371,20 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   the NLA editor's blending and timing go unused, since the animation graph blends clips in the
   game. `Blender.md` gains a section on installing the add-on and using it, and the author tries it
   in the same session as PAN46.
-- **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
-  distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
-  the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
-  `k = 1` a constant screen width; try values between. Depth to the mesh's origin rather than each
-  vertex, so a long model's outline does not taper along it. `k` and the reference as one setting
-  for every outline material, tuned by eye in the editor at several zooms; in play the camera
-  distance is fixed (11), so there it only evens out the near and far rows of the view. Divide the
-  extrusion by the model's scale too, so an actor's outline keeps its width under `ActorScale`,
-  which today thickens it.
+
+## SAGA
+
+- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
+  Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
+  recompiles when one it imports reloads, and an import cycle is a compile error.
+- **PAN72 SAGA language reference**, for mod authors, in `docs/saga-language.md`: syntax, types,
+  literals and their suffixes, operators and casts, locals, `if`, functions, modules and imports,
+  how a formula embeds in an asset (PAN45b), and the host functions and component reads a formula
+  may use, each with a short example. It describes the language as it is, not [saga.md](saga.md)'s
+  plans, and later chunks that change the language update it.
+
+## Saves
+
 - **PAN19 New game.** Resets every precinct, and the actors in it, to its authored state: despawn
   them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
   play changed (PAN82), so loading a save is a new game with the save's changes applied. After
@@ -299,74 +394,9 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
   angle is saved too; a load follows the player with `Viewpoint::follow_snapped`, which keeps it.
   The first state to save: a chest left open.
-- **PAN16 Navigation.** Panoply has none; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
-  First evaluate [rerecast](https://crates.io/crates/rerecast): navigation mesh generation is hard
-  to maintain alone, which outweighs the cost of a fork (D36); check whether its generator works
-  without Bevy, which would need none. Test it against Panoply's idiosyncratic needs: a mesh only
-  around loaded precincts, built as they stream in (R83); door regions (R98); exclusion zones cut
-  where actors stand (R86); and whatever else faery's `nav` does that rerecast lacks. A missing
-  feature may be upstreamed rather than forked: the author has talked with rerecast's author. Crowd
-  and follower behavior (R86, R87) needs test scenarios: driver plans that stage, for example, eight
-  skeletons rushing the player, or two followers through a doorway. An actor that cannot advance
-  plays R33's blocked state and replans (R22).
-- **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
-  (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
-  own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
-  game's click handling runs only while the game has the pointer (PAN5). A click that misses every
-  interactive thing lands on `WorldBackstop` (D61), and a ground click needs the ground point, which
-  it does not report.
-- **PAN4a Portal aspects.** The old code's `Portal` (the aperture, on a wall or fixture exemplar)
-  and `PortalTarget` (per instance: the far end's realm and place), loaded from precincts, and
-  gizmos showing each aperture. Portals go in a crate, since the editor places them (D37, D40):
-  first candidate, `panoply_portals`, over scenery and actors, which crossing needs (PAN4c).
-- **PAN4b Portal view.** What the aperture shows: the far end, rendered by a camera of its own (D21:
-  off-axis projection fitted to the aperture, its own load region). Bevy's `examples/3d/mirror.rs`
-  (a second camera on a render target) and `examples/camera/custom_projection.rs` (an oblique clip
-  plane) are the starting point, replacing the old `active_portal.rs`.
-- **PAN4c Crossing.** The player crosses a portal into the target realm, keeping offset and velocity
-  (R31), detected by a volume at the aperture. Decide here, once crossing can be felt, how the view
-  changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
-  while `follow_active_entity`'s far jump turns to the actor's facing.
-- **PAN4d Portal editing.** Helpers that keep a portal's two ends in step: a portal chooser
-  (`chooser_dialog`) to pick the far end, which sets both ends' `PortalTarget`, and whatever else
-  syncing them needs, decided in the chunk.
-- **PAN5 Editor**, beyond PAN1's shell. `src/editor`, written for Quill, is reference
-  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The design is faery's
-  editor (`packages/editor`, `design/Editor.md`; [faery.md](faery.md), Editor): read it before
-  designing a mode or tool. Two things the shell lacks: a resource in `panoply_core` saying whether
-  the game or the editor handles world clicks, so the game's (PAN17) run only while the game has the
-  pointer, where the mode decides, not the panel (play hands the pointer back, hiding the panel
-  keeps the tool); and the editor's selections saved in `bevy_settings` with its other state, so a
-  restart returns to where work stopped. Scenery mode's overlays (faery's grid, floor cutaway,
-  colliders, marks and portals) are `panoply_overlays` shapes in `mode_overlays.rs`. The author has
-  screenshots of faery's editor. Its tools, modal (one per mode or submode button) or situational
-  (the waypoint tool, opened from a field), and its property editor's field widgets are surveyed in
-  [faery.md](faery.md), Editor; port each with the mode or field that needs it, the widgets chosen
-  by field type (D45). faery's other debug views (listed in [faery.md](faery.md), Editor) join the
-  Show menu with the features they show, not before. Among them, faery's parcel and precinct
-  readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
-  PAN10) when tuning load distances needs it on screen.
-- **PAN79 Mechanisms**: the stock elements puzzles are built from, and how they are wired together,
-  on SAGA's cells and reactions (X7). faery had doors, push and toggle buttons, pressure plates,
-  remotely controlled openables, automatic doors, spear traps and fireball traps (whose fixed
-  period, PAN87, becomes scripted: when a trap fires), wired by reactive formulas so that elaborate
-  puzzles combine simple parts ([faery.md](faery.md), How far faery got; the aspects the converter
-  dropped are under Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
-  (`wall-tiles.exem.json`). Beside them: triggers (a circle or rectangle the player enters),
-  encounter zones, and waymarks for scripted NPC events. To decide: how one element signals another
-  (an entity event, as PAN21's actions are, or a formula over the other's state), and which parts
-  are native aspects and which are SAGA. The hard part is referencing and naming. A precinct is
-  named by its realm and coordinates, and is like a module: its walls and fixtures that others can
-  refer to are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy
-  to type into a text box, so the field for a signal source browses the available signals with a
-  filter, as PAN35's chooser does. A reference into a precinct that is not loaded suspends the
-  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
-  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
-  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
-  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
-  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
-  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
-  first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
+
+## First playable
+
 - **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
   what each needs are in [goals.md](goals.md).
 
