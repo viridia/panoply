@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN75.**
+**Next: PAN76.**
 
 ## Next
 
@@ -109,6 +109,17 @@ set an edit is one of (`EditKind`).
   built and follows the animated glTF node its descriptor's `animation` names, as faery's
   `PhysicsMovable` did (X39's door part), so the leaf is solid and within the probe's reach through
   the whole swing. Closes I26.
+- **PAN75 Point lights.** A `LightSource` (walls and fixtures; three lit fixtures so far, each 2 m)
+  spawns a Bevy `PointLight` as a child of its instance, so it streams in and out with the precinct:
+  `range` from `radius`, `color`, `intensity` (none set yet, so a default chosen by eye), at
+  `offset`, shadows off. faery capped a scene at about six point lights, since three.js lit every
+  fragment with every light; Bevy's clustered forward renderer bins lights into cells of the view
+  and lights a fragment only with its cell's, so the cost follows the lights reaching a fragment,
+  here 0 or 1, and `range` is what keeps a light's cells few. Measure it in `plans/perf.py`: a spot
+  with many lit fixtures, against the same spot without them. Shadows are left for later: each
+  shadowed point light renders the depth around it six times a frame, a cube map, which is the cost
+  that stays. Later: `enabled`, which needs instance properties, and missiles, which `can_attach`
+  does not yet allow.
 - **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
   Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
   recompiles when one it imports reloads, and an import cycle is a compile error.

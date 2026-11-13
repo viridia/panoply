@@ -164,10 +164,9 @@ dropped, not deferred. Numbers are never reused.
   actors restored.
 - **X20** Keep unknown aspects lossless (D25): hold each as an opaque value that saves back
   unchanged, so the editor cannot drop data a disabled module owns. *Gate:* editor restored.
-- **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller
-  than D20's 4 m allowance also needs its own); `LightSource` point lights per precinct
-  (registered, not yet acted on; candles in the old engine); hot reload of `FloorSurface`
-  assets (floors do not rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
+- **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller than
+  D20's 4 m allowance also needs its own); hot reload of `FloorSurface` assets (floors do not
+  rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
