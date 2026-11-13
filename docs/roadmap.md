@@ -156,6 +156,14 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
+- **PAN28l Layout design.** The property editor's look and composition (I40), designed before
+  PAN28i, PAN28k and PAN43 add new kinds of row, so they are built to it. Curated screenshots of the
+  panel as it is, the collider list (`MossyBrickWallTee`) as the hard case, then artifacts offering
+  alternative layouts: what aligns with what (labels, values, the columns they share), nesting and
+  indentation, a disclosure toggle on arrays and structs, what a collapsed pane shows on its header,
+  and mockups of the rows not yet built (a map's entries, a checkbox or color per slot, inherited
+  aspects dimmed). The author picks; the choice is recorded as a decision.
+- **PAN28m Layout.** PAN28l's design applied to the existing widgets. Closes I40.
 - **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
   rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
   it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value

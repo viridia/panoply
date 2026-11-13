@@ -363,12 +363,13 @@ dropped, not deferred. Numbers are never reused.
   meshes. Not confirmed by reverting it. Reported on Discord (2026-11-10); Bevy is tracking an
   alternate fix, with no PR yet. *Gate:* that fix in the Bevy we build against; then compare
   townsfolk in `perf.py`.
-- **X85** Placeholders through feathers (PAN69). Bevy's `Placeholder` has no `Default`, so `bsn!`
-  cannot spawn it and the chooser's filter box gets its hint from an observer (`hint_filter`), and
-  feathers has no placeholder style, so the hint sets its own: dim, by `Placeholder`'s default
-  alpha, and italic. The text-entry dialog's box has no hint yet; its openers would pass one.
-  Follow-up PRs to the placeholder are under discussion. *Gate:* a `Default` or a feathers style in
-  the Bevy we build against; then spawn the hint in `bsn!` with the theme's style.
+- **X85** Placeholders through feathers (PAN69). Bevy's `Placeholder` has no `Default`
+  ([bevy#26532](https://github.com/bevyengine/bevy/issues/26532)), so `bsn!` cannot spawn it and the
+  chooser's filter box gets its hint from an observer (`hint_filter`), and feathers has no
+  placeholder style, so the hint sets its own: dim, by `Placeholder`'s default alpha, and italic.
+  The text-entry dialog's box has no hint yet; its openers would pass one. Follow-up PRs to the
+  placeholder are under discussion. *Gate:* a `Default` or a feathers style in the Bevy we build
+  against; then spawn the hint in `bsn!` with the theme's style.
 - **X86** Dynamic lists in SAGA, beyond fixed-size arrays ([saga.md](saga.md), Values). Open: how
   one lives on a stack that holds no owned data, and whether lists weaken the rule that sets of
   entities are native aggregates. *Gate:* a helper module that needs a list whose length is not

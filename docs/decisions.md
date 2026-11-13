@@ -590,7 +590,8 @@ never reused.
   Bevy's own `ValueChange<String>` with `is_final` set, the event whose doc already covers "input
   lost focus". Bevy's text input reports only keystrokes, and an edit per keystroke would rebuild
   instances for every half-typed path. The module holds no Panoply types, so when Bevy commits text
-  itself, it goes. Reversing it means each widget handling Enter and focus on its own. (PAN28c)
+  itself ([bevy#26500](https://github.com/bevyengine/bevy/issues/26500)), it goes. Reversing it
+  means each widget handling Enter and focus on its own. (PAN28c)
 - **D76** A property root lends its value to the edit (`PropertyRoot::modify`) rather than writing
   values itself, and the editor makes every kind of edit in one place (`EditOp`): a write, an item
   put into a list, an item taken out, each returning the edit that undoes it. Bevy's `apply` never

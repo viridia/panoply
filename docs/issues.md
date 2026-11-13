@@ -99,8 +99,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   Read, not run.
 - **I34** Bevy's `Selected` (`bevy_ui::interaction_states`) does not derive `Reflect`, so a plan
   cannot read which list row is highlighted; `plans/smoke.py` checks the saved choice and leaves the
-  highlight to a screenshot. Likely an oversight upstream, worth a one-line PR. Confirmed by
-  running.
+  highlight to a screenshot. Likely an oversight upstream, worth a one-line PR
+  ([bevy#26499](https://github.com/bevyengine/bevy/issues/26499)). Confirmed by running.
 - **I35** Feathers' list view scrolls its rows with `Overflow::scroll_y()` (`listview.rs`), which
   leaves x visible, so a row's text wider than the row draws past the list's right edge. Measured:
   rows 386 px wide, a long name's text 452. The chooser clips each row itself (`TODO(I35)` in
@@ -108,20 +108,23 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I36** Feathers' number input has no Up and Down keys: faery's nudged a focused number by its
   step, a hundred steps with Cmd (`obsidian/src/components/NumberInput.tsx`), which aligning
   colliders leaned on. Feathers has drag and chevrons, snapped to the step since PAN28c. Candidates:
-  an upstream PR, or an observer in Panoply until then. Read, not run.
+  an upstream PR ([bevy#26535](https://github.com/bevyengine/bevy/issues/26535)), or an observer in
+  Panoply until then. Read, not run.
 - **I37** Feathers' number input draws its label (the X, Y and Z beside an axis's sigil) in the same
   gray as its input area in the property editor, where the label should be a different gray: the
   surface level (`ThemeContext`) adjusts the input's background but not the label's
-  (`TEXT_INPUT_LABEL_BG`). Likely a feathers bug, worth an upstream fix. Seen by the author; the
-  cause not confirmed.
+  (`TEXT_INPUT_LABEL_BG`). Likely a feathers bug, worth an upstream fix
+  ([bevy#26534](https://github.com/bevyengine/bevy/issues/26534)). Seen by the author; the cause not
+  confirmed.
 - **I38** Feathers' number input drags a step's worth only every 100 logical pixels: with a
   `NumberInputStep`, the drag speed is the step times `BASE_DRAG_SPEED` (0.01) per pixel
   (`scrubber_on_drag_start`, `number_input.rs`), and an integer drags as step 1 at the same rate.
   With `NumberInputSnapToStep` the value stays put for about an inch, then jumps one step, so
   `LightSource.offset` at `@Step(0.05)` is hard to nudge. faery dragged one step per pixel. Shift
-  already slows a drag tenfold. Candidates upstream: a factor near 0.1 to 0.25 for a stepped input,
-  or a drag speed the input can be given. Panoply cannot set it meanwhile (`DragState` is set as the
-  drag starts). Seen by the author; the rate read in the code.
+  already slows a drag tenfold. Candidates upstream
+  ([bevy#26533](https://github.com/bevyengine/bevy/issues/26533)): a factor near 0.1 to 0.25 for a
+  stepped input, or a drag speed the input can be given. Panoply cannot set it meanwhile
+  (`DragState` is set as the drag starts). Seen by the author; the rate read in the code.
 - **I39** Feathers' number input chevrons stick on some values of an `f32` input snapped to its
   step: `step_snapped_f64` (`number_input.rs`) allows 1e-9 of a step for rounding, and an `f32`
   widened to `f64` is off by about 1e-7 relative. 0.35f32 is 0.3499999940, 6.9999999 steps of 0.05,
@@ -129,10 +132,11 @@ confirmed by running something or only by reading. Numbers are never reused.
   fix upstream: a tolerance for the value's format (near 1e-6 relative for `F32`), with a test
   stepping `0.35f32`. Meanwhile the property editor gives the input an `f32` field as the `f64` of
   its shortest decimal (`shown_f32`, `TODO(I39)`). Seen by the author on collider dimensions; the
-  arithmetic reproduced in Python.
+  arithmetic reproduced in Python. ([bevy#26536](https://github.com/bevyengine/bevy/issues/26536)).
 - **I40** The property editor's nested values need a design pass on their look and composition, as
   seen in a collider list (items, each a struct holding an enum holding a `Vec3`); the panel works,
-  the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`).
+  the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`). PAN28l designs
+  it, PAN28m applies it.
 - **I41** Feathers' tree view (`FeathersTreeView`, `tree_view.rs`) puts its rows under an inner
   scrolling node, but the headless tree (`bevy_ui_widgets`' `tree.rs`) looks for rows only among the
   `TreeView` entity's own children, both to derive each row's indent level and to list the visible
