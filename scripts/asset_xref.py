@@ -8,9 +8,10 @@ A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floor surfaces, 
 under `assets/`, and exemplars (`file#Label`), whose catalog must exist and hold the label or an
 alias of it. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
 `file.glb#Name`: the file must exist and hold a scene of that name (`SceneryModels`, `Skin`,
-`ItemModel`), or, for `Armature.armature`, a node. `Armature.animations` names only its file, and a
-`SceneryAnimations` transition's sound a file. An `extends` must resolve as a precinct's exemplar
-does.
+`ItemModel`). A `SceneryAnimations` transition's sound names a file. An `extends` must resolve as a
+precinct's exemplar does. An exemplar with an `Armature` and a `Skin`, its own or inherited, needs
+the armature in the Skin's file: the one `Armature.node` names, or else the file's only one; and
+its clips file, `Armature.clips` or else the Skin's file, must hold clips.
 
 A missing reference shows in the game only as an error when something loads it, so a break can sit
 unseen until someone visits the precinct. Known breaks are listed in KNOWN against the ledger entry
@@ -112,7 +113,7 @@ class Assets:
         self.models = {}
 
     def catalog(self, path):
-        """The labels of the catalog at `path` (aliases included), or a reason it has none."""
+        """The entries of the catalog at `path` by label and alias, or a reason it has none."""
         if path not in self.catalogs:
             file = ASSETS / path
             if not file.is_file():
@@ -120,16 +121,18 @@ class Assets:
             else:
                 try:
                     entries = json.loads(file.read_text())
-                    labels = set(entries)
+                    labels = dict(entries)
                     for entry in entries.values():
-                        labels.update(entry.get("alias", []))
+                        labels.update((alias, entry) for alias in entry.get("alias", []))
                     self.catalogs[path] = labels
                 except (ValueError, AttributeError) as e:
                     self.catalogs[path] = f"unreadable: {e}"
         return self.catalogs[path]
 
     def model(self, path):
-        """The scene and node names of the `.glb` at `path`, or a reason it has none."""
+        """The scene names, node names, armature names and clip count of the `.glb` at `path`, or
+        a reason it has none. An armature is a node, not a bone itself, holding a skin's root
+        bone."""
         if path not in self.models:
             file = ASSETS / path
             if not file.is_file():
@@ -138,14 +141,23 @@ class Assets:
                 try:
                     gltf = read_gltf(file)
                     names = lambda key: {x["name"] for x in gltf.get(key, []) if "name" in x}
-                    self.models[path] = (names("scenes"), names("nodes"))
+                    nodes = gltf.get("nodes", [])
+                    bones = {j for skin in gltf.get("skins", []) for j in skin["joints"]}
+                    armatures = {
+                        node.get("name")
+                        for i, node in enumerate(nodes)
+                        if i not in bones and bones & set(node.get("children", []))
+                    }
+                    clips = len(gltf.get("animations", []))
+                    self.models[path] = (names("scenes"), names("nodes"), armatures, clips)
                 except ValueError as e:
                     self.models[path] = f"unreadable: {e}"
         return self.models[path]
 
-    def exemplar_problem(self, reference, base=""):
-        """Why the exemplar `reference` does not resolve, or `None`. `base` is the catalog that
-        names it, against which a reference with no file (`#Label`) or a relative one resolves."""
+    def resolve(self, reference, base=""):
+        """The catalog and entry the exemplar `reference` names, or a reason it does not
+        resolve. `base` is the catalog that names it, against which a reference with no file
+        (`#Label`) or a relative one resolves."""
         file, _, label = reference.partition("#")
         if not label:
             return "no #label"
@@ -158,6 +170,43 @@ class Assets:
             return f"{file}: {labels}"
         if label not in labels:
             return f"no exemplar {label} in {file}"
+        return file, labels[label]
+
+    def exemplar_problem(self, reference, base=""):
+        """Why the exemplar `reference` does not resolve, or `None`."""
+        found = self.resolve(reference, base)
+        return found if isinstance(found, str) else None
+
+    def aspect(self, entry, source, name):
+        """The aspect `name` of `entry`, in the catalog `source`, its own or the nearest one it
+        inherits through `extends`, whole, as the game resolves it; `None` if it has none."""
+        seen = set()
+        while name not in entry.get("aspects", {}):
+            if "extends" not in entry or id(entry) in seen:
+                return None
+            seen.add(id(entry))
+            found = self.resolve(entry["extends"], source)
+            if isinstance(found, str):
+                return None
+            source, entry = found
+        return entry["aspects"][name]
+
+    def armature_problem(self, skin_file, node, clips_file):
+        """Why an `Armature` of `node` (or `None`, for the file's only one) and `clips_file` does
+        not resolve against a Skin in `skin_file`, or `None`."""
+        found = self.model(skin_file)
+        if isinstance(found, str):
+            return f"{skin_file}: {found}"
+        armatures = found[2]
+        if node is None and len(armatures) != 1:
+            return f"no Armature.node, and {skin_file} has armatures {sorted(armatures)}"
+        if node is not None and node not in armatures:
+            return f"no armature {node} in {skin_file}"
+        clips = self.model(clips_file)
+        if isinstance(clips, str):
+            return f"{clips_file}: {clips}"
+        if clips[3] == 0:
+            return f"no clips in {clips_file}"
         return None
 
     def file_problem(self, path):
@@ -173,7 +222,7 @@ class Assets:
             return None
         if not name:
             return f"no #{kind}"
-        scenes, nodes = found
+        scenes, nodes, _, _ = found
         if name not in (scenes if kind == "scene" else nodes):
             return f"no {kind} {name} in {file}"
         return None
@@ -197,8 +246,6 @@ MODEL_FIELDS = [
     ("SceneryModels", "asset", "scene"),
     ("Skin", None, "scene"),
     ("ItemModel", None, "scene"),
-    ("Armature", "armature", "node"),
-    ("Armature", "animations", None),
 ]
 
 
@@ -225,6 +272,14 @@ def check_exemplars(assets, report):
                     if "sound" in transition:
                         reference = transition["sound"]["asset"]
                         report(where, reference, assets.file_problem(reference))
+            armature = assets.aspect(entry, source, "Armature")
+            skin = assets.aspect(entry, source, "Skin")
+            if armature is not None and skin is not None:
+                skin_file = skin.partition("#")[0]
+                node = armature.get("node")
+                clips_file = armature.get("clips", skin_file)
+                reference = f"{skin_file}#{node or '(its armature)'}, clips {clips_file}"
+                report(where, reference, assets.armature_problem(skin_file, node, clips_file))
 
 
 def main():

@@ -58,12 +58,6 @@ set an edit is one of (`EditKind`).
   `TODO(PAN74)`): the floor types precincts name, the `scenery/floors/*.floor.ron` files. Not
   exemplars, so listed from the directory rather than loaded, which would load every floor's
   textures.
-- **PAN28h Armature fields that say what they mean.** `Armature.armature` holds a `file#Node` path
-  but only its node is used, looked up in the Skin's scene; `animations` holds one too but only its
-  file is used (`actor_model.rs`, `actor_animation.rs`). The first becomes the node's name,
-  defaulting to the Skin file's one armature where it has one; the second, a clips file, defaulting
-  to the Skin's file, picked from the character files with clips (the model picker, listing files).
-  The 11 exemplars rewritten to match, and the archetype converter with them.
 - **PAN28d Adding and removing aspects.** The exemplar pane's add menu: its absent optional fields,
   then Aspects…, which opens a chooser (faery's `scenery-add-aspect.png`,
   `scenery-choose-aspect.png`): a checkbox per aspect type that can attach to the exemplar's type
@@ -74,6 +68,13 @@ set an edit is one of (`EditKind`).
   prototype, not a text input; it opens the exemplar chooser scenery mode already has, listing
   exemplars of the same type, abstract ones included, and leaving out any that would make the chain
   a cycle.
+- **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
+  rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
+  it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
+  type's default. Changing a key is a new `EditKind`: it moves the entry and undoes in one step. A
+  key that is empty or already in the map isn't committed. `Colors` and `Features` get custom
+  editors later, as faery's `ColorMap` and `FeatureSelection` were (from `ColorSlots` and
+  `FeatureSlots`).
 - **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
   and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
   and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file

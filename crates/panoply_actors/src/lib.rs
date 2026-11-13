@@ -20,7 +20,7 @@ mod precinct_actors;
 mod world_pick;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
-pub use actor_aspect::{ActorScale, CollisionSize, Skin};
+pub use actor_aspect::{ActorScale, ClipsFile, CollisionSize, Skin};
 pub use actor_control::{
     ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerTurn, PlayerWalk,
 };

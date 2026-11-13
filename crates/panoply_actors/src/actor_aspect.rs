@@ -6,14 +6,24 @@ use panoply_core::HexColor;
 
 use super::ACTOR_TYPE;
 
-/// The species' skeleton and the file holding its animation clips, each a `file#Label` path.
+/// The species' skeleton, which the engine animates, and the file holding its clips.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Armature {
-    pub armature: String,
-    #[serde(default)]
-    pub animations: Option<String>,
+    /// The skeleton's root node in the `Skin`'s scene; by default the `Skin` file's one armature.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node: Option<String>,
+    /// The character glTF holding the species' clips, often shared by several species; by
+    /// default the `Skin`'s own file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clips: Option<ClipsFile>,
 }
+
+/// A character glTF holding animation clips, by its path.
+#[derive(Debug, Reflect, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[reflect(Default)]
+pub struct ClipsFile(pub String);
 
 impl Aspect for Armature {
     fn name(&self) -> &str {

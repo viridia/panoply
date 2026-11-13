@@ -16,8 +16,7 @@
         "radius": 0.3
       },
       "Armature": {
-        "armature": "characters/humanoid-male.glb#HumanoidArmature",
-        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
+        "clips": "characters/humanoid-armature.glb"
       },
       "ClipNames": {
         "Walk": "WalkMale",
@@ -52,8 +51,7 @@
         "radius": 0.3
       },
       "Armature": {
-        "armature": "characters/humanoid-female.glb#HumanoidArmature",
-        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
+        "clips": "characters/humanoid-armature.glb"
       },
       "ClipNames": {
         "Walk": "WalkFemale",
@@ -83,9 +81,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/canine.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/canine.glb#Canine",
       "ColorSlots": [
         "Fur",
@@ -102,10 +98,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/dabori.glb#Armature",
-        "animations": "characters/dabori.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/dabori.glb#Dabori",
       "ColorSlots": [
         "Fur",
@@ -132,9 +125,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/reshari.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/reshari.glb#Reshari",
       "ColorSlots": [
         "Fur",
@@ -1075,9 +1066,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/canine.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/canine.glb#Canine",
       "ColorSlots": [
         "Fur",
@@ -1094,9 +1083,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/ursine.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/ursine.glb#Ursine",
       "ColorSlots": [
         "Fur",
@@ -1113,9 +1100,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/wasp.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/wasp.glb#Wasp",
       "ColorSlots": [
         "Chitin1",
@@ -1134,9 +1119,7 @@
     "type": "Actr",
     "abstract": true,
     "aspects": {
-      "Armature": {
-        "armature": "characters/kreekin.glb#Armature"
-      },
+      "Armature": {},
       "Skin": "characters/kreekin.glb#Kreekin",
       "ColorSlots": [
         "Chitin",
@@ -1155,8 +1138,7 @@
     "display_name": "Skeleton",
     "aspects": {
       "Armature": {
-        "armature": "characters/skeleton.glb#HumanoidArmature",
-        "animations": "characters/humanoid-armature.glb#HumanoidArmature"
+        "clips": "characters/humanoid-armature.glb"
       },
       "ClipNames": {
         "Walk": "WalkMale",

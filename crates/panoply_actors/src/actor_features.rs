@@ -71,7 +71,7 @@ pub fn bind_actor_feature(
     else {
         return;
     };
-    let Some(armature) = &body.armature else {
+    let Some(node) = body.armature.as_ref().and_then(|armature| armature.node.as_ref()) else {
         return;
     };
     let bones: HashMap<&str, Entity> = actors
@@ -80,10 +80,7 @@ pub fn bind_actor_feature(
         .collect();
     for entity in actors.iter_descendants(ready.entity) {
         let Ok(skin) = skins.get(entity) else {
-            if names
-                .get(entity)
-                .is_ok_and(|name| name.as_str() == armature.node)
-            {
+            if names.get(entity).is_ok_and(|name| name.as_str() == node) {
                 commands.entity(entity).despawn();
             }
             continue;

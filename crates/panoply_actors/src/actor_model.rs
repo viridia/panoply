@@ -1,4 +1,9 @@
-use bevy::{gltf::Gltf, prelude::*, world_serialization::WorldAssetRoot};
+use bevy::{
+    gltf::{Gltf, GltfNode, GltfSkin},
+    platform::collections::HashSet,
+    prelude::*,
+    world_serialization::WorldAssetRoot,
+};
 
 use super::{
     actor_animation::ArmatureSource,
@@ -71,19 +76,13 @@ pub fn spawn_actor_bodies(
             warn!("Actor {entity} has no skin");
             continue;
         };
-        // Clips come from the armature's own file when the species has no shared one.
-        let armature = armature.and_then(|armature| {
-            let (file, node) = armature.armature.split_once('#')?;
-            let clips = armature
-                .animations
-                .as_deref()
-                .and_then(|path| path.split_once('#'))
-                .map_or(file, |(clips, _)| clips);
-            Some(ArmatureSource {
-                node: node.to_owned(),
+        let armature = armature.map(|armature| {
+            let clips = armature.clips.as_ref().map_or(file, |clips| clips.0.as_str());
+            ArmatureSource {
+                node: armature.node.clone(),
                 clips: server.load(clips.to_owned()),
                 clip_names: clip_names.map(|names| names.0.clone()).unwrap_or_default(),
-            })
+            }
         });
         commands.spawn((
             Name::new("ActorBody"),
@@ -98,16 +97,30 @@ pub fn spawn_actor_bodies(
     }
 }
 
-/// Spawns each body's scene once its file has loaded.
+/// Spawns each body's scene once its file has loaded, naming its skeleton where the `Armature`
+/// does not.
 pub fn spawn_actor_body_scenes(
     mut commands: Commands,
-    query: Query<(Entity, &ActorBody), Without<WorldAssetRoot>>,
+    mut query: Query<(Entity, &mut ActorBody), Without<WorldAssetRoot>>,
     gltfs: Res<Assets<Gltf>>,
+    nodes: Res<Assets<GltfNode>>,
+    skins: Res<Assets<GltfSkin>>,
 ) {
-    for (entity, body) in query.iter() {
+    for (entity, body) in query.iter_mut() {
+        let body = body.into_inner();
         let Some(gltf) = gltfs.get(&body.gltf) else {
             continue;
         };
+        if let Some(armature) = body.armature.as_mut().filter(|armature| armature.node.is_none()) {
+            let found = armatures(gltf, &nodes, &skins);
+            match found.as_slice() {
+                [node] => armature.node = Some(node.clone()),
+                _ => error!(
+                    "Actor body [{}] needs its Armature's node: its file has armatures {found:?}",
+                    body.scene
+                ),
+            }
+        }
         if let Some(scene) = gltf.named_scenes.get(body.scene.as_str()) {
             commands
                 .entity(entity)
@@ -121,4 +134,26 @@ pub fn spawn_actor_body_scenes(
             commands.entity(entity).despawn();
         }
     }
+}
+
+/// The names of `gltf`'s armatures: the nodes, not bones themselves, that hold its skins' root
+/// bones.
+fn armatures(gltf: &Gltf, nodes: &Assets<GltfNode>, skins: &Assets<GltfSkin>) -> Vec<String> {
+    let bones: HashSet<AssetId<GltfNode>> = gltf
+        .skins
+        .iter()
+        .filter_map(|skin| skins.get(skin))
+        .flat_map(|skin| skin.joints.iter().map(Handle::id))
+        .collect();
+    let mut names: Vec<String> = gltf
+        .nodes
+        .iter()
+        .filter(|node| !bones.contains(&node.id()))
+        .filter_map(|node| nodes.get(node))
+        .filter(|node| node.children.iter().any(|child| bones.contains(&child.id())))
+        .map(|node| node.name.clone())
+        .collect();
+    names.sort();
+    names.dedup();
+    names
 }

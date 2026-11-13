@@ -1,6 +1,7 @@
 //! The dialog a model field's button opens: the models of the field's kind (an actor's body, a
 //! wall's or fixture's model), a disclosure row per glTF file holding a row per named scene in it,
-//! with the field's model selected and its file open. A click
+//! with the field's model selected and its file open; for a clips field, a row per character file
+//! holding clips. A click
 //! on a file's row opens or closes it; Save, or a double-click on a model, sets the field. Cancel,
 //! Esc or a click outside closes it.
 
@@ -26,7 +27,7 @@ use bevy::{
     },
 };
 
-use panoply_actors::Skin;
+use panoply_actors::{ClipsFile, Skin};
 use panoply_scenery::SceneryModel;
 
 use crate::toast::ShowToast;
@@ -41,24 +42,28 @@ pub enum ModelKind {
     Character,
     /// A wall's or a fixture's model (`SceneryModel`).
     Scenery,
+    /// A character file holding clips (`ClipsFile`): the file itself, not a scene in it.
+    Clips,
 }
 
 impl ModelKind {
-    const ALL: [ModelKind; 2] = [ModelKind::Character, ModelKind::Scenery];
+    const ALL: [ModelKind; 3] = [ModelKind::Character, ModelKind::Scenery, ModelKind::Clips];
 
     /// The folders holding this kind's glTF files.
     fn folders(self) -> &'static [&'static str] {
         match self {
-            ModelKind::Character => &["characters"],
+            ModelKind::Character | ModelKind::Clips => &["characters"],
             ModelKind::Scenery => &["scenery/models", "terrain/models"],
         }
     }
 }
 
-/// The kind of model `value` names, and its `file#Scene` path, if it is a model field.
+/// The kind of model `value` names, and its path, if it is a model field.
 pub(crate) fn model_field(value: &dyn PartialReflect) -> Option<(ModelKind, &str)> {
     if let Some(skin) = value.try_downcast_ref::<Skin>() {
         Some((ModelKind::Character, &skin.0))
+    } else if let Some(clips) = value.try_downcast_ref::<ClipsFile>() {
+        Some((ModelKind::Clips, &clips.0))
     } else {
         let model = value.try_downcast_ref::<SceneryModel>()?;
         Some((ModelKind::Scenery, &model.0))
@@ -81,10 +86,16 @@ impl Plugin for ModelPickerPlugin {
 pub(crate) struct PickerFolders(Vec<(&'static str, Handle<LoadedFolder>)>);
 
 fn load_model_folders(mut commands: Commands, server: Res<AssetServer>) {
-    let folders = ModelKind::ALL
+    let mut paths: Vec<&'static str> = ModelKind::ALL
         .iter()
         .flat_map(|kind| kind.folders())
-        .map(|&path| (path, server.load_folder(path)))
+        .copied()
+        .collect();
+    paths.sort();
+    paths.dedup();
+    let folders = paths
+        .into_iter()
+        .map(|path| (path, server.load_folder(path)))
         .collect();
     commands.insert_resource(PickerFolders(folders));
 }
@@ -119,9 +130,11 @@ struct ScrollToModel;
 #[derive(Component, Default, Clone)]
 struct SaveModel;
 
-/// A glTF file of models, and the field's value for each of its named scenes, sorted.
+/// A glTF file, its path, and the field's value for each of its named scenes, sorted: none for a
+/// clips field, which names the file.
 struct ModelFile {
     name: String,
+    path: String,
     models: Vec<String>,
 }
 
@@ -157,20 +170,46 @@ pub(crate) fn open_model_picker(
             let id = handle.id().try_typed::<Gltf>().ok()?;
             let path = server.get_path(id)?;
             let name = path.path().file_stem()?.to_string_lossy().into_owned();
-            let mut models: Vec<String> = gltfs
-                .get(id)?
+            let gltf = gltfs.get(id)?;
+            if kind == ModelKind::Clips {
+                return (!gltf.named_animations.is_empty()).then(|| ModelFile {
+                    name,
+                    path: path.to_string(),
+                    models: Vec::new(),
+                });
+            }
+            let mut models: Vec<String> = gltf
                 .named_scenes
                 .keys()
                 .filter(|scene| scene.as_ref() != DEFAULT_SCENE)
                 .map(|scene| format!("{path}#{scene}"))
                 .collect();
             models.sort_by_key(|model| model.to_lowercase());
-            Some(ModelFile { name, models })
+            Some(ModelFile {
+                name,
+                path: path.to_string(),
+                models,
+            })
         })
         .collect();
     files.sort_by_key(|file| file.name.to_lowercase());
+    let rows: Box<dyn SceneList> = if kind == ModelKind::Clips {
+        Box::new(
+            files
+                .iter()
+                .map(|file| model_row(&file.name, &file.path))
+                .collect::<Vec<_>>(),
+        )
+    } else {
+        Box::new(files.iter().map(file_row).collect::<Vec<_>>())
+    };
+    let title = if kind == ModelKind::Clips {
+        "Choose clips"
+    } else {
+        "Choose model"
+    };
     commands
-        .spawn_scene(picker_dialog(&files))
+        .spawn_scene(picker_dialog(title, rows))
         .insert((
             Name::new("ModelPicker"),
             ModelPicker { button },
@@ -178,14 +217,12 @@ pub(crate) fn open_model_picker(
         ));
 }
 
-/// The picker, listing `files`.
-fn picker_dialog(files: &[ModelFile]) -> impl Scene {
-    let rows: Vec<_> = files.iter().map(file_row).collect();
-    let rows: Box<dyn SceneList> = Box::new(rows);
+/// The picker, titled `title`, listing `rows`.
+fn picker_dialog(title: &'static str, rows: Box<dyn SceneList>) -> impl Scene {
     bsn! {
         @FeathersDialog {
             @width: px(320),
-            @contents: { Box::new(dialog_contents(rows)) as Box<dyn SceneList> },
+            @contents: { Box::new(dialog_contents(title, rows)) as Box<dyn SceneList> },
         }
         on(|close: On<RequestClose>, mut commands: Commands| {
             commands.entity(close.event_target()).despawn();
@@ -195,10 +232,10 @@ fn picker_dialog(files: &[ModelFile]) -> impl Scene {
 
 /// The contents, in a function of their own, as `chooser_dialog`'s are: a `bsn_list!` written
 /// inside the dialog's `bsn!` can give a child the root's entity.
-fn dialog_contents(rows: Box<dyn SceneList>) -> impl SceneList {
+fn dialog_contents(title: &'static str, rows: Box<dyn SceneList>) -> impl SceneList {
     bsn_list! {
         @FeathersDialogHeader Children [
-            Text("Choose model") ThemedText
+            Text(title) ThemedText
             --
             @FeathersDialogClose
         ]
@@ -269,7 +306,14 @@ fn model_tree(rows: Box<dyn SceneList>) -> impl Scene {
 /// A file's row, named after it, holding a row per model.
 fn file_row(file: &ModelFile) -> impl Scene {
     let name = file.name.clone();
-    let models: Vec<_> = file.models.iter().map(|model| model_row(model)).collect();
+    let models: Vec<_> = file
+        .models
+        .iter()
+        .map(|model| {
+            let scene = model.rsplit_once('#').map_or(model.as_str(), |(_, scene)| scene);
+            model_row(scene, model)
+        })
+        .collect();
     let models: Box<dyn SceneList> = Box::new(models);
     bsn! {
         @FeathersTreeItem {
@@ -281,15 +325,15 @@ fn file_row(file: &ModelFile) -> impl Scene {
     }
 }
 
-/// A model's row, captioned and named with its scene: under its file's row, so `canine/Canine`
-/// to a plan.
-fn model_row(model: &str) -> impl Scene {
-    let scene = model.rsplit_once('#').map_or(model, |(_, scene)| scene).to_string();
+/// A row choosing `model`, captioned and named `name`: a model's scene, under its file's row, so
+/// `canine/Canine` to a plan, or a clips file's name.
+fn model_row(name: &str, model: &str) -> impl Scene {
+    let name = name.to_string();
     let model = model.to_string();
     bsn! {
-        @FeathersTreeItem { @label: bsn_list! { @caption(scene.clone()) } }
+        @FeathersTreeItem { @label: bsn_list! { @caption(name.clone()) } }
         ModelRow({model.clone()})
-        Name({scene.clone()})
+        Name({name.clone()})
     }
 }
 

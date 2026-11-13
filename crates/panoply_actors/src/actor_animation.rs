@@ -133,8 +133,9 @@ impl ActorAnimationState {
 /// aspects.
 #[derive(Debug)]
 pub struct ArmatureSource {
-    /// Name of the skeleton's root node in the body scene.
-    pub node: String,
+    /// Name of the skeleton's root node in the body scene; `None` until the body's file has
+    /// loaded and named it, or if it could not.
+    pub node: Option<String>,
     /// The glTF holding the species' clips, often a file shared by several species.
     pub clips: Handle<Gltf>,
     /// The species' names for clips, where they differ from the engine's.
@@ -205,12 +206,14 @@ pub fn bind_actor_skeleton(
     let Some(armature) = &body.armature else {
         return;
     };
-    let Some(root) = children.iter_descendants(ready.entity).find(|entity| {
-        names
-            .get(*entity)
-            .is_ok_and(|name| name.as_str() == armature.node)
-    }) else {
-        error!("Actor skeleton [{}] not found in its body", armature.node);
+    let Some(node) = &armature.node else {
+        return;
+    };
+    let Some(root) = children
+        .iter_descendants(ready.entity)
+        .find(|entity| names.get(*entity).is_ok_and(|name| name.as_str() == node))
+    else {
+        error!("Actor skeleton [{node}] not found in its body");
         return;
     };
     let mut path = vec![names.get(root).unwrap().clone()];

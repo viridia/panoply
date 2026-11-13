@@ -104,6 +104,7 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
 CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
 FURNISHINGS = ASSETS / "exemplars" / "furnishings.exem.json"
+WALL_TILES = ASSETS / "exemplars" / "wall-tiles.exem.json"
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 
@@ -325,14 +326,15 @@ def scenery_panel(driver):
     # The filter box's × empties it, showing every wall again.
     driver.click("Exemplars/ClearFilter")
     driver.present("Exemplars/BasementWall")
+    text_property(driver)
     # The actor tool lists actors, the abstract ones they extend too, so they can be edited.
     driver.click("PlaceActor")
     driver.present("Exemplars/Marcus", timeout=WAIT)
     driver.present("Exemplars/Proto.HumanoidMale")
     driver.absent("Exemplars/CottageWall")
     exemplar_properties(driver)
-    text_property(driver)
     model_property(driver)
+    clips_property(driver)
     driver.click("PlaceFixture")
     scenery_model_property(driver)
     optional_property(driver)
@@ -409,27 +411,56 @@ def exemplar_properties(driver):
 
 def text_property(driver):
     """A text field's edit is made when Enter commits it; Escape puts the text back, editing
-    nothing. Saved, the edit is that one line."""
-    choose(driver, "actor", "Proto.Wasp")
-    armature = "Properties/Armature/armature/input"
-    old = "characters/wasp.glb#Armature"
-    new = "characters/wasp.glb#Rig"
-    retype(driver, armature, "not an armature")
+    nothing. Saved, the edit is that one line. The wall tool's choice goes back to CottageWall."""
+    choose(driver, "wall", "SpearTrap")
+    animation = "Properties/SceneryColliders/Item 1/animation/input"
+    retype(driver, animation, "not an animation")
     driver.key("Escape")
     driver.frames(2)
     expect_disabled(driver, "Save", True)
-    retype(driver, armature, new)
+    retype(driver, animation, "Blades")
     driver.key("Enter")
     expect_disabled(driver, "Save", False)
-    driver.click("Exemplars/Proto.Wasp")
+    driver.click("Exemplars/SpearTrap")
     undo(driver)
-    driver.expect("Toast/ToastText", TEXT, "Undo: Set Armature.armature")
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set SceneryColliders.animation")
     undo(driver, redo=True)
     saved_diff(
         driver,
+        WALL_TILES,
+        "Exemplars/SpearTrap",
+        ['-          "animation": "Spears"', '+          "animation": "Blades"'],
+    )
+    choose(driver, "wall", "CottageWall")
+    driver.click("Exemplars/ClearFilter")
+
+
+def clips_property(driver):
+    """An armature's clips file is picked from the character files holding clips, a row per
+    file. Saved, the edit is that one line."""
+    choose(driver, "actor", "Proto.HumanoidMale")
+    pick = "Properties/Armature/clips/pick"
+    driver.expect(f"{pick}/model", TEXT, "humanoid-armature.glb")
+    driver.click(pick)
+    current = "ModelPicker/humanoid-armature"
+    driver.present(current)
+    (row,) = driver.select(current)
+    driver.expect("ModelPicker/Tree", SELECTED_TREE_ITEM, row)
+    driver.present("ModelPicker/canine")
+    driver.absent("ModelPicker/humanoid-male")
+    driver.screenshot("clips_picker")
+    driver.click("ModelPicker/dabori")
+    driver.click("ModelPicker/Save")
+    driver.absent("ModelPicker")
+    driver.expect(f"{pick}/model", TEXT, "dabori.glb")
+    saved_diff(
+        driver,
         CHARACTERS,
-        "Exemplars/Proto.Wasp",
-        [f'-        "armature": "{old}"', f'+        "armature": "{new}"'],
+        "Exemplars/Proto.HumanoidMale",
+        [
+            '-        "clips": "characters/humanoid-armature.glb"',
+            '+        "clips": "characters/dabori.glb"',
+        ],
     )
 
 
