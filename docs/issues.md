@@ -135,7 +135,7 @@ confirmed by running something or only by reading. Numbers are never reused.
   arithmetic reproduced in Python. ([bevy#26536](https://github.com/bevyengine/bevy/issues/26536)).
 - **I40** The property editor's nested values need a design pass on their look and composition, as
   seen in a collider list (items, each a struct holding an enum holding a `Vec3`); the panel works,
-  the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`). PAN28l designs
+  the concern is aesthetic. Seen by the author in scenery mode (`MossyBrickWallTee`). D83 designs
   it, PAN28m applies it.
 - **I41** Feathers' tree view (`FeathersTreeView`, `tree_view.rs`) puts its rows under an inner
   scrolling node, but the headless tree (`bevy_ui_widgets`' `tree.rs`) looks for rows only among the

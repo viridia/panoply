@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D83.**
+**Next: D84.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -641,3 +641,18 @@ never reused.
   cannot reach the player's machine; a shader can still hang the GPU, so mods ship none. A mod's
   files are untrusted input: each loader rejects a malformed one without panicking, as SAGA's
   compiler does. Reversing it means vetting every mod as a program.
+- **D83** The property editor's layout, mocked up as boards B, C and D of
+  https://claude.ai/artifact/YPCJCQ8fXaev38pqT3Dmm9. A row is a caption in a column of fixed width
+  at its left and a widget filling the rest; a vector's three inputs share its row. Every × sits in
+  one column at the right, in headers and rows alike: headers keep the rows' right padding, and the
+  × is no wider than the column. Captions are in sentence case ("Half extents"), each given by a
+  `DisplayName` annotation on its field rather than derived from the field's name; list items are
+  "#1". A struct's or item's fields are set in behind one stripe, and a variant's fields sit beside
+  their siblings, not deeper. Panes, structs and items collapse behind a chevron, and a collapsed
+  one shows a summary on its header (a list's length, a collider's shape and size). An aspect's pane
+  header has an icon beside its title. The rows still to come: colors a swatch per slot, an unset
+  one dashed; features a checkbox per slot in two columns, with "3 of 14" on the header; a map's
+  entries a key input and a value; an inherited aspect dimmed, "inherited" on its header. Chosen
+  over a Blender-style split with stacked vectors (A), too tall for a 328 px panel, and over a
+  restyle after feathers' Figma (inset sub-panes, one ⋯ menu per header, captions inside widgets),
+  which read less clearly. Reversing it means restyling every kind of row. (PAN28l)

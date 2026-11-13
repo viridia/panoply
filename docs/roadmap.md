@@ -156,14 +156,13 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28l Layout design.** The property editor's look and composition (I40), designed before
-  PAN28i, PAN28k and PAN43 add new kinds of row, so they are built to it. Curated screenshots of the
-  panel as it is, the collider list (`MossyBrickWallTee`) as the hard case, then artifacts offering
-  alternative layouts: what aligns with what (labels, values, the columns they share), nesting and
-  indentation, a disclosure toggle on arrays and structs, what a collapsed pane shows on its header,
-  and mockups of the rows not yet built (a map's entries, a checkbox or color per slot, inherited
-  aspects dimmed). The author picks; the choice is recorded as a decision.
-- **PAN28m Layout.** PAN28l's design applied to the existing widgets. Closes I40.
+- **PAN28m Layout.** D83's layout applied to the existing widgets, before PAN28i, PAN28k and PAN43
+  add rows built to it. `DisplayName` annotations on the aspects' fields, which also replace
+  `r#type`, a raw identifier shown as a caption (`ColliderType`'s field). The header's buttons miss
+  the rows' × column today (the author's screenshot); if feathers' subpane header pads its right end
+  more than the body, a Panoply override, or a fix upstream. Where a collapsed item's summary comes
+  from (a trait an aspect type implements, or a general one from its first fields) and where each
+  aspect's icon is named (an annotation on the type, with a default) are decided here. Closes I40.
 - **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
   rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
   it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
