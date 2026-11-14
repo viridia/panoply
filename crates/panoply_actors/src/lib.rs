@@ -13,6 +13,7 @@ mod actor_features;
 mod actor_model;
 mod actor_physics;
 mod actor_probe;
+mod actor_slots;
 mod actor_travel;
 mod actor_wield;
 mod item_aspect;
@@ -46,7 +47,7 @@ use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
 use self::world_pick::{hide_idle_cursor, pick_world, spawn_world_backstop, WorldCursors};
 
 use self::actor_aspect::{
-    Armature, ClipNames, ColorSlots, Colors, FeatureSlots, Features, WieldedItems,
+    Armature, ClipNames, Colors, Features, WieldedItems,
 };
 use self::item_aspect::{EquipSlot, ItemModel};
 
@@ -89,9 +90,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<TravelTo>()
             .register_type::<ActorAnimationState>()
             .register_type::<ActorIdle>()
-            .register_type::<ColorSlots>()
             .register_type::<Colors>()
-            .register_type::<FeatureSlots>()
             .register_type::<Features>()
             .register_type::<WieldedItems>()
             .register_type::<ItemModel>()

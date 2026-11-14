@@ -3,10 +3,10 @@ use bevy::{
     mesh::skinning::SkinnedMesh,
     platform::collections::HashMap,
     prelude::*,
-    world_serialization::{WorldAssetRoot, WorldInstanceReady},
+    world_serialization::{WorldAsset, WorldAssetRoot, WorldInstanceReady},
 };
 
-use super::{actor_aspect::Features, ActorBody};
+use super::{actor_aspect::Features, actor_slots::is_feature_scene, ActorBody};
 
 /// A feature of an actor (hair, a hat, a beard), a child of the actor: a named scene of the
 /// body's character file, whose meshes are skinned to the body's skeleton (D28).
@@ -14,12 +14,15 @@ use super::{actor_aspect::Features, ActorBody};
 pub struct ActorFeature;
 
 /// Spawns the actor's enabled features once its body has spawned, since they bind to its bones.
+/// A key naming no feature scene of the body's file is left out: one left by a change of
+/// prototype, kept so that changing back restores it.
 pub fn spawn_actor_features(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
     bodies: Query<(&ActorBody, &ChildOf)>,
     features: Query<&Features>,
     gltfs: Res<Assets<Gltf>>,
+    scenes: Res<Assets<WorldAsset>>,
 ) {
     let Ok((body, actor)) = bodies.get(ready.entity) else {
         return;
@@ -32,11 +35,11 @@ pub fn spawn_actor_features(
     };
     for (feature, _) in features.0.iter().filter(|(_, enabled)| **enabled) {
         let Some(scene) = gltf.named_scenes.get(feature.as_str()) else {
-            let mut scenes: Vec<_> = gltf.named_scenes.keys().collect();
-            scenes.sort();
-            error!("Actor feature [{feature}] not found; scenes: {scenes:?}");
             continue;
         };
+        if !scenes.get(scene).is_some_and(|found| is_feature_scene(&found.world, feature)) {
+            continue;
+        }
         commands.spawn((
             Name::new("ActorFeature"),
             ActorFeature,

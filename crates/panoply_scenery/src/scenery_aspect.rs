@@ -1,6 +1,7 @@
+use std::collections::BTreeMap;
+
 use bevy::{
     annotations::{DisplayName, Step},
-    platform::collections::HashMap,
     prelude::*,
 };
 use panoply_core::HexColor;
@@ -129,7 +130,7 @@ impl Aspect for SceneryColliders {
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 #[reflect(@AspectIcon("editor/icons/lucide/map-pin.png"))]
-pub struct SceneryMarks(pub HashMap<String, Vec<Vec3>>);
+pub struct SceneryMarks(pub BTreeMap<String, Vec<Vec3>>);
 
 impl Aspect for SceneryMarks {
     fn name(&self) -> &str {

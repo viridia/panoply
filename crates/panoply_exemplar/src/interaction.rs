@@ -1,6 +1,8 @@
 use std::any::TypeId;
 
-use bevy::{annotations::DisplayName, platform::collections::HashMap, prelude::*};
+use std::collections::BTreeMap;
+
+use bevy::{annotations::DisplayName, prelude::*};
 use panoply_saga::{Formula, HostState};
 use serde::Serialize;
 
@@ -138,7 +140,7 @@ struct InteractionAction {
 
 /// The actions an [`InteractionDesc`] can name.
 #[derive(Resource, Default)]
-pub struct InteractionActions(HashMap<String, InteractionAction>);
+pub struct InteractionActions(BTreeMap<String, InteractionAction>);
 
 /// Registers actions for [`InteractionDesc`]s to name.
 pub trait InteractionAppExt {

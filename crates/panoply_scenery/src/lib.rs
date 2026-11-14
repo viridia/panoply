@@ -1,4 +1,6 @@
-use bevy::{platform::collections::HashMap, prelude::*};
+use std::collections::BTreeMap;
+
+use bevy::prelude::*;
 use floor_surface::{FloorSurface, FloorSurfaceLoader};
 use panoply_exemplar::{InstanceType, InteractionAppExt, ScriptComponentAppExt};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
@@ -97,8 +99,8 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<Vec<ColliderDesc>>()
             .register_type::<Vec<String>>()
             .register_type::<Option<Vec3>>()
-            .register_type::<HashMap<String, Vec<Vec3>>>()
-            .register_type::<HashMap<String, String>>()
+            .register_type::<BTreeMap<String, Vec<Vec3>>>()
+            .register_type::<BTreeMap<String, String>>()
             .add_systems(Startup, init_outline)
             .add_systems(
                 Update,

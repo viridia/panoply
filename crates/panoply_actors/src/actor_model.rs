@@ -82,7 +82,9 @@ pub fn spawn_actor_bodies(
                 // An empty name, as the editor's menu adds the field, is the default too.
                 node: armature.node.clone().filter(|node| !node.is_empty()),
                 clips: server.load(clips.to_owned()),
-                clip_names: clip_names.map(|names| names.0.clone()).unwrap_or_default(),
+                clip_names: clip_names
+                    .map(|names| names.0.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                    .unwrap_or_default(),
             }
         });
         commands.spawn((

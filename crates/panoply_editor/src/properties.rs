@@ -10,8 +10,11 @@
 //! header, collapse their rows behind a chevron and then show a summary: a list's or map's length,
 //! or the value's `PropertySummary`; adding a row from one expands it. A map with string keys is a row per entry, in key order: a
 //! text input for its key, its value's widget beside it, and a ×; a key committed empty or
-//! another entry's is put back. An empty list or map says "No items" or "No entries" in place of
-//! rows. Any other newtype shows its one field's row. An `Option` is its
+//! another entry's is put back. A map whose type gives the keys it may hold (`PropertyMapKeys`:
+//! an actor's features and colors) is a row per key instead, in their order, and no other key: a
+//! checkbox each for a map of booleans, else the value's widget with a ×, or a "not set" button
+//! while the key has no entry; collapsed, it counts the keys set. An empty list or map says "No
+//! items" or "No entries" in place of rows. Any other newtype shows its one field's row. An `Option` is its
 //! value's row, with a × that removes the value, or no row while it is `None`: a struct's heading
 //! has a menu of its absent fields, which adds one with its type's default. Every other field is a
 //! row that shows its value without editing it. Annotations from `bevy::annotations` set a row's
@@ -82,13 +85,15 @@ use bevy_immediate::{
     CapSet, Imm, ImmCapAccessRequests, ImmCapability, ImmEntity,
 };
 use panoply_core::HexColor;
-use panoply_exemplar::annotations::{AspectIcon, Precision, ReflectPropertySummary};
+use panoply_exemplar::annotations::{
+    AspectIcon, Precision, ReflectPropertyMapKeys, ReflectPropertySummary,
+};
 
 use crate::{
     model_picker::{model_field, open_model_picker, ChosenModel, ModelKind},
     scenery_properties::{open_extends_chooser, ExemplarRef},
 };
-use edit::{EditKind, PathSteps, PropertyEdits, PropertyRoot};
+use edit::{EditKind, InspectedValue, PathSteps, PropertyEdits, PropertyRoot};
 
 /// The panel's capabilities: `bevy_immediate`'s for feathers, and binding a color input and a
 /// text input's commits.
@@ -236,20 +241,20 @@ const DEFAULT_ASPECT_ICON: &str = "editor/icons/lucide/puzzle.png";
 #[derive(Resource, Default)]
 pub struct CollapsedRows(HashSet<String>);
 
-/// A subpane captioned with `root`'s caption beside its type's icon, holding the rows of `value`,
-/// `root`'s value; a struct's absent fields are in a menu at the caption's right. Its chevron
+/// A subpane captioned with `inspected`'s root's caption beside its type's icon, holding the rows
+/// of its value; a struct's absent fields are in a menu at the caption's right. Its chevron
 /// collapses the rows, which `collapsed` remembers; collapsed, the header shows a summary. With
 /// `remove`, a × ends the header, which sets it. The edits its widgets ask for go to `edits`; new
 /// values are built from the types in `registry`.
 pub fn root_pane(
     ui: &mut Imm<CapsPanel>,
-    root: &Arc<dyn PropertyRoot>,
-    value: &dyn PartialReflect,
+    inspected: &InspectedValue,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
     collapsed: &mut CollapsedRows,
     remove: Option<&mut bool>,
 ) {
+    let (root, value) = (&inspected.root, inspected.value.as_ref());
     let caption = root.caption();
     let image = aspect_icon(value);
     let key = format!("pane {caption}");
@@ -258,6 +263,7 @@ pub fn root_pane(
         registry,
         edits,
         collapsed,
+        keys: inspected.keys.as_deref(),
         depth: 0,
         added: false,
     };
@@ -286,8 +292,11 @@ pub fn root_pane(
                 });
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
                     rows.add_menu(ui, value, &ParsedPath::empty());
-                    let (inner, path) = through_newtypes(value, ParsedPath::empty());
-                    rows.add_button(ui, inner, &path);
+                    // A map of given keys adds an entry from its key's row instead.
+                    if !has_map_keys(registry, value) {
+                        let (inner, path) = through_newtypes(value, ParsedPath::empty());
+                        rows.add_button(ui, inner, &path);
+                    }
                     remove_button(ui, remove);
                 });
             });
@@ -401,6 +410,7 @@ pub fn root_add_menu(
         registry,
         edits,
         collapsed,
+        keys: None,
         depth: 0,
         added: false,
     }
@@ -423,6 +433,7 @@ pub fn root_rows(
         registry,
         edits,
         collapsed,
+        keys: None,
         depth: 0,
         added: false,
     }
@@ -442,6 +453,8 @@ struct Rows<'a> {
     registry: &'a TypeRegistry,
     edits: &'a mut PropertyEdits,
     collapsed: &'a mut CollapsedRows,
+    /// The keys the root's value may hold, if its type gives them; `None` while they load.
+    keys: Option<&'a [String]>,
     /// How many headings the rows being built are nested under.
     depth: usize,
     /// Whether a header's or heading's add button or menu just asked for an item, entry or field,
@@ -492,6 +505,18 @@ impl Rows<'_> {
     /// The words that stand for `value` while its rows are collapsed, if any.
     fn summary_text(&self, value: &dyn PartialReflect) -> Option<String> {
         let (inner, _) = through_newtypes(value, ParsedPath::empty());
+        if has_map_keys(self.registry, value) {
+            let (ReflectRef::Map(map), Some(keys)) = (inner.reflect_ref(), self.keys) else {
+                return None;
+            };
+            // A key set to `false` is as good as absent.
+            let set = keys
+                .iter()
+                .filter_map(|key| map.get(key))
+                .filter(|value| value.try_downcast_ref::<bool>() != Some(&false))
+                .count();
+            return Some(format!("{set} of {}", keys.len()));
+        }
         match inner.reflect_ref() {
             ReflectRef::List(list) => {
                 return Some(match list.len() {
@@ -571,10 +596,14 @@ impl Rows<'_> {
         }
     }
 
-    /// The rows of the root's value: a struct's fields, a list's items or a map's entries (through
-    /// newtypes), or another value's one row.
+    /// The rows of the root's value: a struct's fields, a list's items, a row per key of a map
+    /// whose type gives its keys, a map's entries (through newtypes), or another value's one row.
     fn root(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect) {
         let (inner, path) = through_newtypes(value, ParsedPath::empty());
+        if has_map_keys(self.registry, value) {
+            self.keyed(ui, inner, &path);
+            return;
+        }
         match (value.reflect_ref(), inner.reflect_ref()) {
             (ReflectRef::Struct(_), _) => self.fields(ui, value, &ParsedPath::empty()),
             (_, ReflectRef::List(_)) => self.items(ui, inner, &path),
@@ -1018,6 +1047,137 @@ impl Rows<'_> {
         }
     }
 
+    /// The rows of `value`, a map at `path`, one per key of [`Rows::keys`], in their order; keys
+    /// outside them are not shown. A map of `bool`s is a checkbox per key, named and captioned
+    /// with it: checking writes `true`, adding the entry if there is none, and unchecking removes
+    /// the entry. Any other map has a row per key, named and captioned with it: its value's
+    /// widget, in a row named `value`, with a × that removes the entry; or, while it has no entry,
+    /// a "not set" button, named `unset`, adding one with its value type's default.
+    fn keyed(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
+        let (ReflectRef::Map(map), Some(TypeInfo::Map(info))) =
+            (value.reflect_ref(), value.get_represented_type_info())
+        else {
+            return;
+        };
+        let Some(keys) = self.keys else {
+            ui.ch_id("Loading").on_spawn_apply_scene(|| placeholder("Loading"));
+            return;
+        };
+        if keys.is_empty() {
+            ui.ch_id("No slots").on_spawn_apply_scene(|| placeholder("No slots"));
+            return;
+        }
+        if info.value_ty().is::<bool>() {
+            self.key_checkboxes(ui, map, keys, path);
+            return;
+        }
+        let width = self.caption_width();
+        let (mut removed, mut added) = (None, None);
+        for key in keys {
+            let row = ui.ch_id(key.clone());
+            let name = key.clone();
+            let caption = key.clone();
+            match map.get(key) {
+                Some(entry) => {
+                    let mut remove = false;
+                    let entry_path = path.with_key(key);
+                    row.on_spawn_insert(move || (Name::new(name.clone()), widget_line()))
+                        .add(|ui| {
+                            caption_cell(ui, caption, width);
+                            let value_node = EntryLayout::Wide.value_node();
+                            ui.ch().on_spawn_insert(move || value_node.clone()).add(|ui| {
+                                let head = RowHead {
+                                    name: "value",
+                                    caption: None,
+                                    width: 0.0,
+                                };
+                                let attrs = CustomAttributes::default();
+                                self.row_with(ui, head, &attrs, entry, entry_path, Some(&mut remove));
+                            });
+                        });
+                    if remove {
+                        removed = Some(key.clone());
+                    }
+                }
+                None => {
+                    row.on_spawn_insert(move || (Name::new(name.clone()), widget_line()))
+                        .add(|ui| {
+                            caption_cell(ui, caption, width);
+                            if ui.ch_id("unset").on_spawn_apply_scene(unset_button).activated() {
+                                added = Some(key.clone());
+                            }
+                            remove_button(ui, None);
+                        });
+                }
+            }
+        }
+        if let Some(key) = removed {
+            self.edits.remove_entry(self.root, path.clone(), key);
+        }
+        if let Some(key) = added {
+            let value_type = info.value_ty();
+            match self.registry.get_type_data::<ReflectDefault>(value_type.id()) {
+                Some(default) => {
+                    let new = default.default().into_partial_reflect();
+                    self.edits.add_entry(self.root, path.clone(), key, new);
+                }
+                None => error!("Cannot make a {}", value_type.path()),
+            }
+        }
+    }
+
+    /// A checkbox per key of `keys` for `map`, a map of `bool`s at `path`, in two columns, in a
+    /// node named `checkboxes`.
+    fn key_checkboxes(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        map: &dyn bevy::reflect::map::Map,
+        keys: &[String],
+        path: &ParsedPath,
+    ) {
+        let mut toggled = None;
+        ui.ch_id("checkboxes")
+            .on_spawn_insert(|| {
+                (
+                    Name::new("checkboxes"),
+                    Node {
+                        display: Display::Grid,
+                        grid_template_columns: RepeatedGridTrack::flex(2, 1.0),
+                        column_gap: px(8),
+                        row_gap: px(4),
+                        ..default()
+                    },
+                )
+            })
+            .add(|ui| {
+                for key in keys {
+                    let shown = map
+                        .get(key)
+                        .and_then(|value| value.try_downcast_ref::<bool>())
+                        .copied()
+                        .unwrap_or(false);
+                    let mut checked = shown;
+                    let name = key.clone();
+                    ui.ch_id(key.clone())
+                        .on_spawn_apply_scene(move || key_checkbox(name.clone()))
+                        .checked(&mut checked);
+                    if checked != shown {
+                        toggled = Some((key, checked));
+                    }
+                }
+            });
+        let Some((key, checked)) = toggled else {
+            return;
+        };
+        if !checked {
+            self.edits.remove_entry(self.root, path.clone(), key.clone());
+        } else if map.get(key).is_some() {
+            self.set(&path.with_key(key), true);
+        } else {
+            self.edits.add_entry(self.root, path.clone(), key.clone(), Box::new(true));
+        }
+    }
+
     /// The row of the entry `key`, holding `value`, of the map at `path`, named after its key, or
     /// `new_entry` while its key is empty. A text input, named `key`, holds its key, then a row
     /// named `value` its value's widget: in a column of fixed width for a narrow widget, else
@@ -1436,6 +1596,37 @@ fn string_keyed(value: &dyn PartialReflect) -> bool {
     matches!(value.get_represented_type_info(), Some(TypeInfo::Map(info)) if info.key_ty().is::<String>())
 }
 
+/// Whether `value`'s type gives the keys it may hold
+/// ([`PropertyMapKeys`](panoply_exemplar::annotations::PropertyMapKeys)), so it is a row per key
+/// rather than a row per entry.
+fn has_map_keys(registry: &TypeRegistry, value: &dyn PartialReflect) -> bool {
+    value.get_represented_type_info().is_some_and(|info| {
+        registry
+            .get_type_data::<ReflectPropertyMapKeys>(info.type_id())
+            .is_some()
+    })
+}
+
+/// The checkbox of a map key, captioned and named with it.
+fn key_checkbox(key: String) -> impl Scene {
+    bsn! {
+        @FeathersCheckbox { @caption: bsn! { Text({key.clone()}) ThemedText } }
+        Name({key.clone()})
+    }
+}
+
+/// A button showing "not set", named `unset`, filling the line, in place of a key's value.
+fn unset_button() -> impl Scene {
+    bsn! {
+        @FeathersButton {
+            @caption: bsn! { Text("not set") ThemedText ThemeTextColor(tokens::TEXT_DIM) },
+            @variant: {ButtonVariant::Plain},
+        }
+        Name("unset")
+        Node { flex_grow: 1.0, min_width: px(0), justify_content: JustifyContent::Start }
+    }
+}
+
 /// The width of a map entry's value column, for a value whose widget is narrow.
 const VALUE_WIDTH: f32 = 72.0;
 
@@ -1786,23 +1977,27 @@ impl RowHead {
     /// The caption in its column, clipped rather than wrapped when it is too long; nothing for a
     /// row without one.
     fn caption_cell(self, ui: &mut Imm<CapsPanel>) {
-        let (Some(caption), width) = (self.caption, self.width) else {
-            return;
-        };
-        ui.ch().on_spawn_apply_scene(move || {
-            bsn! {
-                Node {
-                    width: px(width),
-                    flex_shrink: 0.0,
-                    overflow: Overflow::clip_x(),
-                }
-                Children [
-                    @label(caption)
-                    TextLayout { linebreak: LineBreak::NoWrap }
-                ]
-            }
-        });
+        if let Some(caption) = self.caption {
+            caption_cell(ui, caption.to_string(), self.width);
+        }
     }
+}
+
+/// `caption` in a column `width` wide, clipped rather than wrapped when it is too long.
+fn caption_cell(ui: &mut Imm<CapsPanel>, caption: String, width: f32) {
+    ui.ch().on_spawn_apply_scene(move || {
+        bsn! {
+            Node {
+                width: px(width),
+                flex_shrink: 0.0,
+                overflow: Overflow::clip_x(),
+            }
+            Children [
+                @label(caption.clone())
+                TextLayout { linebreak: LineBreak::NoWrap }
+            ]
+        }
+    });
 }
 
 /// The caption column's width `depth` headings deep: narrower by each level's indent, so the

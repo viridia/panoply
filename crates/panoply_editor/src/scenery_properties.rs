@@ -39,7 +39,7 @@ use crate::{
     properties::{
         edit::{
             apply_property_edits, count_edit_gestures, read_inspected_values, AspectHolder,
-            EditGesture, ExemplarAspect, InspectedRoots, InspectedValues, PathSteps,
+            EditGesture, ExemplarAspect, InspectedRoots, InspectedValue, InspectedValues, PathSteps,
             PropertyEdits, PropertyRoot, ReflectAspectHolder,
         },
         icon_button, root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows,
@@ -317,9 +317,10 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
         let edits = params.edits.as_mut();
         let collapsed = params.collapsed.as_mut();
         let registry = params.registry.read();
-        let Some(((exemplar, fields), aspects)) = params.inspected.values.split_first() else {
+        let Some((first, aspects)) = params.inspected.values.split_first() else {
             return;
         };
+        let (exemplar, fields) = (&first.root, &first.value);
         let Some(root) = (exemplar.as_ref() as &dyn Any).downcast_ref::<ExemplarRoot>() else {
             return;
         };
@@ -419,7 +420,7 @@ fn scrolled_rows(
     ui: &mut Imm<CapsPanel>,
     exemplar: &Arc<dyn PropertyRoot>,
     fields: &dyn PartialReflect,
-    aspects: &[(Arc<dyn PropertyRoot>, Box<dyn PartialReflect>)],
+    aspects: &[InspectedValue],
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
     collapsed: &mut CollapsedRows,
@@ -442,12 +443,11 @@ fn scrolled_rows(
         })
         .add(|ui| {
             root_rows(ui, exemplar, fields, registry, edits, collapsed);
-            for (root, value) in aspects {
+            for aspect in aspects {
                 let mut remove = false;
-                let value = value.as_ref();
-                root_pane(ui, root, value, registry, edits, collapsed, Some(&mut remove));
+                root_pane(ui, aspect, registry, edits, collapsed, Some(&mut remove));
                 if remove {
-                    edits.change_aspects(exemplar, Vec::new(), vec![root.caption()]);
+                    edits.change_aspects(exemplar, Vec::new(), vec![aspect.root.caption()]);
                 }
             }
         });

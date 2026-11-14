@@ -1,6 +1,8 @@
-use bevy::{annotations::DisplayName, platform::collections::HashMap, prelude::*};
+use std::collections::BTreeMap;
+
+use bevy::{annotations::DisplayName, prelude::*};
 use panoply_exemplar::{
-    annotations::{AspectIcon, Precision},
+    annotations::{AspectIcon, Precision, ReflectPropertyMapKeys},
     *,
 };
 use serde::{Deserialize, Serialize};
@@ -56,7 +58,7 @@ impl Aspect for Armature {
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 #[reflect(@AspectIcon("editor/icons/lucide/film.png"))]
-pub struct ClipNames(pub HashMap<String, String>);
+pub struct ClipNames(pub BTreeMap<String, String>);
 
 impl Aspect for ClipNames {
     fn name(&self) -> &str {
@@ -189,11 +191,12 @@ impl Aspect for Skin {
     }
 }
 
-/// Color assignments for this actor.
+/// The actor's colors, by material name: its color slots are the materials of its skin and its
+/// features marked as slots (`actor_slots`). A feature takes its colors from these too.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize, PropertyMapKeys)]
 #[reflect(@AspectIcon("editor/icons/lucide/palette.png"))]
-pub struct Colors(pub HashMap<String, HexColor>);
+pub struct Colors(pub BTreeMap<String, HexColor>);
 
 impl Aspect for Colors {
     fn name(&self) -> &str {
@@ -215,37 +218,12 @@ impl Aspect for Colors {
     }
 }
 
-/// Available color slots for this actor.
+/// The actor's features, by scene name, each shown while `true`: its feature slots are its skin
+/// file's feature scenes (`actor_slots`). A key that names no feature is kept but unused.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
-#[reflect(@AspectIcon("editor/icons/lucide/swatch-book.png"))]
-pub struct ColorSlots(pub Vec<String>);
-
-impl Aspect for ColorSlots {
-    fn name(&self) -> &str {
-        "ColorSlots"
-    }
-
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<ColorSlots> = RemoveComponent::<ColorSlots>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
-    }
-}
-
-/// Enabled features for this actor.
-#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
+#[reflect(Aspect, Default, Serialize, Deserialize, PropertyMapKeys)]
 #[reflect(@AspectIcon("editor/icons/lucide/sparkles.png"))]
-pub struct Features(pub HashMap<String, bool>);
+pub struct Features(pub BTreeMap<String, bool>);
 
 impl Aspect for Features {
     fn name(&self) -> &str {
@@ -285,32 +263,6 @@ impl Aspect for WieldedItems {
 
     fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
         static DETACH: RemoveComponent<WieldedItems> = RemoveComponent::<WieldedItems>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
-    }
-}
-
-/// Available feature slots for this actor.
-#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
-#[reflect(@AspectIcon("editor/icons/lucide/list-checks.png"))]
-pub struct FeatureSlots(pub Vec<String>);
-
-impl Aspect for FeatureSlots {
-    fn name(&self) -> &str {
-        "FeatureSlots"
-    }
-
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<FeatureSlots> = RemoveComponent::<FeatureSlots>::new();
         entity.insert(self.clone());
         &DETACH
     }

@@ -103,11 +103,11 @@ impl Exemplar {
 
     /// The aspect of type `T` that an instance of `exemplar` would get, the nearest along its
     /// inheritance chain, read without spawning an instance.
-    pub fn find_aspect<'a, T: crate::Aspect>(
-        exemplars: &'a Assets<Exemplar>,
-        exemplar: &Handle<Exemplar>,
-    ) -> Option<&'a T> {
-        let mut next = exemplars.get(exemplar);
+    pub fn find_aspect<T: crate::Aspect>(
+        exemplars: &Assets<Exemplar>,
+        exemplar: impl Into<AssetId<Exemplar>>,
+    ) -> Option<&T> {
+        let mut next = exemplars.get(exemplar.into());
         while let Some(exemplar) = next {
             let found = exemplar
                 .0

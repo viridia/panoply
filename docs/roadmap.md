@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN91.**
+**Next: PAN92.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -156,14 +156,15 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28k Features and colors.** `Features` and `Colors` edited as faery's `FeatureSelection` and
-  `ColorMap` were: a checkbox per slot of the actor's `FeatureSlots`, a color per slot of its
-  `ColorSlots`, each resolved through `extends`, never an arbitrary key. A key outside the slots,
-  left by a change of prototype, stays in the file and is skipped: the editor does not show it, and
-  spawning an actor leaves it out without an error, so switching back restores it. A feature borrows
-  its colors from the body, so none are lost. The mismatch a change of `Skin` alone leaves, slots
-  naming scenes the skin's file lacks (SergeantStone's male facial hair on a female skin), is the
-  validator's to report (`asset_xref.py` today).
+- **PAN91 One reload per save.** An edit made just after saving can be lost: the save barrier
+  (`update_save_barrier`, `unsaved.rs`) lifts on the saved file's first reload, and one save can
+  bring a second, which replaces the exemplars with the file as saved. Seen in `plans/smoke.py`'s
+  `slots_property` (an undo after the save, then a reload, then a save with nothing to write); its
+  log showed a lone "Reloaded exemplars/characters.exem.json" after the save, then "Reloading folder
+  exemplars" with another. Likely cause, unconfirmed: the catalogs load as a folder and as files, so
+  a save fires a file reload and a folder reload. Read in Bevy's source how a folder reload treats a
+  file already loaded; then make a save cause one reload, or have the barrier wait for every reload
+  it causes.
 - **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
   and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
   and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
@@ -331,9 +332,7 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
   edges and open cracks at hard corners, while a Solidify alone offsets along unsplit vertex normals
   and would hide them. Check the preview against the game on one model with a hard corner, including
   flat-shaded faces, which the Edge Split may not split. Exports must leave the hull out, with Apply
-  Modifiers on (D55), by a means this chunk settles. In the same pass, each character file marks its
-  body scenes apart from its features with a scene extra, so the model picker can leave features out
-  of a `Skin`'s list (D77's reversal).
+  Modifiers on (D55), by a means this chunk settles.
 - **PAN24 Clip repairs.** With PAN23, as one Blender session. `Punch` keys `upper_arm.R` rolled
   about 140° from its roll in `Stand` (and 70-90° from the mirrored left arm), wringing the
   shoulder; the keys hold no quaternion sign flips, so the poses themselves are wrong. A Blender

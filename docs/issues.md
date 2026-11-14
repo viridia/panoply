@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I49.**
+**Next: I50.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -169,10 +169,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   nothing scrolls to it or gives its key input the keys; while an entry with an empty key is there,
   + does nothing. Candidate: focus the empty key's input on +, scrolling it into view, which covers
     both. Seen in `plans/smoke.py`'s `map_property` screenshot.
-- **I46** A renamed map key may be saved anywhere in its object: `merge` (`save.rs`) puts a key the
-  file lacks after the nearest key before it in the new JSON, whose order is the `HashMap`'s, so
-  `"Idle"` renamed from `"Walk"` need not take `"Walk"`'s line. Candidate: serialize maps with
-  sorted keys, or have `merge` put a key in the place of one removed beside it. Read, not run.
 - **I47** The toolbar's rotate left and right tools mean something only in terrain and scenery
   modes, yet take a toolbar row in every mode. Candidate: move each into its mode's panel, freeing
   the row. Seen by the author.
@@ -187,3 +183,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   finding the swatch without one. The editor copies the color to the drawn swatch meanwhile
   (`ColorSwatchesPlugin`, `TODO(I48)`). The color landing elsewhere confirmed by running (a probe
   read each entity's `ColorSwatchValue`); the cause read in the commit.
+- **I49** A `Skin`'s model picker still lists the features (hair, hats) beside the bodies (D77).
+  Since PAN28k a feature's node carries the extra `feature`, so the picker could leave those scenes
+  out, which is D77's reversal without the scene extras it planned. Read, not run.

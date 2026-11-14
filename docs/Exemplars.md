@@ -157,9 +157,7 @@ A list of aspects that are planned to be implement in panoply:
 - `sfx::WaterFx`
 - `sfx::Particles`
 - `actor::Model`
-- `actor::ColorSlots`
 - `actor::Colors` - allows recoloring of an actor
-- `actor::FeatureSlots`
 - `actor::Features` - allows optional features (hat, beard, hair style)
 - `actor::EquippedSlots`
 - `actor::Equipped`

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D84.**
+**Next: D86.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -657,3 +657,23 @@ never reused.
   over a Blender-style split with stacked vectors (A), too tall for a 328 px panel, and over a
   restyle after feathers' Figma (inset sub-panes, one ⋯ menu per header, captions inside widgets),
   which read less clearly. Reversing it means restyling every kind of row. (PAN28l)
+- **D84** An actor's feature and color slots are read from its skin's character file, marked in
+  Blender, rather than listed by hand in `FeatureSlots` and `ColorSlots` aspects. A feature is a
+  top-level object with the custom property `feature`, which `pipeline.ts` makes a scene of its name
+  (the file's own scene, holding every object, is not a feature); a color slot is a material with
+  `color_slot`, which the body scene or a feature scene uses. The hand lists had drifted from the
+  meshes: 16 exemplars held 25 colors for materials their skins lacked (deleted here), one prototype
+  listed a slot its mesh lacked and missed the material it had, and one listed a feature its file
+  lacked. Color slots are opt-in, so a material such as an eye, which varies from model to model, is
+  never a slot by accident. The editor reads the slots from the loaded `Gltf`'s scene worlds
+  (`GltfMaterialName`, extras), not from the file, through `PropertyMapKeys`, a reflected trait by
+  which a map aspect gives the keys it may hold. A key outside the slots stays in the file, unused
+  and not shown; `asset_xref.py` reports it. Reversing it means hand lists again, which a validator
+  would have to check against the meshes. (PAN28k)
+- **D85** An aspect's map with string keys is a `BTreeMap`, and the catalogs keep each such map
+  sorted by key, so saving changes only the lines of the keys edited. Saving puts a key the file
+  lacks after the nearest key before it in the type's serialization (D73); a `HashMap` serialized in
+  hash order, so a renamed key, or one whose removal was undone, landed on an arbitrary line. Order
+  means nothing to these maps: each is looked up by key, and the panel shows keys sorted anyway. The
+  catalogs' maps were sorted once, here. Reversing it means an ordered map keeping each file's
+  order, with undo putting a removed key back at its index. (PAN28k)

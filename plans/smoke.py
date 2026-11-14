@@ -343,6 +343,7 @@ def scenery_panel(driver):
     model_property(driver)
     clips_property(driver)
     map_property(driver)
+    slots_property(driver)
     aspect_property(driver)
     exemplar_fields(driver)
     driver.click("PlaceFixture")
@@ -490,9 +491,7 @@ def clips_property(driver):
 def map_property(driver):
     """A map's entries, a key input and its value's widget each: the pane's boxed plus adds one
     with an empty key, which typing names; a key the map holds already is not committed; the ×
-    removes an entry. Each undoes. Saved, a removal is that entry's line. An empty map says so."""
-    choose(driver, "actor", "Proto.Wasp")
-    driver.expect("Properties/Colors/placeholder", TEXT, "No entries")
+    removes an entry. Each undoes. Saved, a removal is that entry's line."""
     choose(driver, "actor", "Proto.HumanoidMale")
     clips = "Properties/ClipNames"
     driver.present(f"{clips}/Walk/value/input")
@@ -525,6 +524,55 @@ def map_property(driver):
         ['-        "Walk": "WalkMale",'],
     )
     driver.present(f"{clips}/Walk")
+
+
+def slots_property(driver):
+    """Features and colors are a row per slot of the actor's skin file, not typed keys: a
+    checkbox per feature scene, and a color per material marked a color slot, or "not set". Each
+    undoes. Saved, unchecking a feature or clearing a color is that entry's line. An actor with no
+    skin has no slots."""
+    choose(driver, "actor", "Proto.NPC")
+    driver.present("Properties/Colors/placeholder", timeout=WAIT)
+    driver.expect("Properties/Colors/placeholder", TEXT, "No slots")
+    choose(driver, "actor", "SergeantStone")
+    features = "Properties/Features/checkboxes"
+    # The rows show once the skin's file has loaded.
+    driver.present(f"{features}/HatTricorn", timeout=WAIT)
+    expect_checked(driver, f"{features}/HatTricorn", True)
+    expect_checked(driver, f"{features}/HatCap", False)
+    driver.absent("Properties/Features/header/add_entry")
+    colors = "Properties/Colors"
+    driver.present(f"{colors}/Hair/value/input")
+    driver.present(f"{colors}/Face/unset")
+    driver.absent(f"{colors}/Eyes")
+    driver.screenshot("slots_property")
+
+    driver.click(f"{features}/HatCap")
+    expect_checked(driver, f"{features}/HatCap", True)
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add Features.HatCap")
+    expect_checked(driver, f"{features}/HatCap", False)
+    driver.click(f"{colors}/Face/unset")
+    driver.present(f"{colors}/Face/value/input")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add Colors.Face")
+    driver.present(f"{colors}/Face/unset")
+
+    driver.click(f"{features}/HairThinning")
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/SergeantStone",
+        ['-        "HairThinning": true,'],
+    )
+    driver.click(f"{colors}/Hair/value/remove")
+    driver.present(f"{colors}/Hair/unset")
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/SergeantStone",
+        ['-        "Hair": "#918981",'],
+    )
 
 
 def model_property(driver):
@@ -853,24 +901,27 @@ def saved_diff(driver, catalog, row, expected):
     edit, choosing `row` to take the keys, and saves again, leaving the file as it was. The
     original goes back however the checks end."""
     original = catalog.read_text()
-    try:
-        driver.click("Save")
-        expect_disabled(driver, "Save", True)
-        driver.absent("SaveBarrier")
-        changed = [
+
+    def changed():
+        return [
             line
             for line in difflib.unified_diff(
                 original.splitlines(), catalog.read_text().splitlines(), lineterm="", n=0
             )
             if line[:1] in "+-" and line[:3] not in ("+++", "---")
         ]
-        assert changed == expected, changed
+
+    try:
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert changed() == expected, changed()
         driver.click(row)
         undo(driver)
         driver.click("Save")
         expect_disabled(driver, "Save", True)
         driver.absent("SaveBarrier")
-        assert catalog.read_text() == original, "saving the undone edit changed the catalog"
+        assert not changed(), f"saving the undone edit changed the catalog: {changed()}"
     finally:
         catalog.write_text(original)
 

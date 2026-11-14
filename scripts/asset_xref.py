@@ -11,7 +11,10 @@ alias of it. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in i
 `ItemModel`). A `SceneryAnimations` transition's sound names a file. An `extends` must resolve as a
 precinct's exemplar does. An exemplar with an `Armature` and a `Skin`, its own or inherited, needs
 the armature in the Skin's file: the one `Armature.node` names, or else the file's only one; and
-its clips file, `Armature.clips` or else the Skin's file, must hold clips.
+its clips file, `Armature.clips` or else the Skin's file, must hold clips. An exemplar's own
+`Features` may turn on only the Skin's file's feature scenes (those named after a node whose extras
+set `feature`), and its own `Colors` name only color slots (materials whose extras set `color_slot`)
+that the Skin's scene or a feature scene uses.
 
 A missing reference shows in the game only as an error when something loads it, so a break can sit
 unseen until someone visits the precinct. Known breaks are listed in KNOWN against the ledger entry
@@ -111,6 +114,7 @@ class Assets:
     def __init__(self):
         self.catalogs = {}
         self.models = {}
+        self.slot_files = {}
 
     def catalog(self, path):
         """The entries of the catalog at `path` by label and alias, or a reason it has none."""
@@ -209,6 +213,37 @@ class Assets:
             return f"no clips in {clips_file}"
         return None
 
+    def slots(self, path):
+        """The feature scenes of the character file at `path`, and the color slot materials each of
+        its scenes uses, by scene, or a reason it has none. A feature is a scene named after a node
+        in it whose extras set `feature`; a color slot, a material whose extras set `color_slot`."""
+        if path not in self.slot_files:
+            file = ASSETS / path
+            try:
+                gltf = read_gltf(file)
+            except (OSError, ValueError) as e:
+                self.slot_files[path] = f"unreadable: {e}"
+                return self.slot_files[path]
+            nodes, meshes = gltf.get("nodes", []), gltf.get("meshes", [])
+            materials = gltf.get("materials", [])
+            features, slots = set(), {}
+            for scene in gltf.get("scenes", []):
+                stack, used = list(scene.get("nodes", [])), set()
+                while stack:
+                    node = nodes[stack.pop()]
+                    stack += node.get("children", [])
+                    # The scene made from a feature's object, not the file's own, which holds all.
+                    marked = (node.get("extras") or {}).get("feature")
+                    if marked and node.get("name") == scene.get("name"):
+                        features.add(scene.get("name"))
+                    for primitive in meshes[node["mesh"]]["primitives"] if "mesh" in node else []:
+                        material = materials[primitive["material"]] if "material" in primitive else {}
+                        if (material.get("extras") or {}).get("color_slot"):
+                            used.add(material.get("name"))
+                slots[scene.get("name")] = used
+            self.slot_files[path] = (features, slots)
+        return self.slot_files[path]
+
     def file_problem(self, path):
         return None if (ASSETS / path).is_file() else "file not found"
 
@@ -280,6 +315,26 @@ def check_exemplars(assets, report):
                 clips_file = armature.get("clips", skin_file)
                 reference = f"{skin_file}#{node or '(its armature)'}, clips {clips_file}"
                 report(where, reference, assets.armature_problem(skin_file, node, clips_file))
+            if skin is not None and ("Features" in aspects or "Colors" in aspects):
+                check_slots(assets, report, where, skin, aspects)
+
+
+def check_slots(assets, report, where, skin, aspects):
+    """Each feature an exemplar's own `Features` turns on must be a feature scene of its Skin's
+    file, and each of its own `Colors` a color slot of the Skin's scene or of a feature scene."""
+    skin_file, _, body = skin.partition("#")
+    found = assets.slots(skin_file)
+    if isinstance(found, str):
+        return  # The Skin's own check reports the file.
+    features, slots = found
+    for feature, enabled in aspects.get("Features", {}).items():
+        if enabled:
+            problem = None if feature in features else f"no feature scene {feature} in {skin_file}"
+            report(where, f"Features.{feature}", problem)
+    colorable = set(slots.get(body, set())).union(*(slots[name] for name in features))
+    for color in aspects.get("Colors", {}):
+        problem = None if color in colorable else f"no color slot {color} in {skin} or its features"
+        report(where, f"Colors.{color}", problem)
 
 
 def main():

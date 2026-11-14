@@ -14,9 +14,9 @@ use std::{any::Any, borrow::Cow, sync::Arc};
 use bevy::{
     asset::AssetPath,
     prelude::*,
-    reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath},
+    reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath, TypeRegistry},
 };
-use panoply_exemplar::{Aspect, Exemplar};
+use panoply_exemplar::{annotations::ReflectPropertyMapKeys, Aspect, Exemplar};
 
 use crate::{
     mode_selector::EditorModeSettings,
@@ -92,6 +92,14 @@ pub trait AspectHolder {
         world: &mut World,
         change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
     ) -> Result<(), BevyError>;
+}
+
+/// A root whose value belongs to an exemplar: what the value means may depend on the exemplar's
+/// other aspects, its own or inherited.
+#[reflect_trait]
+pub trait ExemplarPart {
+    /// The exemplar, if it is loaded.
+    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>>;
 }
 
 /// What an edit does, as the undo history names it.
@@ -426,10 +434,21 @@ impl PropertyEdits {
 #[derive(Resource, Default)]
 pub struct EditGesture(u32);
 
-/// The values the panel shows this frame, each with its root, copied after the frame's edits.
+/// The values the panel shows this frame, copied after the frame's edits.
 #[derive(Resource, Default)]
 pub struct InspectedValues {
-    pub values: Vec<(Arc<dyn PropertyRoot>, Box<dyn PartialReflect>)>,
+    pub values: Vec<InspectedValue>,
+}
+
+/// A value the panel shows, with its root.
+pub struct InspectedValue {
+    pub root: Arc<dyn PropertyRoot>,
+    pub value: Box<dyn PartialReflect>,
+    /// For a map whose type has [`PropertyMapKeys`], the keys it may hold, or `None` while they
+    /// load or for any other value.
+    pub keys: Option<Vec<String>>,
+    /// What the keys come from, kept loaded until the next frame reads them again.
+    pub held: Vec<UntypedHandle>,
 }
 
 /// The roots of the values the panel shows, decided from the world each frame.
@@ -478,6 +497,7 @@ fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &E
         }
     }
     match op {
+        EditOp::InsertEntry(key, _) => format!("Add {}", entry_name(&field, key)),
         EditOp::DeleteEntry(key) => format!("Remove {}", entry_name(&field, key)),
         EditOp::MoveEntry(from, to) => format!("Rename {} to {to}", entry_name(&field, from)),
         _ => kind.label(&field),
@@ -565,32 +585,56 @@ pub fn apply_property_edits(world: &mut World) {
     }
 }
 
-/// Copies the value of each of [`InspectedRoots`] into [`InspectedValues`].
+/// Copies the value of each of [`InspectedRoots`] into [`InspectedValues`], with its keys.
 pub fn read_inspected_values(world: &mut World) {
+    let registry = world.resource::<AppTypeRegistry>().clone();
+    let registry = registry.read();
     let values: Vec<_> = world
         .resource::<InspectedRoots>()
         .roots
         .iter()
-        .filter_map(|root| Some((root.clone(), root.read(world)?)))
+        .filter_map(|root| {
+            let value = root.read(world)?;
+            let mut held = Vec::new();
+            let keys = map_keys(world, &registry, root.as_ref(), value.as_ref(), &mut held);
+            Some(InspectedValue {
+                root: root.clone(),
+                value,
+                keys,
+                held,
+            })
+        })
         .collect();
     world.resource_mut::<InspectedValues>().values = values;
 }
 
+/// The keys `value`, `root`'s value, may hold, if its type has [`PropertyMapKeys`] and `root`
+/// belongs to an exemplar; `held` gets what they come from.
+fn map_keys(
+    world: &World,
+    registry: &TypeRegistry,
+    root: &dyn PropertyRoot,
+    value: &dyn PartialReflect,
+    held: &mut Vec<UntypedHandle>,
+) -> Option<Vec<String>> {
+    let value = value.try_as_reflect()?;
+    let keys = registry
+        .get_type_data::<ReflectPropertyMapKeys>(value.reflect_type_info().type_id())?
+        .get(value)?;
+    let root: &dyn Reflect = root;
+    let exemplar = registry
+        .get_type_data::<ReflectExemplarPart>(Any::type_id(root))?
+        .get(root)?
+        .exemplar_id(world)?;
+    keys.property_map_keys(world, exemplar, held)
+}
+
 /// An aspect of an exemplar, named by the exemplar's asset path and the aspect's short type path.
 #[derive(Debug, Clone, PartialEq, Reflect)]
+#[reflect(ExemplarPart)]
 pub struct ExemplarAspect {
     pub exemplar: AssetPath<'static>,
     pub aspect: String,
-}
-
-impl ExemplarAspect {
-    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
-        world
-            .resource::<AssetServer>()
-            .get_path_id(&self.exemplar)?
-            .try_typed::<Exemplar>()
-            .ok()
-    }
 }
 
 impl PropertyRoot for ExemplarAspect {
@@ -638,6 +682,16 @@ impl PropertyRoot for ExemplarAspect {
         })?;
         world.resource_mut::<UnsavedAssets>().mark(catalog);
         Ok(())
+    }
+}
+
+impl ExemplarPart for ExemplarAspect {
+    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
+        world
+            .resource::<AssetServer>()
+            .get_path_id(&self.exemplar)?
+            .try_typed::<Exemplar>()
+            .ok()
     }
 }
 
@@ -962,6 +1016,16 @@ mod tests {
         assert_eq!(label(".depth", EditKind::Add), "Add Size.depth");
         assert_eq!(label(".0", EditKind::RemoveItem(1)), "Remove Size item 2");
         assert_eq!(label(".0[1].shape", EditKind::Set), "Set Size.shape");
+    }
+
+    #[test]
+    fn an_added_entry_is_named_by_its_key() {
+        let label = |key: &str| {
+            let op = EditOp::InsertEntry(key.to_string(), Box::new(0.0f32));
+            edit_label(&HeldRoot, &path(".marks"), EditKind::AddEntry, &op)
+        };
+        assert_eq!(label("Hair"), "Add Size.marks.Hair");
+        assert_eq!(label(""), "Add Size.marks entry");
     }
 
     #[derive(Component, Reflect, Clone, Default, Debug, PartialEq)]
