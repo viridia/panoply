@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN92.**
+**Next: PAN94.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -102,11 +102,20 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   as an overlay and kept as the scenery selection with its precinct. As faery's
   `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
   rect to include it.
-- **PAN88 Instance picking.** A click in scenery mode selects the wall, fixture or actor under the
-  pointer, as faery's `SelectSceneryInstanceMode` did, kept as the scenery selection; PAN28e's
-  instance properties are its first customer. Small or invisible things are picked through their
+- **PAN88 Instance picking.** Selection mode, as faery's `SelectSceneryInstanceMode`: a click
+  selects the wall, fixture or actor under the pointer, kept as the scenery selection with its
+  precinct; PAN28e's instance properties are its first customer. The panel lists the current
+  precinct's instances by id, and choosing one selects it. An id is assigned when an actor is first
+  placed by another tool, and can be edited here. Small or invisible things are picked through their
   `hint` and `marker` colliders (about 15 of each in `furnishings.exem.json` and
   `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries.
+- **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
+  with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
+  marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
+  is read in the chunk.
+- **PAN93 Make global**, on PAN88's selection. A toggle that takes the selected actor out of its
+  precinct, as faery's did. Where a global actor is kept, and how it loads and saves, is decided in
+  the chunk; read faery's first.
 - **PAN76b Cutaway editing**, on PAN77's selection. Adding, removing and resizing a tier's cutaway
   rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
   faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
@@ -123,7 +132,9 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
 - **PAN78 Signs and books**: things to read. A sign is a scenery aspect whose interaction shows its
   text; a document is an inventory item that links to text content and a page style (faery's book
   aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
-  since its action needs only a reading view.
+  since its action needs only a reading view. The text is a book: a catalog entry, not an exemplar
+  ([faery.md](faery.md), Catalog entries), so the first of its kind decides how catalog entries load
+  and save beside exemplars.
 - **PAN79 Mechanisms**: the stock elements puzzles are built from, and how they are wired together,
   on SAGA's cells and reactions (X7). faery had doors, push and toggle buttons, pressure plates,
   remotely controlled openables, automatic doors, spear traps and fireball traps (whose fixed
@@ -165,11 +176,17 @@ set an edit is one of (`EditKind`).
   a save fires a file reload and a folder reload. Read in Bevy's source how a folder reload treats a
   file already loaded; then make a save cause one reload, or have the barrier wait for every reload
   it causes.
-- **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
-  and for the realm panel's selected nav point (faery's `NavPointEditor`). The scenery panel's New…
-  and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
-  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
-  `alias` list, so that precincts naming it keep working until they are saved again.
+- **PAN28e Instances, nav points, New and Clone.** After PAN88, PAN92 and PAN93. Roots for an
+  instance picked in selection mode and for the realm panel's selected nav point (faery's
+  `NavPointEditor`). An instance's aspects show as overrides of its exemplar's. Whether an instance
+  may also add aspects its exemplar lacks is settled first, by a read-only scan of the precincts for
+  instances that do (Poul Ryba's carries `tambry:poul`, his goals at the forge). The leaning:
+  instances only override; behavior unique to a character moves to its own exemplar (two instances
+  that differ get two exemplars extending a shared one), and data that varies per instance goes in
+  an aspect the exemplar declares. The scenery panel's New… and Clone… (`TODO(PAN28e)`), which add
+  exemplars to a catalog: saving merges edits into the file (D73), so a new exemplar needs an insert
+  beside it. Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming
+  it keep working until they are saved again.
 - **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
   apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
   Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts

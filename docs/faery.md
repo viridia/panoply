@@ -177,6 +177,18 @@ Migration scripts below, and X1), `artwork/`.
   `archive/SAGA.md` (see X7).
 - `TODO.md` at the root (21 KB): the old engine's own open items.
 
+## Catalog entries (from the author, not yet read in the code)
+
+Books, dialogues and the other catalog kinds are not exemplars. They share a base type with
+exemplars, `IMetadata`: anything loaded from JSON and saved. A file may hold entries of several
+kinds (dialogues and remarks together), but never exemplars. The files are grouped by region, which
+has nothing to do with loading: every catalog is loaded all the time.
+
+A book holds the text of a sign, book, pamphlet or anything else the player reads: the background
+art it is shown on, optionally fonts, and its paragraphs as JSON. Whether the paragraphs carry rich
+text is unknown; Macondo, the usual font, has no styles. The layout (one page or two facing pages)
+is hard-coded in the engine, not chosen by the book.
+
 ## How far faery got
 
 From the author's notes (2026-10-30), not from reading the code.
