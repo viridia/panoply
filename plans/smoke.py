@@ -19,10 +19,11 @@
   fixture's model) opens a picker of its kind's models by file, its model selected, and Save or a
   double-click sets it; an optional
   field's × removes it and the heading's menu adds one; each saves as its own line. A collider list adds and removes items,
-  a collider's shape select switches its variant, and an added collider saves into the array.
+  a collider's shape select switches its variant, and an added collider saves into the array. A
+  map adds an entry whose key typing names, refuses a key it holds, and removes an entry.
   Every × lines up, a pane's header's with its rows', and widgets end at one edge with or
   without one; a collapsed item shows its summary, and a collapsed pane stays so for the next
-  exemplar.
+  exemplar, until its + adds an item.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -339,6 +340,7 @@ def scenery_panel(driver):
     exemplar_properties(driver)
     model_property(driver)
     clips_property(driver)
+    map_property(driver)
     aspect_property(driver)
     exemplar_fields(driver)
     driver.click("PlaceFixture")
@@ -469,6 +471,46 @@ def clips_property(driver):
             '+        "clips": "characters/dabori.glb"',
         ],
     )
+
+
+def map_property(driver):
+    """A map's entries, a key input and its value's widget each: the pane's boxed plus adds one
+    with an empty key, which typing names; a key the map holds already is not committed; the ×
+    removes an entry. Each undoes. Saved, a removal is that entry's line. An empty map says so."""
+    choose(driver, "actor", "Proto.Wasp")
+    driver.expect("Properties/Colors/placeholder", TEXT, "No entries")
+    choose(driver, "actor", "Proto.HumanoidMale")
+    clips = "Properties/ClipNames"
+    driver.present(f"{clips}/Walk/value/input")
+    driver.present(f"{clips}/Run/key")
+    driver.click(f"{clips}/header/add_entry")
+    driver.present(f"{clips}/new_entry/key")
+    driver.screenshot("map_property")
+    retype(driver, f"{clips}/new_entry/key", "Idle")
+    driver.key("Enter")
+    driver.present(f"{clips}/Idle/value/input")
+    driver.absent(f"{clips}/new_entry")
+    retype(driver, f"{clips}/Idle/key", "Walk")
+    driver.key("Enter")
+    driver.click("Exemplars/Proto.HumanoidMale")
+    driver.frames(2)
+    driver.present(f"{clips}/Idle")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Rename ClipNames entry to Idle")
+    driver.present(f"{clips}/new_entry")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add ClipNames entry")
+    driver.absent(f"{clips}/new_entry")
+
+    driver.click(f"{clips}/Walk/value/remove")
+    driver.absent(f"{clips}/Walk")
+    saved_diff(
+        driver,
+        CHARACTERS,
+        "Exemplars/Proto.HumanoidMale",
+        ['-        "Walk": "WalkMale",'],
+    )
+    driver.present(f"{clips}/Walk")
 
 
 def model_property(driver):
@@ -718,8 +760,8 @@ def collider_layout(driver):
     """D83's layout, on a wall whose colliders nest a variant and an optional vector. The pane
     header's ×, an item's and an optional field's share a right edge, and a vector's inputs end at
     one edge whether its row has a × or not. A collapsed item shows its summary in place of its
-    rows; a collapsed pane shows its length, and stays collapsed for the next wall. The wall tool's
-    choice goes back to CottageWall."""
+    rows; a collapsed pane shows its length, stays collapsed for the next wall, and expands when
+    its + adds an item. The wall tool's choice goes back to CottageWall."""
     driver.click("PlaceWall")
     choose(driver, "wall", "MossyBrickWallTee")
     colliders = "Properties/SceneryColliders"
@@ -749,8 +791,23 @@ def collider_layout(driver):
     choose(driver, "wall", "MossyBrickWallCorner")
     driver.expect(f"{colliders}/header/summary", TEXT, "3 items")
     driver.absent(f"{colliders}/#1")
-    driver.click(f"{colliders}/header/toggle")
-    driver.present(f"{colliders}/#1")
+    # Adding an item expands the pane, to show it.
+    driver.click(f"{colliders}/add_item")
+    driver.present(f"{colliders}/#4")
+    driver.absent(f"{colliders}/header/summary")
+    driver.click("Exemplars/MossyBrickWallCorner")
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Add SceneryColliders item 4")
+    driver.absent(f"{colliders}/#4")
+    # Undone, the catalog is still marked unsaved; saved, it is as it was.
+    original = WALL_TILES.read_text()
+    try:
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert WALL_TILES.read_text() == original, "saving the undone edit changed the catalog"
+    finally:
+        WALL_TILES.write_text(original)
     choose(driver, "wall", "CottageWall")
 
 

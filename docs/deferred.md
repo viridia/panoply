@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X112.**
+**Next: X114.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -485,3 +485,9 @@ dropped, not deferred. Numbers are never reused.
   `EditKind` moving an item from one index to another, saved as the array reordered. Dragging by a
   grip (feathers has `GRIP_VERTICAL`) is more work for something used rarely, and finds no room on
   the heading. *Gate:* the first list whose order matters is edited (PAN78's books, or dialogue).
+- **X112** Widgets an aspect adds to its pane's header, beside the + and ×: an eye that shows
+  `SceneryMarks`' marks as gizmos in the view is the first. *Gate:* the first gizmo an aspect can
+  show.
+- **X113** Lists collapsed by default in the property editor: always, past a length, or remembered
+  per type rather than per pane. Quests and dialogue will make property grids several screens tall.
+  *Gate:* the first property grid more than a screen tall.

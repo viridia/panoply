@@ -7,8 +7,11 @@
 //! of its kind, an exemplar's `extends` a button that opens a chooser of the exemplars it may
 //! extend, an enum a select of its variants with the variant's fields below it. Nested structs and
 //! list items are a heading over their own rows, set in behind a stripe; a heading, and a pane's
-//! header, collapse their rows behind a chevron and then show a summary: a list's length, or the
-//! value's `PropertySummary`. Any other newtype shows its one field's row. An `Option` is its
+//! header, collapse their rows behind a chevron and then show a summary: a list's or map's length,
+//! or the value's `PropertySummary`; adding a row from one expands it. A map with string keys is a row per entry, in key order: a
+//! text input for its key, its value's widget beside it, and a ×; a key committed empty or
+//! another entry's is put back. An empty list or map says "No items" or "No entries" in place of
+//! rows. Any other newtype shows its one field's row. An `Option` is its
 //! value's row, with a × that removes the value, or no row while it is `None`: a struct's heading
 //! has a menu of its absent fields, which adds one with its type's default. Every other field is a
 //! row that shows its value without editing it. Annotations from `bevy::annotations` set a row's
@@ -255,6 +258,7 @@ pub fn root_pane(
         edits,
         collapsed,
         depth: 0,
+        added: false,
     };
     let name = caption.clone();
     let mut expanded = true;
@@ -272,7 +276,7 @@ pub fn root_pane(
             };
             ui.ch().on_spawn_apply_scene(header).add(|ui| {
                 ui.ch().on_spawn_insert(heading_start).add(|ui| {
-                    expanded = disclosure(ui, rows.collapsed, key);
+                    expanded = disclosure(ui, rows.collapsed, key.clone());
                     ui.ch()
                         .on_spawn_apply_scene(move || bsn! { @icon(image) Node { height: px(14) } });
                     ui.ch()
@@ -282,10 +286,11 @@ pub fn root_pane(
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
                     rows.add_menu(ui, value, &ParsedPath::empty(), None);
                     let (inner, path) = through_newtypes(value, ParsedPath::empty());
-                    rows.add_item_button(ui, inner, &path);
+                    rows.add_button(ui, inner, &path);
                     remove_button(ui, remove);
                 });
             });
+            rows.expand_if_added(&key);
             if !expanded {
                 return;
             }
@@ -398,6 +403,7 @@ pub fn root_add_menu(
         edits,
         collapsed,
         depth: 0,
+        added: false,
     }
     .add_menu(ui, value, &ParsedPath::empty(), Some(more))
 }
@@ -419,6 +425,7 @@ pub fn root_rows(
         edits,
         collapsed,
         depth: 0,
+        added: false,
     }
     .root(ui, value);
 }
@@ -438,9 +445,20 @@ struct Rows<'a> {
     collapsed: &'a mut CollapsedRows,
     /// How many headings the rows being built are nested under.
     depth: usize,
+    /// Whether a header's or heading's add button or menu just asked for an item, entry or field,
+    /// which the header or heading then shows ([`Rows::expand_if_added`]).
+    added: bool,
 }
 
 impl Rows<'_> {
+    /// Expands the header or heading collapsed under `key` if its widgets just asked for
+    /// something to be added, so the new row shows once the edit is made.
+    fn expand_if_added(&mut self, key: &str) {
+        if std::mem::take(&mut self.added) {
+            self.collapsed.0.remove(key);
+        }
+    }
+
     /// The width of the caption column at the current depth.
     fn caption_width(&self) -> f32 {
         caption_width(self.depth)
@@ -475,11 +493,20 @@ impl Rows<'_> {
     /// The words that stand for `value` while its rows are collapsed, if any.
     fn summary_text(&self, value: &dyn PartialReflect) -> Option<String> {
         let (inner, _) = through_newtypes(value, ParsedPath::empty());
-        if let ReflectRef::List(list) = inner.reflect_ref() {
-            return Some(match list.len() {
-                1 => "1 item".to_string(),
-                count => format!("{count} items"),
-            });
+        match inner.reflect_ref() {
+            ReflectRef::List(list) => {
+                return Some(match list.len() {
+                    1 => "1 item".to_string(),
+                    count => format!("{count} items"),
+                })
+            }
+            ReflectRef::Map(map) => {
+                return Some(match map.len() {
+                    1 => "1 entry".to_string(),
+                    count => format!("{count} entries"),
+                })
+            }
+            _ => {}
         }
         let reflect = value.try_as_reflect()?;
         let summary = self
@@ -489,38 +516,37 @@ impl Rows<'_> {
     }
 
     /// A heading over rows, named `name`, keyed by `path`: on a line named `heading`, a chevron that
-    /// collapses them, the heading's caption, and its summary while collapsed, then `widgets` and
-    /// the × column at its right; below it, while expanded, `body`'s rows, set in behind a stripe,
-    /// one level deeper.
+    /// collapses them, `start` (the heading's caption, or a map entry's key), and its summary
+    /// while collapsed, then `widgets` and the × column at its right; below it, while expanded,
+    /// `body`'s rows, set in behind a stripe, one level deeper.
     #[expect(clippy::too_many_arguments, reason = "a heading's parts, each used once")]
     fn heading(
         &mut self,
         row: ImmEntity<CapsPanel>,
-        name: &'static str,
-        caption: &'static str,
+        name: Name,
         value: &dyn PartialReflect,
         path: &ParsedPath,
         remove: Option<&mut bool>,
+        start: impl FnOnce(&mut Self, &mut Imm<CapsPanel>),
         widgets: impl FnOnce(&mut Self, &mut Imm<CapsPanel>),
         body: impl FnOnce(&mut Self, &mut Imm<CapsPanel>),
     ) {
         let key = format!("{} {path}", self.root.key());
-        row.on_spawn_insert(move || (Name::new(name), heading_node()))
+        row.on_spawn_insert(move || (name, heading_node()))
             .add(|ui| {
                 let mut expanded = true;
                 let line = || (Name::new("heading"), caption_line());
                 ui.ch().on_spawn_insert(line).add(|ui| {
                     ui.ch().on_spawn_insert(heading_start).add(|ui| {
-                        expanded = disclosure(ui, self.collapsed, key);
-                        ui.ch().on_spawn_apply_scene(move || {
-                            heading_text(caption, tokens::TEXT_MAIN)
-                        });
+                        expanded = disclosure(ui, self.collapsed, key.clone());
+                        start(self, ui);
                         self.summary(ui, value, expanded);
                     });
                     ui.ch().on_spawn_insert(widget_line).add(|ui| {
                         widgets(self, ui);
                         remove_button(ui, remove);
                     });
+                    self.expand_if_added(&key);
                 });
                 if expanded {
                     ui.ch_id("rows").on_spawn_apply_scene(indented_node).add(|ui| {
@@ -546,13 +572,14 @@ impl Rows<'_> {
         }
     }
 
-    /// The rows of the root's value: a struct's fields, a list's items (through newtypes), or
-    /// another value's one row.
+    /// The rows of the root's value: a struct's fields, a list's items or a map's entries (through
+    /// newtypes), or another value's one row.
     fn root(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect) {
         let (inner, path) = through_newtypes(value, ParsedPath::empty());
         match (value.reflect_ref(), inner.reflect_ref()) {
             (ReflectRef::Struct(_), _) => self.fields(ui, value, &ParsedPath::empty()),
             (_, ReflectRef::List(_)) => self.items(ui, inner, &path),
+            _ if string_keyed(inner) => self.entries(ui, inner, &path),
             _ => self.row(
                 ui,
                 short_type_name(value),
@@ -635,6 +662,7 @@ impl Rows<'_> {
             });
         if let Some((name, option)) = picked {
             self.add_or_remove(&path.with_field(name), option, true);
+            self.added = true;
         }
         more_picked
     }
@@ -672,6 +700,24 @@ impl Rows<'_> {
         path: ParsedPath,
         remove: Option<&mut bool>,
     ) {
+        let head = RowHead {
+            name,
+            caption: Some(attrs.get::<DisplayName>().map_or(name, |name| name.0)),
+            width: self.caption_width(),
+        };
+        self.row_with(ui, head, attrs, value, path, remove);
+    }
+
+    /// The row of `value`, at `path`, named and captioned as `head` says.
+    fn row_with(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        head: RowHead,
+        attrs: &CustomAttributes,
+        value: &dyn PartialReflect,
+        path: ParsedPath,
+        remove: Option<&mut bool>,
+    ) {
         // An `Option` is its value's row, ending in a × that removes the value, or no row while
         // it has none.
         if is_option(value) {
@@ -685,21 +731,18 @@ impl Rows<'_> {
             };
             let inner_path = path.with_tuple(0);
             if attrs.get::<ReadOnly>().is_some() {
-                self.row(ui, name, attrs, inner, inner_path, remove);
+                self.row_with(ui, head, attrs, inner, inner_path, remove);
                 return;
             }
             let mut removed = false;
-            self.row(ui, name, attrs, inner, inner_path, Some(&mut removed));
+            self.row_with(ui, head, attrs, inner, inner_path, Some(&mut removed));
             if removed {
                 self.add_or_remove(&path, info, false);
             }
             return;
         }
-        let head = RowHead {
-            name,
-            caption: attrs.get::<DisplayName>().map_or(name, |name| name.0),
-            width: self.caption_width(),
-        };
+        let name = head.name;
+        let caption = head.caption.unwrap_or(name);
         // A model, picked from a list of its kind rather than typed.
         if let Some((kind, model)) = model_field(value) {
             if attrs.get::<ReadOnly>().is_none() {
@@ -726,7 +769,7 @@ impl Rows<'_> {
         // A newtype is its field's row.
         if let Some(inner) = newtype_field(value) {
             if value.try_downcast_ref::<HexColor>().is_none() {
-                self.row(ui, name, attrs, inner, path.with_tuple(0), remove);
+                self.row_with(ui, head, attrs, inner, path.with_tuple(0), remove);
                 return;
             }
         }
@@ -739,7 +782,7 @@ impl Rows<'_> {
         if let Some(&flag) = value.try_downcast_ref::<bool>() {
             let mut edited = flag;
             row.on_spawn_insert(move || head.node()).add(|ui| {
-                ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+                head.caption_cell(ui);
                 ui.ch()
                     .on_spawn_apply_scene(|| bsn! { @FeathersCheckbox #check })
                     .checked(&mut edited);
@@ -783,22 +826,33 @@ impl Rows<'_> {
         } else if let ReflectRef::List(_) = value.reflect_ref() {
             self.heading(
                 row,
-                name,
-                head.caption,
+                name.into(),
                 value,
                 &path,
                 remove,
-                |rows, ui| rows.add_item_button(ui, value, &path),
+                |_, ui| heading_caption(ui, caption),
+                |rows, ui| rows.add_button(ui, value, &path),
                 |rows, ui| rows.items(ui, value, &path),
+            );
+        } else if string_keyed(value) {
+            self.heading(
+                row,
+                name.into(),
+                value,
+                &path,
+                remove,
+                |_, ui| heading_caption(ui, caption),
+                |rows, ui| rows.add_button(ui, value, &path),
+                |rows, ui| rows.entries(ui, value, &path),
             );
         } else if let ReflectRef::Struct(_) = value.reflect_ref() {
             self.heading(
                 row,
-                name,
-                head.caption,
+                name.into(),
                 value,
                 &path,
                 remove,
+                |_, ui| heading_caption(ui, caption),
                 |rows, ui| {
                     rows.add_menu(ui, value, &path, None);
                 },
@@ -822,7 +876,7 @@ impl Rows<'_> {
         let look = NumberLook::from_attributes::<T>(attrs);
         let mut edited = value;
         row.on_spawn_insert(move || head.node()).add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            head.caption_cell(ui);
             number_input(ui.ch(), "input", None, look, &mut edited);
             remove_button(ui, remove);
         });
@@ -844,7 +898,7 @@ impl Rows<'_> {
         let shown = value.to_array().map(shown_f32);
         let mut edited = shown;
         row.on_spawn_insert(move || head.node()).add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            head.caption_cell(ui);
             let [x, y, z] = &mut edited;
             let axes = [
                 ("x", "X", tokens::TEXT_INPUT_X_AXIS, x),
@@ -869,6 +923,10 @@ impl Rows<'_> {
         let ReflectRef::List(list) = value.reflect_ref() else {
             return;
         };
+        if list.is_empty() {
+            ui.ch_id("No items").on_spawn_apply_scene(|| placeholder("No items"));
+            return;
+        }
         let mut removed = None;
         for (index, item) in list.iter().enumerate() {
             let mut remove = false;
@@ -890,28 +948,145 @@ impl Rows<'_> {
         }
     }
 
-    /// If `value`, at `path`, is a list, a boxed plus, named `add_item`, that adds an item at its
-    /// end, its type's default.
-    fn add_item_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
-        let (ReflectRef::List(list), Some(TypeInfo::List(info))) =
-            (value.reflect_ref(), value.get_represented_type_info())
+    /// A boxed plus for `value`, at `path`: if it is a list, named `add_item`, adding an item at
+    /// its end, its type's default; if a map with string keys, named `add_entry`, adding an entry
+    /// with an empty key and its value type's default, unless it has one with an empty key
+    /// already, whose key is still to be typed. Nothing for any other value.
+    fn add_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
+        let (name, value_type) = match (value.reflect_ref(), value.get_represented_type_info()) {
+            (ReflectRef::List(_), Some(TypeInfo::List(info))) => ("add_item", info.item_ty()),
+            (ReflectRef::Map(_), Some(TypeInfo::Map(info))) if string_keyed(value) => {
+                ("add_entry", info.value_ty())
+            }
+            _ => return,
+        };
+        if !icon_button(ui, name, ADD_ICON, px(18), tokens::TEXT_MAIN) {
+            return;
+        }
+        let Some(new) = self
+            .registry
+            .get_type_data::<ReflectDefault>(value_type.id())
+            .map(|default| default.default().into_partial_reflect())
         else {
+            error!("Cannot make a {}", value_type.path());
             return;
         };
-        if !icon_button(ui, "add_item", ADD_ICON, px(18), tokens::TEXT_MAIN) {
+        match value.reflect_ref() {
+            ReflectRef::List(list) => {
+                let kind = EditKind::AddItem(list.len());
+                self.edits.push(self.root, path.clone(), kind, Some(new));
+            }
+            ReflectRef::Map(map) if map.get(&String::new()).is_none() => {
+                self.edits.add_entry(self.root, path.clone(), String::new(), new);
+            }
+            _ => {}
+        }
+        // Shown even while it adds nothing: the entry whose key is still empty.
+        self.added = true;
+    }
+
+    /// The rows of the entries of `value`, a map with string keys at `path`, in the order of
+    /// their keys, an entry whose key is still empty last, where a new one is added. Each has a ×
+    /// that removes it.
+    fn entries(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
+        let ReflectRef::Map(map) = value.reflect_ref() else {
+            return;
+        };
+        if map.is_empty() {
+            ui.ch_id("No entries").on_spawn_apply_scene(|| placeholder("No entries"));
             return;
         }
-        let item = self
-            .registry
-            .get_type_data::<ReflectDefault>(info.item_ty().id())
-            .map(|default| default.default().into_partial_reflect());
-        match item {
-            Some(item) => {
-                let kind = EditKind::AddItem(list.len());
-                self.edits.push(self.root, path.clone(), kind, Some(item));
+        let mut entries: Vec<(&str, &dyn PartialReflect)> = map
+            .iter()
+            .filter_map(|(key, value)| Some((key.try_downcast_ref::<String>()?.as_str(), value)))
+            .collect();
+        entries.sort_by_key(|&(key, _)| (key.is_empty(), key));
+        let (mut removed, mut renamed) = (None, None);
+        for (key, value) in entries {
+            let mut remove = false;
+            if let Some(new) = self.entry(ui, key, value, path, &mut remove) {
+                // A key that is empty, or another entry's, is not committed: the input shows the
+                // entry's own again.
+                if !new.is_empty() && map.get(&new).is_none() {
+                    renamed = Some((key.to_string(), new));
+                }
             }
-            None => error!("Cannot make a {} item", info.item_ty().path()),
+            if remove {
+                removed = Some(key.to_string());
+            }
         }
+        if let Some(key) = removed {
+            self.edits.remove_entry(self.root, path.clone(), key);
+        }
+        if let Some((from, to)) = renamed {
+            self.edits.rename_key(self.root, path.clone(), from, to);
+        }
+    }
+
+    /// The row of the entry `key`, holding `value`, of the map at `path`, named after its key, or
+    /// `new_entry` while its key is empty. A text input, named `key`, holds its key, then a row
+    /// named `value` its value's widget: in a column of fixed width for a narrow widget, else
+    /// sharing the width with the key. A value of several rows is a heading instead, its key in
+    /// place of a caption. The entry's × sets `remove`. Returns the key the input commits.
+    fn entry(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        key: &str,
+        value: &dyn PartialReflect,
+        path: &ParsedPath,
+        remove: &mut bool,
+    ) -> Option<String> {
+        let path = path.with_key(key);
+        let name = Name::new(match key.is_empty() {
+            true => "new_entry".to_string(),
+            false => key.to_string(),
+        });
+        let row = ui.ch_id(path.clone());
+        let mut committed = None;
+        let layout = entry_layout(value);
+        if layout == EntryLayout::Rows {
+            let (inner, inner_path) = through_newtypes(value, path.clone());
+            self.heading(
+                row,
+                name,
+                value,
+                &path,
+                Some(remove),
+                |_, ui| committed = text_field(ui, "key", key),
+                |rows, ui| {
+                    rows.add_menu(ui, inner, &inner_path, None);
+                    rows.add_button(ui, inner, &inner_path);
+                },
+                |rows, ui| match inner.reflect_ref() {
+                    ReflectRef::List(_) => rows.items(ui, inner, &inner_path),
+                    ReflectRef::Struct(_) => rows.fields(ui, inner, &inner_path),
+                    _ if string_keyed(inner) => rows.entries(ui, inner, &inner_path),
+                    _ => {
+                        let head = RowHead {
+                            name: "value",
+                            caption: Some("Value"),
+                            width: rows.caption_width(),
+                        };
+                        let attrs = CustomAttributes::default();
+                        rows.row_with(ui, head, &attrs, inner, inner_path.clone(), None);
+                    }
+                },
+            );
+            return committed;
+        }
+        row.on_spawn_insert(move || (name, widget_line())).add(|ui| {
+            committed = text_field(ui, "key", key);
+            ui.ch().on_spawn_insert(move || layout.value_node()).add(|ui| {
+                let head = RowHead {
+                    name: "value",
+                    caption: None,
+                    width: 0.0,
+                };
+                let attrs = CustomAttributes::default();
+                self.row_with(ui, head, &attrs, value, path, Some(remove));
+            });
+        });
+        committed
     }
 
     /// The row's caption with a select of the variants of `value`, an enum at `path`; below it,
@@ -936,7 +1111,7 @@ impl Rows<'_> {
         row.on_spawn_insert(move || (Name::new(head.name), heading_node()))
             .add(|ui| {
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                    ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+                    head.caption_cell(ui);
                     picked = variant_select(ui, info.variant_names(), index);
                     remove_button(ui, remove);
                 });
@@ -1204,9 +1379,8 @@ fn newtype_field(value: &dyn PartialReflect) -> Option<&dyn PartialReflect> {
     }
 }
 
-/// A caption with a text input, named `input`, showing `value`. Returns the text the input
-/// commits, on Enter or on losing focus (`text_commit`). The input shows a value changed
-/// elsewhere, by undo, only while it is not being edited. With `remove`, a × ends the row.
+/// A caption with a text input, named `input`, showing `value` (`text_field`). Returns the text
+/// the input commits. With `remove`, a × ends the row.
 fn text_row(
     row: ImmEntity<CapsPanel>,
     head: RowHead,
@@ -1216,36 +1390,125 @@ fn text_row(
     let mut committed = None;
     row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
-            ui.ch()
-                .on_spawn_apply_scene(|| {
-                    bsn! { @FeathersTextInputContainer Node { flex_grow: 1.0, min_width: px(0) } }
-                })
-                .add(|ui| {
-                    let mut input = ui
-                        .ch()
-                        .on_spawn_apply_scene(|| bsn! { @FeathersTextInput #input })
-                        .on_spawn_apply_commands(|commands| {
-                            commands
-                                .insert(CommittedText::default())
-                                .observe(keep_committed_text);
-                        });
-                    if let Ok(Some(mut text)) = input.cap_get_component_mut::<CommittedText>() {
-                        committed = text.0.take();
-                    }
-                    let focused = input
-                        .cap_get_resource::<InputFocus>()
-                        .ok()
-                        .and_then(|focus| focus.get())
-                        == Some(input.entity());
-                    // A text just committed shows until the edit it asks for is made.
-                    if !focused && committed.is_none() {
-                        input.input_set(value);
-                    }
-                });
+            head.caption_cell(ui);
+            committed = text_field(ui, "input", value);
             remove_button(ui, remove);
         });
+    committed
+}
+
+/// A text input named `name`, showing `value`, sharing its line's spare width with any other
+/// input there. Returns the text the input commits, on Enter or on losing focus
+/// (`text_commit`), if it differs from `value`. The input shows a value changed elsewhere, by
+/// undo, only while it is not being edited, and `value` again after a commit the panel did not
+/// make.
+fn text_field(ui: &mut Imm<CapsPanel>, name: &'static str, value: &str) -> Option<String> {
+    let mut committed = None;
+    ui.ch()
+        .on_spawn_apply_scene(|| {
+            bsn! {
+                @FeathersTextInputContainer
+                Node { flex_grow: 1.0, flex_basis: px(0), min_width: px(0) }
+            }
+        })
+        .add(|ui| {
+            let mut input = ui
+                .ch()
+                .on_spawn_apply_scene(move || bsn! { @FeathersTextInput Name({name}) })
+                .on_spawn_apply_commands(|commands| {
+                    commands
+                        .insert(CommittedText::default())
+                        .observe(keep_committed_text);
+                });
+            if let Ok(Some(mut text)) = input.cap_get_component_mut::<CommittedText>() {
+                committed = text.0.take();
+            }
+            let focused = input
+                .cap_get_resource::<InputFocus>()
+                .ok()
+                .and_then(|focus| focus.get())
+                == Some(input.entity());
+            // A text just committed shows until the edit it asks for is made.
+            if !focused && committed.is_none() {
+                input.input_set(value);
+            }
+        });
     committed.filter(|text| text != value)
+}
+
+/// Whether `value` is a map whose keys are strings: the maps the panel edits.
+fn string_keyed(value: &dyn PartialReflect) -> bool {
+    matches!(value.get_represented_type_info(), Some(TypeInfo::Map(info)) if info.key_ty().is::<String>())
+}
+
+/// The width of a map entry's value column, for a value whose widget is narrow.
+const VALUE_WIDTH: f32 = 72.0;
+
+/// How a map entry lays out its value beside its key.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum EntryLayout {
+    /// A narrow widget (a checkbox, a number, a swatch), in a column of fixed width.
+    Narrow,
+    /// A wide widget (a text, a vector, a select, a picker's button), sharing the line evenly
+    /// with the key.
+    Wide,
+    /// Rows: a list, a struct, a map or an enum with fields, under a heading holding the key.
+    Rows,
+}
+
+impl EntryLayout {
+    /// The node holding the value's row, ending in the entry's × column.
+    fn value_node(self) -> Node {
+        let width = match self {
+            EntryLayout::Narrow => Node {
+                width: px(VALUE_WIDTH + 4.0 + REMOVE_WIDTH),
+                flex_shrink: 0.0,
+                ..default()
+            },
+            EntryLayout::Wide | EntryLayout::Rows => Node {
+                flex_grow: 1.0,
+                flex_basis: px(0),
+                min_width: px(0),
+                ..default()
+            },
+        };
+        Node {
+            flex_direction: FlexDirection::Column,
+            ..width
+        }
+    }
+}
+
+/// How a map entry lays out `value`, from its type alone, so an entry keeps its layout as its
+/// value changes.
+fn entry_layout(value: &dyn PartialReflect) -> EntryLayout {
+    if model_field(value).is_some() || value.try_downcast_ref::<ExemplarRef>().is_some() {
+        return EntryLayout::Wide;
+    }
+    let (value, _) = through_newtypes(value, ParsedPath::empty());
+    let narrow = value.try_downcast_ref::<bool>().is_some()
+        || value.try_downcast_ref::<f32>().is_some()
+        || value.try_downcast_ref::<f64>().is_some()
+        || value.try_downcast_ref::<i32>().is_some()
+        || value.try_downcast_ref::<i64>().is_some()
+        || value.try_downcast_ref::<HexColor>().is_some();
+    if narrow {
+        return EntryLayout::Narrow;
+    }
+    if value.try_downcast_ref::<Vec3>().is_some() {
+        return EntryLayout::Wide;
+    }
+    match value.get_represented_type_info() {
+        Some(TypeInfo::List(_) | TypeInfo::Struct(_) | TypeInfo::Map(_)) => EntryLayout::Rows,
+        Some(TypeInfo::Enum(info))
+            if info
+                .iter()
+                .any(|variant| !matches!(variant, VariantInfo::Unit(_))) =>
+        {
+            EntryLayout::Rows
+        }
+        _ => EntryLayout::Wide,
+    }
 }
 
 /// A caption with a button, named `pick`, whose text, named `model`, is the model `value` names
@@ -1262,7 +1525,7 @@ fn model_row(
     let shown = value.rsplit_once('/').map_or(value, |(_, file)| file).to_string();
     row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            head.caption_cell(ui);
             let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
                 bsn! {
                     @FeathersButton
@@ -1312,7 +1575,7 @@ fn exemplar_ref_row(
         .to_string();
     row.on_spawn_insert(move || head.node())
         .add(|ui| {
-            ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+            head.caption_cell(ui);
             let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
                 bsn! {
                     @FeathersButton
@@ -1461,7 +1724,7 @@ fn read_only_row(
 ) {
     let text = summary(value);
     row.on_spawn_insert(move || head.node()).add(|ui| {
-        ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+        head.caption_cell(ui);
         ui.ch_id(text.clone())
             .on_spawn_apply_scene(move || bsn! { @label(text.clone()) Node { flex_grow: 1.0 } });
         remove_button(ui, remove);
@@ -1509,11 +1772,11 @@ impl NumberLook {
 }
 
 /// What a row is named and shows at its left: its field's name, its caption, and the width of
-/// the caption column at its depth.
+/// the caption column at its depth. A map entry's value has no caption: its key is beside it.
 #[derive(Clone, Copy)]
 struct RowHead {
     name: &'static str,
-    caption: &'static str,
+    caption: Option<&'static str>,
     width: f32,
 }
 
@@ -1523,21 +1786,25 @@ impl RowHead {
         (Name::new(self.name), widget_line())
     }
 
-    /// The caption in its column, clipped rather than wrapped when it is too long.
-    fn caption_cell(self) -> impl Scene {
-        let caption = self.caption;
-        let width = self.width;
-        bsn! {
-            Node {
-                width: px(width),
-                flex_shrink: 0.0,
-                overflow: Overflow::clip_x(),
+    /// The caption in its column, clipped rather than wrapped when it is too long; nothing for a
+    /// row without one.
+    fn caption_cell(self, ui: &mut Imm<CapsPanel>) {
+        let (Some(caption), width) = (self.caption, self.width) else {
+            return;
+        };
+        ui.ch().on_spawn_apply_scene(move || {
+            bsn! {
+                Node {
+                    width: px(width),
+                    flex_shrink: 0.0,
+                    overflow: Overflow::clip_x(),
+                }
+                Children [
+                    @label(caption)
+                    TextLayout { linebreak: LineBreak::NoWrap }
+                ]
             }
-            Children [
-                @label(caption)
-                TextLayout { linebreak: LineBreak::NoWrap }
-            ]
-        }
+        });
     }
 }
 
@@ -1573,6 +1840,12 @@ fn heading_start() -> Node {
         overflow: Overflow::clip_x(),
         ..widget_line()
     }
+}
+
+/// A heading's caption, in the main text color.
+fn heading_caption(ui: &mut Imm<CapsPanel>, caption: &'static str) {
+    ui.ch()
+        .on_spawn_apply_scene(move || heading_text(caption, tokens::TEXT_MAIN));
 }
 
 /// A heading's text, bold, in `color`.
@@ -1684,7 +1957,7 @@ fn color_row(
     remove: Option<&mut bool>,
 ) {
     row.on_spawn_insert(move || head.node()).add(|ui| {
-        ui.ch().on_spawn_apply_scene(move || head.caption_cell());
+        head.caption_cell(ui);
         color_input(ui, color);
         ui.ch().on_spawn_insert(spacer);
         remove_button(ui, remove);

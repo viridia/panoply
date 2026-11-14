@@ -14,7 +14,7 @@ use std::{any::Any, borrow::Cow, sync::Arc};
 use bevy::{
     asset::AssetPath,
     prelude::*,
-    reflect::{Access, ParsedPath, ReflectMut, ReflectPath},
+    reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath},
 };
 use panoply_exemplar::{Aspect, Exemplar};
 
@@ -32,6 +32,8 @@ pub trait PathSteps {
     fn with_tuple(&self, index: usize) -> ParsedPath;
     /// The path into item `index` of the list at this one.
     fn with_item(&self, index: usize) -> ParsedPath;
+    /// The path into the value of entry `key` of the map at this one.
+    fn with_key(&self, key: &str) -> ParsedPath;
 }
 
 impl PathSteps for ParsedPath {
@@ -45,6 +47,10 @@ impl PathSteps for ParsedPath {
 
     fn with_item(&self, index: usize) -> ParsedPath {
         then(self, Access::ListIndex(index))
+    }
+
+    fn with_key(&self, key: &str) -> ParsedPath {
+        then(self, Access::Key(key.to_string().into()))
     }
 }
 
@@ -101,12 +107,19 @@ pub enum EditKind {
     AddItem(usize),
     /// An item, its index given, taken out of a list.
     RemoveItem(usize),
+    /// An entry put into a map with string keys.
+    AddEntry,
+    /// An entry taken out of a map with string keys.
+    RemoveEntry,
+    /// An entry of a map with string keys moved to another key.
+    RenameKey,
     /// Aspects added to and taken from an [`AspectHolder`] root.
     Aspects,
 }
 
 impl EditKind {
-    /// The kind's words in the undo history, around the root's caption and the path.
+    /// The kind's words in the undo history, around the root's caption and the path. A map edit
+    /// that names a key is labeled by [`edit_label`] instead.
     fn label(self, field: &str) -> String {
         match self {
             EditKind::Set => format!("Set {field}"),
@@ -114,17 +127,21 @@ impl EditKind {
             EditKind::Remove => format!("Remove {field}"),
             EditKind::AddItem(index) => format!("Add {field} item {}", index + 1),
             EditKind::RemoveItem(index) => format!("Remove {field} item {}", index + 1),
+            EditKind::AddEntry => format!("Add {field} entry"),
+            EditKind::RemoveEntry => format!("Remove {field} entry"),
+            EditKind::RenameKey => format!("Rename {field} entry"),
             EditKind::Aspects => format!("Change {field}.aspects"),
         }
     }
 
     /// What the edit does to the value at its path, given `value` for a kind that writes or
-    /// inserts one.
+    /// inserts one. A map or aspects edit is built by its own method of [`PropertyEdits`].
     fn op(self, value: Option<Box<dyn PartialReflect>>) -> Option<EditOp> {
         Some(match self {
             EditKind::Set | EditKind::Add | EditKind::Remove => EditOp::Write(value?),
             EditKind::AddItem(index) => EditOp::Insert(index, value?),
             EditKind::RemoveItem(index) => EditOp::Delete(index),
+            EditKind::AddEntry | EditKind::RemoveEntry | EditKind::RenameKey => return None,
             EditKind::Aspects => return None,
         })
     }
@@ -139,6 +156,13 @@ enum EditOp {
     Insert(usize, Box<dyn PartialReflect>),
     /// Takes the item at an index out of the list at the path.
     Delete(usize),
+    /// Puts an entry, its key not yet in the map, into the map with string keys at the path.
+    InsertEntry(String, Box<dyn PartialReflect>),
+    /// Takes the entry of a key out of the map with string keys at the path.
+    DeleteEntry(String),
+    /// Moves the value of the first key to the second, not yet in the map, in the map with string
+    /// keys at the path.
+    MoveEntry(String, String),
     /// Takes the aspects named (by short type path) out of an [`AspectHolder`] root, then puts
     /// the others in at their indices: an undone removal puts an aspect back where it was.
     Aspects {
@@ -177,6 +201,33 @@ impl EditOp {
                     return Err(format!("{path} has no item {index}").into());
                 }
                 Ok(EditOp::Insert(*index, list.remove(*index)))
+            }
+            EditOp::InsertEntry(key, value) => {
+                let map = map_at(target, path)?;
+                if map.get(key).is_some() {
+                    return Err(format!("{path} has a key {key:?} already").into());
+                }
+                let value = value.reflect_clone()?.into_partial_reflect();
+                map.insert_boxed(Box::new(key.clone()), value);
+                Ok(EditOp::DeleteEntry(key.clone()))
+            }
+            EditOp::DeleteEntry(key) => {
+                let map = map_at(target, path)?;
+                let value = map
+                    .remove(key)
+                    .ok_or_else(|| format!("{path} has no key {key:?}"))?;
+                Ok(EditOp::InsertEntry(key.clone(), value))
+            }
+            EditOp::MoveEntry(from, to) => {
+                let map = map_at(target, path)?;
+                if map.get(to).is_some() {
+                    return Err(format!("{path} has a key {to:?} already").into());
+                }
+                let value = map
+                    .remove(from)
+                    .ok_or_else(|| format!("{path} has no key {from:?}"))?;
+                map.insert_boxed(Box::new(to.clone()), value);
+                Ok(EditOp::MoveEntry(to.clone(), from.clone()))
             }
             EditOp::Aspects { .. } => Err("an aspects edit has no path".into()),
         }
@@ -251,6 +302,18 @@ impl EditOp {
     }
 }
 
+/// `target`, the value at `path`, as a map with string keys.
+fn map_at<'a>(target: &'a mut dyn PartialReflect, path: &ParsedPath) -> Result<&'a mut dyn Map, BevyError> {
+    let string_keys = target
+        .get_represented_type_info()
+        .and_then(|info| info.as_map().ok())
+        .is_some_and(|info| info.key_ty().is::<String>());
+    match target.reflect_mut() {
+        ReflectMut::Map(map) if string_keys => Ok(map),
+        _ => Err(format!("{path} is not a map with string keys").into()),
+    }
+}
+
 /// An edit a widget asks for: a `kind` of edit at `path` within `root`'s value, which `op` does.
 pub struct PropertyEdit {
     root: Arc<dyn PropertyRoot>,
@@ -287,6 +350,45 @@ impl PropertyEdits {
             error!("{kind:?} of {}{path} needs a value", root.caption());
             return;
         };
+        self.0.push(PropertyEdit {
+            root: root.clone(),
+            path,
+            kind,
+            op,
+        });
+    }
+
+    /// Asks for an entry of `key` holding `value` to be put into the map at `path` within
+    /// `root`'s value, a map with string keys that does not hold `key`.
+    pub fn add_entry(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        path: ParsedPath,
+        key: String,
+        value: Box<dyn PartialReflect>,
+    ) {
+        let op = EditOp::InsertEntry(key, value);
+        self.push_op(root, path, EditKind::AddEntry, op);
+    }
+
+    /// Asks for the entry of `key` to be taken out of the map at `path` within `root`'s value.
+    pub fn remove_entry(&mut self, root: &Arc<dyn PropertyRoot>, path: ParsedPath, key: String) {
+        self.push_op(root, path, EditKind::RemoveEntry, EditOp::DeleteEntry(key));
+    }
+
+    /// Asks for the value of `from` to move to `to` in the map at `path` within `root`'s value,
+    /// a map that does not hold `to`.
+    pub fn rename_key(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        path: ParsedPath,
+        from: String,
+        to: String,
+    ) {
+        self.push_op(root, path, EditKind::RenameKey, EditOp::MoveEntry(from, to));
+    }
+
+    fn push_op(&mut self, root: &Arc<dyn PropertyRoot>, path: ParsedPath, kind: EditKind, op: EditOp) {
         self.0.push(PropertyEdit {
             root: root.clone(),
             path,
@@ -350,8 +452,10 @@ struct PropertyAction {
 
 /// An edit's name in the undo history, from `op`, the edit as asked for: "Set LightSource.radius",
 /// "Add SceneryColliders item 2", the path's field names, leaving out the steps into an `Option`,
-/// a newtype or a list, which the panel does not show either. An aspects edit that adds or removes
-/// one aspect names it: "Remove Marcus.Skin".
+/// a newtype or a list, which the panel does not show either, and naming a map's entries by key:
+/// "Set Colors.Hair". An aspects edit that adds or removes one aspect names it: "Remove
+/// Marcus.Skin". A map edit names its key, or "entry" while the key is empty: "Remove
+/// Colors.Hair", "Rename Colors entry to Hair".
 fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &EditOp) -> String {
     let mut field = root.caption();
     if let EditOp::Aspects { add, remove } = op {
@@ -364,12 +468,29 @@ fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &E
         }
     }
     for step in &path.0 {
-        if let Access::Field(name) = &step.access {
-            field.push('.');
-            field.push_str(name);
+        match &step.access {
+            Access::Field(name) => {
+                field.push('.');
+                field.push_str(name);
+            }
+            Access::Key(key) => field = entry_name(&field, key),
+            _ => {}
         }
     }
-    kind.label(&field)
+    match op {
+        EditOp::DeleteEntry(key) => format!("Remove {}", entry_name(&field, key)),
+        EditOp::MoveEntry(from, to) => format!("Rename {} to {to}", entry_name(&field, from)),
+        _ => kind.label(&field),
+    }
+}
+
+/// The entry `key` of the map `field` names, in the undo history: "Colors.Hair", or "Colors
+/// entry" for the empty key.
+fn entry_name(field: &str, key: &str) -> String {
+    match key.is_empty() {
+        true => format!("{field} entry"),
+        false => format!("{field}.{key}"),
+    }
 }
 
 impl UndoAction for PropertyAction {
@@ -522,7 +643,10 @@ impl PropertyRoot for ExemplarAspect {
 
 #[cfg(test)]
 mod tests {
-    use bevy::reflect::{ReflectRef, TypeRegistry};
+    use bevy::{
+        platform::collections::HashMap,
+        reflect::{ReflectRef, TypeRegistry},
+    };
 
     use super::*;
     use crate::properties::option_value;
@@ -533,6 +657,7 @@ mod tests {
         height: f32,
         depth: Option<f32>,
         parts: Vec<f32>,
+        marks: HashMap<String, f32>,
     }
 
     #[derive(Resource, Default)]
@@ -642,6 +767,7 @@ mod tests {
                 height: 0.,
                 depth: None,
                 parts: Vec::new(),
+                marks: HashMap::default(),
             }
         );
     }
@@ -709,6 +835,71 @@ mod tests {
         redo(&mut world);
         redo(&mut world);
         assert_eq!(parts(&world), [2., 3.]);
+    }
+
+    fn marks(world: &World) -> Vec<(String, f32)> {
+        let mut marks: Vec<_> = world.resource::<Held>().0.marks.clone().into_iter().collect();
+        marks.sort_by(|a, b| a.0.cmp(&b.0));
+        marks
+    }
+
+    fn mark(key: &str, value: f32) -> (String, f32) {
+        (key.to_string(), value)
+    }
+
+    /// Asks for the map edit `edit` makes of `marks`, and applies it.
+    fn edit_marks(world: &mut World, edit: impl FnOnce(&mut PropertyEdits, &Arc<dyn PropertyRoot>)) {
+        let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
+        edit(&mut world.resource_mut::<PropertyEdits>(), &root);
+        apply_property_edits(world);
+    }
+
+    #[test]
+    fn map_entries_are_added_renamed_set_and_removed() {
+        let mut world = world();
+        world.resource_mut::<Held>().0.marks.insert("door".into(), 1.);
+        let at = || path(".marks");
+        edit_marks(&mut world, |edits, root| {
+            edits.add_entry(root, at(), String::new(), Box::new(0.0f32))
+        });
+        assert_eq!(marks(&world), [mark("", 0.), mark("door", 1.)]);
+        assert_eq!(last_label(&world), "Add Size.marks entry");
+        edit_marks(&mut world, |edits, root| {
+            edits.rename_key(root, at(), String::new(), "seat".into())
+        });
+        assert_eq!(marks(&world), [mark("door", 1.), mark("seat", 0.)]);
+        assert_eq!(last_label(&world), "Rename Size.marks entry to seat");
+        edit_marks(&mut world, |edits, root| edits.set(root, at().with_key("seat"), 2.0f32));
+        assert_eq!(last_label(&world), "Set Size.marks.seat");
+        edit_marks(&mut world, |edits, root| edits.remove_entry(root, at(), "door".into()));
+        assert_eq!(marks(&world), [mark("seat", 2.)]);
+        assert_eq!(last_label(&world), "Remove Size.marks.door");
+
+        undo(&mut world);
+        assert_eq!(marks(&world), [mark("door", 1.), mark("seat", 2.)]);
+        undo(&mut world);
+        undo(&mut world);
+        assert_eq!(marks(&world), [mark("", 0.), mark("door", 1.)]);
+        undo(&mut world);
+        assert_eq!(marks(&world), [mark("door", 1.)]);
+        redo(&mut world);
+        redo(&mut world);
+        assert_eq!(marks(&world), [mark("door", 1.), mark("seat", 0.)]);
+    }
+
+    #[test]
+    fn a_key_the_map_holds_is_not_added_or_renamed_to() {
+        let mut world = world();
+        world.resource_mut::<Held>().0.marks.insert("door".into(), 1.);
+        world.resource_mut::<Held>().0.marks.insert("seat".into(), 2.);
+        edit_marks(&mut world, |edits, root| {
+            edits.add_entry(root, path(".marks"), "door".into(), Box::new(0.0f32))
+        });
+        edit_marks(&mut world, |edits, root| {
+            edits.rename_key(root, path(".marks"), "door".into(), "seat".into())
+        });
+        assert_eq!(marks(&world), [mark("door", 1.), mark("seat", 2.)]);
+        assert!(world.resource::<UndoStack>().latest_label().is_none());
     }
 
     #[test]

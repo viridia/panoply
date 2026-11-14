@@ -156,13 +156,6 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28i Maps.** A map is edited as a list of key–value pairs, as faery edited it, using the list
-  rows from PAN28f. Each entry is a row with a text input for its key and its value's widget beside
-  it, plus a × that removes the entry. The heading's + adds an entry with an empty key and the value
-  type's default. Changing a key is a new `EditKind`: it moves the entry and undoes in one step. A
-  key that is empty or already in the map isn't committed. `Colors` and `Features` get custom
-  editors later, as faery's `ColorMap` and `FeatureSelection` were (from `ColorSlots` and
-  `FeatureSlots`).
 - **PAN28j Editor polish.** A `Precision` annotation, as arbor_day's (`properties.rs`): the decimal
   places a number input rounds to while dragging, given to feathers as `NumberInputPrecision`, in a
   crate the aspect crates see (`panoply_exemplar::annotations`); `ActorScale` gets one, since
