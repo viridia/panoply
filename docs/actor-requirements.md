@@ -196,8 +196,8 @@ The body's vocabulary, which behavior (goals or the player's input) chooses from
 
 Goals are reworked (X17); these are the capabilities faery's goals provided.
 
-- **R47** Aspects contribute goals; an actor's goals run in priority order. Bands: ultimate
-  25, safety 20, mission 15, social 10, health 5, idle 0.
+- **R47** Behavior packages contribute goals (X17); an actor's goals run in priority order. Bands:
+  ultimate 25, safety 20, mission 15, social 10, health 5, idle 0.
 - **R48** A goal reports satisfied, failed, or the action to take. An action can be
   concurrent, letting lower goals act too (speech while walking).
 - **R49** Goals are re-evaluated when what they depend on changes, when an action finishes,

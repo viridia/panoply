@@ -82,6 +82,146 @@ used to spawn those instances; the game engine will then update the instances (u
 change detection) to reflect the new state. This avoids most of the problems of converting
 runtime instance data back into a form which is serializable.
 
+## Composing behavior
+
+Open. It decides how X17's behavior reaches an actor, and with it whether an instance may add
+aspects its exemplar lacks (PAN28e).
+
+An actor's behavior is goal trees, dialogue sets, remark sets and presence, and a character combines
+pieces of it that vary independently: a town guard has the guards' patrol and dialogue, the town's
+regional lines, and one guard also a quest's questions and remarks. faery's guardsman
+(`packages/game/src/behaviors/demo.tsx`) lists three dialogue sets: generic, regional and quest.
+faery wrote an aspect type per character, which Panoply cannot: `UpdateAspects` keys aspects by
+`TypeId`, the nearest of each type winning, so two pieces of behavior cannot both be aspects of one
+type.
+
+Whatever the mechanism, these hold:
+
+- A piece of behavior is an asset named by path, so a precinct's table can hold it while the
+  precinct is live (X115).
+- Behavior is authored, never added or removed at runtime. A higher-priority goal overrides an
+  inherited one, and a `when` switches one off.
+- Formulas cannot ask which pieces an actor has, since that would tie content to how its files are
+  split. Role, faction and alliance are native aspects.
+- Dialogue and remarks draw on the union of the actor's sets, by the rules in X17, so the order of
+  the pieces matters: farthest ancestor first, the instance last. `UpdateAspects` walks the other
+  way, instance first.
+
+### Alternatives
+
+**A list in one aspect.** One native aspect, `BehaviorPackages`, lists the actor's packages; a merge
+annotation makes the list append along `extends` and the instance, dropping duplicates. Aspects stay
+one per component, and a package is a plain asset reference. Against: a second merge rule, inside
+one field, unlike every other field; packages are absent from the aspect list where the rest of an
+actor's makeup is; the editor has to show inherited entries inside the field. A variation drops the
+merge: when the aspect is added to an instance, the editor fills it with the inherited list.
+Overrides stay uniform (the list replaces), the file shows the whole list, and removing or
+reordering an inherited package is free. But the copy goes stale: when the guard package gains a set
+or is split, every guard holding a copy must be edited.
+
+**A dynamic component per package.** Each package registers a zero-sized component at load
+(`register_component_with_descriptor`, `insert_by_id`), and the aspect union, keyed by
+`ComponentId`, composes packages unchanged. A package is then an aspect in every sense, queryable by
+Bevy. Against: component ids are per run, so files and saves still use names; the editor, the
+serializer and `Aspect::id` assume Rust types. Its distinctive gains, querying an actor by package
+and gating an action on one (D59), are excluded above.
+
+**Keyed aspects.** An aspect type may name a key field, and the union keys on type and key. One
+reflected type, `BehaviorPackage { path }`, keyed by `path`, adds its path to a runtime component
+when attached. No new merge rule: packages appear in the aspect list, inherit along `extends`, and
+show as inherited or overridden as other aspects do. Against: whatever iterates aspects by type
+(D71's checks, the add menu, saving) must learn keys, and the grid shows a package as a struct with
+a `path` field.
+
+**Native and external aspects.** Keyed aspects in their best form: a native aspect is a Rust type
+and a component; an external aspect is an asset, keyed by its path and collected into one component.
+The list shows `tambry:poul` itself. Both share the aspect list, the union, adding and removing, and
+the inherited display, so most of what an author touches is shared. faery's aspects split the same
+way ([modding.md](modding.md), What mods need): its 15 per-character scripts had no fields. It is
+two mechanisms presented as one, and the presentation shows at the seams:
+
+- An external aspect has no fields until the property grid can edit types declared in data, the
+  layer X64 needs, which Panoply would build itself; until then per-instance data goes in a native
+  aspect or the variables aspect (X53).
+- External aspects are not part of `self`'s interface: formulas cannot see them, and D59's actions
+  need native ones.
+- Order matters for external aspects only.
+- Detaching one despawns its goal trees and drops its saved state, and its formulas need their own
+  check, as X96's do.
+
+Mods could author external aspects, which gives them aspects without declaring Rust types (X64).
+
+**Aspects as definitions.** An aspect stops being a component: it is a definition in an exemplar or
+instance, keyed by a Rust type's name or an asset path, and what it does when attached is its own. A
+native aspect's `attach` inserts components (its state, as D74 already has `ContainerState`, and the
+config its systems read); a package's spawns goal trees and registers its dialogue and remark sets.
+The aspect list, the union and the editor work on definitions alone, so the native and external
+split moves from what an aspect is to how one is implemented.
+
+- Uniqueness moves to the components: no two aspects may attach the same component, checked as an
+  exemplar loads and reported in the editor. Two packages never collide.
+- Aspect identity no longer needs a Rust type, which X64 needs.
+- X17's reason for keeping goals out of aspects, several goals of one type with different
+  parameters, no longer constrains aspects.
+- For native aspects little code changes. Each of the 21 inserts a clone of itself (`Lock` and
+  `Container` their state as well), and keeps doing so: the engine still queries for a `Portal`,
+  inserted by the portal aspect. Of the 21, the engine queries 12 as components; `Container` and
+  `Lock` only through their state; `TerrainEffect`, `TerrainHole`, `ItemModel` and `EquipSlot` it
+  reads from the exemplar (`Exemplar::find_aspect`), since terrain vertices and an item in an
+  inventory are not entities; three it does not read yet. So reading a native aspect from its
+  definition by Rust type, along the chain, has to keep working. The registries already tell a
+  component from the aspect that supplies it (`ScriptComponents` maps `Lid` to `Lidded`;
+  interactions register actions by aspect). What keys on an aspect's type is the union (`TypeId`, in
+  `UpdateAspects` and `OwnedAspects`), the editor (the short type path, in adding, removing, undo
+  and each aspect's property root), and the files (`aspects` keyed by short type name). An aspect
+  key replaces those three; keyed aspects and native and external aspects need the same change.
+- D59's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
+  attach, which is what formulas read.
+- A BSN entity is one component per type, so definitions, several of one kind among them, do not map
+  onto it directly. They compile to it: an exemplar to a patch, `extends` to an `@` mixin, and
+  aspects that can repeat to related entities, as X17's goal trees already are.
+
+**Mixins.** An exemplar extends several others (`extends: [guard, lunch-quest]`), and a package is
+an exemplar without a model. This is BSN's own composition: what it calls inheritance is a mixin, an
+`@` patch, applied any number of times, in order. One concept covers kinds and behavior, and reuse
+along independent axes is native. But patches merge by field, and a list is one field, so two mixins
+each listing goals still leave one list: repeatable pieces need keys, a list merge or related
+entities anyway. And it puts things that cannot be placed in catalogs of things that can. It is how
+the others would compile to BSN rather than a rival to them.
+
+**Single `extends`.** All behavior inline in a character's own exemplar, reused by a chain (village
+guard, Tambry guard, lunch guard). The simplest, and faery's guardsman fits it. But a chain is one
+axis: a Tambry innkeeper and a Tambry guard both want Tambry's regional lines from different role
+branches, which means duplication or a chain per combination. And behavior inline in a catalog stays
+resident with it.
+
+**Bundles or lists per kind.** For any of these, the piece can be a bundle of goals, dialogue,
+remarks and presence, or each kind can compose on its own, closer to faery's `Converse` and `Remark`
+lists. A bundle gives a behavior one name, so a quest's goals, lines and remarks travel and page
+together; a bundle holding only dialogue gives the finer reuse anyway. Either way a bundle
+references dialogue set assets, since dialogue is an asset type of its own.
+
+### BSN
+
+Stock BSN composes by mixins, which merge by field, and holds one component per type. Panoply's
+overrides replace a whole aspect, nearest first, so moving to BSN changes what an override means
+whichever alternative is chosen. Each alternative beyond that adds a list merge, a key, or an aspect
+that is not a component. Bevy's editor AST does not exist yet (X1), so Panoply owns the in-memory
+form of the BSN it uses, and that form can hold whichever model is chosen, compiling it to patches.
+The alternatives are judged on that basis.
+
+What owning the form costs does not depend on the model. D73's merge works on `serde_json`'s value
+tree, comparing the exemplars serialized as loaded and as now, and knows nothing of aspects. BSN has
+no such tree, so owning the form means one for the subset Panoply uses, with a parser and a printer
+that keeps a file's formatting, and a serializer from reflected values into it; the merge carries
+over.
+
+### Leaning
+
+Aspects as definitions, or native and external aspects, over a list in one aspect: composition stays
+in the aspect list with one merge. Both put external pieces in the aspect list, so the rule on
+instances adding aspects is settled with this, not after.
+
 ## Aspect example
 
 Each `Aspect` has a Rust class which is constructable via reflection. The `PortalTarget` aspect

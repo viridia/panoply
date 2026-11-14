@@ -102,8 +102,10 @@ property inspector served `portal`, which was built in, and `territorial` and `c
 were mods. Panoply's editor inspects aspects through reflection (PAN28). Bevy's new reflection,
 `bevy_reflect2` ([bevy#26356](https://github.com/bevyengine/bevy/pull/26356)), is simpler, faster
 and lighter than the old, but it reflects only Rust types, with no dynamic structs, so an aspect
-declared in SAGA would need a layer above it. That layer is Bevy's own plan: the PR moves dynamic
-data into a system of its own, built on reflection, which Bevy has yet to write.
+declared in SAGA would need a layer above it: synthetic types, each carrying its own schema. Bevy
+will not provide one; Panoply would be its only customer. The old reflection's `DynamicStruct` was
+no such layer: lacking a schema, it could not deserialize a JSON object of unknown type, since a `1`
+names no numeric type.
 
 Mods declare no aspect types until one needs to (X64). A per-instance variable a mod needs goes in a
 generic variables aspect, a map from names to SAGA values, as X53's named flags and stats are. SAGA

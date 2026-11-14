@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X115.**
+**Next: X116.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -13,7 +13,10 @@ dropped, not deferred. Numbers are never reused.
   straightforward; editing is the hard part. Bevy's scene editor will edit an AST of the scene file
   and serialize it to BSN, not the spawned entities, which lose imports, type names and loading
   directives. Open: use that AST in Panoply's editor, or keep exemplars as an editor-only AST of our
-  own that the editor compiles to BSN.
+  own that the editor compiles to BSN. As of 2026-11 that AST does not exist, and nothing promises
+  it can be used from another editor; if it cannot, the second is forced: an in-memory form of the
+  BSN subset Panoply uses, and a serializer that keeps a file's formatting, as D73's merge does for
+  JSON.
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them. Consider
   deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X5** `bevy-inspector-egui` (pinned bevy 0.15). Bevy main's `bevy_inspector` crate may
@@ -96,11 +99,20 @@ dropped, not deferred. Numbers are never reused.
   between worlds (an actor crossing a portal); and a release supports the Bevy in use.
 - **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`) move to
   ECS and BSN assets. Goals are not aspects, since an actor can hold several goals of one type with
-  different parameters. Aspects own goals (R47), and owning goals is most of what a mod's aspects
-  are for ([modding.md](modding.md)).
-  - **Instanced trees.** Each actor spawns its own copy of each goal tree its aspects own: an entity
-    per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside transform
-    propagation) and rooted at the actor by `GoalOf`.
+  different parameters. Behavior packages own them, and packages are most of what a mod holds
+  ([modding.md](modding.md)).
+  - **Behavior packages.** A package is an asset of goal trees, dialogue sets, remark sets and
+    presence. How an actor composes them, so that a guard with a quest names only the quest's
+    package beside the guard's, is open ([Exemplars.md](Exemplars.md), Composing behavior). Each
+    actor has one conversation and one remark goal, drawing on the union of its packages' sets in
+    order, farthest ancestor first. faery's rules carry over
+    (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro whose conditions
+    hold; each state's options are pooled by state name across sets, sorted stably by `order`, and
+    the first option with a given `id` hides the rest. Remarks choose among the sets whose
+    conditions hold (R53).
+  - **Instanced trees.** Each actor spawns its own copy of each goal tree its packages hold: an
+    entity per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside
+    transform propagation) and rooted at the actor by `GoalOf`.
   - **Definition apart from state.** Each goal type is its own component of immutable parameters
     (`Wander { radius }`), so BSN writes a tree as components and `Subgoals [ ... ]`. It requires
     its state, a separate reflected component whose default is the reset state, and a
@@ -112,9 +124,9 @@ dropped, not deferred. Numbers are never reused.
     parameters, but can be a formula. So SAGA (X7) needs a way to embed formulas in assets, as
     quests and dialogues do. A node's memo cells live on its entity. Landing re-evaluates an actor's
     goals (R37).
-  - **Saves** (PAN82) hold only state that differs from the reset state: per aspect, a hash of its
+  - **Saves** (PAN82) hold only state that differs from the reset state: per package, a hash of its
     goal definition and each changed node's state, keyed by its path of child indices. When the hash
-    no longer matches (a mod or content edit changed the tree), that aspect's state is dropped and
+    no longer matches (a mod or content edit changed the tree), that package's state is dropped and
     its goals restart, which goals tolerate (R50). The same read-out, respawn and write-back is hot
     reload, so an edit reaches every actor, and it is what an actor recovers from (R104).
 
@@ -286,11 +298,11 @@ dropped, not deferred. Numbers are never reused.
   hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
   takes up sound.
 - **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
-  ([modding.md](modding.md), Types a mod declares). Bevy plans that layer, for dynamic data, on
-  `bevy_reflect2`, whose MVP has landed (bevy#26356); use Bevy's if the layer has. In the editor
-  such a type needs its own walk of the rows and its own applying of edits, beside reflection's
-  (PAN28). *Gate:* a mod needs an aspect that native aspects, formulas and the generic variables
-  aspect cannot express.
+  ([modding.md](modding.md), Types a mod declares). Panoply builds that layer: `bevy_reflect2`
+  (bevy#26356) will support neither synthetic types nor dynamic data directly. In the editor such a
+  type needs its own walk of the rows and its own applying of edits, beside reflection's (PAN28).
+  *Gate:* a mod needs an aspect that native aspects, formulas and the generic variables aspect
+  cannot express.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
   `Sword` cannot collide; an order for packages that override the same exemplar; what a save keeps
   of a removed mod's aspects (X20 covers only the editor); and a mod built against an older version
@@ -318,7 +330,9 @@ dropped, not deferred. Numbers are never reused.
   is a saved-at position per asset in the history. *Gate:* PAN44.
 - **X74** Merging `Interactions` entries by `id` along `extends`, so a variant such as a trapped
   chest restates only the entry it changes; an override now replaces the whole list (D59). Needs a
-  way to remove an inherited entry. *Gate:* that repetition hurting in real content.
+  way to remove an inherited entry. *Gate:* that repetition hurting in real content. Behavior
+  packages (X17) may need the same merge, appending only, and come first
+  ([Exemplars.md](Exemplars.md), Composing behavior).
 - **X75** The look of the interaction prompt (PAN21): the decorative box around the key, and the
   key's font, for now `KEY_PROMPT_FONT` (Rubik). The key should be somewhat hefty in weight, and in
   a different-looking font from the caption, though non-swash Macondo has a far more readable
@@ -495,3 +509,12 @@ dropped, not deferred. Numbers are never reused.
 - **X114** faery's parcel and precinct readiness grid in the Show menu, drawn from the survey's data
   (`TerrainPending::survey`, `SceneryPending::survey`, PAN10). *Gate:* tuning load distances needs
   it on screen.
+- **X115** Catalogs held by their owners: a live precinct holds the catalog roots and behavior
+  packages (X17) its tables name, and they unload when it leaves the cache; a global set holds the
+  rest: items, generic exemplars, the player, and every NPC that can become a follower (D24), with
+  its packages. Now `ExemplarCatalogs` holds every catalog it loads for good (D27), as one global
+  set. No LRU: every path has an owner, and the precinct cache already keeps a precinct a while
+  after it leaves the view; faery's LRU made up for references with no owner. A root keeps its
+  labels only because its loader stores their handles in it (D27; Bevy drops its own once the load
+  is processed), so a package's loader must do the same. First measure the memory a catalog holds
+  and the hitch of loading one. *Gate:* the first regional behavior packages (Marheim's).

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN99.**
+**Next: PAN100.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -201,14 +201,12 @@ set an edit is one of (`EditKind`).
 - **PAN28e Instances, nav points, New and Clone.** After PAN88, PAN92 and PAN93. Roots for an
   instance picked in selection mode and for the realm panel's selected nav point (faery's
   `NavPointEditor`). An instance's aspects show as overrides of its exemplar's. Whether an instance
-  may also add aspects its exemplar lacks is settled first, by a read-only scan of the precincts for
-  instances that do (Poul Ryba's carries `tambry:poul`, his goals at the forge). The leaning:
-  instances only override; behavior unique to a character moves to its own exemplar (two instances
-  that differ get two exemplars extending a shared one), and data that varies per instance goes in
-  an aspect the exemplar declares. The scenery panel's New… and Clone… (`TODO(PAN28e)`), which add
-  exemplars to a catalog: saving merges edits into the file (D73), so a new exemplar needs an insert
-  beside it. Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming
-  it keep working until they are saved again.
+  may also add aspects its exemplar lacks is settled with how behavior composes
+  ([Exemplars.md](Exemplars.md), Composing behavior), helped by a read-only scan of the precincts
+  for instances that do (Poul Ryba's carries `tambry:poul`, his goals at the forge). The scenery
+  panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits
+  into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old
+  name joins its `alias` list, so that precincts naming it keep working until they are saved again.
 - **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
   apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
   Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts
@@ -223,6 +221,23 @@ PAN3, Actors, in lettered parts. Requirements, from faery's actor module, are in
 [actor-requirements.md](actor-requirements.md) (draft, for the author to edit). Layers by time scale
 (existence, goals, planning, body, presentation) talk through components, with readiness as
 components and every layer restartable from saved state (R104).
+
+- **PAN99 Composing behavior, decided.** Research, then a branch: settles
+  [Exemplars.md](Exemplars.md), Composing behavior, and with it whether an instance may add aspects
+  (PAN28e). A scenario walkthrough of the leading alternatives (aspects as definitions; native and
+  external aspects), each step tagged asset, formula or native, over a sample: faery's 15
+  per-character aspects (`behaviors/demo.tsx`, `tambry.tsx`, `heroncreek.tsx`) and its generic
+  behavior (`standard.ts`, `work.ts`); its aspects that touch behavior (`conversant`, `follower`,
+  `shop`, `combat`) and logic doors (`mechanisms.ts`); the portal and container aspects; and quests
+  at Marheim's scale, which the author supplies. Its gaps answer the open questions: an aspect an
+  exemplar declares and an instance must supply (`PortalTarget`), bundles or lists per kind, a
+  package on disk before BSN (X1), formulas embedded in assets, and a missing or unknown piece (D47,
+  X20). Then a branch, in its own worktree, implements the chosen alternative's plumbing, with no
+  goal runtime: an aspect key in place of the `TypeId` in the union, the short type path in the
+  editor and the type name in the files; an external aspect, attached but inert; the add menu
+  listing package assets; saving and undo with keyed entries; `find_aspect` still reading native
+  aspects along the chain. It measures the cost and finds what the audit missed, and is kept if it
+  stands on its own. Lands as a decision, with X17, PAN28e and X74 brought in line.
 
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a
