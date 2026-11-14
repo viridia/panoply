@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN94.**
+**Next: PAN99.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -18,7 +18,7 @@ first; a chunk that needs another thread's says so.
 ## Terrain
 
 PAN38, Terrain mode's panel, in lettered parts: its layout, then its tools. PAN39 and PAN40 fill the
-rest of it. Ported from the Quill editor (`REFERENCE(PAN5)`, `ui/mode_terrain.rs`,
+rest of it. Ported from the Quill editor (`src/editor`, `ui/mode_terrain.rs`,
 `ui/tool_terrain_edit.rs`) and faery's `PlotEditPanel.tsx` (`terrain.png`). Each edit marks its
 asset unsaved and goes on the undo stack.
 
@@ -82,12 +82,30 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
 
 ## Scenery
 
+A chunk that adds a mode or a tool starts from faery's design for it ([faery.md](faery.md), Editor,
+its tool survey and screenshots), each chunk naming its faery source; then from what Blender does,
+scoped down. Scenery mode's overlays (faery's grid, floor cutaway, colliders, marks and portals) are
+`panoply_overlays` shapes in `mode_overlays.rs`. `src/editor`, written for the Quill editor, is
+reference (`REFERENCE(PAN94)`): each chunk that replaces a part of it deletes that part.
+
+- **PAN94 Place walls**, the first placing tool: walls drawn into the precinct under the pointer on
+  the current tier, at the wall tool's snap (`TODO(PAN94)` in `scenery_panel.rs`), undoable, and the
+  precinct saved, which no edit has done before (precincts are MessagePack, D73's merge is for
+  catalogs). Placing tools refuse an abstract exemplar (`TODO(PAN94)` in `exemplar_list.rs`).
 - **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
   `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
   Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
   it checks other exemplars. The floor tool lists them through the exemplar list
   (`exemplar_list.rs`, `TODO(PAN74)`), and the property editor edits them. Check what a precinct
   naming one floor loads: the catalog's every texture.
+- **PAN95 Place floors**, on PAN94's saving and PAN74's floor exemplars: floors drawn on the current
+  tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`).
+- **PAN96 Place fixtures**, on PAN94's saving: fixtures placed and turned in the precinct under the
+  pointer.
+- **PAN97 Place actors**, on PAN94's saving: actors placed into the precinct, each assigned an id as
+  it is placed (PAN88 lists and renames them).
+- **PAN98 Paint terrain effects**, on PAN94's saving: the terrain effect tool
+  (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
 - **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
   actors on those floors (R15). Rects are authored per tier (`TierSer.cutaways`); choosing them and
   the 3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
@@ -108,7 +126,8 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   precinct's instances by id, and choosing one selects it. An id is assigned when an actor is first
   placed by another tool, and can be edited here. Small or invisible things are picked through their
   `hint` and `marker` colliders (about 15 of each in `furnishings.exem.json` and
-  `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries.
+  `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries. The
+  editor's world clicks run only in `GameMode::Edit`, as the game's (PAN17) will only in `Play`.
 - **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
@@ -129,12 +148,6 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   `PhysicsMovable` did (a kinematic body moved by the model's own animation, with no separate
   animation data), so the leaf is solid and within the probe's reach through the whole swing. Closes
   I26.
-- **PAN78 Signs and books**: things to read. A sign is a scenery aspect whose interaction shows its
-  text; a document is an inventory item that links to text content and a page style (faery's book
-  aspect opened its content in a frame, `codex` by default). The second aspect after PAN21's first,
-  since its action needs only a reading view. The text is a book: a catalog entry, not an exemplar
-  ([faery.md](faery.md), Catalog entries), so the first of its kind decides how catalog entries load
-  and save beside exemplars.
 - **PAN79 Mechanisms**: the stock elements puzzles are built from, and how they are wired together,
   on SAGA's cells and reactions (X7). faery had doors, push and toggle buttons, pressure plates,
   remotely controlled openables, automatic doors, spear traps and fireball traps (whose fixed
@@ -156,8 +169,17 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   references by realm and coordinates in `design/scripting/predicates.md`; animated instances
   (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
   first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
+- **PAN78 Signs and books**, among the last chunks of all: things to read. A sign is a scenery
+  aspect whose interaction shows its text; a document is an inventory item that links to text
+  content and a page style (faery's book aspect opened its content in a frame, `codex` by default).
+  The text is a book: a catalog entry, not an exemplar ([faery.md](faery.md), Catalog entries), so
+  unless another kind came first, it decides how catalog entries load and save beside exemplars.
 
 ## Editor
+
+A chunk that adds a mode, a tool or a field widget starts from faery's design for it
+([faery.md](faery.md), Editor), as the Scenery thread's do; a field's widget is chosen by its type
+(D45), and a debug view of faery's joins the Show menu with the feature it shows.
 
 PAN28, Property editor, in lettered parts. A fork of arbor_day's `properties.rs` into
 `panoply_editor`, so each develops for its own needs (sharing later is X48); its attributes replaced
@@ -194,22 +216,6 @@ set an edit is one of (`EditKind`).
   (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
   its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
   scene inheritance.
-- **PAN5 Editor**, beyond PAN1's shell. `src/editor`, written for Quill, is reference
-  (`REFERENCE(PAN5)`): delete each part as `panoply_editor` replaces it. The design is faery's
-  editor (`packages/editor`, `design/Editor.md`; [faery.md](faery.md), Editor): read it before
-  designing a mode or tool. Two things the shell lacks: a resource in `panoply_core` saying whether
-  the game or the editor handles world clicks, so the game's (PAN17) run only while the game has the
-  pointer, where the mode decides, not the panel (play hands the pointer back, hiding the panel
-  keeps the tool); and the editor's selections saved in `bevy_settings` with its other state, so a
-  restart returns to where work stopped. Scenery mode's overlays (faery's grid, floor cutaway,
-  colliders, marks and portals) are `panoply_overlays` shapes in `mode_overlays.rs`. The author has
-  screenshots of faery's editor. Its tools, modal (one per mode or submode button) or situational
-  (the waypoint tool, opened from a field), and its property editor's field widgets are surveyed in
-  [faery.md](faery.md), Editor; port each with the mode or field that needs it, the widgets chosen
-  by field type (D45). faery's other debug views (listed in [faery.md](faery.md), Editor) join the
-  Show menu with the features they show, not before. Among them, faery's parcel and precinct
-  readiness grid, drawn from the survey's data (`TerrainPending::survey`, `SceneryPending::survey`,
-  PAN10) when tuning load distances needs it on screen.
 
 ## Actors
 
@@ -262,9 +268,9 @@ components and every layer restartable from saved state (R104).
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
-  game's click handling runs only while the game has the pointer (PAN5). A click that misses every
-  interactive thing lands on `WorldBackstop` (D61), and a ground click needs the ground point, which
-  it does not report.
+  game's click handling runs only in `GameMode::Play`. A click that misses every interactive thing
+  lands on `WorldBackstop` (D61), and a ground click needs the ground point, which it does not
+  report.
 
 ## Portals
 

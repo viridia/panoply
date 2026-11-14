@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I50.**
+**Next: I51.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -186,3 +186,6 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I49** A `Skin`'s model picker still lists the features (hair, hats) beside the bodies (D77).
   Since PAN28k a feature's node carries the extra `feature`, so the picker could leave those scenes
   out, which is D77's reversal without the scene extras it planned. Read, not run.
+- **I50** The scenery panel's "layer to cut at, and its Cut toggle" (`TODO(I50)` in
+  `scenery_panel.rs`, from faery's panel) is unclear: cutaways (PAN76), phasing layers (X109), or
+  something else. Read, not run.

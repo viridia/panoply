@@ -10,7 +10,7 @@ use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
-// REFERENCE(PAN4, PAN5): uncompiled, deleted as the rewrites replace them.
+// REFERENCE(PAN4, PAN94): uncompiled, deleted as the rewrites replace them.
 // #[cfg(feature = "editor")]
 // mod editor;
 // mod portals;
@@ -33,7 +33,7 @@ use panoply_terrain::PanoplyTerrainPlugin;
 // TODO(PAN4): restore
 // use crate::portals::PortalPlugin;
 
-// REFERENCE(PAN5)
+// REFERENCE(PAN94)
 // #[derive(Resource)]
 // struct EditorImages {
 //     world: Handle<Image>,

@@ -38,7 +38,7 @@ Migration scripts below, and X1), `artwork/`.
 - `defs.ts`: nine collision groups (Static, Door, Actor, Npc, Portal, Visible, Sensor, Marker,
   Pickable) as rapier membership/filter bits, and named masks (`TerrainMask`, `ActorMoveMask`,
   `PickMask`, `EditorPickMask`, ...). `ColliderIndex` maps collider handle to metadata (instance,
-  archetype); this is how mouse picking finds game objects (relevant to PAN5, X14).
+  archetype); this is how mouse picking finds game objects (relevant to PAN88, X14).
 - `PhysicsActor.ts`: capsule body; kinematic when controlled, dynamic when not (switching
   rebuilds the body); Y rotation only; CCD on. A second, inflated capsule for picking. Movement
   uses its own shape casts, not a character controller; `unstick` pushes out of overlaps, then
@@ -108,7 +108,7 @@ Migration scripts below, and X1), `artwork/`.
   `IPortal`, `portalAspect`. Small; background for the rewrite.
 - `game/src/systems/FollowerTeleport.ts`: followers crossing with the player.
 
-## Editor (for PAN5)
+## Editor (for the Scenery and Editor threads)
 
 - Screenshots, in [faery-screenshots/](faery-screenshots/), each mode at its route: a bar of mode
   buttons atop the panel, realm (`/map`), terrain (`/plots`), scenery, catalogs and play, then save

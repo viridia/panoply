@@ -314,7 +314,7 @@ never reused.
   branches packed around it; scaled with the instance); shrubs and herbs have none. Trees placed as
   fixtures are authored: they get their descriptors' colliders and no canopy, and a pocket among
   them is an authoring error. The canopy collides with everything for now: when picking and sight
-  rays arrive (PAN5, PAN3), their query filters exclude `CANOPY`.
+  rays arrive (PAN88, PAN3), their query filters exclude `CANOPY`.
 - **D40** Actors are a crate, `panoply_actors`, since the editor sees only engine crates (D37) and
   will edit actors. The precinct file format is a crate of its own, `panoply_precinct`
   (`PrecinctAsset`, its loader and saver, and the instance data it holds), which `panoply_scenery`

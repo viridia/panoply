@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X114.**
+**Next: X115.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -77,7 +77,7 @@ dropped, not deferred. Numbers are never reused.
   live in a per-realm resource keyed by world cell with a regrow time, outside the parcel so
   eviction does not regrow them (and in the save game if they must survive a reload). Flora
   placement skips picked cells. With merged flora (X15), hide an instance by collapsing its vertex
-  range in the parcel's herb mesh. *Gate:* `bevy_picking` (PAN5) and gameplay input.
+  range in the parcel's herb mesh. *Gate:* `bevy_picking` (PAN88) and gameplay input.
 - **X15** Merge flora into per-parcel meshes. Flora costs about 1.5 ms at distance 20 and about
   5 ms at 40 ([notes.md](notes.md)); hiding and the show set (D19, D20) cut little, so the cost
   is the shown flora entities. Plan: cache each model once as a template (part meshes, transforms, material
@@ -122,7 +122,7 @@ dropped, not deferred. Numbers are never reused.
   customers). *Gate:* BSN assets, and SAGA formulas in assets.
 - **X20** Keep unknown aspects lossless (D25) in precincts: hold each as an opaque value that saves
   back unchanged, so the editor cannot drop data a disabled module owns. Catalogs already keep them,
-  since a save merges edits into the file (D73). *Gate:* the editor saves a precinct (PAN5).
+  since a save merges edits into the file (D73). *Gate:* the editor saves a precinct (PAN94).
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller than
   D20's 4 m allowance also needs its own); hot reload of `FloorSurface` assets (floors do not
   rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
@@ -172,7 +172,7 @@ dropped, not deferred. Numbers are never reused.
   hold about 500 precincts; at that size JSON costs nothing over msgpack and reads in a diff and a
   text editor. The editor rewrites it whenever it creates or deletes a precinct, and `asset_xref.py`
   checks it against the folder, so a file added or removed by hand fails `verify.sh`. *Gate:* the
-  editor creates precincts (PAN5), or the errors hide a real one.
+  editor creates precincts (PAN94), or the errors hide a real one.
 - **X36** Colliders authored in the glTF, beside the exemplar descriptors (D38): a model that
   carries its own colliders uses them, and any other keeps its `SceneryColliders`, so old content
   needs no rework, new models can be authored in Blender, and an old one moves when next touched.
@@ -303,15 +303,15 @@ dropped, not deferred. Numbers are never reused.
 - **X69** Stop faery's precinct converter overwriting ([faery.md](faery.md), Migration scripts):
   once Panoply edits a precinct, a rerun would undo it. Freeze it as the realm map converter is, or
   make it merge as the archetype converter does, if faery's precincts still hold content Panoply has
-  not taken (instance inventories and aspects, layers). *Gate:* the editor saves a precinct (PAN5),
+  not taken (instance inventories and aspects, layers). *Gate:* the editor saves a precinct (PAN94),
   or one is edited by hand.
 - **X70** Rebuild demorun's cottages. Demorun was made to film a character running through many
   biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
   they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
-  editor places scenery (PAN5).
+  editor places scenery (PAN94).
 - **X72** Undo of an edit that is off-screen: the camera does not move on undo, so the change can
   happen out of sight. Candidate: an action optionally reports where it happened, and the camera
-  moves only if that is off-screen or in another realm. *Gate:* PAN38 or PAN5, the first edits with
+  moves only if that is off-screen or in another realm. *Gate:* PAN38 or PAN94, the first edits with
   a place on the map, if it annoys in use.
 - **X73** Undoing back to the saved state leaves the asset marked unsaved, so Save stays enabled.
   Harmless, since Save rewrites the same content, but PAN44's prompt would ask needlessly. The fix
@@ -466,10 +466,11 @@ dropped, not deferred. Numbers are never reused.
   editor, layers are shown or hidden for authoring, and a control picks the current layer, to which
   every wall, fixture and floor placed then belongs; the scenery palette's Layers button
   (`SceneryTool::Layers`) is its place. faery had layers too (`engine/src/world/structures/`), not
-  ported. No phased terrain or terrain effects: possible, with no customer. A mod's scenery is the
-  same additive patch: it adds walls, fixtures and actors to the game's precincts, and precincts
-  where the game has none, so a mod ships its own precinct index (X34), joined with the game's.
-  *Gate:* the first quest stage that changes scenery, or the first mod that adds scenery.
+  ported, and never finished their editor: the editor is designed anew. No phased terrain or terrain
+  effects: possible, with no customer. A mod's scenery is the same additive patch: it adds walls,
+  fixtures and actors to the game's precincts, and precincts where the game has none, so a mod ships
+  its own precinct index (X34), joined with the game's. *Gate:* the first quest stage that changes
+  scenery, or the first mod that adds scenery.
 - **X110** The game UI's typeface (`GAME_UI_FONT`, Macondo Swash Caps). Plain Macondo reads better,
   its capital E most of all (X75); the choice is to switch to it, or to make a font of the author's
   own that combines the best of both. Neither has bold or italics, so emphasis in a book's text or a
@@ -491,3 +492,6 @@ dropped, not deferred. Numbers are never reused.
 - **X113** Lists collapsed by default in the property editor: always, past a length, or remembered
   per type rather than per pane. Quests and dialogue will make property grids several screens tall.
   *Gate:* the first property grid more than a screen tall.
+- **X114** faery's parcel and precinct readiness grid in the Show menu, drawn from the survey's data
+  (`TerrainPending::survey`, `SceneryPending::survey`, PAN10). *Gate:* tuning load distances needs
+  it on screen.

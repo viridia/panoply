@@ -157,7 +157,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 align_self: AlignSelf::Start,
             }
             --
-            // TODO(PAN5): the floor tool's shapes and the wall tool's snap.
+            // TODO(PAN94): the wall tool's snap. TODO(PAN95): the floor tool's shapes.
             #ToolOptions
             Node {
                 grid_column: {GridPlacement::start(2)},
@@ -181,7 +181,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 height: px(0),
             }
             --
-            // TODO(PAN5): the layer to cut at, and its Cut toggle.
+            // TODO(I50): the layer to cut at, and its Cut toggle.
             Node {
                 grid_column: {GridPlacement::start(1)},
                 grid_row: {GridPlacement::start(3)},
@@ -321,7 +321,7 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryPalette {
                         settings.scenery_tool = tool;
                     }
                 }
-                // TODO(PAN5): enabled while scenery is selected, turning it.
+                // TODO(PAN92): enabled while scenery is selected, turning it.
                 PaletteAction::Rotate => {
                     button.on_spawn_insert(|| InteractionDisabled);
                 }
