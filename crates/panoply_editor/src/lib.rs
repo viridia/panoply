@@ -5,6 +5,7 @@
 use bevy::{
     app::PluginGroupBuilder,
     feathers::{
+        controls::{ColorInputValue, ColorSwatchValue},
         dark_theme::create_dark_theme,
         palette,
         theme::{SemanticToken, SurfaceLevel, ThemeProps, UiTheme},
@@ -55,6 +56,7 @@ impl PluginGroup for EditorPlugins {
             .add_group(FeathersPlugins)
             .add(EditorThemePlugin)
             .add(FixedPopoversPlugin)
+            .add(ColorSwatchesPlugin)
             .add(shell::EditorShellPlugin)
             .add(debug_views::DebugViewsPlugin)
             .add(diagnostics::EditorDiagnosticsPlugin)
@@ -108,6 +110,39 @@ struct FixedPopoversPlugin;
 impl Plugin for FixedPopoversPlugin {
     fn build(&self, app: &mut App) {
         app.register_required_components::<Popover, FixedNode>();
+    }
+}
+
+/// Every color input's swatch shows its color. Feathers' color input sends its color to an entity
+/// it names `#swatch` from a scene other than the one that spawns the swatch it draws, so the two
+/// are separate entities and the drawn swatch stays white (I48). The drawn one keeps the name, so
+/// the color is copied to it, its own swatch only: the picker's recent colors are swatches too.
+// TODO(I48): drop once feathers' color input reaches its own swatch.
+struct ColorSwatchesPlugin;
+
+impl Plugin for ColorSwatchesPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(PostUpdate, show_color_input_swatches);
+    }
+}
+
+fn show_color_input_swatches(
+    inputs: Query<(Entity, &ColorInputValue)>,
+    children: Query<&Children>,
+    mut swatches: Query<(&Name, &mut ColorSwatchValue)>,
+) {
+    for (input, value) in &inputs {
+        for descendant in children.iter_descendants(input) {
+            let Ok((name, mut swatch)) = swatches.get_mut(descendant) else {
+                continue;
+            };
+            if name.as_str() == "swatch" {
+                if swatch.0 != value.0 {
+                    swatch.0 = value.0;
+                }
+                break;
+            }
+        }
     }
 }
 

@@ -1,8 +1,8 @@
 //! The property editor in scenery mode, for the exemplar chosen in the tool's list: a pane
 //! captioned with its kind and name ("Fixture: WoodenChairSmall"), holding the exemplar's own
 //! fields and then a subpane for each of its own aspects, each with a × that removes it. The
-//! caption's menu adds the exemplar's absent fields and opens the aspects chooser
-//! (`aspect_chooser`). Inherited aspects are not shown.
+//! caption's menu adds the exemplar's absent fields, and a button beside it opens the aspects
+//! chooser (`aspect_chooser`), as Blender's Add Modifier does. Inherited aspects are not shown.
 
 use std::{any::Any, sync::Arc};
 
@@ -16,6 +16,7 @@ use bevy::{
         containers::{pane, pane_body, pane_header},
         controls::{FeathersScrollbar, ScrollbarGutter},
         theme::ThemeTextColor,
+        tokens,
     },
     platform::collections::HashMap,
     text::FontSourceTemplate,
@@ -41,10 +42,14 @@ use crate::{
             EditGesture, ExemplarAspect, InspectedRoots, InspectedValues, PathSteps,
             PropertyEdits, PropertyRoot, ReflectAspectHolder,
         },
-        root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows, HEADER_TEXT,
+        icon_button, root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows,
+        HEADER_TEXT,
     },
     unsaved::UnsavedAssets,
 };
+
+/// The icon of the exemplar pane's button that opens the aspects chooser.
+const ASPECTS_ICON: &str = "editor/icons/lucide/blocks.png";
 
 /// The immediate-mode root of scenery mode's property editor.
 #[derive(Component, Default, Clone)]
@@ -323,8 +328,8 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
         ui.ch_id("pane")
             .on_spawn_apply_scene(|| bsn! { @pane() Node { flex_grow: 1.0, min_height: px(0) } })
             .add(|ui| {
-                // "Fixture: WoodenChairSmall", the name in bold, then the menu that adds its
-                // absent fields and opens the aspects chooser.
+                // "Fixture: WoodenChairSmall", the name in bold, then at the right the menu that
+                // adds its absent fields and the button that opens the aspects chooser.
                 ui.ch()
                     .on_spawn_apply_scene(pane_header)
                     .on_spawn_insert(|| Name::new("ExemplarHeader"))
@@ -345,9 +350,13 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                                     .on_spawn_apply_scene(|| header_text(fonts::BOLD, FontWeight::BOLD))
                                     .on_hash_change_text_fn(name, || name.clone());
                             });
-                        let more = ("aspects", "Aspects…");
+                        ui.ch().on_spawn_insert(|| Node {
+                            flex_grow: 1.0,
+                            ..default()
+                        });
                         let fields = fields.as_ref();
-                        if root_add_menu(ui, exemplar, fields, &registry, edits, collapsed, more) {
+                        root_add_menu(ui, exemplar, fields, &registry, edits, collapsed);
+                        if icon_button(ui, "aspects", ASPECTS_ICON, px(18), tokens::TEXT_MAIN) {
                             let root = exemplar.clone();
                             ui.commands_mut()
                                 .run_system_cached_with(open_aspect_chooser, root);

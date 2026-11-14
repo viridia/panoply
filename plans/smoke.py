@@ -97,6 +97,8 @@ MODAL = "bevy_ui_widgets::modal::ModalDialog"
 TEXT = "bevy_ui::widget::text::Text"
 DISABLED = "bevy_ui::interaction_states::InteractionDisabled"
 NUMERIC = "bevy_ui_widgets::numeric::NumericValue"
+PRECISION = "bevy_feathers::controls::number_input::NumberInputPrecision"
+SWATCH = "bevy_feathers::controls::color_swatch::ColorSwatchValue"
 SELECTED_TREE_ITEM = "bevy_ui_widgets::tree::SelectedTreeItem"
 EXPANDED = "bevy_ui::interaction_states::Expanded"
 CHECKED = "bevy_ui::interaction_states::Checked"
@@ -372,6 +374,18 @@ def exemplar_properties(driver):
     loaded = {"F64": 1.2}
     edited = {"F64": 1.5}
     driver.expect(scale, NUMERIC, loaded)
+    # Its `Precision` rounds a drag to two places.
+    expect_marker(driver, scale, PRECISION, True, ("rounded", "unrounded"))
+    # A color's swatch shows it (I48's workaround): Fur is #a68d6b, its channels as `f32`s.
+    fur = {
+        "Srgba": {
+            "red": 0.6509804129600525,
+            "green": 0.5529412031173706,
+            "blue": 0.41960784792900085,
+            "alpha": 1.0,
+        }
+    }
+    driver.expect("Properties/Colors/Fur/value/input/swatch", SWATCH, fur)
     driver.screenshot("exemplar_properties")
     driver.click(scale)
     driver.key("End")
@@ -577,8 +591,7 @@ def aspect_property(driver):
     driver.expect("Toast/ToastText", TEXT, "Undo: Remove FeralDogAlpha.ActorScale")
     driver.present(scale)
 
-    driver.click("ExemplarHeader/add")
-    driver.click("ExemplarHeader/add_aspects")
+    driver.click("ExemplarHeader/aspects")
     driver.present("AspectChooser")
     expect_checked(driver, "AspectChooser/ActorScale", True)
     expect_checked(driver, "AspectChooser/WieldedItems", False)

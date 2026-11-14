@@ -15,8 +15,9 @@
 //! value's row, with a × that removes the value, or no row while it is `None`: a struct's heading
 //! has a menu of its absent fields, which adds one with its type's default. Every other field is a
 //! row that shows its value without editing it. Annotations from `bevy::annotations` set a row's
-//! caption, a number's range and step, and whether it can be edited; on an `Option`, they apply to
-//! its value.
+//! caption, a number's range and step, and whether it can be edited, and `Precision` the places
+//! a number rounds to while dragged; on an `Option`, they apply to its value. Those on a newtype's
+//! inner field, if it has any, replace those of the field holding the newtype.
 //!
 //! A row is named after its field, never its caption, and a list item "#1", "#2", so plans' paths
 //! keep working when captions change.
@@ -39,8 +40,8 @@ use bevy::{
             FeathersDisclosureToggle, FeathersListRow, FeathersMenu, FeathersMenuItem,
             FeathersMenuPopup,
             FeathersMenuToolButton, FeathersNumberInput, FeathersSelect, FeathersTextInput,
-            FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputSnapToStep,
-            NumberInputStep, OptionIndex,
+            FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputPrecision,
+            NumberInputSnapToStep, NumberInputStep, OptionIndex,
         },
         display::{caption as option_caption, icon, label},
         theme::{ThemeBorderColor, ThemeTextColor, ThemeToken, ThemedText},
@@ -81,7 +82,7 @@ use bevy_immediate::{
     CapSet, Imm, ImmCapAccessRequests, ImmCapability, ImmEntity,
 };
 use panoply_core::HexColor;
-use panoply_exemplar::annotations::{AspectIcon, ReflectPropertySummary};
+use panoply_exemplar::annotations::{AspectIcon, Precision, ReflectPropertySummary};
 
 use crate::{
     model_picker::{model_field, open_model_picker, ChosenModel, ModelKind},
@@ -284,7 +285,7 @@ pub fn root_pane(
                     rows.summary(ui, value, expanded);
                 });
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
-                    rows.add_menu(ui, value, &ParsedPath::empty(), None);
+                    rows.add_menu(ui, value, &ParsedPath::empty());
                     let (inner, path) = through_newtypes(value, ParsedPath::empty());
                     rows.add_button(ui, inner, &path);
                     remove_button(ui, remove);
@@ -385,9 +386,8 @@ fn placeholder(text: &'static str) -> impl Scene {
     }
 }
 
-/// The menu of `value`'s absent fields, `value` being `root`'s value, ending in an item named
-/// `more.0` and captioned `more.1`, for whatever else the root's pane can add. Returns whether
-/// that item was picked. The edits its items ask for go to `edits`.
+/// The menu of `value`'s absent fields, `value` being `root`'s value; nothing while it has none.
+/// The edits its items ask for go to `edits`.
 pub fn root_add_menu(
     ui: &mut Imm<CapsPanel>,
     root: &Arc<dyn PropertyRoot>,
@@ -395,8 +395,7 @@ pub fn root_add_menu(
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
     collapsed: &mut CollapsedRows,
-    more: (&'static str, &'static str),
-) -> bool {
+) {
     Rows {
         root,
         registry,
@@ -405,7 +404,7 @@ pub fn root_add_menu(
         depth: 0,
         added: false,
     }
-    .add_menu(ui, value, &ParsedPath::empty(), Some(more))
+    .add_menu(ui, value, &ParsedPath::empty());
 }
 
 /// The rows of `value`, `root`'s value, in whatever holds them: a struct's fields with no heading
@@ -592,20 +591,13 @@ impl Rows<'_> {
     }
 
     /// A boxed-plus menu of the absent fields of `value`, a struct at `path`: its `Option`
-    /// fields that are `None` and can be edited. Picking one adds it. With `more`, an item named
-    /// `more.0` and captioned `more.1` ends the menu; returns whether it was picked. Nothing if
-    /// the menu would be empty.
-    fn add_menu(
-        &mut self,
-        ui: &mut Imm<CapsPanel>,
-        value: &dyn PartialReflect,
-        path: &ParsedPath,
-        more: Option<(&'static str, &'static str)>,
-    ) -> bool {
+    /// fields that are `None` and can be edited. Picking one adds it. Nothing if the menu would
+    /// be empty.
+    fn add_menu(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
         let (Some(TypeInfo::Struct(info)), ReflectRef::Struct(fields)) =
             (value.get_represented_type_info(), value.reflect_ref())
         else {
-            return false;
+            return;
         };
         let absent: Vec<_> = info
             .iter()
@@ -628,11 +620,10 @@ impl Rows<'_> {
                 Some((field_info.name(), caption, field.get_represented_type_info()?))
             })
             .collect();
-        if absent.is_empty() && more.is_none() {
-            return false;
+        if absent.is_empty() {
+            return;
         }
         let mut picked = None;
-        let mut more_picked = false;
         ui.ch_id("add")
             .on_spawn_apply_scene(|| bsn! { @FeathersMenu #add })
             .add(|ui| {
@@ -655,16 +646,12 @@ impl Rows<'_> {
                             picked = Some((name, option));
                         }
                     }
-                    if let Some((name, caption)) = more {
-                        more_picked = menu_item(ui.ch_id(name), caption, format!("add_{name}"));
-                    }
                 });
             });
         if let Some((name, option)) = picked {
             self.add_or_remove(&path.with_field(name), option, true);
             self.added = true;
         }
-        more_picked
     }
 
     /// The rows of the fields of `value`, a struct at `path`.
@@ -766,9 +753,17 @@ impl Rows<'_> {
                 return;
             }
         }
-        // A newtype is its field's row.
+        // A newtype is its field's row, annotated as its field is, if it is.
         if let Some(inner) = newtype_field(value) {
             if value.try_downcast_ref::<HexColor>().is_none() {
+                let attrs = match value.get_represented_type_info() {
+                    Some(TypeInfo::TupleStruct(info)) => info
+                        .field_at(0)
+                        .map(|field| field.custom_attributes())
+                        .filter(|own| !own.is_empty())
+                        .unwrap_or(attrs),
+                    _ => attrs,
+                };
                 self.row_with(ui, head, attrs, inner, path.with_tuple(0), remove);
                 return;
             }
@@ -854,7 +849,7 @@ impl Rows<'_> {
                 remove,
                 |_, ui| heading_caption(ui, caption),
                 |rows, ui| {
-                    rows.add_menu(ui, value, &path, None);
+                    rows.add_menu(ui, value, &path);
                 },
                 |rows, ui| rows.fields(ui, value, &path),
             );
@@ -1054,7 +1049,7 @@ impl Rows<'_> {
                 Some(remove),
                 |_, ui| committed = text_field(ui, "key", key),
                 |rows, ui| {
-                    rows.add_menu(ui, inner, &inner_path, None);
+                    rows.add_menu(ui, inner, &inner_path);
                     rows.add_button(ui, inner, &inner_path);
                 },
                 |rows, ui| match inner.reflect_ref() {
@@ -1656,7 +1651,7 @@ fn remove_button(ui: &mut Imm<CapsPanel>, remove: Option<&mut bool>) {
 /// A plain tool button named `name` showing the icon `image`, `height` high, tinted `color`.
 /// Returns whether it was clicked.
 // TODO: a dim button variant upstream, which would also brighten on hover.
-fn icon_button(
+pub(crate) fn icon_button(
     ui: &mut Imm<CapsPanel>,
     name: &'static str,
     image: &'static str,
@@ -1760,6 +1755,7 @@ fn summary(value: &dyn PartialReflect) -> String {
 struct NumberLook {
     range: Option<NumericRange>,
     step: Option<f64>,
+    precision: Option<i32>,
 }
 
 impl NumberLook {
@@ -1767,6 +1763,7 @@ impl NumberLook {
         Self {
             range: attrs.get::<ValueRange>().map(|range| T::range(&range.0)),
             step: attrs.get::<Step>().map(|step| step.0),
+            precision: attrs.get::<Precision>().map(|precision| precision.0),
         }
     }
 }
@@ -1932,6 +1929,9 @@ fn number_input<T: NumberField>(
             // Snapped to the step, so values nudged by dragging line up with each other.
             if let Some(step) = look.step {
                 commands.insert((NumberInputStep(step), NumberInputSnapToStep));
+            }
+            if let Some(precision) = look.precision {
+                commands.insert(NumberInputPrecision(precision));
             }
         })
         .on_spawn_apply_scene(move || {

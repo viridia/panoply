@@ -156,12 +156,6 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28j Editor polish.** A `Precision` annotation, as arbor_day's (`properties.rs`): the decimal
-  places a number input rounds to while dragging, given to feathers as `NumberInputPrecision`, in a
-  crate the aspect crates see (`panoply_exemplar::annotations`); `ActorScale` gets one, since
-  dragging it shows nine places. The aspects chooser opens from a button of its own on the exemplar
-  pane's header, as Blender's Add Modifier is, rather than from the end of the fields menu; its icon
-  still to choose (a puzzle piece is aspects' default pane icon).
 - **PAN28k Features and colors.** `Features` and `Colors` edited as faery's `FeatureSelection` and
   `ColorMap` were: a checkbox per slot of the actor's `FeatureSlots`, a color per slot of its
   `ColorSlots`, each resolved through `extends`, never an arbitrary key. A key outside the slots,

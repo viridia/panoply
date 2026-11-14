@@ -1,5 +1,8 @@
 use bevy::{annotations::DisplayName, platform::collections::HashMap, prelude::*};
-use panoply_exemplar::{annotations::AspectIcon, *};
+use panoply_exemplar::{
+    annotations::{AspectIcon, Precision},
+    *,
+};
 use serde::{Deserialize, Serialize};
 
 use panoply_core::HexColor;
@@ -131,7 +134,7 @@ impl Aspect for CollisionSize {
 #[derive(Component, Debug, Reflect, Clone, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 #[reflect(@AspectIcon("editor/icons/lucide/scale-3d.png"))]
-pub struct ActorScale(pub f32);
+pub struct ActorScale(#[reflect(@Precision(2))] pub f32);
 
 impl Default for ActorScale {
     fn default() -> Self {

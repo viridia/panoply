@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I48.**
+**Next: I49.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -176,3 +176,14 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I47** The toolbar's rotate left and right tools mean something only in terrain and scenery
   modes, yet take a toolbar row in every mode. Candidate: move each into its mode's panel, freeing
   the row. Seen by the author.
+- **I48** Feathers' color input never shows its color: the swatch stays white while the picker edits
+  the value (map entries in `Colors`; a `LightSource` color too, unnoticed since it is near white).
+  Its scene names the swatch `#swatch` inside the nested `@caption: bsn!` it passes to
+  `FeathersMenuToolButton`, and refers to it from the outer macro as `ButtonEntityRefs(#swatch)`;
+  since bevy#26314 a nested macro keeps its own call site, so the two are separate entities and the
+  color goes to one never drawn. It had worked because both names were index 0 of their macro, the
+  collision bevy#25407 reported. Whether a name should reach into a nested `bsn!` is awaiting cart's
+  ruling: if it should, the fix is in BSN, keying names across nested macros; if not, in feathers,
+  finding the swatch without one. The editor copies the color to the drawn swatch meanwhile
+  (`ColorSwatchesPlugin`, `TODO(I48)`). The color landing elsewhere confirmed by running (a probe
+  read each entity's `ColorSwatchValue`); the cause read in the commit.

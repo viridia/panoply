@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN28j** Dragged numbers round to an annotated precision; aspects open from their own button.
 - **PAN28i** Maps edit as entries: a key input, its value's widget and a ×; + adds, keys rename.
 - **PAN28m** Property rows align in columns, collapse with summaries; aspects have icons.
 - **PAN28l** The property editor's next look is chosen: aligned columns, collapsing panes, icons.
