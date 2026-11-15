@@ -27,6 +27,7 @@ use crate::{
     widget_keys::WidgetKeysPlugin,
 };
 use panoply_actors::ActorsPlugin;
+use panoply_portals::PanoplyPortalsPlugin;
 use panoply_render::PanoplyRenderPlugin;
 use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
@@ -95,6 +96,7 @@ fn main() {
         PanoplyTerrainPlugin,
         PanoplySceneryPlugin,
         ActorsPlugin,
+        PanoplyPortalsPlugin,
         // TODO(PAN4, X5): restore
         // PortalPlugin,
         // WorldInspectorPlugin::new(),

@@ -13,7 +13,7 @@ use bevy::{
 
 use panoply_core::{PrimaryCamera, Realm};
 
-use super::portal_aspect::{Portal, PortalSide, PortalTarget};
+use panoply_portals::{Portal, PortalSide, PortalTarget};
 
 #[derive(Component)]
 pub(crate) struct ActivePortal {

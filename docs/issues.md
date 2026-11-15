@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I51.**
+**Next: I52.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -189,3 +189,9 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I50** The scenery panel's "layer to cut at, and its Cut toggle" (`TODO(I50)` in
   `scenery_panel.rs`, from faery's panel) is unclear: cutaways (PAN76), phasing layers (X109), or
   something else. Read, not run.
+- **I51** `plans/smoke.py` once failed at the characters catalog's save (`expect_disabled` after
+  `click("Save")`): Save stayed enabled, and no save ran or failed in the log, so the click reached
+  nothing. The plan alone passed right after. The previous step was the redo of an `ActorScale`
+  edit, which a field's keys and the history settle over a few frames. Candidate: wait on something
+  the redo changes before clicking. Seen once, in a directory run (PAN4a); the cause not looked
+  into.

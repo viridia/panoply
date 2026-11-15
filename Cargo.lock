@@ -4770,6 +4770,7 @@ dependencies = [
  "panoply_core",
  "panoply_editor",
  "panoply_exemplar",
+ "panoply_portals",
  "panoply_render",
  "panoply_scenery",
  "panoply_terrain",
@@ -4843,6 +4844,17 @@ name = "panoply_overlays"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "panoply_portals"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "panoply_exemplar",
+ "panoply_scenery",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -3,13 +3,10 @@ use bevy::{
     prelude::*,
 };
 
-use self::{
-    active_portal::{spawn_portals, update_portals},
-    portal_aspect::{Portal, PortalSide, PortalTarget},
-};
+use self::active_portal::{spawn_portals, update_portals};
+use panoply_portals::{Portal, PortalSide, PortalTarget};
 
 mod active_portal;
-mod portal_aspect;
 
 pub struct PortalPlugin;
 

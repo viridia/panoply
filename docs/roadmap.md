@@ -297,14 +297,12 @@ components and every layer restartable from saved state (R104).
 PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/portals` is reference
 (`REFERENCE(PAN4)`), deleted when PAN4c lands.
 
-- **PAN4a Portal aspects.** The old code's `Portal` (the aperture, on a wall or fixture exemplar)
-  and `PortalTarget` (per instance: the far end's realm and place), loaded from precincts, and
-  gizmos showing each aperture. Portals go in a crate, since the editor places them (D37, D40):
-  first candidate, `panoply_portals`, over scenery and actors, which crossing needs (PAN4c).
 - **PAN4b Portal view.** What the aperture shows: the far end, rendered by a camera of its own (D21:
-  off-axis projection fitted to the aperture, its own load region). Bevy's `examples/3d/mirror.rs`
-  (a second camera on a render target) and `examples/camera/custom_projection.rs` (an oblique clip
-  plane) are the starting point, replacing the old `active_portal.rs`.
+  off-axis projection fitted to the aperture, its own load region), with gizmos showing each
+  aperture to judge it against. Bevy's `examples/3d/mirror.rs` (a second camera on a render target)
+  and `examples/camera/custom_projection.rs` (an oblique clip plane) are the starting point,
+  replacing the old `active_portal.rs`. `panoply_portals` depends on scenery only; crossing (PAN4c)
+  adds actors.
 - **PAN4c Crossing.** The player crosses a portal into the target realm, keeping offset and velocity
   (R31), detected by a volume at the aperture. Decide here, once crossing can be felt, how the view
   changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
