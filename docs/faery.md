@@ -278,10 +278,10 @@ version needed for a floors-only realm; it was deleted (see PAN84). X1 needs the
 Conversions baked into Panoply's data: wall and fixture facings from quarter turns to degrees
 (`* 90`); actor facings from radians to degrees, turned a quarter (faery's 0 faced +x, Panoply's
 +z), and written even when 0; tier `level -= 2` and floor type index `-= 1`; instances without an
-`iid` numbered in sequence; terrain effect `road` renamed `cobbles`; model paths rewritten (`a:b` to
-`a.glb#b`, folders moved, `Boulder1` to `Boulder.1` and similar); floor types become
-`scenery/floors/<kebab-case>.floor.ron` (the `.floor.ron` files are not made by these scripts;
-`floor-tiles.json` is skipped).
+`iid` numbered in sequence (to stop: internal ids are not saved, D87); terrain effect `road` renamed
+`cobbles`; model paths rewritten (`a:b` to `a.glb#b`, folders moved, `Boulder1` to `Boulder.1` and
+similar); floor types become `scenery/floors/<kebab-case>.floor.ron` (the `.floor.ron` files are not
+made by these scripts; `floor-tiles.json` is skipped).
 
 Dropped (the scripts log most of them), by the module that would want them. Some are features
 Panoply will not carry over because it has a better way; which is which is undecided per item.
@@ -292,8 +292,12 @@ Panoply will not carry over because it has a better way; which is which is undec
   (with dialogue portraits). `scale` was restored by hand as the `ActorScale` aspect (PAN3l).
   Aspects: `combatant` (some with `healthMax`, `attackPower`), `enemy` (with `loot` tables, e.g.
   `loot:Wolf`), `conversant`, `shopkeeper`, `follower`, `aggressive`, `territorial`.
-- Actor instances in precincts: only `combatant` is kept. Dropped: `enemy`, `territorial`, and
-  script hooks (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...).
+- Actor instances in precincts: `combatant` is kept on two playground Kreekin, by mistake: it
+  belongs on their exemplar, so the converter is to drop it. Dropped: `enemy` (`loot`),
+  `territorial`; behavior hooks on 16 actors (`demo:wolf`, `heroncreek:cwParty`, `tambry:*`, ...),
+  every per-character behavior faery had; `inventory` (32 actors); `instanceVars.stock` (Poul's
+  shop); `healthMax` (9 actors in `demorun`); inline `goals`, the patrol routes of five guards in
+  `demorun/p002-p002`.
 - Items (`items`, `quest-items`, `weapons`, `books`, `creature-parts`, `common`): `type`, `model`
   (as `ItemModel`) and `equipSlot` (as `EquipSlot`, `weaponR` renamed to the bone's `weapon.R`) are
   kept; icon, weapon stats, document content and quest hooks, weight, price, stack size and sounds
@@ -306,6 +310,10 @@ Panoply will not carry over because it has a better way; which is which is undec
   marks, wall size.
 - Scenery instance props: `Group` and `PortalTarget` are kept (Panoply registers neither yet);
   per-instance aspects (`triggerGroup`, `wall:directDoor`, `wall:flipFlopDoor`,
-  `playground:spearTrap2`, `playground:proximityDoor`), `inventory` and per-instance `facing`
-  are dropped.
+  `playground:spearTrap2`, `playground:proximityDoor`), `inventory` (4 containers) and per-instance
+  `facing` are dropped, as are the `properties` other than `portalTarget`: `source` (logic wiring,
+  10), `open: true` (3), `content` (11 signs, naming regional text), the spawners' `spawnTable`,
+  `spawnCount`, `spawnCountMax`, `cooldown`, `radius` and `spawn`, the regions' `halfSizeX`,
+  `halfSizeZ`, `radius`, `track` and `waypoints`, and `takeable` (1). `aIndex` and `pos`, on 135
+  `demorun` instances, look like stale editor fields.
 - Terrain effects: `TerrainBlocked` (`blocked`). Precincts: `layers`.

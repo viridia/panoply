@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D86.**
+**Next: D88.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -127,7 +127,8 @@ never reused.
 - **D25** An aspect type no plugin has registered is skipped with a warning
   (`panoply_exemplar::aspect_list`), not an error that fails the whole catalog or precinct, so
   modules can be restored one at a time (the wall-tile catalog uses portals' `Portal`). Saving such
-  a precinct drops the skipped aspects; see X20.
+  a precinct drops the skipped aspects; see X20. faery's, so dropped, come back with the precinct
+  converter's merge (X69).
 - **D26** No pipeline compiles while scrolling. Bevy 0.20 creates render pipelines
   synchronously on macOS (`bevy_render` `create_pipeline_task`), about 35 ms each, the first
   time a material and mesh-layout combination is drawn. `panoply_render`'s warm-up loads the model folders
@@ -677,3 +678,18 @@ never reused.
   means nothing to these maps: each is looked up by key, and the panel shows keys sorted anyway. The
   catalogs' maps were sorted once, here. Reversing it means an ordered map keeping each file's
   order, with undo putting a removed key back at its index. (PAN28k)
+- **D86** Dialogue and remarks compose apart from goals, each through one native aspect listing set
+  assets, with a flag to inherit the parent's list ([Exemplars.md](Exemplars.md), Dialogue and
+  remarks). An aspect per package needs keyed or external aspects, still open for goals; one
+  ordinary aspect needs neither, can be built now, and keeps a guard's quest lines an override, not
+  an added aspect. Given up: a quest's goals and lines travelling as one bundle, and two mods adding
+  lines to one character both surviving (X74). Reversing it means dialogue in behavior packages.
+  (PAN99)
+- **D87** A precinct instance's `SceneryInstanceId` is `External`, a name saved with it, or
+  `Internal`, a number assigned as the precinct loads, neither saved nor stable across edits.
+  Scripting and saved state ([save-games.md](save-games.md)) refer to instances by external id only,
+  so an instance gets one when it is an actor, or when its exemplar has an aspect whose state saves
+  (a container's contents, a lock); the editor assigns it and the author may rename it. Other walls
+  and fixtures, most of a precinct, carry none, which keeps them featherweight. Whether a door or
+  chest is open does not save, so it needs no id for that. Reversing it means internal ids saved and
+  kept stable through every edit. (PAN99)

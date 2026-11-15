@@ -38,28 +38,56 @@ saves most chunks are unchanged, and saves share them rather than copying them.
 A quest with far-reaching effects is the exception to "only nearby state changes", and is handled
 as a special case (for example through the global chunk).
 
+## When it saves
+
+Saving is automatic: the game saves when it finds a moment convenient, such as between interactions
+with no transition under way, and the player never has to. A save the player keeps is a bookmark of
+progress, a chapter or a quest's stage, not a snapshot of an instant.
+
+## Animation
+
+No save holds a pose or an animation part-way through. What a precinct loads with, from a save or
+back from the cache, follows from these rules, and content is built so that the jump they make
+rarely matters.
+
+- **The logical state saves, and loads at its rest pose.** A lowered drawbridge loads lowered; a
+  one-shot transition does not replay.
+- **Open and shut does not save.** Doors and chests close by themselves once the player is done with
+  them, and while a chest is open its inventory has the player's attention, so the game does not
+  save then. A door saved open loads shut; an actor standing in its doorway is freed as one spawned
+  inside solid scenery is (PAN3q).
+- **A loop takes its phase from the world clock**, time modulo its period, so it saves nothing, and
+  a windmill does not jump when its precinct leaves the cache and comes back.
+- **Consequences follow the change of logical state,** not an animation's end, so loading at the
+  rest pose skips none of them.
+- **Carriers.** A thing that carries an actor (a lift, a moving platform) is the case these rules
+  serve worst: a looping one resumes at its phase, but a lift loaded at rest mid-ride leaves its
+  rider in the air. Carriers are rare, so they are the exception: a carrier saves its position along
+  its path, and loads there. That needs motion of its own, a position along a path that it advances
+  and restores, not a Bevy animation clip.
+
 ## Chunk format
 
-A precinct's chunk is MessagePack: a map from `SceneryInstanceId` to that instance's entries, each a
-map from an aspect's name to the state that aspect saved.
+A precinct's chunk is MessagePack: a map from an instance's external id (D87) to that instance's
+entries, each a map from an aspect's name to the state that aspect saved.
 
 ```text
-{ <iid>: { "Lock": { locked: false }, "Container": { open: true } }, ... }
+{ <iid>: { "Lock": { locked: false } }, ... }
 ```
 
 - **Aspects save their own state.** `Aspect` has `save`, which writes an entry from the entity's
   components, and `restore`, which applies one; both do nothing by default. The unit is the aspect,
-  not the component: `Container` saves `ContainerState`, which it inserted, and an aspect may
-  combine several components in one entry. Restoring runs after the aspects attach, over the state
-  they built from the asset.
+  not the component: `Lock` saves `LockState`, which it inserted, and an aspect may combine several
+  components in one entry. Restoring runs after the aspects attach, over the state they built from
+  the asset.
 - **Entries are keyed by `Aspect::name()`,** not by type path, which is long and changes whenever
   code moves between modules. Names are checked unique across every registered aspect at startup; a
   mod's aspects carry its prefix ([modding.md](modding.md)). A renamed aspect keeps its old names as
   aliases.
 - **An entry is written when its state differs from the authored state** (D74): the aspect is the
-  authored state, and the state play changes is a component apart from it. A chest opened and shut
-  again writes nothing, and an entry restored from a save is written again only while it still
-  differs from the asset.
+  authored state, and the state play changes is a component apart from it. A chest unlocked and
+  locked again writes nothing, and an entry restored from a save is written again only while it
+  still differs from the asset.
 - **Payloads are serde structs written with field names** (`rmp_serde::to_vec_named`; `to_vec`
   writes structs as arrays, so adding a field would shift every field after it). Not reflection:
   Bevy's reflect deserializer rejects a field it does not know, so a save from before a field was
@@ -86,9 +114,9 @@ component field by field would fix that, if it ever matters.
 
 ## What it asks of Panoply
 
-- **Persisted state is a delta over the authored asset.** A precinct's chunk holds only what
-  changed in play (an NPC killed, a door opened, a chest looted), keyed by `SceneryInstanceId`.
-  Instance ids must therefore stay stable across edits of the authored precinct.
+- **Persisted state is a delta over the authored asset.** A precinct's chunk holds only what changed
+  in play (an NPC killed, a door unlocked, a chest looted), keyed by external instance id, which
+  stays stable across edits of the authored precinct; internal ids do not (D87).
 - **Collecting a precinct's state works on a live precinct,** not only at despawn, because a save
   flushes every cached precinct. Eviction is "collect state, then despawn"; save is "collect
   state" for every precinct. So this is an operation both call, not an observer on despawn.

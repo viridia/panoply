@@ -91,7 +91,10 @@ reference (`REFERENCE(PAN94)`): each chunk that replaces a part of it deletes th
 - **PAN94 Place walls**, the first placing tool: walls drawn into the precinct under the pointer on
   the current tier, at the wall tool's snap (`TODO(PAN94)` in `scenery_panel.rs`), undoable, and the
   precinct saved, which no edit has done before (precincts are MessagePack, D73's merge is for
-  catalogs). Placing tools refuse an abstract exemplar (`TODO(PAN94)` in `exemplar_list.rs`).
+  catalogs). Placing tools refuse an abstract exemplar (`TODO(PAN94)` in `exemplar_list.rs`). A save
+  writes no internal id (D87; `SceneryInstanceData` serializes them now), and gives an external id
+  to each instance whose exemplar has state that saves and lacks one: 105 of the 121 containers
+  placed.
 - **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
   `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
   Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
@@ -155,20 +158,21 @@ reference (`REFERENCE(PAN94)`): each chunk that replaces a part of it deletes th
   puzzles combine simple parts ([faery.md](faery.md), How far faery got; the aspects the converter
   dropped are under Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
   (`wall-tiles.exem.json`). Beside them: triggers (a circle or rectangle the player enters),
-  encounter zones, and waymarks for scripted NPC events. To decide: how one element signals another
-  (an entity event, as PAN21's actions are, or a formula over the other's state), and which parts
-  are native aspects and which are SAGA. The hard part is referencing and naming. A precinct is
-  named by its realm and coordinates, and is like a module: its walls and fixtures that others can
-  refer to are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy
-  to type into a text box, so the field for a signal source browses the available signals with a
-  filter, as PAN35's chooser does. A reference into a precinct that is not loaded suspends the
-  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
-  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
-  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
-  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
-  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
-  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
-  first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
+  encounter zones, waymarks for scripted NPC events, and patrol paths, fixtures that goals name
+  ([goal-format.md](goal-format.md), Open). To decide: how one element signals another (an entity
+  event, as PAN21's actions are, or a formula over the other's state), and which parts are native
+  aspects and which are SAGA. The hard part is referencing and naming. A precinct is named by its
+  realm and coordinates, and is like a module: its walls and fixtures that others can refer to are
+  its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy to type into
+  a text box, so the field for a signal source browses the available signals with a filter, as
+  PAN35's chooser does. A reference into a precinct that is not loaded suspends the formula reading
+  it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to differ from
+  what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance` observable that
+  is null while its target is not loaded, a `StructureRefNode` watching structures load and unload,
+  and global variables or lazily loaded scope objects for long-range wiring; global references by
+  realm and coordinates in `design/scripting/predicates.md`; animated instances (moving parts) kept
+  apart from static instancing in `engine/src/models/InstancedModels.ts`. The first customer is
+  PAN6's door opened by a button ([goals.md](goals.md), step 4).
 - **PAN78 Signs and books**, among the last chunks of all: things to read. A sign is a scenery
   aspect whose interaction shows its text; a document is an inventory item that links to text
   content and a page style (faery's book aspect opened its content in a frame, `codex` by default).
@@ -224,20 +228,21 @@ components and every layer restartable from saved state (R104).
 
 - **PAN99 Composing behavior, decided.** Research, then a branch: settles
   [Exemplars.md](Exemplars.md), Composing behavior, and with it whether an instance may add aspects
-  (PAN28e). A scenario walkthrough of the leading alternatives (aspects as definitions; native and
-  external aspects), each step tagged asset, formula or native, over a sample: faery's 15
-  per-character aspects (`behaviors/demo.tsx`, `tambry.tsx`, `heroncreek.tsx`) and its generic
-  behavior (`standard.ts`, `work.ts`); its aspects that touch behavior (`conversant`, `follower`,
-  `shop`, `combat`) and logic doors (`mechanisms.ts`); the portal and container aspects; and quests
-  at Marheim's scale, which the author supplies. Its gaps answer the open questions: an aspect an
-  exemplar declares and an instance must supply (`PortalTarget`), bundles or lists per kind, a
-  package on disk before BSN (X1), formulas embedded in assets, and a missing or unknown piece (D47,
-  X20). Then a branch, in its own worktree, implements the chosen alternative's plumbing, with no
-  goal runtime: an aspect key in place of the `TypeId` in the union, the short type path in the
-  editor and the type name in the files; an external aspect, attached but inert; the add menu
-  listing package assets; saving and undo with keyed entries; `find_aspect` still reading native
-  aspects along the chain. It measures the cost and finds what the audit missed, and is kept if it
-  stands on its own. Lands as a decision, with X17, PAN28e and X74 brought in line.
+  (PAN28e); dialogue and remarks are settled (D86). A scenario walkthrough of the leading
+  alternatives (aspects as definitions; native and external aspects), each step tagged asset,
+  formula or native, over a sample: faery's 15 per-character aspects (`behaviors/demo.tsx`,
+  `tambry.tsx`, `heroncreek.tsx`) and its generic behavior (`standard.ts`, `work.ts`); its aspects
+  that touch behavior (`conversant`, `follower`, `shop`, `combat`) and logic doors
+  (`mechanisms.ts`); the portal and container aspects; and quests at Marheim's scale, which the
+  author supplies. Its gaps answer the open questions: an aspect an exemplar declares and an
+  instance must supply (`PortalTarget`), a package on disk before BSN (X1), formulas embedded in
+  assets, and a missing or unknown piece (D47, X20). Then a branch, in its own worktree, implements
+  the chosen alternative's plumbing, with no goal runtime: an aspect key in place of the `TypeId` in
+  the union, the short type path in the editor and the type name in the files; an external aspect,
+  attached but inert; the add menu listing package assets; saving and undo with keyed entries;
+  `find_aspect` still reading native aspects along the chain. It measures the cost and finds what
+  the audit missed, and is kept if it stands on its own. Lands as a decision, with X17, PAN28e and
+  X74 brought in line.
 
 - **PAN34 Incident log.** Unusual events, recorded for later analysis: what happened, to which
   actor, where and when. First PAN3m's put-backs, which log nothing today, and PAN3q's rescues; a

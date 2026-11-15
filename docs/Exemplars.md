@@ -84,8 +84,9 @@ runtime instance data back into a form which is serializable.
 
 ## Composing behavior
 
-Open. It decides how X17's behavior reaches an actor, and with it whether an instance may add
-aspects its exemplar lacks (PAN28e).
+Open for goal trees and presence; dialogue and remarks are settled (D86). It decides how X17's
+behavior reaches an actor, and with it whether an instance may add aspects its exemplar lacks
+(PAN28e).
 
 An actor's behavior is goal trees, dialogue sets, remark sets and presence, and a character combines
 pieces of it that vary independently: a town guard has the guards' patrol and dialogue, the town's
@@ -106,6 +107,20 @@ Whatever the mechanism, these hold:
 - Dialogue and remarks draw on the union of the actor's sets, by the rules in X17, so the order of
   the pieces matters: farthest ancestor first, the instance last. `UpdateAspects` walks the other
   way, instance first.
+
+### Dialogue and remarks
+
+Dialogue composes apart from goals: a goal puts an actor into conversation, and what it can say
+comes from one native aspect, `Dialogues { inherit, sets }`, a list of dialogue set assets.
+Resolving it walks from the instance up the chain to the first `Dialogues` whose `inherit` is false,
+and takes the sets farthest first, the order X17's union needs. `inherit` is true by default, so a
+guard given a quest's lines lists only the quest's set; `inherit: false` starts over, which is how
+an inherited set is dropped. `Proto.NPC` carries an empty `Dialogues`, so a guard's quest lines
+override an aspect it has rather than add one. Remarks compose the same way. The panel shows the
+list and the flag, and while the flag is on, the inherited sets above them, read-only.
+
+Two mods each adding lines to one guard override the same `Dialogues`, and the later wins; merging
+them is X74's.
 
 ### Alternatives
 
@@ -154,32 +169,49 @@ Mods could author external aspects, which gives them aspects without declaring R
 **Aspects as definitions.** An aspect stops being a component: it is a definition in an exemplar or
 instance, keyed by a Rust type's name or an asset path, and what it does when attached is its own. A
 native aspect's `attach` inserts components (its state, as D74 already has `ContainerState`, and the
-config its systems read); a package's spawns goal trees and registers its dialogue and remark sets.
-The aspect list, the union and the editor work on definitions alone, so the native and external
-split moves from what an aspect is to how one is implemented.
+config its systems read); a package's spawns goal trees. The aspect list, the union and the editor
+work on definitions alone, so the native and external split moves from what an aspect is to how one
+is implemented.
 
 - Uniqueness moves to the components: no two aspects may attach the same component, checked as an
   exemplar loads and reported in the editor. Two packages never collide.
 - Aspect identity no longer needs a Rust type, which X64 needs.
 - X17's reason for keeping goals out of aspects, several goals of one type with different
   parameters, no longer constrains aspects.
-- For native aspects little code changes. Each of the 21 inserts a clone of itself (`Lock` and
-  `Container` their state as well), and keeps doing so: the engine still queries for a `Portal`,
-  inserted by the portal aspect. Of the 21, the engine queries 12 as components; `Container` and
-  `Lock` only through their state; `TerrainEffect`, `TerrainHole`, `ItemModel` and `EquipSlot` it
-  reads from the exemplar (`Exemplar::find_aspect`), since terrain vertices and an item in an
-  inventory are not entities; three it does not read yet. So reading a native aspect from its
-  definition by Rust type, along the chain, has to keep working. The registries already tell a
-  component from the aspect that supplies it (`ScriptComponents` maps `Lid` to `Lidded`;
-  interactions register actions by aspect). What keys on an aspect's type is the union (`TypeId`, in
-  `UpdateAspects` and `OwnedAspects`), the editor (the short type path, in adding, removing, undo
-  and each aspect's property root), and the files (`aspects` keyed by short type name). An aspect
-  key replaces those three; keyed aspects and native and external aspects need the same change.
+- For native aspects the contract changes more than the code. Each of the 21 inserts a clone of
+  itself, and most would keep doing so:
+  - 11 are built on later by a system: `SceneryModels`, `SceneryColliders`, `SceneryAnimations`,
+    `Skin`, `Armature`, `ClipNames`, `CollisionSize`, `ActorScale`, `Colors`, `Features` and
+    `WieldedItems`. The work cannot happen in `attach`: a model loads after the aspects are applied,
+    colliders are rebuilt in Rapier's world when an element moves and bodies when a model reloads,
+    all through rebuild markers (`SceneryElementRebuildColliders`, `ActorRebuildModels`). The system
+    then needs the definition per entity, as the instance resolved it over its chain, and the
+    component is that resolved view; `Exemplar::find_aspect` reads the chain without the instance.
+    So `attach` inserts a component holding the aspect's own data, as now.
+  - `Interactions` is queried every frame, by the probe and picking; `Portal`, when it lands, by the
+    engine. Both stay components.
+  - `Container` and `Lock` supply play state (`ContainerState`, `LockState`), which D74 already
+    keeps apart from the aspect.
+  - `TerrainEffect`, `TerrainHole`, `ItemModel` and `EquipSlot` are read from the exemplar, since
+    terrain vertices and an item in an inventory are not entities. They are definitions already, and
+    the components they insert go unread.
+  - `WallSize`, `SceneryMarks` and `LightSource` are not read yet.
+
+  So reading a native aspect from its definition by Rust type, along the chain, has to keep working.
+  The registries already tell a component from the aspect that supplies it (`ScriptComponents` maps
+  `ContainerState` to `Container`; interactions register actions by aspect). What keys on an
+  aspect's type is the union (`TypeId`, in `UpdateAspects` and `OwnedAspects`), the editor (the
+  short type path, in adding, removing, undo and each aspect's property root), and the files
+  (`aspects` keyed by short type name). An aspect key replaces those three; keyed aspects and native
+  and external aspects need the same change. Over native aspects this alternative and native and
+  external aspects then do the same; they differ in what a package is called and where uniqueness is
+  checked.
 - D59's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
   attach, which is what formulas read.
 - A BSN entity is one component per type, so definitions, several of one kind among them, do not map
   onto it directly. They compile to it: an exemplar to a patch, `extends` to an `@` mixin, and
-  aspects that can repeat to related entities, as X17's goal trees already are.
+  aspects that can repeat to related entities, as X17's goal trees already are. Since native aspects
+  stay components in practice, they map onto BSN as they do now; only packages need more.
 
 **Mixins.** An exemplar extends several others (`extends: [guard, lunch-quest]`), and a package is
 an exemplar without a model. This is BSN's own composition: what it calls inheritance is a mixin, an
@@ -195,11 +227,10 @@ axis: a Tambry innkeeper and a Tambry guard both want Tambry's regional lines fr
 branches, which means duplication or a chain per combination. And behavior inline in a catalog stays
 resident with it.
 
-**Bundles or lists per kind.** For any of these, the piece can be a bundle of goals, dialogue,
-remarks and presence, or each kind can compose on its own, closer to faery's `Converse` and `Remark`
-lists. A bundle gives a behavior one name, so a quest's goals, lines and remarks travel and page
-together; a bundle holding only dialogue gives the finer reuse anyway. Either way a bundle
-references dialogue set assets, since dialogue is an asset type of its own.
+**Bundles or lists per kind.** Settled for dialogue and remarks, which compose on their own, as
+faery's `Converse` and `Remark` lists did. A bundle of goals, dialogue, remarks and presence would
+have given a quest one name to travel and page by; a quest's goals and its lines are now edited in
+two places.
 
 ### BSN
 
@@ -216,11 +247,56 @@ no such tree, so owning the form means one for the subset Panoply uses, with a p
 that keeps a file's formatting, and a serializer from reflected values into it; the merge carries
 over.
 
+### Packages written in SAGA
+
+A variation of native and external aspects, or of aspects as definitions: an external aspect is a
+SAGA source file, declaring its fields, goal trees, interactions and presence together, with
+formulas inline, in place of an asset of data. It composes as any external aspect does; what changes
+is how it is written. Two forms, unspecified:
+
+- **Aspects as values.** A function or constant returns an aspect, and goal trees are SAGA values of
+  types the native goals expose. Parameters are a package's fields, so its signature is the schema
+  X64 needs, and the language builds trees (a patrol from a list of points) and reuses them. But a
+  tree mixes two times: what the function computes once, as the package loads, and the conditions
+  that must stay formulas, evaluated as the world changes, so SAGA has to tell them apart.
+- **A declarative format.** A syntax outside functions, with SAGA embedded for conditions and
+  effects, as BSN embeds Rust expressions. This extends SAGA less than it defines a format of its
+  own, the bespoke format for goals that is the other way past X1. It is read without evaluating
+  anything, so the editor sees its fields and trees, but it abstracts only as far as its syntax
+  does.
+
+Either way:
+
+- faery's first goal editor drew trees and was abandoned: one diagram showing type, structure and
+  execution at once is hard to read, and text keeps them apart. Its later trees were TSX, JSX
+  without a compiler, and syntactically awkward; SAGA has a compiler, so its syntax can be designed
+  for them.
+- A package is checked as it compiles, and find references covers what it names. The native goal
+  runtime runs its trees, so scripts still hold no memory but the world's.
+- Behavior then needs no BSN (X1), and no formulas embedded in assets.
+- A field declared in SAGA is a type declared in data, so setting one per actor waits on the layer
+  X64 needs, as an external aspect's fields do. Values that vary by placement are mostly references:
+  a patrol path is a fixture, edited in the world, which a guard package's field names (naming
+  across precincts is PAN79's).
+- Against: SAGA grows from formulas to declarations, with tooling to match, and a file that fails to
+  compile loses its character's behavior whole, where a bad field loses one value.
+
+### Dialogue text
+
+Under any alternative, dialogue is an asset type of its own, and its format is a question apart.
+faery's was first written as JSON, a large form of quotes and commas, then in the property editor,
+which was better but no help in following transitions. Ink and Yarn write dialogue as text made for
+prose: a line is the line, a node a heading, an option a marked line, a condition a formula, a jump
+a name. Yarn Spinner shows the transitions in a graph generated from the text, each node linking to
+its lines, so the graph shows flow alone. Stages, topics, flags and other sets would resolve as the
+text compiles, and lines need stable ids, mostly generated, so translations survive edits.
+
 ### Leaning
 
 Aspects as definitions, or native and external aspects, over a list in one aspect: composition stays
 in the aspect list with one merge. Both put external pieces in the aspect list, so the rule on
-instances adding aspects is settled with this, not after.
+instances adding aspects is settled with this, not after. Packages written in SAGA are against: they
+disrupt much for an uncertain return.
 
 ## Aspect example
 

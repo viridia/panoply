@@ -16,7 +16,7 @@ dropped, not deferred. Numbers are never reused.
   own that the editor compiles to BSN. As of 2026-11 that AST does not exist, and nothing promises
   it can be used from another editor; if it cannot, the second is forced: an in-memory form of the
   BSN subset Panoply uses, and a serializer that keeps a file's formatting, as D73's merge does for
-  JSON.
+  JSON. What Panoply needs to ask of asset BSN is in [asset-bsn.md](asset-bsn.md).
 - **X2** Synthesized shared assets (successor to D6). *Gate:* a restored module needs them. Consider
   deterministic `AssetId`s from hashed params instead of a fake asset source.
 - **X5** `bevy-inspector-egui` (pinned bevy 0.15). Bevy main's `bevy_inspector` crate may
@@ -101,15 +101,15 @@ dropped, not deferred. Numbers are never reused.
   ECS and BSN assets. Goals are not aspects, since an actor can hold several goals of one type with
   different parameters. Behavior packages own them, and packages are most of what a mod holds
   ([modding.md](modding.md)).
-  - **Behavior packages.** A package is an asset of goal trees, dialogue sets, remark sets and
-    presence. How an actor composes them, so that a guard with a quest names only the quest's
-    package beside the guard's, is open ([Exemplars.md](Exemplars.md), Composing behavior). Each
-    actor has one conversation and one remark goal, drawing on the union of its packages' sets in
-    order, farthest ancestor first. faery's rules carry over
-    (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro whose conditions
-    hold; each state's options are pooled by state name across sets, sorted stably by `order`, and
-    the first option with a given `id` hides the rest. Remarks choose among the sets whose
-    conditions hold (R53).
+  - **Behavior packages.** A package is an asset of goal trees and presence. How an actor composes
+    them, so that a guard with a quest names only the quest's package beside the guard's, is open
+    ([Exemplars.md](Exemplars.md), Composing behavior). Dialogue and remark sets are listed apart,
+    by the `Dialogues` aspect and its remarks counterpart (D86). Each actor has one conversation and
+    one remark goal, drawing on the union of those sets in order, farthest ancestor first. faery's
+    rules carry over (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro
+    whose conditions hold; each state's options are pooled by state name across sets, sorted stably
+    by `order`, and the first option with a given `id` hides the rest. Remarks choose among the sets
+    whose conditions hold (R53).
   - **Instanced trees.** Each actor spawns its own copy of each goal tree its packages hold: an
     entity per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside
     transform propagation) and rooted at the actor by `GoalOf`.
@@ -120,6 +120,8 @@ dropped, not deferred. Numbers are never reused.
     evaluates them. One system walks each tree from the top through those pointers, because a
     combinator calls its active child and acts on the result in the same pass. The Rust goal types
     are a closed set per build; mods compose them.
+  - **Format.** A prototype in JSON, with what it leaves open (parameters, scoped values), is in
+    [goal-format.md](goal-format.md).
   - **Formulas.** A goal's condition is a reactive formula; an effect is usually a Rust type with
     parameters, but can be a formula. So SAGA (X7) needs a way to embed formulas in assets, as
     quests and dialogues do. A node's memo cells live on its entity. Landing re-evaluates an actor's
@@ -129,12 +131,18 @@ dropped, not deferred. Numbers are never reused.
     no longer matches (a mod or content edit changed the tree), that package's state is dropped and
     its goals restart, which goals tolerate (R50). The same read-out, respawn and write-back is hot
     reload, so an edit reaches every actor, and it is what an actor recovers from (R104).
+  - **Testing** is the slow part of authoring behavior: a sequence takes time to play out, and much
+    can go wrong on the way (the innkeeper going to bed from the kitchen). The runtime needs to
+    start a character in a given state at a given hour, run time fast, show the active goal and why
+    its siblings lost (their `when` and priority), and replay a run deterministically.
 
   The first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
   customers). *Gate:* BSN assets, and SAGA formulas in assets.
 - **X20** Keep unknown aspects lossless (D25) in precincts: hold each as an opaque value that saves
-  back unchanged, so the editor cannot drop data a disabled module owns. Catalogs already keep them,
-  since a save merges edits into the file (D73). *Gate:* the editor saves a precinct (PAN94).
+  back unchanged, so the editor cannot drop data owned by a mod or module that is not loaded.
+  Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
+  need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
+  optional module whose aspects sit on instances.
 - **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller than
   D20's 4 m allowance also needs its own); hot reload of `FloorSurface` assets (floors do not
   rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
@@ -312,11 +320,14 @@ dropped, not deferred. Numbers are never reused.
   dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
   decides what a package exports, as PAN79's precinct exports do. SAGA's imports and asset ids would
   share one scheme. *Gate:* a second package loads beside the game.
-- **X69** Stop faery's precinct converter overwriting ([faery.md](faery.md), Migration scripts):
-  once Panoply edits a precinct, a rerun would undo it. Freeze it as the realm map converter is, or
-  make it merge as the archetype converter does, if faery's precincts still hold content Panoply has
-  not taken (instance inventories and aspects, layers). *Gate:* the editor saves a precinct (PAN94),
-  or one is edited by hand.
+- **X69** Make faery's precinct converter merge, as the archetype converter does (D56), not
+  overwrite: once Panoply edits a precinct, a rerun would undo it, and faery's precincts hold much
+  Panoply has not taken ([faery.md](faery.md), Migration scripts). It matches an instance by
+  external id where faery gave one, otherwise by exemplar and position; adds the per-instance
+  aspects an instance lacks; and keeps what Panoply has. So a save may drop aspects no plugin
+  registers (D25), and a rerun restores them. It writes no id where faery had none, since internal
+  ids are not saved (D87): it numbers them now, 16,880 walls and fixtures. *Gate:* the editor saves
+  a precinct (PAN94), or one is edited by hand.
 - **X70** Rebuild demorun's cottages. Demorun was made to film a character running through many
   biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
   they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
@@ -332,7 +343,8 @@ dropped, not deferred. Numbers are never reused.
   chest restates only the entry it changes; an override now replaces the whole list (D59). Needs a
   way to remove an inherited entry. *Gate:* that repetition hurting in real content. Behavior
   packages (X17) may need the same merge, appending only, and come first
-  ([Exemplars.md](Exemplars.md), Composing behavior).
+  ([Exemplars.md](Exemplars.md), Composing behavior). So does `Dialogues` (D86), for mods: two that
+  each add lines to one character override the same aspect, and only the later survives.
 - **X75** The look of the interaction prompt (PAN21): the decorative box around the key, and the
   key's font, for now `KEY_PROMPT_FONT` (Rubik). The key should be somewhat hefty in weight, and in
   a different-looking font from the caption, though non-swash Macondo has a far more readable
