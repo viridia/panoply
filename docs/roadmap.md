@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN102.**
+**Next: PAN103.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -124,9 +124,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   naming one floor loads: the catalog's every texture.
 - **PAN95 Place floors**, on PAN94's saving and PAN74's floor exemplars: floors drawn on the current
   tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`).
-- **PAN97 Place actors**, on PAN94's saving: actors placed into the precinct, each assigned an id as
-  it is placed (PAN88 lists and renames them), with the fixture tool's gesture (D89): the cast and
-  dial in `placement.rs`, with the actor's capsule as its shape.
 - **PAN98 Paint terrain effects**, on PAN94's saving: the terrain effect tool
   (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
 - **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
@@ -159,6 +156,16 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
   is read in the chunk.
+- **PAN102 Marker fixtures**, on PAN88's picking. Fixtures with no model, standing for abstract
+  things (a waymark, a region, a patrol path, a music cue), drawn by the editor alone. faery's
+  marker aspects (`engine/src/world/scenery/markers.ts`: `waymark`, `circle`, `rect`, `waypoints`),
+  dropped by the converter ([faery.md](faery.md), Migration scripts), become aspects whose overlays
+  the editor draws while their precinct is selected, with faery's map pin as a billboard at each,
+  picked through their `marker` colliders. Regions are read by wander's tether (R52) and music on
+  entry (X61), and the converter keeps the instances Tambry and Heron Creek place. A patrol path is
+  one fixture with an ordered list of points, not a fixture per point: a guard's field names one id,
+  and the order is the list's. Its points are stored relative to the fixture, so PAN92's gizmo moves
+  and turns the whole route; faery's were in world space.
 - **PAN93 Make global**, on PAN88's selection. A toggle that takes the selected actor out of its
   precinct, as faery's did. Where a global actor is kept, and how it loads and saves, is decided in
   the chunk; read faery's first.

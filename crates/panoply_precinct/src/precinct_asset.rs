@@ -63,20 +63,11 @@ impl PrecinctAsset {
     /// kebab case, numbered with the lowest number the precinct does not yet use, as `chest-2`.
     /// Returns how many were given one.
     pub fn assign_external_ids(&mut self, needs_id: impl Fn(usize) -> bool) -> usize {
-        let mut taken: HashSet<String> = self
-            .scenery
-            .iter()
-            .map(|instance| &instance.iid)
-            .chain(self.actors.iter().map(|actor| &actor.iid))
-            .filter_map(|iid| match iid {
-                SceneryInstanceId::External(name) => Some((**name).clone()),
-                _ => None,
-            })
-            .collect();
+        let mut taken = self.external_ids();
         let bases: Vec<String> = self
             .scenery_types
             .iter()
-            .map(|path| kebab_case(path.rsplit('#').next().unwrap_or(path)))
+            .map(|path| id_base(path))
             .collect();
         let mut next = vec![1usize; bases.len()];
         let mut count = 0;
@@ -84,18 +75,45 @@ impl PrecinctAsset {
             if matches!(instance.iid, SceneryInstanceId::External(_)) || !needs_id(instance.id) {
                 continue;
             }
-            let name = loop {
-                let name = format!("{}-{}", bases[instance.id], next[instance.id]);
-                next[instance.id] += 1;
-                if !taken.contains(&name) {
-                    break name;
-                }
-            };
-            taken.insert(name.clone());
+            let name = unused_id(&bases[instance.id], &mut next[instance.id], &mut taken);
             instance.iid = SceneryInstanceId::External(Arc::new(name));
             count += 1;
         }
         count
+    }
+
+    /// Places an actor of the exemplar at `exemplar`, a `file#Label` path, at `position` in the
+    /// world's coordinates, facing `facing` degrees. It gets an external id, named as
+    /// [`assign_external_ids`](Self::assign_external_ids) names scenery, which it returns.
+    pub fn add_actor(
+        &mut self,
+        exemplar: String,
+        facing: f32,
+        position: Vec3,
+    ) -> SceneryInstanceId {
+        let name = unused_id(&id_base(&exemplar), &mut 1, &mut self.external_ids());
+        let iid = SceneryInstanceId::External(Arc::new(name));
+        self.actors.push(ActorInstanceData {
+            exemplar,
+            position,
+            facing,
+            iid: iid.clone(),
+            aspects: InstanceAspects::default(),
+        });
+        iid
+    }
+
+    /// The external ids the precinct's scenery and actors use.
+    fn external_ids(&self) -> HashSet<String> {
+        self.scenery
+            .iter()
+            .map(|instance| &instance.iid)
+            .chain(self.actors.iter().map(|actor| &actor.iid))
+            .filter_map(|iid| match iid {
+                SceneryInstanceId::External(name) => Some((**name).clone()),
+                _ => None,
+            })
+            .collect()
     }
 
     /// Return the tier with the given level.
@@ -209,6 +227,23 @@ impl PrecinctAsset {
                 instance.iid = SceneryInstanceId::Internal(next);
                 next += 1;
             }
+        }
+    }
+}
+
+/// The base of an external id for an instance of the exemplar at `path`: its label in kebab case.
+fn id_base(path: &str) -> String {
+    kebab_case(path.rsplit('#').next().unwrap_or(path))
+}
+
+/// `base` numbered with the lowest number from `next` up that is not in `taken`, as `chest-2`;
+/// taken, and `next` moved past it.
+fn unused_id(base: &str, next: &mut usize, taken: &mut HashSet<String>) -> String {
+    loop {
+        let name = format!("{base}-{next}");
+        *next += 1;
+        if taken.insert(name.clone()) {
+            return name;
         }
     }
 }
@@ -678,5 +713,33 @@ mod tests {
             ids[3],
             SceneryInstanceId::External(Arc::new("wooden-chest-3".into()))
         );
+    }
+
+    /// A placed actor is named for its exemplar, around the names scenery and actors already use.
+    #[test]
+    fn a_placed_actor_takes_the_lowest_free_name() {
+        let mut precinct = PrecinctAsset {
+            scenery_types: vec!["exemplars/furnishings.exem.json#Guard".into()],
+            ..default()
+        };
+        let named = SceneryInstanceId::External(Arc::new("guard-1".into()));
+        precinct.add_scenery_element(0, 0., Vec3::ZERO, Some(named));
+        let path = "exemplars/characters.exem.json#Guard";
+        let first = precinct.add_actor(path.into(), 90., Vec3::X);
+        let second = precinct.add_actor(path.into(), 0., Vec3::Z);
+        assert_eq!(
+            first,
+            SceneryInstanceId::External(Arc::new("guard-2".into()))
+        );
+        assert_eq!(
+            second,
+            SceneryInstanceId::External(Arc::new("guard-3".into()))
+        );
+        let placed: Vec<_> = precinct
+            .actors
+            .iter()
+            .map(|a| (a.facing, a.position))
+            .collect();
+        assert_eq!(placed, [(90., Vec3::X), (0., Vec3::Z)]);
     }
 }

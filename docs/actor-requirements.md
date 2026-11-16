@@ -210,13 +210,13 @@ Goals are reworked (X17); these are the capabilities faery's goals provided.
   step a prerequisite of the next, rechecked as conditions change, so a step that stops holding is
   returned to; a fallback when one fails). New in Panoply: timeout (fails its child after N s) and
   cooldown (its child cannot restart within N s of finishing).
-- **R52** Leaves: travel to a point (preferred distance, minimum distance, tolerance), pursue
-  a moving target (replans when it moves 1 m; walks when near, trots under 4 m, runs beyond, or
-  always runs when chasing; can open doors; can avoid actors), wander (a random reachable
-  point within a marker's radius), wait, pose, look at a point or instance, face a direction,
-  mutate state, deactivate, remark, converse, interact (apply a verb), park (R56), use a
-  fixture (R79), equip, unequip, attack (player only), target an enemy (NPCs), apply an
-  untargeted skill.
+- **R52** Leaves: travel to a point (preferred distance, minimum distance, tolerance), pursue a
+  moving target (replans when it moves 1 m; walks when near, trots under 4 m, runs beyond, or always
+  runs when chasing; can open doors; can avoid actors), wander (a random reachable point within a
+  circle or rect marker, as a tether: Sigrid sweeping her house in Tambry), wait, pose, look at a
+  point or instance, face a direction, mutate state, deactivate, remark, converse, interact (apply a
+  verb), park (R56), use a fixture (R79), equip, unequip, attack (player only), target an enemy
+  (NPCs), apply an untargeted skill.
 - **R53** Remarks: an NPC within 1 to 2 m of the player says a line chosen at random, weighted,
   from remark sets whose conditions hold; then waits at least 5 s; it turns to the player for
   a line with a gesture.

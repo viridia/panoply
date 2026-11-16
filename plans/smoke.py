@@ -356,6 +356,7 @@ def scenery_panel(driver):
     driver.present("Exemplars/Marcus", timeout=WAIT)
     driver.present("Exemplars/Proto.HumanoidMale")
     driver.absent("Exemplars/CottageWall")
+    actor_tool(driver)
     exemplar_properties(driver)
     model_property(driver)
     clips_property(driver)
@@ -562,6 +563,64 @@ def fixture_tool(driver):
     driver.frames(2)
     facing = driver.get_resource(FIXTURE_SETTINGS, at="facing")
     assert facing == 270.0, f"facing {facing}"
+
+
+def actor_tool(driver):
+    """The actor tool, over the playground at `SPOT`: hovering shows the chosen actor and its
+    footprint; a drag turns it toward the pointer and places it, an actor that stands on the ground, which undo and
+    redo take back and put again. Save writes the precinct (restored afterwards)."""
+    choose(driver, "actor", "Marcus")
+    driver.goto(SPOT, 20.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    right = (middle[0] + 150, middle[1])
+    precinct = ASSETS / SPOT_PRECINCT
+    original = precinct.read_bytes()
+
+    def marcuses(with_=()):
+        return len(by_name(driver, "Actor:Marcus", with_=with_))
+
+    def expect_marcuses(expected, with_=()):
+        def check():
+            found = marcuses(with_)
+            return found == expected, lambda: f"{found} Marcuses"
+
+        driver.wait(check, f"{expected} Marcuses", {"seconds": 5})
+
+    base = marcuses()
+    standing = marcuses([MOTION])
+    try:
+        move_pointer(driver, window, scale, middle)
+        driver.frames(3)
+        assert driver.get("ActorFootprint", INHERITED), "no footprint on hover"
+        driver.present("ActorPreview", timeout=WAIT)
+        assert driver.get("ActorPreview", INHERITED), "no preview on hover"
+        button(driver, window, "Pressed")
+        move_pointer(driver, window, scale, right)
+        driver.frames(3)
+        assert driver.get("FacingDial", INHERITED), "no dial while dragging"
+        driver.expect("FacingReadout", TEXT, "270°")
+        # The preview turns with the drag, before the release places the actor.
+        facing = driver.get("ActorPreview", MOTION)["facing"]
+        assert abs(facing - 4.712389) < 1e-3, f"preview facing {facing}"
+        driver.screenshot("actor_drag")
+        button(driver, window, "Released")
+        expect_marcuses(base + 1)
+        # It gets physics: the ground under it is found.
+        expect_marcuses(standing + 1, [MOTION])
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Place Marcus")
+        expect_marcuses(base)
+        undo(driver, redo=True)
+        expect_marcuses(base + 1)
+
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert precinct.read_bytes() != original, "Save did not write the precinct"
+    finally:
+        restore(precinct, original)
+    expect_marcuses(base)
+    driver.click("Exemplars/ClearFilter")
 
 
 def tier(driver):

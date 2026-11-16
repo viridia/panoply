@@ -1,20 +1,44 @@
-//! Placing an instance where the pointer is, and turning it as it goes down: what the fixture tool
-//! does, and the actor tool will. The instance's own shapes are cast along the pointer's ray to
-//! where they first touch something, then straight down onto what is under them, as faery's
+//! Placing an instance where the pointer is, and turning it as it goes down: the gesture the
+//! fixture and actor tools share (D89). The instance's own shapes are cast along the pointer's ray
+//! to where they first touch something, then straight down onto what is under them, as faery's
 //! `PlaceFixtureTool.ts` cast them, so a mug lands on a table and a painting against a wall.
 //!
 //! A press fixes the place and a drag turns the instance toward the pointer, in steps, snapping to
-//! quarter turns. While it does, a dial at the instance's base shows the facing.
+//! quarter turns. While it does, a dial at the instance's base shows the facing, and the facing
+//! shows as text beside the pointer. Escape during a drag cancels it.
 
-use bevy::prelude::*;
-use panoply_core::{realm_physics::collision_groups, ToBevy, ToRapier};
-use panoply_overlays::{DrawPlane, OverlayShape, PolygonOptions, ShapeBuilder, StrokeMarker};
+use bevy::{
+    app::Propagate,
+    camera::visibility::RenderLayers,
+    color::palettes::css,
+    ecs::system::SystemParam,
+    picking::{
+        events::PointerState,
+        pointer::{PointerButton, PointerId},
+    },
+    prelude::*,
+    window::PrimaryWindow,
+};
+use bevy_action_map::prelude::*;
+use panoply_core::{
+    realm_physics::collision_groups, Realm, RealmPhysics, ToBevy, ToRapier, Viewpoint,
+};
+use panoply_overlays::{
+    AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder, StrokeMarker,
+};
+use panoply_scenery::PrecinctCache;
 use rapier3d::{
     parry::query::details::ShapeCastOptions,
     prelude::{
         Group, InteractionGroups, InteractionTestMode, PhysicsWorld, Pose, QueryFilter, Ray,
         SharedShape,
     },
+};
+
+use crate::{
+    mode_selector::SceneryTool,
+    scenery_pointer::{precinct_at, SceneryPointer, SceneryPointerSystems},
+    terrain_cursor::level_point,
 };
 
 /// How far along the pointer's ray an instance is cast, in meters.
@@ -52,6 +76,306 @@ const QUARTER_TICK_LENGTH: f32 = 0.25;
 
 /// How far above the instance's base the dial is drawn, so its depth does not tie with a floor's.
 const DIAL_LIFT: f32 = 0.02;
+
+/// How far the pointer must move from the press, in logical pixels, before a drag turns the
+/// instance.
+const TURN_THRESHOLD: f32 = 5.;
+
+/// The readout's offset from the pointer, in pixels, and its font size.
+const READOUT_OFFSET: Vec2 = Vec2::new(18., 14.);
+const READOUT_FONT_SIZE: f32 = 14.;
+
+/// The gesture's state, its keys, and the dial, hand and readout that show a drag.
+pub struct PlacementPlugin;
+
+impl Plugin for PlacementPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<PlacementDragState>()
+            .add_overlay::<FacingDial>()
+            .add_overlay::<FacingHand>()
+            .add_context::<PlacementDragKeys>(|context| {
+                context.active_if(|drag: Res<PlacementDragState>| drag.0.is_some());
+                context
+                    .bind::<CancelPlacementDrag>(KeyCode::Escape)
+                    .consume();
+            })
+            .add_systems(Startup, spawn_drag_display)
+            .add_systems(OnExit(SceneryTool::PlaceFixture), clear_drag)
+            .add_systems(OnExit(SceneryTool::PlaceActor), clear_drag)
+            .add_systems(
+                Update,
+                (show_dial, show_readout)
+                    .in_set(PlacementDisplaySystems)
+                    .after(SceneryPointerSystems),
+            );
+    }
+}
+
+/// Draws the dial and readout from the drag; the tools' updates run before it.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct PlacementDisplaySystems;
+
+/// A drag in progress, held from the press to the release.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PlacementDrag {
+    /// The precinct the instance goes in, and its coordinates.
+    pub precinct: Entity,
+    pub coords: IVec2,
+    /// Where the instance goes, in the world's coordinates, and its dial's radius.
+    pub dial: DialPlace,
+    /// In degrees, as a precinct holds it.
+    pub facing: f32,
+    /// Where the press was in the window, in logical pixels, and whether the pointer has moved
+    /// far enough from it to turn the instance. Until it has, the instance keeps the tool's
+    /// facing: the pointer's point on the instance's level can be far from the instance at the
+    /// press, as on a click on a wall, whose fixture lands at the wall's foot.
+    press: Option<Vec2>,
+    turning: bool,
+    /// Escape cancelled it: the release places nothing.
+    cancelled: bool,
+}
+
+/// The drag in progress, if any.
+#[derive(Resource, Default)]
+pub(crate) struct PlacementDragState(Option<PlacementDrag>);
+
+impl PlacementDragState {
+    /// The drag, unless Escape cancelled it.
+    fn shown(&self) -> Option<&PlacementDrag> {
+        self.0.as_ref().filter(|drag| !drag.cancelled)
+    }
+}
+
+/// Escape cancels a drag. Above `AppControl`, whose Escape quits, and consumed, so cancelling a
+/// drag never quits.
+#[derive(InputContext)]
+#[context(path = "editor.placement_drag", tick = Render, priority = 500)]
+pub struct PlacementDragKeys;
+
+/// Cancel the drag: its release places nothing.
+#[derive(InputAction)]
+#[action(path = "editor.placement_drag.cancel", output = bool, intent = Button)]
+pub struct CancelPlacementDrag;
+
+/// The facing, as text beside the pointer, while a drag turns the instance.
+#[derive(Component)]
+struct FacingReadout;
+
+fn clear_drag(mut drag: ResMut<PlacementDragState>) {
+    drag.0 = None;
+}
+
+/// What the gesture did in a frame.
+pub(crate) struct PlacementFrame {
+    /// Where the instance would go, in the world's coordinates, and its facing in degrees: from
+    /// the drag, or where a click would place it. `None` while the pointer is over nothing, or
+    /// after Escape, until the release.
+    pub target: Option<(Vec3, f32)>,
+    /// The drag a release ended, unless Escape cancelled it: the placement to commit.
+    pub released: Option<PlacementDrag>,
+}
+
+/// The pointer, the keys and the drag, for a placing tool's update.
+#[derive(SystemParam)]
+pub(crate) struct PlacementGesture<'w, 's> {
+    pointer: Res<'w, SceneryPointer>,
+    pointers: Res<'w, PointerState>,
+    keys: ContextActions<'w, 's, PlacementDragKeys>,
+    drag: ResMut<'w, PlacementDragState>,
+    was_pressed: Local<'s, bool>,
+    ui_nodes: Query<'w, 's, (), With<Node>>,
+    windows: Query<'w, 's, &'static Window, With<PrimaryWindow>>,
+    viewpoint: Res<'w, Viewpoint>,
+    realms: Query<'w, 's, &'static RealmPhysics>,
+    cache: Res<'w, PrecinctCache>,
+}
+
+impl PlacementGesture<'_, '_> {
+    /// Whether a drag is turning an instance, showing the dial.
+    pub fn dragging(&self) -> bool {
+        self.drag.shown().is_some()
+    }
+
+    /// Follows the pointer with an instance of `shapes`, facing `facing` degrees while no drag
+    /// turns it; starts, turns, cancels and ends drags.
+    pub fn update(&mut self, shapes: &[(SharedShape, Pose)], facing: f32) -> PlacementFrame {
+        // A press in the view, not on the panel or a widget over the view.
+        let pressed = self
+            .pointers
+            .get(PointerId::Mouse, PointerButton::Primary)
+            .is_some_and(|state| state.pressing.keys().any(|e| !self.ui_nodes.contains(*e)));
+        let just_pressed = pressed && !*self.was_pressed;
+        let just_released = !pressed && *self.was_pressed;
+        *self.was_pressed = pressed;
+
+        if self.keys.fired::<CancelPlacementDrag>() {
+            if let Some(drag) = self.drag.0.as_mut() {
+                drag.cancelled = true;
+            }
+        }
+
+        let realm = self.viewpoint.realm;
+        let world = realm
+            .and_then(|realm| self.realms.get(realm).ok())
+            .map(RealmPhysics::world);
+        let (ray, point) = (self.pointer.ray, self.pointer.point);
+        let land = |facing: f32| {
+            world
+                .zip(ray)
+                .and_then(|(world, ray)| cast_placement(world, shapes, facing.to_radians(), ray))
+                .or(point)
+        };
+
+        let cursor = self.windows.single().ok().and_then(Window::cursor_position);
+        if just_pressed {
+            self.drag.0 = land(facing).and_then(|position| {
+                let (precinct, coords) = precinct_at(&self.cache, realm?, position)?;
+                Some(PlacementDrag {
+                    precinct,
+                    coords,
+                    dial: DialPlace {
+                        center: position,
+                        radius: dial_radius(shapes),
+                    },
+                    facing,
+                    press: cursor,
+                    turning: false,
+                    cancelled: false,
+                })
+            });
+        } else if let Some(drag) = self.drag.0.as_mut() {
+            drag.turning |= cursor
+                .zip(drag.press)
+                .is_some_and(|(cursor, press)| cursor.distance(press) >= TURN_THRESHOLD);
+            let dial = drag.dial;
+            let point = ray
+                .filter(|_| drag.turning)
+                .and_then(|ray| level_point(ray, dial.center.y));
+            if let Some(facing) =
+                point.and_then(|point| facing_toward(dial.center.xz(), point.xz(), dial.radius))
+            {
+                drag.facing = facing;
+            }
+        }
+
+        let released = just_released
+            .then(|| self.drag.0.take())
+            .flatten()
+            .filter(|drag| !drag.cancelled);
+        let target = match self.drag.0 {
+            Some(drag) => (!drag.cancelled).then_some((drag.dial.center, drag.facing)),
+            None => land(facing).map(|position| (position, facing)),
+        };
+        PlacementFrame { target, released }
+    }
+}
+
+/// `facing`, in degrees, turned by `turns` quarter turns, right for positive, as the wall tool
+/// turns. A facing between quarter turns takes the next one that way first, so the keys always
+/// return to them.
+pub(crate) fn turn_facing(facing: f32, turns: i8) -> f32 {
+    let quarters = facing / 90.;
+    let next = if turns > 0 {
+        quarters.ceil() - turns as f32
+    } else {
+        quarters.floor() - turns as f32
+    };
+    (next * 90.).rem_euclid(360.) + 0.
+}
+
+/// The drag's keys, and the dial, its hand and the readout, hidden until a drag shows them.
+fn spawn_drag_display(asset_server: Res<AssetServer>, mut commands: Commands) {
+    // Without it, `ContextActions` finds no context, and the tools' updates are skipped.
+    commands.spawn((Name::new("PlacementDragKeys"), PlacementDragKeys));
+    let overlay = || {
+        (
+            OverlayColor {
+                base: css::SILVER.with_alpha(0.9).into(),
+                underlay: 0.6,
+            },
+            Propagate(RenderLayers::none()),
+            Transform::default(),
+            Visibility::default(),
+        )
+    };
+    commands.spawn((Name::new("FacingDial"), FacingDial::default(), overlay()));
+    commands.spawn((Name::new("FacingHand"), FacingHand::default(), overlay()));
+    commands.spawn((
+        Name::new("FacingReadout"),
+        FacingReadout,
+        Text::default(),
+        TextFont {
+            font: FontSource::Handle(asset_server.load("fonts/Rubik/Rubik-VariableFont_wght.ttf")),
+            font_size: FontSize::Px(READOUT_FONT_SIZE),
+            ..default()
+        },
+        TextColor(Color::WHITE),
+        TextShadow::default(),
+        Node {
+            position_type: PositionType::Absolute,
+            display: Display::None,
+            ..default()
+        },
+        Pickable::IGNORE,
+    ));
+}
+
+/// Shows the dial and its hand while a drag turns an instance, in the viewed realm.
+fn show_dial(
+    drag: Res<PlacementDragState>,
+    viewpoint: Res<Viewpoint>,
+    realms: Query<&Realm>,
+    mut dials: Query<(&mut FacingDial, &mut Propagate<RenderLayers>), Without<FacingHand>>,
+    mut hands: Query<(
+        &mut FacingHand,
+        &mut OverlayColor,
+        &mut Propagate<RenderLayers>,
+    )>,
+) {
+    let layer = viewpoint
+        .realm
+        .and_then(|e| realms.get(e).ok())
+        .map_or(RenderLayers::none(), |r| r.layer.clone());
+    let shown = drag.shown();
+    for (mut dial, mut propagate) in &mut dials {
+        dial.set_if_neq(FacingDial(shown.map(|drag| drag.dial)));
+        propagate.set_if_neq(Propagate(layer.clone()));
+    }
+    let snapped = shown.is_some_and(|drag| is_quarter_turn(drag.facing));
+    for (mut hand, mut color, mut propagate) in &mut hands {
+        hand.set_if_neq(FacingHand(shown.map(|drag| (drag.dial, drag.facing))));
+        let base = if snapped { css::GOLD } else { css::SILVER };
+        color.base = base.with_alpha(0.9).into();
+        propagate.set_if_neq(Propagate(layer.clone()));
+    }
+}
+
+/// Shows the facing beside the pointer while a drag turns an instance.
+fn show_readout(
+    drag: Res<PlacementDragState>,
+    windows: Query<&Window, With<PrimaryWindow>>,
+    mut readouts: Query<(&mut Text, &mut Node), With<FacingReadout>>,
+) {
+    let cursor = windows.single().ok().and_then(Window::cursor_position);
+    for (mut text, mut node) in &mut readouts {
+        let Some((cursor, drag)) = cursor.zip(drag.shown()) else {
+            if node.display != Display::None {
+                node.display = Display::None;
+            }
+            continue;
+        };
+        let place = cursor + READOUT_OFFSET;
+        if node.display != Display::Flex || node.left != px(place.x) || node.top != px(place.y) {
+            node.display = Display::Flex;
+            node.left = px(place.x);
+            node.top = px(place.y);
+        }
+        let shown = format!("{}°", drag.facing.round());
+        if text.0 != shown {
+            text.0 = shown;
+        }
+    }
+}
 
 /// What the cast can land on: everything but the canopy, which the pointer passes through (D39).
 fn cast_filter() -> QueryFilter<'static> {
@@ -110,8 +434,14 @@ pub(crate) fn cast_placement(
     ray: Ray3d,
 ) -> Option<Vec3> {
     let rotation = Quat::from_rotation_y(facing);
-    let (along, normal) =
-        first_hit(world, shapes, rotation, ray.origin, *ray.direction, CAST_RANGE)?;
+    let (along, normal) = first_hit(
+        world,
+        shapes,
+        rotation,
+        ray.origin,
+        *ray.direction,
+        CAST_RANGE,
+    )?;
     let touch = ray.get_point((along - CAST_GAP).max(0.)) + normal * SURFACE_GAP;
     let drop = first_hit(world, shapes, rotation, touch, Vec3::NEG_Y, DROP_RANGE)
         .map_or(0., |(drop, _)| (drop - CAST_GAP).max(0.));
@@ -174,7 +504,7 @@ impl DialPlace {
     }
 
     /// A builder drawing on the ground at the dial's height.
-    fn builder(self, builder: &mut ShapeBuilder) -> &mut ShapeBuilder {
+    pub(crate) fn builder(self, builder: &mut ShapeBuilder) -> &mut ShapeBuilder {
         builder
             .with_draw_plane(DrawPlane::XZ)
             .with_offset(self.center.y + DIAL_LIFT)
@@ -182,7 +512,7 @@ impl DialPlace {
     }
 
     /// The point at `radius` from the center toward `degrees`, in the world's x and z.
-    fn toward(self, degrees: f32, radius: f32) -> Vec2 {
+    pub(crate) fn toward(self, degrees: f32, radius: f32) -> Vec2 {
         let (sin, cos) = degrees.to_radians().sin_cos();
         self.center.xz() + Vec2::new(sin, cos) * radius
     }
@@ -287,8 +617,12 @@ mod tests {
         )];
         let on_floor = cast_placement(world, &mug, 0., ray_toward(Vec3::new(0., 0., 0.))).unwrap();
         assert!(on_floor.y.abs() < 0.01, "on the floor at {on_floor}");
-        let on_table = cast_placement(world, &mug, 0., ray_toward(Vec3::new(2.5, 0.8, 0.))).unwrap();
-        assert!((on_table.y - 0.8).abs() < 0.01, "on the table at {on_table}");
+        let on_table =
+            cast_placement(world, &mug, 0., ray_toward(Vec3::new(2.5, 0.8, 0.))).unwrap();
+        assert!(
+            (on_table.y - 0.8).abs() < 0.01,
+            "on the table at {on_table}"
+        );
 
         // A painting, raised in its exemplar, touches the wall and drops to the floor.
         let painting = [(
@@ -300,7 +634,10 @@ mod tests {
         let ray = Ray3d::new(origin, Dir3::new(Vec3::new(-1., -0.1, 0.)).unwrap());
         let hung = cast_placement(world, &painting, facing_out, ray).unwrap();
         assert!(hung.y.abs() < 0.01, "dropped to the floor at {hung}");
-        assert!((hung.x - -0.95).abs() < 0.01, "flush with the wall at {hung}");
+        assert!(
+            (hung.x - -0.95).abs() < 0.01,
+            "flush with the wall at {hung}"
+        );
     }
 
     #[test]
@@ -333,6 +670,20 @@ mod tests {
             let toward = (point - center).normalize();
             assert!(front.xz().distance(toward) < 1e-5, "{front} at {facing}°");
         }
+    }
+
+    #[test]
+    fn keys_turn_by_quarter_turns_as_the_wall_tool_turns() {
+        assert_eq!(turn_facing(0., 1), 270.);
+        assert_eq!(turn_facing(270., -2), 90.);
+    }
+
+    #[test]
+    fn keys_return_a_facing_between_quarter_turns_to_one() {
+        assert_eq!(turn_facing(35., 1), 0.);
+        assert_eq!(turn_facing(35., -1), 90.);
+        assert_eq!(turn_facing(305., -1), 0.);
+        assert_eq!(turn_facing(35., 2), 270.);
     }
 
     #[test]

@@ -16,6 +16,7 @@ use bevy::{
     ui_widgets::popover::Popover,
 };
 
+pub mod actor_tool;
 pub mod aspect_chooser;
 pub mod chooser;
 pub mod debug_views;
@@ -85,7 +86,9 @@ impl PluginGroup for EditorPlugins {
             .add(scenery_pointer::SceneryPointerPlugin)
             .add(precinct_edit::PrecinctEditPlugin)
             .add(wall_tool::WallToolPlugin)
+            .add(placement::PlacementPlugin)
             .add(fixture_tool::FixtureToolPlugin)
+            .add(actor_tool::ActorToolPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_commit::TextCommitPlugin)

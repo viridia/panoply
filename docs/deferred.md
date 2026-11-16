@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X116.**
+**Next: X117.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -291,9 +291,10 @@ dropped, not deferred. Numbers are never reused.
   entries do not fit the panel is taken up; dialogues are the likely first.
 - **X61** Audio beyond transition sounds (D63). The old engine had ambient sound emitters placed as
   a scenery aspect (`SoundSource`), music, water sounds and an audio-effect system (`AudioFx`,
-  `AudioFxTemplate`). The proving slice: one ambient emitter aspect and music per realm, on Bevy's
-  built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry: his
-  hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
+  `AudioFxTemplate`). Music also changed on entering a region marker (PAN102), as Heron Creek's
+  armory's did on a rect. The proving slice: one ambient emitter aspect and music per realm, on
+  Bevy's built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry:
+  his hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
   takes up sound.
 - **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
   ([modding.md](modding.md), Types a mod declares). Panoply builds that layer: `bevy_reflect2`
@@ -520,3 +521,9 @@ dropped, not deferred. Numbers are never reused.
   labels only because its loader stores their handles in it (D27; Bevy drops its own once the load
   is processed), so a package's loader must do the same. First measure the memory a catalog holds
   and the hitch of loading one. *Gate:* the first regional behavior packages (Marheim's).
+- **X116** Editing a patrol path's points in the world (PAN102), as Blender edits a curve's: while
+  the path is selected, a handle at each point, dragged across the ground with PAN96's cast; points
+  added and removed in the property editor's list until then. Beside it, faery's button by a
+  world-location field (`WaypointFieldEditor.tsx`, `PlaceWaypointTool.ts`), which sets the field by
+  a click on the map, converted into the fixture's frame; handles may leave it only fields no
+  fixture owns, such as an actor's home. *Gate:* a goal that follows a path (R21, R43).

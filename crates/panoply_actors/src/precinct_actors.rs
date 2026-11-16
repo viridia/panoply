@@ -66,7 +66,7 @@ impl PlacedAs {
 /// changes, an actor whose entry changed, or is gone, is replaced, so it starts again where the
 /// asset places it; the others are left as they are, so an edit elsewhere in the precinct does not
 /// restart them.
-// TODO(PAN97): an edit to an actor's aspects alone replaces nothing, as entries are compared
+// TODO(PAN28e): an edit to an actor's aspects alone replaces nothing, as entries are compared
 // without them.
 pub(crate) fn spawn_precinct_actors(
     mut commands: Commands,

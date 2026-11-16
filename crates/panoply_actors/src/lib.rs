@@ -27,7 +27,7 @@ pub use actor_control::{
 };
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
-pub use actor_physics::{ActorMotion, ActorResting};
+pub use actor_physics::{capsule, ActorHeld, ActorMotion, ActorResting};
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 pub use precinct_actors::{HomePrecinct, PrecinctActors};
@@ -84,6 +84,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<PrecinctActors>()
             .register_type::<ActorMotion>()
             .register_type::<ActorResting>()
+            .register_type::<ActorHeld>()
             .register_type::<ActorIntent>()
             .register_type::<TravelTo>()
             .register_type::<ActorAnimationState>()

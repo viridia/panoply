@@ -69,6 +69,14 @@ pub struct ActorResting {
     pub collider_changes: u64,
 }
 
+/// Marks an actor whose `ActorMotion` something other than physics sets, as the editor sets its
+/// preview of an actor about to be placed: `move_actors` leaves it where it is put, and it is
+/// drawn and animated from its motion as any actor is. It is given its motion when spawned, since
+/// `start_actor_physics` would otherwise give it one, to move.
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+pub struct ActorHeld;
+
 /// How far a facing may be from the heading for the actor to count as facing it, in radians.
 const FACING_TOLERANCE: f32 = 1e-4;
 
@@ -101,8 +109,8 @@ fn controller() -> KinematicCharacterController {
     }
 }
 
-/// The actor's capsule, centered on the origin.
-pub(crate) fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) -> Capsule {
+/// The actor's capsule, centered on the origin; an actor's feet are at its bottom.
+pub fn capsule(size: Option<&CollisionSize>, scale: Option<&ActorScale>) -> Capsule {
     let size = size.cloned().unwrap_or_default().scaled_by(scale);
     let radius = size.radius;
     let half_segment = (size.height * 0.5 - radius).max(0.0);
@@ -188,18 +196,21 @@ pub(crate) fn start_actor_physics(
 /// Runs after the realm steps, so colliders inserted since the last tick are in its broad phase.
 /// Only the viewpoint's realm steps, so actors in other realms hold still, and so do actors whose
 /// ground is not built (`GroundReady`), mid-fall included, until it is. Resting actors
-/// (`ActorResting`) are skipped.
+/// (`ActorResting`) are skipped, and so are held ones (`ActorHeld`).
 pub(crate) fn move_actors(
     mut commands: Commands,
-    mut actors: Query<(
-        Entity,
-        &Actor,
-        &mut ActorMotion,
-        Option<&ActorIntent>,
-        Option<&CollisionSize>,
-        Option<&ActorScale>,
-        Option<&ActorResting>,
-    )>,
+    mut actors: Query<
+        (
+            Entity,
+            &Actor,
+            &mut ActorMotion,
+            Option<&ActorIntent>,
+            Option<&CollisionSize>,
+            Option<&ActorScale>,
+            Option<&ActorResting>,
+        ),
+        Without<ActorHeld>,
+    >,
     realms: Query<&RealmPhysics>,
     viewpoint: Res<Viewpoint>,
     time: Res<Time<Fixed>>,
