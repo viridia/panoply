@@ -2,7 +2,7 @@
 //! italics, so they can be edited, though they cannot be placed. Every catalog under `exemplars/`
 //! loads when scenery mode is first entered, since the game loads exemplars only as precincts name
 //! them. Each tool's choice is saved, so returning to the tool, or restarting, keeps it.
-// TODO(PAN96, PAN97): the fixture and actor tools refuse an abstract exemplar, as the wall tool does.
+// TODO(PAN97): the actor tool refuses an abstract exemplar, as the wall and fixture tools do.
 
 use bevy::{
     asset::LoadedFolder,
@@ -156,6 +156,30 @@ pub fn chosen_exemplar(
     named_exemplars(server, exemplars, placed_type(tool)?)
         .into_iter()
         .find_map(|(found, id)| (found == name).then_some(id))
+}
+
+/// What `tool` would place: its chosen exemplar, or `None` for `(erase)`. `Err` while nothing
+/// placeable is chosen, with why, if the reason is worth telling.
+pub(crate) fn chosen_placeable(
+    choices: &SceneryChoices,
+    tool: SceneryTool,
+    server: &AssetServer,
+    exemplars: &Assets<Exemplar>,
+) -> Result<Option<AssetId<Exemplar>>, Option<String>> {
+    let Some(name) = choices.choice(tool) else {
+        return Err(None);
+    };
+    if name == ERASE {
+        return Ok(None);
+    }
+    let id = chosen_exemplar(server, exemplars, tool, &name).ok_or(None)?;
+    match exemplars.get(id) {
+        Some(exemplar) if exemplar.0.is_abstract => {
+            Err(Some(format!("{name} is abstract, so it cannot be placed")))
+        }
+        Some(_) => Ok(Some(id)),
+        None => Err(None),
+    }
 }
 
 /// The exemplars of `instance_type`, each with its name in the list: its label, or, where two

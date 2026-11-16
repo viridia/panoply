@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D89.**
+**Next: D90.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -701,3 +701,13 @@ never reused.
   id (D87) when its precinct saves, named for the exemplar's label in kebab case and the lowest
   number its precinct does not use, as `wooden-chest-2`. Reversing it means a save game finding an
   instance some other way. (PAN94)
+- **D89** A placing tool only places: a press puts the instance where its own shapes, cast along the
+  pointer's ray, first touch, dropped onto what is under them, and a drag turns it toward the
+  pointer on a dial, before the release commits it (`placement.rs`). So a mug goes on a table
+  without selecting the table, and the turn that most often follows a placement needs no mode
+  switch. Picking what is there is selection mode's (PAN88), and moving or turning it afterwards the
+  gizmos' (PAN92). A drag's turn is that placement's alone; the keys set the tool's facing, since a
+  vase set at an angle is more often followed by a bed square to a wall than by another vase.
+  Wall-hung fixtures need no case of their own: they are raised in their exemplars, and land against
+  a wall. Reversing it means place mode also selecting, as a sequencer's notes do, and an instance
+  on another losing to the instance under it. (PAN96)

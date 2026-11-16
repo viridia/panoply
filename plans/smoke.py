@@ -25,7 +25,8 @@
   without one; a collapsed item shows its summary, and a collapsed pane stays so for the next
   exemplar, until its + adds an item. The wall tool places a wall by click and a row by drag,
   undoably, erases one, saves the precinct (restored afterwards) and a new one (deleted
-  afterwards); its keys turn the walls and step the tier, and Escape cancels a drag.
+  afterwards); its keys turn the walls and step the tier, and Escape cancels a drag. The fixture
+  tool places by click, undoably, and turns by drag on a dial shown on every drag.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -111,6 +112,7 @@ REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
 WINDOW = "bevy_window::window::Window"
 NODE = "bevy_ui::ui_node::Node"
 WALL_SETTINGS = "panoply_editor::wall_tool::WallToolSettings"
+FIXTURE_SETTINGS = "panoply_editor::fixture_tool::FixtureToolSettings"
 TIER = "panoply_editor::scenery_pointer::SceneryTier"
 # The playground precinct under `SPOT`, and one with no file, which the realm's bounds hold.
 SPOT_PRECINCT = "scenery/precincts/playground/p001-p002.msgpack"
@@ -348,6 +350,7 @@ def scenery_panel(driver):
     driver.present("Exemplars/BasementWall")
     text_property(driver)
     wall_tool(driver)
+    fixture_tool(driver)
     # The actor tool lists actors, the abstract ones they extend too, so they can be edited.
     driver.click("PlaceActor")
     driver.present("Exemplars/Marcus", timeout=WAIT)
@@ -389,14 +392,10 @@ def wall_tool(driver):
     original = precinct.read_bytes()
 
     def count():
-        return len(by_name(driver, "SceneryElement"))
+        return element_count(driver)
 
     def expect_count(expected):
-        def check():
-            found = count()
-            return found == expected, lambda: f"{found} scenery elements"
-
-        driver.wait(check, f"{expected} scenery elements", {"seconds": 5})
+        expect_elements(driver, expected)
 
     def drag(to):
         move_pointer(driver, window, scale, middle)
@@ -481,6 +480,88 @@ def wall_tool(driver):
     finally:
         created.unlink(missing_ok=True)
     driver.goto(SPOT, 20.0)
+
+
+def element_count(driver):
+    """The scenery elements in the precincts, not counting a tool's preview."""
+    return len(by_name(driver, "SceneryElement"))
+
+
+def expect_elements(driver, expected):
+    def check():
+        found = element_count(driver)
+        return found == expected, lambda: f"{found} scenery elements"
+
+    driver.wait(check, f"{expected} scenery elements", {"seconds": 5})
+
+
+def fixture_tool(driver):
+    """The fixture tool, over the playground at `SPOT`: a click places the chosen fixture, which
+    undo and redo take back and put again. A drag turns it toward the pointer, on a dial with the
+    facing beside the pointer; the dial shows again on the next drag. Escape cancels a drag, ]
+    turns the fixtures to place, and Save writes the precinct (restored afterwards)."""
+    driver.click("PlaceFixture")
+    wait_mode(driver, scenery_tool, "PlaceFixture")
+    driver.present("Exemplars/FlowerPot", timeout=WAIT)
+    choose(driver, "fixture", "FlowerPot")
+    driver.goto(SPOT, 20.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    right = (middle[0] + 150, middle[1])
+    precinct = ASSETS / SPOT_PRECINCT
+    original = precinct.read_bytes()
+
+    def dial_shown():
+        return driver.get("FacingDial", INHERITED)
+
+    def press_and_drag(to):
+        move_pointer(driver, window, scale, middle)
+        button(driver, window, "Pressed")
+        move_pointer(driver, window, scale, to)
+        driver.frames(3)
+
+    base = element_count(driver)
+    try:
+        # A press shows the dial, a sign that a drag would turn the fixture; a click places it.
+        press_and_drag(middle)
+        assert dial_shown(), "no dial on the press"
+        button(driver, window, "Released")
+        expect_elements(driver, base + 1)
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Place FlowerPot")
+        expect_elements(driver, base)
+        undo(driver, redo=True)
+        expect_elements(driver, base + 1)
+
+        # Dragged to the right of the view, which looks north, the fixture faces east.
+        press_and_drag(right)
+        assert dial_shown(), "no dial while dragging"
+        driver.expect("FacingReadout", TEXT, "270°")
+        driver.screenshot("fixture_drag")
+        button(driver, window, "Released")
+        expect_elements(driver, base + 2)
+        assert not dial_shown(), "the dial stays after the drag"
+
+        # The dial shows again on the next drag, which Escape cancels without quitting.
+        press_and_drag(right)
+        assert dial_shown(), "no dial on the second drag"
+        driver.key("Escape")
+        button(driver, window, "Released")
+        driver.frames(5)
+        assert element_count(driver) == base + 2, "a cancelled drag placed a fixture"
+
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert precinct.read_bytes() != original, "Save did not write the precinct"
+    finally:
+        restore(precinct, original)
+    expect_elements(driver, base)
+
+    # ] turns the fixtures to place a quarter turn right.
+    driver.key("BracketRight")
+    driver.frames(2)
+    facing = driver.get_resource(FIXTURE_SETTINGS, at="facing")
+    assert facing == 270.0, f"facing {facing}"
 
 
 def tier(driver):

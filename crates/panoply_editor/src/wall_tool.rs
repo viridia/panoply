@@ -32,7 +32,7 @@ use panoply_scenery::{
 };
 
 use crate::{
-    exemplar_list::{chosen_exemplar, SceneryChoices, ERASE},
+    exemplar_list::{chosen_placeable, SceneryChoices},
     mode_selector::SceneryTool,
     precinct_edit::PrecinctEdits,
     scenery_pointer::{
@@ -248,29 +248,6 @@ fn rotate_keys(
     }
 }
 
-/// What the tool would place: the chosen wall's exemplar, or `None` for `(erase)`. `Err` while
-/// nothing placeable is chosen, with why, if the reason is worth telling.
-fn chosen_wall(
-    choices: &SceneryChoices,
-    server: &AssetServer,
-    exemplars: &Assets<Exemplar>,
-) -> Result<Option<AssetId<Exemplar>>, Option<String>> {
-    let Some(name) = choices.choice(SceneryTool::PlaceWall) else {
-        return Err(None);
-    };
-    if name == ERASE {
-        return Ok(None);
-    }
-    let id = chosen_exemplar(server, exemplars, SceneryTool::PlaceWall, &name).ok_or(None)?;
-    match exemplars.get(id) {
-        Some(exemplar) if exemplar.0.is_abstract => {
-            Err(Some(format!("{name} is abstract, so it cannot be placed")))
-        }
-        Some(_) => Ok(Some(id)),
-        None => Err(None),
-    }
-}
-
 /// The tiles from `anchor` to `corner`, a meter apart, at `height`.
 fn tiles(anchor: Vec2, corner: Vec2, height: f32) -> Vec<Vec3> {
     let (min, max) = (anchor.min(corner), anchor.max(corner));
@@ -350,7 +327,7 @@ fn update_wall_tool(
         drag.corner = drag.anchor + step.clamp(lowest, highest);
     }
 
-    let wall = chosen_wall(&choices, &server, &exemplars);
+    let wall = chosen_placeable(&choices, SceneryTool::PlaceWall, &server, &exemplars);
     if released {
         if let Some(done) = drag.0.take().filter(|drag| !drag.cancelled) {
             match &wall {

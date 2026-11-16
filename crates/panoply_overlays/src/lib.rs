@@ -23,7 +23,8 @@ pub use crate::{
     shape_builder::{DrawPlane, PolygonOptions, ShapeBuilder, StrokeMarker},
 };
 
-/// A shape drawn as an overlay, rebuilt when the component changes.
+/// A shape drawn as an overlay, rebuilt when the component changes. The overlay owns its entity's
+/// `Visibility`: a shape that draws nothing hides it.
 pub trait OverlayShape: Component<Mutability = Mutable> + PartialEq {
     fn draw(&self, builder: &mut ShapeBuilder);
 }
@@ -36,6 +37,7 @@ pub trait AddOverlay {
 impl AddOverlay for App {
     fn add_overlay<S: OverlayShape>(&mut self) -> &mut Self {
         self.register_required_components::<S, OverlayColor>()
+            .register_required_components::<S, Visibility>()
             .register_required_components::<S, NotShadowCaster>()
             .register_required_components::<S, NotShadowReceiver>()
             .add_observer(add_materials::<S>)
@@ -82,21 +84,22 @@ fn add_materials<S: OverlayShape>(
 
 /// Redraws each overlay whose shape changed, in place once it has a mesh.
 fn rebuild_mesh<S: OverlayShape>(
-    shapes: Query<(Entity, &S, Option<&Mesh3d>), Changed<S>>,
+    mut shapes: Query<(Entity, &S, Option<&Mesh3d>, &mut Visibility), Changed<S>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
-    for (entity, shape, mesh) in &shapes {
+    for (entity, shape, mesh, mut visibility) in &mut shapes {
         let mut builder = ShapeBuilder::new();
         shape.draw(&mut builder);
-        // A shape that draws nothing, such as a hidden cursor, has no mesh: the renderer warns of
-        // one with no vertices.
+        // A shape that draws nothing, such as a hidden cursor, is hidden with the mesh it last
+        // drew: the renderer warns of a mesh with no vertices, and removing `Mesh3d` would lose
+        // the overlay for good, since Bevy drops a mesh's material when its `Mesh3d` goes and takes
+        // it back only when its visibility or material changes, not when `Mesh3d` returns.
         if builder.is_empty() {
-            if mesh.is_some() {
-                commands.entity(entity).remove::<Mesh3d>();
-            }
+            visibility.set_if_neq(Visibility::Hidden);
             continue;
         }
+        visibility.set_if_neq(Visibility::Inherited);
         if let Some(mesh) = mesh.filter(|mesh| meshes.contains(&mesh.0)) {
             builder.build(&mut meshes.get_mut(&mesh.0).unwrap());
             continue;

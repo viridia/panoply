@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN96** Fixtures place where the pointer is, landing on what is under them, turned by a drag.
 - **PAN94** Walls paint onto a tier by dragging, at a snap, undoably; precincts save, even new ones.
 - **PAN4a** Portals' apertures and targets load from catalogs and precincts, no longer skipped.
 - **PAN28k** Features and colors are a row per slot, marked in the models; maps save in key order.

@@ -21,6 +21,7 @@ pub mod chooser;
 pub mod debug_views;
 pub mod diagnostics;
 pub mod exemplar_list;
+pub mod fixture_tool;
 pub mod goto;
 pub mod json;
 pub mod map_size;
@@ -30,6 +31,7 @@ pub mod model_picker;
 pub mod nav_point_list;
 pub mod new_realm;
 pub mod parcel_selection;
+pub mod placement;
 pub mod precinct_edit;
 pub mod properties;
 pub mod quit_dialog;
@@ -83,6 +85,7 @@ impl PluginGroup for EditorPlugins {
             .add(scenery_pointer::SceneryPointerPlugin)
             .add(precinct_edit::PrecinctEditPlugin)
             .add(wall_tool::WallToolPlugin)
+            .add(fixture_tool::FixtureToolPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_commit::TextCommitPlugin)

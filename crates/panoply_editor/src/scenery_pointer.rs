@@ -38,10 +38,28 @@ impl SceneryTier {
 /// there, if it is loaded.
 #[derive(Resource, Clone, Copy, PartialEq, Debug, Default)]
 pub struct SceneryPointer {
+    /// The pointer's ray from the view's camera.
+    pub ray: Option<Ray3d>,
     /// In the world's coordinates.
     pub point: Option<Vec3>,
     /// The precinct's entity and coordinates.
     pub precinct: Option<(Entity, IVec2)>,
+}
+
+/// The loaded precinct of `realm` at `point`, in the world's coordinates: its entity and
+/// coordinates.
+pub(crate) fn precinct_at(
+    cache: &PrecinctCache,
+    realm: Entity,
+    point: Vec3,
+) -> Option<(Entity, IVec2)> {
+    let coords = (point.xz() / PRECINCT_SIZE_F).floor().as_ivec2();
+    let key = PrecinctKey {
+        realm,
+        x: coords.x,
+        z: coords.y,
+    };
+    Some((cache.peek(&key)?, coords))
 }
 
 /// Scenery mode's keys. A focused text field or a dialog holds the keys (`widget_keys`), so these
@@ -132,20 +150,19 @@ fn update_scenery_pointer(
     cache: Res<PrecinctCache>,
     mut pointer: ResMut<SceneryPointer>,
 ) {
-    let point = rays
+    let ray = rays
         .iter()
         .find(|(id, _)| id.pointer == PointerId::Mouse && cameras.contains(id.camera))
-        .and_then(|(_, &ray)| level_point(ray, tier.height()));
-    let precinct = point.zip(viewpoint.realm).and_then(|(point, realm)| {
-        let coords = (point.xz() / PRECINCT_SIZE_F).floor().as_ivec2();
-        let key = PrecinctKey {
-            realm,
-            x: coords.x,
-            z: coords.y,
-        };
-        Some((cache.peek(&key)?, coords))
+        .map(|(_, &ray)| ray);
+    let point = ray.and_then(|ray| level_point(ray, tier.height()));
+    let precinct = point
+        .zip(viewpoint.realm)
+        .and_then(|(point, realm)| precinct_at(&cache, realm, point));
+    pointer.set_if_neq(SceneryPointer {
+        ray,
+        point,
+        precinct,
     });
-    pointer.set_if_neq(SceneryPointer { point, precinct });
 }
 
 #[cfg(test)]

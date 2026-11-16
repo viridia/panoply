@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I53.**
+**Next: I54.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -190,3 +190,11 @@ confirmed by running something or only by reading. Numbers are never reused.
   (`SceneryEditPanel.tsx`, `createShortcuts`), which Panoply leaves out: W is the editor camera's
   forward (`ViewpointControl` in `src/input.rs`), so tool keys need other letters, or a modifier.
   Read, not run.
+- **I53** Bevy draws nothing for a mesh whose `Mesh3d` was removed and inserted again:
+  `late_sweep_material_instances` drops the entity's material instance when its `Mesh3d` goes, and
+  `extract_mesh_materials` takes it back only on `Changed<ViewVisibility>` or
+  `Changed<MeshMaterial3d<M>>`, neither of which a returning `Mesh3d` sets (`bevy_pbr`'s
+  `material.rs`). Worth reporting upstream. `panoply_overlays` hid an empty shape by removing its
+  mesh, so the fixture tool's dial showed on the first drag only; it now hides the entity instead.
+  Confirmed by running (PAN96): a probe read the dial's bounds and visibility, and screenshots
+  showed it missing, then drawn after the change.

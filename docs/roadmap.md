@@ -124,10 +124,9 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   naming one floor loads: the catalog's every texture.
 - **PAN95 Place floors**, on PAN94's saving and PAN74's floor exemplars: floors drawn on the current
   tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`).
-- **PAN96 Place fixtures**, on PAN94's saving: fixtures placed and turned in the precinct under the
-  pointer.
 - **PAN97 Place actors**, on PAN94's saving: actors placed into the precinct, each assigned an id as
-  it is placed (PAN88 lists and renames them).
+  it is placed (PAN88 lists and renames them), with the fixture tool's gesture (D89): the cast and
+  dial in `placement.rs`, with the actor's capsule as its shape.
 - **PAN98 Paint terrain effects**, on PAN94's saving: the terrain effect tool
   (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
 - **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
