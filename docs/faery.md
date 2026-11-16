@@ -184,6 +184,9 @@ exemplars, `IMetadata`: anything loaded from JSON and saved. A file may hold ent
 kinds (dialogues and remarks together), but never exemplars. The files are grouped by region, which
 has nothing to do with loading: every catalog is loaded all the time.
 
+In the code, floors and terrain effects are archetypes (`FloorArchetype`, `TerrainFxArchetype` in
+`engine/src/world/scenery/`), but with fixed fields and no aspects, and nothing instances them.
+
 A book holds the text of a sign, book, pamphlet or anything else the player reads: the background
 art it is shown on, optionally fonts, and its paragraphs as JSON. Whether the paragraphs carry rich
 text is unknown; Macondo, the usual font, has no styles. The layout (one page or two facing pages)

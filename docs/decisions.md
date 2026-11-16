@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D90.**
+**Next: D91.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -612,13 +612,13 @@ never reused.
   and removes aspects. A root that lacks the trait refuses the edit. Methods on `PropertyRoot` with
   failing defaults would put each kind of root's operations on every root: nav points, quests and
   dialogues hold no aspects. Reversing it means those methods. (PAN28d)
-- **D79** An asset type is an exemplar when its instances may differ in which parts they have, and
-  gain from composing aspects: walls, fixtures, actors, items, terrain effects, and floors (PAN74).
-  A sequence or a state machine, as a quest or a dialogue, is an asset type of its own, since
-  aspects would not compose it. Floors were made assets in 2024, when a floor's only aspect was its
-  material; as exemplars they get the list, the property editor and saving that exemplars have, and
-  room for footsteps, slipperiness and depressions. Reversing it means an editor of its own for each
-  asset type that is not an exemplar. (PAN28d)
+- **D79** Superseded by D90. An asset type is an exemplar when its instances may differ in which
+  parts they have, and gain from composing aspects: walls, fixtures, actors, items, terrain effects,
+  and floors (PAN74). A sequence or a state machine, as a quest or a dialogue, is an asset type of
+  its own, since aspects would not compose it. Floors were made assets in 2024, when a floor's only
+  aspect was its material; as exemplars they get the list, the property editor and saving that
+  exemplars have, and room for footsteps, slipperiness and depressions. Reversing it means an editor
+  of its own for each asset type that is not an exemplar. (PAN28d)
 - **D80** An actor's place is not saved with its home precinct, on eviction or on save: when the
   precinct loads again, or a save is loaded, its actors start at their authored places and their
   goals take them to wherever the hour puts them. Time passes while a precinct is away, and its
@@ -711,3 +711,13 @@ never reused.
   Wall-hung fixtures need no case of their own: they are raised in their exemplars, and land against
   a wall. Reversing it means place mode also selecting, as a sequencer's notes do, and an instance
   on another losing to the instance under it. (PAN96)
+- **D90** An asset type is an exemplar when its instances may differ in which parts they have, and
+  gain from composing aspects into entities: walls, fixtures, actors, items. Every other asset type
+  loaded and saved is a catalog entry, a typed record with no aspects and no prototype: floors,
+  terrain effects, books, quests, dialogues, spawn tables. Catalog entries share one loader, list,
+  property editor root (D78) and save path, so a new kind needs its type, not an editor of its own,
+  as faery's `IMetadata` was the base of everything its editor loaded and saved. Floors and terrain
+  effects compose nothing: a floor has no parts, every terrain effect holds the one aspect
+  `TerrainEffect` but the hole, which holds `TerrainHole`, none extends another, and none spawns.
+  D79 made them exemplars for the editor exemplars had. Reversing it means aspects on records that
+  have no parts.

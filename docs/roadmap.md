@@ -116,15 +116,20 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
   asset server skipping the reload of a file it wrote through its own `AssetWriter`
   ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
-- **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
-  `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
-  Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
-  it checks other exemplars. The floor tool lists them through the exemplar list
-  (`exemplar_list.rs`, `TODO(PAN74)`), and the property editor edits them. Check what a precinct
-  naming one floor loads: the catalog's every texture.
-- **PAN95 Place floors**, on PAN94's saving and PAN74's floor exemplars: floors drawn on the current
+- **PAN74a Catalog entries, with floors** (D90). The asset kind beside exemplars: how an entry is
+  named and referenced, its file format, loading, the list, the property editor's root (D78),
+  saving, `asset_xref.py`'s checks, and how a mod overrides an entry ([modding.md](modding.md)).
+  Propose before code. Floors are the first kind: the floor types (`scenery/floors/*.floor.ron`,
+  `FloorSurface`) become entries, and precincts' `floor_surfaces` name them, rewritten. The floor
+  tool lists them (`exemplar_list.rs`, `TODO(PAN74a)`), and the property editor edits them. If
+  entries share a file, check what a precinct naming one floor loads: the file's every texture.
+- **PAN74b Terrain effects as catalog entries** (D90). The entries of `terrainfx.exem.json` move out
+  of exemplars, the hole a variant of the entry rather than an aspect of its own. Precincts' terrain
+  effect tables name them, rewritten; `TerrainFxMap` reads the entry rather than downcasting
+  aspects; and the terrain effect tool lists them as the floor tool does.
+- **PAN95 Place floors**, on PAN94's saving and PAN74a's floor entries: floors drawn on the current
   tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`).
-- **PAN98 Paint terrain effects**, on PAN94's saving: the terrain effect tool
+- **PAN98 Paint terrain effects**, on PAN94's saving and PAN74b's entries: the terrain effect tool
   (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
 - **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
   actors on those floors (R15). Rects are authored per tier (`TierSer.cutaways`); choosing them and
@@ -207,8 +212,8 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
 - **PAN78 Signs and books**, among the last chunks of all: things to read. A sign is a scenery
   aspect whose interaction shows its text; a document is an inventory item that links to text
   content and a page style (faery's book aspect opened its content in a frame, `codex` by default).
-  The text is a book: a catalog entry, not an exemplar ([faery.md](faery.md), Catalog entries), so
-  unless another kind came first, it decides how catalog entries load and save beside exemplars.
+  The text is a book: a catalog entry (D90), not an exemplar ([faery.md](faery.md), Catalog
+  entries).
 
 ## Editor
 

@@ -68,7 +68,7 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
         SceneryTool::PlaceFixture => Some(FIXTURE_TYPE),
         SceneryTool::PlaceActor => Some(ACTOR_TYPE),
         SceneryTool::DrawTerrainFx => Some(TERRAIN_FX_TYPE),
-        // TODO(PAN74): the floor types, which are not exemplars.
+        // TODO(PAN74a): the floor types, which are not exemplars.
         SceneryTool::PlaceFloor
         | SceneryTool::Interact
         | SceneryTool::Layers
