@@ -33,6 +33,7 @@
       "Bash(/Users/talin/Projects/games/panoply/scripts/blend_export.py)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/blend_export.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/glb_compare.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/local_sweep.py *)",
       "Read(~/.cargo/registry/**)",
       "Read(~/.cargo/git/**)",
       "Read(//Users/talin/Projects/games/**)"

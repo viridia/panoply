@@ -39,6 +39,8 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 - `blend_cleanup.py`: repairs what the inventory reports; a dry run unless `--apply`, which saves
   `.blend` files, so it has no allow rule.
 - `glb_compare.py`: what a re-export changed, clip by clip and pose by pose, against git `HEAD`.
+- `local_sweep.py`: asks a local Ollama model the same questions about each of several files, one
+  answer per file, citing lines, for bulk reading whose claims are then checked at the source.
 - `lucide_icons.sh <name>…`: fetches Lucide icons and writes them as the editor's 48 px white PNGs
   into `assets/editor/icons/lucide/`. It downloads, so it has no allow rule.
 - `devfmt.py --diff`: rewraps changed Markdown paragraphs to 100 columns (`--preview` to read

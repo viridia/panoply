@@ -99,23 +99,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   rewrites it whenever it creates or deletes a precinct (since PAN94, its first edit of a precinct
   with no file), and `asset_xref.py` checks it against the folder, so a file added or removed by
   hand fails `verify.sh`.
-- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
-  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
-  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
-  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
-  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
-  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
-  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
-  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
-  themselves), external ids written into memory at save rather than arriving with the reload (D88),
-  plans restoring files in memory rather than by writing them, and removing the barrier. Two
-  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
-  after the next save, the barrier took it for that save's reload, and the real one then overwrote
-  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
-  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
-  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
-  asset server skipping the reload of a file it wrote through its own `AssetWriter`
-  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
 - **PAN74a Catalog entries, with floors** (D90). The asset kind beside exemplars: how an entry is
   named and referenced, its file format, loading, the list, the property editor's root (D78),
   saving, `asset_xref.py`'s checks, and how a mod overrides an entry ([modding.md](modding.md)).
@@ -178,6 +161,23 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
   faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
   a rect into a cutaway is read in the chunk.
+- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
+  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
+  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
+  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
+  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
+  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
+  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
+  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
+  themselves), external ids written into memory at save rather than arriving with the reload (D88),
+  plans restoring files in memory rather than by writing them, and removing the barrier. Two
+  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
+  after the next save, the barrier took it for that save's reload, and the real one then overwrote
+  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
+  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
+  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
+  asset server skipping the reload of a file it wrote through its own `AssetWriter`
+  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
 
 ## Interaction
 
@@ -297,7 +297,10 @@ components and every layer restartable from saved state (R104).
   aura is added to an actor's travel before the controller moves it, so a pushed actor is still
   swept against the world and is never pushed through a wall. A smoothed velocity rather than a
   force, so it does not jitter; a weight per actor, so NPCs yield to the player more than the player
-  to them. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
+  to them. The weight follows size and stance: a dwarf does not shove a giant, a guard on duty
+  stands planted, and a scripted goal may make an actor immovable, to block a path for a scene.
+  Whether it is computed or an aspect's value that goals change is settled here; PAN16's route costs
+  read it. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
   Neighbours by testing every pair in the realm until a grid is needed. The playground's townsfolk
   are the test. X50 builds NPCs' steering on it.
 - **PAN89 Actor colliders**, so a ray can hit an actor: PAN88's picking, the probe (PAN21) and
@@ -312,15 +315,44 @@ components and every layer restartable from saved state (R104).
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
 - **PAN16 Navigation.** Panoply has none; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
-  First evaluate [rerecast](https://crates.io/crates/rerecast): navigation mesh generation is hard
-  to maintain alone, which outweighs the cost of a fork (D36); check whether its generator works
-  without Bevy, which would need none. Test it against Panoply's idiosyncratic needs: a mesh only
-  around loaded precincts, built as they stream in (R83); door regions (R98); exclusion zones cut
-  where actors stand (R86); and whatever else faery's `nav` does that rerecast lacks. A missing
-  feature may be upstreamed rather than forked: the author has talked with rerecast's author. Crowd
-  and follower behavior (R86, R87) needs test scenarios: driver plans that stage, for example, eight
-  skeletons rushing the player, or two followers through a doorway. An actor that cannot advance
-  plays R33's blocked state and replans (R22).
+  Research first, landing as a decision: what generates the mesh and what queries it, each in D36's
+  order. [rerecast](https://crates.io/crates/rerecast) is a port of Recast, generation only, whose
+  core crate needs no Bevy; its README pairs it with `landmass` and `vleue_navigator` for queries.
+  Read with `local_sweep.py` inventories first, faery's `nav` and the candidate crates, then the
+  files they point to: an inventory finds where to read, but misses what one file guarantees and
+  another relies on (faery's regions are convex, split in `NavigationMesh.ts`). The questions:
+  - A mesh only around loaded precincts (R83): rerecast's tiles, whose state its roadmap leaves
+    unclear, or a mesh per precinct joined at query time, as faery's tracts were (`perimeter` edges,
+    `neighborTransition` in `NavRouteTask.ts`), with borders padded so the edges meet.
+  - Door regions (R98): an area type marked by the door collider's `ConvexVolume`, and a side table
+    from polygon to door instance, since an area type is a `u8`. The cell size must keep a narrow
+    doorway open after the agent radius is eroded.
+  - Exclusion zones where actors stand (R86): without a tile cache, rerecast cuts nothing at run
+    time. Likely relaxed to two parts. A cost per query, as faery's `actor` surface already was in
+    its search, but only on a polygon the actor leaves no way past: one too narrow at the actor for
+    the agent to go around it, judged by width, not area, since a corridor is large but narrow. The
+    cost follows the two actors' weights (PAN90): one the agent outweighs costs the time to shove
+    it, and one far heavier blocks the polygon for this query. An actor in a field costs nothing, so
+    polygon size need not be capped; faery capped its regions at 4 m cells (`REGION_QUANTA`) to
+    bound the cost of cutting actors in, which Panoply does not do. Then the smoothed path bends
+    around the actors near it: where a segment passes within an actor's radius plus the agent's,
+    waypoints on the tangents of that circle, on the side whose segments stay on the mesh (a raycast
+    along it). Bending suits standing actors, who are where the plan saw them; moving ones are the
+    aura's (R23). Where neither side stays on the mesh, the route replans. Before bending is built,
+    an artifact for the author: its test cases, illustrated, to find the edge cases.
+  - Ladders: rerecast has no off-mesh links, so they are the query side's.
+  - Querying: a crate, if it takes costs or filters per query and joins meshes; else a port of
+    `NavRouteTask.ts` (A*, a funnel pass, tract seams), which runs on any mesh of convex polygons.
+    Faery read each door's `open` signal inside its search, but a door does not change during one
+    query, so its cost can be set before the query (passable at a cost, or blocked if automatic, or
+    locked) and the door-use waypoints added after it, along the corridor (`findDoorUseLocation`).
+
+  Settle it with one scenario walkthrough: a guard routes through a door into the next precinct
+  while two followers stand in the corridor. A missing feature may be upstreamed rather than forked:
+  the author has talked with rerecast's author. Crowd and follower behavior (R86, R87) needs test
+  scenarios: driver plans that stage, for example, eight skeletons rushing the player, or two
+  followers through a doorway. An actor that cannot advance plays R33's blocked state and replans
+  (R22).
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
