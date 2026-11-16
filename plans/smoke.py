@@ -23,7 +23,9 @@
   map adds an entry whose key typing names, refuses a key it holds, and removes an entry.
   Every × lines up, a pane's header's with its rows', and widgets end at one edge with or
   without one; a collapsed item shows its summary, and a collapsed pane stays so for the next
-  exemplar, until its + adds an item.
+  exemplar, until its + adds an item. The wall tool places a wall by click and a row by drag,
+  undoably, erases one, saves the precinct (restored afterwards) and a new one (deleted
+  afterwards); its keys turn the walls and step the tier, and Escape cancels a drag.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
   travels to the point selected; + asks for a name, refusing one in use, and adds the point,
@@ -79,8 +81,9 @@ TOOL_BUTTONS = [
 ]
 SCENERY_BUTTONS = [
     "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "Interact",
-    "Layers", "RectSelect", "RotateCcw", "RotateCw",
+    "Layers", "RectSelect",
 ]
+SNAP_BUTTONS = ["SnapNormal", "SnapOffset", "SnapQuarter"]
 WAIT = {"frames": 900, "seconds": 45}
 # Forest, shoreline, water, grass and rocks.
 SPOT = [110.0, 0.0, 150.0]
@@ -106,6 +109,13 @@ SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
 WINDOW = "bevy_window::window::Window"
+NODE = "bevy_ui::ui_node::Node"
+WALL_SETTINGS = "panoply_editor::wall_tool::WallToolSettings"
+TIER = "panoply_editor::scenery_pointer::SceneryTier"
+# The playground precinct under `SPOT`, and one with no file, which the realm's bounds hold.
+SPOT_PRECINCT = "scenery/precincts/playground/p001-p002.msgpack"
+EMPTY_SPOT = [160.0, 0.0, 160.0]
+EMPTY_PRECINCT = "scenery/precincts/playground/p002-p002.msgpack"
 WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
@@ -317,8 +327,11 @@ def scenery_panel(driver):
     driver.click("PlaceWall")
     wait_mode(driver, scenery_tool, "PlaceWall")
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
-    for button in ["RotateCw", "SceneryPanel/Cut", "SceneryPanel/New", "SceneryPanel/Clone"]:
+    for button in ["SceneryPanel/Cut", "SceneryPanel/New", "SceneryPanel/Clone"]:
         expect_disabled(driver, button, True)
+    # The wall tool has options above its list; the floor tool, so far, none.
+    expect_display(driver, "ToolOptions", "Flex")
+    expect_highlight(driver, "SnapNormal", SNAP_BUTTONS)
 
     # The wall tool lists the walls, after a row that erases, as the exemplars load.
     driver.present("Exemplars/CottageWall", timeout=WAIT)
@@ -334,6 +347,7 @@ def scenery_panel(driver):
     driver.click("Exemplars/ClearFilter")
     driver.present("Exemplars/BasementWall")
     text_property(driver)
+    wall_tool(driver)
     # The actor tool lists actors, the abstract ones they extend too, so they can be edited.
     driver.click("PlaceActor")
     driver.present("Exemplars/Marcus", timeout=WAIT)
@@ -347,6 +361,7 @@ def scenery_panel(driver):
     aspect_property(driver)
     exemplar_fields(driver)
     driver.click("PlaceFixture")
+    expect_display(driver, "ToolOptions", "None")
     scenery_model_property(driver)
     optional_property(driver)
     collider_property(driver)
@@ -360,6 +375,127 @@ def scenery_panel(driver):
     # The row highlights, then scrolls into view after a layout pass.
     driver.frames(10)
     driver.screenshot("scenery_choice_kept")
+
+
+def wall_tool(driver):
+    """The wall tool, over the playground at `SPOT`: a click places a wall, and a drag a row of
+    them, which undo and redo take back and put again; `(erase)` erases one. Save writes the
+    precinct (restored afterwards). ] turns the walls to place, . and , step the tier, and Escape
+    during a drag cancels it without quitting. Placed into a precinct with no file, a wall is saved
+    into a new one (deleted afterwards)."""
+    driver.goto(SPOT, 20.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    precinct = ASSETS / SPOT_PRECINCT
+    original = precinct.read_bytes()
+
+    def count():
+        return len(by_name(driver, "SceneryElement"))
+
+    def expect_count(expected):
+        def check():
+            found = count()
+            return found == expected, lambda: f"{found} scenery elements"
+
+        driver.wait(check, f"{expected} scenery elements", {"seconds": 5})
+
+    def drag(to):
+        move_pointer(driver, window, scale, middle)
+        button(driver, window, "Pressed")
+        move_pointer(driver, window, scale, to)
+        button(driver, window, "Released")
+
+    base = count()
+    right = (middle[0] + 150, middle[1])
+    try:
+        drag(middle)
+        expect_count(base + 1)
+        # A drag places a tile a meter, from the press to the pointer, replacing the wall the
+        # click placed.
+        move_pointer(driver, window, scale, middle)
+        button(driver, window, "Pressed")
+        move_pointer(driver, window, scale, right)
+        driver.screenshot("wall_drag")
+        button(driver, window, "Released")
+        driver.frames(5)
+        placed = count() - base
+        assert placed >= 2, f"the drag placed {placed} walls"
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, f"Undo: Place {placed} walls")
+        expect_count(base + 1)
+        undo(driver, redo=True)
+        expect_count(base + placed)
+
+        # Escape cancels a drag, and does not quit.
+        move_pointer(driver, window, scale, middle)
+        button(driver, window, "Pressed")
+        move_pointer(driver, window, scale, right)
+        driver.key("Escape")
+        button(driver, window, "Released")
+        driver.frames(5)
+        assert count() == base + placed, "a cancelled drag placed walls"
+
+        # `(erase)` erases the wall under the pointer.
+        choose(driver, "wall", "(erase)")
+        drag(middle)
+        expect_count(base + placed - 1)
+        choose(driver, "wall", "CottageWall")
+
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert precinct.read_bytes() != original, "Save did not write the precinct"
+    finally:
+        restore(precinct, original)
+    # The watcher's reload puts the precinct back as it was.
+    expect_count(base)
+
+    # ] turns the walls to place; . and , step the tier, which the tile grid shows.
+    driver.key("BracketRight")
+    driver.frames(2)
+    assert driver.get_resource(WALL_SETTINGS, at="facing") == 1
+    driver.click("RotateLeft")
+    driver.frames(2)
+    assert driver.get_resource(WALL_SETTINGS, at="facing") == 0
+    driver.key("Period")
+    driver.frames(2)
+    assert tier(driver) == 1, f"tier {tier(driver)}"
+    move_pointer(driver, window, scale, middle)
+    driver.screenshot("wall_tier")
+    driver.key("Comma")
+    driver.frames(2)
+    assert tier(driver) == 0, f"tier {tier(driver)}"
+
+    # A precinct with no file gets one when saved.
+    driver.goto(EMPTY_SPOT, 20.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    created = ASSETS / EMPTY_PRECINCT
+    assert not created.exists(), f"{created} exists already"
+    base = count()
+    try:
+        drag(middle)
+        expect_count(base + 1)
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+        assert created.exists(), "Save did not create the precinct"
+    finally:
+        created.unlink(missing_ok=True)
+    driver.goto(SPOT, 20.0)
+
+
+def tier(driver):
+    value = driver.get_resource(TIER)
+    return value[0] if isinstance(value, list) else value
+
+
+def expect_display(driver, selector, display):
+    """Waits until the node `selector`'s display is `display`, as "Flex" or "None"."""
+
+    def check():
+        found = driver.get(selector, NODE)["display"]
+        return found == display, lambda: f"display {found}"
+
+    driver.wait(check, f"{selector} display {display}", {"seconds": 2})
 
 
 def exemplar_properties(driver):
@@ -429,7 +565,7 @@ def exemplar_properties(driver):
         driver.absent("SaveBarrier")
         assert CHARACTERS.read_bytes() == original, "saving the undone edit changed the catalog"
     finally:
-        CHARACTERS.write_bytes(original)
+        restore(CHARACTERS, original)
     driver.click("Exemplars/ClearFilter")
 
 
@@ -868,7 +1004,7 @@ def collider_layout(driver):
         driver.absent("SaveBarrier")
         assert WALL_TILES.read_text() == original, "saving the undone edit changed the catalog"
     finally:
-        WALL_TILES.write_text(original)
+        restore(WALL_TILES, original)
     choose(driver, "wall", "CottageWall")
 
 
@@ -923,7 +1059,7 @@ def saved_diff(driver, catalog, row, expected):
         driver.absent("SaveBarrier")
         assert not changed(), f"saving the undone edit changed the catalog: {changed()}"
     finally:
-        catalog.write_text(original)
+        restore(catalog, original)
 
 
 def expect_choice(driver, tool, expected):
@@ -1011,7 +1147,7 @@ def realm_panel(driver):
         expect_disabled(driver, "Save", True)
         driver.absent("SaveBarrier")
     finally:
-        LOCATIONS.write_bytes(original)
+        restore(LOCATIONS, original)
 
     create_and_change_realm(driver)
 
@@ -1181,6 +1317,15 @@ def rotate_contour(driver):
     driver.expect("Toast/ToastText", TEXT, "Redo: Rotate contour")
     driver.click("RealmMode")
     wait_mode(driver, editor_mode, "Realm")
+
+
+def restore(path, original):
+    """Writes `original`, text or bytes, back to `path`, unless the file already holds it: a
+    needless write is reloaded by the file watcher, and the reload can arrive after the next save,
+    which takes it for that save's own (PAN101)."""
+    data = original.encode() if isinstance(original, str) else original
+    if path.read_bytes() != data:
+        path.write_bytes(data)
 
 
 def undo(driver, redo=False):

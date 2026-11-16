@@ -1,7 +1,7 @@
 use crate::{
     actors::ACTOR_TYPE,
     editor::{
-        events::{PlaceWalls, RemoveWalls, RotateSelection},
+        events::RotateSelection,
         undo::{RedoEntry, UndoEntry, UndoStack},
         unsaved, EditorMode,
     },
@@ -18,7 +18,7 @@ use bevy_quill::prelude::*;
 use bevy_quill_obsidian::{prelude::*, RoundedCorners};
 use panoply_exemplar::Exemplar;
 
-use super::{controls::ExemplarChooser, tool_floor_create, tool_floor_edit, tool_wall_create};
+use super::{controls::ExemplarChooser, tool_floor_create, tool_floor_edit};
 
 pub(crate) struct EditSceneryPlugin;
 
@@ -66,19 +66,14 @@ impl Plugin for EditSceneryPlugin {
             .add_systems(OnExit(SceneryOverlay::FloorCreate), tool_floor_create::exit)
             .add_systems(OnEnter(SceneryOverlay::FloorDraw), tool_floor_edit::enter)
             .add_systems(OnExit(SceneryOverlay::FloorDraw), tool_floor_edit::exit)
-            .add_systems(OnEnter(SceneryOverlay::PlaceWall), tool_wall_create::enter)
-            .add_systems(OnExit(SceneryOverlay::PlaceWall), tool_wall_create::exit)
             .add_systems(
                 Update,
                 (
                     tool_floor_create::update.run_if(in_state(SceneryOverlay::FloorCreate)),
                     tool_floor_edit::update.run_if(in_state(SceneryOverlay::FloorDraw)),
-                    tool_wall_create::update.run_if(in_state(SceneryOverlay::PlaceWall)),
                     update.run_if(in_state(EditorMode::Scenery)),
                 ),
-            )
-            .observe(place_walls)
-            .observe(remove_walls);
+            );
     }
 }
 
@@ -703,173 +698,4 @@ fn update(
             .despawn();
         r_drag_state.cursor_model = None;
     }
-}
-
-#[derive(Debug, Event)]
-struct UndoPlaceWalls {
-    label: &'static str,
-    precinct: Handle<PrecinctAsset>,
-    added: Vec<SceneryInstanceData>,
-    removed: Vec<SceneryInstanceData>,
-}
-
-impl UndoEntry for UndoPlaceWalls {
-    fn label(&self) -> &'static str {
-        self.label
-    }
-
-    fn undo(&self, world: &mut World) -> Box<dyn RedoEntry> {
-        let mut precinct_assets = world.get_resource_mut::<Assets<PrecinctAsset>>().unwrap();
-        let precinct = precinct_assets.get_mut(self.precinct.id()).unwrap();
-        let to_remove = HashSet::<SceneryInstanceId>::from_iter(
-            self.added.iter().map(|scenery| scenery.iid.clone()),
-        );
-        precinct.remove_scenery_elements(|iid, _, _| to_remove.contains(iid));
-        for scenery in self.removed.iter() {
-            precinct.add_scenery_element(
-                scenery.id,
-                scenery.facing,
-                scenery.position,
-                Some(scenery.iid.clone()),
-            );
-        }
-        let mut unsaved = world.get_resource_mut::<unsaved::UnsavedAssets>().unwrap();
-        unsaved
-            .precincts
-            .insert(self.precinct.clone(), unsaved::ModifiedState::Unsaved);
-        Box::new(UndoPlaceWalls {
-            label: self.label,
-            precinct: self.precinct.clone(),
-            added: self.added.clone(),
-            removed: self.removed.clone(),
-        })
-    }
-}
-
-impl RedoEntry for UndoPlaceWalls {
-    fn label(&self) -> &str {
-        self.label
-    }
-
-    fn redo(&self, world: &mut World) -> Box<dyn UndoEntry> {
-        let mut precinct_assets = world.get_resource_mut::<Assets<PrecinctAsset>>().unwrap();
-        let precinct = precinct_assets.get_mut(self.precinct.id()).unwrap();
-        let to_remove = HashSet::<SceneryInstanceId>::from_iter(
-            self.removed.iter().map(|scenery| scenery.iid.clone()),
-        );
-        precinct.remove_scenery_elements(|iid, _, _| to_remove.contains(iid));
-        for scenery in self.added.iter() {
-            precinct.add_scenery_element(
-                scenery.id,
-                scenery.facing,
-                scenery.position,
-                Some(scenery.iid.clone()),
-            );
-        }
-        let mut unsaved = world.get_resource_mut::<unsaved::UnsavedAssets>().unwrap();
-        unsaved
-            .precincts
-            .insert(self.precinct.clone(), unsaved::ModifiedState::Unsaved);
-        Box::new(UndoPlaceWalls {
-            label: self.label,
-            precinct: self.precinct.clone(),
-            added: self.added.clone(),
-            removed: self.removed.clone(),
-        })
-    }
-}
-
-fn place_walls(
-    trigger: Trigger<PlaceWalls>,
-    mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
-    r_server: Res<AssetServer>,
-    mut r_undo_stack: ResMut<UndoStack>,
-    mut r_unsaved: ResMut<unsaved::UnsavedAssets>,
-) {
-    let event = trigger.event();
-    let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
-        Some(precinct) => precinct,
-        None => {
-            r_precinct_assets.insert(event.precinct.id(), PrecinctAsset::default());
-            r_precinct_assets.get_mut(event.precinct.id()).unwrap()
-        }
-    };
-    let exemplar_path = r_server.get_path(event.exemplar).unwrap().to_string();
-    let archetype_id = match precinct.scenery_type_index(&exemplar_path) {
-        Some(id) => id,
-        None => precinct.add_scenery_type(exemplar_path),
-    };
-    let height = event.tier as f32 + TIER_OFFSET;
-    // TODO: For undo purposes, TBA
-    let mut added: Vec<SceneryInstanceData> = Vec::new();
-    let removed = precinct.remove_scenery_elements(|_, _, pos| {
-        // TODO: Check for wall type?
-        pos.x >= event.area.min.x
-            && pos.x <= event.area.max.x
-            && pos.y > height - 0.5
-            && pos.y < height + 0.5
-            && pos.z >= event.area.min.y
-            && pos.z <= event.area.max.y
-    });
-    let mut x = event.area.min.x;
-    while x <= event.area.max.x {
-        let mut z = event.area.min.y;
-        while z <= event.area.max.y {
-            let position = Vec3::new(x, height, z);
-            added.push(SceneryInstanceData {
-                iid: precinct.add_scenery_element(archetype_id, event.facing, position, None),
-                id: archetype_id,
-                facing: event.facing,
-                position,
-                aspects: Default::default(),
-            });
-            z += 1.0;
-        }
-        x += 1.0;
-    }
-    r_undo_stack.push(UndoPlaceWalls {
-        label: "Place Walls",
-        precinct: event.precinct.clone(),
-        added,
-        removed,
-    });
-    r_unsaved
-        .precincts
-        .insert(event.precinct.clone(), unsaved::ModifiedState::Unsaved);
-}
-
-fn remove_walls(
-    trigger: Trigger<RemoveWalls>,
-    mut r_precinct_assets: ResMut<Assets<PrecinctAsset>>,
-    mut r_undo_stack: ResMut<UndoStack>,
-    mut r_unsaved: ResMut<unsaved::UnsavedAssets>,
-) {
-    let event = trigger.event();
-    let precinct = match r_precinct_assets.get_mut(event.precinct.id()) {
-        Some(precinct) => precinct,
-        None => {
-            r_precinct_assets.insert(event.precinct.id(), PrecinctAsset::default());
-            r_precinct_assets.get_mut(event.precinct.id()).unwrap()
-        }
-    };
-    let height = event.tier as f32 + TIER_OFFSET;
-    let removed = precinct.remove_scenery_elements(|_, _, pos| {
-        // TODO: Check for wall type?
-        pos.x >= event.area.min.x
-            && pos.x <= event.area.max.x
-            && pos.y > height - 0.5
-            && pos.y < height + 0.5
-            && pos.z >= event.area.min.y
-            && pos.z <= event.area.max.y
-    });
-    // println!("Removed {} walls.", removed.len());
-    r_undo_stack.push(UndoPlaceWalls {
-        label: "Remove Walls",
-        precinct: event.precinct.clone(),
-        added: Vec::new(),
-        removed,
-    });
-    r_unsaved
-        .precincts
-        .insert(event.precinct.clone(), unsaved::ModifiedState::Unsaved);
 }

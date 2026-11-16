@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN100.**
+**Next: PAN102.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -86,15 +86,35 @@ A chunk that adds a mode or a tool starts from faery's design for it ([faery.md]
 its tool survey and screenshots), each chunk naming its faery source; then from what Blender does,
 scoped down. Scenery mode's overlays (faery's grid, floor cutaway, colliders, marks and portals) are
 `panoply_overlays` shapes in `mode_overlays.rs`. `src/editor`, written for the Quill editor, is
-reference (`REFERENCE(PAN94)`): each chunk that replaces a part of it deletes that part.
+reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes that part.
 
-- **PAN94 Place walls**, the first placing tool: walls drawn into the precinct under the pointer on
-  the current tier, at the wall tool's snap (`TODO(PAN94)` in `scenery_panel.rs`), undoable, and the
-  precinct saved, which no edit has done before (precincts are MessagePack, D73's merge is for
-  catalogs). Placing tools refuse an abstract exemplar (`TODO(PAN94)` in `exemplar_list.rs`). A save
-  writes no internal id (D87; `SceneryInstanceData` serializes them now), and gives an external id
-  to each instance whose exemplar has state that saves and lacks one: 105 of the 121 containers
-  placed.
+- **PAN100 Precinct index.** The game asks for every precinct near the view, and only some have
+  files, so each missing one logs "Path not found" (`p002-p002.msgpack` and others), burying the
+  errors that matter. It needs to know which exist. A list works in packaged and web builds, where
+  folder loading may not: per realm, beside the precincts it lists
+  (`scenery/precincts/<realm>/index.json`), a sorted JSON array of `[x, y]` coordinates, one per
+  line so a diff shows each precinct added or removed (serde_json's pretty printer would split each
+  pair over four lines, so the writer formats it). A finished realm may hold about 500 precincts; at
+  that size JSON costs nothing over msgpack and reads in a diff and a text editor. The editor
+  rewrites it whenever it creates or deletes a precinct (since PAN94, its first edit of a precinct
+  with no file), and `asset_xref.py` checks it against the folder, so a file added or removed by
+  hand fails `verify.sh`.
+- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
+  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
+  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
+  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
+  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
+  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
+  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
+  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
+  themselves), external ids written into memory at save rather than arriving with the reload (D88),
+  plans restoring files in memory rather than by writing them, and removing the barrier. Two
+  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
+  after the next save, the barrier took it for that save's reload, and the real one then overwrote
+  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
+  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
+  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative, worth
+  an issue: the asset server skipping the reload of a file it wrote through its own `AssetWriter`.
 - **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
   `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
   Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
@@ -117,7 +137,11 @@ reference (`REFERENCE(PAN94)`): each chunk that replaces a part of it deletes th
   glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
   drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
   behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
-  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant).
+  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant). The editor gets faery's
+  Cut beside the tier buttons (`TODO(PAN76a)` in `scenery_panel.rs`), which hides what is above the
+  current tier (`TierSelector.tsx`, `hideTopFloors`), on the same hiding; and the wall tool hides
+  the walls a release would replace while it hovers, as faery's did (`PlaceWallTool.ts`,
+  `setExclusion`).
 - **PAN77 Scenery rect selection.** The RectSelect tool, whose button does nothing yet: drag out a
   rect on the current tier of the precinct under the pointer, snapped to the wall snap size, drawn
   as an overlay and kept as the scenery selection with its precinct. As faery's

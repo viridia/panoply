@@ -15,6 +15,7 @@ use bevy::{
     prelude::*,
     settings::SaveSettingsDeferred,
     ui::InteractionDisabled,
+    ui_widgets::Activate,
 };
 use bevy_immediate::{
     attach::{BevyImmediateAttachPlugin, ImmediateAttach},
@@ -25,8 +26,10 @@ use bevy_immediate::{
 use crate::{
     exemplar_list::{exemplar_chooser, placed_type, SceneryChoices},
     mode_selector::{EditorModeSettings, SceneryTool},
+    scenery_pointer::{step_tier, SceneryTier},
     scenery_properties::SceneryProperties,
     shell::SAVE_DELAY,
+    wall_tool::{WallSnap, WallToolSettings},
 };
 
 /// The panel's root.
@@ -46,70 +49,82 @@ const BUTTON_WIDTH: f32 = 44.0;
 const BUTTON_HEIGHT: f32 = 44.0;
 const COLUMNS: usize = 2;
 
-/// What a palette button does: choose a tool, or turn the selection.
-#[derive(Clone, Copy, PartialEq)]
-enum PaletteAction {
-    Tool(SceneryTool),
-    Rotate,
-}
+/// The palette's buttons, in rows of two: a name, its icon and the icon's height, and the tool it
+/// chooses. Each icon keeps its own aspect, at the height that fits it in 40 by 32.
+const BUTTONS: [(&str, &str, f32, SceneryTool); 8] = [
+    (
+        "PlaceFloor",
+        "editor/icons/floor-draw.png",
+        28.,
+        SceneryTool::PlaceFloor,
+    ),
+    (
+        "PlaceWall",
+        "editor/icons/wall-draw.png",
+        32.,
+        SceneryTool::PlaceWall,
+    ),
+    (
+        "PlaceFixture",
+        "editor/icons/furnishing-draw.png",
+        32.,
+        SceneryTool::PlaceFixture,
+    ),
+    (
+        "PlaceActor",
+        "editor/icons/actor.png",
+        32.,
+        SceneryTool::PlaceActor,
+    ),
+    (
+        "DrawTerrainFx",
+        "editor/icons/road-draw.png",
+        28.,
+        SceneryTool::DrawTerrainFx,
+    ),
+    (
+        "Interact",
+        "editor/icons/machine.png",
+        32.,
+        SceneryTool::Interact,
+    ),
+    (
+        "Layers",
+        "editor/icons/layers.png",
+        32.,
+        SceneryTool::Layers,
+    ),
+    (
+        "RectSelect",
+        "editor/icons/rect-select.png",
+        32.,
+        SceneryTool::RectSelect,
+    ),
+];
 
-/// The palette's buttons, in rows of two: a name, its icon and the icon's height, and what it
-/// does. Each icon keeps its own aspect, at the height that fits it in 40 by 32.
-const BUTTONS: [(&str, &str, f32, PaletteAction); 10] = {
-    use PaletteAction::{Rotate, Tool};
-    [
-        (
-            "PlaceFloor",
-            "editor/icons/floor-draw.png",
-            28.,
-            Tool(SceneryTool::PlaceFloor),
-        ),
-        (
-            "PlaceWall",
-            "editor/icons/wall-draw.png",
-            32.,
-            Tool(SceneryTool::PlaceWall),
-        ),
-        (
-            "PlaceFixture",
-            "editor/icons/furnishing-draw.png",
-            32.,
-            Tool(SceneryTool::PlaceFixture),
-        ),
-        (
-            "PlaceActor",
-            "editor/icons/actor.png",
-            32.,
-            Tool(SceneryTool::PlaceActor),
-        ),
-        (
-            "DrawTerrainFx",
-            "editor/icons/road-draw.png",
-            28.,
-            Tool(SceneryTool::DrawTerrainFx),
-        ),
-        (
-            "Interact",
-            "editor/icons/machine.png",
-            32.,
-            Tool(SceneryTool::Interact),
-        ),
-        (
-            "Layers",
-            "editor/icons/layers.png",
-            32.,
-            Tool(SceneryTool::Layers),
-        ),
-        (
-            "RectSelect",
-            "editor/icons/rect-select.png",
-            32.,
-            Tool(SceneryTool::RectSelect),
-        ),
-        ("RotateCcw", "editor/icons/rotate-ccw.png", 26., Rotate),
-        ("RotateCw", "editor/icons/rotate-cw.png", 26., Rotate),
-    ]
-};
+/// The wall toolbar's buttons' size, and their icons' height.
+const OPTION_WIDTH: f32 = 32.0;
+const OPTION_HEIGHT: f32 = 28.0;
+const OPTION_ICON: f32 = 18.0;
+
+/// The snap buttons: a name, an icon, and the snap each chooses.
+const SNAPS: [(&str, &str, WallSnap); 3] = [
+    (
+        "SnapNormal",
+        "editor/icons/grid-normal.png",
+        WallSnap::Normal,
+    ),
+    (
+        "SnapOffset",
+        "editor/icons/grid-offset.png",
+        WallSnap::Offset,
+    ),
+    (
+        "SnapQuarter",
+        "editor/icons/grid-fine.png",
+        WallSnap::Quarter,
+    ),
+];
 
 pub struct SceneryPanelPlugin;
 
@@ -118,7 +133,36 @@ impl Plugin for SceneryPanelPlugin {
         app.add_plugins((
             BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryPalette>::new(),
             BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryExemplars>::new(),
-        ));
+            BevyImmediateAttachPlugin::<CapsUiFeathers, WallToolbar>::new(),
+        ))
+        .add_systems(Update, show_tool_options);
+    }
+}
+
+/// Whether `tool` has options above its exemplars.
+fn has_options(tool: SceneryTool) -> bool {
+    // TODO(PAN95): the floor tool's shapes.
+    tool == SceneryTool::PlaceWall
+}
+
+/// Shows the options row for a tool that has options; otherwise the exemplars take its place.
+fn show_tool_options(
+    settings: Res<EditorModeSettings>,
+    mut options: Query<&mut Node, (With<WallToolbar>, Without<SceneryExemplars>)>,
+    mut exemplars: Query<&mut Node, (With<SceneryExemplars>, Without<WallToolbar>)>,
+) {
+    let shown = has_options(settings.scenery_tool);
+    for mut node in &mut options {
+        let display = if shown { Display::Flex } else { Display::None };
+        if node.display != display {
+            node.display = display;
+        }
+    }
+    for mut node in &mut exemplars {
+        let rows = GridPlacement::start_end(if shown { 2 } else { 1 }, 6);
+        if node.grid_row != rows {
+            node.grid_row = rows;
+        }
     }
 }
 
@@ -157,12 +201,16 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 align_self: AlignSelf::Start,
             }
             --
-            // TODO(PAN94): the wall tool's snap. TODO(PAN95): the floor tool's shapes.
+            // The chosen tool's options, shown only for a tool that has some
+            // (`show_tool_options`).
+            WallToolbar
             #ToolOptions
             Node {
                 grid_column: {GridPlacement::start(2)},
                 grid_row: {GridPlacement::start(1)},
                 height: px(32),
+                column_gap: px(8),
+                align_items: AlignItems::Center,
             }
             --
             // Down to the bottom of Clone…. An auto row grows to the max-content height of what
@@ -181,7 +229,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 height: px(0),
             }
             --
-            // TODO(I50): the layer to cut at, and its Cut toggle.
+            // The current tier, which ▲ ▼ step. TODO(PAN76a): Cut, which hides what is above it.
             Node {
                 grid_column: {GridPlacement::start(1)},
                 grid_row: {GridPlacement::start(3)},
@@ -204,8 +252,8 @@ pub(crate) fn scenery_panel() -> impl Scene {
                     },
                     @corners: RoundedCorners::None,
                 }
-                #LayerUp
-                InteractionDisabled
+                #TierUp
+                on(|_: On<Activate>, mut tier: ResMut<SceneryTier>| step_tier(&mut tier, 1))
                 --
                 @FeathersButton {
                     @caption: bsn! {
@@ -214,8 +262,8 @@ pub(crate) fn scenery_panel() -> impl Scene {
                     },
                     @corners: RoundedCorners::Right,
                 }
-                #LayerDown
-                InteractionDisabled
+                #TierDown
+                on(|_: On<Activate>, mut tier: ResMut<SceneryTier>| step_tier(&mut tier, -1))
             ]
             --
             // TODO(PAN28e): New and Clone act on the chosen exemplar.
@@ -276,8 +324,8 @@ struct SceneryPaletteParams<'w, 's> {
 impl ImmediateAttach<CapsUiFeathers> for SceneryPalette {
     type Params = SceneryPaletteParams<'static, 'static>;
 
-    /// A button per tool, each named for its tool, the chosen one highlighted, then the rotate
-    /// buttons. The grid's outer corners are rounded.
+    /// A button per tool, each named for its tool, the chosen one highlighted. The grid's outer
+    /// corners are rounded.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut SceneryPaletteParams) {
         // Edit a copy: writing through `ResMut` every frame would mark the settings changed every
         // frame.
@@ -285,8 +333,8 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryPalette {
         let changed = *params.shown != Some(settings.scenery_tool);
         *params.shown = Some(settings.scenery_tool);
         let last = BUTTONS.len() - 1;
-        for (index, &(name, image, height, action)) in BUTTONS.iter().enumerate() {
-            let selected = action == PaletteAction::Tool(settings.scenery_tool);
+        for (index, &(name, image, height, tool)) in BUTTONS.iter().enumerate() {
+            let selected = tool == settings.scenery_tool;
             let corners = match index {
                 0 => RoundedCorners::TopLeft,
                 i if i == COLUMNS - 1 => RoundedCorners::TopRight,
@@ -315,20 +363,138 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryPalette {
                 })
                 .on_spawn_insert(move || Name::new(name))
                 .on_change_insert(changed, move || ButtonVariant::selected(selected));
-            match action {
-                PaletteAction::Tool(tool) => {
-                    if button.activated() {
-                        settings.scenery_tool = tool;
-                    }
-                }
-                // TODO(PAN92): enabled while scenery is selected, turning it.
-                PaletteAction::Rotate => {
-                    button.on_spawn_insert(|| InteractionDisabled);
-                }
+            if button.activated() {
+                settings.scenery_tool = tool;
             }
         }
         if params.settings.set_if_neq(settings) {
             params.commands.queue(SaveSettingsDeferred(SAVE_DELAY));
         }
     }
+}
+
+/// The wall tool's options: the snap, Replace, and the rotate buttons.
+#[derive(Component, Default, Clone)]
+struct WallToolbar;
+
+#[derive(SystemParam)]
+struct WallToolbarParams<'w, 's> {
+    settings: ResMut<'w, WallToolSettings>,
+    /// The options the buttons last showed: `is_changed` would miss the toolbar's own changes.
+    shown: Local<'s, Option<WallToolSettings>>,
+    commands: Commands<'w, 's>,
+}
+
+impl ImmediateAttach<CapsUiFeathers> for WallToolbar {
+    type Params = WallToolbarParams<'static, 'static>;
+
+    /// The snap buttons, segmented, the chosen one highlighted; Replace, highlighted while on; and
+    /// Rotate left and right, segmented. Each button is named for what it does.
+    fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut WallToolbarParams) {
+        let mut settings = *params.settings;
+        let changed = *params.shown != Some(settings);
+        *params.shown = Some(settings);
+        ui.ch_id("snap").on_spawn_insert(segmented).add(|ui| {
+            for (index, &(name, image, snap)) in SNAPS.iter().enumerate() {
+                let corners = match index {
+                    0 => RoundedCorners::Left,
+                    i if i == SNAPS.len() - 1 => RoundedCorners::Right,
+                    _ => RoundedCorners::None,
+                };
+                let selected = settings.snap == snap;
+                if option_button(ui, name, image, corners, selected, changed, false) {
+                    settings.snap = snap;
+                }
+            }
+        });
+        let replace = settings.replace;
+        if option_button(
+            ui,
+            "Replace",
+            "editor/icons/lucide/eraser.png",
+            RoundedCorners::All,
+            replace,
+            changed,
+            false,
+        ) {
+            settings.replace = !replace;
+        }
+        ui.ch_id("rotate").on_spawn_insert(segmented).add(|ui| {
+            let left = "editor/icons/rotate-view.png";
+            if option_button(
+                ui,
+                "RotateLeft",
+                left,
+                RoundedCorners::Left,
+                false,
+                false,
+                true,
+            ) {
+                settings.turn(-1);
+            }
+            if option_button(
+                ui,
+                "RotateRight",
+                left,
+                RoundedCorners::Right,
+                false,
+                false,
+                false,
+            ) {
+                settings.turn(1);
+            }
+        });
+        if params.settings.set_if_neq(settings) {
+            params.commands.queue(SaveSettingsDeferred(SAVE_DELAY));
+        }
+    }
+}
+
+/// A row of buttons joined by 1-pixel seams.
+fn segmented() -> Node {
+    Node {
+        column_gap: px(1),
+        ..default()
+    }
+}
+
+/// One of the wall toolbar's buttons, named `name`, its icon mirrored if `mirrored`, as the rotate
+/// buttons share one; highlighted while `selected`, updated when `changed`. Returns whether it was
+/// clicked.
+fn option_button(
+    ui: &mut Imm<CapsUiFeathers>,
+    name: &'static str,
+    image: &'static str,
+    corners: RoundedCorners,
+    selected: bool,
+    changed: bool,
+    mirrored: bool,
+) -> bool {
+    let flip = if mirrored {
+        UiTransform::from_scale(Vec2::new(-1.0, 1.0))
+    } else {
+        UiTransform::IDENTITY
+    };
+    ui.ch_id(name)
+        .on_spawn_apply_scene(move || {
+            bsn! {
+                @FeathersButton {
+                    @caption: bsn! {
+                        Node { height: px(OPTION_ICON) }
+                        ImageNode { image: image }
+                        UiTransform { scale: {flip.scale}, rotation: {flip.rotation} }
+                    },
+                    @corners: corners,
+                    @variant: ButtonVariant::selected(selected),
+                }
+                Node {
+                    width: px(OPTION_WIDTH),
+                    height: px(OPTION_HEIGHT),
+                    padding: px(0),
+                }
+            }
+        })
+        .on_spawn_insert(move || Name::new(name))
+        .on_change_insert(changed, move || ButtonVariant::selected(selected))
+        .activated()
 }

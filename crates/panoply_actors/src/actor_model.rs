@@ -77,13 +77,22 @@ pub fn spawn_actor_bodies(
             continue;
         };
         let armature = armature.map(|armature| {
-            let clips = armature.clips.as_ref().map_or(file, |clips| clips.0.as_str());
+            let clips = armature
+                .clips
+                .as_ref()
+                .map_or(file, |clips| clips.0.as_str());
             ArmatureSource {
                 // An empty name, as the editor's menu adds the field, is the default too.
                 node: armature.node.clone().filter(|node| !node.is_empty()),
                 clips: server.load(clips.to_owned()),
                 clip_names: clip_names
-                    .map(|names| names.0.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                    .map(|names| {
+                        names
+                            .0
+                            .iter()
+                            .map(|(k, v)| (k.clone(), v.clone()))
+                            .collect()
+                    })
                     .unwrap_or_default(),
             }
         });
@@ -114,7 +123,11 @@ pub fn spawn_actor_body_scenes(
         let Some(gltf) = gltfs.get(&body.gltf) else {
             continue;
         };
-        if let Some(armature) = body.armature.as_mut().filter(|armature| armature.node.is_none()) {
+        if let Some(armature) = body
+            .armature
+            .as_mut()
+            .filter(|armature| armature.node.is_none())
+        {
             let found = armatures(gltf, &nodes, &skins);
             match found.as_slice() {
                 [node] => armature.node = Some(node.clone()),
@@ -153,7 +166,11 @@ fn armatures(gltf: &Gltf, nodes: &Assets<GltfNode>, skins: &Assets<GltfSkin>) ->
         .iter()
         .filter(|node| !bones.contains(&node.id()))
         .filter_map(|node| nodes.get(node))
-        .filter(|node| node.children.iter().any(|child| bones.contains(&child.id())))
+        .filter(|node| {
+            node.children
+                .iter()
+                .any(|child| bones.contains(&child.id()))
+        })
         .map(|node| node.name.clone())
         .collect();
     names.sort();

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D88.**
+**Next: D89.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -693,3 +693,11 @@ never reused.
   and fixtures, most of a precinct, carry none, which keeps them featherweight. Whether a door or
   chest is open does not save, so it needs no id for that. Reversing it means internal ids saved and
   kept stable through every edit. (PAN99)
+- **D88** An aspect's config is what is authored: its fields, written on an exemplar, or on an
+  instance to override the exemplar's aspect of that type; the two are layers of one kind, not two
+  kinds as faery's props and config were. Its state is what play changes and a saved game keeps (a
+  container's contents, a lock), declared by `Aspect::has_state`; app preferences are settings
+  (`SettingsGroup`). So an instance whose exemplar chain has an aspect with state gets an external
+  id (D87) when its precinct saves, named for the exemplar's label in kebab case and the lowest
+  number its precinct does not use, as `wooden-chest-2`. Reversing it means a save game finding an
+  instance some other way. (PAN94)

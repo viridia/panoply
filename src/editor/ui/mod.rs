@@ -10,7 +10,6 @@ pub mod save_button;
 pub mod tool_floor_create;
 pub mod tool_floor_edit;
 pub mod tool_terrain_edit;
-pub mod tool_wall_create;
 pub mod zoom_selector;
 
 pub mod quick_nav;

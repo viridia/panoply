@@ -5,9 +5,13 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-futures-lite = { workspace = true }
 panoply_exemplar = { workspace = true }
 panoply_saga = { workspace = true }
 rmp-serde = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+# The round-trip test registers the instance aspect types the game does.
+panoply_portals = { workspace = true }
+serde_json = { workspace = true }

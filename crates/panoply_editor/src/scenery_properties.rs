@@ -19,9 +19,9 @@ use bevy::{
         tokens,
     },
     platform::collections::HashMap,
-    text::FontSourceTemplate,
     prelude::*,
     reflect::{ParsedPath, TypeRegistry},
+    text::FontSourceTemplate,
     ui_widgets::{ControlOrientation, NumericValue, ScrollArea},
 };
 use bevy_immediate::{
@@ -39,11 +39,10 @@ use crate::{
     properties::{
         edit::{
             apply_property_edits, count_edit_gestures, read_inspected_values, AspectHolder,
-            EditGesture, ExemplarAspect, InspectedRoots, InspectedValue, InspectedValues, PathSteps,
-            PropertyEdits, PropertyRoot, ReflectAspectHolder,
+            EditGesture, ExemplarAspect, InspectedRoots, InspectedValue, InspectedValues,
+            PathSteps, PropertyEdits, PropertyRoot, ReflectAspectHolder,
         },
-        icon_button, root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows,
-        HEADER_TEXT,
+        icon_button, root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows, HEADER_TEXT,
     },
     unsaved::UnsavedAssets,
 };
@@ -204,7 +203,10 @@ impl AspectHolder for ExemplarRoot {
 }
 
 /// The exemplar `root` is, if it is an [`ExemplarRoot`].
-pub(crate) fn exemplar_of(root: &dyn PropertyRoot, server: &AssetServer) -> Option<AssetId<Exemplar>> {
+pub(crate) fn exemplar_of(
+    root: &dyn PropertyRoot,
+    server: &AssetServer,
+) -> Option<AssetId<Exemplar>> {
     let exemplar = (root as &dyn Any).downcast_ref::<ExemplarRoot>()?;
     exemplar.ids(server).ok().map(|(id, _)| id)
 }
@@ -236,12 +238,14 @@ pub(crate) fn open_extends_chooser(
     commands
         .spawn_scene(chooser_dialog("Extends", "Choose", names))
         .insert(Name::new("ExtendsChooser"))
-        .observe(move |chosen: On<ItemChosen>, mut edits: ResMut<PropertyEdits>| {
-            if let Some(path) = paths.get(&chosen.name) {
-                let field = ParsedPath::empty().with_field("extends");
-                edits.set(&root, field, ExemplarRef(Some(path.clone())));
-            }
-        });
+        .observe(
+            move |chosen: On<ItemChosen>, mut edits: ResMut<PropertyEdits>| {
+                if let Some(path) = paths.get(&chosen.name) {
+                    let field = ParsedPath::empty().with_field("extends");
+                    edits.set(&root, field, ExemplarRef(Some(path.clone())));
+                }
+            },
+        );
 }
 
 /// The kind of exemplar `tool` places, as the panel's heading names it.
@@ -348,7 +352,9 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                                     })
                                     .on_hash_change_text_fn(&kind, || kind.clone());
                                 ui.ch()
-                                    .on_spawn_apply_scene(|| header_text(fonts::BOLD, FontWeight::BOLD))
+                                    .on_spawn_apply_scene(|| {
+                                        header_text(fonts::BOLD, FontWeight::BOLD)
+                                    })
                                     .on_hash_change_text_fn(name, || name.clone());
                             });
                         ui.ch().on_spawn_insert(|| Node {

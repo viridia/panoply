@@ -37,7 +37,10 @@ pub fn spawn_actor_features(
         let Some(scene) = gltf.named_scenes.get(feature.as_str()) else {
             continue;
         };
-        if !scenes.get(scene).is_some_and(|found| is_feature_scene(&found.world, feature)) {
+        if !scenes
+            .get(scene)
+            .is_some_and(|found| is_feature_scene(&found.world, feature))
+        {
             continue;
         }
         commands.spawn((
@@ -74,7 +77,11 @@ pub fn bind_actor_feature(
     else {
         return;
     };
-    let Some(node) = body.armature.as_ref().and_then(|armature| armature.node.as_ref()) else {
+    let Some(node) = body
+        .armature
+        .as_ref()
+        .and_then(|armature| armature.node.as_ref())
+    else {
         return;
     };
     let bones: HashMap<&str, Entity> = actors

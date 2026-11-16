@@ -195,12 +195,13 @@ impl Precinct {
             }
         }
 
-        // Iterate through the scenery instances in the asset.
+        // Update each scenery instance whose id is still there in place, if its exemplar has not
+        // changed.
+        let mut unmatched = Vec::new();
         for sid in asset.scenery.iter() {
             let facing = sid.facing * std::f32::consts::PI / 180.;
             let transform = Transform::from_translation(sid.position)
                 .with_rotation(Quat::from_rotation_y(facing));
-            // Update the scenery instance in place if the exemplar has not changed.
             if let Some(se_ent) = existing.remove(&sid.iid) {
                 let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
                 if scenery_element.exemplar == scenery_exemplars[sid.id] {
@@ -217,6 +218,34 @@ impl Precinct {
 
                 // The exemplar changed: replace the instance.
                 commands.entity(se_ent).despawn();
+            }
+            unmatched.push((sid, facing, transform));
+        }
+
+        // Internal ids are numbered as the precinct loads (D87), so after a save, the reload's
+        // instances carry other numbers than the elements spawned before it. An element left over
+        // with the same exemplar, place and facing is the same instance: it takes the new id
+        // rather than being spawned again, which would empty the place while its models load.
+        let mut alike = HashMap::<(AssetId<Exemplar>, [u32; 4]), Vec<Entity>>::new();
+        for se_ent in existing.values() {
+            let element = q_scenery_elements.get(*se_ent).unwrap();
+            alike
+                .entry(element_key(
+                    element.exemplar.id(),
+                    element.position,
+                    element.facing,
+                ))
+                .or_default()
+                .push(*se_ent);
+        }
+        for (sid, facing, transform) in unmatched {
+            let exemplar = &scenery_exemplars[sid.id];
+            let key = element_key(exemplar.id(), sid.position, facing);
+            if let Some(se_ent) = alike.get_mut(&key).and_then(Vec::pop) {
+                let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
+                existing.remove(&scenery_element.iid);
+                scenery_element.iid = sid.iid.clone();
+                continue;
             }
 
             // Otherwise, spawn a new instance.
@@ -242,7 +271,26 @@ impl Precinct {
             commands.entity(*se_ent).despawn();
         }
     }
+}
 
+/// What makes two scenery elements alike: their exemplar, position and facing, exactly.
+fn element_key(
+    exemplar: AssetId<Exemplar>,
+    position: Vec3,
+    facing: f32,
+) -> (AssetId<Exemplar>, [u32; 4]) {
+    (
+        exemplar,
+        [
+            position.x.to_bits(),
+            position.y.to_bits(),
+            position.z.to_bits(),
+            facing.to_bits(),
+        ],
+    )
+}
+
+impl Precinct {
     /// Decodes the precinct's terrain effects. Every loaded precinct gets a `TerrainFxMap`, empty
     /// if the asset has none, since parcels wait for it before building ground (D11).
     pub fn rebuild_terrain_fx(
@@ -277,7 +325,11 @@ pub fn mark_precinct_data(
     mut ev_asset: MessageReader<AssetEvent<PrecinctAsset>>,
 ) {
     for ev in ev_asset.read() {
-        let (AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id }) = ev else {
+        // `Added` is an asset the editor made for a precinct that has no file yet.
+        let (AssetEvent::LoadedWithDependencies { id }
+        | AssetEvent::Modified { id }
+        | AssetEvent::Added { id }) = ev
+        else {
             continue;
         };
         if let Some((precinct_entity, _)) = q_precincts.iter().find(|r| r.1.asset.id() == *id) {

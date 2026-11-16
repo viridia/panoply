@@ -32,20 +32,3 @@ pub struct ThumbnailsReady;
 /// Rotate the current selection.
 #[derive(Clone, Debug, Event)]
 pub struct RotateSelection(pub i32);
-
-#[derive(Clone, Debug, Event)]
-pub struct PlaceWalls {
-    pub precinct: Handle<PrecinctAsset>,
-    pub tier: i16,
-    pub area: Rect,
-    pub facing: f32,
-    pub exemplar: AssetId<Exemplar>,
-    pub replace: bool,
-}
-
-#[derive(Clone, Debug, Event)]
-pub struct RemoveWalls {
-    pub precinct: Handle<PrecinctAsset>,
-    pub tier: i16,
-    pub area: Rect,
-}

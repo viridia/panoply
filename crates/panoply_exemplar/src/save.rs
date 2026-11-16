@@ -27,7 +27,9 @@ fn relative_reference(from: &Path, to: &AssetPath) -> String {
     if target == from {
         return format!("#{label}");
     }
-    let folder: Vec<PathPart> = from.parent().map_or(Vec::new(), |dir| dir.components().collect());
+    let folder: Vec<PathPart> = from
+        .parent()
+        .map_or(Vec::new(), |dir| dir.components().collect());
     let parts: Vec<PathPart> = target.components().collect();
     let shared = folder
         .iter()
@@ -181,7 +183,9 @@ impl ExemplarCatalog {
         registry: &TypeRegistry,
         server: &AssetServer,
     ) -> Result<(), BevyError> {
-        let entries = file.as_object_mut().ok_or("the catalog is not a JSON object")?;
+        let entries = file
+            .as_object_mut()
+            .ok_or("the catalog is not a JSON object")?;
         for (name, loaded) in &self.loaded {
             let Some(handle) = self.entries.get(name) else {
                 continue;
@@ -351,7 +355,10 @@ mod tests {
         let from = Path::new("exemplars/regional/marheim.exem.json");
         let to = |path: &'static str| AssetPath::parse(path);
         assert_eq!(
-            relative_reference(from, &to("exemplars/regional/marheim.exem.json#Proto.Guard")),
+            relative_reference(
+                from,
+                &to("exemplars/regional/marheim.exem.json#Proto.Guard")
+            ),
             "#Proto.Guard"
         );
         assert_eq!(

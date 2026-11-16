@@ -37,6 +37,11 @@ impl Aspect for Lock {
     fn clone_boxed(&self) -> Box<dyn Aspect> {
         Box::new(self.clone())
     }
+
+    /// Whether it is locked.
+    fn has_state(&self) -> bool {
+        true
+    }
 }
 
 /// Whether a lock is locked now, kept apart from [`Lock`] so that reapplying aspects leaves it as

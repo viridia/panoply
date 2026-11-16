@@ -9,6 +9,7 @@
 
 use std::path::{Path, PathBuf};
 
+use bevy::ecs::message::MessageCursor;
 use bevy::{
     asset::{io::file::FileAssetReader, io::AssetSourceId, AssetLoadFailedEvent, UntypedAssetId},
     picking::cursor::{EntityCursor, OverrideCursor},
@@ -17,10 +18,10 @@ use bevy::{
     ui::{FixedNode, OverrideClip},
     window::SystemCursorIcon,
 };
-use bevy::ecs::message::MessageCursor;
 use bevy_action_map::prelude::*;
 use panoply_core::NavPointsAsset;
 use panoply_exemplar::{Exemplar, ExemplarCatalog};
+use panoply_precinct::PrecinctAsset;
 use panoply_terrain::TerrainMapAsset;
 
 use crate::{json::to_asset_json, toast::ShowToast};
@@ -114,6 +115,31 @@ impl SaveableAsset for ExemplarCatalog {
     }
 }
 
+/// The precinct's file, with an external id given to each scenery instance whose exemplar has
+/// state and that lacks one (D87). The ids go into the file only; the watcher's reload brings them
+/// into the asset in memory.
+impl SaveableAsset for PrecinctAsset {
+    fn to_bytes(&self, _file: &Path, world: &World) -> Result<Vec<u8>, BevyError> {
+        let server = world.resource::<AssetServer>();
+        let exemplars = world.resource::<Assets<Exemplar>>();
+        let has_state: Vec<bool> = self
+            .scenery_types
+            .iter()
+            .map(|path| {
+                server
+                    .get_handle::<Exemplar>(path.clone())
+                    .is_some_and(|handle| Exemplar::has_state(exemplars, handle.id()))
+            })
+            .collect();
+        let mut precinct = self.clone();
+        let named = precinct.assign_external_ids(|index| has_state[index]);
+        if named > 0 {
+            info!("Gave {named} scenery instances external ids");
+        }
+        Ok(precinct.to_bytes(&world.resource::<AppTypeRegistry>().read())?)
+    }
+}
+
 /// Adds a saveable asset type: [`SaveAssets`] writes its unsaved assets.
 pub trait RegisterSaveable {
     fn register_saveable<A: SaveableAsset>(&mut self) -> &mut Self;
@@ -151,7 +177,8 @@ impl Plugin for UnsavedAssetsPlugin {
             })
             .register_saveable::<NavPointsAsset>()
             .register_saveable::<TerrainMapAsset>()
-            .register_saveable::<ExemplarCatalog>();
+            .register_saveable::<ExemplarCatalog>()
+            .register_saveable::<PrecinctAsset>();
     }
 }
 
@@ -248,7 +275,10 @@ fn save_assets<A: SaveableAsset>(
         match save(id, world) {
             Ok(path) => {
                 info!("Saved {}", path.display());
-                world.resource_mut::<UnsavedAssets>().0.remove(&id.untyped());
+                world
+                    .resource_mut::<UnsavedAssets>()
+                    .0
+                    .remove(&id.untyped());
                 if world.resource::<AssetServer>().watching_for_changes() {
                     world.resource_mut::<SaveWait>().ids.insert(id.untyped());
                 }

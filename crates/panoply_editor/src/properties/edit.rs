@@ -268,7 +268,10 @@ impl EditOp {
         add.sort_by_key(|(index, _)| *index);
         for (index, aspect) in add {
             let name = aspect.reflect_short_type_path();
-            if aspects.iter().any(|had| had.reflect_short_type_path() == name) {
+            if aspects
+                .iter()
+                .any(|had| had.reflect_short_type_path() == name)
+            {
                 return Err(format!("there is a {name} already").into());
             }
             aspects.insert((*index).min(aspects.len()), aspect.clone_boxed());
@@ -311,7 +314,10 @@ impl EditOp {
 }
 
 /// `target`, the value at `path`, as a map with string keys.
-fn map_at<'a>(target: &'a mut dyn PartialReflect, path: &ParsedPath) -> Result<&'a mut dyn Map, BevyError> {
+fn map_at<'a>(
+    target: &'a mut dyn PartialReflect,
+    path: &ParsedPath,
+) -> Result<&'a mut dyn Map, BevyError> {
     let string_keys = target
         .get_represented_type_info()
         .and_then(|info| info.as_map().ok())
@@ -396,7 +402,13 @@ impl PropertyEdits {
         self.push_op(root, path, EditKind::RenameKey, EditOp::MoveEntry(from, to));
     }
 
-    fn push_op(&mut self, root: &Arc<dyn PropertyRoot>, path: ParsedPath, kind: EditKind, op: EditOp) {
+    fn push_op(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        path: ParsedPath,
+        kind: EditKind,
+        op: EditOp,
+    ) {
         self.0.push(PropertyEdit {
             root: root.clone(),
             path,
@@ -892,7 +904,13 @@ mod tests {
     }
 
     fn marks(world: &World) -> Vec<(String, f32)> {
-        let mut marks: Vec<_> = world.resource::<Held>().0.marks.clone().into_iter().collect();
+        let mut marks: Vec<_> = world
+            .resource::<Held>()
+            .0
+            .marks
+            .clone()
+            .into_iter()
+            .collect();
         marks.sort_by(|a, b| a.0.cmp(&b.0));
         marks
     }
@@ -902,7 +920,10 @@ mod tests {
     }
 
     /// Asks for the map edit `edit` makes of `marks`, and applies it.
-    fn edit_marks(world: &mut World, edit: impl FnOnce(&mut PropertyEdits, &Arc<dyn PropertyRoot>)) {
+    fn edit_marks(
+        world: &mut World,
+        edit: impl FnOnce(&mut PropertyEdits, &Arc<dyn PropertyRoot>),
+    ) {
         let root: Arc<dyn PropertyRoot> = Arc::new(HeldRoot);
         edit(&mut world.resource_mut::<PropertyEdits>(), &root);
         apply_property_edits(world);
@@ -911,7 +932,11 @@ mod tests {
     #[test]
     fn map_entries_are_added_renamed_set_and_removed() {
         let mut world = world();
-        world.resource_mut::<Held>().0.marks.insert("door".into(), 1.);
+        world
+            .resource_mut::<Held>()
+            .0
+            .marks
+            .insert("door".into(), 1.);
         let at = || path(".marks");
         edit_marks(&mut world, |edits, root| {
             edits.add_entry(root, at(), String::new(), Box::new(0.0f32))
@@ -923,9 +948,13 @@ mod tests {
         });
         assert_eq!(marks(&world), [mark("door", 1.), mark("seat", 0.)]);
         assert_eq!(last_label(&world), "Rename Size.marks entry to seat");
-        edit_marks(&mut world, |edits, root| edits.set(root, at().with_key("seat"), 2.0f32));
+        edit_marks(&mut world, |edits, root| {
+            edits.set(root, at().with_key("seat"), 2.0f32)
+        });
         assert_eq!(last_label(&world), "Set Size.marks.seat");
-        edit_marks(&mut world, |edits, root| edits.remove_entry(root, at(), "door".into()));
+        edit_marks(&mut world, |edits, root| {
+            edits.remove_entry(root, at(), "door".into())
+        });
         assert_eq!(marks(&world), [mark("seat", 2.)]);
         assert_eq!(last_label(&world), "Remove Size.marks.door");
 
@@ -944,8 +973,16 @@ mod tests {
     #[test]
     fn a_key_the_map_holds_is_not_added_or_renamed_to() {
         let mut world = world();
-        world.resource_mut::<Held>().0.marks.insert("door".into(), 1.);
-        world.resource_mut::<Held>().0.marks.insert("seat".into(), 2.);
+        world
+            .resource_mut::<Held>()
+            .0
+            .marks
+            .insert("door".into(), 1.);
+        world
+            .resource_mut::<Held>()
+            .0
+            .marks
+            .insert("seat".into(), 2.);
         edit_marks(&mut world, |edits, root| {
             edits.add_entry(root, path(".marks"), "door".into(), Box::new(0.0f32))
         });
@@ -1001,8 +1038,14 @@ mod tests {
             switched(Shape::Box { half_extents }, "Sphere"),
             Shape::Sphere { radius: 0. }
         );
-        assert_eq!(switched(Shape::Ball(2.), "Sphere"), Shape::Sphere { radius: 0. });
-        assert_eq!(switched(Shape::Sphere { radius: 2. }, "Ball"), Shape::Ball(0.));
+        assert_eq!(
+            switched(Shape::Ball(2.), "Sphere"),
+            Shape::Sphere { radius: 0. }
+        );
+        assert_eq!(
+            switched(Shape::Sphere { radius: 2. }, "Ball"),
+            Shape::Ball(0.)
+        );
     }
 
     #[test]
@@ -1136,7 +1179,12 @@ mod tests {
             .collect()
     }
 
-    fn change_aspects(world: &mut World, root: impl PropertyRoot, add: Vec<Box<dyn Aspect>>, remove: &[&str]) {
+    fn change_aspects(
+        world: &mut World,
+        root: impl PropertyRoot,
+        add: Vec<Box<dyn Aspect>>,
+        remove: &[&str],
+    ) {
         let root: Arc<dyn PropertyRoot> = Arc::new(root);
         let remove = remove.iter().map(|name| name.to_string()).collect();
         world
@@ -1157,12 +1205,20 @@ mod tests {
         assert_eq!(last_label(&world), "Remove Marcus.Horns");
         undo(&mut world);
         assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
-        assert_eq!(world.resource::<HeldAspects>().0[0].reflect_short_type_path(), "Wings");
+        assert_eq!(
+            world.resource::<HeldAspects>().0[0].reflect_short_type_path(),
+            "Wings"
+        );
         redo(&mut world);
         assert_eq!(held_aspects(&world), ["Wings", "Tail"]);
 
         // Several at once, one undo entry; an added aspect goes last.
-        change_aspects(&mut world, AspectsRoot, vec![Box::new(Horns)], &["Wings", "Tail"]);
+        change_aspects(
+            &mut world,
+            AspectsRoot,
+            vec![Box::new(Horns)],
+            &["Wings", "Tail"],
+        );
         assert_eq!(held_aspects(&world), ["Horns"]);
         assert_eq!(last_label(&world), "Change Marcus.aspects");
         undo(&mut world);

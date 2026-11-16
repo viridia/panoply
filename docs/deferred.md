@@ -183,16 +183,6 @@ dropped, not deferred. Numbers are never reused.
   the outline width read from the node, its parent or the material and rounded to 0.001 first, so
   near-equal widths share one material. The same cache would serve Panoply's other generated
   materials. *Gate:* the first arbor_day species placed in the game.
-- **X34** "Path not found" errors for precincts that have no file (`p002-p002.msgpack` and others):
-  the game loads every precinct position near the view, but only some exist. It needs to know which
-  do. A list works in packaged and web builds, where folder loading may not: per realm, beside the
-  precincts it lists (`scenery/precincts/<realm>/index.json`), a sorted JSON array of `[x, y]`
-  coordinates, one per line so a diff shows each precinct added or removed (serde_json's pretty
-  printer would split each pair over four lines, so the writer formats it). A finished realm may
-  hold about 500 precincts; at that size JSON costs nothing over msgpack and reads in a diff and a
-  text editor. The editor rewrites it whenever it creates or deletes a precinct, and `asset_xref.py`
-  checks it against the folder, so a file added or removed by hand fails `verify.sh`. *Gate:* the
-  editor creates precincts (PAN94), or the errors hide a real one.
 - **X36** Colliders authored in the glTF, beside the exemplar descriptors (D38): a model that
   carries its own colliders uses them, and any other keeps its `SceneryColliders`, so old content
   needs no rework, new models can be authored in Blender, and an old one moves when next touched.
@@ -495,8 +485,8 @@ dropped, not deferred. Numbers are never reused.
   ported, and never finished their editor: the editor is designed anew. No phased terrain or terrain
   effects: possible, with no customer. A mod's scenery is the same additive patch: it adds walls,
   fixtures and actors to the game's precincts, and precincts where the game has none, so a mod ships
-  its own precinct index (X34), joined with the game's. *Gate:* the first quest stage that changes
-  scenery, or the first mod that adds scenery.
+  its own precinct index (PAN100), joined with the game's. *Gate:* the first quest stage that
+  changes scenery, or the first mod that adds scenery.
 - **X110** The game UI's typeface (`GAME_UI_FONT`, Macondo Swash Caps). Plain Macondo reads better,
   its capital E most of all (X75); the choice is to switch to it, or to make a font of the author's
   own that combines the best of both. Neither has bold or italics, so emphasis in a book's text or a

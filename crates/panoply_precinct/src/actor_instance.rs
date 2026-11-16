@@ -31,22 +31,39 @@ pub struct ActorInstanceData {
     pub aspects: InstanceAspects,
 }
 
-impl Serialize for ActorInstanceData {
+impl ActorInstanceData {
+    /// The actor as a precinct file holds it, its aspects written through reflection.
+    pub(crate) fn serializable<'a>(&'a self, registry: &'a TypeRegistry) -> ActorInstanceSer<'a> {
+        ActorInstanceSer {
+            actor: self,
+            registry,
+        }
+    }
+}
+
+/// Writes an [`ActorInstanceData`] as a map, leaving out what is at its default.
+pub(crate) struct ActorInstanceSer<'a> {
+    actor: &'a ActorInstanceData,
+    registry: &'a TypeRegistry,
+}
+
+impl Serialize for ActorInstanceSer<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
+        let actor = self.actor;
         let mut map = serializer.serialize_map(None)?;
-        map.serialize_entry("exemplar", &self.exemplar)?;
-        map.serialize_entry("position", &self.position)?;
-        if self.facing != 0.0 {
-            map.serialize_entry("facing", &self.facing)?;
+        map.serialize_entry("exemplar", &actor.exemplar)?;
+        map.serialize_entry("position", &actor.position)?;
+        if actor.facing != 0.0 {
+            map.serialize_entry("facing", &actor.facing)?;
         }
-        if self.iid != SceneryInstanceId::None {
-            map.serialize_entry("iid", &self.iid)?;
+        if let SceneryInstanceId::External(_) = actor.iid {
+            map.serialize_entry("iid", &actor.iid)?;
         }
-        if !self.aspects.is_empty() {
-            map.serialize_entry("aspects", &self.aspects)?;
+        if !actor.aspects.is_empty() {
+            map.serialize_entry("aspects", &actor.aspects.serializable(self.registry))?;
         }
         map.end()
     }

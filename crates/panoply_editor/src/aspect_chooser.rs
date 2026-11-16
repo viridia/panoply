@@ -224,5 +224,8 @@ fn save_aspects(
 fn new_aspect(registry: &bevy::reflect::TypeRegistry, name: &str) -> Option<Box<dyn Aspect>> {
     let registration = registry.get_with_short_type_path(name)?;
     let default = registration.data::<ReflectDefault>()?.default();
-    registration.data::<ReflectAspect>()?.get_boxed(default).ok()
+    registration
+        .data::<ReflectAspect>()?
+        .get_boxed(default)
+        .ok()
 }

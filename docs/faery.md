@@ -250,17 +250,18 @@ precincts, which resolve names against the exemplars.
 | Script                       | Reads (`los-data/`)              | Writes (`assets/`)                    | Runs      |
 | ---------------------------- | -------------------------------- | ------------------------------------- | --------- |
 | `convert_archetypes.mts`     | `meta/archetypes/`, `regional/`  | `exemplars/**/*.exem.json`            | merges    |
-| `convert_precincts.mts`      | `scenery/<realm>/*.msgpack`      | `scenery/precincts/<realm>/*.msgpack` | overwrites|
+| `convert_precincts.mts`      | `scenery/<realm>/*.msgpack`      | `scenery/precincts/<realm>/*.msgpack` | frozen    |
 | `convert_realm_maps.mts`     | `realms/*.msgpack`               | `terrain/maps/*.terrain`              | frozen    |
 | `convert_terrain_groups.mts` | `world.json`                     | `terrain/terrain.groups.json`         | frozen    |
 
-The frozen two warn and exit: they convert everything they read, and the editor edits their outputs
-(PAN37-PAN40). The archetype converter merges (D56): it adds the catalogs, exemplars, top-level
-fields and aspects Panoply lacks, and keeps those it has, so hand edits survive (`CollisionSize`,
-PAN3f; humanoids' `"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). `--dry-run` reports
-without writing; `--replace <Aspect>` rewrites that aspect wherever it differs. An exemplar deleted
-in Panoply returns on the next run, so a deletion is made in the converter. From `meta/regional/` it
-takes actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs. It
+The frozen three warn and exit: they convert everything they read, and the editor edits their
+outputs (PAN37-PAN40, PAN94). The precinct converter runs again once it merges (X69). The archetype
+converter merges (D56): it adds the catalogs, exemplars, top-level fields and aspects Panoply lacks,
+and keeps those it has, so hand edits survive (`CollisionSize`, PAN3f; humanoids'
+`"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). `--dry-run` reports without writing;
+`--replace <Aspect>` rewrites that aspect wherever it differs. An exemplar deleted in Panoply
+returns on the next run, so a deletion is made in the converter. From `meta/regional/` it takes
+actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs. It
 writes each catalog back whole as `JSON.stringify` lays it out, so a run reformats every catalog
 that keeps short arrays on one line (eight, the wall and fixture catalogs among them), even when it
 adds nothing; `--dry-run` writes nothing.

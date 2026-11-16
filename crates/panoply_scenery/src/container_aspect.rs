@@ -30,6 +30,11 @@ impl Aspect for Container {
     fn clone_boxed(&self) -> Box<dyn Aspect> {
         Box::new(self.clone())
     }
+
+    /// Its contents.
+    fn has_state(&self) -> bool {
+        true
+    }
 }
 
 /// Whether a container is open, kept apart from [`Container`] so that reapplying aspects leaves it

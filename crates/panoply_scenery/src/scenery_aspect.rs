@@ -68,7 +68,9 @@ impl PropertySummary for ModelComponent {
     /// The model's scene, as "MossyBrickWallHalf", without its file.
     fn property_summary(&self) -> String {
         let path = &self.asset.0;
-        path.rsplit_once('#').map_or(path.as_str(), |(_, scene)| scene).to_string()
+        path.rsplit_once('#')
+            .map_or(path.as_str(), |(_, scene)| scene)
+            .to_string()
     }
 }
 

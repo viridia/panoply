@@ -3,7 +3,7 @@
 
 use bevy::{app::Propagate, prelude::*};
 use panoply_exemplar::ExemplarServer;
-use panoply_precinct::PrecinctAsset;
+use panoply_precinct::{ActorInstanceData, PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::precinct::Precinct;
 
 use crate::{Actor, ActorIntent, ActorRebuildAspects};
@@ -41,15 +41,41 @@ pub(crate) fn mark_precinct_actors(
     }
 }
 
-/// Spawns a marked precinct's actors once their exemplar catalogs have loaded. A changed asset
-/// replaces the actors, so each starts again where the asset places it.
+/// What placed an actor: its entry in its precinct's asset, without its aspects. An edit to the
+/// precinct that leaves the entry as it was leaves the actor alone.
+#[derive(Component, Debug, Clone, PartialEq)]
+pub(crate) struct PlacedAs {
+    iid: SceneryInstanceId,
+    exemplar: String,
+    position: Vec3,
+    facing: f32,
+}
+
+impl PlacedAs {
+    fn of(data: &ActorInstanceData) -> Self {
+        Self {
+            iid: data.iid.clone(),
+            exemplar: data.exemplar.clone(),
+            position: data.position,
+            facing: data.facing,
+        }
+    }
+}
+
+/// Spawns a marked precinct's actors once their exemplar catalogs have loaded. When the asset
+/// changes, an actor whose entry changed, or is gone, is replaced, so it starts again where the
+/// asset places it; the others are left as they are, so an edit elsewhere in the precinct does not
+/// restart them.
+// TODO(PAN97): an edit to an actor's aspects alone replaces nothing, as entries are compared
+// without them.
 pub(crate) fn spawn_precinct_actors(
     mut commands: Commands,
-    precincts: Query<(Entity, &Precinct, Has<PrecinctActors>), With<ReadPrecinctActors>>,
+    precincts: Query<(Entity, &Precinct, Option<&PrecinctActors>), With<ReadPrecinctActors>>,
+    placed: Query<&PlacedAs>,
     assets: Res<Assets<PrecinctAsset>>,
     mut exemplars: ExemplarServer,
 ) {
-    for (entity, precinct, has_actors) in &precincts {
+    for (entity, precinct, actors) in &precincts {
         let Some(asset) = assets.get(&precinct.asset) else {
             continue;
         };
@@ -58,10 +84,17 @@ pub(crate) fn spawn_precinct_actors(
             continue;
         };
         commands.entity(entity).remove::<ReadPrecinctActors>();
-        if has_actors {
-            commands.entity(entity).despawn_related::<PrecinctActors>();
-        }
+        let mut existing: Vec<(Entity, &PlacedAs)> = actors
+            .into_iter()
+            .flat_map(|actors| actors.iter())
+            .filter_map(|actor| Some((actor, placed.get(actor).ok()?)))
+            .collect();
         for (data, exemplar) in asset.actors.iter().zip(handles) {
+            let placement = PlacedAs::of(data);
+            if let Some(index) = existing.iter().position(|(_, p)| **p == placement) {
+                existing.swap_remove(index);
+                continue;
+            }
             let facing = data.facing.to_radians();
             let label = data
                 .exemplar
@@ -74,6 +107,7 @@ pub(crate) fn spawn_precinct_actors(
                     realm: precinct.realm,
                 },
                 HomePrecinct(entity),
+                placement,
                 // Without an intent, an actor would turn to heading 0.
                 ActorIntent {
                     heading: facing,
@@ -86,6 +120,9 @@ pub(crate) fn spawn_precinct_actors(
                 Visibility::default(),
                 Propagate(precinct.render_layer.clone()),
             ));
+        }
+        for (actor, _) in existing {
+            commands.entity(actor).despawn();
         }
     }
 }

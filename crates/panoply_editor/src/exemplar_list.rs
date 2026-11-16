@@ -2,7 +2,7 @@
 //! italics, so they can be edited, though they cannot be placed. Every catalog under `exemplars/`
 //! loads when scenery mode is first entered, since the game loads exemplars only as precincts name
 //! them. Each tool's choice is saved, so returning to the tool, or restarting, keeps it.
-// TODO(PAN94): the placing tools refuse an abstract exemplar.
+// TODO(PAN96, PAN97): the fixture and actor tools refuse an abstract exemplar, as the wall tool does.
 
 use bevy::{
     asset::LoadedFolder,

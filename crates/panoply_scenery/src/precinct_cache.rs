@@ -20,6 +20,12 @@ pub struct PrecinctCache {
     precincts: lru::LruCache<PrecinctKey, Entity>,
 }
 
+impl Default for PrecinctCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PrecinctCache {
     pub fn new() -> Self {
         Self {

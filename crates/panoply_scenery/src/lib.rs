@@ -5,7 +5,7 @@ use floor_surface::{FloorSurface, FloorSurfaceLoader};
 use panoply_exemplar::{InstanceType, InteractionAppExt, ScriptComponentAppExt};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
-use precinct_cache::{spawn_precincts, PrecinctCache};
+use precinct_cache::spawn_precincts;
 
 use self::{
     animation_aspect::{
@@ -46,6 +46,7 @@ mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
 pub use pending::{PrecinctStatus, SceneryPending};
+pub use precinct_cache::PrecinctCache;
 pub use scenery_aspect::SceneryModel;
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors

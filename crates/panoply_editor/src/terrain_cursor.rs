@@ -253,7 +253,7 @@ fn nearest_vertex(point: Vec2) -> IVec2 {
 }
 
 /// Where `ray` meets the level plane at `height`, if it does ahead of its origin.
-fn level_point(ray: Ray3d, height: f32) -> Option<Vec3> {
+pub(crate) fn level_point(ray: Ray3d, height: f32) -> Option<Vec3> {
     let distance = ray.intersect_plane(Vec3::Y * height, InfinitePlane3d::new(Vec3::Y))?;
     Some(ray.get_point(distance))
 }

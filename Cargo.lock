@@ -4818,6 +4818,7 @@ dependencies = [
  "panoply_core",
  "panoply_exemplar",
  "panoply_overlays",
+ "panoply_precinct",
  "panoply_render",
  "panoply_scenery",
  "panoply_terrain",
@@ -4862,11 +4863,12 @@ name = "panoply_precinct"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "futures-lite",
  "panoply_exemplar",
+ "panoply_portals",
  "panoply_saga",
  "rmp-serde",
  "serde",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 

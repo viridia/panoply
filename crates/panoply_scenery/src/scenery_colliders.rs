@@ -164,7 +164,8 @@ impl ColliderDesc {
         let offset = self.offset.unwrap_or_default();
         let mut rotation = Quat::IDENTITY;
         let (shape, lift) = match self.shape {
-            ColliderShape::Box { half_extents: size } | ColliderShape::Rbox { half_extents: size } => {
+            ColliderShape::Box { half_extents: size }
+            | ColliderShape::Rbox { half_extents: size } => {
                 (SharedShape::cuboid(size.x, size.y, size.z), size.y)
             }
             ColliderShape::Cylinder {

@@ -1,18 +1,14 @@
 use bevy::{
-    asset::{
-        io::{AssetWriterError, Reader},
-        saver::AssetSaver,
-        AssetLoader, LoadContext,
-    },
+    asset::{io::Reader, AssetLoader, LoadContext},
+    platform::collections::HashSet,
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use futures_lite::AsyncWriteExt;
 use panoply_exemplar::{AspectListDeserializer, InstanceAspects};
 use panoply_saga::{FormulaQueue, SagaHost};
 use serde::{
     de::{DeserializeSeed, Visitor},
-    ser::SerializeTuple,
+    ser::{SerializeMap, SerializeTuple},
     Deserialize, Serialize,
 };
 use std::{
@@ -25,38 +21,83 @@ use crate::{actor_instance::ActorInstanceListDeserializer, ActorInstanceData, Fl
 
 extern crate rmp_serde as rmps;
 
-/// TODO: use serialize_if not empty
-#[derive(TypePath, Asset, Serialize, Debug, Default, Clone)]
+/// Everything authored in one precinct but terrain (D24). Written with
+/// [`to_bytes`](Self::to_bytes), which drops what the loader skipped: faery's `layers`, and aspect
+/// types no plugin registers (D25).
+#[derive(TypePath, Asset, Debug, Default, Clone)]
 pub struct PrecinctAsset {
     /// Table of wall archetypes used by this precinct.
     pub scenery_types: Vec<String>,
 
     /// Table of floor archetypes used by this precinct.
-    #[serde(default)]
     pub floor_surfaces: Vec<String>,
 
     /// Table of terrain effect archetypes used by this precinct.
-    #[serde(default)]
     pub terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.
-    #[serde(default)]
     pub tiers: Vec<TierSer>,
 
     /// Packed terrain effect table
     pub terrain_fx: Option<Vec<i16>>,
 
     /// The actors the precinct places (D24).
-    #[serde(default)]
     pub actors: Vec<ActorInstanceData>,
 
     /// Table of scenery instances.
-    #[serde(default)]
     pub scenery: Vec<SceneryInstanceData>,
-    // layers?: Record<string, ILayerData>,
 }
 
 impl PrecinctAsset {
+    /// The precinct's file. Internal ids are written as nil, since the loader numbers instances
+    /// itself (D87).
+    pub fn to_bytes(&self, registry: &TypeRegistry) -> Result<Vec<u8>, rmps::encode::Error> {
+        rmps::to_vec_named(&PrecinctSer {
+            precinct: self,
+            registry,
+        })
+    }
+
+    /// Gives an external id to each scenery instance that lacks one and for which `needs_id`,
+    /// given its index in `scenery_types`, is true. Each is named for its exemplar's label in
+    /// kebab case, numbered with the lowest number the precinct does not yet use, as `chest-2`.
+    /// Returns how many were given one.
+    pub fn assign_external_ids(&mut self, needs_id: impl Fn(usize) -> bool) -> usize {
+        let mut taken: HashSet<String> = self
+            .scenery
+            .iter()
+            .map(|instance| &instance.iid)
+            .chain(self.actors.iter().map(|actor| &actor.iid))
+            .filter_map(|iid| match iid {
+                SceneryInstanceId::External(name) => Some((**name).clone()),
+                _ => None,
+            })
+            .collect();
+        let bases: Vec<String> = self
+            .scenery_types
+            .iter()
+            .map(|path| kebab_case(path.rsplit('#').next().unwrap_or(path)))
+            .collect();
+        let mut next = vec![1usize; bases.len()];
+        let mut count = 0;
+        for instance in &mut self.scenery {
+            if matches!(instance.iid, SceneryInstanceId::External(_)) || !needs_id(instance.id) {
+                continue;
+            }
+            let name = loop {
+                let name = format!("{}-{}", bases[instance.id], next[instance.id]);
+                next[instance.id] += 1;
+                if !taken.contains(&name) {
+                    break name;
+                }
+            };
+            taken.insert(name.clone());
+            instance.iid = SceneryInstanceId::External(Arc::new(name));
+            count += 1;
+        }
+        count
+    }
+
     /// Return the tier with the given level.
     pub fn find_tier(&self, level: i32) -> Option<&TierSer> {
         self.tiers.iter().find(|t| t.level == level)
@@ -147,19 +188,126 @@ impl PrecinctAsset {
         index
     }
 
+    /// One past the highest internal id.
     fn next_scenery_id(&self) -> usize {
-        let mut next_id: usize = 0;
-        loop {
-            let found_id = next_id;
-            self.scenery.iter().for_each(|c| {
-                if let SceneryInstanceId::Internal(id) = c.iid {
-                    next_id = next_id.max(id + 1);
-                }
-            });
-            if next_id == found_id {
-                return next_id;
+        self.scenery
+            .iter()
+            .filter_map(|instance| match instance.iid {
+                SceneryInstanceId::Internal(id) => Some(id + 1),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Numbers each scenery instance read without an id, in file order, after the highest internal
+    /// id the file holds.
+    fn number_scenery(&mut self) {
+        let mut next = self.next_scenery_id();
+        for instance in &mut self.scenery {
+            if instance.iid == SceneryInstanceId::None {
+                instance.iid = SceneryInstanceId::Internal(next);
+                next += 1;
             }
         }
+    }
+}
+
+/// `label` in kebab case: `WoodenChest` as `wooden-chest`.
+fn kebab_case(label: &str) -> String {
+    let mut result = String::with_capacity(label.len() + 4);
+    let mut previous: Option<char> = None;
+    for c in label.chars() {
+        if c.is_uppercase() {
+            if previous.is_some_and(|p| p.is_lowercase() || p.is_ascii_digit()) {
+                result.push('-');
+            }
+            result.extend(c.to_lowercase());
+        } else if matches!(c, '.' | '_' | ' ' | '-') {
+            if !result.ends_with('-') {
+                result.push('-');
+            }
+        } else {
+            result.push(c);
+        }
+        previous = Some(c);
+    }
+    result
+}
+
+/// Writes a [`PrecinctAsset`] as a named map, each instance's aspects through reflection.
+struct PrecinctSer<'a> {
+    precinct: &'a PrecinctAsset,
+    registry: &'a TypeRegistry,
+}
+
+impl Serialize for PrecinctSer<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        let precinct = self.precinct;
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("scenery_types", &precinct.scenery_types)?;
+        if !precinct.floor_surfaces.is_empty() {
+            map.serialize_entry("floor_surfaces", &precinct.floor_surfaces)?;
+        }
+        if !precinct.terrain_fx_types.is_empty() {
+            map.serialize_entry("terrain_fx_types", &precinct.terrain_fx_types)?;
+        }
+        if !precinct.tiers.is_empty() {
+            map.serialize_entry("tiers", &precinct.tiers)?;
+        }
+        if let Some(terrain_fx) = &precinct.terrain_fx {
+            map.serialize_entry("terrain_fx", terrain_fx)?;
+        }
+        if !precinct.actors.is_empty() {
+            let actors: Vec<_> = precinct
+                .actors
+                .iter()
+                .map(|actor| actor.serializable(self.registry))
+                .collect();
+            map.serialize_entry("actors", &actors)?;
+        }
+        let scenery: Vec<_> = precinct
+            .scenery
+            .iter()
+            .map(|instance| SceneryInstanceSer {
+                instance,
+                registry: self.registry,
+            })
+            .collect();
+        map.serialize_entry("scenery", &scenery)?;
+        map.end()
+    }
+}
+
+/// Writes a [`SceneryInstanceData`] as a tuple: exemplar index, facing, position, id, and the
+/// aspects, if it has any.
+struct SceneryInstanceSer<'a> {
+    instance: &'a SceneryInstanceData,
+    registry: &'a TypeRegistry,
+}
+
+impl Serialize for SceneryInstanceSer<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        let instance = self.instance;
+        let has_aspects = !instance.aspects.is_empty();
+        let mut state = serializer.serialize_tuple(if has_aspects { 5 } else { 4 })?;
+        state.serialize_element(&instance.id)?;
+        state.serialize_element(&instance.facing)?;
+        state.serialize_element(&instance.position)?;
+        state.serialize_element(match &instance.iid {
+            SceneryInstanceId::Internal(_) => &SceneryInstanceId::None,
+            iid => iid,
+        })?;
+        if has_aspects {
+            state.serialize_element(&instance.aspects.serializable(self.registry))?;
+        }
+        state.end()
     }
 }
 
@@ -168,10 +316,14 @@ impl PrecinctAsset {
 pub struct TierSer {
     pub level: i32,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pfloors: Vec<FloorRegionSer>,
 
-    #[serde(default, with = "panoply_exemplar::ser::vec_rect")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        with = "panoply_exemplar::ser::vec_rect"
+    )]
     pub cutaways: Vec<Rect>,
 }
 
@@ -202,27 +354,6 @@ pub struct SceneryInstanceData {
 
     /// List of aspects for this instance.
     pub aspects: InstanceAspects,
-}
-
-impl Serialize for SceneryInstanceData {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::ser::Serializer,
-    {
-        let mut len = 4;
-        if !self.aspects.is_empty() {
-            len += 1;
-        }
-        let mut state = serializer.serialize_tuple(len)?;
-        state.serialize_element(&self.id)?;
-        state.serialize_element(&self.facing)?;
-        state.serialize_element(&self.position)?;
-        state.serialize_element(&self.iid)?;
-        if !self.aspects.is_empty() {
-            state.serialize_element(&self.aspects)?;
-        }
-        state.end()
-    }
 }
 
 struct CompressedInstanceVisitor<'a, 'b> {
@@ -435,11 +566,12 @@ impl<'de> DeserializeSeed<'de> for PrecinctAssetDeserializer<'_, '_> {
                                 })?;
                         }
                         Field::Layers => {
-                            // TODO
+                            // faery's editing layers, which Panoply does not have.
                             map.next_value::<serde::de::IgnoredAny>()?;
                         }
                     }
                 }
+                precinct.number_scenery();
                 Ok(precinct)
             }
         }
@@ -506,46 +638,45 @@ impl AssetLoader for PrecinctAssetLoader {
     }
 }
 
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum PrecinctAssetSaverError {
-    #[error("Could not save precinct: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Could not encode precinct: {0}")]
-    Encode(#[from] rmps::encode::Error),
-    #[error("Could not commit precinct file: {0}")]
-    Commit(#[from] AssetWriterError),
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[derive(TypePath)]
-pub struct PrecinctAssetSaver {
-    #[allow(dead_code)] // For dropping unused types on save; the editor saves precincts (PAN94).
-    type_registry: TypeRegistryArc,
-}
-
-impl PrecinctAssetSaver {
-    pub fn new(type_registry: TypeRegistryArc) -> Self {
-        PrecinctAssetSaver { type_registry }
+    #[test]
+    fn labels_in_kebab_case() {
+        assert_eq!(kebab_case("WoodenChest"), "wooden-chest");
+        assert_eq!(kebab_case("Chest2Large"), "chest2-large");
+        assert_eq!(kebab_case("Proto.Guard"), "proto-guard");
+        assert_eq!(kebab_case("chest"), "chest");
     }
-}
 
-impl AssetSaver for PrecinctAssetSaver {
-    type Asset = PrecinctAsset;
-    type Settings = ();
-    type OutputLoader = PrecinctAssetLoader;
-    type Error = PrecinctAssetSaverError;
-
-    async fn save(
-        &self,
-        writer: &mut bevy::asset::io::Writer,
-        asset: bevy::asset::saver::SavedAsset<'_, '_, Self::Asset>,
-        _settings: &Self::Settings,
-        _asset_path: bevy::asset::AssetPath<'_>,
-    ) -> Result<(), Self::Error> {
-        // TODO: Optimize precinct - remove unused types. Should be done in serializer.
-        // rmps::encode::write(writer, &*asset)?; // Doesn't work with async writer
-        let v = rmps::encode::to_vec_named(&*asset)?;
-        writer.write_all(&v).await?;
-        Ok(())
+    /// Ids go to the instances that need them, numbered from the lowest free number, around the
+    /// names the precinct already uses; an instance with an id keeps it.
+    #[test]
+    fn external_ids_take_the_lowest_free_number() {
+        let mut precinct = PrecinctAsset {
+            scenery_types: vec![
+                "exemplars/furnishings.exem.json#WoodenChest".into(),
+                "exemplars/walls.exem.json#Wall".into(),
+            ],
+            ..default()
+        };
+        let named = SceneryInstanceId::External(Arc::new("wooden-chest-1".into()));
+        precinct.add_scenery_element(0, 0., Vec3::ZERO, Some(named.clone()));
+        precinct.add_scenery_element(0, 0., Vec3::X, None);
+        precinct.add_scenery_element(1, 0., Vec3::Y, None);
+        precinct.add_scenery_element(0, 0., Vec3::Z, None);
+        assert_eq!(precinct.assign_external_ids(|index| index == 0), 2);
+        let ids: Vec<_> = precinct.scenery.iter().map(|s| s.iid.clone()).collect();
+        assert_eq!(ids[0], named);
+        assert_eq!(
+            ids[1],
+            SceneryInstanceId::External(Arc::new("wooden-chest-2".into()))
+        );
+        assert_eq!(ids[2], SceneryInstanceId::Internal(1));
+        assert_eq!(
+            ids[3],
+            SceneryInstanceId::External(Arc::new("wooden-chest-3".into()))
+        );
     }
 }

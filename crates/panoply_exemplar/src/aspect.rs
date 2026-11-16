@@ -2,7 +2,10 @@ use bevy::platform::collections::HashMap;
 use bevy::{
     asset::LoadContext,
     prelude::*,
-    reflect::{serde::TypedReflectDeserializer, TypeRegistration, TypeRegistry},
+    reflect::{
+        serde::{TypedReflectDeserializer, TypedReflectSerializer},
+        TypeRegistration, TypeRegistry,
+    },
 };
 use panoply_saga::FormulaQueue;
 use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
@@ -39,6 +42,13 @@ where
 
     /// Clone this aspect as a boxed trait object.
     fn clone_boxed(&self) -> Box<dyn Aspect>;
+
+    /// Whether an instance with this aspect has state: what play changes and a saved game keeps,
+    /// such as a container's contents, as against the aspect's config, which is authored (D88).
+    /// Such an instance needs an external id for a saved game to find it by (D87).
+    fn has_state(&self) -> bool {
+        false
+    }
 
     //   /** Formulas to be bound to the specified properties */
     //   formulas?: IFormulaGenerators<SelfType, Props, Config>;
@@ -176,15 +186,34 @@ impl Debug for InstanceAspects {
     }
 }
 
-impl Serialize for InstanceAspects {
+impl InstanceAspects {
+    /// The aspects as a file holds them, a map from each aspect's short type path to its fields,
+    /// the form [`AspectListDeserializer`](crate::AspectListDeserializer) reads.
+    pub fn serializable<'a>(&'a self, registry: &'a TypeRegistry) -> SerializableAspects<'a> {
+        SerializableAspects {
+            aspects: &self.0,
+            registry,
+        }
+    }
+}
+
+/// Serializes a list of aspects through reflection; see [`InstanceAspects::serializable`].
+pub struct SerializableAspects<'a> {
+    aspects: &'a [Box<dyn Aspect>],
+    registry: &'a TypeRegistry,
+}
+
+impl Serialize for SerializableAspects<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
     {
-        let map = serializer.serialize_map(Some(self.0.len()))?;
-        for _aspect in self.0.iter() {
-            todo!();
-            // map.serialize_entry(aspect.into_reflect().type_id(), aspect)?;
+        let mut map = serializer.serialize_map(Some(self.aspects.len()))?;
+        for aspect in self.aspects {
+            map.serialize_entry(
+                aspect.reflect_short_type_path(),
+                &TypedReflectSerializer::new(aspect.as_partial_reflect(), self.registry),
+            )?;
         }
         map.end()
     }

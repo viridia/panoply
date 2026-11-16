@@ -26,6 +26,8 @@ pub struct DebugViews {
     pub physics: bool,
     /// Collision groups to draw (`panoply_core::realm_physics::collision_groups`) as bits.
     pub physics_groups: u32,
+    /// In scenery mode, draw the tile grid over the precinct under the pointer.
+    pub tile_grid: bool,
 }
 
 impl Default for DebugViews {
@@ -33,6 +35,7 @@ impl Default for DebugViews {
         Self {
             physics: false,
             physics_groups: Group::ALL.bits(),
+            tile_grid: true,
         }
     }
 }

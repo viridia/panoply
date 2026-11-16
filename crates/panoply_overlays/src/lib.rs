@@ -89,6 +89,14 @@ fn rebuild_mesh<S: OverlayShape>(
     for (entity, shape, mesh) in &shapes {
         let mut builder = ShapeBuilder::new();
         shape.draw(&mut builder);
+        // A shape that draws nothing, such as a hidden cursor, has no mesh: the renderer warns of
+        // one with no vertices.
+        if builder.is_empty() {
+            if mesh.is_some() {
+                commands.entity(entity).remove::<Mesh3d>();
+            }
+            continue;
+        }
         if let Some(mesh) = mesh.filter(|mesh| meshes.contains(&mesh.0)) {
             builder.build(&mut meshes.get_mut(&mesh.0).unwrap());
             continue;
@@ -102,9 +110,14 @@ fn rebuild_mesh<S: OverlayShape>(
     }
 }
 
-/// Gives each underlay its parent's mesh, and both materials the overlay's color.
+/// Gives each underlay its parent's mesh, or none while the parent has none, and both materials
+/// the overlay's color.
 fn sync_underlay(
-    overlays: Query<(&Mesh3d, Ref<OverlayColor>, &MeshMaterial3d<OverlayMaterial>)>,
+    overlays: Query<(
+        Option<&Mesh3d>,
+        Ref<OverlayColor>,
+        &MeshMaterial3d<OverlayMaterial>,
+    )>,
     underlays: Query<
         (
             Entity,
@@ -122,8 +135,14 @@ fn sync_underlay(
         let Ok((parent_mesh, color, overlay)) = overlays.get(child_of.parent()) else {
             continue;
         };
-        if mesh != Some(parent_mesh) {
-            commands.entity(entity).insert(parent_mesh.clone());
+        match parent_mesh {
+            Some(parent_mesh) if mesh != Some(parent_mesh) => {
+                commands.entity(entity).insert(parent_mesh.clone());
+            }
+            None if mesh.is_some() => {
+                commands.entity(entity).remove::<Mesh3d>();
+            }
+            _ => {}
         }
         if color.is_changed() {
             if let Some(mut material) = overlay_materials.get_mut(overlay) {

@@ -30,11 +30,13 @@ pub mod model_picker;
 pub mod nav_point_list;
 pub mod new_realm;
 pub mod parcel_selection;
+pub mod precinct_edit;
 pub mod properties;
 pub mod quit_dialog;
 pub mod realm_panel;
 pub mod saved_view;
 pub mod scenery_panel;
+pub mod scenery_pointer;
 pub mod scenery_properties;
 pub mod search_filter;
 pub mod shell;
@@ -46,6 +48,7 @@ pub mod text_entry;
 pub mod toast;
 pub mod undo;
 pub mod unsaved;
+pub mod wall_tool;
 pub mod zoom;
 
 pub struct EditorPlugins;
@@ -77,6 +80,9 @@ impl PluginGroup for EditorPlugins {
             .add(scenery_panel::SceneryPanelPlugin)
             .add(scenery_properties::SceneryPropertiesPlugin)
             .add(exemplar_list::ExemplarListPlugin)
+            .add(scenery_pointer::SceneryPointerPlugin)
+            .add(precinct_edit::PrecinctEditPlugin)
+            .add(wall_tool::WallToolPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_commit::TextCommitPlugin)

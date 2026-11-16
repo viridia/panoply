@@ -1,6 +1,6 @@
 use bevy::{
-    audio::{SpatialScale, Volume},
     annotations::DisplayName,
+    audio::{SpatialScale, Volume},
     gltf::Gltf,
     prelude::*,
     world_serialization::WorldInstanceReady,

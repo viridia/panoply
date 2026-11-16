@@ -41,16 +41,16 @@ use bevy::{
         controls::{
             ButtonVariant, ColorInputValue, FeathersButton, FeathersCheckbox, FeathersColorInput,
             FeathersDisclosureToggle, FeathersListRow, FeathersMenu, FeathersMenuItem,
-            FeathersMenuPopup,
-            FeathersMenuToolButton, FeathersNumberInput, FeathersSelect, FeathersTextInput,
-            FeathersTextInputContainer, FeathersToolButton, HardLimit, NumberInputPrecision,
-            NumberInputSnapToStep, NumberInputStep, OptionIndex,
+            FeathersMenuPopup, FeathersMenuToolButton, FeathersNumberInput, FeathersSelect,
+            FeathersTextInput, FeathersTextInputContainer, FeathersToolButton, HardLimit,
+            NumberInputPrecision, NumberInputSnapToStep, NumberInputStep, OptionIndex,
         },
         display::{caption as option_caption, icon, label},
         theme::{ThemeBorderColor, ThemeTextColor, ThemeToken, ThemedText},
         tokens,
     },
     input_focus::InputFocus,
+    platform::collections::HashSet,
     prelude::*,
     reflect::{
         attributes::CustomAttributes,
@@ -60,7 +60,6 @@ use bevy::{
         tuple::DynamicTuple,
         ParsedPath, ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
     },
-    platform::collections::HashSet,
     text::{FontSourceTemplate, LineBreak, TextLayout},
     ui::Selected,
     ui_widgets::{
@@ -71,9 +70,10 @@ use bevy::{
 use bevy_immediate::{
     impl_capability_set,
     ui::{
-        activated, anchored, base, button_variant,
-        checked::{self, ImmUiChecked},
+        activated,
         activated::ImmUiActivated,
+        anchored, base, button_variant,
+        checked::{self, ImmUiChecked},
         clicked, color_plane, color_swatch, disabled, interaction, layout_order, look,
         number_input::{self, ImmUiNumberInput, ImmUiNumericValue},
         selected, slider_base_color, slider_value,
@@ -543,7 +543,10 @@ impl Rows<'_> {
     /// collapses them, `start` (the heading's caption, or a map entry's key), and its summary
     /// while collapsed, then `widgets` and the × column at its right; below it, while expanded,
     /// `body`'s rows, set in behind a stripe, one level deeper.
-    #[expect(clippy::too_many_arguments, reason = "a heading's parts, each used once")]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "a heading's parts, each used once"
+    )]
     fn heading(
         &mut self,
         row: ImmEntity<CapsPanel>,
@@ -573,11 +576,13 @@ impl Rows<'_> {
                     self.expand_if_added(&key);
                 });
                 if expanded {
-                    ui.ch_id("rows").on_spawn_apply_scene(indented_node).add(|ui| {
-                        self.depth += 1;
-                        body(self, ui);
-                        self.depth -= 1;
-                    });
+                    ui.ch_id("rows")
+                        .on_spawn_apply_scene(indented_node)
+                        .add(|ui| {
+                            self.depth += 1;
+                            body(self, ui);
+                            self.depth -= 1;
+                        });
                 }
             });
     }
@@ -646,7 +651,11 @@ impl Rows<'_> {
                 let caption = attrs
                     .get::<DisplayName>()
                     .map_or(field_info.name(), |name| name.0);
-                Some((field_info.name(), caption, field.get_represented_type_info()?))
+                Some((
+                    field_info.name(),
+                    caption,
+                    field.get_represented_type_info()?,
+                ))
             })
             .collect();
         if absent.is_empty() {
@@ -948,7 +957,8 @@ impl Rows<'_> {
             return;
         };
         if list.is_empty() {
-            ui.ch_id("No items").on_spawn_apply_scene(|| placeholder("No items"));
+            ui.ch_id("No items")
+                .on_spawn_apply_scene(|| placeholder("No items"));
             return;
         }
         let mut removed = None;
@@ -976,7 +986,12 @@ impl Rows<'_> {
     /// its end, its type's default; if a map with string keys, named `add_entry`, adding an entry
     /// with an empty key and its value type's default, unless it has one with an empty key
     /// already, whose key is still to be typed. Nothing for any other value.
-    fn add_button(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect, path: &ParsedPath) {
+    fn add_button(
+        &mut self,
+        ui: &mut Imm<CapsPanel>,
+        value: &dyn PartialReflect,
+        path: &ParsedPath,
+    ) {
         let (name, value_type) = match (value.reflect_ref(), value.get_represented_type_info()) {
             (ReflectRef::List(_), Some(TypeInfo::List(info))) => ("add_item", info.item_ty()),
             (ReflectRef::Map(_), Some(TypeInfo::Map(info))) if string_keyed(value) => {
@@ -1001,7 +1016,8 @@ impl Rows<'_> {
                 self.edits.push(self.root, path.clone(), kind, Some(new));
             }
             ReflectRef::Map(map) if map.get(&String::new()).is_none() => {
-                self.edits.add_entry(self.root, path.clone(), String::new(), new);
+                self.edits
+                    .add_entry(self.root, path.clone(), String::new(), new);
             }
             _ => {}
         }
@@ -1017,7 +1033,8 @@ impl Rows<'_> {
             return;
         };
         if map.is_empty() {
-            ui.ch_id("No entries").on_spawn_apply_scene(|| placeholder("No entries"));
+            ui.ch_id("No entries")
+                .on_spawn_apply_scene(|| placeholder("No entries"));
             return;
         }
         let mut entries: Vec<(&str, &dyn PartialReflect)> = map
@@ -1060,11 +1077,13 @@ impl Rows<'_> {
             return;
         };
         let Some(keys) = self.keys else {
-            ui.ch_id("Loading").on_spawn_apply_scene(|| placeholder("Loading"));
+            ui.ch_id("Loading")
+                .on_spawn_apply_scene(|| placeholder("Loading"));
             return;
         };
         if keys.is_empty() {
-            ui.ch_id("No slots").on_spawn_apply_scene(|| placeholder("No slots"));
+            ui.ch_id("No slots")
+                .on_spawn_apply_scene(|| placeholder("No slots"));
             return;
         }
         if info.value_ty().is::<bool>() {
@@ -1085,15 +1104,24 @@ impl Rows<'_> {
                         .add(|ui| {
                             caption_cell(ui, caption, width);
                             let value_node = EntryLayout::Wide.value_node();
-                            ui.ch().on_spawn_insert(move || value_node.clone()).add(|ui| {
-                                let head = RowHead {
-                                    name: "value",
-                                    caption: None,
-                                    width: 0.0,
-                                };
-                                let attrs = CustomAttributes::default();
-                                self.row_with(ui, head, &attrs, entry, entry_path, Some(&mut remove));
-                            });
+                            ui.ch()
+                                .on_spawn_insert(move || value_node.clone())
+                                .add(|ui| {
+                                    let head = RowHead {
+                                        name: "value",
+                                        caption: None,
+                                        width: 0.0,
+                                    };
+                                    let attrs = CustomAttributes::default();
+                                    self.row_with(
+                                        ui,
+                                        head,
+                                        &attrs,
+                                        entry,
+                                        entry_path,
+                                        Some(&mut remove),
+                                    );
+                                });
                         });
                     if remove {
                         removed = Some(key.clone());
@@ -1103,7 +1131,11 @@ impl Rows<'_> {
                     row.on_spawn_insert(move || (Name::new(name.clone()), widget_line()))
                         .add(|ui| {
                             caption_cell(ui, caption, width);
-                            if ui.ch_id("unset").on_spawn_apply_scene(unset_button).activated() {
+                            if ui
+                                .ch_id("unset")
+                                .on_spawn_apply_scene(unset_button)
+                                .activated()
+                            {
                                 added = Some(key.clone());
                             }
                             remove_button(ui, None);
@@ -1116,7 +1148,10 @@ impl Rows<'_> {
         }
         if let Some(key) = added {
             let value_type = info.value_ty();
-            match self.registry.get_type_data::<ReflectDefault>(value_type.id()) {
+            match self
+                .registry
+                .get_type_data::<ReflectDefault>(value_type.id())
+            {
                 Some(default) => {
                     let new = default.default().into_partial_reflect();
                     self.edits.add_entry(self.root, path.clone(), key, new);
@@ -1170,11 +1205,13 @@ impl Rows<'_> {
             return;
         };
         if !checked {
-            self.edits.remove_entry(self.root, path.clone(), key.clone());
+            self.edits
+                .remove_entry(self.root, path.clone(), key.clone());
         } else if map.get(key).is_some() {
             self.set(&path.with_key(key), true);
         } else {
-            self.edits.add_entry(self.root, path.clone(), key.clone(), Box::new(true));
+            self.edits
+                .add_entry(self.root, path.clone(), key.clone(), Box::new(true));
         }
     }
 
@@ -1229,18 +1266,21 @@ impl Rows<'_> {
             );
             return committed;
         }
-        row.on_spawn_insert(move || (name, widget_line())).add(|ui| {
-            committed = text_field(ui, "key", key);
-            ui.ch().on_spawn_insert(move || layout.value_node()).add(|ui| {
-                let head = RowHead {
-                    name: "value",
-                    caption: None,
-                    width: 0.0,
-                };
-                let attrs = CustomAttributes::default();
-                self.row_with(ui, head, &attrs, value, path, Some(remove));
+        row.on_spawn_insert(move || (name, widget_line()))
+            .add(|ui| {
+                committed = text_field(ui, "key", key);
+                ui.ch()
+                    .on_spawn_insert(move || layout.value_node())
+                    .add(|ui| {
+                        let head = RowHead {
+                            name: "value",
+                            caption: None,
+                            width: 0.0,
+                        };
+                        let attrs = CustomAttributes::default();
+                        self.row_with(ui, head, &attrs, value, path, Some(remove));
+                    });
             });
-        });
         committed
     }
 
@@ -1282,10 +1322,9 @@ impl Rows<'_> {
         };
         let name = info.variant_names()[picked];
         match variant_value(self.registry, current, name) {
-            Some(value) => {
-                self.edits
-                    .push(self.root, path.clone(), EditKind::Set, Some(value))
-            }
+            Some(value) => self
+                .edits
+                .push(self.root, path.clone(), EditKind::Set, Some(value)),
             None => error!("Cannot make a {}::{name}", info.type_path()),
         }
     }
@@ -1341,7 +1380,9 @@ const ADD_ICON: &str = "editor/icons/add_box.png";
 /// kept, since rows take their captions for good.
 fn item_caption(index: usize) -> &'static str {
     static CAPTIONS: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
-    let mut captions = CAPTIONS.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut captions = CAPTIONS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     while captions.len() <= index {
         let caption = format!("#{}", captions.len() + 1);
         captions.push(Box::leak(caption.into_boxed_str()));
@@ -1351,7 +1392,10 @@ fn item_caption(index: usize) -> &'static str {
 
 /// `value` and its `path` within the root, or, while it is a newtype other than a color, its one
 /// field and that field's path.
-fn through_newtypes(value: &dyn PartialReflect, path: ParsedPath) -> (&dyn PartialReflect, ParsedPath) {
+fn through_newtypes(
+    value: &dyn PartialReflect,
+    path: ParsedPath,
+) -> (&dyn PartialReflect, ParsedPath) {
     match newtype_field(value) {
         Some(inner) if value.try_downcast_ref::<HexColor>().is_none() => {
             through_newtypes(inner, path.with_tuple(0))
@@ -1488,7 +1532,10 @@ fn show_variant(world: &mut World, select: Entity, index: usize) {
         None
     });
     if let Some(row) = row {
-        world.trigger(SetSelected { entity: select, row });
+        world.trigger(SetSelected {
+            entity: select,
+            row,
+        });
     }
 }
 
@@ -1543,12 +1590,11 @@ fn text_row(
     remove: Option<&mut bool>,
 ) -> Option<String> {
     let mut committed = None;
-    row.on_spawn_insert(move || head.node())
-        .add(|ui| {
-            head.caption_cell(ui);
-            committed = text_field(ui, "input", value);
-            remove_button(ui, remove);
-        });
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        head.caption_cell(ui);
+        committed = text_field(ui, "input", value);
+        remove_button(ui, remove);
+    });
     committed
 }
 
@@ -1708,39 +1754,41 @@ fn model_row(
     remove: Option<&mut bool>,
 ) -> Option<String> {
     let mut chosen = None;
-    let shown = value.rsplit_once('/').map_or(value, |(_, file)| file).to_string();
-    row.on_spawn_insert(move || head.node())
-        .add(|ui| {
-            head.caption_cell(ui);
-            let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
-                bsn! {
-                    @FeathersButton
-                    #pick
-                    ChosenModel
-                    Node {
-                        flex_grow: 1.0,
-                        min_width: px(0),
-                        justify_content: JustifyContent::Start,
-                        overflow: Overflow::clip_x(),
-                    }
+    let shown = value
+        .rsplit_once('/')
+        .map_or(value, |(_, file)| file)
+        .to_string();
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        head.caption_cell(ui);
+        let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
+            bsn! {
+                @FeathersButton
+                #pick
+                ChosenModel
+                Node {
+                    flex_grow: 1.0,
+                    min_width: px(0),
+                    justify_content: JustifyContent::Start,
+                    overflow: Overflow::clip_x(),
                 }
-            });
-            if let Ok(Some(mut model)) = button.cap_get_component_mut::<ChosenModel>() {
-                chosen = model.0.take();
             }
-            if button.activated() {
-                let (entity, current) = (button.entity(), value.to_string());
-                button
-                    .commands()
-                    .run_system_cached_with(open_model_picker, (entity, kind, current));
-            }
-            button.add(|ui| {
-                ui.ch()
-                    .on_spawn_apply_scene(|| button_text("model"))
-                    .on_hash_change_text_fn(&shown, || shown.clone());
-            });
-            remove_button(ui, remove);
         });
+        if let Ok(Some(mut model)) = button.cap_get_component_mut::<ChosenModel>() {
+            chosen = model.0.take();
+        }
+        if button.activated() {
+            let (entity, current) = (button.entity(), value.to_string());
+            button
+                .commands()
+                .run_system_cached_with(open_model_picker, (entity, kind, current));
+        }
+        button.add(|ui| {
+            ui.ch()
+                .on_spawn_apply_scene(|| button_text("model"))
+                .on_hash_change_text_fn(&shown, || shown.clone());
+        });
+        remove_button(ui, remove);
+    });
     chosen.filter(|model| model != value)
 }
 
@@ -1757,36 +1805,37 @@ fn exemplar_ref_row(
     let shown = value
         .0
         .as_deref()
-        .map_or("none", |path| path.rsplit_once('#').map_or(path, |(_, label)| label))
+        .map_or("none", |path| {
+            path.rsplit_once('#').map_or(path, |(_, label)| label)
+        })
         .to_string();
-    row.on_spawn_insert(move || head.node())
-        .add(|ui| {
-            head.caption_cell(ui);
-            let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
-                bsn! {
-                    @FeathersButton
-                    #pick
-                    Node {
-                        flex_grow: 1.0,
-                        min_width: px(0),
-                        justify_content: JustifyContent::Start,
-                        overflow: Overflow::clip_x(),
-                    }
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        head.caption_cell(ui);
+        let mut button = ui.ch_id("pick").on_spawn_apply_scene(|| {
+            bsn! {
+                @FeathersButton
+                #pick
+                Node {
+                    flex_grow: 1.0,
+                    min_width: px(0),
+                    justify_content: JustifyContent::Start,
+                    overflow: Overflow::clip_x(),
                 }
-            });
-            if button.activated() {
-                let root = root.clone();
-                button
-                    .commands()
-                    .run_system_cached_with(open_extends_chooser, root);
             }
-            button.add(|ui| {
-                ui.ch()
-                    .on_spawn_apply_scene(|| button_text("name"))
-                    .on_hash_change_text_fn(&shown, || shown.clone());
-            });
-            remove_button(ui, remove);
         });
+        if button.activated() {
+            let root = root.clone();
+            button
+                .commands()
+                .run_system_cached_with(open_extends_chooser, root);
+        }
+        button.add(|ui| {
+            ui.ch()
+                .on_spawn_apply_scene(|| button_text("name"))
+                .on_hash_change_text_fn(&shown, || shown.clone());
+        });
+        remove_button(ui, remove);
+    });
 }
 
 /// The text of a picker's button, named `name`: regular, since it is a value rather than an
@@ -1857,11 +1906,10 @@ pub(crate) fn icon_button(
     });
     let clicked = button.activated();
     button.add(|ui| {
-        ui.ch_id(image)
-            .on_spawn_apply_scene(move || {
-                // `ThemeTextColor` colors only a `TextColor` already there as it is inserted.
-                bsn! { @icon(image) Node { height: {height} } TextColor ThemeTextColor({color}) }
-            });
+        ui.ch_id(image).on_spawn_apply_scene(move || {
+            // `ThemeTextColor` colors only a `TextColor` already there as it is inserted.
+            bsn! { @icon(image) Node { height: {height} } TextColor ThemeTextColor({color}) }
+        });
     });
     clicked
 }

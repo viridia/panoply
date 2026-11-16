@@ -46,9 +46,7 @@ use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
 use self::world_pick::{hide_idle_cursor, pick_world, spawn_world_backstop, WorldCursors};
 
-use self::actor_aspect::{
-    Armature, ClipNames, Colors, Features, WieldedItems,
-};
+use self::actor_aspect::{Armature, ClipNames, Colors, Features, WieldedItems};
 use self::item_aspect::{EquipSlot, ItemModel};
 
 pub const ACTOR_TYPE: InstanceType = InstanceType::from_str("Actr");

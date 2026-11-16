@@ -9,9 +9,8 @@ use bevy::{
     asset::LoadedFolder,
     feathers::{
         controls::{
-            ButtonVariant, FeathersButton, FeathersDialog, FeathersDialogBody,
-            FeathersDialogClose, FeathersDialogFooter, FeathersDialogHeader, FeathersScrollbar,
-            FeathersTreeItem,
+            ButtonVariant, FeathersButton, FeathersDialog, FeathersDialogBody, FeathersDialogClose,
+            FeathersDialogFooter, FeathersDialogHeader, FeathersScrollbar, FeathersTreeItem,
         },
         display::caption,
         theme::ThemedText,
@@ -74,10 +73,8 @@ pub struct ModelPickerPlugin;
 
 impl Plugin for ModelPickerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, load_model_folders).add_systems(
-            Update,
-            (select_current_model, scroll_to_model, enable_save),
-        );
+        app.add_systems(Startup, load_model_folders)
+            .add_systems(Update, (select_current_model, scroll_to_model, enable_save));
     }
 }
 
@@ -208,13 +205,11 @@ pub(crate) fn open_model_picker(
     } else {
         "Choose model"
     };
-    commands
-        .spawn_scene(picker_dialog(title, rows))
-        .insert((
-            Name::new("ModelPicker"),
-            ModelPicker { button },
-            SelectModel(current),
-        ));
+    commands.spawn_scene(picker_dialog(title, rows)).insert((
+        Name::new("ModelPicker"),
+        ModelPicker { button },
+        SelectModel(current),
+    ));
 }
 
 /// The picker, titled `title`, listing `rows`.
@@ -310,7 +305,9 @@ fn file_row(file: &ModelFile) -> impl Scene {
         .models
         .iter()
         .map(|model| {
-            let scene = model.rsplit_once('#').map_or(model.as_str(), |(_, scene)| scene);
+            let scene = model
+                .rsplit_once('#')
+                .map_or(model.as_str(), |(_, scene)| scene);
             model_row(scene, model)
         })
         .collect();
@@ -378,7 +375,14 @@ fn save_double_clicked(
         return;
     };
     let tree = click.event_target();
-    choose(tree, &model.0, &parents, &pickers, &mut buttons, &mut commands);
+    choose(
+        tree,
+        &model.0,
+        &parents,
+        &pickers,
+        &mut buttons,
+        &mut commands,
+    );
 }
 
 /// Observer on Save: chooses the selected model.
@@ -404,7 +408,14 @@ fn save_selected(
     }) else {
         return;
     };
-    choose(tree, &model.0, &parents, &pickers, &mut buttons, &mut commands);
+    choose(
+        tree,
+        &model.0,
+        &parents,
+        &pickers,
+        &mut buttons,
+        &mut commands,
+    );
 }
 
 /// Gives `model` to the button of the picker holding `tree`, and closes the picker.
@@ -441,7 +452,10 @@ fn select_current_model(
     mut commands: Commands,
 ) {
     for (picker, wanted) in &pickers {
-        let Some(tree) = children.iter_descendants(picker).find(|&e| trees.contains(e)) else {
+        let Some(tree) = children
+            .iter_descendants(picker)
+            .find(|&e| trees.contains(e))
+        else {
             continue;
         };
         let Some(row) = children

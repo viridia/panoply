@@ -45,7 +45,9 @@ fn feature_scenes(gltf: &Gltf, scenes: &Assets<WorldAsset>) -> Vec<String> {
         .named_scenes
         .iter()
         .filter(|(name, handle)| {
-            scenes.get(*handle).is_some_and(|scene| is_feature_scene(&scene.world, name))
+            scenes
+                .get(*handle)
+                .is_some_and(|scene| is_feature_scene(&scene.world, name))
         })
         .map(|(name, _)| name.to_string())
         .collect();
@@ -74,8 +76,8 @@ fn skin_model<'w>(
     held: &mut Vec<UntypedHandle>,
 ) -> Option<Option<(&'w Gltf, &'w str)>> {
     let exemplars = world.resource::<Assets<Exemplar>>();
-    let Some((file, scene)) = Exemplar::find_aspect::<Skin>(exemplars, exemplar)
-        .and_then(|skin| skin.0.split_once('#'))
+    let Some((file, scene)) =
+        Exemplar::find_aspect::<Skin>(exemplars, exemplar).and_then(|skin| skin.0.split_once('#'))
     else {
         return Some(None);
     };
@@ -120,7 +122,10 @@ impl PropertyMapKeys for Colors {
         let mut slots = BTreeSet::new();
         let features = feature_scenes(gltf, scenes);
         for name in std::iter::once(body).chain(features.iter().map(String::as_str)) {
-            let scene = gltf.named_scenes.get(name).and_then(|handle| scenes.get(handle));
+            let scene = gltf
+                .named_scenes
+                .get(name)
+                .and_then(|handle| scenes.get(handle));
             if let Some(scene) = scene {
                 color_slot_materials(&scene.world, &mut slots);
             }

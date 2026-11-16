@@ -20,7 +20,12 @@ use panoply_terrain::{
     TerrainMapAsset, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 
-use crate::{mode_selector::EditorMode, parcel_selection::ParcelSelection};
+use crate::{
+    debug_views::DebugViews,
+    mode_selector::EditorMode,
+    parcel_selection::ParcelSelection,
+    scenery_pointer::{SceneryPointer, SceneryPointerSystems, SceneryTier},
+};
 
 /// Points along each side of a parcel's contour: one a meter, both ends included.
 const CONTOUR_STRIDE: usize = PARCEL_SIZE_U + 1;
@@ -65,6 +70,32 @@ impl OverlayShape for RealmGrid {
         builder.with_stroke_width(0.5).stroke_rect(map.inflate(0.5));
     }
 }
+
+/// Scenery mode's tile grid: a line every meter over a precinct, with a heavier border, at the
+/// current tier's height, so it shows both where walls snap and which tier the tools are on. Over
+/// the precinct under the pointer, kept while the pointer is off every precinct. Hidden while
+/// `None`, or turned off in the Show menu.
+#[derive(Component, Reflect, Clone, PartialEq, Default)]
+#[reflect(Component)]
+pub struct TileGrid(Option<(IVec2, f32)>);
+
+impl OverlayShape for TileGrid {
+    fn draw(&self, builder: &mut ShapeBuilder) {
+        let Some((coords, height)) = self.0 else {
+            return;
+        };
+        let min = coords.as_vec2() * PRECINCT_SIZE as f32;
+        let precinct = Rect::from_corners(min, min + Vec2::splat(PRECINCT_SIZE as f32));
+        builder
+            .with_draw_plane(DrawPlane::XZ)
+            .with_offset(height + TILE_GRID_LIFT);
+        builder.with_stroke_width(0.03).grid(precinct, 1.0);
+        builder.with_stroke_width(0.15).stroke_rect(precinct);
+    }
+}
+
+/// How far above its tier the tile grid is drawn, so its depth does not tie with a floor's.
+const TILE_GRID_LIFT: f32 = 0.005;
 
 /// The selected parcel's contour: its heights at every meter, as the terrain tools edit them,
 /// before the ground smooths them. Empty while no parcel is selected.
@@ -181,6 +212,14 @@ pub struct ModeOverlaysPlugin;
 impl Plugin for ModeOverlaysPlugin {
     fn build(&self, app: &mut App) {
         app.add_overlay::<RealmGrid>()
+            .add_overlay::<TileGrid>()
+            .add_systems(OnEnter(EditorMode::Scenery), spawn_tile_grid)
+            .add_systems(
+                Update,
+                update_tile_grid
+                    .after(SceneryPointerSystems)
+                    .run_if(in_state(EditorMode::Scenery)),
+            )
             .add_systems(
                 OnEnter(EditorMode::Realm),
                 spawn_realm_grid(EditorMode::Realm),
@@ -244,6 +283,47 @@ fn update_realm_grid(
             parcels,
             parcels_only,
         });
+        propagate.set_if_neq(Propagate(layer.clone()));
+    }
+}
+
+fn spawn_tile_grid(mut commands: Commands) {
+    commands.spawn((
+        Name::new("TileGrid"),
+        TileGrid::default(),
+        OverlayColor {
+            base: css::LIGHT_STEEL_BLUE.with_alpha(0.35).into(),
+            underlay: 0.3,
+        },
+        Propagate(RenderLayers::none()),
+        Transform::default(),
+        Visibility::default(),
+        DespawnOnExit(EditorMode::Scenery),
+    ));
+}
+
+/// Follows the precinct under the pointer, the tier, the view's realm and the Show menu.
+fn update_tile_grid(
+    pointer: Res<SceneryPointer>,
+    tier: Res<SceneryTier>,
+    views: Res<DebugViews>,
+    viewpoint: Res<Viewpoint>,
+    realms: Query<&Realm>,
+    mut grids: Query<(&mut TileGrid, &mut Propagate<RenderLayers>)>,
+) {
+    let layer = viewpoint
+        .realm
+        .and_then(|e| realms.get(e).ok())
+        .map_or(RenderLayers::none(), |r| r.layer.clone());
+    for (mut grid, mut propagate) in &mut grids {
+        let coords = pointer
+            .precinct
+            .map(|(_, coords)| coords)
+            .or(grid.0.map(|(coords, _)| coords));
+        let shown = coords
+            .filter(|_| views.tile_grid)
+            .map(|coords| (coords, tier.height()));
+        grid.set_if_neq(TileGrid(shown));
         propagate.set_if_neq(Propagate(layer.clone()));
     }
 }

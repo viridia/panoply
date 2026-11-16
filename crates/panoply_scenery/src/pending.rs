@@ -21,7 +21,7 @@ use crate::{
 /// Scenery work still to do: precinct assets loading, precincts, elements and floors not yet
 /// built, and element scenes waiting for their frame budget. For readiness checks, such as the
 /// editor's `ViewReady` and actors' footprints, and the readiness survey. A precinct with no file
-/// fails to load, and counts as done (X34).
+/// fails to load, and counts as done (PAN100).
 #[derive(SystemParam)]
 pub struct SceneryPending<'w, 's> {
     server: Res<'w, AssetServer>,

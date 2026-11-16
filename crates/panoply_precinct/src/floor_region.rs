@@ -8,8 +8,8 @@ use serde::{
 /// Serialized schema for a floor region.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct FloorRegionSer {
-    /// Index into archetypes table
-    #[serde(alias = "type")]
+    /// Index into archetypes table, `type` in the file, as faery named it.
+    #[serde(rename = "type", alias = "surface_index")]
     pub surface_index: usize,
 
     /// List of 2d polygonal vertices.
@@ -19,7 +19,7 @@ pub struct FloorRegionSer {
     )]
     pub poly: Vec<Vec2>,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub holes: Vec<Vec<Vec2>>,
 }
 

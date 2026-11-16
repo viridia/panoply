@@ -365,6 +365,11 @@ impl ShapeBuilder {
     }
 
     /// Writes the shapes into `mesh`, replacing what it held.
+    /// Whether nothing has been drawn.
+    pub fn is_empty(&self) -> bool {
+        self.indices.is_empty()
+    }
+
     pub fn build(self, mesh: &mut Mesh) {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices);
         mesh.insert_indices(Indices::U32(self.indices));

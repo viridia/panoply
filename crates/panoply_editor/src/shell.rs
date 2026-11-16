@@ -457,6 +457,8 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
                                         }
                                         views.physics_groups = groups.bits();
                                     });
+                                checkbox(ui.ch_id("tile_grid"), "Tile grid")
+                                    .checked(&mut views.tile_grid);
                             });
                     });
             });

@@ -39,7 +39,11 @@ impl Clone for ExemplarData {
             meta_type: self.meta_type,
             display_name: self.display_name.clone(),
             alias: self.alias.clone(),
-            aspects: self.aspects.iter().map(|aspect| aspect.clone_boxed()).collect(),
+            aspects: self
+                .aspects
+                .iter()
+                .map(|aspect| aspect.clone_boxed())
+                .collect(),
             extends: self.extends.clone(),
             is_abstract: self.is_abstract,
             formulas: self.formulas.clone(),
@@ -61,7 +65,11 @@ impl Exemplar {
         id: AssetId<Exemplar>,
         change: impl FnOnce(&mut ExemplarData) -> Result<R, BevyError>,
     ) -> Result<R, BevyError> {
-        let old = exemplars.get(id).ok_or("the exemplar is not loaded")?.0.clone();
+        let old = exemplars
+            .get(id)
+            .ok_or("the exemplar is not loaded")?
+            .0
+            .clone();
         let mut data = (*old).clone();
         let result = change(&mut data)?;
         let new = Arc::new(data);
@@ -124,6 +132,27 @@ impl Exemplar {
                 .and_then(|handle| exemplars.get(handle));
         }
         None
+    }
+
+    /// Whether an instance of `exemplar` would get an aspect that has state
+    /// ([`Aspect::has_state`](crate::Aspect::has_state)), from it or along its chain.
+    pub fn has_state(exemplars: &Assets<Exemplar>, exemplar: AssetId<Exemplar>) -> bool {
+        let mut next = exemplars.get(exemplar);
+        // A chain longer than there are exemplars has a cycle.
+        for _ in 0..=exemplars.len() {
+            let Some(exemplar) = next else {
+                return false;
+            };
+            if exemplar.0.aspects.iter().any(|aspect| aspect.has_state()) {
+                return true;
+            }
+            next = exemplar
+                .0
+                .extends
+                .as_ref()
+                .and_then(|handle| exemplars.get(handle));
+        }
+        false
     }
 
     /// Whether an instance of `exemplar` would get the aspect whose type is `aspect`, from it or
@@ -249,6 +278,10 @@ mod tests {
         assert!(Exemplar::chain_contains(&exemplars, child.id(), base.id()));
         assert!(Exemplar::chain_contains(&exemplars, child.id(), child.id()));
         assert!(!Exemplar::chain_contains(&exemplars, base.id(), child.id()));
-        assert!(!Exemplar::chain_contains(&exemplars, child.id(), other.id()));
+        assert!(!Exemplar::chain_contains(
+            &exemplars,
+            child.id(),
+            other.id()
+        ));
     }
 }

@@ -103,7 +103,9 @@ impl UndoStack {
     /// The name of the latest edit, which undo would reverse.
     #[cfg(test)]
     pub fn latest_label(&self) -> Option<String> {
-        self.undo.last().map(|entry| entry.action.label().into_owned())
+        self.undo
+            .last()
+            .map(|entry| entry.action.label().into_owned())
     }
 }
 
