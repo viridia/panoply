@@ -113,8 +113,9 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   after the next save, the barrier took it for that save's reload, and the real one then overwrote
   the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
   catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
-  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative, worth
-  an issue: the asset server skipping the reload of a file it wrote through its own `AssetWriter`.
+  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
+  asset server skipping the reload of a file it wrote through its own `AssetWriter`
+  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
 - **PAN74 Floors as exemplars** (D79). The floor types (`scenery/floors/*.floor.ron`,
   `FloorSurface`) move into a catalog as exemplars of a floor type, their `material` enum an aspect.
   Precincts' `floor_surfaces` name them as exemplars, rewritten, and `asset_xref.py` checks them as
