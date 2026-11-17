@@ -1,6 +1,0 @@
-FloorSurface(
-    material: Standard(
-        texture: Some("textures/carpet-square-black.png")
-    ),
-    raise: 0.02
-)

@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     world_serialization::{WorldAssetRoot, WorldInstanceReady},
 };
-use panoply_exemplar::{Exemplar, ExemplarServer};
+use panoply_exemplar::{CatalogServer, Exemplar};
 
 use super::{
     actor_aspect::WieldedItems,
@@ -58,7 +58,7 @@ pub fn spawn_wielded_items(
 pub fn attach_wielded_items(
     mut commands: Commands,
     mut query: Query<(Entity, &mut WieldedItem, &ChildOf), Without<WorldAssetRoot>>,
-    mut exemplar_server: ExemplarServer,
+    mut exemplar_server: CatalogServer,
     exemplars: Res<Assets<Exemplar>>,
     server: Res<AssetServer>,
     gltfs: Res<Assets<Gltf>>,
@@ -68,7 +68,7 @@ pub fn attach_wielded_items(
 ) {
     for (entity, mut wielded, actor) in query.iter_mut() {
         if wielded.model.is_none() {
-            let Some(exemplar) = exemplar_server.get(&wielded.item) else {
+            let Some(exemplar) = exemplar_server.get::<Exemplar>(&wielded.item) else {
                 continue;
             };
             if !exemplars.contains(&exemplar) {

@@ -1,6 +1,6 @@
 use crate::{
     floor_region::{FloorRegion, RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
-    floor_surface::FloorSurface,
+    floor_surface::{FloorMaterialHandle, FloorMaterials, FloorSurface},
     precinct::Precinct,
     FloorOutline, FLOOR_THICKNESS, PHYSICS_FLOOR_THICKNESS, TIER_OFFSET,
 };
@@ -158,35 +158,30 @@ pub(crate) fn insert_floor_meshes(
     }
 }
 
+/// Gives each marked floor region its floor type's material, once the material is built.
 pub(crate) fn rebuild_floor_materials(
     mut commands: Commands,
     query: Query<(Entity, &FloorRegion), With<RebuildFloorMaterials>>,
-    mut std_materials: ResMut<Assets<StandardMaterial>>,
-    surfaces: Res<Assets<FloorSurface>>,
+    materials: Res<FloorMaterials>,
 ) {
     for (entity, region) in query.iter() {
-        let Some(surface) = surfaces.get(&region.surface) else {
+        let Some(material) = materials.get(region.surface.id()) else {
             continue;
         };
         let mut floor = commands.entity(entity);
         floor.remove::<RebuildFloorMaterials>();
         // An entity must not carry two materials (Notes, Bevy 0.20 issues), so remove the other.
-        if let Some(ref noisy_material) = surface.material_noisy {
-            floor
-                .remove::<MeshMaterial3d<StandardMaterial>>()
-                .insert(MeshMaterial3d(noisy_material.clone()));
-        } else {
-            let std_material = surface.material_std.clone().unwrap_or_else(|| {
-                // Debug surface.
-                std_materials.add(StandardMaterial {
-                    base_color: Srgba::rgb(1.0, 0.0, 0.0).into(),
-                    unlit: true,
-                    ..Default::default()
-                })
-            });
-            floor
-                .remove::<MeshMaterial3d<FloorNoisyMaterial>>()
-                .insert(MeshMaterial3d(std_material));
+        match material {
+            FloorMaterialHandle::Noisy(noisy) => {
+                floor
+                    .remove::<MeshMaterial3d<StandardMaterial>>()
+                    .insert(MeshMaterial3d(noisy.clone()));
+            }
+            FloorMaterialHandle::Standard(standard) => {
+                floor
+                    .remove::<MeshMaterial3d<FloorNoisyMaterial>>()
+                    .insert(MeshMaterial3d(standard.clone()));
+            }
         }
     }
 }

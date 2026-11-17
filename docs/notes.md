@@ -155,3 +155,11 @@ calls for work becomes an issue in [issues.md](issues.md).
   embedded, and each move then costs about 2.5 ms (release; 0.1 ms on the surface) and moves
   nothing, whatever the fall speed: a capsule 0.4 m into a flat 64×64-cell parcel mesh, timed over
   200 moves. Actors whose ground stays missing loop through R27's put-back, falling 2 m and back.
+- Reflection's deserializer loses data silently in one case (locked Bevy a35f1b5, PAN74a). It
+  converts each value to its concrete type through `FromReflect` as it goes (`deserializer.rs`). A
+  struct variant's derived `FromReflect` treats every field as required unless the field is
+  `#[reflect(default)]` (`enum_utility.rs`), so a variant missing one, as a file leaving out an
+  `Option`, does not convert. A struct with `#[reflect(Default)]` then keeps its default for any
+  field that does not convert, so the whole enum falls back to its default, the fields the file did
+  give included: every textured floor drew white. Recipe: mark a variant's optional fields
+  `#[reflect(default)]`; a test reading the real files catches it (`floor_surface.rs`).

@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use bevy::prelude::*;
-use floor_surface::{FloorSurface, FloorSurfaceLoader};
-use panoply_exemplar::{InstanceType, InteractionAppExt, ScriptComponentAppExt};
+use floor_surface::{build_floor_materials, FloorMaterials};
+use panoply_exemplar::{CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::spawn_precincts;
@@ -33,6 +33,8 @@ mod floor_mesh;
 pub mod floor_region;
 mod floor_surface;
 mod lock_aspect;
+
+pub use floor_surface::{FloorMaterial, FloorSurface};
 mod pending;
 pub mod precinct;
 mod precinct_cache;
@@ -68,9 +70,9 @@ impl Plugin for PanoplySceneryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PrecinctCache::new())
             .init_asset_loader::<PrecinctAssetLoader>()
-            .init_asset_loader::<FloorSurfaceLoader>()
             .init_asset::<PrecinctAsset>()
-            .init_asset::<FloorSurface>()
+            .register_catalog_entry::<FloorSurface>()
+            .init_resource::<FloorMaterials>()
             .init_resource::<FloorOutline>()
             .register_type::<SceneryModels>()
             .register_type::<SceneryColliders>()
@@ -127,7 +129,8 @@ impl Plugin for PanoplySceneryPlugin {
                         .after(spawn_precincts),
                     // These poll resource handles so won't run in the same frame anyway
                     insert_floor_meshes,
-                    rebuild_floor_materials,
+                    build_floor_materials,
+                    rebuild_floor_materials.after(build_floor_materials),
                     spawn_se_model_instances,
                 ),
             );

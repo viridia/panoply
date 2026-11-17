@@ -437,12 +437,6 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "base64"
-version = "0.21.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
-
-[[package]]
-name = "base64"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
@@ -552,7 +546,7 @@ dependencies = [
  "downcast-rs 2.0.2",
  "either",
  "petgraph",
- "ron 0.12.2",
+ "ron",
  "serde",
  "smallvec",
  "thiserror 2.0.21",
@@ -651,7 +645,7 @@ dependencies = [
  "futures-util",
  "js-sys",
  "notify-debouncer-full",
- "ron 0.12.2",
+ "ron",
  "serde",
  "stackfuture",
  "thiserror 2.0.21",
@@ -836,7 +830,7 @@ dependencies = [
  "bevy_utils",
  "bevy_window",
  "bevy_world_serialization",
- "ron 0.12.2",
+ "ron",
  "serde",
  "serde_json",
  "strsim",
@@ -1073,7 +1067,7 @@ version = "0.20.0-dev"
 source = "git+https://github.com/bevyengine/bevy.git?branch=main#a35f1b512b09d4f0ad3ded3d4e360bf75f0677d6"
 dependencies = [
  "async-lock",
- "base64 0.23.1",
+ "base64",
  "bevy_animation",
  "bevy_app",
  "bevy_asset",
@@ -2112,7 +2106,7 @@ dependencies = [
  "bevy_transform",
  "bevy_utils",
  "derive_more",
- "ron 0.12.2",
+ "ron",
  "serde",
  "thiserror 2.0.21",
  "uuid",
@@ -4908,10 +4902,10 @@ dependencies = [
  "panoply_exemplar",
  "panoply_precinct",
  "panoply_render",
+ "panoply_saga",
  "panoply_terrain",
  "rapier3d",
  "rmp-serde",
- "ron 0.8.1",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -5454,18 +5448,6 @@ dependencies = [
  "num-rational",
  "thiserror 2.0.21",
  "tracing",
-]
-
-[[package]]
-name = "ron"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b91f7eff05f748767f183df4320a63d6936e9c6107d97c9e6bdd9784f4289c94"
-dependencies = [
- "base64 0.21.7",
- "bitflags 2.13.2",
- "serde",
- "serde_derive",
 ]
 
 [[package]]

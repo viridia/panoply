@@ -23,7 +23,8 @@ impl<'de> Deserialize<'de> for HexColor {
         D: serde::Deserializer<'de>,
     {
         let hex = String::deserialize(deserializer)?;
-        let color = Srgba::hex(hex).unwrap();
+        let color = Srgba::hex(&hex)
+            .map_err(|err| serde::de::Error::custom(format!("bad color {hex:?}: {err}")))?;
         Ok(HexColor(color))
     }
 }

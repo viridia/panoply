@@ -124,6 +124,9 @@ LOCATIONS = ASSETS / "world.locations.json"
 CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
 FURNISHINGS = ASSETS / "exemplars" / "furnishings.exem.json"
 WALL_TILES = ASSETS / "exemplars" / "wall-tiles.exem.json"
+FLOORS = ASSETS / "catalog" / "floors.floor.json"
+# Inside the playground's precinct (0, 0), among its floors.
+FLOORS_SPOT = [8.0, 0.0, 8.0]
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 
@@ -326,6 +329,7 @@ def scenery_panel(driver):
     wait_mode(driver, editor_mode, "Scenery")
     driver.present("SceneryPanel")
     assert scenery_tool(driver) == "PlaceFloor", f"started with {scenery_tool(driver)}"
+    floor_entries(driver)
     driver.click("PlaceWall")
     wait_mode(driver, scenery_tool, "PlaceWall")
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
@@ -379,6 +383,36 @@ def scenery_panel(driver):
     # The row highlights, then scrolls into view after a layout pass.
     driver.frames(10)
     driver.screenshot("scenery_choice_kept")
+
+
+def floor_entries(driver):
+    """The floor tool lists the floors, catalog entries, and the chosen one's fields show below the
+    list, in a pane with no aspects button. Raising a floor type rebuilds the floors of that type at
+    the playground's origin, undoably, and Save writes the edit into that entry alone."""
+    driver.goto(FLOORS_SPOT, 15.0)
+    driver.present("Exemplars/MossyPaversBordered", timeout=WAIT)
+    driver.present("Exemplars/WoodWalnut")
+    driver.absent("Exemplars/CottageWall")
+    choose(driver, "floor", "MossyPaversBordered")
+    raise_input = "Properties/raise/input"
+    driver.expect(raise_input, NUMERIC, {"F64": 0.0})
+    driver.absent("PaneHeader/aspects")
+    driver.screenshot("floor_entry")
+    retype(driver, raise_input, "0.5")
+    driver.key("Enter")
+    driver.expect(raise_input, NUMERIC, {"F64": 0.5})
+    driver.frames(10)
+    driver.screenshot("floor_raised")
+    row = "Exemplars/MossyPaversBordered"
+    driver.click(row)
+    undo(driver)
+    driver.expect("Toast/ToastText", TEXT, "Undo: Set MossyPaversBordered.raise")
+    driver.expect(raise_input, NUMERIC, {"F64": 0.0})
+    undo(driver, redo=True)
+    driver.expect(raise_input, NUMERIC, {"F64": 0.5})
+    saved_diff(driver, FLOORS, row, ["-    }", "+    },", '+    "raise": 0.5'])
+    driver.click("Exemplars/ClearFilter")
+    driver.goto(SPOT, 20.0)
 
 
 def wall_tool(driver):
@@ -915,7 +949,7 @@ def aspect_property(driver):
     driver.expect("Toast/ToastText", TEXT, "Undo: Remove FeralDogAlpha.ActorScale")
     driver.present(scale)
 
-    driver.click("ExemplarHeader/aspects")
+    driver.click("PaneHeader/aspects")
     driver.present("AspectChooser")
     expect_checked(driver, "AspectChooser/ActorScale", True)
     expect_checked(driver, "AspectChooser/WieldedItems", False)

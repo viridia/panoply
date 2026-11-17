@@ -20,7 +20,7 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::NavPointsAsset;
-use panoply_exemplar::{Exemplar, ExemplarCatalog};
+use panoply_exemplar::{CatalogEntry, EntryCatalog, Exemplar, ExemplarCatalog};
 use panoply_precinct::PrecinctAsset;
 use panoply_terrain::TerrainMapAsset;
 
@@ -110,6 +110,19 @@ impl SaveableAsset for ExemplarCatalog {
             world.resource::<Assets<Exemplar>>(),
             &world.resource::<AppTypeRegistry>().read(),
             world.resource::<AssetServer>(),
+        )?;
+        Ok(to_asset_json(&json)?.into_bytes())
+    }
+}
+
+/// The file of catalog entries as it is, with its edits written in (`EntryCatalog::merge_into`).
+impl<T: CatalogEntry> SaveableAsset for EntryCatalog<T> {
+    fn to_bytes(&self, file: &Path, world: &World) -> Result<Vec<u8>, BevyError> {
+        let mut json: serde_json::Value = serde_json::from_slice(&std::fs::read(file)?)?;
+        self.merge_into(
+            &mut json,
+            world.resource::<Assets<T>>(),
+            &world.resource::<AppTypeRegistry>().read(),
         )?;
         Ok(to_asset_json(&json)?.into_bytes())
     }

@@ -140,17 +140,18 @@ mod tests {
         empty: Vec<f32>,
     }
 
-    /// Every exemplar catalog, with its path: `assets/exemplars` and the folders in it.
+    /// Every exemplar catalog and file of catalog entries, with its path: the JSON files in
+    /// `assets/exemplars`, `assets/catalog` and the folders in them.
     fn catalogs() -> Vec<(std::path::PathBuf, String)> {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/exemplars");
-        let mut folders = vec![root];
+        let assets = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let mut folders = vec![assets.join("exemplars"), assets.join("catalog")];
         let mut found = Vec::new();
         while let Some(folder) = folders.pop() {
             for entry in std::fs::read_dir(&folder).unwrap() {
                 let path = entry.unwrap().path();
                 if path.is_dir() {
                     folders.push(path);
-                } else if path.to_string_lossy().ends_with(".exem.json") {
+                } else if path.extension().is_some_and(|extension| extension == "json") {
                     let text = std::fs::read_to_string(&path).unwrap();
                     // An empty file is no catalog.
                     if !text.is_empty() {

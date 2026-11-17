@@ -75,17 +75,25 @@ fn exemplar_json(
     }
     let mut aspects = Map::new();
     for aspect in &exemplar.aspects {
-        let serializer = TypedReflectSerializer::new(aspect.as_partial_reflect(), registry);
-        // Through text: a `Value` holds an `f32` widened to `f64`, which writes 1.2 as
-        // 1.2000000476837158, where text writes an `f32` as its shortest decimal.
-        let text = serde_json::to_string(&serializer)?;
         aspects.insert(
             aspect.reflect_short_type_path().to_string(),
-            serde_json::from_str(&text)?,
+            reflect_json(aspect.as_partial_reflect(), registry)?,
         );
     }
     entry.insert("aspects".into(), aspects.into());
     Ok(entry.into())
+}
+
+/// `value` as JSON, serialized through reflection.
+pub(crate) fn reflect_json(
+    value: &dyn PartialReflect,
+    registry: &TypeRegistry,
+) -> Result<Value, BevyError> {
+    let serializer = TypedReflectSerializer::new(value, registry);
+    // Through text: a `Value` holds an `f32` widened to `f64`, which writes 1.2 as
+    // 1.2000000476837158, where text writes an `f32` as its shortest decimal.
+    let text = serde_json::to_string(&serializer)?;
+    Ok(serde_json::from_str(&text)?)
 }
 
 /// Writes into `original` the changes from `base` to `new`. An object's key that `new` dropped, or

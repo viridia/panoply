@@ -343,10 +343,6 @@ impl Aspect for PortalTarget {
 
 A list of aspects that are planned to be implement in panoply:
 
-- `floor::StdSurface` - floor texture asset
-- `floor::NoiseSurface` - floor procedural texture
-- `floor::Geometry` - floor mesh options
-- `floor::Nav` - pathfinding effects such as footpaths
 - `scenery::Models` - list of glb models to display
 - `scenery::Colliders` - physics colliders
 - `scenery::Marks` - interaction marks

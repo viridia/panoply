@@ -1,6 +1,0 @@
-FloorSurface(
-    material: Standard(
-        texture: Some("textures/brown-marble.png"),
-        roughness: Some(0.35),
-    ),
-)

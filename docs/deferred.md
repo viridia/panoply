@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X117.**
+**Next: X119.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -143,9 +143,8 @@ dropped, not deferred. Numbers are never reused.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
   need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
   optional module whose aspects sit on instances.
-- **X21** Scenery follow-ups, each small: a show set for precincts like D20 (scenery taller than
-  D20's 4 m allowance also needs its own); hot reload of `FloorSurface` assets (floors do not
-  rebuild when one changes). *Gate:* scenery restored; take each when it is needed.
+- **X21** A show set for precincts like D20 (scenery taller than D20's 4 m allowance also needs its
+  own). *Gate:* scenery restored; take it when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
   viewpoint has loaded, so a loading screen or other visual barrier covers the pop-in on entering
   the game. "Loaded" means the precincts in view have no `ReadPrecinctData`, their scenery scenes
@@ -303,9 +302,11 @@ dropped, not deferred. Numbers are never reused.
   *Gate:* a mod needs an aspect that native aspects, formulas and the generic variables aspect
   cannot express.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
-  `Sword` cannot collide; an order for packages that override the same exemplar; what a save keeps
-  of a removed mod's aspects (X20 covers only the editor); and a mod built against an older version
-  of its game's primitives. The model for ids is WESL's imports
+  `Sword` cannot collide; an order for packages that override the same exemplar or catalog entry, an
+  entry's override being a redirect from its reference to the mod's, applied in `CatalogServer`
+  ([modding.md](modding.md), Catalog entries); a mod's files in the editor's lists; what a save
+  keeps of a removed mod's aspects (X20 covers only the editor); and a mod built against an older
+  version of its game's primitives. The model for ids is WESL's imports
   ([spec](https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md)), which Panoply's
   shaders already use: `package::` names the package's own items, any other first segment names a
   dependency declared in its manifest (`wesl.toml`), and visibility (`public`, package, `private`)
@@ -515,15 +516,27 @@ dropped, not deferred. Numbers are never reused.
 - **X115** Catalogs held by their owners: a live precinct holds the catalog roots and behavior
   packages (X17) its tables name, and they unload when it leaves the cache; a global set holds the
   rest: items, generic exemplars, the player, and every NPC that can become a follower (D24), with
-  its packages. Now `ExemplarCatalogs` holds every catalog it loads for good (D27), as one global
-  set. No LRU: every path has an owner, and the precinct cache already keeps a precinct a while
-  after it leaves the view; faery's LRU made up for references with no owner. A root keeps its
-  labels only because its loader stores their handles in it (D27; Bevy drops its own once the load
-  is processed), so a package's loader must do the same. First measure the memory a catalog holds
-  and the hitch of loading one. *Gate:* the first regional behavior packages (Marheim's).
+  its packages. Now `CatalogRoots` holds every catalog it loads for good (D27), as one global set.
+  No LRU: every path has an owner, and the precinct cache already keeps a precinct a while after it
+  leaves the view; faery's LRU made up for references with no owner. A root keeps its labels only
+  because its loader stores their handles in it (D27; Bevy drops its own once the load is
+  processed), so a package's loader must do the same. First measure the memory a catalog holds and
+  the hitch of loading one. *Gate:* the first regional behavior packages (Marheim's).
 - **X116** Editing a patrol path's points in the world (PAN102), as Blender edits a curve's: while
   the path is selected, a handle at each point, dragged across the ground with PAN96's cast; points
   added and removed in the property editor's list until then. Beside it, faery's button by a
   world-location field (`WaypointFieldEditor.tsx`, `PlaceWaypointTool.ts`), which sets the field by
   a click on the map, converted into the fixture's frame; handles may leave it only fields no
   fixture owns, such as an actor's home. *Gate:* a goal that follows a path (R21, R43).
+- **X117** Regional bundles: one file per region holding catalog entries of several kinds, as faery
+  grouped its catalogs ([faery.md](faery.md), Catalog entries), holding the same typed entries, so
+  `file#Label` references and entry types stay as D91 has them. Open: whether a bundle marks each
+  entry's kind by a section per kind or a `type` field per entry. The need may go: a text format for
+  dialogues and remarks ([Exemplars.md](Exemplars.md), Dialogue text), and spawn and loot tables as
+  SAGA functions over imported exemplars (X118). *Gate:* the first regional kind.
+- **X118** Assets imported into SAGA by name (`use exemplars::items::{WolfPelt}`), each a typed
+  constant of a host type: an exemplar's handle as `Exemplar`, an entry's as its own type. The host
+  resolves an import as the script compiles, the handle held as a loader dependency, and it is
+  checked once its catalog loads: a missing label, or an exemplar of the wrong instance type for the
+  function given it. A spawn or loot table could then be a function rather than data with paths
+  written as strings. Shares X65's id scheme. *Gate:* the first spawn or loot table.

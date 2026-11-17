@@ -24,7 +24,7 @@ use bevy_immediate::{
 };
 
 use crate::{
-    exemplar_list::{exemplar_chooser, placed_type, SceneryChoices},
+    exemplar_list::{has_list, tool_chooser, SceneryChoices},
     mode_selector::{EditorModeSettings, SceneryTool},
     scenery_pointer::{step_tier, SceneryTier},
     scenery_properties::SceneryProperties,
@@ -301,15 +301,15 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
     type Params = SceneryExemplarsParams<'static>;
 
     /// The chosen tool's chooser, keyed by the tool, so choosing another replaces it; none for a
-    /// tool that places no exemplars.
+    /// tool that has no list.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut SceneryExemplarsParams) {
         let tool = params.settings.scenery_tool;
-        if placed_type(tool).is_none() {
+        if !has_list(tool) {
             return;
         }
         let selected = params.choices.choice(tool);
         ui.ch_id(tool)
-            .on_spawn_apply_scene(move || exemplar_chooser(tool, selected.clone()));
+            .on_spawn_apply_scene(move || tool_chooser(tool, selected.clone()));
     }
 }
 

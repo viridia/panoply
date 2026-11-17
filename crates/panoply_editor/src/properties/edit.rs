@@ -67,6 +67,12 @@ pub trait PropertyRoot: Reflect {
     /// The value's name in the panel and in the undo history, as "SceneryColliders".
     fn caption(&self) -> String;
 
+    /// What kind of thing the value is, as a pane holding it names it before its caption
+    /// ("Floor: Slate"); empty for a value no pane holds, as an aspect.
+    fn kind(&self) -> String {
+        String::new()
+    }
+
     /// A key naming the value, the same for the same value across reloads, never an `Entity`.
     fn key(&self) -> String;
 

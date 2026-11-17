@@ -34,7 +34,7 @@ use panoply_exemplar::{Aspect, Exemplar, ExemplarData};
 use crate::{
     aspect_chooser::open_aspect_chooser,
     chooser::{chooser_dialog, ItemChosen},
-    exemplar_list::{chosen_exemplar, named_exemplars, SceneryChoices},
+    exemplar_list::{chosen_exemplar, named_exemplars, placed_entry, SceneryChoices},
     mode_selector::{EditorModeSettings, SceneryTool},
     properties::{
         edit::{
@@ -163,6 +163,10 @@ impl PropertyRoot for ExemplarRoot {
         self.name.clone()
     }
 
+    fn kind(&self) -> String {
+        self.kind.to_string()
+    }
+
     fn key(&self) -> String {
         self.exemplar.to_string()
     }
@@ -259,7 +263,8 @@ fn kind(tool: SceneryTool) -> &'static str {
     }
 }
 
-/// Inspects the own aspects of the exemplar chosen in the current tool's list, if any.
+/// Inspects the own aspects of the exemplar chosen in the current tool's list, if any. A tool that
+/// places catalog entries is `catalog_entries`'.
 fn inspect_chosen_exemplar(
     settings: Res<EditorModeSettings>,
     choices: Res<SceneryChoices>,
@@ -268,6 +273,9 @@ fn inspect_chosen_exemplar(
     mut inspected: ResMut<InspectedRoots>,
 ) {
     let tool = settings.scenery_tool;
+    if placed_entry(tool).is_some() {
+        return;
+    }
     let chosen = choices.choice(tool).and_then(|name| {
         let id = chosen_exemplar(&server, &exemplars, tool, &name)?;
         Some((name, id))
@@ -314,9 +322,9 @@ pub(crate) struct SceneryPropertiesParams<'w> {
 impl ImmediateAttach<CapsPanel> for SceneryProperties {
     type Params = SceneryPropertiesParams<'static>;
 
-    /// A pane for the exemplar, the first value, filling the panel's last row: its header fixed,
-    /// and its body scrolling, holding the exemplar's own fields' rows, then a subpane per aspect,
-    /// the rest. The exemplar holds its aspects.
+    /// A pane for the first value, an exemplar or a catalog entry, filling the panel's last row:
+    /// its header fixed, and its body scrolling, holding its own fields' rows, then, for an
+    /// exemplar, a subpane per aspect, the rest. The exemplar holds its aspects.
     fn construct(ui: &mut Imm<CapsPanel>, params: &mut SceneryPropertiesParams) {
         let edits = params.edits.as_mut();
         let collapsed = params.collapsed.as_mut();
@@ -325,11 +333,12 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
             return;
         };
         let (exemplar, fields) = (&first.root, &first.value);
-        let Some(root) = (exemplar.as_ref() as &dyn Any).downcast_ref::<ExemplarRoot>() else {
-            return;
-        };
-        let kind = format!("{}:", root.kind);
-        let name = &root.name;
+        let kind = format!("{}:", exemplar.kind());
+        let name = &exemplar.caption();
+        let holder: &dyn Reflect = exemplar.as_ref();
+        let holds_aspects = registry
+            .get_type_data::<ReflectAspectHolder>(Any::type_id(holder))
+            .is_some();
         ui.ch_id("pane")
             .on_spawn_apply_scene(|| bsn! { @pane() Node { flex_grow: 1.0, min_height: px(0) } })
             .add(|ui| {
@@ -337,7 +346,7 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                 // adds its absent fields and the button that opens the aspects chooser.
                 ui.ch()
                     .on_spawn_apply_scene(pane_header)
-                    .on_spawn_insert(|| Name::new("ExemplarHeader"))
+                    .on_spawn_insert(|| Name::new("PaneHeader"))
                     .add(|ui| {
                         ui.ch()
                             .on_spawn_insert(|| Node {
@@ -363,7 +372,9 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
                         });
                         let fields = fields.as_ref();
                         root_add_menu(ui, exemplar, fields, &registry, edits, collapsed);
-                        if icon_button(ui, "aspects", ASPECTS_ICON, px(18), tokens::TEXT_MAIN) {
+                        if holds_aspects
+                            && icon_button(ui, "aspects", ASPECTS_ICON, px(18), tokens::TEXT_MAIN)
+                        {
                             let root = exemplar.clone();
                             ui.commands_mut()
                                 .run_system_cached_with(open_aspect_chooser, root);

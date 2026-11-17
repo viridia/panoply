@@ -29,6 +29,16 @@ exemplars through `extends` (D27). It cannot add systems, rendering, widgets or 
 scripts. SAGA has no file or network access, so a mod is sandboxed by construction. Panoply is not a
 general-purpose engine: even the Creation Kit's scope is more than it aims for.
 
+## Catalog entries
+
+A catalog entry (D90), a floor or a quest, has no prototype, so a mod replaces one whole, never
+patches it. If each mod is an asset source of its own, a zip read as a filesystem, its entry's path
+is `mymod://…`, never the replaced entry's, so an override is a redirect from the base reference to
+the mod's, applied where references resolve, in `CatalogServer` (D27). A source layered over the
+default one would shadow whole files, not entries. A path inside an entry, a floor's texture, names
+the default source unless it says otherwise, so a mod names its own files with its source
+(`mymod://textures/…`). The order of packages that override the same entry is X65's.
+
 ## Where logic lives
 
 - **Centralized**, as in Bethesda's Creation Kit: Papyrus scripts are source files of functions and

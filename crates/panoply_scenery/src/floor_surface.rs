@@ -1,60 +1,81 @@
+//! Floor types, catalog entries (`*.floor.json`, D90). An entry is data; its material is built
+//! here as it loads or changes, so an edit or a reload shows at once.
+
 use bevy::{
-    asset::AssetLoader,
+    annotations::DisplayName,
     image::{
         ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
         ImageSamplerDescriptor,
     },
     pbr::ExtendedMaterial,
+    platform::collections::HashMap,
     prelude::*,
 };
-use ron::de::from_bytes;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-
+use panoply_core::HexColor;
+use panoply_exemplar::CatalogEntry;
 use panoply_render::{FloorNoisyMaterial, FloorNoisyMaterialExt};
 
-#[derive(TypePath, Asset, Serialize, Deserialize, Debug, Default, Clone)]
+use crate::floor_region::{FloorRegion, RebuildFloorMaterials, RebuildFloorMesh};
+
+/// A floor type: how a floor region looks, and the shape of its slab.
+#[derive(Asset, Reflect, Clone, Debug)]
+#[reflect(Default, @DisplayName("Floor"))]
 pub struct FloorSurface {
+    #[reflect(@DisplayName("Material"))]
     pub material: FloorMaterial,
-    // nav
-    #[serde(default)]
+    /// How far the top is above the tier's level, as a carpet is.
+    #[reflect(@DisplayName("Raise"))]
     pub raise: f32,
-
-    #[serde(default = "default_sides")]
+    /// Whether the slab's sides are drawn.
+    #[reflect(@DisplayName("Sides"))]
     pub sides: bool,
-
-    #[serde(skip)]
-    pub material_std: Option<Handle<StandardMaterial>>,
-
-    #[serde(skip)]
-    pub material_noisy: Option<Handle<FloorNoisyMaterial>>,
 }
 
-fn default_sides() -> bool {
-    true
+impl Default for FloorSurface {
+    fn default() -> Self {
+        Self {
+            material: FloorMaterial::default(),
+            raise: 0.,
+            sides: true,
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+impl CatalogEntry for FloorSurface {
+    const EXTENSION: &'static str = "floor.json";
+}
+
+/// How a floor is drawn. A variant's fields that a file may leave out are `#[reflect(default)]`:
+/// without it, a variant missing one does not convert, and the floor's material falls back to the
+/// default whole.
+#[derive(Reflect, Clone, Debug)]
+#[reflect(Default)]
 pub enum FloorMaterial {
+    /// Lit, with an optional texture tiled once a meter.
     Standard {
-        #[serde(default)]
+        /// The texture's path from the assets folder.
+        #[reflect(default, @DisplayName("Texture"))]
         texture: Option<String>,
-        #[serde(default, with = "panoply_exemplar::ser::hex_color_opt")]
-        color: Option<Srgba>,
+        #[reflect(default, @DisplayName("Color"))]
+        color: Option<HexColor>,
+        #[reflect(default, @DisplayName("Roughness"))]
         roughness: Option<f32>,
     },
+    /// One color, unlit.
     Unlit {
-        #[serde(with = "panoply_exemplar::ser::hex_color")]
-        color: Srgba,
+        #[reflect(@DisplayName("Color"))]
+        color: HexColor,
     },
+    /// Two colors and roughnesses mixed by tiled noise.
     Noise {
-        #[serde(with = "panoply_exemplar::ser::hex_color")]
-        color: Srgba,
-        #[serde(with = "panoply_exemplar::ser::hex_color")]
-        color_alt: Srgba,
+        #[reflect(@DisplayName("Color"))]
+        color: HexColor,
+        #[reflect(@DisplayName("Second color"))]
+        color_alt: HexColor,
+        #[reflect(@DisplayName("Roughness"))]
         roughness: f32,
+        #[reflect(@DisplayName("Second roughness"))]
         roughness_alt: f32,
-        // scale: f32,
     },
 }
 
@@ -68,43 +89,78 @@ impl Default for FloorMaterial {
     }
 }
 
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum FloorSurfaceError {
-    #[error("Could not load terrain map: {0}")]
-    Io(#[from] std::io::Error),
-    /// A [RON Error](serde_ron::error::SpannedError)
-    #[error("Could not parse RON: {0}")]
-    RonError(#[from] ron::error::SpannedError),
+/// A floor type's material, of whichever kind it is.
+#[derive(Clone)]
+pub enum FloorMaterialHandle {
+    Standard(Handle<StandardMaterial>),
+    Noisy(Handle<FloorNoisyMaterial>),
 }
 
-#[derive(Default, TypePath)]
-pub struct FloorSurfaceLoader;
+/// Each loaded floor type's material.
+#[derive(Resource, Default)]
+pub struct FloorMaterials(HashMap<AssetId<FloorSurface>, FloorMaterialHandle>);
 
-impl AssetLoader for FloorSurfaceLoader {
-    type Asset = FloorSurface;
-    type Settings = ();
-    type Error = FloorSurfaceError;
+impl FloorMaterials {
+    pub fn get(&self, surface: AssetId<FloorSurface>) -> Option<&FloorMaterialHandle> {
+        self.0.get(&surface)
+    }
+}
 
-    async fn load(
+/// Builds the material of each floor type that loaded or changed, and has the floors of a changed
+/// one rebuilt: their material, and their slab, whose `raise` and `sides` may have changed.
+pub(crate) fn build_floor_materials(
+    mut events: MessageReader<AssetEvent<FloorSurface>>,
+    surfaces: Res<Assets<FloorSurface>>,
+    mut materials: ResMut<FloorMaterials>,
+    mut std_materials: ResMut<Assets<StandardMaterial>>,
+    mut noisy_materials: ResMut<Assets<FloorNoisyMaterial>>,
+    server: Res<AssetServer>,
+    regions: Query<(Entity, &FloorRegion)>,
+    mut commands: Commands,
+) {
+    for event in events.read() {
+        match *event {
+            AssetEvent::Added { id } | AssetEvent::Modified { id } => {
+                let Some(surface) = surfaces.get(id) else {
+                    continue;
+                };
+                let material = surface.material.build(
+                    &server,
+                    &mut std_materials,
+                    &mut noisy_materials,
+                );
+                materials.0.insert(id, material);
+                if matches!(event, AssetEvent::Modified { .. }) {
+                    for (entity, _) in regions.iter().filter(|(_, r)| r.surface.id() == id) {
+                        commands
+                            .entity(entity)
+                            .insert((RebuildFloorMaterials, RebuildFloorMesh));
+                    }
+                }
+            }
+            AssetEvent::Removed { id } | AssetEvent::Unused { id } => {
+                materials.0.remove(&id);
+            }
+            AssetEvent::LoadedWithDependencies { .. } => {}
+        }
+    }
+}
+
+impl FloorMaterial {
+    fn build(
         &self,
-        reader: &mut dyn bevy::asset::io::Reader,
-        _settings: &Self::Settings,
-        load_context: &mut bevy::asset::LoadContext<'_>,
-    ) -> Result<Self::Asset, Self::Error> {
-        // Deserialize from RON
-        let mut bytes = Vec::new();
-        reader.read_to_end(&mut bytes).await?;
-        let mut asset = from_bytes::<Self::Asset>(&bytes)?;
-
-        match asset.material {
+        server: &AssetServer,
+        std_materials: &mut Assets<StandardMaterial>,
+        noisy_materials: &mut Assets<FloorNoisyMaterial>,
+    ) -> FloorMaterialHandle {
+        match self {
             FloorMaterial::Standard {
-                ref texture,
+                texture,
                 color,
                 roughness,
             } => {
-                let texture: Option<Handle<Image>> = texture.as_ref().map(|t| {
-                    load_context
+                let texture = texture.as_ref().map(|path| {
+                    server
                         .load_builder()
                         .with_settings(|settings: &mut ImageLoaderSettings| {
                             settings.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
@@ -118,25 +174,21 @@ impl AssetLoader for FloorSurfaceLoader {
                                 ..default()
                             });
                         })
-                        .load(t)
+                        .load(path.clone())
                 });
-                let material = StandardMaterial {
+                FloorMaterialHandle::Standard(std_materials.add(StandardMaterial {
                     base_color_texture: texture,
-                    base_color: color.unwrap_or(Srgba::WHITE).into(),
+                    base_color: color.map_or(Srgba::WHITE, |color| color.0).into(),
                     perceptual_roughness: roughness.unwrap_or(1.0),
-                    ..Default::default()
-                };
-                asset.material_std =
-                    Some(load_context.add_labeled_asset("floor_std".to_string(), material));
+                    ..default()
+                }))
             }
             FloorMaterial::Unlit { color } => {
-                let material = StandardMaterial {
-                    base_color: color.into(),
+                FloorMaterialHandle::Standard(std_materials.add(StandardMaterial {
+                    base_color: color.0.into(),
                     unlit: true,
-                    ..Default::default()
-                };
-                asset.material_std =
-                    Some(load_context.add_labeled_asset("floor_unlit".to_string(), material));
+                    ..default()
+                }))
             }
             FloorMaterial::Noise {
                 color,
@@ -144,34 +196,66 @@ impl AssetLoader for FloorSurfaceLoader {
                 roughness,
                 roughness_alt,
             } => {
-                let texture: Handle<Image> = load_context
+                let noise: Handle<Image> = server
                     .load_builder()
                     .with_settings(|settings: &mut ImageLoaderSettings| {
                         settings.sampler = panoply_terrain::tiling_sampler();
                     })
                     .load("terrain/textures/noise.ktx2");
-                let material = ExtendedMaterial {
+                FloorMaterialHandle::Noisy(noisy_materials.add(ExtendedMaterial {
                     base: StandardMaterial {
-                        base_color: color.into(),
-                        perceptual_roughness: roughness,
-                        ..Default::default()
+                        base_color: color.0.into(),
+                        perceptual_roughness: *roughness,
+                        ..default()
                     },
                     extension: FloorNoisyMaterialExt {
-                        color: color.into(),
-                        color_alt: color_alt.into(),
-                        roughness,
-                        roughness_alt,
-                        noise: texture,
+                        color: color.0.into(),
+                        color_alt: color_alt.0.into(),
+                        roughness: *roughness,
+                        roughness_alt: *roughness_alt,
+                        noise,
                     },
-                };
-                asset.material_noisy =
-                    Some(load_context.add_labeled_asset("floor_noisy".to_string(), material));
+                }))
             }
         }
-        Ok(asset)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bevy::reflect::TypeRegistry;
+    use panoply_exemplar::read_entries;
+    use panoply_saga::FormulaQueue;
+
+    use super::*;
+
+    /// The floors as the loader reads them from `assets/catalog/floors.floor.json`.
+    fn floors() -> Vec<(String, FloorSurface)> {
+        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../assets/catalog/floors.floor.json");
+        let mut registry = TypeRegistry::new();
+        registry.register::<FloorSurface>();
+        read_entries(
+            &std::fs::read(file).unwrap(),
+            &registry,
+            &mut FormulaQueue::default(),
+        )
+        .unwrap()
     }
 
-    fn extensions(&self) -> &[&str] {
-        &["floor.ron"]
+    /// A variant's field the file leaves out (`color`) does not reset the others.
+    #[test]
+    fn a_standard_floor_keeps_its_texture_and_roughness() {
+        let floors = floors();
+        let (_, marble) = floors.iter().find(|(l, _)| l == "BeigeMarble").unwrap();
+        let FloorMaterial::Standard {
+            texture, roughness, ..
+        } = &marble.material
+        else {
+            panic!("{:?}", marble.material);
+        };
+        assert_eq!(texture.as_deref(), Some("textures/beige-marble.png"));
+        assert_eq!(*roughness, Some(0.35));
+        assert!(marble.sides);
     }
 }

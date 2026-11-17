@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I54.**
+**Next: I59.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -198,3 +198,28 @@ confirmed by running something or only by reading. Numbers are never reused.
   mesh, so the fixture tool's dial showed on the first drag only; it now hides the entity instead.
   Confirmed by running (PAN96): a probe read the dial's bounds and visibility, and screenshots
   showed it missing, then drawn after the change.
+- **I54** `plans/smoke.py` once failed at `collider_layout` on code unchanged since PAN97: after a
+  collider item's toggle was clicked, its `offset` row was still there (`absent` timed out). The
+  next run passed the step. Seen once (PAN74a's baseline run); the cause not looked into.
+- **I55** Two floors differ from faery's `floor-tiles.json`: `RoughStone` uses `rough-stone.png`
+  with no raise where faery used `rough-stone-warm.png` raised 0.02 (the texture `SlideyStone`
+  uses), and `IceCavefloor` has `sides: false` where faery drew its sides. Which is meant is the
+  author's call; the catalog keeps Panoply's. Read, not run.
+- **I56** Raising a floor type in the editor (PAN74a's live edit of `raise`) rebuilds its floors'
+  colliders in place, pushing the slab up through actors standing on it, and they stay embedded:
+  Rapier's controller depenetrates only when asked for no movement ([notes.md](notes.md), the
+  editor's fall to 3 fps). Lowering it again drops them. Candidate: when `insert_floor_meshes`
+  replaces a floor's collider, re-ground the actors over it, as R27's put-back does for returning
+  ground. Seen by the author; the mechanism read, not run.
+- **I57** `plans/smoke.py` failed in PAN74a's directory run at `fixture_tool`: a drag to the right
+  read 160° where 270° is expected (`FacingReadout`). It had passed alone with the same code. Two
+  candidates, neither checked: actors embedded by the floor test's raise (I56) slowing frames past
+  the drag's three-frame wait, or the hitch log scroll.py leaves on for later plans (I30).
+- **I58** `plans/smoke.py` (1,690 lines, one launch) chains every editor feature, each section
+  relying on the state earlier ones leave, so reaching a new feature runs all before it, and each
+  chunk lengthens every run. Proposed: split by area (game, scenery tools, property editor, terrain,
+  realm), each plan setting up its own state, so one plan, or one section named in the environment,
+  runs alone; launches take about 3 s. And narrow a chunk's end to the game plans, `perf.py` and the
+  plans of the areas it touched, all of them only when shared editor code changes: the game's
+  integrity matters more than the editor's. The second changes AGENTS.md's Verify. Discussed with
+  the author, not yet decided.

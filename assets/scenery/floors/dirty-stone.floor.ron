@@ -1,5 +1,0 @@
-FloorSurface(
-    material: Standard(
-        texture: Some("textures/dirty-stone.png")
-    )
-)

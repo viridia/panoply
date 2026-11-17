@@ -18,6 +18,7 @@ use bevy::{
 
 pub mod actor_tool;
 pub mod aspect_chooser;
+pub mod catalog_entries;
 pub mod chooser;
 pub mod debug_views;
 pub mod diagnostics;
@@ -83,6 +84,7 @@ impl PluginGroup for EditorPlugins {
             .add(scenery_panel::SceneryPanelPlugin)
             .add(scenery_properties::SceneryPropertiesPlugin)
             .add(exemplar_list::ExemplarListPlugin)
+            .add(catalog_entries::CatalogEntriesPlugin)
             .add(scenery_pointer::SceneryPointerPlugin)
             .add(precinct_edit::PrecinctEditPlugin)
             .add(wall_tool::WallToolPlugin)

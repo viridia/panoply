@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D91.**
+**Next: D93.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -139,18 +139,18 @@ never reused.
   (`FLORA_SCENES_PER_FRAME`, `SCENERY_SCENES_PER_FRAME`): parcels' flora and a precinct's
   scenery otherwise arrive as 300-500 scenes in one frame. `plans/scroll.py` fails if a
   pipeline is created during its cold walk.
-- **D27** Exemplars are loaded by path through `panoply_exemplar::ExemplarServer`, never
-  `AssetServer::load("file#Label")`. Bevy 0.20 starts a separate load of the whole file for each
-  `file#Label` requested before the file has loaded (`bevy_asset` `load_internal`,
-  `HandleLoadingMode::Force`; Bevy issue #10549): the playground's first precinct read
-  `wall-tiles.exem.json` 128 times. `ExemplarServer::get` loads the catalog root, held in the
-  `ExemplarCatalogs` resource, and returns `None` until it has loaded, then the labeled handle
-  (labels are registered before the root counts as loaded). The catalog holds every label's
+- **D27** Exemplars and catalog entries (D91) are loaded by path through
+  `panoply_exemplar::CatalogServer`, never `AssetServer::load("file#Label")`. Bevy 0.20 starts a
+  separate load of the whole file for each `file#Label` requested before the file has loaded
+  (`bevy_asset` `load_internal`, `HandleLoadingMode::Force`; Bevy issue #10549): the playground's
+  first precinct read `wall-tiles.exem.json` 128 times. `CatalogServer::get` loads the catalog root,
+  held in the `CatalogRoots` resource, and returns `None` until it has loaded, then the labeled
+  handle (labels are registered before the root counts as loaded). The catalog holds every label's
   handle, aliases included, so labels stay loaded. Precincts wait for their catalogs
-  (`ReadPrecinctData`), and a parcel's ground waits for the precinct as before (D11). In the
-  loader, `extends` within the same catalog uses `LoadContext::get_label_handle`, since a load
-  by path would reload the file being loaded; a missing target is a warning. Checked with a
-  temporary log in the loader: `plans/scenery.py` loads each of ten catalogs once.
+  (`ReadPrecinctData`), and a parcel's ground waits for the precinct as before (D11). In the loader,
+  `extends` within the same catalog uses `LoadContext::get_label_handle`, since a load by path would
+  reload the file being loaded; a missing target is a warning. Checked with a temporary log in the
+  loader: `plans/scenery.py` loads each of ten catalogs once.
 - **D28** Actor models stay one glTF per species as authored (`humanoid-male.glb` holds every male
   body and feature; `humanoid-armature.glb` the shared clips), with no split transform. Bevy always
   loads a glTF whole, labels included, and uploads all its meshes; the files are small (humanoid
@@ -714,10 +714,23 @@ never reused.
 - **D90** An asset type is an exemplar when its instances may differ in which parts they have, and
   gain from composing aspects into entities: walls, fixtures, actors, items. Every other asset type
   loaded and saved is a catalog entry, a typed record with no aspects and no prototype: floors,
-  terrain effects, books, quests, dialogues, spawn tables. Catalog entries share one loader, list,
-  property editor root (D78) and save path, so a new kind needs its type, not an editor of its own,
-  as faery's `IMetadata` was the base of everything its editor loaded and saved. Floors and terrain
-  effects compose nothing: a floor has no parts, every terrain effect holds the one aspect
-  `TerrainEffect` but the hole, which holds `TerrainHole`, none extends another, and none spawns.
-  D79 made them exemplars for the editor exemplars had. Reversing it means aspects on records that
-  have no parts.
+  terrain effects, books, quests, dialogues, spawn tables. Catalog entries share one generic loader,
+  list, property editor root (D78) and save path, each monomorphized per kind (D91), so a new kind
+  needs its type, not an editor of its own, as faery's `IMetadata` was the base of everything its
+  editor loaded and saved. Floors and terrain effects compose nothing: a floor has no parts, every
+  terrain effect holds the one aspect `TerrainEffect` but the hole, which holds `TerrainHole`, none
+  extends another, and none spawns. D79 made them exemplars for the editor exemplars had. Reversing
+  it means aspects on records that have no parts.
+- **D91** A file of catalog entries holds one kind: a JSON object from label to entry, its extension
+  naming the kind (`floors.floor.json`), any number of files per kind. An entry is `file#Label`, as
+  an exemplar is, loaded through `CatalogServer` (D27); it has no aliases, so a rename rewrites its
+  references. A kind is a Rust type (`CatalogEntry`), read through reflection onto its default, so a
+  file leaves out what is at its default, and saved as D73 saves a catalog, a field edited back to
+  its default leaving the file. Shared code is generic over the kind, not type-erased: the loader
+  (`EntryCatalog<T>`), the editor's root (`EntryRoot<T>`) and list, a line per kind. Files mixing
+  kinds, as regional bundles of spawn tables and dialogues might want, are X117. Reversing it means
+  type data per kind and untyped handles throughout. (PAN74a)
+- **D92** A loader of a catalog entry does no GPU work: an entry is data, and what is built from it,
+  as a floor's material, is built by a system and rebuilt on `AssetEvent::Modified`. So an edit in
+  the property editor, or a reload, shows at once; the floor loader built its material once, and no
+  change reached it. Reversing it means a reload per edit. (PAN74a)

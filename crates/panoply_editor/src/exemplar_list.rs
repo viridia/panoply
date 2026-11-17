@@ -1,7 +1,10 @@
-//! The exemplars of the type a scenery tool places, in a [`Chooser`]: abstract ones too, in
-//! italics, so they can be edited, though they cannot be placed. Every catalog under `exemplars/`
-//! loads when scenery mode is first entered, since the game loads exemplars only as precincts name
-//! them. Each tool's choice is saved, so returning to the tool, or restarting, keeps it.
+//! What a scenery tool places, in a [`Chooser`]: the exemplars of its type, abstract ones too, in
+//! italics, so they can be edited, though they cannot be placed; or the catalog entries of its
+//! kind (`catalog_entries`). Every file under `exemplars/` and `catalog/` loads when scenery mode
+//! is first entered, since the game loads them only as precincts name them. Each tool's choice is
+//! saved, so returning to the tool, or restarting, keeps it.
+
+use std::any::TypeId;
 
 use bevy::{
     asset::LoadedFolder,
@@ -11,7 +14,7 @@ use bevy::{
 };
 use panoply_actors::ACTOR_TYPE;
 use panoply_exemplar::{Exemplar, InstanceType};
-use panoply_scenery::{FIXTURE_TYPE, TERRAIN_FX_TYPE, WALL_TYPE};
+use panoply_scenery::{FloorSurface, FIXTURE_TYPE, TERRAIN_FX_TYPE, WALL_TYPE};
 
 use crate::{
     chooser::{chooser, Chooser},
@@ -22,15 +25,28 @@ use crate::{
 /// The wall list's first row, which places no wall: the wall tool erases with it.
 pub const ERASE: &str = "(erase)";
 
-/// The folder of exemplar catalogs, loaded and held while editing.
+/// The folders of exemplar catalogs and of catalog entries, loaded and held while editing.
 #[derive(Resource, Default)]
-struct ExemplarFolder(Option<Handle<LoadedFolder>>);
+pub(crate) struct CatalogFolders {
+    exemplars: Option<Handle<LoadedFolder>>,
+    entries: Option<Handle<LoadedFolder>>,
+}
 
-/// The exemplar chosen in each tool's list, by its name there, saved between runs.
+impl CatalogFolders {
+    /// Whether the folder of catalog entries has loaded, with everything in it.
+    pub(crate) fn entries_loaded(&self, server: &AssetServer) -> bool {
+        self.entries
+            .as_ref()
+            .is_some_and(|folder| server.is_loaded_with_dependencies(folder))
+    }
+}
+
+/// What is chosen in each tool's list, by its name there, saved between runs.
 #[derive(Resource, SettingsGroup, Reflect, Clone, PartialEq, Debug, Default)]
 #[reflect(Resource, SettingsGroup, Default)]
 #[settings_group(group = "scenery_choices")]
 pub struct SceneryChoices {
+    pub floor: Option<String>,
     pub wall: Option<String>,
     pub fixture: Option<String>,
     pub actor: Option<String>,
@@ -43,9 +59,10 @@ impl SceneryChoices {
         self.clone().choice_mut(tool).cloned().flatten()
     }
 
-    /// The choice for `tool`, if it places exemplars.
+    /// The choice for `tool`, if it has a list.
     fn choice_mut(&mut self, tool: SceneryTool) -> Option<&mut Option<String>> {
         match tool {
+            SceneryTool::PlaceFloor => Some(&mut self.floor),
             SceneryTool::PlaceWall => Some(&mut self.wall),
             SceneryTool::PlaceFixture => Some(&mut self.fixture),
             SceneryTool::PlaceActor => Some(&mut self.actor),
@@ -55,9 +72,9 @@ impl SceneryChoices {
     }
 }
 
-/// A chooser listing the exemplars that `tool` places.
+/// A chooser listing what `tool` places.
 #[derive(Component, Default, Clone)]
-pub struct ExemplarChooser {
+pub struct ToolChooser {
     pub tool: SceneryTool,
 }
 
@@ -68,7 +85,6 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
         SceneryTool::PlaceFixture => Some(FIXTURE_TYPE),
         SceneryTool::PlaceActor => Some(ACTOR_TYPE),
         SceneryTool::DrawTerrainFx => Some(TERRAIN_FX_TYPE),
-        // TODO(PAN74a): the floor types, which are not exemplars.
         SceneryTool::PlaceFloor
         | SceneryTool::Interact
         | SceneryTool::Layers
@@ -76,47 +92,63 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
     }
 }
 
+/// The kind of catalog entry `tool` places, if it places entries.
+pub fn placed_entry(tool: SceneryTool) -> Option<TypeId> {
+    match tool {
+        SceneryTool::PlaceFloor => Some(TypeId::of::<FloorSurface>()),
+        _ => None,
+    }
+}
+
+/// Whether `tool` has a list of what it places.
+pub fn has_list(tool: SceneryTool) -> bool {
+    placed_type(tool).is_some() || placed_entry(tool).is_some()
+}
+
 pub struct ExemplarListPlugin;
 
 impl Plugin for ExemplarListPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ExemplarFolder>()
-            .add_systems(OnEnter(EditorMode::Scenery), load_exemplars)
+        app.init_resource::<CatalogFolders>()
+            .add_systems(OnEnter(EditorMode::Scenery), load_catalogs)
             .add_systems(Update, (list_exemplars, save_choice));
     }
 }
 
-/// A chooser of the exemplars `tool` places, with the saved choice selected. Its filter box must
-/// not take the focus: in the panel, the keys that move the view would type into it.
-pub fn exemplar_chooser(tool: SceneryTool, selected: Option<String>) -> impl Scene {
+/// A chooser of what `tool` places, with the saved choice selected. Its filter box must not take
+/// the focus: in the panel, the keys that move the view would type into it.
+pub fn tool_chooser(tool: SceneryTool, selected: Option<String>) -> impl Scene {
     bsn! {
         @chooser(false, Vec::new(), selected.clone())
-        ExemplarChooser { tool: {tool} }
+        ToolChooser { tool: {tool} }
     }
 }
 
-fn load_exemplars(mut folder: ResMut<ExemplarFolder>, server: Res<AssetServer>) {
-    if folder.0.is_none() {
-        folder.0 = Some(server.load_folder("exemplars"));
+fn load_catalogs(mut folders: ResMut<CatalogFolders>, server: Res<AssetServer>) {
+    if folders.exemplars.is_none() {
+        folders.exemplars = Some(server.load_folder("exemplars"));
+    }
+    if folders.entries.is_none() {
+        folders.entries = Some(server.load_folder("catalog"));
     }
 }
 
-/// Lists, in each [`ExemplarChooser`], the exemplars its tool places, once every catalog and the
-/// catalogs they extend have loaded, so that the list is whole when it first shows: rows arriving
-/// later would sort in above a selected row that had scrolled into view, and push it out. After
-/// that, lists again as a catalog reloads.
+/// Lists, in each [`ToolChooser`] whose tool places exemplars, those exemplars, once every catalog
+/// and the catalogs they extend have loaded, so that the list is whole when it first shows: rows
+/// arriving later would sort in above a selected row that had scrolled into view, and push it out.
+/// After that, lists again as a catalog reloads.
 fn list_exemplars(
     mut events: MessageReader<AssetEvent<Exemplar>>,
-    added: Query<(), Added<ExemplarChooser>>,
-    folder: Res<ExemplarFolder>,
+    added: Query<(), Added<ToolChooser>>,
+    folders: Res<CatalogFolders>,
     mut was_loaded: Local<bool>,
     server: Res<AssetServer>,
     exemplars: Res<Assets<Exemplar>>,
-    mut choosers: Query<(&mut Chooser, &ExemplarChooser)>,
+    mut choosers: Query<(&mut Chooser, &ToolChooser)>,
 ) {
     let changed = events.read().count() > 0;
-    let loaded = folder
-        .0
+    let loaded = folders
+        .exemplars
         .as_ref()
         .is_some_and(|folder| server.is_loaded_with_dependencies(folder));
     let just_loaded = loaded && !*was_loaded;
@@ -219,7 +251,7 @@ pub(crate) fn named_exemplars(
 /// Saves each chooser's selection as its tool's choice. A selection the filter hides is cleared in
 /// the chooser but kept as the choice.
 fn save_choice(
-    choosers: Query<(&Chooser, &ExemplarChooser), Changed<Chooser>>,
+    choosers: Query<(&Chooser, &ToolChooser), Changed<Chooser>>,
     mut choices: ResMut<SceneryChoices>,
     mut commands: Commands,
 ) {
@@ -241,7 +273,7 @@ fn save_choice(
 mod tests {
     use super::*;
 
-    /// Each tool that places exemplars has a choice saved for it.
+    /// Each tool that has a list has a choice saved for it.
     #[test]
     fn every_placing_tool_has_a_choice() {
         let tools = [
@@ -256,10 +288,7 @@ mod tests {
         ];
         let mut choices = SceneryChoices::default();
         for tool in tools {
-            assert_eq!(
-                placed_type(tool).is_some(),
-                choices.choice_mut(tool).is_some()
-            );
+            assert_eq!(has_list(tool), choices.choice_mut(tool).is_some());
         }
     }
 }

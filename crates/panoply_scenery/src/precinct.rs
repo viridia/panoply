@@ -346,18 +346,19 @@ pub fn read_precinct_data(
     mut q_floor_regions: Query<&mut FloorRegion>,
     mut q_scenery_elements: Query<&mut SceneryElement>,
     assets: Res<Assets<PrecinctAsset>>,
-    asset_server: Res<AssetServer>,
-    mut exemplars: ExemplarServer,
+    mut catalogs: CatalogServer,
 ) {
     for (precinct_entity, precinct, precinct_children) in q_precincts.iter() {
         let Some(precinct_asset) = assets.get(&precinct.asset) else {
             continue;
         };
 
-        // Both lists are requested before either is waited on, so their catalogs load together.
-        let scenery_exemplars = exemplars.get_all(&precinct_asset.scenery_types);
-        let fx_exemplars = exemplars.get_all(&precinct_asset.terrain_fx_types);
-        let (Some(scenery_exemplars), Some(fx_exemplars)) = (scenery_exemplars, fx_exemplars)
+        // Every list is requested before any is waited on, so their catalogs load together.
+        let scenery_exemplars = catalogs.get_all::<Exemplar>(&precinct_asset.scenery_types);
+        let fx_exemplars = catalogs.get_all::<Exemplar>(&precinct_asset.terrain_fx_types);
+        let floor_surfaces = catalogs.get_all::<FloorSurface>(&precinct_asset.floor_surfaces);
+        let (Some(scenery_exemplars), Some(fx_exemplars), Some(floor_surfaces)) =
+            (scenery_exemplars, fx_exemplars, floor_surfaces)
         else {
             continue;
         };
@@ -366,12 +367,6 @@ pub fn read_precinct_data(
             .remove::<ReadPrecinctData>();
 
         // TODO: Sync nav mesh, light sources, particles, etc.
-
-        let floor_surfaces: Vec<Handle<FloorSurface>> = precinct_asset
-            .floor_surfaces
-            .iter()
-            .map(|s| asset_server.load(s))
-            .collect();
 
         precinct.rebuild_tiers(
             &mut commands,

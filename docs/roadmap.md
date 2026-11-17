@@ -99,19 +99,15 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   rewrites it whenever it creates or deletes a precinct (since PAN94, its first edit of a precinct
   with no file), and `asset_xref.py` checks it against the folder, so a file added or removed by
   hand fails `verify.sh`.
-- **PAN74a Catalog entries, with floors** (D90). The asset kind beside exemplars: how an entry is
-  named and referenced, its file format, loading, the list, the property editor's root (D78),
-  saving, `asset_xref.py`'s checks, and how a mod overrides an entry ([modding.md](modding.md)).
-  Propose before code. Floors are the first kind: the floor types (`scenery/floors/*.floor.ron`,
-  `FloorSurface`) become entries, and precincts' `floor_surfaces` name them, rewritten. The floor
-  tool lists them (`exemplar_list.rs`, `TODO(PAN74a)`), and the property editor edits them. If
-  entries share a file, check what a precinct naming one floor loads: the file's every texture.
 - **PAN74b Terrain effects as catalog entries** (D90). The entries of `terrainfx.exem.json` move out
   of exemplars, the hole a variant of the entry rather than an aspect of its own. Precincts' terrain
   effect tables name them, rewritten; `TerrainFxMap` reads the entry rather than downcasting
   aspects; and the terrain effect tool lists them as the floor tool does.
 - **PAN95 Place floors**, on PAN94's saving and PAN74a's floor entries: floors drawn on the current
-  tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`).
+  tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`). With the floor tool's
+  options, each tool's panel becomes its own: its `construct` emits its options row and its list, as
+  faery's modes were each a component, and `show_tool_options`, which shows the wall toolbar and
+  moves the list's grid row from outside, goes.
 - **PAN98 Paint terrain effects**, on PAN94's saving and PAN74b's entries: the terrain effect tool
   (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
 - **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
@@ -341,6 +337,8 @@ components and every layer restartable from saved state (R104).
     aura's (R23). Where neither side stays on the mesh, the route replans. Before bending is built,
     an artifact for the author: its test cases, illustrated, to find the edge cases.
   - Ladders: rerecast has no off-mesh links, so they are the query side's.
+  - Floors that block: faery's `BlackoutFloor` was `blocked`, the unlit black fill between cave
+    walls in the underground, where no one walks. Panoply's floor entries have no such field yet.
   - Querying: a crate, if it takes costs or filters per query and joins meshes; else a port of
     `NavRouteTask.ts` (A*, a funnel pass, tract seams), which runs on any mesh of convex polygons.
     Faery read each door's `open` signal inside its search, but a door does not change during one

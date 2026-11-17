@@ -8,6 +8,7 @@ mod aspect;
 mod aspect_list;
 mod catalogs;
 mod command;
+mod entry;
 mod exemplar;
 mod instance_type;
 mod interaction;
@@ -26,8 +27,12 @@ use panoply_saga::SagaPlugin;
 pub use aspect::*;
 pub use aspect_list::AspectList;
 pub use aspect_list::AspectListDeserializer;
-pub use catalogs::{ExemplarCatalogs, ExemplarServer};
+pub use catalogs::{CatalogMember, CatalogRoots, CatalogServer};
 pub use command::UpdateAspects;
+pub use entry::{
+    read_entries, CatalogEntry, CatalogEntryAppExt, EntryCatalog, EntryCatalogLoader,
+    EntryCatalogLoaderError,
+};
 pub use exemplar::{Exemplar, ExemplarCatalog, ExemplarData};
 pub use instance_type::InstanceType;
 pub use interaction::*;
@@ -42,7 +47,7 @@ impl Plugin for ExemplarPlugin {
         if !app.is_plugin_added::<SagaPlugin>() {
             app.add_plugins(SagaPlugin);
         }
-        app.init_resource::<ExemplarCatalogs>()
+        app.init_resource::<CatalogRoots>()
             .init_resource::<InteractionActions>()
             .register_type::<Interactions>()
             .register_type::<InteractionDesc>()

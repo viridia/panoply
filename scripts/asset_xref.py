@@ -4,9 +4,10 @@
     scripts/asset_xref.py           every check; exit 1 if any fails
     scripts/asset_xref.py --quiet   failures only, no summary
 
-A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floor surfaces, which must be files
-under `assets/`, and exemplars (`file#Label`), whose catalog must exist and hold the label or an
-alias of it. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
+A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floors, catalog entries
+(`file#Label`) whose `.floor.json` file must exist and hold the label, and exemplars (`file#Label`),
+whose catalog must exist and hold the label or an alias of it. A floor entry
+(`assets/catalog/**/*.floor.json`) names its texture, a file. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
 `file.glb#Name`: the file must exist and hold a scene of that name (`SceneryModels`, `Skin`,
 `ItemModel`). A `SceneryAnimations` transition's sound names a file. An `extends` must resolve as a
 precinct's exemplar does. An exemplar with an `Armature` and a `Skin`, its own or inherited, needs
@@ -35,6 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
 PRECINCTS = ASSETS / "scenery" / "precincts"
 EXEMPLARS = ASSETS / "exemplars"
+CATALOG = ASSETS / "catalog"
 
 # Broken references the ledgers own, as {reference: ledger id}.
 KNOWN = {}
@@ -181,6 +183,22 @@ class Assets:
         found = self.resolve(reference, base)
         return found if isinstance(found, str) else None
 
+    def entry_problem(self, reference, extension):
+        """Why `reference`, a catalog entry in a file ending in `extension`, does not resolve, or
+        `None`. Entries have no aliases."""
+        file, _, label = reference.partition("#")
+        if not label:
+            return "no #label"
+        if not file.endswith(extension):
+            return f"not a {extension} file"
+        entries = self.catalog(file)
+        if isinstance(entries, str):
+            return f"{file}: {entries}"
+        alias = next((e for e in entries.values() if label in e.get("alias", [])), None)
+        if label not in entries or alias is not None:
+            return f"no entry {label} in {file}"
+        return None
+
     def aspect(self, entry, source, name):
         """The aspect `name` of `entry`, in the catalog `source`, its own or the nearest one it
         inherits through `extends`, whole, as the game resolves it; `None` if it has none."""
@@ -267,8 +285,8 @@ def check_precincts(assets, report):
     for file in sorted(PRECINCTS.glob("*/*.msgpack")):
         source = asset_name(file)
         precinct, _ = unpack(file.read_bytes())
-        for path in precinct.get("floor_surfaces", []):
-            report(source, path, assets.file_problem(path))
+        for reference in precinct.get("floor_surfaces", []):
+            report(source, reference, assets.entry_problem(reference, ".floor.json"))
         exemplars = precinct.get("scenery_types", []) + precinct.get("terrain_fx_types", [])
         exemplars += [actor["exemplar"] for actor in precinct.get("actors", [])]
         for reference in exemplars:
@@ -319,6 +337,17 @@ def check_exemplars(assets, report):
                 check_slots(assets, report, where, skin, aspects)
 
 
+def check_entries(assets, report):
+    """The files catalog entries name: a floor's texture."""
+    for file in sorted(CATALOG.glob("**/*.floor.json")):
+        source = asset_name(file)
+        for label, entry in json.loads(file.read_text()).items():
+            standard = entry.get("material", {}).get("Standard", {})
+            if "texture" in standard:
+                reference = standard["texture"]
+                report(f"{source}#{label}", reference, assets.file_problem(reference))
+
+
 def check_slots(assets, report, where, skin, aspects):
     """Each feature an exemplar's own `Features` turns on must be a feature scene of its Skin's
     file, and each of its own `Colors` a color slot of the Skin's scene or of a feature scene."""
@@ -356,6 +385,7 @@ def main():
 
     check_precincts(assets, report)
     check_exemplars(assets, report)
+    check_entries(assets, report)
 
     failures = []
     for (reference, problem), sources in sorted(broken.items()):

@@ -2,7 +2,7 @@
 //! despawned with it.
 
 use bevy::{app::Propagate, prelude::*};
-use panoply_exemplar::ExemplarServer;
+use panoply_exemplar::{CatalogServer, Exemplar};
 use panoply_precinct::{ActorInstanceData, PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::precinct::Precinct;
 
@@ -73,13 +73,14 @@ pub(crate) fn spawn_precinct_actors(
     precincts: Query<(Entity, &Precinct, Option<&PrecinctActors>), With<ReadPrecinctActors>>,
     placed: Query<&PlacedAs>,
     assets: Res<Assets<PrecinctAsset>>,
-    mut exemplars: ExemplarServer,
+    mut exemplars: CatalogServer,
 ) {
     for (entity, precinct, actors) in &precincts {
         let Some(asset) = assets.get(&precinct.asset) else {
             continue;
         };
-        let Some(handles) = exemplars.get_all(asset.actors.iter().map(|actor| &actor.exemplar))
+        let Some(handles) =
+            exemplars.get_all::<Exemplar>(asset.actors.iter().map(|actor| &actor.exemplar))
         else {
             continue;
         };

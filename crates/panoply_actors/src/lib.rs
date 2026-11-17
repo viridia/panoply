@@ -3,7 +3,7 @@ use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
 };
-use panoply_exemplar::{Exemplar, ExemplarServer, InstanceAspects, InstanceType, UpdateAspects};
+use panoply_exemplar::{CatalogServer, Exemplar, InstanceAspects, InstanceType, UpdateAspects};
 
 mod actor_animation;
 mod actor_aspect;
@@ -184,7 +184,7 @@ const PLAYER_WIELDS: &str = "exemplars/weapons.exem.json#Broadsword";
 
 fn spawn_player(
     mut commands: Commands,
-    mut exemplars: ExemplarServer,
+    mut exemplars: CatalogServer,
     mut viewpoint: ResMut<Viewpoint>,
     realms: Query<(Entity, &Realm)>,
     mut spawned: Local<bool>,
@@ -196,7 +196,7 @@ fn spawn_player(
     else {
         return;
     };
-    let Some(exemplar) = exemplars.get(PLAYER_EXEMPLAR) else {
+    let Some(exemplar) = exemplars.get::<Exemplar>(PLAYER_EXEMPLAR) else {
         return;
     };
     let actor = commands.spawn((
