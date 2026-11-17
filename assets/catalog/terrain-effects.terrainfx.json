@@ -1,0 +1,231 @@
+{
+  "Road": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 1,
+      "elevation": -0.14,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Road.Med": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.75,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Road.Light": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.5,
+      "elevation": -0.05,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Road.ExtraLight": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.25,
+      "elevation": -0.025,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Road.Dirt": {
+    "Surface": {
+      "effect": [
+        "cobbles",
+        "path"
+      ],
+      "effect_strength": 1,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Road.Flat": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Soil": {
+    "Surface": {
+      "effect": [
+        "soil"
+      ],
+      "effect_strength": 1,
+      "elevation": 0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Dirt": {
+    "Surface": {
+      "effect": [
+        "path"
+      ],
+      "effect_strength": 1,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Dirt.Med": {
+    "Surface": {
+      "effect": [
+        "path"
+      ],
+      "effect_strength": 0.75,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Dirt.Light": {
+    "Surface": {
+      "effect": [
+        "path"
+      ],
+      "effect_strength": 0.5,
+      "elevation": -0.08,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Dirt.ExtraLight": {
+    "Surface": {
+      "effect": [
+        "path"
+      ],
+      "effect_strength": 0.4,
+      "elevation": -0.07,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 1,
+      "elevation": -0.2,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles.Med": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.75,
+      "elevation": -0.2,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles.Light": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.5,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles.ExtraLight": {
+    "Surface": {
+      "effect": [
+        "cobbles"
+      ],
+      "effect_strength": 0.25,
+      "elevation": -0.05,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles.Dirt": {
+    "Surface": {
+      "effect": [
+        "cobbles",
+        "path"
+      ],
+      "effect_strength": 1,
+      "elevation": -0.1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Cobbles.Flat": {
+    "Surface": {
+      "effect": [
+        "cobbles",
+        "path"
+      ],
+      "effect_strength": 1,
+      "continuous_x": true,
+      "continuous_y": true
+    }
+  },
+  "Grave.X": {
+    "Surface": {
+      "effect": [
+        "soil"
+      ],
+      "effect_strength": 0.5,
+      "elevation": 0.4,
+      "continuous_x": true
+    }
+  },
+  "Grave.Z": {
+    "Surface": {
+      "effect": [
+        "soil"
+      ],
+      "effect_strength": 0.5,
+      "elevation": 0.4,
+      "continuous_y": true
+    }
+  },
+  "Tilled.X": {
+    "Surface": {
+      "effect": [
+        "soil"
+      ],
+      "effect_strength": 0.9,
+      "elevation": 0.3,
+      "continuous_x": true
+    }
+  },
+  "Tilled.Z": {
+    "Surface": {
+      "effect": [
+        "soil"
+      ],
+      "effect_strength": 0.9,
+      "elevation": 0.3,
+      "continuous_y": true
+    }
+  },
+  "Hole": "Hole"
+}

@@ -32,7 +32,7 @@ pub struct PrecinctAsset {
     /// Table of floor archetypes used by this precinct.
     pub floor_surfaces: Vec<String>,
 
-    /// Table of terrain effect archetypes used by this precinct.
+    /// The terrain effects this precinct uses, catalog entries (`file#Label`).
     pub terrain_fx_types: Vec<String>,
 
     /// Table of floors, spaced 1 meter apart.

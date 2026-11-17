@@ -192,9 +192,8 @@ is implemented.
     engine. Both stay components.
   - `Container` and `Lock` supply play state (`ContainerState`, `LockState`), which D74 already
     keeps apart from the aspect.
-  - `TerrainEffect`, `TerrainHole`, `ItemModel` and `EquipSlot` are read from the exemplar, since
-    terrain vertices and an item in an inventory are not entities. They are definitions already, and
-    the components they insert go unread.
+  - `ItemModel` and `EquipSlot` are read from the exemplar, since an item in an inventory is not an
+    entity. They are definitions already, and the components they insert go unread.
   - `WallSize`, `SceneryMarks` and `LightSource` are not read yet.
 
   So reading a native aspect from its definition by Rust type, along the chain, has to keep working.

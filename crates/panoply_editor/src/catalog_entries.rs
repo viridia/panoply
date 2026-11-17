@@ -9,7 +9,7 @@ use bevy::{
     reflect::TypeInfo,
 };
 use panoply_exemplar::{CatalogEntry, EntryCatalog};
-use panoply_scenery::FloorSurface;
+use panoply_scenery::{FloorSurface, TerrainEffect};
 
 use crate::{
     chooser::Chooser,
@@ -24,7 +24,8 @@ pub struct CatalogEntriesPlugin;
 
 impl Plugin for CatalogEntriesPlugin {
     fn build(&self, app: &mut App) {
-        app.edit_catalog_entry::<FloorSurface>();
+        app.edit_catalog_entry::<FloorSurface>()
+            .edit_catalog_entry::<TerrainEffect>();
     }
 }
 

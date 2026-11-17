@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I59.**
+**Next: I61.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -223,3 +223,16 @@ confirmed by running something or only by reading. Numbers are never reused.
   plans of the areas it touched, all of them only when shared editor code changes: the game's
   integrity matters more than the editor's. The second changes AGENTS.md's Verify. Discussed with
   the author, not yet decided.
+- **I59** Whether inventory items are exemplars or catalog entries, to be discussed. An item is
+  always in a container, a pile if nothing else, which is the entity in the world; its icon, its
+  wielded model and its pile's look show it, and none is the item. Picking up a coin merges it into
+  the stack held: a slot is the item's handle, a count and any state of its own, stacking only
+  without state. For exemplars: aspects shared with scenery (a book read as a sign is, the reading
+  interface needing only the aspect's data) and `extends` for families. Leaning: an exemplar never
+  spawned, its aspects read from the definition along its chain, which needs an aspect's action to
+  run from a definition and a context (who, which slot) rather than an entity. D90's test would then
+  read "composes aspects, or shares them with things that do". Discussed with the author.
+- **I60** A terrain effect's `Effect` shows in the property editor as its bits, read-only (`2` for
+  soil): `TerrainTypes` is a bitflags newtype over `u8`. Candidate: a checkbox per flag, as a map
+  with keys from its type has a row per key. Seen in `plans/smoke.py`'s `terrain_effect_entry`
+  screenshot (PAN74b); the aspect showed it the same.

@@ -613,14 +613,15 @@ impl Rows<'_> {
             (ReflectRef::Struct(_), _) => self.fields(ui, value, &ParsedPath::empty()),
             (_, ReflectRef::List(_)) => self.items(ui, inner, &path),
             _ if string_keyed(inner) => self.entries(ui, inner, &path),
-            _ => self.row(
-                ui,
-                short_type_name(value),
-                &CustomAttributes::default(),
-                value,
-                ParsedPath::empty(),
-                None,
-            ),
+            // Captioned by its type's `DisplayName`, if it has one, as an enum entry's is.
+            _ => {
+                let attrs = match value.get_represented_type_info() {
+                    Some(TypeInfo::Enum(info)) => info.custom_attributes(),
+                    Some(TypeInfo::TupleStruct(info)) => info.custom_attributes(),
+                    _ => &CustomAttributes::default(),
+                };
+                self.row(ui, short_type_name(value), attrs, value, ParsedPath::empty(), None);
+            }
         }
     }
 

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN74b** Terrain effects are catalog entries, the hole one of them: listed, edited live, saved.
 - **PAN74a** Floors are catalog entries: the floor tool lists them, edited live and saved.
 - **PAN97** Actors place as fixtures do, their capsule landing on the ground, each named as placed.
 - **PAN96** Fixtures place where the pointer is, landing on what is under them, turned by a drag.

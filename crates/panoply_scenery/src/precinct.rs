@@ -16,6 +16,7 @@ use super::{
     scenery_element::{
         SceneryElement, SceneryElementRebuildAspects, SceneryElementRebuildColliders,
     },
+    terrain_effect::TerrainEffect,
     terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap},
     PRECINCT_SIZE_F,
 };
@@ -298,14 +299,14 @@ impl Precinct {
         commands: &mut Commands,
         entity: Entity,
         asset: &PrecinctAsset,
-        fx_exemplars: Vec<Handle<Exemplar>>,
+        effects: Vec<Handle<TerrainEffect>>,
     ) {
         let mut fx = TerrainFxMap::new();
         if let Some(ref encoded) = asset.terrain_fx {
             if let Err(err) = rle_decode(encoded, &mut fx.map) {
                 error!("Precinct {:?}: bad terrain effects: {err:?}", self.coords);
             }
-            fx.exemplars = fx_exemplars;
+            fx.effects = effects;
         }
         commands
             .entity(entity)
@@ -355,10 +356,10 @@ pub fn read_precinct_data(
 
         // Every list is requested before any is waited on, so their catalogs load together.
         let scenery_exemplars = catalogs.get_all::<Exemplar>(&precinct_asset.scenery_types);
-        let fx_exemplars = catalogs.get_all::<Exemplar>(&precinct_asset.terrain_fx_types);
+        let effects = catalogs.get_all::<TerrainEffect>(&precinct_asset.terrain_fx_types);
         let floor_surfaces = catalogs.get_all::<FloorSurface>(&precinct_asset.floor_surfaces);
-        let (Some(scenery_exemplars), Some(fx_exemplars), Some(floor_surfaces)) =
-            (scenery_exemplars, fx_exemplars, floor_surfaces)
+        let (Some(scenery_exemplars), Some(effects), Some(floor_surfaces)) =
+            (scenery_exemplars, effects, floor_surfaces)
         else {
             continue;
         };
@@ -387,6 +388,6 @@ pub fn read_precinct_data(
             &mut q_scenery_elements,
         );
 
-        precinct.rebuild_terrain_fx(&mut commands, precinct_entity, precinct_asset, fx_exemplars);
+        precinct.rebuild_terrain_fx(&mut commands, precinct_entity, precinct_asset, effects);
     }
 }

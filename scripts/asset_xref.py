@@ -4,10 +4,11 @@
     scripts/asset_xref.py           every check; exit 1 if any fails
     scripts/asset_xref.py --quiet   failures only, no summary
 
-A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floors, catalog entries
-(`file#Label`) whose `.floor.json` file must exist and hold the label, and exemplars (`file#Label`),
-whose catalog must exist and hold the label or an alias of it. A floor entry
-(`assets/catalog/**/*.floor.json`) names its texture, a file. An exemplar catalog (`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
+A precinct (`assets/scenery/precincts/<realm>/*.msgpack`) names floors and terrain effects, catalog
+entries (`file#Label`) whose `.floor.json` or `.terrainfx.json` file must exist and hold the label,
+and exemplars (`file#Label`), whose catalog must exist and hold the label or an alias of it. A floor
+entry (`assets/catalog/**/*.floor.json`) names its texture, a file. An exemplar catalog
+(`assets/exemplars/**/*.exem.json`) names, in its aspects, models as
 `file.glb#Name`: the file must exist and hold a scene of that name (`SceneryModels`, `Skin`,
 `ItemModel`). A `SceneryAnimations` transition's sound names a file. An `extends` must resolve as a
 precinct's exemplar does. An exemplar with an `Armature` and a `Skin`, its own or inherited, needs
@@ -119,7 +120,8 @@ class Assets:
         self.slot_files = {}
 
     def catalog(self, path):
-        """The entries of the catalog at `path` by label and alias, or a reason it has none."""
+        """The entries of the catalog at `path` by label, and an exemplar catalog's by alias too, or
+        a reason it has none."""
         if path not in self.catalogs:
             file = ASSETS / path
             if not file.is_file():
@@ -128,7 +130,7 @@ class Assets:
                 try:
                     entries = json.loads(file.read_text())
                     labels = dict(entries)
-                    for entry in entries.values():
+                    for entry in entries.values() if path.endswith(".exem.json") else []:
                         labels.update((alias, entry) for alias in entry.get("alias", []))
                     self.catalogs[path] = labels
                 except (ValueError, AttributeError) as e:
@@ -194,8 +196,7 @@ class Assets:
         entries = self.catalog(file)
         if isinstance(entries, str):
             return f"{file}: {entries}"
-        alias = next((e for e in entries.values() if label in e.get("alias", [])), None)
-        if label not in entries or alias is not None:
+        if label not in entries:
             return f"no entry {label} in {file}"
         return None
 
@@ -287,7 +288,9 @@ def check_precincts(assets, report):
         precinct, _ = unpack(file.read_bytes())
         for reference in precinct.get("floor_surfaces", []):
             report(source, reference, assets.entry_problem(reference, ".floor.json"))
-        exemplars = precinct.get("scenery_types", []) + precinct.get("terrain_fx_types", [])
+        for reference in precinct.get("terrain_fx_types", []):
+            report(source, reference, assets.entry_problem(reference, ".terrainfx.json"))
+        exemplars = precinct.get("scenery_types", [])
         exemplars += [actor["exemplar"] for actor in precinct.get("actors", [])]
         for reference in exemplars:
             report(source, reference, assets.exemplar_problem(reference))

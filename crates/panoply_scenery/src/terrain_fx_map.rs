@@ -2,16 +2,14 @@ use bevy::prelude::*;
 use panoply_core::Realm;
 use panoply_terrain::{
     Parcel, ParcelCache, ParcelFloraChanged, ParcelTerrainFx, RebuildParcelGroundMesh,
-    RebuildParcelTerrainFx, TerrainFxVertexAttr, TerrainOptions, PARCEL_SIZE,
+    RebuildParcelTerrainFx, TerrainFxVertexAttr, PARCEL_SIZE,
     PARCEL_TERRAIN_FX_AREA, PARCEL_TERRAIN_FX_STRIDE,
 };
-
-use panoply_exemplar::*;
 
 use super::{
     precinct::{Precinct, PrecinctKey},
     precinct_cache::PrecinctCache,
-    terrain_fx_aspect::{TerrainEffect, TerrainHole},
+    terrain_effect::TerrainEffect,
     PRECINCT_SIZE,
 };
 
@@ -24,7 +22,8 @@ pub const TERRAIN_FX_MAP_SIZE: usize = (PRECINCT_SIZE + 2) as usize;
 /// and loading.
 #[derive(Component)]
 pub struct TerrainFxMap {
-    pub(crate) exemplars: Vec<Handle<Exemplar>>,
+    /// The precinct's table of effects; the map's value `n` is the `n - 1`th, 0 none.
+    pub(crate) effects: Vec<Handle<TerrainEffect>>,
     pub(crate) map: [u16; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
     pub(crate) map_vertex_attr: [TerrainFxVertexAttr; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
 }
@@ -32,7 +31,7 @@ pub struct TerrainFxMap {
 impl TerrainFxMap {
     pub fn new() -> Self {
         Self {
-            exemplars: Vec::new(),
+            effects: Vec::new(),
             map: [0; TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
             map_vertex_attr: [TerrainFxVertexAttr::default();
                 TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
@@ -44,16 +43,35 @@ impl TerrainFxMap {
 #[component(storage = "SparseSet")]
 pub struct RebuildTerrainFxVertexAttrs;
 
+/// Marks for rebuilding each precinct whose table holds a terrain effect that changed, as an edit
+/// in the property editor or a reload changes it (D92).
+pub fn mark_changed_terrain_effects(
+    mut events: MessageReader<AssetEvent<TerrainEffect>>,
+    maps: Query<(Entity, &TerrainFxMap)>,
+    mut commands: Commands,
+) {
+    for event in events.read() {
+        let AssetEvent::Modified { id } = *event else {
+            continue;
+        };
+        for (entity, map) in &maps {
+            if map.effects.iter().any(|effect| effect.id() == id) {
+                commands.entity(entity).insert(RebuildTerrainFxVertexAttrs);
+            }
+        }
+    }
+}
+
 pub fn rebuild_terrain_fx_vertex_attrs(
     mut commands: Commands,
     mut query: Query<(Entity, &Precinct, &mut TerrainFxMap), With<RebuildTerrainFxVertexAttrs>>,
     parcel_cache: Res<ParcelCache>,
-    exemplar_assets: Res<Assets<Exemplar>>,
+    effects: Res<Assets<TerrainEffect>>,
     server: Res<AssetServer>,
 ) {
     for (entity, precinct, mut terrain_fx) in query.iter_mut() {
-        // Wait for the exemplars; one that failed to load becomes "no effect".
-        let any_loading = terrain_fx.exemplars.iter().any(|s| {
+        // Wait for the effects; one that failed to load becomes "no effect".
+        let any_loading = terrain_fx.effects.iter().any(|s| {
             let state = server.load_state(s);
             !state.is_loaded() && !state.is_failed()
         });
@@ -62,38 +80,13 @@ pub fn rebuild_terrain_fx_vertex_attrs(
         }
 
         let fx_table: Vec<TerrainFxVertexAttr> = terrain_fx
-            .exemplars
+            .effects
             .iter()
-            .map(|s| {
-                // Note that we're accessing the exemplar directly in this case instead
-                // of applying the aspects to an entity, since the individual effects are
-                // not associated with a single entity but with vertex attributes.
-                let mut vxt_attr = TerrainFxVertexAttr::default();
-                let Some(s) = exemplar_assets.get(s) else {
-                    return vxt_attr;
-                };
-                for aspect in s.0.aspects.iter() {
-                    // TODO: Extends - require async resolution of the exemplar.
-
-                    // Terrain effects
-                    if let Some(eff) = aspect.as_any().downcast_ref::<TerrainEffect>() {
-                        vxt_attr.effect = eff.effect;
-                        vxt_attr.effect_strength = eff.effect_strength.unwrap_or(0.);
-                        vxt_attr.elevation = eff.elevation.unwrap_or(0.);
-                        if eff.continuous_x.unwrap_or(false) {
-                            vxt_attr.options |= TerrainOptions::ContinuousX;
-                        }
-                        if eff.continuous_y.unwrap_or(false) {
-                            vxt_attr.options |= TerrainOptions::ContinuousY;
-                        }
-                    }
-
-                    // Terrain holes
-                    if aspect.as_any().downcast_ref::<TerrainHole>().is_some() {
-                        vxt_attr.options |= TerrainOptions::Hole;
-                    }
-                }
-                vxt_attr
+            .map(|effect| {
+                effects
+                    .get(effect)
+                    .map(TerrainEffect::vertex_attr)
+                    .unwrap_or_default()
             })
             .collect();
 

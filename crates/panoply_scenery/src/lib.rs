@@ -22,8 +22,9 @@ use self::{
     scenery_element::{
         rebuild_changed_se_aspects, spawn_se_model_instances, spawn_se_models, update_se_aspects,
     },
-    terrain_fx_aspect::{TerrainEffect, TerrainHole},
-    terrain_fx_map::{rebuild_parcel_terrain_fx, rebuild_terrain_fx_vertex_attrs},
+    terrain_fx_map::{
+        mark_changed_terrain_effects, rebuild_parcel_terrain_fx, rebuild_terrain_fx_vertex_attrs,
+    },
     wall_aspect::WallSize,
 };
 
@@ -42,8 +43,10 @@ mod rle;
 mod scenery_aspect;
 mod scenery_colliders;
 pub mod scenery_element;
-mod terrain_fx_aspect;
+mod terrain_effect;
 mod terrain_fx_map;
+
+pub use terrain_effect::TerrainEffect;
 mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
@@ -59,7 +62,6 @@ pub const TIER_OFFSET: f32 = 0.02; // Tiers are slightly higher than the terrain
 pub const WALL_TYPE: InstanceType = InstanceType::from_str("Wall");
 pub const FIXTURE_TYPE: InstanceType = InstanceType::from_str("Fixt");
 pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Floor");
-pub const TERRAIN_FX_TYPE: InstanceType = InstanceType::from_str("TrFx");
 
 #[derive(Resource, Default)]
 pub struct FloorOutline(pub Handle<OutlineMaterial>);
@@ -72,6 +74,7 @@ impl Plugin for PanoplySceneryPlugin {
             .init_asset_loader::<PrecinctAssetLoader>()
             .init_asset::<PrecinctAsset>()
             .register_catalog_entry::<FloorSurface>()
+            .register_catalog_entry::<TerrainEffect>()
             .init_resource::<FloorMaterials>()
             .init_resource::<FloorOutline>()
             .register_type::<SceneryModels>()
@@ -92,8 +95,6 @@ impl Plugin for PanoplySceneryPlugin {
             .add_observer(toggle_container)
             .add_systems(Update, (drive_scenery_animations, start_pending_sounds))
             .register_type::<WallSize>()
-            .register_type::<TerrainEffect>()
-            .register_type::<TerrainHole>()
             .register_type::<SceneryModel>()
             .register_type::<ModelComponent>()
             .register_type::<Vec<ModelComponent>>()
@@ -123,7 +124,10 @@ impl Plugin for PanoplySceneryPlugin {
                     spawn_se_models.after(update_se_aspects),
                     build_se_colliders.after(update_se_aspects),
                     // TerrainFx processing
-                    rebuild_terrain_fx_vertex_attrs.after(read_precinct_data),
+                    mark_changed_terrain_effects,
+                    rebuild_terrain_fx_vertex_attrs
+                        .after(read_precinct_data)
+                        .after(mark_changed_terrain_effects),
                     rebuild_parcel_terrain_fx
                         .after(rebuild_terrain_fx_vertex_attrs)
                         .after(spawn_precincts),

@@ -99,10 +99,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   rewrites it whenever it creates or deletes a precinct (since PAN94, its first edit of a precinct
   with no file), and `asset_xref.py` checks it against the folder, so a file added or removed by
   hand fails `verify.sh`.
-- **PAN74b Terrain effects as catalog entries** (D90). The entries of `terrainfx.exem.json` move out
-  of exemplars, the hole a variant of the entry rather than an aspect of its own. Precincts' terrain
-  effect tables name them, rewritten; `TerrainFxMap` reads the entry rather than downcasting
-  aspects; and the terrain effect tool lists them as the floor tool does.
 - **PAN95 Place floors**, on PAN94's saving and PAN74a's floor entries: floors drawn on the current
   tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`). With the floor tool's
   options, each tool's panel becomes its own: its `construct` emits its options row and its list, as

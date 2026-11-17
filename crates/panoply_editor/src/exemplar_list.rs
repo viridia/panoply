@@ -14,7 +14,7 @@ use bevy::{
 };
 use panoply_actors::ACTOR_TYPE;
 use panoply_exemplar::{Exemplar, InstanceType};
-use panoply_scenery::{FloorSurface, FIXTURE_TYPE, TERRAIN_FX_TYPE, WALL_TYPE};
+use panoply_scenery::{FloorSurface, TerrainEffect, FIXTURE_TYPE, WALL_TYPE};
 
 use crate::{
     chooser::{chooser, Chooser},
@@ -84,8 +84,8 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
         SceneryTool::PlaceWall => Some(WALL_TYPE),
         SceneryTool::PlaceFixture => Some(FIXTURE_TYPE),
         SceneryTool::PlaceActor => Some(ACTOR_TYPE),
-        SceneryTool::DrawTerrainFx => Some(TERRAIN_FX_TYPE),
         SceneryTool::PlaceFloor
+        | SceneryTool::DrawTerrainFx
         | SceneryTool::Interact
         | SceneryTool::Layers
         | SceneryTool::RectSelect => None,
@@ -96,6 +96,7 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
 pub fn placed_entry(tool: SceneryTool) -> Option<TypeId> {
     match tool {
         SceneryTool::PlaceFloor => Some(TypeId::of::<FloorSurface>()),
+        SceneryTool::DrawTerrainFx => Some(TypeId::of::<TerrainEffect>()),
         _ => None,
     }
 }

@@ -127,6 +127,9 @@ WALL_TILES = ASSETS / "exemplars" / "wall-tiles.exem.json"
 FLOORS = ASSETS / "catalog" / "floors.floor.json"
 # Inside the playground's precinct (0, 0), among its floors.
 FLOORS_SPOT = [8.0, 0.0, 8.0]
+TERRAIN_EFFECTS = ASSETS / "catalog" / "terrain-effects.terrainfx.json"
+# The tilled rows (`Tilled.Z`) in the playground's precinct (1, 0).
+TILLED_SPOT = [73.0, 0.0, 26.0]
 # The arrows fly the view at 10 m/s.
 CAMERA_SPEED = 10.0
 
@@ -330,6 +333,7 @@ def scenery_panel(driver):
     driver.present("SceneryPanel")
     assert scenery_tool(driver) == "PlaceFloor", f"started with {scenery_tool(driver)}"
     floor_entries(driver)
+    terrain_effects(driver)
     driver.click("PlaceWall")
     wait_mode(driver, scenery_tool, "PlaceWall")
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
@@ -411,6 +415,37 @@ def floor_entries(driver):
     undo(driver, redo=True)
     driver.expect(raise_input, NUMERIC, {"F64": 0.5})
     saved_diff(driver, FLOORS, row, ["-    }", "+    },", '+    "raise": 0.5'])
+    driver.click("Exemplars/ClearFilter")
+    driver.goto(SPOT, 20.0)
+
+
+def terrain_effects(driver):
+    """The terrain effect tool lists the effects, catalog entries, the hole among them, and the
+    chosen one's variant and fields show below the list. Raising the tilled rows in the
+    playground's precinct (1, 0) rebuilds the ground under them, and Save writes the edit into that
+    entry alone."""
+    driver.click("DrawTerrainFx")
+    wait_mode(driver, scenery_tool, "DrawTerrainFx")
+    driver.goto(TILLED_SPOT, 15.0)
+    driver.present("Exemplars/Tilled.Z", timeout=WAIT)
+    driver.present("Exemplars/Hole")
+    driver.absent("Exemplars/MossyPaversBordered")
+    choose(driver, "terrain_fx", "Tilled.Z")
+    elevation = "Properties/elevation/input"
+    driver.expect(elevation, NUMERIC, {"F64": 0.3})
+    driver.absent("PaneHeader/aspects")
+    driver.screenshot("terrain_effect_entry")
+    retype(driver, elevation, "1")
+    driver.key("Enter")
+    driver.expect(elevation, NUMERIC, {"F64": 1.0})
+    driver.frames(10)
+    driver.screenshot("terrain_effect_raised")
+    saved_diff(
+        driver,
+        TERRAIN_EFFECTS,
+        "Exemplars/Tilled.Z",
+        ['-      "elevation": 0.3,', '+      "elevation": 1,'],
+    )
     driver.click("Exemplars/ClearFilter")
     driver.goto(SPOT, 20.0)
 
