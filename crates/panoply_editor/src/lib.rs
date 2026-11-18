@@ -25,6 +25,8 @@ pub mod diagnostics;
 pub mod exemplar_list;
 pub mod fixture_tool;
 pub mod goto;
+pub mod instance_list;
+pub mod instance_selection;
 pub mod json;
 pub mod map_size;
 pub mod mode_overlays;
@@ -91,6 +93,8 @@ impl PluginGroup for EditorPlugins {
             .add(placement::PlacementPlugin)
             .add(fixture_tool::FixtureToolPlugin)
             .add(actor_tool::ActorToolPlugin)
+            .add(instance_selection::InstanceSelectionPlugin)
+            .add(instance_list::InstanceListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)
             .add(saved_view::SavedViewPlugin)
             .add(text_commit::TextCommitPlugin)

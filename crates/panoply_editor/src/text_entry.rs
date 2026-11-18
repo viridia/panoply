@@ -16,18 +16,20 @@ use bevy::{
     input_focus::{AutoFocus, InputFocus},
     platform::collections::HashSet,
     prelude::*,
-    text::EditableText,
+    text::{EditableText, TextEdit},
     ui::InteractionDisabled,
     ui_widgets::{Activate, RequestClose},
 };
 use bevy_action_map::prelude::*;
 
-/// The dialog's root, holding the values the text may not take.
+/// The dialog's root, holding the values the text may not take, and the text the box starts with.
 #[derive(Component, Default, Clone)]
 pub struct TextEntryDialog {
     pub taken: HashSet<String>,
     /// Says why the text, not empty and not taken, cannot be accepted.
     pub rule: Option<TextEntryRule>,
+    /// The box's text as the dialog opens, selected, so typing replaces it.
+    pub text: String,
 }
 
 /// A check on the text in a [`TextEntryDialog`], returning why it fails.
@@ -78,13 +80,13 @@ impl Plugin for TextEntryPlugin {
         .add_systems(Startup, |mut commands: Commands| {
             commands.spawn((Name::new("TextEntryKeys"), TextEntryKeys));
         })
-        .add_systems(Update, (validate, accept_on_enter));
+        .add_systems(Update, (fill_entry, validate, accept_on_enter).chain());
     }
 }
 
 /// The dialog, titled `title`, its box labeled `label`. Its root is named `#TextEntryDialog`.
 pub fn text_entry_dialog(title: &str, label: &str, taken: HashSet<String>) -> impl Scene {
-    text_entry_dialog_with_rule(title, label, taken, None)
+    entry_dialog(title, label, taken, None, String::new())
 }
 
 /// As [`text_entry_dialog`], with a further check on the text.
@@ -93,6 +95,26 @@ pub fn text_entry_dialog_with_rule(
     label: &str,
     taken: HashSet<String>,
     rule: Option<TextEntryRule>,
+) -> impl Scene {
+    entry_dialog(title, label, taken, rule, String::new())
+}
+
+/// As [`text_entry_dialog`], its box starting with `text`, as a rename starts with the name.
+pub fn text_entry_dialog_with_text(
+    title: &str,
+    label: &str,
+    taken: HashSet<String>,
+    text: String,
+) -> impl Scene {
+    entry_dialog(title, label, taken, None, text)
+}
+
+fn entry_dialog(
+    title: &str,
+    label: &str,
+    taken: HashSet<String>,
+    rule: Option<TextEntryRule>,
+    text: String,
 ) -> impl Scene {
     let (title, label) = (title.to_string(), label.to_string());
     bsn! {
@@ -103,7 +125,7 @@ pub fn text_entry_dialog_with_rule(
             },
         }
         #TextEntryDialog
-        TextEntryDialog { taken: {taken.clone()}, rule: {rule} }
+        TextEntryDialog { taken: {taken.clone()}, rule: {rule}, text: {text.clone()} }
         on(|close: On<RequestClose>, mut commands: Commands| {
             commands.entity(close.event_target()).despawn();
         })
@@ -164,6 +186,25 @@ fn rejection(dialog: &TextEntryDialog, text: &str) -> Option<&'static str> {
         Some("Name in use")
     } else {
         dialog.rule.and_then(|rule| rule(text))
+    }
+}
+
+/// Puts the dialog's starting text in its box as the box appears, selected.
+fn fill_entry(
+    mut inputs: Query<(Entity, &mut EditableText), Added<TextEntryInput>>,
+    parents: Query<&ChildOf>,
+    dialogs: Query<&TextEntryDialog>,
+) {
+    for (input, mut editable) in &mut inputs {
+        let text = parents
+            .iter_ancestors(input)
+            .find_map(|e| dialogs.get(e).ok())
+            .map(|dialog| dialog.text.as_str())
+            .unwrap_or_default();
+        if !text.is_empty() {
+            editable.editor.set_text(text);
+            editable.queue_edit(TextEdit::SelectAll);
+        }
     }
 }
 

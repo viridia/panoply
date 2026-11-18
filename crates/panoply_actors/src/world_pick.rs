@@ -12,12 +12,10 @@ use bevy::{
     window::{CursorOptions, CustomCursor, CustomCursorImage, PrimaryWindow},
 };
 use panoply_core::{
-    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, ToBevy, ToRapier,
-    Viewpoint,
+    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
 use panoply_saga::SagaHost;
-use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
 /// How far from the camera a pointer's ray can hit something, in meters.
 const PICK_RANGE: f32 = 500.;
@@ -114,7 +112,8 @@ pub(crate) fn hide_idle_cursor(
 /// A picking backend. Casts each pointer's ray into the viewed realm's colliders, and reports the
 /// first thing it hits if that offers an interaction, so that nothing is picked through a wall. Its
 /// cursor is set here, on that entity alone, so it follows the entries offered at the moment. The
-/// canopy is passed through (D39). Every ray also reports the backstop.
+/// canopy is passed through (D39), and so are the editor's markers. Every ray also reports the
+/// backstop.
 pub(crate) fn pick_world(
     rays: Res<RayMap>,
     cameras: Query<&Camera, With<PrimaryCamera>>,
@@ -129,16 +128,9 @@ pub(crate) fn pick_world(
     mut commands: Commands,
 ) {
     let host = host.get();
-    let world = viewpoint
-        .realm
-        .and_then(|realm| realms.get(realm).ok())
-        .map(RealmPhysics::world);
-    let filter = QueryFilter::default().groups(InteractionGroups::new(
-        Group::ALL,
-        !collision_groups::CANOPY,
-        InteractionTestMode::And,
-    ));
-    for (&id, ray) in rays.iter() {
+    let physics = viewpoint.realm.and_then(|realm| realms.get(realm).ok());
+    let groups = collision_groups::BLOCKING.difference(collision_groups::CANOPY);
+    for (&id, &ray) in rays.iter() {
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
@@ -147,15 +139,8 @@ pub(crate) fn pick_world(
             vec![(*backstop, HitData::new(id.camera, 0., None, None))],
             BACKSTOP_ORDER,
         ));
-        let ray = Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier());
-        let Some((handle, distance)) =
-            world.and_then(|world| world.cast_ray(&ray, PICK_RANGE, true, filter))
-        else {
-            continue;
-        };
-        let Some(target) = world
-            .and_then(|world| world.colliders.get(handle))
-            .and_then(|collider| Entity::try_from_bits(collider.user_data as u64))
+        let Some((target, distance)) =
+            physics.and_then(|physics| physics.pick(ray, PICK_RANGE, groups))
         else {
             continue;
         };
@@ -169,12 +154,7 @@ pub(crate) fn pick_world(
         if current != Some(cursor) {
             commands.entity(target).try_insert(cursor.clone());
         }
-        let hit = HitData::new(
-            id.camera,
-            distance,
-            Some(ray.point_at(distance).to_bevy()),
-            None,
-        );
+        let hit = HitData::new(id.camera, distance, Some(ray.get_point(distance)), None);
         commands.write_message(PointerHits::new(
             id.pointer,
             vec![(target, hit)],

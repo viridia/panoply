@@ -30,7 +30,7 @@ pub use actor_model::*;
 pub use actor_physics::{capsule, ActorHeld, ActorMotion, ActorResting};
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
-pub use precinct_actors::{HomePrecinct, PrecinctActors};
+pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
 
 use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};

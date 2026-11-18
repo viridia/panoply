@@ -151,7 +151,10 @@ mod tests {
                 let path = entry.unwrap().path();
                 if path.is_dir() {
                     folders.push(path);
-                } else if path.extension().is_some_and(|extension| extension == "json") {
+                } else if path
+                    .extension()
+                    .is_some_and(|extension| extension == "json")
+                {
                     let text = std::fs::read_to_string(&path).unwrap();
                     // An empty file is no catalog.
                     if !text.is_empty() {

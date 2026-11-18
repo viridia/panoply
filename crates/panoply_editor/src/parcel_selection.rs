@@ -22,13 +22,11 @@ use bevy::{
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
 use panoply_core::{
-    realm_physics::collision_groups, GameMode, PrimaryCamera, Realm, RealmPhysics, ToRapier,
-    Viewpoint,
+    realm_physics::collision_groups, GameMode, PrimaryCamera, Realm, RealmPhysics, Viewpoint,
 };
 use panoply_terrain::{
     Parcel, ParcelCache, ParcelKey, TerrainMap, TerrainMapAsset, PARCEL_SIZE_F, WATER_HEIGHT,
 };
-use rapier3d::prelude::{Group, InteractionGroups, InteractionTestMode, QueryFilter, Ray};
 
 use crate::{
     mode_overlays::SelectedContour, mode_selector::EditorMode, shell::SAVE_DELAY,
@@ -94,27 +92,11 @@ fn pick_ground(
     let Ok(physics) = realms.get(realm) else {
         return;
     };
-    let world = physics.world();
-    let filter = QueryFilter::default().groups(InteractionGroups::new(
-        Group::ALL,
-        collision_groups::TERRAIN,
-        InteractionTestMode::And,
-    ));
     for (&id, ray) in rays.iter() {
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
-        let ground = world
-            .cast_ray(
-                &Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier()),
-                PICK_RANGE,
-                true,
-                filter,
-            )
-            .and_then(|(handle, distance)| {
-                let collider = world.colliders.get(handle)?;
-                Some((Entity::try_from_bits(collider.user_data as u64)?, distance))
-            });
+        let ground = physics.pick(*ray, PICK_RANGE, collision_groups::TERRAIN);
         let water = water_distance(ray.origin, *ray.direction)
             .filter(|&distance| distance <= PICK_RANGE)
             .and_then(|distance| {

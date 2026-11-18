@@ -4,7 +4,7 @@ use bevy::{
 };
 use rapier3d::prelude::*;
 
-use crate::{Realm, Viewpoint};
+use crate::{Realm, ToRapier, Viewpoint};
 
 /// Collision groups, as rapier membership and filter bits. Each is defined when its kind of
 /// collider arrives, after the three.js version's nine (see `docs/faery.md`, Physics).
@@ -33,6 +33,16 @@ pub mod collision_groups {
     /// in the debug view.
     pub const ACTOR: Group = Group::GROUP_7;
 
+    /// Scenery's `marker` colliders, on things the editor shows but the player never sees: chalk
+    /// marks on the stage, such as patrol paths, music cues, the sensors of traps and quests, and
+    /// the tethers of wandering. The collider is only the editor's handle for picking one; the game
+    /// reads the marks themselves, and no game query meets the collider.
+    pub const MARKER: Group = Group::GROUP_8;
+
+    /// What the game's own casts and movement meet: every group but the editor's markers, and the
+    /// actors, which are not colliders (D41).
+    pub const BLOCKING: Group = Group::ALL.difference(MARKER).difference(ACTOR);
+
     /// The groups of a parcel's colliders, as opposed to a precinct's.
     pub const PARCEL: Group = TERRAIN.union(FLORA).union(CANOPY);
 
@@ -45,7 +55,17 @@ pub mod collision_groups {
         ("Trees", FLORA),
         ("Canopy", CANOPY),
         ("Actors", ACTOR),
+        ("Markers", MARKER),
     ];
+}
+
+/// A query filter meeting only colliders in `groups`.
+pub fn group_filter(groups: Group) -> QueryFilter<'static> {
+    QueryFilter::default().groups(InteractionGroups::new(
+        Group::ALL,
+        groups,
+        InteractionTestMode::And,
+    ))
 }
 
 /// Colliders an entity owns in its realm's physics world, removed from it when this component
@@ -86,6 +106,18 @@ impl RealmPhysics {
     /// The rapier world, for queries and debug rendering.
     pub fn world(&self) -> &PhysicsWorld {
         &self.world
+    }
+
+    /// The first collider in `groups` along `ray`, within `range`: the entity its `user_data`
+    /// names, and how far along the ray it was hit. Game and editor picking both cast this, each
+    /// with its own groups, so the ray stops at whatever of those it meets first.
+    pub fn pick(&self, ray: Ray3d, range: f32, groups: Group) -> Option<(Entity, f32)> {
+        let ray = Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier());
+        let (handle, distance) = self
+            .world
+            .cast_ray(&ray, range, true, group_filter(groups))?;
+        let collider = self.world.colliders.get(handle)?;
+        Some((Entity::try_from_bits(collider.user_data as u64)?, distance))
     }
 
     /// Number of colliders in this realm's physics world.

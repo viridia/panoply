@@ -81,7 +81,7 @@ TOOL_BUTTONS = [
     "DrawTrees", "DrawShrubs", "DrawHerbs", "EraseFlora", "RotateCcw", "RotateCw",
 ]
 SCENERY_BUTTONS = [
-    "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "Interact",
+    "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "SelectInstance",
     "Layers", "RectSelect",
 ]
 SNAP_BUTTONS = ["SnapNormal", "SnapOffset", "SnapQuarter"]
@@ -114,6 +114,8 @@ NODE = "bevy_ui::ui_node::Node"
 WALL_SETTINGS = "panoply_editor::wall_tool::WallToolSettings"
 FIXTURE_SETTINGS = "panoply_editor::fixture_tool::FixtureToolSettings"
 TIER = "panoply_editor::scenery_pointer::SceneryTier"
+SCENERY_SELECTION = "panoply_editor::instance_selection::ScenerySelection"
+OUTLINE = "panoply_editor::instance_selection::InstanceOutline"
 # The playground precinct under `SPOT`, and one with no file, which the realm's bounds hold.
 SPOT_PRECINCT = "scenery/precincts/playground/p001-p002.msgpack"
 EMPTY_SPOT = [160.0, 0.0, 160.0]
@@ -365,6 +367,7 @@ def scenery_panel(driver):
     driver.present("Exemplars/Proto.HumanoidMale")
     driver.absent("Exemplars/CottageWall")
     actor_tool(driver)
+    select_instance(driver)
     exemplar_properties(driver)
     model_property(driver)
     clips_property(driver)
@@ -690,6 +693,85 @@ def actor_tool(driver):
         restore(precinct, original)
     expect_marcuses(base)
     driver.click("Exemplars/ClearFilter")
+
+
+def select_instance(driver):
+    """Selection mode, over the playground at `SPOT`: hovering a fixture outlines it and a click
+    selects it, its pane showing it has no name. An actor is chosen from the list of named
+    instances and renamed through Rename…, whose box starts with the name; a click outside the
+    dialog closes it and keeps the selection, and undo takes the rename back. The precinct is
+    restored afterwards."""
+    driver.click("PlaceFixture")
+    wait_mode(driver, scenery_tool, "PlaceFixture")
+    choose(driver, "fixture", "FlowerPot")
+    driver.goto(SPOT, 20.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    right = (middle[0] + 150, middle[1])
+    precinct = ASSETS / SPOT_PRECINCT
+    original = precinct.read_bytes()
+
+    def click_at(point):
+        move_pointer(driver, window, scale, point)
+        button(driver, window, "Pressed")
+        button(driver, window, "Released")
+
+    def selected():
+        return driver.get_resource(SCENERY_SELECTION)
+
+    try:
+        # A flower pot in the middle of the view, and an actor to its right.
+        base = element_count(driver)
+        click_at(middle)
+        expect_elements(driver, base + 1)
+        driver.click("PlaceActor")
+        choose(driver, "actor", "Marcus")
+        click_at(right)
+
+        driver.click("SelectInstance")
+        wait_mode(driver, scenery_tool, "SelectInstance")
+        move_pointer(driver, window, scale, middle)
+        assert driver.get("InstanceOutline:Hovered", OUTLINE)["polygons"], "no outline on hover"
+        click_at(middle)
+        assert selected()["instance"] is not None, "the click selected nothing"
+        driver.expect("InstanceId", TEXT, "none")
+        driver.screenshot("instance_selected")
+
+        # The actor placed has a name, so the list holds it.
+        rows = by_name(driver, "marcus-")
+        assert rows, "no actor in the list"
+        row = rows[-1]["components"][NAME]
+        name = row.split(" ")[0]
+        driver.click(f"Exemplars/{row}")
+        driver.expect("InstanceId", TEXT, name)
+        actor = selected()["instance"]
+
+        # A click outside the dialog closes it, and the press does not reach the view.
+        driver.click("RenameInstance")
+        driver.present("TextEntryDialog")
+        click_at(middle)
+        driver.absent("TextEntryDialog")
+        assert selected()["instance"] == actor, "a click outside the dialog changed the selection"
+
+        driver.click("RenameInstance")
+        driver.present("TextEntryDialog")
+        retype(driver, "TextEntryDialog/Entry", "smoke-guard")
+        driver.click("TextEntryDialog/Ok")
+        driver.expect("InstanceId", TEXT, "smoke-guard")
+        assert any(
+            r["components"][NAME].startswith("smoke-guard ") for r in named(driver)
+        ), "the list lacks the new name"
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, f"Undo: Rename {name} to smoke-guard")
+
+        driver.click("Save")
+        expect_disabled(driver, "Save", True)
+        driver.absent("SaveBarrier")
+    finally:
+        restore(precinct, original)
+    expect_elements(driver, base)
+    # The actor tool, as `actor_tool` left it, for the sections after.
+    driver.click("PlaceActor")
+    wait_mode(driver, scenery_tool, "PlaceActor")
 
 
 def tier(driver):

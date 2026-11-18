@@ -124,11 +124,10 @@ pub(crate) fn build_floor_materials(
                 let Some(surface) = surfaces.get(id) else {
                     continue;
                 };
-                let material = surface.material.build(
-                    &server,
-                    &mut std_materials,
-                    &mut noisy_materials,
-                );
+                let material =
+                    surface
+                        .material
+                        .build(&server, &mut std_materials, &mut noisy_materials);
                 materials.0.insert(id, material);
                 if matches!(event, AssetEvent::Modified { .. }) {
                     for (entity, _) in regions.iter().filter(|(_, r)| r.surface.id() == id) {

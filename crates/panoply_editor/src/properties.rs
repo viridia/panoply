@@ -223,7 +223,7 @@ pub const HEADER_TEXT: ThemeToken = tokens::LISTROW_TEXT;
 
 /// The width of a row's caption column at the top level. A nested row's is narrower by its
 /// indent, so widgets line up at every depth.
-const CAPTION_WIDTH: f32 = 88.0;
+pub(crate) const CAPTION_WIDTH: f32 = 88.0;
 
 /// How far each level of nesting sets its rows in: the stripe and the gap after it
 /// (`indented_node`).
@@ -620,7 +620,14 @@ impl Rows<'_> {
                     Some(TypeInfo::TupleStruct(info)) => info.custom_attributes(),
                     _ => &CustomAttributes::default(),
                 };
-                self.row(ui, short_type_name(value), attrs, value, ParsedPath::empty(), None);
+                self.row(
+                    ui,
+                    short_type_name(value),
+                    attrs,
+                    value,
+                    ParsedPath::empty(),
+                    None,
+                );
             }
         }
     }
@@ -2033,7 +2040,7 @@ impl RowHead {
 }
 
 /// `caption` in a column `width` wide, clipped rather than wrapped when it is too long.
-fn caption_cell(ui: &mut Imm<CapsPanel>, caption: String, width: f32) {
+pub(crate) fn caption_cell(ui: &mut Imm<CapsPanel>, caption: String, width: f32) {
     ui.ch().on_spawn_apply_scene(move || {
         bsn! {
             Node {

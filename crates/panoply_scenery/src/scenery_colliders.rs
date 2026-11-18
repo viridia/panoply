@@ -155,10 +155,64 @@ impl ColliderDesc {
     /// The shape and its pose relative to the element, placed as faery's `createCollider.ts`
     /// placed it, since the content was authored against that: `offset` is the bottom center, so
     /// shapes other than ellipsoids are raised by their half-height; the offset turns with the
-    /// element. `None` for descriptors that are not static solids (doors, sensors, hints, markers
-    /// and the rest come with the features that use them) and for hulls that fail.
+    /// element. `None` for descriptors that are not static solids (doors, sensors, hints and the
+    /// rest come with the features that use them; markers are [`Self::marker_shape`]'s) and for
+    /// hulls that fail.
     pub fn shape(&self) -> Option<(SharedShape, Pose)> {
-        if self.kind != ColliderType::Solid || self.animation.is_some() {
+        (self.kind == ColliderType::Solid)
+            .then(|| self.geometry())
+            .flatten()
+    }
+
+    /// A marker's shape and pose, placed as [`Self::shape`] places a solid's: what the editor
+    /// picks it by. `None` for every other type.
+    pub fn marker_shape(&self) -> Option<(SharedShape, Pose)> {
+        (self.kind == ColliderType::Marker)
+            .then(|| self.geometry())
+            .flatten()
+    }
+
+    /// The outline of a solid's or marker's shape seen from above, as points around it in the
+    /// element's x and z, turned with its facing as the shape is: what the editor draws around a
+    /// picked instance. `None` for the types not picked.
+    pub fn footprint(&self) -> Option<Vec<Vec2>> {
+        if !matches!(self.kind, ColliderType::Solid | ColliderType::Marker)
+            || self.animation.is_some()
+        {
+            return None;
+        }
+        let center = self.offset.unwrap_or_default().xz();
+        let ellipse = |radii: Vec2| {
+            (0..FOOTPRINT_SEGMENTS)
+                .map(|i| {
+                    let angle = i as f32 / FOOTPRINT_SEGMENTS as f32 * std::f32::consts::TAU;
+                    center + Vec2::new(angle.cos(), angle.sin()) * radii
+                })
+                .collect()
+        };
+        let rect = |half: Vec2, turns: f32| {
+            let rotation = Rot2::radians(-turns * FRAC_PI_2);
+            [(-1., -1.), (1., -1.), (1., 1.), (-1., 1.)]
+                .map(|(x, z)| center + rotation * (Vec2::new(x, z) * half))
+                .to_vec()
+        };
+        Some(match self.shape {
+            ColliderShape::Box { half_extents } | ColliderShape::Rbox { half_extents } => {
+                rect(half_extents.xz(), 0.)
+            }
+            ColliderShape::Ramp {
+                half_extents,
+                facing,
+            } => rect(half_extents.xz(), facing),
+            ColliderShape::Sphere { radius } => ellipse(Vec2::splat(radius)),
+            ColliderShape::Cylinder { radius, .. } => ellipse(Vec2::splat(radius)),
+            ColliderShape::Ellipsoid { radii } => ellipse(radii.xz()),
+        })
+    }
+
+    /// The shape and pose of a static descriptor, whatever its type.
+    fn geometry(&self) -> Option<(SharedShape, Pose)> {
+        if self.animation.is_some() {
             return None;
         }
         let offset = self.offset.unwrap_or_default();
@@ -188,6 +242,9 @@ impl ColliderDesc {
         ))
     }
 }
+
+/// The points around a round footprint.
+const FOOTPRINT_SEGMENTS: usize = 32;
 
 fn convex_hull(points: impl IntoIterator<Item = Vec3>) -> Option<SharedShape> {
     let points: Vec<_> = points.into_iter().map(ToRapier::to_rapier).collect();
@@ -261,11 +318,19 @@ pub fn build_se_colliders(
             element.position.to_rapier(),
             Quat::from_rotation_y(element.facing).to_rapier(),
         );
-        let handles = colliders
+        let solids = colliders
             .0
             .iter()
             .filter_map(ColliderDesc::shape)
-            .map(|(shape, pose)| {
+            .map(|shape| (shape, group));
+        let markers = colliders
+            .0
+            .iter()
+            .filter_map(ColliderDesc::marker_shape)
+            .map(|shape| (shape, collision_groups::MARKER));
+        let handles = solids
+            .chain(markers)
+            .map(|((shape, pose), group)| {
                 let collider = ColliderBuilder::new(shape)
                     .position(placement * pose)
                     .collision_groups(InteractionGroups::new(
@@ -287,7 +352,30 @@ pub fn build_se_colliders(
 
 #[cfg(test)]
 mod tests {
+    use panoply_core::ToBevy;
+
     use super::*;
+
+    /// A ramp's footprint turns with its facing, as its shape does; a hint has none.
+    #[test]
+    fn a_footprint_turns_with_the_shape() {
+        let text = r#"{"shape":"ramp","half_extents":[1,0.5,0.25],"facing":1,"offset":[2,0,0]}"#;
+        let desc: ColliderDesc = serde_json::from_str(text).unwrap();
+        let (_, pose) = desc.shape().unwrap();
+        let corner = Vec3::new(1., 0., 0.25);
+        let turned = pose.rotation.to_bevy() * corner;
+        let expected = Vec2::new(2., 0.) + turned.xz();
+        let footprint = desc.footprint().unwrap();
+        assert!(
+            footprint.iter().any(|p| p.distance(expected) < 1e-5),
+            "{footprint:?} lacks {expected}"
+        );
+
+        let hint: ColliderDesc =
+            serde_json::from_str(r#"{"shape":"box","type":"hint","half_extents":[1,1,1]}"#)
+                .unwrap();
+        assert!(hint.footprint().is_none());
+    }
 
     #[test]
     fn the_shape_is_a_key_beside_its_dimensions() {

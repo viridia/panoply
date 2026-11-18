@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I61.**
+**Next: I64.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -236,3 +236,32 @@ confirmed by running something or only by reading. Numbers are never reused.
   soil): `TerrainTypes` is a bitflags newtype over `u8`. Candidate: a checkbox per flag, as a map
   with keys from its type has a row per key. Seen in `plans/smoke.py`'s `terrain_effect_entry`
   screenshot (PAN74b); the aspect showed it the same.
+- **I61** `CliffHintFullWide` in `wall-tiles.exem.json` is a wall with nothing but a `hint`
+  collider, so it cannot be seen or picked. The author takes it for a removed feature, perhaps of
+  terrain flattening. Candidate: delete it, in the converter, or the next conversion brings it back.
+  Read, not run.
+- **I62** Widgets that show a value (list rows, a select's chosen value, an id in a pane) are set in
+  the same Fira Sans Regular as buttons, which act. The author would set values a weight lighter, as
+  widget collections usually set actions heavier than values. Feathers bundles only Regular and Bold
+  (`bevy_feathers/src/assets/fonts`), and its buttons and labels are Regular. Candidate: ship Firava
+  ([hellogreg/firava](https://github.com/hellogreg/firava), OFL 1.1, not on Google Fonts), Fira Sans
+  4.2 made variable, weights 100 to 900 on one axis, regular and italic, as `Firava.ttf` and
+  `FiravaItalic.ttf`. Set `FontWeight::LIGHT` on the value text Panoply builds (`chooser.rs`'s rows,
+  the summaries and values in `properties.rs`, `instance_list.rs`'s id), or move all of Panoply's
+  text to it. One font then serves every weight, and Panoply proves the move feathers has discussed
+  but not made, which would bring its own value widgets (select, text and number inputs) along. Its
+  family is presumably Firava rather than Fira Sans, so Panoply's text names the families in order,
+  Firava first, Fira Sans for what it lacks, then Key Symbols (Bevy's text takes a list of families
+  since the last cycle). It holds about 450 characters to Fira Sans's 1,700, which matters for
+  feathers more than for an English editor. Unchecked: the family name in its name table, and how
+  Bevy's text picks a weight from a variable font. Seen by the author; the font read on its repo.
+- **I63** A click inside a modal dialog that its target does not consume escapes the dialog: the
+  text input (`bevy_ui_widgets`' `text_input`) handles no `PointerClick`, and the modal stops only
+  presses at its body (`modal_dialog_barrier_on_click` observes `PointerPress`), so a click in the
+  rename dialog's box bubbles through the dialog and the UI root to the window, past picking hygiene
+  (D94). Selection mode once took it for a click on the ground and cleared the selection. The
+  modal's observer is named for clicks but observes presses (`modal.rs`), and a press and the click
+  picking sends on its release bubble each on their own, so stopping one leaves the other. Upstream
+  candidates: the barrier and the dialog body consuming `PointerClick` too, as the name intends, the
+  cleanest; and the text input consuming the clicks it uses for focus and the caret. Confirmed by
+  running (PAN88's probe: original target `TextEntryDialog/…/Entry`, arriving at the window).

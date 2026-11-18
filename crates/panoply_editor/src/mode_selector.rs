@@ -66,7 +66,8 @@ pub enum SceneryTool {
     PlaceFixture,
     PlaceActor,
     DrawTerrainFx,
-    Interact,
+    /// Selection mode: a click selects the wall or fixture under the pointer.
+    SelectInstance,
     Layers,
     RectSelect,
 }

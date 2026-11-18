@@ -44,7 +44,7 @@ pub(crate) fn mark_precinct_actors(
 /// What placed an actor: its entry in its precinct's asset, without its aspects. An edit to the
 /// precinct that leaves the entry as it was leaves the actor alone.
 #[derive(Component, Debug, Clone, PartialEq)]
-pub(crate) struct PlacedAs {
+pub struct PlacedAs {
     iid: SceneryInstanceId,
     exemplar: String,
     position: Vec3,
@@ -52,6 +52,16 @@ pub(crate) struct PlacedAs {
 }
 
 impl PlacedAs {
+    /// The actor's id in its precinct.
+    pub fn iid(&self) -> &SceneryInstanceId {
+        &self.iid
+    }
+
+    /// The actor's exemplar, a `file#Label` path.
+    pub fn exemplar(&self) -> &str {
+        &self.exemplar
+    }
+
     fn of(data: &ActorInstanceData) -> Self {
         Self {
             iid: data.iid.clone(),

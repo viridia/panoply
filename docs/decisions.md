@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D93.**
+**Next: D95.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -734,3 +734,20 @@ never reused.
   as a floor's material, is built by a system and rebuilt on `AssetEvent::Modified`. So an edit in
   the property editor, or a reload, shows at once; the floor loader built its material once, and no
   change reached it. Reversing it means a reload per edit. (PAN74a)
+- **D93** The editor picks a small or invisible thing by its `marker` colliders: chalk marks on the
+  stage, such as patrol paths, music cues, the sensors of traps and quests, and wandering's tethers.
+  They are colliders in the `MARKER` group, which the game's own casts and movement leave out by
+  filtering on `BLOCKING`, so a marker is the editor's handle alone and the game reads the mark
+  itself. Hints and markers are collider types rather than aspects of their own so that one editor
+  places every collider-like volume. A hint is for navigation alone (PAN16), never built as a
+  collider nor picked, as faery built none: beside a door or a stair, it would take the click meant
+  for it. Selection mode's ray is the game's (D61) with other groups, stopping at walls, floors and
+  ground, so nothing is picked through a wall. Reversing it means a pick shape of another kind, and
+  queries that need no filter to miss it. (PAN88)
+- **D94** The editor's world tools take the pointer through picking: a backend reports what the
+  pointer is over in the world, and the tool observes picking's events on it. So whatever is in
+  front, the panel, a widget over the view or a dialog's barrier, takes the press first, as picking
+  routes it; a tool polling `PointerState` sees every press, and has to guess which were meant for
+  it (PAN103). Picking hygiene: an observer that handles a picking event consumes it
+  (`propagate(false)`), so it reaches nothing behind or above its target, unless the observer only
+  adds to what another does. Reversing it means each tool filtering presses itself. (PAN88)

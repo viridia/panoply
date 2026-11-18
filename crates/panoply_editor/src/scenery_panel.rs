@@ -25,6 +25,7 @@ use bevy_immediate::{
 
 use crate::{
     exemplar_list::{has_list, tool_chooser, SceneryChoices},
+    instance_list::{instance_chooser, InstancePane},
     mode_selector::{EditorModeSettings, SceneryTool},
     scenery_pointer::{step_tier, SceneryTier},
     scenery_properties::SceneryProperties,
@@ -83,10 +84,10 @@ const BUTTONS: [(&str, &str, f32, SceneryTool); 8] = [
         SceneryTool::DrawTerrainFx,
     ),
     (
-        "Interact",
+        "SelectInstance",
         "editor/icons/machine.png",
         32.,
-        SceneryTool::Interact,
+        SceneryTool::SelectInstance,
     ),
     (
         "Layers",
@@ -135,7 +136,7 @@ impl Plugin for SceneryPanelPlugin {
             BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryExemplars>::new(),
             BevyImmediateAttachPlugin::<CapsUiFeathers, WallToolbar>::new(),
         ))
-        .add_systems(Update, show_tool_options);
+        .add_systems(Update, (show_tool_options, show_properties_or_instance));
     }
 }
 
@@ -162,6 +163,27 @@ fn show_tool_options(
         let rows = GridPlacement::start_end(if shown { 2 } else { 1 }, 6);
         if node.grid_row != rows {
             node.grid_row = rows;
+        }
+    }
+}
+
+/// Shows, in the panel's last row, the property editor, or in selection mode the selected
+/// instance's pane: they share the row, and a hidden one leaves the other to take the pointer.
+fn show_properties_or_instance(
+    settings: Res<EditorModeSettings>,
+    mut properties: Query<&mut Node, (With<SceneryProperties>, Without<InstancePane>)>,
+    mut instance: Query<&mut Node, (With<InstancePane>, Without<SceneryProperties>)>,
+) {
+    let selecting = settings.scenery_tool == SceneryTool::SelectInstance;
+    let display = |shown: bool| if shown { Display::Flex } else { Display::None };
+    for mut node in &mut properties {
+        if node.display != display(!selecting) {
+            node.display = display(!selecting);
+        }
+    }
+    for mut node in &mut instance {
+        if node.display != display(selecting) {
+            node.display = display(selecting);
         }
     }
 }
@@ -287,6 +309,17 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 flex_direction: FlexDirection::Column,
                 min_height: px(0),
             }
+            --
+            // In selection mode, the selected instance's pane, in the same place, the property
+            // editor hidden (`show_properties_or_instance`).
+            #InstancePane
+            InstancePane
+            Node {
+                grid_column: {GridPlacement::start_end(1, -1)},
+                grid_row: {GridPlacement::start(6)},
+                flex_direction: FlexDirection::Column,
+                min_height: px(0),
+            }
         ]
     }
 }
@@ -304,6 +337,10 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
     /// tool that has no list.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut SceneryExemplarsParams) {
         let tool = params.settings.scenery_tool;
+        if tool == SceneryTool::SelectInstance {
+            ui.ch_id(tool).on_spawn_apply_scene(instance_chooser);
+            return;
+        }
         if !has_list(tool) {
             return;
         }

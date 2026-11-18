@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN103.**
+**Next: PAN104.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first; a chunk that needs another thread's says so.
@@ -118,20 +118,14 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   Cut beside the tier buttons (`TODO(PAN76a)` in `scenery_panel.rs`), which hides what is above the
   current tier (`TierSelector.tsx`, `hideTopFloors`), on the same hiding; and the wall tool hides
   the walls a release would replace while it hovers, as faery's did (`PlaceWallTool.ts`,
-  `setExclusion`).
+  `setExclusion`). What is hidden is not picked, in play or selection mode, as faery's cutaways
+  cleared their colliders' Visible group: `RealmPhysics::pick` takes the groups to meet, so the
+  hidden colliders need a group of their own, or a filter by owner.
 - **PAN77 Scenery rect selection.** The RectSelect tool, whose button does nothing yet: drag out a
   rect on the current tier of the precinct under the pointer, snapped to the wall snap size, drawn
   as an overlay and kept as the scenery selection with its precinct. As faery's
   `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
   rect to include it.
-- **PAN88 Instance picking.** Selection mode, as faery's `SelectSceneryInstanceMode`: a click
-  selects the wall, fixture or actor under the pointer, kept as the scenery selection with its
-  precinct; PAN28e's instance properties are its first customer. The panel lists the current
-  precinct's instances by id, and choosing one selects it. An id is assigned when an actor is first
-  placed by another tool, and can be edited here. Small or invisible things are picked through their
-  `hint` and `marker` colliders (about 15 of each in `furnishings.exem.json` and
-  `wall-tiles.exem.json`), which must stay out of the game's own collisions and queries. The
-  editor's world clicks run only in `GameMode::Edit`, as the game's (PAN17) will only in `Play`.
 - **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
@@ -153,23 +147,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
   faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
   a rect into a cutaway is read in the chunk.
-- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
-  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
-  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
-  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
-  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
-  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
-  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
-  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
-  themselves), external ids written into memory at save rather than arriving with the reload (D88),
-  plans restoring files in memory rather than by writing them, and removing the barrier. Two
-  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
-  after the next save, the barrier took it for that save's reload, and the real one then overwrote
-  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
-  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
-  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
-  asset server skipping the reload of a file it wrote through its own `AssetWriter`
-  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
 
 ## Interaction
 
@@ -221,15 +198,6 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN91 One reload per save.** An edit made just after saving can be lost: the save barrier
-  (`update_save_barrier`, `unsaved.rs`) lifts on the saved file's first reload, and one save can
-  bring a second, which replaces the exemplars with the file as saved. Seen in `plans/smoke.py`'s
-  `slots_property` (an undo after the save, then a reload, then a save with nothing to write); its
-  log showed a lone "Reloaded exemplars/characters.exem.json" after the save, then "Reloading folder
-  exemplars" with another. Likely cause, unconfirmed: the catalogs load as a folder and as files, so
-  a save fires a file reload and a folder reload. Read in Bevy's source how a folder reload treats a
-  file already loaded; then make a save cause one reload, or have the barrier wait for every reload
-  it causes.
 - **PAN28e Instances, nav points, New and Clone.** After PAN88, PAN92 and PAN93. Roots for an
   instance picked in selection mode and for the realm panel's selected nav point (faery's
   `NavPointEditor`). An instance's aspects show as overrides of its exemplar's. Whether an instance
@@ -302,7 +270,8 @@ components and every layer restartable from saved state (R104).
   moved updates its collider, so resting actors (PAN3p) cost nothing; check it in `plans/perf.py`.
   Check whether a collider without a body must be a sensor to stay out of contact generation. faery
   also had an inflated capsule for picking ([faery.md](faery.md), Physics); one capsule serves both
-  until picking feels fiddly.
+  until picking feels fiddly. Selection mode's click then picks actors too, which until now are
+  chosen from its list (`instance_selection.rs`).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
@@ -487,6 +456,51 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 
 - **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
   what each needs are in [goals.md](goals.md).
+
+## Technical debt
+
+Code that works but stands in the way: a pattern the rest of the code has moved past, or a
+workaround for what should be fixed at its cause. Each is taken when its area is next touched, or
+sooner when it bites.
+
+- **PAN103 Tools on picking events.** The editor's world tools read the mouse by polling
+  `PointerState`, which passes by picking's routing: what a widget or dialog in front of the view
+  does with a press does not reach them. So closing a dialog by clicking outside it, which despawns
+  the barrier the press landed on, reads as a press in the view, and starts a wall stroke or a
+  placement (selection mode had the same until PAN88 moved it to events). Move the wall tool
+  (`wall_tool.rs`), the placement gesture of the fixture and actor tools (`placement.rs`) and the
+  terrain brushes (`terrain_cursor.rs`) to picking backends and `Pointer<Press>`, `Pointer<Drag>`
+  and `Pointer<DragEnd>` observers, as terrain mode's parcel selection and selection mode take
+  theirs (`parcel_selection.rs`, `instance_selection.rs`). Each gesture spans frames, press to
+  release, and Escape cancels one mid-drag. And the click observers that handle a click without
+  consuming it, which D94 asks of them, do: `select_parcel` (`parcel_selection.rs`), and the
+  chooser's and the model picker's rows (`chooser.rs`, `model_picker.rs`).
+- **PAN91 One reload per save.** An edit made just after saving can be lost: the save barrier
+  (`update_save_barrier`, `unsaved.rs`) lifts on the saved file's first reload, and one save can
+  bring a second, which replaces the exemplars with the file as saved. Seen in `plans/smoke.py`'s
+  `slots_property` (an undo after the save, then a reload, then a save with nothing to write); its
+  log showed a lone "Reloaded exemplars/characters.exem.json" after the save, then "Reloading folder
+  exemplars" with another. Likely cause, unconfirmed: the catalogs load as a folder and as files, so
+  a save fires a file reload and a folder reload. Read in Bevy's source how a folder reload treats a
+  file already loaded; then make a save cause one reload, or have the barrier wait for every reload
+  it causes.
+- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
+  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
+  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
+  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
+  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
+  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
+  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
+  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
+  themselves), external ids written into memory at save rather than arriving with the reload (D88),
+  plans restoring files in memory rather than by writing them, and removing the barrier. Two
+  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
+  after the next save, the barrier took it for that save's reload, and the real one then overwrote
+  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
+  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
+  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
+  asset server skipping the reload of a file it wrote through its own `AssetWriter`
+  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
 
 ## Sweeps
 

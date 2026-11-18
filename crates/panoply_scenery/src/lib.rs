@@ -2,7 +2,9 @@ use std::collections::BTreeMap;
 
 use bevy::prelude::*;
 use floor_surface::{build_floor_materials, FloorMaterials};
-use panoply_exemplar::{CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt};
+use panoply_exemplar::{
+    CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt,
+};
 use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::spawn_precincts;

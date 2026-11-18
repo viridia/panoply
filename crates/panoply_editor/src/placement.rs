@@ -21,7 +21,8 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::{
-    realm_physics::collision_groups, Realm, RealmPhysics, ToBevy, ToRapier, Viewpoint,
+    realm_physics::{collision_groups, group_filter},
+    Realm, RealmPhysics, ToBevy, ToRapier, Viewpoint,
 };
 use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder, StrokeMarker,
@@ -29,10 +30,7 @@ use panoply_overlays::{
 use panoply_scenery::PrecinctCache;
 use rapier3d::{
     parry::query::details::ShapeCastOptions,
-    prelude::{
-        Group, InteractionGroups, InteractionTestMode, PhysicsWorld, Pose, QueryFilter, Ray,
-        SharedShape,
-    },
+    prelude::{PhysicsWorld, Pose, QueryFilter, Ray, SharedShape},
 };
 
 use crate::{
@@ -377,13 +375,10 @@ fn show_readout(
     }
 }
 
-/// What the cast can land on: everything but the canopy, which the pointer passes through (D39).
+/// What the cast can land on: everything but the canopy, which the pointer passes through (D39),
+/// and markers, which nothing stands on.
 fn cast_filter() -> QueryFilter<'static> {
-    QueryFilter::default().groups(InteractionGroups::new(
-        Group::ALL,
-        !collision_groups::CANOPY,
-        InteractionTestMode::And,
-    ))
+    group_filter(collision_groups::BLOCKING.difference(collision_groups::CANOPY))
 }
 
 /// How far `shapes`, at `origin` and turned by `rotation`, move along `direction` before the first

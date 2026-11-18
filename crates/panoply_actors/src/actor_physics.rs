@@ -5,7 +5,10 @@
 //! each other.
 
 use bevy::{ecs::system::SystemParam, prelude::*};
-use panoply_core::{RealmPhysics, ToBevy, ToRapier, Viewpoint};
+use panoply_core::{
+    realm_physics::{collision_groups, group_filter},
+    RealmPhysics, ToBevy, ToRapier, Viewpoint,
+};
 use panoply_scenery::SceneryPending;
 use panoply_terrain::TerrainPending;
 use rapier3d::{
@@ -169,10 +172,9 @@ pub(crate) fn start_actor_physics(
         }
         let facing = transform.rotation.to_euler(EulerRot::YXZ).0;
         let ray = down_ray(position + Vec3::Y * GROUND_RAY_RISE);
-        let ground =
-            physics
-                .world()
-                .cast_ray(&ray, GROUND_RAY_LENGTH, true, QueryFilter::default());
+        let ground = physics
+            .world()
+            .cast_ray(&ray, GROUND_RAY_LENGTH, true, blocking());
         if ground.is_some() {
             commands.entity(entity).insert(ActorMotion {
                 position,
@@ -238,7 +240,7 @@ pub(crate) fn move_actors(
         if !ground.under(actor.realm, motion.position, shape.radius) {
             continue;
         }
-        let queries = physics.world().query_pipeline();
+        let queries = physics.world().query_pipeline_with_filter(blocking());
         let mut center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
         let pushed = push_out(&controller, &queries, &shape, center, dt);
         motion.position += pushed;
@@ -330,6 +332,11 @@ fn push_out(
         .to_bevy()
 }
 
+/// What an actor meets: everything but the editor's markers.
+fn blocking() -> QueryFilter<'static> {
+    group_filter(collision_groups::BLOCKING)
+}
+
 /// A ray straight down from `origin`.
 fn down_ray(origin: Vec3) -> Ray {
     Ray::new(origin.to_rapier(), Vec3::NEG_Y.to_rapier())
@@ -367,7 +374,9 @@ pub(crate) fn interpolate_actors(
 
 #[cfg(test)]
 mod tests {
-    use rapier3d::prelude::{ColliderBuilder, RigidBodyBuilder};
+    use rapier3d::prelude::{
+        ColliderBuilder, Group, InteractionGroups, InteractionTestMode, RigidBodyBuilder,
+    };
 
     use super::*;
 
@@ -438,6 +447,46 @@ mod tests {
         assert!(
             queries.intersect_shape(pose, &shape).next().is_none(),
             "still inside the ground"
+        );
+    }
+
+    #[test]
+    fn an_actor_falls_through_a_marker() {
+        let mut physics = parcel_ground();
+        let body = physics.insert_body(RigidBodyBuilder::fixed().build());
+        let marker = ColliderBuilder::cuboid(1.0, 0.5, 1.0)
+            .translation(Vec3::new(8.0, 0.5, 8.0).to_rapier())
+            .collision_groups(InteractionGroups::new(
+                collision_groups::MARKER,
+                Group::ALL,
+                InteractionTestMode::And,
+            ))
+            .build();
+        physics.insert_collider(body, marker);
+        physics.step(DT);
+        let queries = physics.world().query_pipeline_with_filter(blocking());
+        let (controller, shape) = (controller(), capsule(None, None));
+        let mut center = center_at(&shape, 2.0);
+        let mut vertical_speed = 0.0;
+        for _ in 0..64 {
+            vertical_speed -= GRAVITY * DT;
+            let movement = controller.move_shape(
+                DT,
+                &queries,
+                &shape,
+                &Pose::from_translation(center.to_rapier()),
+                (Vec3::Y * vertical_speed * DT).to_rapier(),
+                |_| {},
+            );
+            center += movement.translation.to_bevy();
+            if movement.grounded {
+                vertical_speed = 0.0;
+            }
+        }
+        let feet = center.y - shape.half_height() - shape.radius;
+        assert!(
+            (0.0..0.05).contains(&feet),
+            "feet at {feet}, not on the ground under the marker"
         );
     }
 

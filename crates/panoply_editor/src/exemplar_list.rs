@@ -86,7 +86,7 @@ pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
         SceneryTool::PlaceActor => Some(ACTOR_TYPE),
         SceneryTool::PlaceFloor
         | SceneryTool::DrawTerrainFx
-        | SceneryTool::Interact
+        | SceneryTool::SelectInstance
         | SceneryTool::Layers
         | SceneryTool::RectSelect => None,
     }
@@ -283,7 +283,7 @@ mod tests {
             SceneryTool::PlaceFixture,
             SceneryTool::PlaceActor,
             SceneryTool::DrawTerrainFx,
-            SceneryTool::Interact,
+            SceneryTool::SelectInstance,
             SceneryTool::Layers,
             SceneryTool::RectSelect,
         ];

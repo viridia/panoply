@@ -4,14 +4,14 @@
 use bevy::prelude::*;
 use bevy_action_map::prelude::*;
 use panoply_core::{
-    realm_physics::collision_groups, RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT,
-    KEY_PROMPT_FONT,
+    realm_physics::{collision_groups, group_filter},
+    RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT, KEY_PROMPT_FONT,
 };
 use panoply_exemplar::{perform_interaction, Interactions};
 use panoply_saga::SagaHost;
 use rapier3d::{
     parry::{query::details::ShapeCastOptions, shape::Cuboid},
-    prelude::{Group, InteractionGroups, InteractionTestMode, Pose, QueryFilter},
+    prelude::Pose,
 };
 
 use crate::{
@@ -85,11 +85,12 @@ pub(crate) fn probe_interaction(
         let shape = capsule(size, scale);
         let half_height = shape.half_height() + shape.radius;
         let rotation = Quat::from_rotation_y(motion.facing);
-        let filter = QueryFilter::default().groups(InteractionGroups::new(
-            Group::ALL,
-            !(collision_groups::CANOPY | collision_groups::TERRAIN | collision_groups::FLOOR),
-            InteractionTestMode::And,
-        ));
+        let filter = group_filter(
+            collision_groups::BLOCKING
+                .difference(collision_groups::CANOPY)
+                .difference(collision_groups::TERRAIN)
+                .difference(collision_groups::FLOOR),
+        );
         let (handle, hit) = world.cast_shape(
             &Pose::from_parts(
                 (motion.position + Vec3::Y * half_height).to_rapier(),

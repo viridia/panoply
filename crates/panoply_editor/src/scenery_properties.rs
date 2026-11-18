@@ -418,7 +418,7 @@ impl ImmediateAttach<CapsPanel> for SceneryProperties {
 
 /// Part of the pane's caption, in `font` at the header's size: the header's own font does not
 /// reach text inside a nested node.
-fn header_text(font: &'static str, weight: FontWeight) -> impl Scene {
+pub(crate) fn header_text(font: &'static str, weight: FontWeight) -> impl Scene {
     bsn! {
         Text("")
         TextFont {

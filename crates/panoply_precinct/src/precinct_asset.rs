@@ -103,8 +103,33 @@ impl PrecinctAsset {
         iid
     }
 
+    /// Gives the instance, scenery or actor, whose id is `from` the external id `to`. Refused, and
+    /// `false` returned, if no instance has that id, or `to` is empty or already used here.
+    pub fn rename_instance(&mut self, from: &SceneryInstanceId, to: &str) -> bool {
+        if to.is_empty() || self.external_ids().contains(to) {
+            return false;
+        }
+        let iid = self
+            .scenery
+            .iter_mut()
+            .map(|instance| &mut instance.iid)
+            .chain(self.actors.iter_mut().map(|actor| &mut actor.iid))
+            .find(|iid| *iid == from);
+        let Some(iid) = iid else {
+            return false;
+        };
+        *iid = SceneryInstanceId::External(Arc::new(to.to_string()));
+        true
+    }
+
+    /// Whether an instance, scenery or actor, has the id `iid`.
+    pub fn has_instance(&self, iid: &SceneryInstanceId) -> bool {
+        self.scenery.iter().any(|instance| instance.iid == *iid)
+            || self.actors.iter().any(|actor| actor.iid == *iid)
+    }
+
     /// The external ids the precinct's scenery and actors use.
-    fn external_ids(&self) -> HashSet<String> {
+    pub fn external_ids(&self) -> HashSet<String> {
         self.scenery
             .iter()
             .map(|instance| &instance.iid)
@@ -741,5 +766,31 @@ mod tests {
             .map(|a| (a.facing, a.position))
             .collect();
         assert_eq!(placed, [(90., Vec3::X), (0., Vec3::Z)]);
+    }
+
+    /// A rename takes a name no instance uses, scenery or actor, and gives an internal id a name.
+    #[test]
+    fn a_rename_refuses_a_name_in_use() {
+        let mut precinct = PrecinctAsset {
+            scenery_types: vec!["exemplars/furnishings.exem.json#Chest".into()],
+            ..default()
+        };
+        let wall = precinct.add_scenery_element(0, 0., Vec3::ZERO, None);
+        let guard = precinct.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::X);
+        assert!(!precinct.rename_instance(&wall, "guard-1"));
+        assert!(!precinct.rename_instance(&wall, ""));
+        assert!(precinct.rename_instance(&wall, "strongbox"));
+        assert!(!precinct.rename_instance(&guard, "strongbox"));
+        assert!(precinct.rename_instance(&guard, "captain"));
+        let missing = SceneryInstanceId::External(Arc::new("guard-1".into()));
+        assert!(!precinct.rename_instance(&missing, "sergeant"));
+        assert_eq!(
+            precinct.scenery[0].iid,
+            SceneryInstanceId::External(Arc::new("strongbox".into()))
+        );
+        assert_eq!(
+            precinct.actors[0].iid,
+            SceneryInstanceId::External(Arc::new("captain".into()))
+        );
     }
 }

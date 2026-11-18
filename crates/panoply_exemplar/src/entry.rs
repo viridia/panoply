@@ -12,8 +12,7 @@ use bevy::{
     platform::collections::HashSet,
     prelude::*,
     reflect::{
-        serde::TypedReflectDeserializer, GetTypeRegistration, TypeRegistry, TypeRegistryArc,
-        Typed,
+        serde::TypedReflectDeserializer, GetTypeRegistration, TypeRegistry, TypeRegistryArc, Typed,
     },
 };
 use panoply_saga::{FormulaQueue, SagaHost, SagaPlugin};
@@ -24,9 +23,7 @@ use thiserror::Error;
 use crate::save::{merge, reflect_json};
 
 /// A kind of catalog entry. Its caption in the editor is its type's `DisplayName`.
-pub trait CatalogEntry:
-    Asset + Reflect + Typed + GetTypeRegistration + Default + Clone
-{
+pub trait CatalogEntry: Asset + Reflect + Typed + GetTypeRegistration + Default + Clone {
     /// The extension of the files holding entries of this kind, as `floor.json`.
     const EXTENSION: &'static str;
 }
@@ -123,7 +120,10 @@ struct EntriesSeed<'a, T> {
 impl<'de, T: CatalogEntry> DeserializeSeed<'de> for EntriesSeed<'_, T> {
     type Value = Vec<(String, T)>;
 
-    fn deserialize<D: de::Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
+    fn deserialize<D: de::Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> Result<Self::Value, D::Error> {
         deserializer.deserialize_map(self)
     }
 }
@@ -299,7 +299,10 @@ mod tests {
             r#"{ "Inn": { "text": "a" }, "Inn": { "text": "b" } }"#,
             &HostState::new(),
         );
-        assert!(result.unwrap_err().to_string().contains("Inn is in the file twice"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Inn is in the file twice"));
     }
 
     #[test]

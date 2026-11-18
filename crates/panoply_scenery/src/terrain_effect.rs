@@ -144,7 +144,9 @@ mod tests {
             let mut json = serde_json::to_value(serializer).unwrap();
             // Fields at their defaults are left out of the file.
             if let Some(fields) = json.get_mut("Surface").and_then(|s| s.as_object_mut()) {
-                fields.retain(|_, v| !(v == &serde_json::json!(0.0) || v == &serde_json::json!(false)));
+                fields.retain(|_, v| {
+                    !(v == &serde_json::json!(0.0) || v == &serde_json::json!(false))
+                });
             }
             let mut expected = file[&label].clone();
             if let Some(fields) = expected.get_mut("Surface").and_then(|s| s.as_object_mut()) {

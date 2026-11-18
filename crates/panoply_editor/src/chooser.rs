@@ -429,8 +429,8 @@ fn row(name: String, italic: bool) -> impl Scene {
     };
     bsn! {
         @FeathersListRow
-        // The list view clips only vertically, and a name with nowhere to wrap is wider than the
-        // row: clip it at the row's content box.
+        // The list view clips only vertically, and a name on one line can be wider than the row:
+        // clip it at the row's content box.
         // TODO(I35): drop once feathers' list view clips horizontally too.
         Node {
             overflow: Overflow::clip_x(),
@@ -446,6 +446,8 @@ fn row(name: String, italic: bool) -> impl Scene {
         Children [
             Text({label.clone()})
             ThemedText
+            // One line, clipped by the row, never wrapped at a space.
+            TextLayout { linebreak: LineBreak::NoWrap }
             // The list view's font, in the row's style.
             TextFont {
                 font: FontSourceTemplate::Families(fonts::SANS),
