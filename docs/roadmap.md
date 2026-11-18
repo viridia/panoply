@@ -154,8 +154,11 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   `OpenDoor` clip through `SceneryAnimations` and offered through `Interactions`. Its collider is
   built and follows the animated glTF node its descriptor's `animation` names, as faery's
   `PhysicsMovable` did (a kinematic body moved by the model's own animation, with no separate
-  animation data), so the leaf is solid and within the probe's reach through the whole swing. Closes
-  I26.
+  animation data), so the leaf is solid and within the probe's reach through the whole swing. An
+  actor in the swing: in faery, unsticking turned the overlap into velocity and threw the actor
+  across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
+  resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
+  standing in the swing. Closes I26.
 - **PAN79 Mechanisms**: the stock elements puzzles are built from, and how they are wired together,
   on SAGA's cells and reactions (X7). faery had doors, push and toggle buttons, pressure plates,
   remotely controlled openables, automatic doors, spear traps and fireball traps (whose fixed
@@ -271,54 +274,110 @@ components and every layer restartable from saved state (R104).
   force, so it does not jitter; a weight per actor, so NPCs yield to the player more than the player
   to them. The weight follows size and stance: a dwarf does not shove a giant, a guard on duty
   stands planted, and a scripted goal may make an actor immovable, to block a path for a scene.
-  Whether it is computed or an aspect's value that goals change is settled here; PAN16's route costs
-  read it. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
+  Whether it is computed or an aspect's value that goals change is settled here; PAN16e's route
+  costs read it. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
   Neighbours by testing every pair in the realm until a grid is needed. The playground's townsfolk
   are the test. X50 builds NPCs' steering on it.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16 Navigation.** Panoply has none; faery's is in `engine/src/nav` (see [faery.md](faery.md)).
-  Research first, landing as a decision: what generates the mesh and what queries it, each in D36's
-  order. [rerecast](https://crates.io/crates/rerecast) is a port of Recast, generation only, whose
-  core crate needs no Bevy; its README pairs it with `landmass` and `vleue_navigator` for queries.
-  Read with `local_sweep.py` inventories first, faery's `nav` and the candidate crates, then the
-  files they point to: an inventory finds where to read, but misses what one file guarantees and
-  another relies on (faery's regions are convex, split in `NavigationMesh.ts`). The questions:
-  - A mesh only around loaded precincts (R83): rerecast's tiles, whose state its roadmap leaves
-    unclear, or a mesh per precinct joined at query time, as faery's tracts were (`perimeter` edges,
-    `neighborTransition` in `NavRouteTask.ts`), with borders padded so the edges meet.
-  - Door regions (R98): an area type marked by the door collider's `ConvexVolume`, and a side table
-    from polygon to door instance, since an area type is a `u8`. The cell size must keep a narrow
-    doorway open after the agent radius is eroded.
-  - Exclusion zones where actors stand (R86): without a tile cache, rerecast cuts nothing at run
-    time. Likely relaxed to two parts. A cost per query, as faery's `actor` surface already was in
-    its search, but only on a polygon the actor leaves no way past: one too narrow at the actor for
-    the agent to go around it, judged by width, not area, since a corridor is large but narrow. The
-    cost follows the two actors' weights (PAN90): one the agent outweighs costs the time to shove
-    it, and one far heavier blocks the polygon for this query. An actor in a field costs nothing, so
-    polygon size need not be capped; faery capped its regions at 4 m cells (`REGION_QUANTA`) to
-    bound the cost of cutting actors in, which Panoply does not do. Then the smoothed path bends
-    around the actors near it: where a segment passes within an actor's radius plus the agent's,
-    waypoints on the tangents of that circle, on the side whose segments stay on the mesh (a raycast
-    along it). Bending suits standing actors, who are where the plan saw them; moving ones are the
-    aura's (R23). Where neither side stays on the mesh, the route replans. Before bending is built,
-    an artifact for the author: its test cases, illustrated, to find the edge cases.
-  - Ladders: rerecast has no off-mesh links, so they are the query side's.
+- **PAN16a Navmesh generation.** Panoply has none; faery's is in `engine/src/nav` (see
+  [faery.md](faery.md)). [rerecast](https://crates.io/crates/rerecast)'s core crate (1.0), a
+  Bevy-free port of Recast that generates meshes only, driven by our own code (D36): `bevy_rerecast`
+  follows Bevy releases and assumes Avian, but its `generator/mod.rs` is the template. Lands as a
+  decision, which first weighs the alternative: a port of faery's builder, 2D polygons cut by exact
+  boolean operations and joined as a graph (about 2,000 lines of TypeScript, on `i_overlay` and
+  `rstar` for `polygon-clipping` and `rbush`), whose cost follows the obstacles, where Recast's
+  follows the area over the cell size squared, empty ground included, and whose edges are exact,
+  where Recast's fall on its grid. So it opens with a measurement: the densest real precinct (the
+  playground's cottage) through rerecast in a test, at 0.1 m and 0.15 m cells, for build time, peak
+  memory, and whether the cottage doorway stays open. If the time is too long, splitting a precinct
+  into 16 m tiles is tried, which bounds a rebuild to the tiles a neighbour or an edit touches,
+  before the port. The query side (PAN16c) is the same either way: both make convex polygons joined
+  by their edges.
+  - One mesh per precinct, built as a Recast tile: `ConfigBuilder::tiling` pads the build area by
+    the agent radius plus 3 cells, and `into_polygon_mesh` marks the edges on the tile's boundary
+    with their side, which PAN16c joins. Built when the precinct loads, and rebuilt as its
+    neighbours load, since the padding reads their geometry: a precinct at the frontier works on its
+    own, its edge toward an unloaded neighbour a wall, and the frontier need not grow. A rebuild
+    waits a short delay after the last neighbour loads, restarted by each, so neighbours loading
+    together cost one rebuild; one loading while a build runs queues one more.
+  - Off the main thread, as ground, floor and flora meshes are (`AsyncComputeTaskPool`): the main
+    thread only clones the static colliders' shapes and poses and the door volumes, and the task
+    triangulates them. A route asked of a precinct whose mesh is not ready gets "not ready". An edit
+    in the editor regenerates when the edit ends, a generation count discarding stale results, and a
+    neighbour only when the edit is inside its padding. Measure the build time per precinct; a cache
+    or baked meshes (rerecast's `serialize`, its deterministic `libm`) wait on that number.
+  - Doors (R98): one `DOOR` area type, marked by each `ColliderType::Door` collider's footprint as a
+    `ConvexVolume`, as faery marked it (`addDoorObstacles` in `NavigationMeshBuilder.ts`). That
+    collider is the closed leaf, kinematic once PAN59 builds it, so it stays out of the input, which
+    takes static colliders only. Area types never share a region, so door polygons are their own,
+    but faery's door region was a sliver as thick as the leaf, which its exact boolean clipping
+    kept; on Recast's grid that strip is a cell or two, under `min_region_area`, which would delete
+    it and close the doorway. So the marked footprint is grown across the wall's depth, and every
+    route through the doorway crosses a `DOOR` polygon. The task maps each `DOOR` polygon to its
+    door by testing the polygon's centroid against the precinct's door list (a `Vec`; a precinct has
+    a few dozen doors at most) into a table indexed by polygon. Area types are kept for cost
+    classes. The editor flags door volumes that touch, which would merge into one polygon.
+  - Hints: a `ColliderType::Hint` volume is where routes do not go but actors may stand: beside the
+    stone sarcophagus, where its lid lands, and on the hinge side of a door, where the open leaf
+    rests (`CottageWallDoorway`). Faery subtracted hints as it did solids. Marked area 0, its
+    footprint grown by the agent radius, since marking comes after erosion and would otherwise let a
+    body overlap it; a usage mark placed on the mesh then lands outside it.
   - Floors that block: faery's `BlackoutFloor` was `blocked`, the unlit black fill between cave
-    walls in the underground, where no one walks. Panoply's floor entries have no such field yet.
-  - Querying: a crate, if it takes costs or filters per query and joins meshes; else a port of
-    `NavRouteTask.ts` (A*, a funnel pass, tract seams), which runs on any mesh of convex polygons.
-    Faery read each door's `open` signal inside its search, but a door does not change during one
-    query, so its cost can be set before the query (passable at a cost, or blocked if automatic, or
-    locked) and the door-use waypoints added after it, along the corridor (`findDoorUseLocation`).
+    walls in the underground, where no one walks; area 0. Panoply's floor entries have no such field
+    yet.
+  - Cell size: erosion takes the agent radius rounded up to whole cells, from each side of an
+    opening, and rasterizing takes any cell a jamb touches. The cottage doorway is 0.8 m and a
+    human's radius 0.3 m: at 0.2 m cells, 2 cells are eroded from each side of about 3 or 4 free
+    ones, which closes it; at 0.1 m, 3 from each side of 8 leaves 2. Start at 0.1 m, which Recast's
+    rule of a third to half the radius also gives, and measure the build time there.
+  - Agent radius is baked into a mesh. Two size classes: human (0.3 m), used by smaller actors too,
+    and large, for actors larger than human, built only for precincts where one is simulated (R83).
+    A large mesh closes the doorways a large actor does not fit, which is the behavior wanted.
 
-  Settle it with one scenario walkthrough: a guard routes through a door into the next precinct
-  while two followers stand in the corridor. A missing feature may be upstreamed rather than forked:
-  the author has talked with rerecast's author. Crowd and follower behavior (R86, R87) needs test
-  scenarios: driver plans that stage, for example, eight skeletons rushing the player, or two
-  followers through a doorway. An actor that cannot advance plays R33's blocked state and replans
-  (R22).
+  A missing feature may be upstreamed rather than forked: the author has talked with rerecast's
+  author.
+- **PAN16b Navmesh visualization.** A debug view of PAN16a's meshes, copied from `bevy_rerecast`'s
+  `debug.rs` (MIT/Apache, credited in a comment): polygon outlines into a retained `GizmoAsset`, a
+  translucent unlit fill, rebuilt only when a mesh changes. Its asset-event plumbing is not copied,
+  since Panoply's meshes are per-precinct data. Added: fill coloured by area type, so door and
+  blocked polygons stand out; the tile-boundary edges in their own colour, to see that neighbours
+  meet; the fill from the detail mesh, since the polygon mesh's heights can be off by the climb.
+- **PAN16c Pathfinding.** Routes across the joined precinct meshes, with the route drawn in PAN16b's
+  view. A crate, if its Bevy-free core takes costs or filters per query and joins meshes
+  (`landmass`, `polyanya` under `vleue_navigator`); else a port of `NavRouteTask.ts` (A*, a funnel
+  pass, tract seams), which runs on any mesh of convex polygons. Read with `local_sweep.py`
+  inventories first, faery's `nav` and the candidate crates, then the files they point to: an
+  inventory finds where to read, but misses what one file guarantees and another relies on.
+  - Seams: tile-boundary edges matched to the neighbour's overlapping edge, as faery's `perimeter`
+    edges were (`neighborTransition` in `NavRouteTask.ts`).
+  - Doors: faery read each door's `open` signal inside its search, but a door does not change during
+    one query, so its cost is set before the query from PAN16a's table (passable at a cost, or
+    blocked if automatic, or locked) and the door-use waypoints added after it, along the corridor
+    (`findDoorUseLocation`).
+  - Ladders: rerecast has no off-mesh links, so they are the query side's.
+
+  Settle the choice with one scenario walkthrough: a guard routes through a door into the next
+  precinct.
+- **PAN16d Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
+  mesh is not ready, opens doors on the way (R52), and an actor that cannot advance plays R33's
+  blocked state and replans (R22).
+- **PAN16e Routing around actors.** Exclusion zones where actors stand (R86): without a tile cache,
+  rerecast cuts nothing at run time. Likely relaxed to two parts. A cost per query, as faery's
+  `actor` surface already was in its search, but only on a polygon the actor leaves no way past: one
+  too narrow at the actor for the agent to go around it, judged by width, not area, since a corridor
+  is large but narrow. The cost follows the two actors' weights (PAN90): one the agent outweighs
+  costs the time to shove it, and one far heavier blocks the polygon for this query. An actor in a
+  field costs nothing, so polygon size need not be capped; faery capped its regions at 4 m cells
+  (`REGION_QUANTA`) to bound the cost of cutting actors in, which Panoply does not do. Then the
+  smoothed path bends around the actors near it: where a segment passes within an actor's radius
+  plus the agent's, waypoints on the tangents of that circle, on the side whose segments stay on the
+  mesh (a raycast along it). Bending suits standing actors, who are where the plan saw them; moving
+  ones are the aura's (R23). Where neither side stays on the mesh, the route replans. Before bending
+  is built, an artifact for the author: its test cases, illustrated, to find the edge cases. Crowd
+  and follower behavior (R86, R87) needs test scenarios: driver plans that stage, for example, eight
+  skeletons rushing the player, or two followers through a doorway.
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
