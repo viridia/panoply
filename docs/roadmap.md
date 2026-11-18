@@ -166,7 +166,19 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   encounter zones, waymarks for scripted NPC events, and patrol paths, fixtures that goals name
   ([goal-format.md](goal-format.md), Open). To decide: how one element signals another (an entity
   event, as PAN21's actions are, or a formula over the other's state), and which parts are native
-  aspects and which are SAGA. The hard part is referencing and naming. A precinct is named by its
+  aspects and which are SAGA. Proposed: a mechanism is a node of its own, not wiring stored on its
+  participants, which in faery left no list of what was wired and no owner when several entities
+  take part. A definition, in SAGA, declares roles typed by capability (`plate: Sensor`,
+  `spears: [Spears]`) and holds the cells and reactions over them; a one-off puzzle is a definition
+  used once. An instance is a node in the precinct with its own external id, naming a definition and
+  binding each role to an instance picked in the editor, never typed, and it holds the mechanism's
+  own state. Being bound gives an instance an external id (D87). The editor lists a precinct's
+  mechanisms, draws a selected one's wires, and lists those that name a selected participant. The
+  node has an editor-only position near its participants, so selecting, moving and copying apply to
+  it, and copying a trap with its mechanism binds the copy's roles to the copied instances. One
+  wiring gesture makes a stock `Opens(button, door)`, so the simplest case stays one step.
+  Precedents: Planet's Edge's logic tiles beyond the map's edge, and Unreal's placed Blueprint
+  actors with picked references. The hard part is referencing and naming. A precinct is named by its
   realm and coordinates, and is like a module: its walls and fixtures that others can refer to are
   its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy to type into
   a text box, so the field for a signal source browses the available signals with a filter, as
@@ -263,15 +275,6 @@ components and every layer restartable from saved state (R104).
   read it. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
   Neighbours by testing every pair in the realm until a grid is needed. The playground's townsfolk
   are the test. X50 builds NPCs' steering on it.
-- **PAN89 Actor colliders**, so a ray can hit an actor: PAN88's picking, the probe (PAN21) and
-  PAN17's clicks. Today an actor's capsule is only a query shape that `move_actors` sweeps. A
-  collider in the realm's rapier world, in a new `ACTOR` collision group that the character
-  controller's filter leaves out, so actors never collide through rapier (R86). Only an actor that
-  moved updates its collider, so resting actors (PAN3p) cost nothing; check it in `plans/perf.py`.
-  Check whether a collider without a body must be a sensor to stay out of contact generation. faery
-  also had an inflated capsule for picking ([faery.md](faery.md), Physics); one capsule serves both
-  until picking feels fiddly. Selection mode's click then picks actors too, which until now are
-  chosen from its list (`instance_selection.rs`).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.

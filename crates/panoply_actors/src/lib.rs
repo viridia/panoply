@@ -36,7 +36,9 @@ use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_acto
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::{drive_player, follow_player, goto_player};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
-use self::actor_physics::{interpolate_actors, move_actors, start_actor_physics};
+use self::actor_physics::{
+    interpolate_actors, move_actors, place_actor_colliders, start_actor_physics,
+};
 use self::actor_probe::{
     clear_probed_interaction, probe_interaction, spawn_interaction_prompt, update_interaction_key,
     update_interaction_prompt, InteractionKey, ProbedInteraction,
@@ -157,7 +159,7 @@ impl Plugin for ActorsPlugin {
             )
             .add_systems(
                 FixedUpdate,
-                (travel_actors, move_actors)
+                (travel_actors, move_actors, place_actor_colliders)
                     .chain()
                     .after(realm_physics_system),
             )

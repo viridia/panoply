@@ -10,11 +10,14 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_actors::{Actor, ActorMotion, ActorScale, CollisionSize};
-use panoply_core::{realm_physics::collision_groups, RealmPhysics, ToBevy, ToRapier, Viewpoint};
+use panoply_core::{
+    realm_physics::{collision_groups, group_filter},
+    RealmPhysics, ToBevy, ToRapier, Viewpoint,
+};
 use panoply_terrain::Parcel;
 use rapier3d::{
     pipeline::{DebugColor, DebugRenderBackend, DebugRenderMode, DebugRenderObject},
-    prelude::{DebugRenderPipeline, DebugRenderStyle, Group, QueryFilter, Ray},
+    prelude::{DebugRenderPipeline, DebugRenderStyle, Group, Ray},
 };
 
 /// Which debug views are drawn, saved between runs.
@@ -153,7 +156,8 @@ fn draw_physics(
     };
     physics.world().debug_render(&mut pipeline, &mut backend);
 
-    // Actors' capsules are query shapes, not in the world (D41), so rapier does not draw them.
+    // Actors' capsules are drawn here rather than by rapier, which would draw their colliders where
+    // the last tick left them, stepping at the tick rate behind the smoothly drawn actor.
     if backend.groups.contains(collision_groups::ACTOR) {
         for (actor, transform, size, scale) in &q_actors {
             if viewpoint.realm != Some(actor.realm) {
@@ -171,9 +175,13 @@ fn draw_physics(
 
     let origin = viewpoint.position + Vec3::Y * 1000.;
     let ray = Ray::new(origin.to_rapier(), Vec3::NEG_Y.to_rapier());
-    let hit = physics
-        .world()
-        .cast_ray(&ray, 2000., true, QueryFilter::default());
+    // The view follows the player, whose capsule would otherwise be what it hits.
+    let hit = physics.world().cast_ray(
+        &ray,
+        2000.,
+        true,
+        group_filter(Group::ALL.difference(collision_groups::ACTOR)),
+    );
     probe.hit = hit.map(|(_, distance)| ray.point_at(distance).to_bevy());
     probe.groups = hit
         .and_then(|(handle, _)| physics.world().colliders.get(handle))
@@ -195,8 +203,9 @@ impl DebugRenderBackend for GizmoBackend<'_, '_, '_> {
         match object {
             DebugRenderObject::Collider(_, collider) => {
                 let memberships = collider.collision_groups().memberships;
-                // Scenery colliders are a few lines each, so all of them are drawn.
-                memberships.intersects(self.groups)
+                // Scenery colliders are a few lines each, so all of them are drawn. Actors are
+                // drawn by `draw_physics`.
+                memberships.intersects(self.groups.difference(collision_groups::ACTOR))
                     && (!memberships.intersects(collision_groups::PARCEL)
                         || self.shown_parcels.contains(&collider.user_data))
             }

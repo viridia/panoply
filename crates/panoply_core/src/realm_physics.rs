@@ -29,8 +29,8 @@ pub mod collision_groups {
     /// The surface over generated forests that catches what falls onto them.
     pub const CANOPY: Group = Group::GROUP_6;
 
-    /// Actors. Their capsules are not yet colliders in the world (D41), so this only names them
-    /// in the debug view.
+    /// Actors' capsules (D95), which casts meet so that picking and the probe can hit an actor, and
+    /// which the actors' own movement leaves out, so actors never block each other (R86).
     pub const ACTOR: Group = Group::GROUP_7;
 
     /// Scenery's `marker` colliders, on things the editor shows but the player never sees: chalk
@@ -39,8 +39,8 @@ pub mod collision_groups {
     /// reads the marks themselves, and no game query meets the collider.
     pub const MARKER: Group = Group::GROUP_8;
 
-    /// What the game's own casts and movement meet: every group but the editor's markers, and the
-    /// actors, which are not colliders (D41).
+    /// What actors' movement meets, and what the world is built of: every group but the editor's
+    /// markers and the actors.
     pub const BLOCKING: Group = Group::ALL.difference(MARKER).difference(ACTOR);
 
     /// The groups of a parcel's colliders, as opposed to a precinct's.
@@ -125,8 +125,9 @@ impl RealmPhysics {
         self.world.colliders.len()
     }
 
-    /// Counts insertions and removals of colliders, so what depends on the world staying as it
-    /// was, such as a resting actor, can tell when it changed.
+    /// Counts changes to the colliders in [`collision_groups::BLOCKING`], so what depends on the
+    /// world staying as it was, such as a resting actor, can tell when it changed. Actors and
+    /// markers come and go without counting, since nothing stands on them.
     pub fn collider_changes(&self) -> u64 {
         self.collider_changes
     }
@@ -146,14 +147,53 @@ impl RealmPhysics {
         handle: RigidBodyHandle,
         collider: Collider,
     ) -> ColliderHandle {
-        self.collider_changes += 1;
+        self.count_change(&collider);
         self.world.insert_collider(collider, Some(handle))
     }
 
-    pub fn remove_collider(&mut self, collider: ColliderHandle) {
-        self.world.remove_collider(collider);
-        self.collider_changes += 1;
+    /// Inserts a collider with no body, which rapier treats as fixed: it moves only when
+    /// [`Self::move_collider`] moves it, and no contacts are computed between it and other fixed
+    /// colliders, which every collider here is.
+    pub fn insert_standalone_collider(&mut self, collider: Collider) -> ColliderHandle {
+        self.count_change(&collider);
+        self.world.insert_collider(collider, None)
     }
+
+    pub fn remove_collider(&mut self, handle: ColliderHandle) {
+        if let Some(collider) = self.world.remove_collider(handle) {
+            self.count_change(&collider);
+        }
+    }
+
+    /// Moves a standalone collider to `translation`, if it is elsewhere. Queries meet it there
+    /// once the world has stepped, which brings the broad phase up to date. A collider left where
+    /// it is costs the step nothing: rapier marks a collider for the broad phase on any mutable
+    /// access, so it is compared first.
+    pub fn move_collider(&mut self, handle: ColliderHandle, translation: bevy::math::Vec3) {
+        let translation = translation.to_rapier();
+        let colliders = &mut self.world.colliders;
+        if colliders
+            .get(handle)
+            .is_none_or(|collider| collider.translation() == translation)
+        {
+            return;
+        }
+        let collider = &mut colliders[handle];
+        collider.set_translation(translation);
+        self.collider_changes += u64::from(blocks(collider));
+    }
+
+    fn count_change(&mut self, collider: &Collider) {
+        self.collider_changes += u64::from(blocks(collider));
+    }
+}
+
+/// Whether `collider` is one actors' movement meets.
+fn blocks(collider: &Collider) -> bool {
+    collider
+        .collision_groups()
+        .memberships
+        .intersects(collision_groups::BLOCKING)
 }
 
 /// Most fixed steps a frame catches up (D68). A frame that took longer than this many steps feeds

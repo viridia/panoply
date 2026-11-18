@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::{collision_groups, group_filter},
-    RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT, KEY_PROMPT_FONT,
+    OwnedColliders, RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT, KEY_PROMPT_FONT,
 };
 use panoply_exemplar::{perform_interaction, Interactions};
 use panoply_saga::SagaHost;
@@ -58,7 +58,8 @@ pub(crate) struct InteractionPromptCaption;
 /// Sweeps a thin box from the actor's feet to the top of its head along its facing, so that it
 /// finds a chest on the ground and a sign at eye level alike, and offers the first enabled
 /// interaction of what it hits first. Ground and floors would stop a box that reaches the feet, and
-/// the canopy is passed through (D39). Actors are not yet colliders (D41).
+/// the canopy is passed through (D39). Other actors stop it, and the player's own capsule, which
+/// the box starts inside, is passed through.
 pub(crate) fn probe_interaction(
     input: ContextActions<PlayerControl>,
     players: Query<
@@ -67,6 +68,7 @@ pub(crate) fn probe_interaction(
             &ActorMotion,
             Option<&CollisionSize>,
             Option<&ActorScale>,
+            Option<&OwnedColliders>,
         ),
         With<PlayerActor>,
     >,
@@ -80,17 +82,22 @@ pub(crate) fn probe_interaction(
 ) {
     let host = host.get();
     let found = players.single().ok().and_then(|player| {
-        let (actor, motion, size, scale) = player;
+        let (actor, motion, size, scale, own) = player;
         let world = realms.get(actor.realm).ok()?.world();
         let shape = capsule(size, scale);
         let half_height = shape.half_height() + shape.radius;
         let rotation = Quat::from_rotation_y(motion.facing);
-        let filter = group_filter(
+        let mut filter = group_filter(
             collision_groups::BLOCKING
+                .union(collision_groups::ACTOR)
                 .difference(collision_groups::CANOPY)
                 .difference(collision_groups::TERRAIN)
                 .difference(collision_groups::FLOOR),
         );
+        // A filter excludes one collider, and an actor has one.
+        if let Some(&handle) = own.and_then(|own| own.handles.first()) {
+            filter = filter.exclude_collider(handle);
+        }
         let (handle, hit) = world.cast_shape(
             &Pose::from_parts(
                 (motion.position + Vec3::Y * half_height).to_rapier(),

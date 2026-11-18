@@ -1,11 +1,11 @@
-//! Scenery mode's selection mode, as faery's `SelectSceneryInstanceMode`: a click selects the wall
-//! or fixture under the pointer, with its precinct, and a click on anything else selects the
+//! Scenery mode's selection mode, as faery's `SelectSceneryInstanceMode`: a click selects the wall,
+//! fixture or actor under the pointer, with its precinct, and a click on anything else selects the
 //! precinct there and no instance. The pointer comes through picking (D94): a backend casts its ray
-//! as play's picking casts it (D61), at walls, fixtures, floors and ground alike, and reports the
-//! element it first meets, so nothing is picked through a wall, and a click on a widget or dialog
-//! in front of the view is theirs; markers stop the ray too, the handles of things the player never
-//! sees (D93). A click on the ground arrives on the parcel `parcel_selection`'s backend reports.
-//! Actors are picked from the panel's list (`instance_list`) until they have colliders (PAN89).
+//! as play's picking casts it (D61), at walls, fixtures, actors, floors and ground alike, and
+//! reports the instance it first meets, so nothing is picked through a wall, and a click on a
+//! widget or dialog in front of the view is theirs; markers stop the ray too, the handles of things
+//! the player never sees (D93). A click on the ground arrives on the parcel `parcel_selection`'s
+//! backend reports. The player's actor stops the ray but is no precinct's, so it is not picked.
 //!
 //! The instance under the pointer is outlined, and the selected one more brightly: the footprint of
 //! each collider it is picked by, on its base, or for an actor its capsule's.
@@ -27,7 +27,7 @@ use bevy::{
     },
     prelude::*,
 };
-use panoply_actors::{capsule, ActorScale, CollisionSize, PlacedAs, PrecinctActors};
+use panoply_actors::{capsule, ActorScale, CollisionSize, HomePrecinct, PlacedAs, PrecinctActors};
 use panoply_core::{
     realm_physics::collision_groups, PrimaryCamera, Realm, RealmPhysics, Viewpoint,
 };
@@ -231,14 +231,17 @@ fn follow_selection(
     selection.set_if_neq(followed);
 }
 
+/// What selection mode picks: scenery elements, and the actors precincts place.
+type Instance = Or<(With<SceneryElement>, With<PlacedAs>)>;
+
 /// A picking backend in selection mode. Casts each pointer's ray in the view realm and reports the
-/// scenery element it first meets, if what it first meets is one, with the point hit.
+/// instance it first meets, if what it first meets is one, with the point hit.
 fn pick_scenery(
     rays: Res<RayMap>,
     cameras: Query<&Camera, With<PrimaryCamera>>,
     viewpoint: Res<Viewpoint>,
     realms: Query<&RealmPhysics>,
-    elements: Query<(), With<SceneryElement>>,
+    instances: Query<(), Instance>,
     mut hits: MessageWriter<PointerHits>,
 ) {
     let Some(physics) = viewpoint.realm.and_then(|realm| realms.get(realm).ok()) else {
@@ -248,29 +251,30 @@ fn pick_scenery(
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
-        let Some((element, distance)) = physics
+        let Some((instance, distance)) = physics
             .pick(ray, PICK_RANGE, !collision_groups::CANOPY)
-            .filter(|(entity, _)| elements.contains(*entity))
+            .filter(|(entity, _)| instances.contains(*entity))
         else {
             continue;
         };
         let hit = HitData::new(id.camera, distance, Some(ray.get_point(distance)), None);
         hits.write(PointerHits::new(
             id.pointer,
-            vec![(element, hit)],
+            vec![(instance, hit)],
             camera.order as f32,
         ));
     }
 }
 
-/// Observer while in selection mode: a click on a scenery element selects it and its precinct; a
-/// click on the ground, a parcel, selects the precinct where the pointer meets the tier's plane, and
-/// no instance. Every other target is left alone, whatever it is: a click on a widget that does not
-/// consume it bubbles up to the window, which is no UI node either. A click it handles goes no
-/// further.
+/// Observer while in selection mode: a click on a scenery element or a placed actor selects it and
+/// its precinct; a click on the ground, a parcel, selects the precinct where the pointer meets the
+/// tier's plane, and no instance. Every other target is left alone, whatever it is: a click on a
+/// widget that does not consume it bubbles up to the window, which is no UI node either. A click it
+/// handles goes no further.
 fn select_clicked(
     mut click: On<PointerClick>,
     elements: Query<(&SceneryElement, &ChildOf)>,
+    actors: Query<(&PlacedAs, &HomePrecinct)>,
     parcels: Query<(), With<Parcel>>,
     pointer: Res<SceneryPointer>,
     mut selection: ResMut<ScenerySelection>,
@@ -281,6 +285,8 @@ fn select_clicked(
     }
     let chosen = if let Ok((element, parent)) = elements.get(target) {
         ScenerySelection::instance(parent.parent(), target, element.iid.clone())
+    } else if let Ok((placed, home)) = actors.get(target) {
+        ScenerySelection::instance(home.0, target, placed.iid().clone())
     } else if parcels.contains(target) {
         ScenerySelection {
             precinct: pointer.precinct.map(|(entity, _)| entity),
@@ -296,7 +302,7 @@ fn select_clicked(
 /// Outlines the hovered and the selected instance, in the view realm's layer.
 fn show_outlines(
     hover: Res<HoverMap>,
-    hovered_elements: Query<(), With<SceneryElement>>,
+    instances: Query<(), Instance>,
     selection: Res<ScenerySelection>,
     elements: Query<(&SceneryElement, Option<&SceneryColliders>)>,
     actors: Query<(&Transform, Option<&CollisionSize>, Option<&ActorScale>), With<PlacedAs>>,
@@ -325,7 +331,7 @@ fn show_outlines(
     let hovered = hover.get(&PointerId::Mouse).and_then(|hits| {
         hits.keys()
             .copied()
-            .find(|&entity| hovered_elements.contains(entity))
+            .find(|&entity| instances.contains(entity))
     });
     for (mut outline, mut propagate) in &mut outlines {
         let entity = match outline.of {

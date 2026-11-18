@@ -229,17 +229,17 @@ dropped, not deferred. Numbers are never reused.
 - **X50** NPCs steering apart while they travel (R23, R86), on PAN90's repulsion: a small sideways
   bias, so two actors meeting head-on do not stall, and allies' wider spacing (0.5 m). *Gate:* NPCs
   travel among each other (PAN16, X17).
-- **X51** Wake only the resting actors near a collider change. Today any insertion or removal wakes
-  every resting actor in the realm for a tick (PAN3p), so while precincts and parcels stream in, the
-  count changes on most ticks and a crowd stays awake. Instead, `RealmPhysics`, through which every
-  insertion and removal goes, keeps each changed collider's bounding box (read before removal) in a
-  `SmallVec`, so the common case allocates nothing; `move_actors` wakes the resting actors whose
-  capsules overlap one, and clears it. The search starts as a test of each resting actor against
-  each box; a spatial hash grid or a BVH when actor counts need one, or rapier's own once actors are
-  colliders (PAN89), an intersection query in the `ACTOR` group. Or, before the exact test, a
-  filter: a bitmask of x and z cells taken modulo its width, whose aliasing only wakes extra actors,
-  though a parcel's ground fills much of it. *Gate:* a frame-time hitch measured while walking into
-  a crowd as its precincts load.
+- **X51** Wake only the resting actors near a collider change. Today any insertion or removal of a
+  collider actors stand on wakes every resting actor in the realm for a tick (PAN3p), so while
+  precincts and parcels stream in, the count changes on most ticks and a crowd stays awake. Instead,
+  `RealmPhysics`, through which every insertion and removal goes, keeps each changed collider's
+  bounding box (read before removal) in a `SmallVec`, so the common case allocates nothing;
+  `move_actors` wakes the resting actors whose capsules overlap one, and clears it. The search
+  starts as a test of each resting actor against each box; a spatial hash grid or a BVH when actor
+  counts need one, or rapier's own, now that actors are colliders (D95), an intersection query in
+  the `ACTOR` group. Or, before the exact test, a filter: a bitmask of x and z cells taken modulo
+  its width, whose aliasing only wakes extra actors, though a parcel's ground fills much of it.
+  *Gate:* a frame-time hitch measured while walking into a crowd as its precincts load.
 - **X52** An actor that falls out of the world goes back to the last save point, where a respawn
   after death puts it, rather than to the last place it stood (R27, PAN3m). *Gate:* save points.
 - **X53** Skill trees as assets, so skills and spells are content, not engine code

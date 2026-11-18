@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I64.**
+**Next: I65.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -265,3 +265,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   candidates: the barrier and the dialog body consuming `PointerClick` too, as the name intends, the
   cleanest; and the text input consuming the clicks it uses for focus and the caret. Confirmed by
   running (PAN88's probe: original target `TextEntryDialog/…/Entry`, arriving at the window).
+- **I64** The actor tool places an actor among generated trees on the ground, and its physics then
+  lifts it onto the canopy 2 m up (D39): the placement cast passes through the canopy (`cast_filter`
+  in `placement.rs`), while the actor's capsule overlaps it and is pushed out upward. So the actor
+  stands where the author did not put it. Candidates: land the placement on the canopy, as physics
+  will, or refuse forest cells for actors. Confirmed by running (PAN89's probe: Marcus placed at the
+  playground's tree line stood at y 2.01, over ground near 0).

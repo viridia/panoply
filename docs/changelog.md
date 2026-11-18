@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN89** Actors can be clicked: selection mode selects them, and they stop picking and the probe.
 - **PAN88** Selection mode: a click selects a wall or fixture; named instances listed and renamed.
 - **PAN74b** Terrain effects are catalog entries, the hole one of them: listed, edited live, saved.
 - **PAN74a** Floors are catalog entries: the floor tool lists them, edited live and saved.

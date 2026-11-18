@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D95.**
+**Next: D96.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -326,12 +326,9 @@ never reused.
   `FixedUpdate` after the realm steps, so colliders inserted since the last tick are in the broad
   phase. Bevy main has no transform interpolation, so `panoply_actors::actor_physics` draws each
   actor between its last two ticks' positions, as Bevy's `physics_in_fixed_timestep` example does.
-  The capsule (`CollisionSize`, R4) is a query shape, not a collider in the world: nothing yet needs
-  to hit an actor, and leaving it out spares filtering the actor out of its own casts. Reversing
-  that, for actors blocking each other or picking, adds a collider and a filter, and lets rapier's
-  debug render draw it; until then the F3 view draws capsules itself, under the `ACTOR` group's
-  "Actors" entry in the Show menu. An actor gets physics when its footprint is built (D67) and a ray
-  down from it hits a collider. (PAN3f)
+  The capsule (`CollisionSize`, R4) is swept as a query shape; that it was not also a collider is
+  superseded by D95. An actor gets physics when its footprint is built (D67) and a ray down from it
+  hits a collider. (PAN3f)
 - **D42** The camera follows an entity named in `Viewpoint::follow` (R102's active entity), set to
   the player's actor at spawn. Moving the viewpoint any other way (`GotoLocation`, the free camera's
   arrow keys) clears it, so plans and the editor look anywhere without fighting the actor; W or S
@@ -751,3 +748,16 @@ never reused.
   it (PAN103). Picking hygiene: an observer that handles a picking event consumes it
   (`propagate(false)`), so it reaches nothing behind or above its target, unless the observer only
   adds to what another does. Reversing it means each tool filtering presses itself. (PAN88)
+- **D95** An actor's capsule is also a collider in its realm's world, in the `ACTOR` group, so that
+  picking, the probe and selection mode can hit an actor; the controller's casts filter on
+  `BLOCKING`, which leaves `ACTOR` out, so actors never block each other (R86). The collider has no
+  body: rapier treats it as fixed, and its broad phase drops pairs of fixed colliders before the
+  narrow phase sees them, so no contacts are computed and it need not be a sensor. Its filter is
+  every group, since a query meets only colliders whose filter holds the query's groups. It follows
+  the actor's tick pose, set only when that moved, because any mutable access marks a collider for
+  the broad phase's update; and its insertions and moves do not count as changes to the world, which
+  wake resting actors (PAN3p), since nothing stands on an actor. The F3 view still draws actors'
+  capsules itself, at their drawn pose, rather than rapier's at the tick's. One capsule serves
+  picking and movement, where faery inflated a second for picking ([faery.md](faery.md), Physics),
+  until picking an actor feels fiddly. Reversing it means filtering every pick by hand against a
+  list of actors. (PAN89)

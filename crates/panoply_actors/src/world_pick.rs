@@ -111,9 +111,9 @@ pub(crate) fn hide_idle_cursor(
 
 /// A picking backend. Casts each pointer's ray into the viewed realm's colliders, and reports the
 /// first thing it hits if that offers an interaction, so that nothing is picked through a wall. Its
-/// cursor is set here, on that entity alone, so it follows the entries offered at the moment. The
-/// canopy is passed through (D39), and so are the editor's markers. Every ray also reports the
-/// backstop.
+/// cursor is set here, on that entity alone, so it follows the entries offered at the moment. Actors
+/// stop the ray as walls do. The canopy is passed through (D39), and so are the editor's markers.
+/// Every ray also reports the backstop.
 pub(crate) fn pick_world(
     rays: Res<RayMap>,
     cameras: Query<&Camera, With<PrimaryCamera>>,
@@ -129,7 +129,9 @@ pub(crate) fn pick_world(
 ) {
     let host = host.get();
     let physics = viewpoint.realm.and_then(|realm| realms.get(realm).ok());
-    let groups = collision_groups::BLOCKING.difference(collision_groups::CANOPY);
+    let groups = collision_groups::BLOCKING
+        .union(collision_groups::ACTOR)
+        .difference(collision_groups::CANOPY);
     for (&id, &ray) in rays.iter() {
         let Ok(camera) = cameras.get(id.camera) else {
             continue;

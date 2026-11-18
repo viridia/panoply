@@ -697,16 +697,16 @@ def actor_tool(driver):
 
 def select_instance(driver):
     """Selection mode, over the playground at `SPOT`: hovering a fixture outlines it and a click
-    selects it, its pane showing it has no name. An actor is chosen from the list of named
-    instances and renamed through Rename…, whose box starts with the name; a click outside the
-    dialog closes it and keeps the selection, and undo takes the rename back. The precinct is
-    restored afterwards."""
+    selects it, its pane showing it has no name. An actor is selected by a click too, and chosen
+    from the list of named instances, then renamed through Rename…, whose box starts with the name;
+    a click outside the dialog closes it and keeps the selection, and undo takes the rename back.
+    The precinct is restored afterwards."""
     driver.click("PlaceFixture")
     wait_mode(driver, scenery_tool, "PlaceFixture")
     choose(driver, "fixture", "FlowerPot")
     driver.goto(SPOT, 20.0, azimuth=0.0)
     window, scale, middle, _ = view_points(driver)
-    right = (middle[0] + 150, middle[1])
+    below = (middle[0], middle[1] + 100)
     precinct = ASSETS / SPOT_PRECINCT
     original = precinct.read_bytes()
 
@@ -719,13 +719,15 @@ def select_instance(driver):
         return driver.get_resource(SCENERY_SELECTION)
 
     try:
-        # A flower pot in the middle of the view, and an actor to its right.
+        # A flower pot in the middle of the view, and an actor below it, along the strip of open
+        # ground between the trees and the water: among the trees, the actor would stand on the
+        # canopy, over the ground the click placed it on.
         base = element_count(driver)
         click_at(middle)
         expect_elements(driver, base + 1)
         driver.click("PlaceActor")
         choose(driver, "actor", "Marcus")
-        click_at(right)
+        click_at(below)
 
         driver.click("SelectInstance")
         wait_mode(driver, scenery_tool, "SelectInstance")
@@ -736,7 +738,21 @@ def select_instance(driver):
         driver.expect("InstanceId", TEXT, "none")
         driver.screenshot("instance_selected")
 
-        # The actor placed has a name, so the list holds it.
+        # The actor is outlined on hover once it stands there with its collider, and a click
+        # selects it.
+        move_pointer(driver, window, scale, below)
+
+        def actor_hovered():
+            polygons = driver.get("InstanceOutline:Hovered", OUTLINE)["polygons"]
+            return bool(polygons), lambda: "no outline"
+
+        driver.wait(actor_hovered, "the actor outlined on hover", {"seconds": 5})
+        click_at(below)
+        clicked = selected()["instance"]
+        driver.screenshot("actor_selected")
+
+        # The actor placed has a name, so the list holds it, and choosing it there selects the
+        # actor the click did.
         rows = by_name(driver, "marcus-")
         assert rows, "no actor in the list"
         row = rows[-1]["components"][NAME]
@@ -744,6 +760,7 @@ def select_instance(driver):
         driver.click(f"Exemplars/{row}")
         driver.expect("InstanceId", TEXT, name)
         actor = selected()["instance"]
+        assert actor == clicked, f"the click selected {clicked}, the list {actor}"
 
         # A click outside the dialog closes it, and the press does not reach the view.
         driver.click("RenameInstance")

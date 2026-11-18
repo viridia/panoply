@@ -1,20 +1,23 @@
 //! Actors' movement through their realm's physics: a capsule moved by rapier's kinematic
 //! character controller each fixed tick, and drawn between the last two ticks' poses.
 //!
-//! The capsule is a query shape, not a collider in the world, so actors do not yet collide with
-//! each other.
+//! The same capsule is a collider in the `ACTOR` group, so a ray or the probe can hit the actor
+//! (D95). Actors' movement leaves that group out, so actors never block each other (R86).
 
 use bevy::{ecs::system::SystemParam, prelude::*};
 use panoply_core::{
     realm_physics::{collision_groups, group_filter},
-    RealmPhysics, ToBevy, ToRapier, Viewpoint,
+    OwnedColliders, RealmPhysics, ToBevy, ToRapier, Viewpoint,
 };
 use panoply_scenery::SceneryPending;
 use panoply_terrain::TerrainPending;
 use rapier3d::{
     control::{CharacterLength, KinematicCharacterController},
     parry::query::details::ShapeCastOptions,
-    prelude::{Capsule, Pose, QueryFilter, QueryPipeline, Ray},
+    prelude::{
+        Capsule, Collider, ColliderBuilder, Group, InteractionGroups, InteractionTestMode, Pose,
+        QueryFilter, QueryPipeline, Ray, SharedShape,
+    },
 };
 
 use crate::{actor_control::angle_between, Actor, ActorIntent, ActorScale, CollisionSize};
@@ -308,6 +311,73 @@ pub(crate) fn move_actors(
     }
 }
 
+/// Keeps each actor's collider on its capsule: inserted once the actor has physics, inserted again
+/// when its capsule's size or its realm changes, and otherwise moved to where the last tick left
+/// the actor, which costs nothing for an actor that stayed put (`RealmPhysics::move_collider`). A
+/// held actor has none, since it is not yet in the world. Runs after `move_actors`, so the next
+/// step brings the broad phase up to date before anything casts at the actor.
+pub(crate) fn place_actor_colliders(
+    mut commands: Commands,
+    actors: Query<
+        (
+            Entity,
+            &Actor,
+            &ActorMotion,
+            Option<&CollisionSize>,
+            Option<&ActorScale>,
+            Option<&OwnedColliders>,
+        ),
+        Without<ActorHeld>,
+    >,
+    mut realms: Query<&mut RealmPhysics>,
+) {
+    for (entity, actor, motion, size, scale, owned) in &actors {
+        let Ok(mut physics) = realms.get_mut(actor.realm) else {
+            continue;
+        };
+        let shape = capsule(size, scale);
+        let center = motion.position + Vec3::Y * (shape.half_height() + shape.radius);
+        let current = owned
+            .filter(|owned| owned.realm == actor.realm)
+            .and_then(|owned| owned.handles.first().copied())
+            .filter(|&handle| {
+                physics
+                    .world()
+                    .colliders
+                    .get(handle)
+                    .and_then(|collider| collider.shape().as_capsule())
+                    .is_some_and(|built| {
+                        built.radius == shape.radius && built.half_height() == shape.half_height()
+                    })
+            });
+        if let Some(handle) = current {
+            physics.move_collider(handle, center);
+            continue;
+        }
+        let collider = actor_collider(shape, center, entity);
+        // Replacing the component removes the old collider (`OwnedColliders`' hook).
+        commands.entity(entity).insert(OwnedColliders {
+            realm: actor.realm,
+            handles: vec![physics.insert_standalone_collider(collider)],
+        });
+    }
+}
+
+/// An actor's collider: its capsule centered at `center`, in the `ACTOR` group, naming `entity`.
+/// Its filter is every group, since a query meets only colliders whose filter has the query's
+/// groups; it is kept out of contacts by having no body (`insert_standalone_collider`).
+fn actor_collider(shape: Capsule, center: Vec3, entity: Entity) -> Collider {
+    ColliderBuilder::new(SharedShape::new(shape))
+        .translation(center.to_rapier())
+        .collision_groups(InteractionGroups::new(
+            collision_groups::ACTOR,
+            Group::ALL,
+            InteractionTestMode::And,
+        ))
+        .user_data(entity.to_bits() as u128)
+        .build()
+}
+
 /// The translation that pushes a capsule centered at `center` out of what it is inside (R26), or
 /// zero if it is inside nothing. The controller pushes out only when asked for no movement, so an
 /// actor that falls or walks would otherwise stay inside ground that was built around it, such as
@@ -488,6 +558,37 @@ mod tests {
             (0.0..0.05).contains(&feet),
             "feet at {feet}, not on the ground under the marker"
         );
+    }
+
+    /// An actor's collider is met where it was moved once the world steps, by a pick and not by
+    /// actors' movement, and neither its insertion nor its moves count as a change to the world.
+    #[test]
+    fn an_actor_collider_follows_its_actor_and_blocks_nothing() {
+        let mut physics = parcel_ground();
+        let changes = physics.collider_changes();
+        let shape = capsule(None, None);
+        let entity = Entity::from_raw_u32(7).unwrap();
+        let (from, to) = (
+            center_at(&shape, 0.0),
+            center_at(&shape, 0.0) + Vec3::X * 3.0,
+        );
+        let handle = physics.insert_standalone_collider(actor_collider(shape, from, entity));
+        physics.step(DT);
+        physics.move_collider(handle, to);
+        physics.step(DT);
+        let down = |at: Vec3| Ray3d::new(at + Vec3::Y * 10.0, Dir3::NEG_Y);
+        let groups = collision_groups::ACTOR;
+        assert_eq!(
+            physics.pick(down(to), 20.0, groups).map(|hit| hit.0),
+            Some(entity)
+        );
+        assert_eq!(physics.pick(down(from), 20.0, groups), None);
+        let (blocker, _) = physics
+            .world()
+            .cast_ray(&down_ray(to + Vec3::Y * 10.0), 20.0, true, blocking())
+            .expect("the ground under the actor");
+        assert_ne!(blocker, handle);
+        assert_eq!(physics.collider_changes(), changes);
     }
 
     #[test]
