@@ -228,10 +228,11 @@ confirmed by running something or only by reading. Numbers are never reused.
   wielded model and its pile's look show it, and none is the item. Picking up a coin merges it into
   the stack held: a slot is the item's handle, a count and any state of its own, stacking only
   without state. For exemplars: aspects shared with scenery (a book read as a sign is, the reading
-  interface needing only the aspect's data) and `extends` for families. Leaning: an exemplar never
-  spawned, its aspects read from the definition along its chain, which needs an aspect's action to
-  run from a definition and a context (who, which slot) rather than an entity. D90's test would then
-  read "composes aspects, or shares them with things that do". Discussed with the author.
+  interface needing only the aspect's data) and `extends` for families. Leaning: an exemplar spawned
+  once per item type as an invisible, stateless entity kept in memory, its aspects resolved there as
+  on any instance; a slot refers to it and is copied by value, and an aspect's action runs on that
+  entity as scenery's do. D90's test would then read "composes aspects, or shares them with things
+  that do". Discussed with the author.
 - **I60** A terrain effect's `Effect` shows in the property editor as its bits, read-only (`2` for
   soil): `TerrainTypes` is a bitflags newtype over `u8`. Candidate: a checkbox per flag, as a map
   with keys from its type has a row per key. Seen in `plans/smoke.py`'s `terrain_effect_entry`
