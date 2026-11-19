@@ -4764,6 +4764,7 @@ dependencies = [
  "panoply_core",
  "panoply_editor",
  "panoply_exemplar",
+ "panoply_nav",
  "panoply_portals",
  "panoply_render",
  "panoply_scenery",
@@ -4831,6 +4832,21 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_nav"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "panoply_core",
+ "panoply_scenery",
+ "panoply_terrain",
+ "rapier3d",
+ "rmp-serde",
+ "serde",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 

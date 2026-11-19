@@ -21,7 +21,7 @@ use self::{
     lock_aspect::{Lock, LockState},
     precinct::{mark_precinct_data, read_precinct_data},
     scenery_aspect::{LightSource, ModelComponent, SceneryMarks, SceneryModels},
-    scenery_colliders::{build_se_colliders, ColliderShape, ColliderType},
+    scenery_colliders::build_se_colliders,
     scenery_element::{
         rebuild_changed_se_aspects, spawn_se_model_instances, spawn_se_models, update_se_aspects,
     },
@@ -57,7 +57,7 @@ pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
 pub use pending::{PrecinctStatus, SceneryPending};
 pub use precinct_cache::PrecinctCache;
 pub use scenery_aspect::{SceneryColliders, SceneryModel};
-pub use scenery_colliders::ColliderDesc;
+pub use scenery_colliders::{ColliderDesc, ColliderShape, ColliderType};
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders

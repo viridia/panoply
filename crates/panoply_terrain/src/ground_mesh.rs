@@ -5,7 +5,7 @@ use crate::{
     RebuildParcelGroundMesh, RebuildParcelTerrainFx, RotatingSquareArray, ShapeRef, SquareArray,
     TerrainOptions, TerrainTypes, ADJACENT_COUNT, CENTER_SHAPE, PARCEL_HEIGHT_SCALE,
     PARCEL_MESH_SCALE, PARCEL_MESH_SIZE, PARCEL_MESH_SIZE_U, PARCEL_MESH_STRIDE,
-    PARCEL_MESH_STRIDE_U, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F,
+    PARCEL_MESH_STRIDE_U, PARCEL_MESH_VERTEX_COUNT, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
 };
 use panoply_core::{Realm, RealmPhysics};
 
@@ -419,6 +419,58 @@ fn compute_ground_mesh(
     Some(GroundMeshResult { mesh, collider })
 }
 
+/// Vertices along a side of a parcel's coarse ground: one per meter.
+const COARSE_STRIDE: usize = PARCEL_SIZE_U + 1;
+
+/// Mesh vertices per meter along a side.
+const MESH_PER_CELL: usize = PARCEL_MESH_SIZE_U / PARCEL_SIZE_U;
+
+/// A parcel's ground at one vertex per meter, from its collider's trimesh: every vertex on a
+/// meter's corner, which carries the smoothing and the terrain effects' elevation, and two
+/// triangles per terrain cell, holes left out. Navigation reads this rather than the collider's
+/// sixteen triangles to the cell. Vertices are in the parcel's coordinates, as the trimesh's are.
+pub fn coarse_ground(vertices: &[rapier3d::math::Vec3], indices: &[[u32; 3]]) -> CoarseGround {
+    let stride = PARCEL_MESH_STRIDE_U;
+    let coarse_vertices = (0..COARSE_STRIDE)
+        .flat_map(|z| (0..COARSE_STRIDE).map(move |x| (x, z)))
+        .map(|(x, z)| vertices[z * MESH_PER_CELL * stride + x * MESH_PER_CELL])
+        .map(|v| Vec3::from_array(v.to_array()))
+        .collect();
+
+    // A mesh quad is present when its first triangle is; each such triangle starts at the
+    // quad's corner (x + 1, z) and runs through (x, z), as `compute_ground_mesh` writes it.
+    let mut present = vec![false; PARCEL_MESH_SIZE_U * PARCEL_MESH_SIZE_U];
+    for &[_, b, _] in indices.iter().step_by(2) {
+        let (x, z) = (b as usize % stride, b as usize / stride);
+        if x < PARCEL_MESH_SIZE_U && z < PARCEL_MESH_SIZE_U {
+            present[z * PARCEL_MESH_SIZE_U + x] = true;
+        }
+    }
+    let mut coarse_indices = Vec::new();
+    for z in 0..PARCEL_SIZE_U {
+        for x in 0..PARCEL_SIZE_U {
+            // A terrain cell is a hole as a whole, so its corner quad tells.
+            if !present[z * MESH_PER_CELL * PARCEL_MESH_SIZE_U + x * MESH_PER_CELL] {
+                continue;
+            }
+            let corner = |dx: usize, dz: usize| ((z + dz) * COARSE_STRIDE + x + dx) as u32;
+            let (a, b, c, d) = (corner(1, 0), corner(0, 0), corner(0, 1), corner(1, 1));
+            coarse_indices.push([a, b, d]);
+            coarse_indices.push([b, c, d]);
+        }
+    }
+    CoarseGround {
+        vertices: coarse_vertices,
+        indices: coarse_indices,
+    }
+}
+
+/// What [`coarse_ground`] returns.
+pub struct CoarseGround {
+    pub vertices: Vec<Vec3>,
+    pub indices: Vec<[u32; 3]>,
+}
+
 fn pack_u32(n0: u32, n1: u32, n2: u32, n3: u32) -> u32 {
     n0 | (n1 << 8) | (n2 << 16) | (n3 << 24)
 }
@@ -527,4 +579,53 @@ fn interpolate_square(square: &RotatingSquareArray<i8>, x: f32, z: f32) -> f32 {
     let h0 = h00 * (1. - fx) + h10 * fx;
     let h1 = h01 * (1. - fx) + h11 * fx;
     h0 * (1. - fy) + h1 * fy
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A parcel's mesh laid out as `compute_ground_mesh` writes it, its height `x + 10 z`, with
+    /// the terrain cell (3, 5) a hole: the coarse ground keeps every meter's corner and leaves
+    /// that one cell out.
+    #[test]
+    fn coarse_ground_keeps_corners_and_holes() {
+        let stride = PARCEL_MESH_STRIDE_U;
+        let vertices: Vec<_> = (0..stride)
+            .flat_map(|z| (0..stride).map(move |x| (x, z)))
+            .map(|(x, z)| {
+                let (x, z) = (x as f32 * PARCEL_MESH_SCALE, z as f32 * PARCEL_MESH_SCALE);
+                rapier3d::math::Vec3::new(x, x + 10. * z, z)
+            })
+            .collect();
+        let mut indices = Vec::new();
+        for z in 0..PARCEL_MESH_SIZE_U {
+            for x in 0..PARCEL_MESH_SIZE_U {
+                if (x / MESH_PER_CELL, z / MESH_PER_CELL) == (3, 5) {
+                    continue;
+                }
+                let corner = |dx: usize, dz: usize| ((z + dz) * stride + x + dx) as u32;
+                let (a, b, c, d) = (corner(1, 0), corner(0, 0), corner(0, 1), corner(1, 1));
+                indices.push([a, b, d]);
+                indices.push([b, c, d]);
+            }
+        }
+
+        let coarse = coarse_ground(&vertices, &indices);
+        assert_eq!(coarse.vertices.len(), COARSE_STRIDE * COARSE_STRIDE);
+        assert_eq!(
+            coarse.vertices[2 * COARSE_STRIDE + 1],
+            Vec3::new(1., 21., 2.)
+        );
+        assert_eq!(
+            coarse.indices.len(),
+            2 * (PARCEL_SIZE_U * PARCEL_SIZE_U - 1)
+        );
+        let corner = |x: usize, z: usize| (z * COARSE_STRIDE + x) as u32;
+        let hole = [corner(4, 5), corner(3, 5), corner(4, 6)];
+        assert!(!coarse.indices.contains(&hole));
+        assert!(coarse
+            .indices
+            .contains(&[corner(5, 5), corner(4, 5), corner(5, 6)]));
+    }
 }

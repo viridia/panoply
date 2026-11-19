@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D97.**
+**Next: D98.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -776,3 +776,15 @@ never reused.
   hides an entity, cutaways or anything later, then hides it from picking too, and no collider
   changes when a cutaway does. Reversing it means rewriting colliders' groups as cutaways change.
   (PAN76a)
+- **D97** Navigation's input and mesh are Panoply's own types in `panoply_nav`, in the precinct's
+  coordinates (its corner at the origin), so a boundary edge lies exactly on x or z = 0 or 64 and a
+  saved input does not depend on where its precinct is. The input is plain data: scenery as its
+  `ColliderDesc`s where each element stands, so a collider's type, margin and walkability reach the
+  generators, and tree trunks as solid cylinders beside them; floors as triangles; and the ground at
+  one vertex per meter, taken from the ground collider's corners, not its sixteen triangles to the
+  cell, so its heights carry the smoothing and terrain effects but not the 0.25 m detail between.
+  The canopy (D39) is left out, since no route goes over the trees. Rapier's own shapes were the
+  alternative, but saving them needs its `serde-serialize` feature and writes each trimesh's BVH,
+  tying the fixtures to parry's version. The mesh holds 3D vertices, not faery's plane and 2D
+  vertices per polygon, which stay inside the port (PAN16d), since Recast's polygons are not exactly
+  planar. Reversing it means changing both generators' input and output. (PAN16a)

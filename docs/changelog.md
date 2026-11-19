@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN16a** Navigation's mesh type, and two playground precincts' input saved for its tests.
 - **PAN76a** Indoors, the floors above the player are cut away; the editor's Cut hides upper tiers.
 - **PAN89** Actors can be clicked: selection mode selects them, and they stop picking and the probe.
 - **PAN88** Selection mode: a click selects a wall or fixture; named instances listed and renamed.

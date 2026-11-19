@@ -172,6 +172,15 @@ impl ColliderDesc {
             .flatten()
     }
 
+    /// The shape and pose of any descriptor but a marker, placed as [`Self::shape`] places a
+    /// solid's: what navigation is built from. An animated descriptor's is its rest pose, so a
+    /// door's is the closed leaf. `None` for markers and for hulls that fail.
+    pub fn volume(&self) -> Option<(SharedShape, Pose)> {
+        (self.kind != ColliderType::Marker)
+            .then(|| self.rest_geometry())
+            .flatten()
+    }
+
     /// The outline of a solid's or marker's shape seen from above, as points around it in the
     /// element's x and z, turned with its facing as the shape is: what the editor draws around a
     /// picked instance. `None` for the types not picked.
@@ -215,6 +224,11 @@ impl ColliderDesc {
         if self.animation.is_some() {
             return None;
         }
+        self.rest_geometry()
+    }
+
+    /// The shape and pose of a descriptor, whatever its type, an animated one in its rest pose.
+    fn rest_geometry(&self) -> Option<(SharedShape, Pose)> {
         let offset = self.offset.unwrap_or_default();
         let mut rotation = Quat::IDENTITY;
         let (shape, lift) = match self.shape {
@@ -375,6 +389,22 @@ mod tests {
             serde_json::from_str(r#"{"shape":"box","type":"hint","half_extents":[1,1,1]}"#)
                 .unwrap();
         assert!(hint.footprint().is_none());
+    }
+
+    /// A door is animated, so physics builds no shape for it here, but navigation reads its closed
+    /// leaf; a marker has no volume.
+    #[test]
+    fn an_animated_door_has_a_volume_and_no_shape() {
+        let text = r#"{"shape":"box","type":"door","half_extents":[0.5,0.92,0.1],
+            "offset":[0.4,0,0],"animation":"HeavyGateLeft"}"#;
+        let door: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert!(door.shape().is_none());
+        let (_, pose) = door.volume().unwrap();
+        assert_eq!(pose.translation.to_bevy(), Vec3::new(0.4, 0.92, 0.));
+
+        let text = r#"{"shape":"box","type":"marker","half_extents":[1,1,1]}"#;
+        let marker: ColliderDesc = serde_json::from_str(text).unwrap();
+        assert!(marker.volume().is_none());
     }
 
     #[test]

@@ -13,6 +13,8 @@ reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
 opens and shuts it. In a house, in play, the floor above is cut away (R15).
+The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
+its tests read; over unchanged content it writes the same bytes.
 
     bevy-remote-driver plans/actors.py
 
@@ -76,6 +78,10 @@ WAIT = {"seconds": 60}
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 HOME = "panoply_actors::precinct_actors::HomePrecinct"
 FIRST_PRECINCT = "Precinct:playground:0:0"
+PRECINCT_SIZE = 64
+PARCEL_SIZE = 16
+# Where the navigation generators' tests read their input (`NavInput`).
+NAV_FIXTURES = Path(__file__).resolve().parent.parent / "crates/panoply_nav/tests/fixtures"
 # Groups of precinct actors, a wide variety in a small area each, and the azimuth to see them
 # from. The creatures and townsfolk stand in ranks along z, facing +x, so they are seen from
 # their front at 45° (facing north-east); the townsfolk do not all fit in the view.
@@ -346,6 +352,14 @@ def run(driver):
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
 
+    # The navigation generators' tests read these two precincts' input: the lair and the village.
+    # A parcel without terrain, as under the lair, has no ground.
+    lair = capture_nav_input(driver, 0, 0)
+    assert lair["ground"] > 0 and lair["doors"] > 0, f"lair: {lair}"
+    village = capture_nav_input(driver, 1, 0)
+    assert village["ground"] > 0 and village["doors"] > 0, f"village: {village}"
+    assert village["floors"] > 0, f"village: {village}"
+
     # A reloaded character file rebuilds the actors made from it, hair and sword included, rather
     # than Bevy respawning its scenes in place, which panicked on the sword's.
     reload(driver, "characters/humanoid-male.glb")
@@ -367,6 +381,36 @@ def run(driver):
     moved = driver.get("Actor", MOTION)["position"]
     assert moved == stood, f"moved from {stood} to {moved} without ground"
     driver.exits("Escape")
+
+
+def capture_nav_input(driver, x, z):
+    """Writes the navigation input of the playground's precinct (`x`, `z`) to its fixture in
+    `panoply_nav`, once the precinct and its 16 parcels have loaded, and returns its counts."""
+    center = [(x + 0.5) * PRECINCT_SIZE, 0.0, (z + 0.5) * PRECINCT_SIZE]
+    driver.goto(center, 40.0)
+    side = PRECINCT_SIZE // PARCEL_SIZE
+    parcels = {(x * side + i, z * side + j) for i in range(side) for j in range(side)}
+
+    def loaded():
+        survey = driver.readiness()
+        ready = {
+            (p["x"], p["z"])
+            for p in survey["parcels"]
+            if p["realm"] == "playground" and not p["pending"]
+        }
+        precinct = [
+            p
+            for p in survey["precincts"]
+            if p["realm"] == "playground" and (p["x"], p["z"]) == (x, z) and not p["pending"]
+        ]
+        return parcels <= ready and bool(precinct), lambda: f"parcels {parcels - ready} pending"
+
+    driver.wait(loaded, f"precinct ({x}, {z}) and its parcels to load", WAIT)
+    path = NAV_FIXTURES / f"playground-{x}-{z}.msgpack"
+    params = {"realm": "playground", "x": x, "z": z, "path": str(path)}
+    counts = driver.call("panoply.nav_input", params)
+    print(f"navigation input of ({x}, {z}): {counts}")
+    return counts
 
 
 def prompt(driver):

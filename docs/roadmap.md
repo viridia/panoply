@@ -274,39 +274,27 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16a Navigation mesh and input.** Panoply has no navigation; faery's is in `engine/src/nav`
-  (see [faery.md](faery.md)). Two generators are prototyped (PAN16c, PAN16d) and compared (PAN16e),
-  all on main: each a module of a crate of its own (`panoply_nav`), both compiled in and chosen at
-  run time, since the comparison needs both in one build, which separate branches or Cargo features
-  would not give (features would also leave one unchecked by `verify.sh`'s clippy). Their
-  dependencies (`rerecast`, `i_overlay`, `i_triangle`) need no Bevy and are small; the loser's go
-  with it. This chunk lands what both share.
-  - The mesh type, Panoply's own, which both generators produce: shared vertices, convex polygons, a
-    neighbour per edge, an area per polygon, and the side of each edge on the precinct boundary,
-    which PAN16g joins across precincts.
-  - A precinct's navigation input as a snapshot: its static colliders' shapes and poses, its ground,
-    floor and flora trimeshes, and its door and hint colliders, whose volumes `ColliderDesc::shape`
-    does not give today (it returns `None` for all but solids). PAN16f builds it in the game; here
-    it is saved to a fixture file from a loaded precinct (an editor command or a driver step), so
-    both prototypes' tests read the same input, the densest real precinct (the playground's
-    cottage), without loading assets and catalogs.
-- **PAN16b Navmesh visualization.** A debug view of PAN16a's mesh type, ahead of the prototypes so
-  each is seen while it is built, and PAN16e sees both over the same precinct, a setting in the view
-  choosing which generator builds the mesh. Checked on a mesh made by hand. Copied from
-  `bevy_rerecast`'s `debug.rs` (MIT/Apache, credited in a comment): polygon outlines into a retained
-  `GizmoAsset`, a translucent unlit fill, rebuilt only when a mesh changes. Its asset-event plumbing
-  is not copied, since Panoply's meshes are per-precinct data. Added: fill coloured by area, so door
-  and blocked polygons stand out; the boundary edges in their own colour, to see that neighbours
-  meet; for Recast, the fill from its detail mesh, since its polygon heights can be off by the
-  climb. Interiors show once PAN76a cuts roofs away.
-- **PAN16c Recast prototype.** From PAN16a's fixture to its mesh type:
-  [rerecast](https://crates.io/crates/rerecast)'s core crate (1.0), a Bevy-free port of Recast that
-  generates meshes only, driven by our own code (D36): `bevy_rerecast` follows Bevy releases and
-  assumes Avian, but its `generator/mod.rs` is the template. A test that prints build time and peak
-  memory at 0.1 m and 0.15 m cells; if the time is too long, 16 m tiles, which bound a rebuild to
-  the tiles an edit touches.
-  - Input as triangles: ground, floors and flora already are, as colliders, and scenery solids
-    become them through parry's `to_trimesh` (as `avian_rerecast`'s `collider_to_trimesh.rs` does).
+- **PAN16b Navmesh visualization.** A debug view of `panoply_nav`'s `NavMesh` (D97), ahead of the
+  prototypes so each is seen while it is built, and PAN16e sees both over the same precinct, a
+  setting in the view choosing which generator builds the mesh. Checked on a mesh made by hand.
+  Copied from `bevy_rerecast`'s `debug.rs` (MIT/Apache, credited in a comment): polygon outlines
+  into a retained `GizmoAsset`, a translucent unlit fill, rebuilt only when a mesh changes. Its
+  asset-event plumbing is not copied, since Panoply's meshes are per-precinct data. Added: fill
+  coloured by area, so door and blocked polygons stand out; the boundary edges in their own colour,
+  to see that neighbours meet; for Recast, the fill from its detail mesh, since its polygon heights
+  can be off by the climb. Interiors show once PAN76a cuts roofs away.
+- **PAN16c Recast prototype.** From `panoply_nav`'s fixtures (`tests/fixtures`, the playground's
+  lair and village) to its `NavMesh` (D97). A module of `panoply_nav`, compiled in beside PAN16d's
+  and chosen at run time, since PAN16e compares both in one build, which separate branches or Cargo
+  features would not give (features would also leave one unchecked by `verify.sh`'s clippy); the
+  loser's dependencies go with it. [rerecast](https://crates.io/crates/rerecast)'s core crate (1.0),
+  a Bevy-free port of Recast that generates meshes only, driven by our own code (D36):
+  `bevy_rerecast` follows Bevy releases and assumes Avian, but its `generator/mod.rs` is the
+  template. A test that prints build time and peak memory at 0.1 m and 0.15 m cells; if the time is
+  too long, 16 m tiles, which bound a rebuild to the tiles an edit touches.
+  - Input as triangles: ground and floors already are, and the colliders, scenery's and the trunk
+    cylinders, become them through `ColliderDesc::volume` and parry's `to_trimesh` (as
+    `avian_rerecast`'s `collider_to_trimesh.rs` does).
   - The precinct as a Recast tile: `ConfigBuilder::tiling` pads the build area by the agent radius
     plus 3 cells, and `into_polygon_mesh` marks the edges on the tile's boundary with their side.
     Built from the precinct's own geometry alone, as faery built its tracts; left empty, the padding
@@ -329,7 +317,7 @@ components and every layer restartable from saved state (R104).
 
   A missing feature may be upstreamed rather than forked: the author has talked with rerecast's
   author.
-- **PAN16d Port prototype.** PAN16a's fixture and mesh type, from a port of faery's builder: 2D
+- **PAN16d Port prototype.** PAN16c's fixtures and `NavMesh`, from a port of faery's builder: 2D
   polygons cut by exact boolean operations and joined as a graph, about 2,000 lines of TypeScript
   (`NavigationMeshBuilder.ts`, `NavigationMesh.ts`, `NavRegion.ts`, the tract files), whose cost
   follows the obstacles, where Recast's follows the area over the cell size squared, empty ground
@@ -341,7 +329,9 @@ components and every layer restartable from saved state (R104).
   then split into convex polygons (Hertel–Mehlhorn over a Delaunay triangulation, `i_triangle`),
   with adjacency from shared edges. Read faery's code for bugs as it is ported.
   - Input as footprints: the collider shapes' outlines, the floor regions, and the terrain's
-    walkability ported from faery's (`navHeightMap`).
+    walkability ported from faery's (`navHeightMap`), read from the ground's one vertex per meter.
+  - Faery's polygons as a plane and 2D vertices, projected along y, for the boolean operations, are
+    this module's own; its output is `NavMesh`'s 3D vertices.
   - Doors are the leaf's footprint, as faery's were, and hints are subtracted as solids are, as
     faery did.
   - Joining layers at stairs and ramps (`isSamePlane`, `projectVertexToPlane` in `NavRegion.ts`) is
@@ -357,10 +347,10 @@ components and every layer restartable from saved state (R104).
     across the line does not narrow this side's mesh, so a route running beside the seam may pass
     within the agent radius of it.
   - Off the main thread, as ground, floor and flora meshes are (`AsyncComputeTaskPool`): the main
-    thread only takes PAN16a's snapshot, which clones shapes rather than triangulating them, and the
-    task does the rest. A route asked of a precinct whose mesh is not ready gets "not ready". An
-    edit in the editor regenerates when the edit ends, a generation count discarding stale results.
-    A cache or baked meshes wait on PAN16e's build times.
+    thread only takes the input (`NavInputCapture`, D97), which copies descriptors and triangles
+    rather than building anything, and the task does the rest. A route asked of a precinct whose
+    mesh is not ready gets "not ready". An edit in the editor regenerates when the edit ends, a
+    generation count discarding stale results. A cache or baked meshes wait on PAN16e's build times.
   - Doors (R98): the door collider is the closed leaf, kinematic once PAN59 builds it, so it stays
     out of the input, which takes static colliders only. The task maps each `DOOR` polygon to its
     door by testing the polygon's centroid against the precinct's door list (a `Vec`; a precinct has
