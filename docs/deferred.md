@@ -228,7 +228,7 @@ dropped, not deferred. Numbers are never reused.
   same fix has to be made in both.
 - **X50** NPCs steering apart while they travel (R23, R86), on PAN90's repulsion: a small sideways
   bias, so two actors meeting head-on do not stall, and allies' wider spacing (0.5 m). *Gate:* NPCs
-  travel among each other (PAN16d, X17).
+  travel among each other (PAN16h, X17).
 - **X51** Wake only the resting actors near a collider change. Today any insertion or removal of a
   collider actors stand on wakes every resting actor in the realm for a tick (PAN3p), so while
   precincts and parcels stream in, the count changes on most ticks and a crowd stays awake. Instead,

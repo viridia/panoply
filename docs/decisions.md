@@ -736,7 +736,7 @@ never reused.
   They are colliders in the `MARKER` group, which the game's own casts and movement leave out by
   filtering on `BLOCKING`, so a marker is the editor's handle alone and the game reads the mark
   itself. Hints and markers are collider types rather than aspects of their own so that one editor
-  places every collider-like volume. A hint is for navigation alone (PAN16a), never built as a
+  places every collider-like volume. A hint is for navigation alone (PAN16f), never built as a
   collider nor picked, as faery built none: beside a door or a stair, it would take the click meant
   for it. Selection mode's ray is the game's (D61) with other groups, stopping at walls, floors and
   ground, so nothing is picked through a wall. Reversing it means a pick shape of another kind, and
