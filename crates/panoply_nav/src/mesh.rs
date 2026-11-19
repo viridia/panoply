@@ -2,7 +2,11 @@
 //! origin, so it spans 0 to [`PRECINCT_SIZE_F`] on x and z, and a boundary edge lies exactly on
 //! one of those lines.
 
-use bevy::math::Vec3;
+use bevy::{
+    ecs::{component::Component, reflect::ReflectComponent},
+    math::Vec3,
+    reflect::{std_traits::ReflectDefault, Reflect},
+};
 use panoply_core::metrics::PRECINCT_SIZE_F;
 use thiserror::Error;
 
@@ -10,14 +14,19 @@ use thiserror::Error;
 const TOLERANCE: f32 = 1e-4;
 
 /// Convex polygons sharing their vertices, each edge naming what lies across it.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Reflect)]
 pub struct NavMesh {
     pub vertices: Vec<Vec3>,
     pub polygons: Vec<NavPolygon>,
 }
 
+/// A precinct's navigation mesh, on the precinct's entity.
+#[derive(Component, Debug, Clone, Default, PartialEq, Reflect)]
+#[reflect(Component, Default)]
+pub struct PrecinctNavMesh(pub NavMesh);
+
 /// A convex polygon of a [`NavMesh`].
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Reflect)]
 pub struct NavPolygon {
     /// Indices into the mesh's vertices, counter-clockwise seen from above.
     pub vertices: Vec<u32>,
@@ -28,7 +37,7 @@ pub struct NavPolygon {
 }
 
 /// What lies across a polygon's edge.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum NavEdge {
     /// Nothing walkable.
     Wall,
@@ -39,7 +48,7 @@ pub enum NavEdge {
 }
 
 /// The kind of ground a polygon is, which routes cost differently.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum NavAreaKind {
     Walkable,
     /// A doorway, under a door's leaf.
@@ -47,7 +56,7 @@ pub enum NavAreaKind {
 }
 
 /// A side of a precinct.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum PrecinctSide {
     /// The line x = 0.
     NegX,

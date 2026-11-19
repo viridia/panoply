@@ -1,4 +1,5 @@
-//! Flat shapes, stroked or filled, drawn in a plane and turned into triangles.
+//! Flat shapes, stroked or filled, drawn in a plane and turned into triangles; and filled convex
+//! polygons given in 3D.
 
 use bevy::{
     math::{Rect, Vec2, Vec3},
@@ -244,6 +245,20 @@ impl ShapeBuilder {
         self
     }
 
+    /// A convex polygon from its points in order around it, where they are: not in the draw
+    /// plane, nor moved by the offset. A fan of triangles from the first point.
+    pub fn fill_convex_3d(&mut self, points: &[Vec3]) -> &mut Self {
+        if points.len() < 3 {
+            return self;
+        }
+        let start = self.vertices.len() as u32;
+        self.vertices.extend_from_slice(points);
+        for i in 1..points.len() as u32 - 1 {
+            self.indices.extend([start, start + i, start + i + 1]);
+        }
+        self
+    }
+
     /// Strokes a polyline, or with `options.closed` a polygon, centered on its points: mitered
     /// where segments join, square at open ends, dashed if `options` say so.
     pub fn stroke_polygon(&mut self, points: &[Vec2], options: PolygonOptions) -> &mut Self {
@@ -378,6 +393,8 @@ impl ShapeBuilder {
 
 #[cfg(test)]
 mod tests {
+    use bevy::math::Vec3Swizzles;
+
     use super::*;
 
     /// Every vertex is finite and every index names one; returns the number of quads.
@@ -538,6 +555,22 @@ mod tests {
             .vertices
             .iter()
             .all(|v| v.distance(center) <= 1. + 1e-5));
+    }
+
+    #[test]
+    fn a_convex_pentagon_is_three_triangles_where_it_is() {
+        let mut builder = ShapeBuilder::new();
+        builder.fill_rect(Rect::new(100., 100., 101., 101.));
+        let points: Vec<Vec3> = (0..5)
+            .map(|i| {
+                let angle = i as f32 * std::f32::consts::TAU / 5.;
+                Vec2::from_angle(angle).extend(2.).xzy()
+            })
+            .collect();
+        builder.fill_convex_3d(&points);
+        assert_eq!(builder.indices.len(), 6 + 9);
+        assert_eq!(&builder.vertices[4..], &points[..]);
+        assert!(builder.indices[6..].iter().all(|&i| i >= 4));
     }
 
     #[test]

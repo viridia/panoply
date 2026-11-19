@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I65.**
+**Next: I66.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -272,3 +272,12 @@ confirmed by running something or only by reading. Numbers are never reused.
   stands where the author did not put it. Candidates: land the placement on the canopy, as physics
   will, or refuse forest cells for actors. Confirmed by running (PAN89's probe: Marcus placed at the
   playground's tree line stood at y 2.01, over ground near 0).
+- **I65** The driver's plans fail when the author uses the machine during a run: the real pointer
+  moving over the game's window sends its own `CursorMoved` beside the plan's, and a blanked or
+  covered screen makes a screenshot come back empty. On battery the author has to move the mouse now
+  and then to keep the screen from blanking. Both happened in PAN16b's run of `smoke.py`: an empty
+  `cut.png`, then 2,009 scenery elements where 2,008 were expected, after the pointer moved during a
+  placement. Candidates, in `bevy_remote_driver`: drop the OS's pointer events while a plan drives,
+  keeping only those it injects; and hold the display awake for the run (as `caffeinate -d` does on
+  macOS), or read the frame from the render target rather than the screen. Seen by the author; the
+  causes read, not run.

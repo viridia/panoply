@@ -31,6 +31,8 @@ pub struct DebugViews {
     pub physics_groups: u32,
     /// In scenery mode, draw the tile grid over the precinct under the pointer.
     pub tile_grid: bool,
+    /// Draw each precinct's navigation mesh (`nav_view`).
+    pub navigation: bool,
 }
 
 impl Default for DebugViews {
@@ -39,6 +41,7 @@ impl Default for DebugViews {
             physics: false,
             physics_groups: Group::ALL.bits(),
             tile_grid: true,
+            navigation: false,
         }
     }
 }

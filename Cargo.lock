@@ -4812,6 +4812,7 @@ dependencies = [
  "panoply_actors",
  "panoply_core",
  "panoply_exemplar",
+ "panoply_nav",
  "panoply_overlays",
  "panoply_precinct",
  "panoply_render",

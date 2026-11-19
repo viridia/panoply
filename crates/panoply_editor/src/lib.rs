@@ -33,6 +33,7 @@ pub mod mode_overlays;
 pub mod mode_selector;
 pub mod model_picker;
 pub mod nav_point_list;
+pub mod nav_view;
 pub mod new_realm;
 pub mod parcel_selection;
 pub mod placement;
@@ -73,6 +74,7 @@ impl PluginGroup for EditorPlugins {
             .add(goto::GotoDialogPlugin)
             .add(panoply_overlays::OverlaysPlugin)
             .add(mode_overlays::ModeOverlaysPlugin)
+            .add(nav_view::NavViewPlugin)
             .add(chooser::ChooserPlugin)
             .add(model_picker::ModelPickerPlugin)
             .add(nav_point_list::NavPointListPlugin)

@@ -459,6 +459,8 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
                                     });
                                 checkbox(ui.ch_id("tile_grid"), "Tile grid")
                                     .checked(&mut views.tile_grid);
+                                checkbox(ui.ch_id("navigation"), "Navigation")
+                                    .checked(&mut views.navigation);
                             });
                     });
             });

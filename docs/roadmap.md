@@ -274,15 +274,6 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16b Navmesh visualization.** A debug view of `panoply_nav`'s `NavMesh` (D97), ahead of the
-  prototypes so each is seen while it is built, and PAN16e sees both over the same precinct, a
-  setting in the view choosing which generator builds the mesh. Checked on a mesh made by hand.
-  Copied from `bevy_rerecast`'s `debug.rs` (MIT/Apache, credited in a comment): polygon outlines
-  into a retained `GizmoAsset`, a translucent unlit fill, rebuilt only when a mesh changes. Its
-  asset-event plumbing is not copied, since Panoply's meshes are per-precinct data. Added: fill
-  coloured by area, so door and blocked polygons stand out; the boundary edges in their own colour,
-  to see that neighbours meet; for Recast, the fill from its detail mesh, since its polygon heights
-  can be off by the climb. Interiors show once PAN76a cuts roofs away.
 - **PAN16c Recast prototype.** From `panoply_nav`'s fixtures (`tests/fixtures`, the playground's
   lair and village) to its `NavMesh` (D97). A module of `panoply_nav`, compiled in beside PAN16d's
   and chosen at run time, since PAN16e compares both in one build, which separate branches or Cargo
@@ -291,7 +282,10 @@ components and every layer restartable from saved state (R104).
   a Bevy-free port of Recast that generates meshes only, driven by our own code (D36):
   `bevy_rerecast` follows Bevy releases and assumes Avian, but its `generator/mod.rs` is the
   template. A test that prints build time and peak memory at 0.1 m and 0.15 m cells; if the time is
-  too long, 16 m tiles, which bound a rebuild to the tiles an edit touches.
+  too long, 16 m tiles, which bound a rebuild to the tiles an edit touches. To be seen in PAN16b's
+  view, which draws a precinct's `PrecinctNavMesh`, the editor builds the loaded precincts' meshes
+  with the generator a setting beside the Navigation checkbox chooses. For Recast the view fills
+  from its detail mesh, since its polygon heights can be off by the climb.
   - Input as triangles: ground and floors already are, and the colliders, scenery's and the trunk
     cylinders, become them through `ColliderDesc::volume` and parry's `to_trimesh` (as
     `avian_rerecast`'s `collider_to_trimesh.rs` does).
