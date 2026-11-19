@@ -579,10 +579,13 @@ mod tests {
         let down = |at: Vec3| Ray3d::new(at + Vec3::Y * 10.0, Dir3::NEG_Y);
         let groups = collision_groups::ACTOR;
         assert_eq!(
-            physics.pick(down(to), 20.0, groups).map(|hit| hit.0),
+            physics
+                .pick(down(to), 20.0, groups, |_| true)
+                .map(|hit| hit.0),
             Some(entity)
         );
-        assert_eq!(physics.pick(down(from), 20.0, groups), None);
+        assert_eq!(physics.pick(down(from), 20.0, groups, |_| true), None);
+        assert_eq!(physics.pick(down(to), 20.0, groups, |_| false), None);
         let (blocker, _) = physics
             .world()
             .cast_ray(&down_ray(to + Vec3::Y * 10.0), 20.0, true, blocking())

@@ -106,21 +106,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   moves the list's grid row from outside, goes.
 - **PAN98 Paint terrain effects**, on PAN94's saving and PAN74b's entries: the terrain effect tool
   (`SceneryTool::DrawTerrainFx`) painting effects into the precinct.
-- **PAN76a Cutaways.** When the player is under a ceiling, scenery above them is hidden, including
-  actors on those floors (R15). Rects are authored per tier (`TierSer.cutaways`); choosing them and
-  the 3D test against element and actor bounds follow the three.js version ([faery.md](faery.md),
-  Scenery). Tier entities (D24) carry their rects; elements need bounds. Hidden elements use
-  `Visibility::Hidden` so descendants inherit it (D19). Once interiors show, check outlines on
-  glass: through a transparent mesh, its inverted hull's far side shows, not just the rim. faery
-  drew a `glass` material's back faces first, depth only (`ModelCatalog.ts`, `glass`), so the hull
-  behind the glass failed the depth test; Panoply ignores the `glass` extra (the `Alembic` in
-  `decorations.glb` has it; `GlassTest`'s `black-glass` is another variant). The editor gets faery's
-  Cut beside the tier buttons (`TODO(PAN76a)` in `scenery_panel.rs`), which hides what is above the
-  current tier (`TierSelector.tsx`, `hideTopFloors`), on the same hiding; and the wall tool hides
-  the walls a release would replace while it hovers, as faery's did (`PlaceWallTool.ts`,
-  `setExclusion`). What is hidden is not picked, in play or selection mode, as faery's cutaways
-  cleared their colliders' Visible group: `RealmPhysics::pick` takes the groups to meet, so the
-  hidden colliders need a group of their own, or a filter by owner.
 - **PAN77 Scenery rect selection.** The RectSelect tool, whose button does nothing yet: drag out a
   rect on the current tier of the precinct under the pointer, snapped to the wall snap size, drawn
   as an overlay and kept as the scenery selection with its precinct. As faery's

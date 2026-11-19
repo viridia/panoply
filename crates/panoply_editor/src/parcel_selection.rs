@@ -96,7 +96,7 @@ fn pick_ground(
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
-        let ground = physics.pick(*ray, PICK_RANGE, collision_groups::TERRAIN);
+        let ground = physics.pick(*ray, PICK_RANGE, collision_groups::TERRAIN, |_| true);
         let water = water_distance(ray.origin, *ray.direction)
             .filter(|&distance| distance <= PICK_RANGE)
             .and_then(|distance| {

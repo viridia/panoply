@@ -21,7 +21,7 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::{
-    realm_physics::{collision_groups, group_filter},
+    realm_physics::{collision_groups, group_filter, owner, owner_shown},
     Realm, RealmPhysics, ToBevy, ToRapier, Viewpoint,
 };
 use panoply_overlays::{
@@ -30,7 +30,7 @@ use panoply_overlays::{
 use panoply_scenery::PrecinctCache;
 use rapier3d::{
     parry::query::details::ShapeCastOptions,
-    prelude::{PhysicsWorld, Pose, QueryFilter, Ray, SharedShape},
+    prelude::{Collider, ColliderHandle, PhysicsWorld, Pose, QueryFilter, Ray, SharedShape},
 };
 
 use crate::{
@@ -186,6 +186,7 @@ pub(crate) struct PlacementGesture<'w, 's> {
     viewpoint: Res<'w, Viewpoint>,
     realms: Query<'w, 's, &'static RealmPhysics>,
     cache: Res<'w, PrecinctCache>,
+    visibility: Query<'w, 's, &'static InheritedVisibility>,
 }
 
 impl PlacementGesture<'_, '_> {
@@ -217,10 +218,13 @@ impl PlacementGesture<'_, '_> {
             .and_then(|realm| self.realms.get(realm).ok())
             .map(RealmPhysics::world);
         let (ray, point) = (self.pointer.ray, self.pointer.point);
+        let shown = owner_shown(&self.visibility);
         let land = |facing: f32| {
             world
                 .zip(ray)
-                .and_then(|(world, ray)| cast_placement(world, shapes, facing.to_radians(), ray))
+                .and_then(|(world, ray)| {
+                    cast_placement(world, shapes, facing.to_radians(), ray, &shown)
+                })
                 .or(point)
         };
 
@@ -376,9 +380,12 @@ fn show_readout(
 }
 
 /// What the cast can land on: everything but the canopy, which the pointer passes through (D39),
-/// and markers, which nothing stands on.
-fn cast_filter() -> QueryFilter<'static> {
-    group_filter(collision_groups::BLOCKING.difference(collision_groups::CANOPY))
+/// markers, which nothing stands on, and what is hidden, such as what Cut hides.
+fn cast_filter<'a>(shown: &'a dyn Fn(ColliderHandle, &Collider) -> bool) -> QueryFilter<'a> {
+    QueryFilter {
+        predicate: Some(shown),
+        ..group_filter(collision_groups::BLOCKING.difference(collision_groups::CANOPY))
+    }
 }
 
 /// How far `shapes`, at `origin` and turned by `rotation`, move along `direction` before the first
@@ -392,7 +399,9 @@ fn first_hit(
     origin: Vec3,
     direction: Vec3,
     range: f32,
+    shown: &dyn Fn(Entity) -> bool,
 ) -> Option<(f32, Vec3)> {
+    let shown = |_, collider: &Collider| owner(collider).is_none_or(shown);
     let start = Pose::from_parts(origin.to_rapier(), rotation.to_rapier());
     let options = ShapeCastOptions {
         max_time_of_impact: range,
@@ -402,7 +411,7 @@ fn first_hit(
     };
     let ray = Ray::new(origin.to_rapier(), direction.to_rapier());
     let point = world
-        .cast_ray_and_get_normal(&ray, range, true, cast_filter())
+        .cast_ray_and_get_normal(&ray, range, true, cast_filter(&shown))
         .map(|(_, hit)| (hit.time_of_impact, hit.normal.to_bevy()));
     shapes
         .iter()
@@ -412,7 +421,7 @@ fn first_hit(
                 direction.to_rapier(),
                 &**shape,
                 options,
-                cast_filter(),
+                cast_filter(&shown),
             )
         })
         .map(|(_, hit)| (hit.time_of_impact, hit.normal1.to_bevy()))
@@ -421,12 +430,14 @@ fn first_hit(
 }
 
 /// Where an instance of `shapes`, facing `facing` radians, lands when cast along `ray`: where it
-/// first touches something, then dropped onto what is under it. `None` if the ray meets nothing.
+/// first touches something, then dropped onto what is under it, meeting only colliders whose owner
+/// `shown` accepts. `None` if the ray meets nothing.
 pub(crate) fn cast_placement(
     world: &PhysicsWorld,
     shapes: &[(SharedShape, Pose)],
     facing: f32,
     ray: Ray3d,
+    shown: &dyn Fn(Entity) -> bool,
 ) -> Option<Vec3> {
     let rotation = Quat::from_rotation_y(facing);
     let (along, normal) = first_hit(
@@ -436,10 +447,19 @@ pub(crate) fn cast_placement(
         ray.origin,
         *ray.direction,
         CAST_RANGE,
+        shown,
     )?;
     let touch = ray.get_point((along - CAST_GAP).max(0.)) + normal * SURFACE_GAP;
-    let drop = first_hit(world, shapes, rotation, touch, Vec3::NEG_Y, DROP_RANGE)
-        .map_or(0., |(drop, _)| (drop - CAST_GAP).max(0.));
+    let drop = first_hit(
+        world,
+        shapes,
+        rotation,
+        touch,
+        Vec3::NEG_Y,
+        DROP_RANGE,
+        shown,
+    )
+    .map_or(0., |(drop, _)| (drop - CAST_GAP).max(0.));
     Some(touch - Vec3::Y * drop)
 }
 
@@ -610,10 +630,19 @@ mod tests {
             SharedShape::cuboid(0.05, 0.05, 0.05),
             Pose::from_translation(Vec3::new(0., 0.05, 0.).to_rapier()),
         )];
-        let on_floor = cast_placement(world, &mug, 0., ray_toward(Vec3::new(0., 0., 0.))).unwrap();
+        let on_floor = cast_placement(world, &mug, 0., ray_toward(Vec3::new(0., 0., 0.)), &|_| {
+            true
+        })
+        .unwrap();
         assert!(on_floor.y.abs() < 0.01, "on the floor at {on_floor}");
-        let on_table =
-            cast_placement(world, &mug, 0., ray_toward(Vec3::new(2.5, 0.8, 0.))).unwrap();
+        let on_table = cast_placement(
+            world,
+            &mug,
+            0.,
+            ray_toward(Vec3::new(2.5, 0.8, 0.)),
+            &|_| true,
+        )
+        .unwrap();
         assert!(
             (on_table.y - 0.8).abs() < 0.01,
             "on the table at {on_table}"
@@ -627,7 +656,7 @@ mod tests {
         let facing_out = 90f32.to_radians();
         let origin = Vec3::new(3., 1.5, 0.);
         let ray = Ray3d::new(origin, Dir3::new(Vec3::new(-1., -0.1, 0.)).unwrap());
-        let hung = cast_placement(world, &painting, facing_out, ray).unwrap();
+        let hung = cast_placement(world, &painting, facing_out, ray, &|_| true).unwrap();
         assert!(hung.y.abs() < 0.01, "dropped to the floor at {hung}");
         assert!(
             (hung.x - -0.95).abs() < 0.01,

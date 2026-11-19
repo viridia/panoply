@@ -27,7 +27,7 @@ use crate::{
     exemplar_list::{has_list, tool_chooser, SceneryChoices},
     instance_list::{instance_chooser, InstancePane},
     mode_selector::{EditorModeSettings, SceneryTool},
-    scenery_pointer::{step_tier, SceneryTier},
+    scenery_pointer::{step_tier, SceneryCut, SceneryTier},
     scenery_properties::SceneryProperties,
     shell::SAVE_DELAY,
     wall_tool::{WallSnap, WallToolSettings},
@@ -136,7 +136,20 @@ impl Plugin for SceneryPanelPlugin {
             BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryExemplars>::new(),
             BevyImmediateAttachPlugin::<CapsUiFeathers, WallToolbar>::new(),
         ))
-        .add_systems(Update, (show_tool_options, show_properties_or_instance));
+        .add_systems(
+            Update,
+            (show_tool_options, show_properties_or_instance, show_cut),
+        );
+    }
+}
+
+/// The Cut button, shown selected while [`SceneryCut`] is on.
+#[derive(Component, Default, Clone)]
+struct CutButton;
+
+fn show_cut(cut: Res<SceneryCut>, mut buttons: Query<&mut ButtonVariant, With<CutButton>>) {
+    for mut variant in &mut buttons {
+        variant.set_if_neq(ButtonVariant::selected(cut.0));
     }
 }
 
@@ -251,7 +264,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 height: px(0),
             }
             --
-            // The current tier, which ▲ ▼ step. TODO(PAN76a): Cut, which hides what is above it.
+            // The current tier, which ▲ ▼ step, and Cut, which hides what is above it.
             Node {
                 grid_column: {GridPlacement::start(1)},
                 grid_row: {GridPlacement::start(3)},
@@ -263,8 +276,9 @@ pub(crate) fn scenery_panel() -> impl Scene {
                     @corners: RoundedCorners::Left,
                 }
                 #Cut
+                CutButton
                 Node { flex_grow: 1.0 }
-                InteractionDisabled
+                on(|_: On<Activate>, mut cut: ResMut<SceneryCut>| cut.0 = !cut.0)
                 --
                 @FeathersButton {
                     @caption: bsn! {

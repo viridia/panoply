@@ -11,7 +11,9 @@ amid snow), lighting_biomes.png (holm-overland 992, 891 at distance 80: many par
 blending), lighting_marheim.png (holm-overland 499, 701: the palace's relief on faces turned
 from the sun) and lighting_armory.png (holm-overland 797, 1101: Heron Creek Armory's shadowed
 side, where ambient occlusion shows most) and lighting_hair.png (the player's actor up close:
-the hair's shine, a band across the strands, D29). Environment variables try
+the hair's shine, a band across the strands, D29) and lighting_glass.png (a glass alembic up
+close: its outline should show as a rim, not the hull's far side through the glass). Environment
+variables try
 other values without a rebuild, through the reflected resources:
 
     SUN=1500        Sunlight::illuminance (lux)
@@ -52,6 +54,8 @@ SPOTS = {
     "far": ("playground", [110.0, 0.0, 150.0], None, 40.0),
     # The player's actor's head, where it spawns, by now landed.
     "hair": ("playground", [37.0, 1.6, 47.0], None, 2.5),
+    # The alembic in precinct (2, 1), whose material is `glass`.
+    "glass": ("playground", [184.39, 0.5, 97.92], None, 3.0),
     "snow": ("demorun", [190.3, 0.0, 220.1], None, 20.0),
     "glade": ("demorun", [225.7, 0.0, 222.6], None, 20.0),
     "biomes": ("holm-overland", [992.0, 0.0, 891.1], None, 80.0),

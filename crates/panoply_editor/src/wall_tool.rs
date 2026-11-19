@@ -5,7 +5,8 @@
 //! erases the walls in the rectangle instead. Escape during a drag cancels it.
 //!
 //! Replace, on by default, first removes the walls the new ones would stand on: those within the
-//! rectangle's tiles on the tier, but not fixtures.
+//! rectangle's tiles on the tier, but not fixtures. While hovering or dragging, those walls are
+//! hidden, so the preview shows what a release leaves.
 
 use std::borrow::Cow;
 
@@ -26,6 +27,7 @@ use panoply_exemplar::Exemplar;
 use panoply_overlays::{AddOverlay, DrawPlane, OverlayColor, OverlayShape, ShapeBuilder};
 use panoply_precinct::SceneryInstanceId;
 use panoply_scenery::{
+    cutaways::CutawayVolume,
     precinct::Precinct,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
     PRECINCT_SIZE_F, WALL_TYPE,
@@ -171,7 +173,7 @@ struct WallPreview;
 /// The tiles a release would fill, and what it would place there, which the outline and the
 /// preview show; the preview keeps what it last showed, so it changes only when this does.
 #[derive(Resource, Clone, PartialEq, Default)]
-struct WallTarget {
+pub(crate) struct WallTarget {
     /// The precinct's coordinates, and the tiles, in its coordinates. Empty while there are none.
     coords: IVec2,
     tiles: Vec<Vec3>,
@@ -179,7 +181,34 @@ struct WallTarget {
     exemplar: Option<AssetId<Exemplar>>,
     /// In radians.
     facing: f32,
+    /// A release would remove the walls on the tiles: Replace is on, or the row is `(erase)`.
+    removes: bool,
 }
+
+impl WallTarget {
+    /// The volume holding the walls a release would remove, as `place_walls` finds them, which are
+    /// hidden while the tool hovers or drags, as faery's were.
+    pub(crate) fn replaced(&self) -> Option<CutawayVolume> {
+        let height = self.tiles.first()?.y;
+        if !self.removes {
+            return None;
+        }
+        let origin = self.coords.as_vec2() * PRECINCT_SIZE_F;
+        let area = cells(&self.tiles).inflate(-REPLACE_INSET);
+        Some(CutawayVolume {
+            min: (area.min + origin).extend(height - REPLACE_REACH).xzy(),
+            max: (area.max + origin).extend(height + REPLACE_REACH).xzy(),
+            only: Some(WALL_TYPE),
+        })
+    }
+}
+
+/// How far inside the tiles' cells a wall must stand to be replaced, so that a wall on a
+/// neighboring cell's edge stays.
+const REPLACE_INSET: f32 = 0.01;
+
+/// How far above or below the tier a wall may stand to be replaced.
+const REPLACE_REACH: f32 = 0.5;
 
 pub struct WallToolPlugin;
 
@@ -368,6 +397,9 @@ fn update_wall_tool(
     target.set_if_neq(WallTarget {
         coords,
         tiles,
+        removes: wall
+            .as_ref()
+            .is_ok_and(|exemplar| settings.replace || exemplar.is_none()),
         exemplar: wall.ok().flatten(),
         facing: settings.facing_degrees().to_radians(),
     });
@@ -492,13 +524,12 @@ fn place_walls(
     walls: &[bool],
 ) -> Option<Cow<'static, str>> {
     let height = tiles.first()?.y;
-    // Just inside the tiles' cells, so a wall on a neighboring cell's edge stays.
-    let area = cells(tiles).inflate(-0.01);
+    let area = cells(tiles).inflate(-REPLACE_INSET);
     let removed = if replace {
         precinct
             .remove_scenery_elements(|_, index, position| {
                 walls.get(index).copied().unwrap_or(false)
-                    && (position.y - height).abs() < 0.5
+                    && (position.y - height).abs() < REPLACE_REACH
                     && area.contains(position.xz())
             })
             .len()

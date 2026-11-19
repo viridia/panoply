@@ -29,7 +29,8 @@ use bevy::{
 };
 use panoply_actors::{capsule, ActorScale, CollisionSize, HomePrecinct, PlacedAs, PrecinctActors};
 use panoply_core::{
-    realm_physics::collision_groups, PrimaryCamera, Realm, RealmPhysics, Viewpoint,
+    realm_physics::{collision_groups, owner_shown},
+    PrimaryCamera, Realm, RealmPhysics, Viewpoint,
 };
 use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder,
@@ -242,8 +243,10 @@ fn pick_scenery(
     viewpoint: Res<Viewpoint>,
     realms: Query<&RealmPhysics>,
     instances: Query<(), Instance>,
+    visibility: Query<&InheritedVisibility>,
     mut hits: MessageWriter<PointerHits>,
 ) {
+    let shown = owner_shown(&visibility);
     let Some(physics) = viewpoint.realm.and_then(|realm| realms.get(realm).ok()) else {
         return;
     };
@@ -252,7 +255,7 @@ fn pick_scenery(
             continue;
         };
         let Some((instance, distance)) = physics
-            .pick(ray, PICK_RANGE, !collision_groups::CANOPY)
+            .pick(ray, PICK_RANGE, !collision_groups::CANOPY, &shown)
             .filter(|(entity, _)| instances.contains(*entity))
         else {
             continue;

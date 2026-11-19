@@ -12,7 +12,8 @@ use bevy::{
     window::{CursorOptions, CustomCursor, CustomCursorImage, PrimaryWindow},
 };
 use panoply_core::{
-    realm_physics::collision_groups, GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
+    realm_physics::{collision_groups, owner_shown},
+    GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
 use panoply_saga::SagaHost;
@@ -112,7 +113,8 @@ pub(crate) fn hide_idle_cursor(
 /// A picking backend. Casts each pointer's ray into the viewed realm's colliders, and reports the
 /// first thing it hits if that offers an interaction, so that nothing is picked through a wall. Its
 /// cursor is set here, on that entity alone, so it follows the entries offered at the moment. Actors
-/// stop the ray as walls do. The canopy is passed through (D39), and so are the editor's markers.
+/// stop the ray as walls do. The canopy is passed through (D39), and so are the editor's markers
+/// and whatever is hidden, such as cutaways (R15).
 /// Every ray also reports the backstop.
 pub(crate) fn pick_world(
     rays: Res<RayMap>,
@@ -122,12 +124,14 @@ pub(crate) fn pick_world(
     interactions: Query<(&Interactions, Option<&EntityCursor>)>,
     cursors: Res<WorldCursors>,
     backstop: Single<Entity, With<WorldBackstop>>,
+    visibility: Query<&InheritedVisibility>,
     host: Res<SagaHost>,
     // Read for the interactions' `when`, so the hits are written through commands.
     ecs: &World,
     mut commands: Commands,
 ) {
     let host = host.get();
+    let shown = owner_shown(&visibility);
     let physics = viewpoint.realm.and_then(|realm| realms.get(realm).ok());
     let groups = collision_groups::BLOCKING
         .union(collision_groups::ACTOR)
@@ -142,7 +146,7 @@ pub(crate) fn pick_world(
             BACKSTOP_ORDER,
         ));
         let Some((target, distance)) =
-            physics.and_then(|physics| physics.pick(ray, PICK_RANGE, groups))
+            physics.and_then(|physics| physics.pick(ray, PICK_RANGE, groups, &shown))
         else {
             continue;
         };

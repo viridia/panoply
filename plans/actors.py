@@ -12,7 +12,7 @@ Fallen into a hole or off the map, the actor is put back where it last stood. It
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
-opens and shuts it.
+opens and shuts it. In a house, in play, the floor above is cut away (R15).
 
     bevy-remote-driver plans/actors.py
 
@@ -69,6 +69,9 @@ TRAVEL_TARGET = [41.0, 0.0, 47.0]
 BRINK = [32.8, 1.0, 47.1]
 HOLE = [23.0, 0.0, 47.1]
 OFF_THE_MAP = [-5.0, 2.0, 47.0]
+# Inside the house in precinct (0, 0), under its upper floor on tier 2, whose cutaway rects cover it.
+INSIDE = [53.0, 0.5, 41.0]
+VISIBILITY = "bevy_camera::visibility::Visibility"
 WAIT = {"seconds": 60}
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 HOME = "panoply_actors::precinct_actors::HomePrecinct"
@@ -337,6 +340,7 @@ def run(driver):
     assert flat_distance(back["position"], lip["position"]) < 0.1, f"not at the lip: {back}"
 
     check_chest(driver)
+    check_cutaways(driver)
 
     for name, (position, azimuth) in GROUPS.items():
         driver.goto(position, 20.0, azimuth=azimuth)
@@ -525,6 +529,42 @@ def check_chest(driver):
     driver.frames(5)
     assert prompt(driver) == "", f"prompt not cleared: {prompt(driver)!r}"
     driver.mode("Edit")
+
+
+def check_cutaways(driver):
+    """In play, standing in the house in the playground's precinct (0, 0), its upper floor, on
+    tier 2, is cut away, walls and floors, and the actor stays shown; back in editing, nothing
+    is. Checked by eye in `cutaway.png`: the actor inside the open house, and outlines through
+    any glass as rims only."""
+    place(driver, INSIDE)
+    driver.goto(INSIDE, 20.0)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    assert hidden(driver) == ([], []), f"hidden in editing: {hidden(driver)}"
+    driver.mode("Play")
+    driver.frames(5)
+    elements, floors = hidden(driver)
+    print(f"cut away in the house: {len(elements)} elements, {len(floors)} floors")
+    assert elements, "no element cut away over the actor"
+    assert floors, "no floor cut away over the actor"
+    assert driver.get("Actor", VISIBILITY) != "Hidden", "the player's actor is hidden"
+    driver.screenshot("cutaway")
+    driver.mode("Edit")
+    driver.frames(5)
+    assert hidden(driver) == ([], []), f"hidden after play: {hidden(driver)}"
+
+
+def hidden(driver):
+    """The scenery elements and floor regions whose `Visibility` is hidden, by entity."""
+    rows = driver.call(
+        "world.query",
+        {"data": {"components": [NAME, VISIBILITY]}, "filter": {"with": [NAME, VISIBILITY]}},
+    )
+    found = {"SceneryElement": [], "FloorRegion": []}
+    for row in rows:
+        name = row["components"][NAME]
+        if name in found and row["components"][VISIBILITY] == "Hidden":
+            found[name].append(row["entity"])
+    return found["SceneryElement"], found["FloorRegion"]
 
 
 def check_precinct_actors(driver):

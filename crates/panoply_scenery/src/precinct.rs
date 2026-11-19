@@ -61,8 +61,7 @@ pub struct PrecinctTier {
     /// Floor level.
     pub level: i32,
 
-    /// Authored cutaway rectangles, in precinct-local coordinates.
-    // TODO(PAN76a): nothing hides scenery by them yet.
+    /// Authored cutaway rectangles, in precinct-local coordinates (`cutaways::choose_cutaways`).
     pub cutaways: Vec<Rect>,
 }
 

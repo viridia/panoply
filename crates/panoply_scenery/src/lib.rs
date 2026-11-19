@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
-use bevy::prelude::*;
+use bevy::{camera::visibility::VisibilitySystems, prelude::*, transform::TransformSystems};
+use cutaways::{hide_cut_away_scenery, Cutaways};
 use floor_surface::{build_floor_materials, FloorMaterials};
 use panoply_exemplar::{
     CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt,
@@ -32,6 +33,7 @@ use self::{
 
 mod animation_aspect;
 mod container_aspect;
+pub mod cutaways;
 mod floor_mesh;
 pub mod floor_region;
 mod floor_surface;
@@ -67,6 +69,11 @@ pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Floor");
 
 #[derive(Resource, Default)]
 pub struct FloorOutline(pub Handle<OutlineMaterial>);
+
+/// Hides what the [`cutaways::Cutaways`] hold, in `PostUpdate` once transforms are propagated and
+/// before visibility is. What writes the cutaways from world positions runs before it.
+#[derive(SystemSet, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct CutawaySystems;
 
 pub struct PanoplySceneryPlugin;
 
@@ -108,6 +115,14 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<Option<Vec3>>()
             .register_type::<BTreeMap<String, Vec<Vec3>>>()
             .register_type::<BTreeMap<String, String>>()
+            .init_resource::<Cutaways>()
+            .configure_sets(
+                PostUpdate,
+                CutawaySystems
+                    .after(TransformSystems::Propagate)
+                    .before(VisibilitySystems::VisibilityPropagate),
+            )
+            .add_systems(PostUpdate, hide_cut_away_scenery.in_set(CutawaySystems))
             .add_systems(Startup, init_outline)
             .add_systems(
                 Update,

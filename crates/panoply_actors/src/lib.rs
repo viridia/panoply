@@ -1,14 +1,16 @@
-use bevy::{app::Propagate, picking::PickingSystems, prelude::*};
+use bevy::{app::Propagate, picking::PickingSystems, prelude::*, transform::TransformSystems};
 use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
 };
 use panoply_exemplar::{CatalogServer, Exemplar, InstanceAspects, InstanceType, UpdateAspects};
+use panoply_scenery::CutawaySystems;
 
 mod actor_animation;
 mod actor_aspect;
 mod actor_colors;
 mod actor_control;
+mod actor_cutaways;
 mod actor_features;
 mod actor_model;
 mod actor_physics;
@@ -35,6 +37,7 @@ pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
 use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::{drive_player, follow_player, goto_player};
+use self::actor_cutaways::{choose_player_cutaways, hide_cut_away_actors};
 use self::actor_features::{bind_actor_feature, spawn_actor_features};
 use self::actor_physics::{
     interpolate_actors, move_actors, place_actor_colliders, start_actor_physics,
@@ -121,6 +124,15 @@ impl Plugin for ActorsPlugin {
                     .run_if(in_state(GameMode::Play)),
             )
             .add_systems(Update, hide_idle_cursor)
+            .add_systems(
+                PostUpdate,
+                (
+                    choose_player_cutaways
+                        .after(TransformSystems::Propagate)
+                        .before(CutawaySystems),
+                    hide_cut_away_actors.in_set(CutawaySystems),
+                ),
+            )
             .add_systems(OnEnter(GameMode::Play), follow_player)
             .add_systems(OnExit(GameMode::Play), clear_probed_interaction)
             .add_systems(

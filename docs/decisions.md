@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D96.**
+**Next: D97.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -761,3 +761,18 @@ never reused.
   picking and movement, where faery inflated a second for picking ([faery.md](faery.md), Physics),
   until picking an actor feels fiddly. Reversing it means filtering every pick by hand against a
   list of actors. (PAN89)
+- **D96** Cutaways (R15) are chosen as the three.js version chose them ([faery.md](faery.md),
+  Scenery), but by the triangle between the ray up from the player and the line to the camera, where
+  faery tried a point on each: on each tier the triangle is a segment from under the player toward
+  the camera, and every rect it crosses is chosen, so a ceiling anywhere between the player and the
+  camera is caught. The camera always looks down, so what lies above it is never in view and the
+  segment may stop there. Elements and actors are hidden by their origin, as in faery, not their
+  bounds, which would also hide the ground floor's walls beside a rect, reaching up into its volume;
+  floor regions by their outline, each on its own, where faery hid a tier's whole floor. The
+  player's cutaways and the editor's (Cut, the wall tool's) are lists in one `Cutaways` resource,
+  and only what it changes, or what was added or moved, is tested again. Picking and placement pass
+  through what is hidden by asking whether the collider's owner is drawn (`owner_shown`, its
+  `InheritedVisibility`), not by a group of their own as faery cleared its Visible bit: whatever
+  hides an entity, cutaways or anything later, then hides it from picking too, and no collider
+  changes when a cutaway does. Reversing it means rewriting colliders' groups as cutaways change.
+  (PAN76a)

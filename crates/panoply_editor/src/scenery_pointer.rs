@@ -10,9 +10,17 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::{PrimaryCamera, Viewpoint};
-use panoply_scenery::{precinct::PrecinctKey, PrecinctCache, PRECINCT_SIZE_F, TIER_OFFSET};
+use panoply_scenery::{
+    cutaways::{CutawayVolume, Cutaways},
+    precinct::PrecinctKey,
+    PrecinctCache, PRECINCT_SIZE_F, TIER_OFFSET,
+};
 
-use crate::{mode_selector::EditorMode, terrain_cursor::level_point};
+use crate::{
+    mode_selector::{EditorMode, SceneryTool},
+    terrain_cursor::level_point,
+    wall_tool::WallTarget,
+};
 
 /// The tiers the tools can choose, which the precincts' levels lie within.
 pub const TIER_RANGE: RangeInclusive<i32> = -8..=8;
@@ -33,6 +41,16 @@ impl SceneryTier {
         Self((self.0 + by).clamp(*TIER_RANGE.start(), *TIER_RANGE.end()))
     }
 }
+
+/// Cut, beside the tier buttons: in scenery mode, scenery from two tiers above the current one up
+/// is cut away, as faery's Cut did, so the tools reach what is under it. Not saved.
+#[derive(Resource, Reflect, Clone, Copy, PartialEq, Eq, Debug, Default)]
+#[reflect(Resource)]
+pub struct SceneryCut(pub bool);
+
+/// How far above the current tier [`SceneryCut`] cuts, in meters: the next tier's walls stay, as
+/// they stand at 1 m, and its floor, as floors are tested just below their tier.
+const CUT_ABOVE: f32 = 1.4;
 
 /// Where the pointer meets the current tier's level plane in the view realm, and the precinct
 /// there, if it is loaded.
@@ -97,8 +115,11 @@ pub struct SceneryPointerPlugin;
 impl Plugin for SceneryPointerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SceneryTier>()
+            .init_resource::<SceneryCut>()
             .init_resource::<SceneryPointer>()
             .register_type::<SceneryTier>()
+            .register_type::<SceneryCut>()
+            .add_systems(Update, editor_cutaways)
             .add_context::<SceneryKeys>(|context| {
                 context.active_in_state(EditorMode::Scenery);
                 // As faery's: brackets turn, and comma and period, or Shift and the brackets,
@@ -139,6 +160,38 @@ fn tier_keys(input: ContextActions<SceneryKeys>, mut tier: ResMut<SceneryTier>) 
     }
     if input.fired::<TierUp>() {
         step_tier(&mut tier, 1);
+    }
+}
+
+/// The editor's cutaways, while editing in scenery mode: Cut's, and the walls the wall tool would
+/// replace. Editor modes exist only while editing, not in play.
+fn editor_cutaways(
+    editor_mode: Option<Res<State<EditorMode>>>,
+    tool: Option<Res<State<SceneryTool>>>,
+    cut: Res<SceneryCut>,
+    tier: Res<SceneryTier>,
+    wall: Res<WallTarget>,
+    mut cutaways: ResMut<Cutaways>,
+) {
+    let mut volumes = Vec::new();
+    if editor_mode.is_some_and(|mode| *mode.get() == EditorMode::Scenery) {
+        if cut.0 {
+            volumes.push(CutawayVolume {
+                min: Vec3::new(
+                    f32::NEG_INFINITY,
+                    tier.height() + CUT_ABOVE,
+                    f32::NEG_INFINITY,
+                ),
+                max: Vec3::INFINITY,
+                only: None,
+            });
+        }
+        if tool.is_some_and(|tool| *tool.get() == SceneryTool::PlaceWall) {
+            volumes.extend(wall.replaced());
+        }
+    }
+    if cutaways.editor != volumes {
+        cutaways.editor = volumes;
     }
 }
 

@@ -69,7 +69,7 @@ Migration scripts below, and X1), `artwork/`.
   `ComputedWall{Models,Obstacles,Physics}`, `ComputedFloor{Mesh,Physics,RegionObstacles}`,
   `ComputedModelGroups`, `ComputedTerrainEffects`. The pattern (each element yields render
   models, nav obstacles and colliders) may shape the scenery restoration.
-- Not yet in Panoply: cutaways, sensors, precinct point lights, tiers and layers.
+- Not yet in Panoply: sensors, precinct point lights and layers.
 - Cutaways (read in full): `engine/src/player/CutawayController.ts` picks cutaways each frame
   from the authored rects of the player's precinct. For each tier from the player's
   (`floor(y - TIER_OFFSET + 1.7)`) upward, it takes the rect hit by a vertical ray from the

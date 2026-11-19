@@ -68,6 +68,19 @@ pub fn group_filter(groups: Group) -> QueryFilter<'static> {
     ))
 }
 
+/// The entity a collider's `user_data` names.
+pub fn owner(collider: &Collider) -> Option<Entity> {
+    Entity::try_from_bits(collider.user_data as u64)
+}
+
+/// Whether `entity` is drawn, for [`RealmPhysics::pick`]: picking passes through what is hidden,
+/// such as cutaways (R15), whatever hides it. An entity with no visibility counts as shown.
+pub fn owner_shown<'a, 'w, 's, 'v>(
+    visibility: &'a Query<'w, 's, &'v InheritedVisibility>,
+) -> impl Fn(Entity) -> bool + use<'a, 'w, 's, 'v> {
+    |entity| visibility.get(entity).ok().is_none_or(|shown| shown.get())
+}
+
 /// Colliders an entity owns in its realm's physics world, removed from it when this component
 /// is replaced or removed, or the entity despawns. Immutable, so every change goes through
 /// insertion and the hook.
@@ -108,16 +121,22 @@ impl RealmPhysics {
         &self.world
     }
 
-    /// The first collider in `groups` along `ray`, within `range`: the entity its `user_data`
-    /// names, and how far along the ray it was hit. Game and editor picking both cast this, each
-    /// with its own groups, so the ray stops at whatever of those it meets first.
-    pub fn pick(&self, ray: Ray3d, range: f32, groups: Group) -> Option<(Entity, f32)> {
+    /// The first collider in `groups` along `ray`, within `range`, whose owner `shown` accepts:
+    /// the entity its `user_data` names, and how far along the ray it was hit. Game and editor
+    /// picking both cast this, each with its own groups, so the ray stops at whatever of those it
+    /// meets first, passing through what is hidden ([`owner_shown`]).
+    pub fn pick(
+        &self,
+        ray: Ray3d,
+        range: f32,
+        groups: Group,
+        shown: impl Fn(Entity) -> bool,
+    ) -> Option<(Entity, f32)> {
         let ray = Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier());
-        let (handle, distance) = self
-            .world
-            .cast_ray(&ray, range, true, group_filter(groups))?;
-        let collider = self.world.colliders.get(handle)?;
-        Some((Entity::try_from_bits(collider.user_data as u64)?, distance))
+        let predicate = |_, collider: &Collider| owner(collider).is_none_or(&shown);
+        let filter = group_filter(groups).predicate(&predicate);
+        let (handle, distance) = self.world.cast_ray(&ray, range, true, filter)?;
+        Some((owner(self.world.colliders.get(handle)?)?, distance))
     }
 
     /// Number of colliders in this realm's physics world.

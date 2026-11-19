@@ -25,7 +25,8 @@
   without one; a collapsed item shows its summary, and a collapsed pane stays so for the next
   exemplar, until its + adds an item. The wall tool places a wall by click and a row by drag,
   undoably, erases one, saves the precinct (restored afterwards) and a new one (deleted
-  afterwards); its keys turn the walls and step the tier, and Escape cancels a drag. The fixture
+  afterwards); it hides the wall a release would replace; its keys turn the walls and step the
+  tier, and Escape cancels a drag. Cut hides what is above the tier, and shows it again. The fixture
   tool places by click, undoably, and turns by drag on a dial shown on every drag.
   Physics drawing and its Show menu are in `physics_views.py`, run on demand.
 - Realm panel: its stats name the view's realm; its filter box does not take the keys; Go
@@ -130,6 +131,8 @@ FLOORS = ASSETS / "catalog" / "floors.floor.json"
 # Inside the playground's precinct (0, 0), among its floors.
 FLOORS_SPOT = [8.0, 0.0, 8.0]
 TERRAIN_EFFECTS = ASSETS / "catalog" / "terrain-effects.terrainfx.json"
+# Inside the house in the playground's precinct (0, 0), under its upper floor on tier 2.
+HOUSE = [53.0, 0.0, 41.0]
 # The tilled rows (`Tilled.Z`) in the playground's precinct (1, 0).
 TILLED_SPOT = [73.0, 0.0, 26.0]
 # The arrows fly the view at 10 m/s.
@@ -339,7 +342,7 @@ def scenery_panel(driver):
     driver.click("PlaceWall")
     wait_mode(driver, scenery_tool, "PlaceWall")
     expect_highlight(driver, "PlaceWall", SCENERY_BUTTONS)
-    for button in ["SceneryPanel/Cut", "SceneryPanel/New", "SceneryPanel/Clone"]:
+    for button in ["SceneryPanel/New", "SceneryPanel/Clone"]:
         expect_disabled(driver, button, True)
     # The wall tool has options above its list; the floor tool, so far, none.
     expect_display(driver, "ToolOptions", "Flex")
@@ -481,6 +484,13 @@ def wall_tool(driver):
     try:
         drag(middle)
         expect_count(base + 1)
+        # Hovering over the wall just placed hides it, as a release there would replace it; off
+        # it, it shows again.
+        driver.frames(2)
+        assert len(hidden(driver, "SceneryElement")) == 1, "the wall under the pointer shows"
+        move_pointer(driver, window, scale, (middle[0], middle[1] + 200))
+        driver.frames(2)
+        assert not hidden(driver, "SceneryElement"), "a wall off the pointer is hidden"
         # A drag places a tile a meter, from the press to the pointer, replacing the wall the
         # click placed.
         move_pointer(driver, window, scale, middle)
@@ -536,6 +546,7 @@ def wall_tool(driver):
     driver.key("Comma")
     driver.frames(2)
     assert tier(driver) == 0, f"tier {tier(driver)}"
+    cut(driver)
 
     # A precinct with no file gets one when saved.
     driver.goto(EMPTY_SPOT, 20.0, azimuth=0.0)
@@ -553,6 +564,33 @@ def wall_tool(driver):
     finally:
         created.unlink(missing_ok=True)
     driver.goto(SPOT, 20.0)
+
+
+def cut(driver):
+    """Cut hides the scenery from two tiers above the current one up, walls and floors, and
+    shows it again when turned off. At the house in the playground's precinct (0, 0), whose upper
+    floor is on tier 2. Checked by eye in `cut.png`: the house's ground floor, open above."""
+    driver.goto(HOUSE, 20.0, azimuth=0.0)
+    before = len(hidden(driver, "SceneryElement")), len(hidden(driver, "FloorRegion"))
+    driver.click("SceneryPanel/Cut")
+    driver.frames(2)
+    driver.expect("SceneryPanel/Cut", BUTTON_VARIANT, "Primary")
+    cut_away = len(hidden(driver, "SceneryElement")), len(hidden(driver, "FloorRegion"))
+    print(f"hidden before Cut {before}, with it {cut_away}")
+    assert cut_away[0] > before[0], f"Cut hid no walls: {cut_away}"
+    assert cut_away[1] > before[1], f"Cut hid no floors: {cut_away}"
+    driver.screenshot("cut")
+    driver.click("SceneryPanel/Cut")
+    driver.frames(2)
+    driver.expect("SceneryPanel/Cut", BUTTON_VARIANT, "Normal")
+    after = len(hidden(driver, "SceneryElement")), len(hidden(driver, "FloorRegion"))
+    assert after == before, f"hidden after Cut {after}, before {before}"
+
+
+def hidden(driver, prefix):
+    """The names of the entities named `prefix…` whose `Visibility` is hidden."""
+    rows = by_name(driver, prefix, [VISIBILITY])
+    return [row["components"][NAME] for row in rows if row["components"][VISIBILITY] == "Hidden"]
 
 
 def element_count(driver):
