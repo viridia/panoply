@@ -277,22 +277,24 @@ components and every layer restartable from saved state (R104).
   where Recast's fall on its grid. So it opens with a measurement: the densest real precinct (the
   playground's cottage) through rerecast in a test, at 0.1 m and 0.15 m cells, for build time, peak
   memory, and whether the cottage doorway stays open. If the time is too long, splitting a precinct
-  into 16 m tiles is tried, which bounds a rebuild to the tiles a neighbour or an edit touches,
-  before the port. The query side (PAN16c) is the same either way: both make convex polygons joined
-  by their edges.
+  into 16 m tiles is tried, which bounds a rebuild to the tiles an edit touches, before the port.
+  The query side (PAN16c) is the same either way: both make convex polygons joined by their edges.
   - One mesh per precinct, built as a Recast tile: `ConfigBuilder::tiling` pads the build area by
     the agent radius plus 3 cells, and `into_polygon_mesh` marks the edges on the tile's boundary
-    with their side, which PAN16c joins. Built when the precinct loads, and rebuilt as its
-    neighbours load, since the padding reads their geometry: a precinct at the frontier works on its
-    own, its edge toward an unloaded neighbour a wall, and the frontier need not grow. A rebuild
-    waits a short delay after the last neighbour loads, restarted by each, so neighbours loading
-    together cost one rebuild; one loading while a build runs queues one more.
+    with their side, which PAN16c joins. Built from the precinct's own geometry alone, when it
+    loads, as faery built its tracts: the neighbours' obstacles are PAN16c's, which intersects the
+    two sides' boundary edges when a route crosses. Left empty, the padding would erode the mesh
+    away from the boundary and leave no boundary edges, so the precinct's edge columns are copied
+    outward across it after rasterizing (`Heightfield`'s spans are public): open ground stays open
+    to the line, and a wall meeting the line continues past it. An obstacle just across the line is
+    not eroded on this side, so a route running beside the seam may pass within the agent radius of
+    it.
   - Off the main thread, as ground, floor and flora meshes are (`AsyncComputeTaskPool`): the main
     thread only clones the static colliders' shapes and poses and the door volumes, and the task
     triangulates them. A route asked of a precinct whose mesh is not ready gets "not ready". An edit
-    in the editor regenerates when the edit ends, a generation count discarding stale results, and a
-    neighbour only when the edit is inside its padding. Measure the build time per precinct; a cache
-    or baked meshes (rerecast's `serialize`, its deterministic `libm`) wait on that number.
+    in the editor regenerates when the edit ends, a generation count discarding stale results.
+    Measure the build time per precinct; a cache or baked meshes (rerecast's `serialize`, its
+    deterministic `libm`) wait on that number.
   - Doors (R98): one `DOOR` area type, marked by each `ColliderType::Door` collider's footprint as a
     `ConvexVolume`, as faery marked it (`addDoorObstacles` in `NavigationMeshBuilder.ts`). That
     collider is the closed leaf, kinematic once PAN59 builds it, so it stays out of the input, which
@@ -335,8 +337,10 @@ components and every layer restartable from saved state (R104).
   pass, tract seams), which runs on any mesh of convex polygons. Read with `local_sweep.py`
   inventories first, faery's `nav` and the candidate crates, then the files they point to: an
   inventory finds where to read, but misses what one file guarantees and another relies on.
-  - Seams: tile-boundary edges matched to the neighbour's overlapping edge, as faery's `perimeter`
-    edges were (`neighborTransition` in `NavRouteTask.ts`).
+  - Seams: a route crosses a precinct boundary only where the boundary edges of the two sides
+    overlap, a 1D intersection along the line, as faery's `perimeter` edges were
+    (`neighborTransition` in `NavRouteTask.ts`); each side's edges are already cut short by its own
+    obstacles.
   - Doors: faery read each door's `open` signal inside its search, but a door does not change during
     one query, so its cost is set before the query from PAN16a's table (passable at a cost, or
     blocked if automatic, or locked) and the door-use waypoints added after it, along the corridor
