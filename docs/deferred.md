@@ -27,7 +27,7 @@ dropped, not deferred. Numbers are never reused.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
   [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula and PAN71's imports:
-  value slots, then cells and reactions for PAN79's button and door. *Gate:* PAN71.
+  value slots, which PAN105's cells and reactions build on. *Gate:* PAN71.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about

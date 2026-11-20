@@ -60,6 +60,53 @@ method can insert multiple components or perform other operations on the entity.
 requirement is that the changes be undoable, via the `DetachAspect` trait which is produced
 during attachment.
 
+## Config and state
+
+Open; PAN99 settles it. D88 divides an aspect's fields into config, what is authored, and state,
+what play changes. But config is authored at two stages: on the exemplar, as a kind is designed, and
+on the instance, as it is placed. A chest has all three:
+
+- its container type, which background the inventory screen shows when it opens, set on the
+  exemplar;
+- its key id, which key unlocks it, set on the instance;
+- whether it is open, changed in play.
+
+An override replaces a whole aspect, so if the container type and the key id are fields of one
+aspect, a chest that the silver key opens restates its container type, in a new exemplar or in an
+instance override, and no longer follows the exemplar's.
+
+Does an aspect need three sets of fields with distinct life cycles, or will two do, and are two
+possible only with per-field overrides?
+
+- **Three sets.** An aspect declares exemplar config, instance config and state apart, and an
+  instance sets only its own. Against: a field's stage is fixed by the aspect's author, so the rare
+  instance that wants another container type needs an exemplar of its own.
+- **Two, with per-field overrides (X99).** An instance sets any field, and the rest stay inherited.
+  Against: X99's cost, `Inherit<T>` resolved at evaluation, on every field an instance may set, and
+  a property editor that shows each field as inherited or set, which is hard to present.
+- **Two, split by aspect.** Fields set at different stages go in different aspects, as `Portal` and
+  `PortalTarget` already do: the key id in `Lock`, the container type in `Container`, so overriding
+  `Lock` leaves `Container` inherited. Against: the split is the aspect author's to get right, the
+  aspect list grows, and a scripted aspect whose tuning is set on the exemplar and whose roles on
+  the instance, as PAN79's relay logic, splits one concept across two aspects.
+
+Leaning: two, split by aspect, with instances adding aspects their exemplars lack. Without that, a
+chest and a lockable chest are two exemplars; with it, `Lock` is a mixin any chest takes. Adding an
+aspect is a smaller lift than per-field overrides, since an added aspect shows in the property
+editor as an aspect, not as a field's state.
+
+- Bevy's required components do not express this. `Container` cannot require `Lock`, since not every
+  container is locked, and `Lock` cannot require `Container`, since doors take it too. What the
+  editor wants is the "suggested components" idea floated for Bevy and not taken far: aspects known
+  to work with another, which the add menu offers first. Which side declares the pairing is open.
+- A formula on the exemplar may read an aspect only some instances add: `Proto.Container`'s "Open"
+  is offered not while locked, reading `LockState`. D71 checks a formula against its exemplar's
+  chain, so the formula needs to read an absent aspect as a default, or the check moves to the
+  instance. Leaning: the container's entries know about locks, reading a missing `LockState` as
+  unlocked through SAGA's `Option` (`?.`, `??`; [saga.md](saga.md), Values), so D71 checks such a
+  read as optional rather than composing entries from the aspects an instance has, which would ask
+  far more of overriding.
+
 ## Loading Exemplars
 
 To load an exemplar, you'll need to register the exemplar asset loader.
