@@ -76,5 +76,6 @@ fn nav_input(
         "colliders": input.colliders.len(),
         "doors": colliders(ColliderType::Door),
         "hints": colliders(ColliderType::Hint),
+        "path_cells": input.paths.iter().filter(|&&p| p).count(),
     }))
 }

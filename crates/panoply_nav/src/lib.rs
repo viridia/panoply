@@ -2,6 +2,7 @@
 
 mod input;
 mod mesh;
+pub mod recast;
 mod remote;
 
 use bevy::app::{App, Plugin, Startup};

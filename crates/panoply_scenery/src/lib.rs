@@ -51,6 +51,7 @@ mod terrain_effect;
 mod terrain_fx_map;
 
 pub use terrain_effect::TerrainEffect;
+pub use terrain_fx_map::TerrainFxMap;
 mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};

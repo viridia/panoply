@@ -37,6 +37,22 @@ impl TerrainFxMap {
                 TERRAIN_FX_MAP_SIZE * TERRAIN_FX_MAP_SIZE],
         }
     }
+
+    /// The effect on the 1 m cell whose corner is at `x`, `z` in the precinct, from -1 to
+    /// [`PRECINCT_SIZE`] (the skirt included); none outside that.
+    pub fn effect_at(&self, x: i32, z: i32) -> TerrainFxVertexAttr {
+        let range = -1..=PRECINCT_SIZE;
+        if !(range.contains(&x) && range.contains(&z)) {
+            return TerrainFxVertexAttr::default();
+        }
+        self.map_vertex_attr[(x + 1) as usize + (z + 1) as usize * TERRAIN_FX_MAP_SIZE]
+    }
+}
+
+impl Default for TerrainFxMap {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Component)]

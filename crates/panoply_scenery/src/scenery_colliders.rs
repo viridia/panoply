@@ -119,7 +119,7 @@ pub struct ColliderDesc {
 
     /// Extra clearance kept around the collider when navigation maps are built: its footprint
     /// grows by this much before the maps' boolean operations.
-    // TODO(PAN16): read when building navigation maps.
+    // TODO(PAN16d): read by the port; Recast reads it.
     #[reflect(@DisplayName("Margin"))]
     pub margin: Option<f32>,
 }
@@ -228,8 +228,10 @@ impl ColliderDesc {
     }
 
     /// The shape and pose of a descriptor, whatever its type, an animated one in its rest pose.
+    /// The offset is from `origin`, the pivot an animated part turns about, as faery's
+    /// `makeColliderTransform` placed it.
     fn rest_geometry(&self) -> Option<(SharedShape, Pose)> {
-        let offset = self.offset.unwrap_or_default();
+        let offset = self.origin.unwrap_or_default() + self.offset.unwrap_or_default();
         let mut rotation = Quat::IDENTITY;
         let (shape, lift) = match self.shape {
             ColliderShape::Box { half_extents: size }
@@ -392,15 +394,15 @@ mod tests {
     }
 
     /// A door is animated, so physics builds no shape for it here, but navigation reads its closed
-    /// leaf; a marker has no volume.
+    /// leaf, offset from its hinge; a marker has no volume.
     #[test]
     fn an_animated_door_has_a_volume_and_no_shape() {
         let text = r#"{"shape":"box","type":"door","half_extents":[0.5,0.92,0.1],
-            "offset":[0.4,0,0],"animation":"HeavyGateLeft"}"#;
+            "offset":[0.4,0,0],"origin":[-0.4,0,0],"animation":"HeavyGateLeft"}"#;
         let door: ColliderDesc = serde_json::from_str(text).unwrap();
         assert!(door.shape().is_none());
         let (_, pose) = door.volume().unwrap();
-        assert_eq!(pose.translation.to_bevy(), Vec3::new(0.4, 0.92, 0.));
+        assert_eq!(pose.translation.to_bevy(), Vec3::new(0., 0.92, 0.));
 
         let text = r#"{"shape":"box","type":"marker","half_extents":[1,1,1]}"#;
         let marker: ColliderDesc = serde_json::from_str(text).unwrap();

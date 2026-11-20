@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I66.**
+**Next: I68.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -281,3 +281,16 @@ confirmed by running something or only by reading. Numbers are never reused.
   keeping only those it injects; and hold the display awake for the run (as `caffeinate -d` does on
   macOS), or read the frame from the render target rather than the screen. Seen by the author; the
   causes read, not run.
+- **I66** With the camera turned 180° from the player's facing, pressing forward walks the actor
+  forward from its own view, turning in a tight arc until its heading meets the camera's. People
+  turn in place first. faery stopped and played its turn clip while the target heading was more than
+  60° off, turning at 5 rad/s, and walked only within that (`moveTowardsWaypoint` in `Actor.ts`,
+  `DEFAULT_TURN_RATE`). Panoply has a `Turn` gait already. Seen by the author; faery's rule read,
+  Panoply's cause not looked into.
+- **I67** Navigation takes a footpath from a terrain effect's look: a cell is a path when its effect
+  is cobbled (`footpaths` in `panoply_nav`'s `input.rs`), as faery took its road and stone. The
+  author expects two dirt effects that look the same but navigate differently, a trail through a
+  forest (a path) and a patch with no grass (not one), which the look cannot tell apart. Candidate:
+  a field on the terrain effect entry (`Surface`) saying whether it is a footpath, set on the roads
+  and trails, which the capture reads through the precinct's effect table rather than the vertex
+  attributes. Discussed with the author.

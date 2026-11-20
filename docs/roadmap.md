@@ -274,45 +274,11 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16c Recast prototype.** From `panoply_nav`'s fixtures (`tests/fixtures`, the playground's
-  lair and village) to its `NavMesh` (D97). A module of `panoply_nav`, compiled in beside PAN16d's
-  and chosen at run time, since PAN16e compares both in one build, which separate branches or Cargo
-  features would not give (features would also leave one unchecked by `verify.sh`'s clippy); the
-  loser's dependencies go with it. [rerecast](https://crates.io/crates/rerecast)'s core crate (1.0),
-  a Bevy-free port of Recast that generates meshes only, driven by our own code (D36):
-  `bevy_rerecast` follows Bevy releases and assumes Avian, but its `generator/mod.rs` is the
-  template. A test that prints build time and peak memory at 0.1 m and 0.15 m cells; if the time is
-  too long, 16 m tiles, which bound a rebuild to the tiles an edit touches. To be seen in PAN16b's
-  view, which draws a precinct's `PrecinctNavMesh`, the editor builds the loaded precincts' meshes
-  with the generator a setting beside the Navigation checkbox chooses. For Recast the view fills
-  from its detail mesh, since its polygon heights can be off by the climb.
-  - Input as triangles: ground and floors already are, and the colliders, scenery's and the trunk
-    cylinders, become them through `ColliderDesc::volume` and parry's `to_trimesh` (as
-    `avian_rerecast`'s `collider_to_trimesh.rs` does).
-  - The precinct as a Recast tile: `ConfigBuilder::tiling` pads the build area by the agent radius
-    plus 3 cells, and `into_polygon_mesh` marks the edges on the tile's boundary with their side.
-    Built from the precinct's own geometry alone, as faery built its tracts; left empty, the padding
-    would erode the mesh away from the boundary and leave no boundary edges, so the precinct's edge
-    columns are copied outward across it after rasterizing (`Heightfield`'s spans are public): open
-    ground stays open to the line, and a wall meeting the line continues past it.
-  - Cell size: erosion takes the agent radius rounded up to whole cells, from each side of an
-    opening, and rasterizing takes any cell a jamb touches. The cottage doorway is 0.8 m and a
-    human's radius 0.3 m: at 0.2 m cells, 2 cells are eroded from each side of about 3 or 4 free
-    ones, which closes it; at 0.1 m, 3 from each side of 8 leaves 2. Recast's rule of a third to
-    half the radius also gives 0.1 m.
-  - Doors: one `DOOR` area type, marked by each door collider's footprint as a `ConvexVolume`.
-    Faery's door region was a sliver as thick as the leaf (`addDoorObstacles` in
-    `NavigationMeshBuilder.ts`), which its exact clipping kept; on Recast's grid that strip is a
-    cell or two, under `min_region_area`, which would delete it and close the doorway, so the
-    footprint is grown across the wall's depth. Area types never share a region, so door polygons
-    are their own.
-  - Hints and floors that block: area 0, a hint's footprint grown by the agent radius, since marking
-    comes after erosion and would otherwise let a body overlap it.
-
-  A missing feature may be upstreamed rather than forked: the author has talked with rerecast's
-  author.
-- **PAN16d Port prototype.** PAN16c's fixtures and `NavMesh`, from a port of faery's builder: 2D
-  polygons cut by exact boolean operations and joined as a graph, about 2,000 lines of TypeScript
+- **PAN16d Port prototype.** The fixtures and `NavMesh` Recast builds from (D97), from a port of
+  faery's builder, chosen at run time beside Recast (`panoply_nav::recast`) by a setting beside the
+  Show menu's Navigation checkbox, which the editor's build (`nav_build`) reads; the setting waited
+  for a second generator, since one would be a select of one option. The port: 2D polygons cut by
+  exact boolean operations and joined as a graph, about 2,000 lines of TypeScript
   (`NavigationMeshBuilder.ts`, `NavigationMesh.ts`, `NavRegion.ts`, the tract files), whose cost
   follows the obstacles, where Recast's follows the area over the cell size squared, empty ground
   included, and whose edges are exact, where Recast's fall on its grid. Ported lean: without faery's
@@ -327,14 +293,16 @@ components and every layer restartable from saved state (R104).
   - Faery's polygons as a plane and 2D vertices, projected along y, for the boolean operations, are
     this module's own; its output is `NavMesh`'s 3D vertices.
   - Doors are the leaf's footprint, as faery's were, and hints are subtracted as solids are, as
-    faery did.
+    faery did; a solid's `margin` grows its footprint (`TODO(PAN16)` in `scenery_colliders.rs`).
+  - Footpaths as faery's `addTerrainPaths` cut them, from the input's path cells.
   - Joining layers at stairs and ramps (`isSamePlane`, `projectVertexToPlane` in `NavRegion.ts`) is
     left out and judged by reading in PAN16e, since it is where faery's bugs are likeliest.
-- **PAN16e Generator decision.** PAN16c's and PAN16d's meshes compared on build time, peak memory,
-  whether the cottage doorway stays open, polygon count, and how closely the edges follow the
-  obstacles, in PAN16b's view; the port's layer joining judged by reading. Lands as a decision. The
-  loser's module and dependencies are removed, and with them the setting that chose between them;
-  the winner's grows into PAN16f.
+- **PAN16e Generator decision.** Recast's and PAN16d's meshes compared on build time, peak memory
+  (`tests/recast.rs` prints Recast's), whether the doorways stay open and how wide the stairways
+  stay (Recast's squeezes them tight, though open), polygon count, how closely the edges follow the
+  obstacles and the footpaths, in PAN16b's view; the port's layer joining judged by reading. Lands
+  as a decision. The loser's module and dependencies are removed, and with them the setting that
+  chose between them; the winner's grows into PAN16f.
 - **PAN16f Navmesh generation.** The winning generator in the game, one mesh per precinct.
   - Built from the precinct's own geometry alone, when it loads: the neighbours' obstacles are
     PAN16g's, which intersects the two sides' boundary edges when a route crosses. An obstacle just

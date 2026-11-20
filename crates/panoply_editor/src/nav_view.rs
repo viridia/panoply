@@ -72,6 +72,7 @@ fn area_color(area: NavAreaKind) -> Color {
     match area {
         NavAreaKind::Walkable => tailwind::SKY_500.with_alpha(0.3).into(),
         NavAreaKind::Door => tailwind::AMBER_400.with_alpha(0.6).into(),
+        NavAreaKind::Path => tailwind::VIOLET_400.with_alpha(0.4).into(),
     }
 }
 
@@ -185,25 +186,32 @@ fn edges(mesh: &NavMesh) -> impl Iterator<Item = (Vec3, Vec3, NavEdge)> + '_ {
 }
 
 /// The polygons grouped by area, each lifted by [`FILL_LIFT`], in the order their areas first
-/// appear. Polygons naming a vertex the mesh lacks are left out.
+/// appear: a polygon as its detail triangles where it has them, so the fill follows the ground,
+/// and otherwise as itself. Polygons naming a vertex the mesh lacks are left out.
 fn fills(mesh: &NavMesh) -> Vec<(NavAreaKind, Vec<Vec<Vec3>>)> {
+    let lift = |p: Vec3| p + Vec3::Y * FILL_LIFT;
     let mut areas: Vec<(NavAreaKind, Vec<Vec<Vec3>>)> = Vec::new();
     for polygon in &mesh.polygons {
-        let points = polygon
-            .vertices
-            .iter()
-            .map(|&v| {
-                mesh.vertices
-                    .get(v as usize)
-                    .map(|p| *p + Vec3::Y * FILL_LIFT)
-            })
-            .collect::<Option<Vec<_>>>();
-        let Some(points) = points else {
-            continue;
+        let shapes = if polygon.detail.is_empty() {
+            let points = polygon
+                .vertices
+                .iter()
+                .map(|&v| mesh.vertices.get(v as usize).copied().map(lift))
+                .collect::<Option<Vec<_>>>();
+            let Some(points) = points else {
+                continue;
+            };
+            vec![points]
+        } else {
+            polygon
+                .detail
+                .iter()
+                .map(|triangle| triangle.map(lift).to_vec())
+                .collect()
         };
         match areas.iter_mut().find(|(area, _)| *area == polygon.area) {
-            Some((_, polygons)) => polygons.push(points),
-            None => areas.push((polygon.area, vec![points])),
+            Some((_, polygons)) => polygons.extend(shapes),
+            None => areas.push((polygon.area, shapes)),
         }
     }
     areas
@@ -228,6 +236,7 @@ mod tests {
             vertices: vec![2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2],
             edges: edges.to_vec(),
             area,
+            detail: Vec::new(),
         };
         use NavEdge::*;
         NavMesh {

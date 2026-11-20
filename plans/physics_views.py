@@ -11,10 +11,13 @@ the probe or the navigation view is suspect.
 - The Show menu turns a collider group off, and Space toggles the checkbox just clicked, so keys
   reach widgets; Physics turns the drawing off. The menu is clicked twice: the second click lands
   only if the first left the menu open.
-- A navigation mesh made by hand, put on a precinct, gets a view, hidden until Navigation is
-  checked; a changed mesh replaces it, and a removed one takes it away. In `nav_view.png`, a row
-  of three polygons east of the player's spot, blue, amber (a doorway), blue: red walls along
-  their sides, faint lines where they meet, and a green edge on the precinct's side at x 64.
+- A navigation mesh made by hand, put on the village's precinct, gets a view, hidden until
+  Navigation is checked; a changed mesh replaces it, and a removed one takes it away. In
+  `nav_view.png`, a row of three polygons, blue, amber (a doorway), blue: red walls along their
+  sides, faint lines where they meet, and a green edge on the precinct's side at x 128.
+- Navigation on builds the lair's mesh with Recast, doorways and footpaths included, and leaves
+  the hand-made one alone. In `nav_recast.png`, the doorway near (50.5, 50.5) from above, amber
+  between its jambs.
 
 Settings start empty, so physics drawing and the navigation view start off and the panel hidden.
 """
@@ -49,11 +52,16 @@ COLLIDER_SPOTS = [
 ]
 NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
 VISIBILITY = "bevy_camera::visibility::Visibility"
-# The precinct the hand-made mesh goes on, whose corner is at the origin, so its coordinates are
-# the realm's; and its view.
-PRECINCT = "Precinct:playground:0:0"
+# The precinct the hand-made mesh goes on, the village, and its view. A mesh is in its precinct's
+# coordinates, so the realm's x is 64 more.
+PRECINCT = "Precinct:playground:1:0"
 NAV_VIEW = f"{PRECINCT}/NavMeshView"
 NAV_FILLS = f"{NAV_VIEW}/NavAreaFill"
+# The lair, whose corner is at the origin, built by Recast once Navigation is on, and one of its
+# doorways.
+LAIR = "Precinct:playground:0:0"
+LAIR_VIEW = f"{LAIR}/NavMeshView"
+DOORWAY = [50.5, 0.0, 50.75]
 
 
 def run(driver):
@@ -126,8 +134,8 @@ def show_menu(driver):
 
 
 def hand_made_mesh(door="Door"):
-    """Three polygons in a row along x at z 47 to 51, east of the player's spot: walkable from x
-    40 to 50, a doorway (area `door`) to 51, walkable to the precinct's side at 64."""
+    """Three polygons in a row along x at z 47 to 51, in the precinct's coordinates: walkable from
+    x 40 to 50, a doorway (area `door`) to 51, walkable to the precinct's side at 64."""
     xs = [40.0, 50.0, 51.0, 64.0]
     vertices = [[x, 0.0, z] for x in xs for z in (47.0, 51.0)]
 
@@ -152,7 +160,7 @@ def hand_made_mesh(door="Door"):
 def nav_view(driver):
     """Follows `show_menu`, whose menu is still open."""
     assert driver.get_resource(VIEWS, at="navigation") is False, "navigation view on at start"
-    driver.goto([52.0, 0.0, 49.0], 30.0)
+    driver.goto([116.0, 0.0, 49.0], 30.0)
     driver.set(PRECINCT, NAV_MESH, hand_made_mesh())
     driver.present(NAV_VIEW)
     assert driver.get(NAV_VIEW, VISIBILITY) == "Hidden", "navigation view shown while off"
@@ -164,6 +172,7 @@ def nav_view(driver):
     assert driver.get_resource(VIEWS, at="navigation") is True, "Navigation did not turn on"
     assert driver.get(NAV_VIEW, VISIBILITY) == "Inherited", "navigation view still hidden"
     driver.screenshot("nav_view")
+    recast_mesh(driver)
 
     # The doorway made walkable: one view still, with one fill.
     view = driver.select(NAV_VIEW)
@@ -177,3 +186,23 @@ def nav_view(driver):
     entity = driver.select(PRECINCT)[0]
     driver.call("world.remove_components", {"entity": entity, "components": [NAV_MESH]})
     driver.absent(NAV_VIEW)
+
+
+def recast_mesh(driver):
+    """Turning Navigation on builds the meshes of the loaded precincts that have none with Recast,
+    the lair among them; the hand-made one is left as it is."""
+    driver.wait(
+        lambda: (bool(driver.select(LAIR_VIEW)), "no view"),
+        "the lair's Recast mesh",
+        {"seconds": 30},
+    )
+    polygons = driver.get(LAIR, NAV_MESH, at="polygons")
+    areas = {area: sum(1 for p in polygons if p["area"] == area) for area in ("Door", "Path")}
+    print(f"lair: {len(polygons)} polygons, {areas}")
+    assert areas["Door"], "the lair's mesh has no doorways"
+    hand_made = driver.get(PRECINCT, NAV_MESH, at="polygons")
+    assert len(hand_made) == 3, f"the hand-made mesh became {len(hand_made)} polygons"
+    driver.goto(DOORWAY, 12.0)
+    driver.frames(10)
+    driver.screenshot("nav_recast")
+    driver.goto([116.0, 0.0, 49.0], 30.0)

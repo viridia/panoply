@@ -60,6 +60,7 @@ panoply_saga = { path = "crates/panoply_saga" }
 panoply_scenery = { path = "crates/panoply_scenery" }
 panoply_terrain = { path = "crates/panoply_terrain" }
 rapier3d = { version = "0.36.1", features = ["debug-render"] }
+rerecast = "1.0.0"
 rmp-serde = "1.1.2"
 ron = "0.8.1"
 serde = "1.0.217"

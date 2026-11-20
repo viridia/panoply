@@ -32,6 +32,7 @@ pub mod map_size;
 pub mod mode_overlays;
 pub mod mode_selector;
 pub mod model_picker;
+pub mod nav_build;
 pub mod nav_point_list;
 pub mod nav_view;
 pub mod new_realm;
@@ -75,6 +76,7 @@ impl PluginGroup for EditorPlugins {
             .add(panoply_overlays::OverlaysPlugin)
             .add(mode_overlays::ModeOverlaysPlugin)
             .add(nav_view::NavViewPlugin)
+            .add(nav_build::NavBuildPlugin)
             .add(chooser::ChooserPlugin)
             .add(model_picker::ModelPickerPlugin)
             .add(nav_point_list::NavPointListPlugin)

@@ -9,6 +9,7 @@ panoply_core = { workspace = true }
 panoply_scenery = { workspace = true }
 panoply_terrain = { workspace = true }
 rapier3d = { workspace = true }
+rerecast = { workspace = true }
 rmp-serde = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -782,9 +782,12 @@ never reused.
   `ColliderDesc`s where each element stands, so a collider's type, margin and walkability reach the
   generators, and tree trunks as solid cylinders beside them; floors as triangles; and the ground at
   one vertex per meter, taken from the ground collider's corners, not its sixteen triangles to the
-  cell, so its heights carry the smoothing and terrain effects but not the 0.25 m detail between.
-  The canopy (D39) is left out, since no route goes over the trees. Rapier's own shapes were the
-  alternative, but saving them needs its `serde-serialize` feature and writes each trimesh's BVH,
-  tying the fixtures to parry's version. The mesh holds 3D vertices, not faery's plane and 2D
-  vertices per polygon, which stay inside the port (PAN16d), since Recast's polygons are not exactly
-  planar. Reversing it means changing both generators' input and output. (PAN16a)
+  cell, so its heights carry the smoothing and terrain effects but not the 0.25 m detail between;
+  and each 1 m cell's footpath flag (cobbled effects), with a ring of the neighbours' cells, as
+  faery's builder took them for its path regions (PAN16c). The canopy (D39) is left out, since no
+  route goes over the trees. Rapier's own shapes were the alternative, but saving them needs its
+  `serde-serialize` feature and writes each trimesh's BVH, tying the fixtures to parry's version.
+  The mesh holds 3D vertices, not faery's plane and 2D vertices per polygon, which stay inside the
+  port (PAN16d), since Recast's polygons are not exactly planar; a polygon carries its surface as
+  triangles where it is not planar, which the port leaves empty (PAN16c). Reversing it means
+  changing both generators' input and output. (PAN16a)

@@ -8,9 +8,9 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use panoply_core::{realm_physics::collision_groups, RealmPhysics, ToBevy, ToRapier};
 use panoply_scenery::{
     precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, ColliderShape, ColliderType,
-    SceneryColliders, PRECINCT_SIZE, PRECINCT_SIZE_F,
+    SceneryColliders, TerrainFxMap, PRECINCT_SIZE, PRECINCT_SIZE_F,
 };
-use panoply_terrain::{coarse_ground, Parcel, PARCEL_SIZE};
+use panoply_terrain::{coarse_ground, Parcel, TerrainTypes, PARCEL_SIZE};
 use rapier3d::prelude::{Collider, Group, RigidBodyHandle};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -27,6 +27,29 @@ pub struct NavInput {
     pub colliders: Vec<NavCollider>,
     /// The ground of each parcel, and the precinct's floors.
     pub surfaces: Vec<NavSurface>,
+    /// Whether each 1 m cell is a footpath (a cobbled terrain effect), row by row from
+    /// the cell at (-1, -1): the precinct's cells and a ring of its neighbours' around them, so a
+    /// generator sees where a path runs on across the line. [`PATH_GRID`] cells a side.
+    #[serde(default)]
+    pub paths: Vec<bool>,
+}
+
+/// Cells along a side of [`NavInput::paths`]: the precinct's and one either side.
+pub const PATH_GRID: usize = PRECINCT_SIZE as usize + 2;
+
+impl NavInput {
+    /// Whether the 1 m cell with its corner at `x`, `z` in the precinct is a footpath; `false`
+    /// beyond the ring around the precinct.
+    pub fn path_at(&self, x: i32, z: i32) -> bool {
+        let range = -1..=PRECINCT_SIZE;
+        range.contains(&x)
+            && range.contains(&z)
+            && self
+                .paths
+                .get((x + 1) as usize + (z + 1) as usize * PATH_GRID)
+                .copied()
+                .unwrap_or(false)
+    }
 }
 
 /// A collider descriptor where it stands: scenery's as its catalog gives it, so its type, margin
@@ -106,7 +129,15 @@ impl NavInput {
 /// What [`NavInputCapture::capture`] reads.
 #[derive(SystemParam)]
 pub struct NavInputCapture<'w, 's> {
-    precincts: Query<'w, 's, (&'static Precinct, &'static Children)>,
+    precincts: Query<
+        'w,
+        's,
+        (
+            &'static Precinct,
+            &'static Children,
+            Option<&'static TerrainFxMap>,
+        ),
+    >,
     elements: Query<'w, 's, (&'static SceneryElement, &'static SceneryColliders)>,
     parcels: Query<'w, 's, &'static Parcel>,
     realms: Query<'w, 's, &'static RealmPhysics>,
@@ -117,10 +148,10 @@ impl NavInputCapture<'_, '_> {
     /// stand, and from physics its floors and its parcels' ground and trunks, copied rather than
     /// triangulated. Fails if the precinct or any of its parcels is not loaded.
     pub fn capture(&self, realm: Entity, coords: IVec2) -> Result<NavInput, CaptureError> {
-        let (precinct, children) = self
+        let (precinct, children, effects) = self
             .precincts
             .iter()
-            .find(|(p, _)| p.realm == realm && p.coords == coords)
+            .find(|(p, ..)| p.realm == realm && p.coords == coords)
             .ok_or(CaptureError::PrecinctNotLoaded(coords))?;
         let physics = self
             .realms
@@ -129,6 +160,7 @@ impl NavInputCapture<'_, '_> {
         let origin = Vec3::new(coords.x as f32, 0., coords.y as f32) * PRECINCT_SIZE_F;
         let mut input = NavInput {
             coords,
+            paths: footpaths(effects),
             ..default()
         };
 
@@ -172,6 +204,22 @@ impl NavInputCapture<'_, '_> {
         input.sort();
         Ok(input)
     }
+}
+
+/// Each cell's footpath flag, from the precinct's terrain effects: a path is cobbled, as faery's
+/// navigation took its road and stone channels (`getMovementEffectsMask`). Trodden ground
+/// (`TerrainTypes::Path`, faery's dirt) is not a path.
+fn footpaths(effects: Option<&TerrainFxMap>) -> Vec<bool> {
+    let Some(effects) = effects else {
+        return vec![false; PATH_GRID * PATH_GRID];
+    };
+    (-1..=PRECINCT_SIZE)
+        .flat_map(|z| (-1..=PRECINCT_SIZE).map(move |x| (x, z)))
+        .map(|(x, z)| {
+            let fx = effects.effect_at(x, z);
+            fx.effect_strength > 0. && fx.effect.contains(TerrainTypes::Cobbles)
+        })
+        .collect()
 }
 
 /// The colliders on `body` in `group`.
