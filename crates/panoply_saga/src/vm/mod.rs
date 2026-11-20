@@ -673,7 +673,7 @@ fn load_field(vm: &mut ScriptVm) -> Result<(), VMError> {
                 .get(heap_index as usize)
                 .ok_or(VMError::InvalidType(ExprType::None))?;
             let field = struct_field(reflect.as_ref(), field_index)?;
-            // TODO(X7): composite fields of temporaries, flattened into slots.
+            // TODO(PAN107): composite fields of temporaries, flattened into slots.
             primitive_field(field).ok_or(VMError::Unsupported("composite fields of temporaries"))?
         }
         _ => return Err(VMError::InvalidType(vm.value_type(&arg))),

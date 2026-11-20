@@ -10,10 +10,12 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN107.**
+**Next: PAN108.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
-first; a chunk that needs another thread's says so.
+first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
+title, naming each open chunk, deferral or issue it waits for directly (what those wait for is
+theirs to name). `xref.py` checks that each is still open.
 
 ## Terrain
 
@@ -74,11 +76,11 @@ of flow, so water shading changes (X11) must keep them readable as moving bumps.
   by eye in motion at a plan spot. With four axis directions, a diagonal current may read as two
   crossing patterns; six or eight directions would cover angles better, at more texture samples (now
   12); how many is settled here.
-- **PAN85b Currents mode.** An editor mode for drawing river currents, saved with the terrain data.
-  Where they live is decided here: a contour is shared by every parcel that uses it, so a river
-  crossing parcels likely needs data per parcel or per realm map, not per contour.
-- **PAN85c Currents in the water.** `water_mesh.rs` reads PAN85b's currents in place of the test
-  function, and a water mesh rebuilds when they are edited.
+- **PAN85b Currents mode.** *Needs:* PAN85a. An editor mode for drawing river currents, saved with
+  the terrain data. Where they live is decided here: a contour is shared by every parcel that uses
+  it, so a river crossing parcels likely needs data per parcel or per realm map, not per contour.
+- **PAN85c Currents in the water.** *Needs:* PAN85b. `water_mesh.rs` reads PAN85b's currents in
+  place of the test function, and a water mesh rebuilds when they are edited.
 
 ## Scenery
 
@@ -128,10 +130,10 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
 - **PAN93 Make global**, on PAN88's selection. A toggle that takes the selected actor out of its
   precinct, as faery's did. Where a global actor is kept, and how it loads and saves, is decided in
   the chunk; read faery's first.
-- **PAN76b Cutaway editing**, on PAN77's selection. Adding, removing and resizing a tier's cutaway
-  rects, each edit undoable and marking the precinct unsaved, and a Show menu item drawing them, as
-  faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's `SelectSceneryRectTool` made
-  a rect into a cutaway is read in the chunk.
+- **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
+  tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
+  drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
+  `SelectSceneryRectTool` made a rect into a cutaway is read in the chunk.
 
 ## Aspects
 
@@ -157,7 +159,7 @@ aspects that mechanisms, containers and signs are built on.
   listing package assets; saving and undo with keyed entries; `find_aspect` still reading native
   aspects along the chain. It measures the cost and finds what the audit missed, and is kept if it
   stands on its own. Lands as a decision, with X17, PAN28e and X74 brought in line.
-- **PAN104 Scripted aspects**, after PAN99 and PAN105: an aspect declared in a SAGA script, as
+- **PAN104 Scripted aspects.** *Needs:* PAN99, PAN105. An aspect declared in a SAGA script, as
   faery's scripted aspects were, with fields and hooks. Its fields are config or state as PAN99
   divides them (the syntax is open: perhaps `@` marks config, after BSN), each of a reflected Rust
   type the property editor already edits, so the layer above reflection (X64) is a list of rows,
@@ -177,49 +179,49 @@ aspects that mechanisms, containers and signs are built on.
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79 Mechanisms**, after PAN104: the stock elements puzzles are built from, and how they are
-  wired together, on SAGA's cells and reactions (PAN105) and scripted aspects. faery had doors, push
-  and toggle buttons, pressure plates, remotely controlled openables, automatic doors, spear traps
-  and fireball traps (whose fixed period, PAN87, becomes scripted: when a trap fires), wired by
-  reactive formulas so that elaborate puzzles combine simple parts ([faery.md](faery.md), How far
-  faery got; the aspects the converter dropped are under Migration scripts). The first sensor
-  collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`). Beside them: triggers (a
-  circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
-  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
-  signals another through cells, a formula over the other's state, wherever a formula can say it,
-  and through an event only where none can: engines built on events, such as the Creation Kit,
-  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
-  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
-  the precinct, not as wiring stored on its participants, which in faery left no list of what was
-  wired and no owner when several took part. A relay holds two aspects. A native visualization
-  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
-  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target
-  and fills it by picking, never by typing. Logic on one entity is a scripted aspect on that entity.
-  A placed relay binds its roles on the instance and keeps its exemplar's tuning, as PAN99 settles.
-  A bound instance gets an external id (D87). The editor lists a precinct's relays, draws a selected
-  one's wires, and lists those that name a selected instance; selecting, moving and copying apply to
-  relays, and copying a trap with its relay binds the copy's roles to the copied instances. One
-  wiring gesture places a stock relay for a button opening a door, so the simplest case stays one
-  step. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`, and
-  Unreal's placed Blueprint actors with picked references. The hard part is referencing and naming.
-  A precinct is named by its realm and coordinates, and is like a module: its walls and fixtures
-  that others can refer to are its exports, by their export id (`SceneryInstanceId::External`). That
-  name is clumsy to type into a text box, so the field for a signal source browses the available
-  signals with a filter, as PAN35's chooser does. A reference into a precinct that is not loaded
-  suspends the formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency,
-  and likely to differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an
-  `Instance` observable that is null while its target is not loaded, a `StructureRefNode` watching
-  structures load and unload, and global variables or lazily loaded scope objects for long-range
-  wiring; global references by realm and coordinates in `design/scripting/predicates.md`; animated
-  instances (moving parts) kept apart from static instancing in
-  `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by a button
-  ([goals.md](goals.md), step 4).
-- **PAN106 Containers**, after PAN104: what a container holds. An open chest shows its contents on
-  an inventory screen whose background its container type chooses, and items move between it and the
-  player; a locked one opens for the key its instance names, and a corpse, once combat kills (PAN6),
-  is looted the same way ([goals.md](goals.md), step 7). The first feature that moves items, so it
-  brings in X42.
-- **PAN78 Signs and books**, after PAN104, and among the last chunks of all: things to read. A sign
+- **PAN79 Mechanisms.** *Needs:* PAN59, PAN102, PAN104. The stock elements puzzles are built from,
+  and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted aspects.
+  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
+  automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
+  a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
+  ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
+  scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
+  Beside them: triggers (a circle or rectangle the player enters), encounter zones, waymarks for
+  scripted NPC events, and patrol paths, fixtures that goals name ([goal-format.md](goal-format.md),
+  Open). One element signals another through cells, a formula over the other's state, wherever a
+  formula can say it, and through an event only where none can: engines built on events, such as the
+  Creation Kit, tangle when several signals must be correlated. Which parts are native aspects and
+  which are SAGA is to decide. Proposed: logic that spans several entities lives on a relay, an
+  exemplar placed in the precinct, not as wiring stored on its participants, which in faery left no
+  list of what was wired and no owner when several took part. A relay holds two aspects. A native
+  visualization aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a
+  scripted aspect (PAN104). A field of the instance-reference type is a role: the editor draws a
+  wire to its target and fills it by picking, never by typing. Logic on one entity is a scripted
+  aspect on that entity. A placed relay binds its roles on the instance and keeps its exemplar's
+  tuning, as PAN99 settles. A bound instance gets an external id (D87). The editor lists a
+  precinct's relays, draws a selected one's wires, and lists those that name a selected instance;
+  selecting, moving and copying apply to relays, and copying a trap with its relay binds the copy's
+  roles to the copied instances. One wiring gesture places a stock relay for a button opening a
+  door, so the simplest case stays one step. Precedents: Planet's Edge's logic tiles beyond the
+  map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with picked references.
+  The hard part is referencing and naming. A precinct is named by its realm and coordinates, and is
+  like a module: its walls and fixtures that others can refer to are its exports, by their export id
+  (`SceneryInstanceId::External`). That name is clumsy to type into a text box, so the field for a
+  signal source browses the available signals with a filter, as PAN35's chooser does. A reference
+  into a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md), Values).
+  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
+  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
+  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
+  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
+  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
+  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
+  a button ([goals.md](goals.md), step 4).
+- **PAN106 Containers.** *Needs:* PAN104. What a container holds. An open chest shows its contents
+  on an inventory screen whose background its container type chooses, and items move between it and
+  the player; a locked one opens for the key its instance names, and a corpse, once combat kills
+  (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that moves items,
+  so it brings in X42.
+- **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
   is a scenery aspect whose interaction shows its text; a document is an inventory item that links
   to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
   default). The text is a book: a catalog entry (D90), not an exemplar ([faery.md](faery.md),
@@ -239,7 +241,7 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** After PAN88, PAN92 and PAN93. Roots for an
+- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN93, PAN99. Roots for an
   instance picked in selection mode and for the realm panel's selected nav point (faery's
   `NavPointEditor`). An instance's aspects show as overrides of its exemplar's. Whether an instance
   may also add aspects its exemplar lacks is settled with how behavior composes
@@ -268,18 +270,24 @@ components and every layer restartable from saved state (R104).
   rescue's record says what trapped the actor, so traps can be found and fixed in the content. Where
   the log is kept, and whether a plan reads it, decided when it is written; what else counts as
   unusual is added as it turns up.
-- **PAN3q Stuck rescue**, the backstop for traps the canopy (D39) does not cover (trees against
-  walls, canopy bowls too steep to climb, clearings enclosed beyond its margin): an actor that is
-  not grounded, or makes no progress against its intent, for some seconds moves to the nearest free
-  spot; before navigation, the nearest cell outside the canopy cover. An actor that spawns inside
-  solid scenery is rescued the same way at once: an authored place that a phased layer (X109) or a
-  mod covered. Each rescue goes in PAN34's log, so the content can be fixed. Tune the canopy and
-  trunk height (`CANOPY_HEIGHT`, D39).
+- **PAN3q Stuck rescue.** *Needs:* PAN34. The backstop for traps the canopy (D39) does not cover
+  (trees against walls, canopy bowls too steep to climb, clearings enclosed beyond its margin): an
+  actor that is not grounded, or makes no progress against its intent, for some seconds moves to the
+  nearest free spot; before navigation, the nearest cell outside the canopy cover. An actor that
+  spawns inside solid scenery is rescued the same way at once: an authored place that a phased layer
+  (X109) or a mod covered. Each rescue goes in PAN34's log, so the content can be fixed. Tune the
+  canopy and trunk height (`CANOPY_HEIGHT`, D39).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16g Pathfinding.** Routes across the joined precinct meshes, with the route drawn in PAN16b's
-  view. A crate, if its Bevy-free core takes costs or filters per query and joins meshes
+- **PAN16g Pathfinding.** Routes across the joined precinct meshes, first for the player's click to
+  move: a click on the ground asks for a route from the player to that point, drawn in PAN16b's view
+  as faery drew routes, a stroked line ending in an arrowhead (`strokePolyline` in faery's
+  `packages/editor/src/helpers/drawShapes.ts`); the player does not walk it yet (PAN17). A click
+  that misses every interactive thing lands on `WorldBackstop` (D61), which must report the ground
+  point; a plan clicks ground through a server method of Panoply's own (the driver's X2), or a
+  waypoint entity spawned there and clicked through the driver's X9. Ground clicks run only in
+  `GameMode::Play`. A crate, if its Bevy-free core takes costs or filters per query and joins meshes
   (`landmass`, `polyanya` under `vleue_navigator`); else a port of `NavRouteTask.ts` (A*, a funnel
   pass, tract seams), which runs on any mesh of convex polygons. Read with `local_sweep.py`
   inventories first, faery's `nav` and the candidate crates, then the files they point to: an
@@ -288,33 +296,36 @@ components and every layer restartable from saved state (R104).
     overlap, a 1D intersection along the line, as faery's `perimeter` edges were
     (`neighborTransition` in `NavRouteTask.ts`); each side's edges are already cut short by its own
     obstacles.
-  - Doors: faery read each door's `open` signal inside its search, but a door does not change during
-    one query, so its cost is set before the query from PAN16f's table (passable at a cost, or
-    blocked if automatic, or locked) and the door-use waypoints added after it, along the corridor
-    (`findDoorUseLocation`). A door is its element's entity (`NavMesh::doors`); one missing is a
-    door despawned while its precinct's mesh is rebuilt (D100), skipped.
   - Not ready: a precinct without a `PrecinctNavMesh` is not ready, and a route asked of it says so.
   - Seams beside obstacles: each precinct's mesh is built from its own geometry alone, so an
     obstacle just across the line does not narrow this side's mesh, and a route running beside the
     seam may pass within the agent radius of it.
-  - Portals: the portal area is set per query too, open to the player's click-to-move routes and
-    closed to NPCs' (R31), as faery's portal areas were.
   - Ladders: the mesh has no off-mesh links, so they are the query side's.
 
-  Settle the choice with one scenario walkthrough: a guard routes through a door into the next
-  precinct.
-- **PAN16h Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
-  mesh is not ready, opens doors on the way (R52), and an actor that cannot advance plays R33's
-  blocked state and replans (R22).
-- **PAN16i Routing around actors.** Exclusion zones where actors stand (R86): the generator does not
-  cut them in at run time, having left out faery's patching (D99). Likely relaxed to two parts. A
-  cost per query, as faery's `actor` surface already was in its search, but only on a polygon the
-  actor leaves no way past: one too narrow at the actor for the agent to go around it, judged by
-  width, not area, since a corridor is large but narrow. The cost follows the two actors' weights
-  (D102): one the agent outweighs costs the time to shove it, and one far heavier blocks the polygon
-  for this query. An actor in a field costs nothing, so polygon size need not be capped; faery
-  capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in, which
-  Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
+  The search takes a cost per area per query, which PAN16j's doors and PAN16k's portals set. Settle
+  the choice with one scenario walkthrough: the player clicks a point in the next precinct, and the
+  route crosses the seam; then check it against PAN16j's guard routing through a door.
+- **PAN16h Routes in behaviors.** *Needs:* PAN16g. Actors follow routes: a behavior asks for one,
+  waits while the mesh is not ready, and an actor that cannot advance plays R33's blocked state and
+  replans (R22).
+- **PAN16j Doors in routes.** *Needs:* PAN16h, PAN59. faery read each door's `open` signal inside
+  its search, but a door does not change during one query, so its cost is set before the query from
+  PAN16f's table (passable at a cost, or blocked if automatic, or locked) and the door-use waypoints
+  added after it, along the corridor (`findDoorUseLocation`). A door is its element's entity
+  (`NavMesh::doors`); one missing is a door despawned while its precinct's mesh is rebuilt (D100),
+  skipped. Following the route, an actor stops at the door's use mark, plays the opening, then goes
+  through (R52).
+- **PAN16k Portals in routes.** *Needs:* PAN16g, PAN4c. The portal area is set per query, open to
+  the player's click-to-move routes and closed to NPCs' (R31), as faery's portal areas were.
+- **PAN16i Routing around actors.** *Needs:* PAN16h. Exclusion zones where actors stand (R86): the
+  generator does not cut them in at run time, having left out faery's patching (D99). Likely relaxed
+  to two parts. A cost per query, as faery's `actor` surface already was in its search, but only on
+  a polygon the actor leaves no way past: one too narrow at the actor for the agent to go around it,
+  judged by width, not area, since a corridor is large but narrow. The cost follows the two actors'
+  weights (D102): one the agent outweighs costs the time to shove it, and one far heavier blocks the
+  polygon for this query. An actor in a field costs nothing, so polygon size need not be capped;
+  faery capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in,
+  which Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
   passes within an actor's radius plus the agent's plus a margin, waypoints on the tangents of that
   circle, on the side whose segments stay on the mesh (a raycast along it). The margin keeps a path
   out of personal space where there is room, though the push lets capsules overlap (D102): an actor
@@ -323,12 +334,9 @@ components and every layer restartable from saved state (R104).
   replans. Before bending is built, an artifact for the author: its test cases, illustrated, to find
   the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios: driver plans that
   stage, for example, eight skeletons rushing the player, or two followers through a doorway.
-- **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
-  (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
-  own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
-  game's click handling runs only in `GameMode::Play`. A click that misses every interactive thing
-  lands on `WorldBackstop` (D61), and a ground click needs the ground point, which it does not
-  report.
+- **PAN17 Click to move.** *Needs:* PAN16g. The player walks the route PAN16g draws for a ground
+  click. Clicking an actor or fixture walks to it, which a plan does through clicks in the world
+  (`bevy_remote_driver`'s X9).
 
 ## Portals
 
@@ -341,10 +349,10 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
   and `examples/camera/custom_projection.rs` (an oblique clip plane) are the starting point,
   replacing the old `active_portal.rs`. `panoply_portals` depends on scenery only; crossing (PAN4c)
   adds actors.
-- **PAN4c Crossing.** The player crosses a portal into the target realm, keeping offset and velocity
-  (R31), detected by a volume at the aperture. Decide here, once crossing can be felt, how the view
-  changes at a crossing (D64) and which way a hard cut faces: `follow_snapped` keeps the heading,
-  while `follow_active_entity`'s far jump turns to the actor's facing.
+- **PAN4c Crossing.** *Needs:* PAN4b. The player crosses a portal into the target realm, keeping
+  offset and velocity (R31), detected by a volume at the aperture. Decide here, once crossing can be
+  felt, how the view changes at a crossing (D64) and which way a hard cut faces: `follow_snapped`
+  keeps the heading, while `follow_active_entity`'s far jump turns to the actor's facing.
 - **PAN4d Portal editing.** Helpers that keep a portal's two ends in step: a portal chooser
   (`chooser_dialog`) to pick the far end, which sets both ends' `PortalTarget`, and whatever else
   syncing them needs, decided in the chunk.
@@ -372,17 +380,17 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
   (`los-data/meta/particles.json`), which the converter dropped; Panoply's `Campfire`
   (`camping.exem.json`) gets it back, beside the `Test.Particles` fixtures faery kept for trying
   effects. Snoring waits for a sleep state (X44).
-- **PAN87 Missiles**: entities without automatic instancing that collide, light, sound and emit
-  particles, as faery's particles did and GPU particles cannot ([particles.md](particles.md), Two
-  layers). The first are the fireball traps: `FireballEmitter` and `FireballEmitterRapid`
-  (`furnishings.exem.json`), placed in the playground (`p002-p001`) and the necropolis
-  (`holm-underground/p017-p013`). faery's `particles` aspect on them fired `particles:Fireball` and
-  `particles:FireballTrapRapid` (`los-data/meta/particles.json`): a fireball that collides
-  (`collisionMask`), lights within 4 m, sounds on spawn and on hitting, and bursts into PAN86's
-  particles. faery timed a trap's shots by the effect's emission rate (`emissionRate` 0.5 with
-  `maxParticles` 1, a shot every 2 s); here launching is the trap's own, not a particle setting: a
-  fixed period on its aspect for now, scripted in PAN79. Its fire damage waits for actors to have
-  health, in PAN6's combat.
+- **PAN87 Missiles.** *Needs:* PAN86. Entities without automatic instancing that collide, light,
+  sound and emit particles, as faery's particles did and GPU particles cannot
+  ([particles.md](particles.md), Two layers). The first are the fireball traps: `FireballEmitter`
+  and `FireballEmitterRapid` (`furnishings.exem.json`), placed in the playground (`p002-p001`) and
+  the necropolis (`holm-underground/p017-p013`). faery's `particles` aspect on them fired
+  `particles:Fireball` and `particles:FireballTrapRapid` (`los-data/meta/particles.json`): a
+  fireball that collides (`collisionMask`), lights within 4 m, sounds on spawn and on hitting, and
+  bursts into PAN86's particles. faery timed a trap's shots by the effect's emission rate
+  (`emissionRate` 0.5 with `maxParticles` 1, a shot every 2 s); here launching is the trap's own,
+  not a particle setting: a fixed period on its aspect for now, scripted in PAN79. Its fire damage
+  waits for actors to have health, in PAN6's combat.
 - **PAN20 Outline width by distance.** An experiment: flatten the curve by which outlines thin with
   distance, without making them constant. `outline.wesl` extrudes in mesh-local units, so on screen
   the width falls as 1 / depth. Scale the extrusion by `(depth / reference)^k`: `k = 0` is today,
@@ -438,33 +446,38 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 
 ## SAGA
 
-- **PAN71 Imports**, after WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented on
-  Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
+- **PAN71 Imports**, modeled on WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented
+  on Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
   recompiles when one it imports reloads, and an import cycle is a compile error.
-- **PAN105 Cells and reactions**, after X7's value slots: step 3 of [saga.md](saga.md), Order of
-  work, its first customer an animation's `when` (Early customers).
-- **PAN72 SAGA language reference**, for mod authors, in `docs/saga-language.md`: syntax, types,
-  literals and their suffixes, operators and casts, locals, `if`, functions, modules and imports,
-  how a formula embeds in an asset (PAN45b), and the host functions and component reads a formula
-  may use, each with a short example. It describes the language as it is, not [saga.md](saga.md)'s
-  plans, and later chunks that change the language update it.
+- **PAN107 Value slots.** *Needs:* PAN71. Step 2 of [saga.md](saga.md), Order of work, as its Values
+  section lays them out: host-declared structs and fixed-size arrays flattened into slots, and a
+  stack with no owned data, replacing what The crate lists under what value slots change. The
+  `TODO(PAN107)`s in `panoply_saga` include tuples, tuple structs and enums, which Values does not
+  cover and whose enums it wraps rather than flattens: each is built here or routed elsewhere.
+- **PAN105 Cells and reactions.** *Needs:* PAN107. Step 3 of [saga.md](saga.md), Order of work, its
+  first customer an animation's `when` (Early customers).
+- **PAN72 SAGA language reference.** *Needs:* PAN71. For mod authors, in `docs/saga-language.md`:
+  syntax, types, literals and their suffixes, operators and casts, locals, `if`, functions, modules
+  and imports, how a formula embeds in an asset (PAN45b), and the host functions and component reads
+  a formula may use, each with a short example. It describes the language as it is, not
+  [saga.md](saga.md)'s plans, and later chunks that change the language update it.
 
 ## Saves
 
 - **PAN19 New game.** Resets every precinct, and the actors in it, to its authored state: despawn
   them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
-  play changed (PAN82), so loading a save is a new game with the save's changes applied. After
-  PAN3l, which puts actors in precincts. R12 is the same reset for one actor.
-- **PAN82 Save games** with structural sharing: one chunk of play changes per precinct, written on
-  eviction; a save is only a root index of chunk versions. Design and what it asks of the engine in
-  [save-games.md](save-games.md). X14's picked cells would live in the precinct chunk. The camera
-  angle is saved too; a load follows the player with `Viewpoint::follow_snapped`, which keeps it.
-  The first state to save: a chest left open.
+  play changed (PAN82), so loading a save is a new game with the save's changes applied. R12 is the
+  same reset for one actor.
+- **PAN82 Save games.** *Needs:* PAN19. Save games with structural sharing: one chunk of play
+  changes per precinct, written on eviction; a save is only a root index of chunk versions. Design
+  and what it asks of the engine in [save-games.md](save-games.md). X14's picked cells would live in
+  the precinct chunk. The camera angle is saved too; a load follows the player with
+  `Viewpoint::follow_snapped`, which keeps it. The first state to save: a chest left open.
 
 ## First playable
 
-- **PAN6 Up in Arms.** The first playable: the "Up in Arms" quest, end to end. Its steps and
-  what each needs are in [goals.md](goals.md).
+- **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106. The first playable: the "Up in Arms" quest,
+  end to end. Its steps and what each needs are in [goals.md](goals.md).
 
 ## Technical debt
 

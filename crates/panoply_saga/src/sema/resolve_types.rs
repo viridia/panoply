@@ -19,7 +19,7 @@ pub(crate) fn resolve_types(scope: &Scope, ast: &ASTNode) -> Result<ExprType, Co
                 _ => Err(CompilationError::UnknownType(ast.location, (*ident).into())),
             }
         }
-        // TODO(X7): fixed-size arrays, laid out in slots.
+        // TODO(PAN107): fixed-size arrays, laid out in slots.
         NodeKind::ArrayType => Err(CompilationError::Unsupported(ast.location, "array types")),
         // TODO(PAN71): types named through an imported module.
         NodeKind::QName(_) => Err(CompilationError::Unsupported(

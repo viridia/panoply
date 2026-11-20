@@ -14,6 +14,9 @@ A ledger numbered from a counter carries a `**Next: <prefix><n>.**` line, which 
 number the ledger has used, in the working tree or in its git history: an entry routed out leaves a
 gap that is never reissued.
 
+A roadmap entry's `*Needs:*` lists ids only, each still open: a roadmap chunk, a deferral or an
+issue.
+
 Each changelog entry is one line, within WIDTH columns, and cites no decision, deferral or issue.
 
 The tables below are this script's configuration; show.py reads them too.
@@ -170,6 +173,25 @@ def main():
         used = max(highest_ever(p, entry_def(prefix)) for p in histories)
         if value <= used:
             fail(path, n, f"Next: {prefix}{value} is stale; {prefix}{used} has been used")
+
+    # A roadmap entry's *Needs:* names ids only, each of an open chunk, deferral or issue: a landed
+    # chunk is one its dependents forgot.
+    roadmap_ids, _ = defined(ROADMAP, entry_def(CHUNK))
+    open_ids = set(roadmap_ids) | {i.rstrip("abcdefghijklmnopqrstuvwxyz") for i in roadmap_ids}
+    open_ids |= known["X"][0] | known["I"][0]
+    entries = []  # [line number, text] of each roadmap entry, its continuation lines joined
+    for n, line in prose(ROADMAP):
+        if entry_def(CHUNK).match(line):
+            entries.append([n, line])
+        elif entries and line.startswith("  "):
+            entries[-1][1] += " " + line.strip()
+    for n, text in entries:
+        for m in re.finditer(r"\*Needs:\*([^.]*)\.", text):
+            for need in (s.strip() for s in m.group(1).split(",")):
+                if not re.fullmatch(rf"{CHUNK_ID}|[XI]\d+", need):
+                    fail(ROADMAP, n, f"*Needs:* names {need!r}, not an id")
+                elif need not in open_ids:
+                    fail(ROADMAP, n, f"*Needs:* {need} is not open")
 
     ledger_cite = re.compile(r"\b[DXI]\d+\b")
     lines = CHANGELOG.read_text(encoding="utf-8").split("\n")

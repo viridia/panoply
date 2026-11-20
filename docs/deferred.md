@@ -26,8 +26,9 @@ dropped, not deferred. Numbers are never reused.
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
-  [saga.md](saga.md) and [modding.md](modding.md), beyond PAN45's first formula and PAN71's imports:
-  value slots, which PAN105's cells and reactions build on. *Gate:* PAN71.
+  [saga.md](saga.md) and [modding.md](modding.md), beyond the steps the roadmap holds (PAN71,
+  PAN107, PAN105, PAN104). *Gate:* PAN105, when the next step of saga.md's Order of work becomes a
+  chunk.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about

@@ -483,7 +483,7 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
                 self.build_member(loc, base, name)
             }
 
-            // TODO(X7): tuple fields, laid out in slots.
+            // TODO(PAN107): tuple fields, laid out in slots.
             NodeKind::FieldIndex => Err(CompilationError::Unsupported(loc, "tuple fields")),
 
             NodeKind::Empty => Ok(self.expr(loc, ExprKind::Empty, ExprType::Void)),
@@ -694,7 +694,7 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
                     ExprType::from_type_info(field_info),
                 ))
             }
-            // TODO(X7): tuple structs, tuples and enums, through value slots.
+            // TODO(PAN107): tuple structs, tuples and enums, through value slots.
             ExprType::Reflected(_) => Err(CompilationError::Unsupported(
                 loc,
                 "fields of this kind of type",

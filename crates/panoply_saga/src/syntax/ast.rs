@@ -58,7 +58,7 @@ pub(crate) enum NodeKind<'a> {
     QName(&'a [&'a ASTNode<'a>]),
     Call(&'a ASTNode<'a>, &'a [&'a ASTNode<'a>]),
     FieldName(&'a ASTNode<'a>, &'a str),
-    // TODO(X7): the base and index, once tuple fields compile.
+    // TODO(PAN107): the base and index, once tuple fields compile.
     FieldIndex,
     Cast {
         arg: &'a ASTNode<'a>,
@@ -82,7 +82,7 @@ pub(crate) enum NodeKind<'a> {
         lhs: &'a ASTNode<'a>,
         rhs: &'a ASTNode<'a>,
     },
-    // TODO(X7): the element type, once fixed-size arrays compile.
+    // TODO(PAN107): the element type, once fixed-size arrays compile.
     ArrayType,
     If {
         condition: &'a ASTNode<'a>,
