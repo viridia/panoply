@@ -47,11 +47,12 @@ mod rle;
 mod scenery_aspect;
 mod scenery_colliders;
 pub mod scenery_element;
+mod simulation;
 mod terrain_effect;
 mod terrain_fx_map;
 
 pub use terrain_effect::TerrainEffect;
-pub use terrain_fx_map::TerrainFxMap;
+pub use terrain_fx_map::{RebuildTerrainFxVertexAttrs, TerrainFxMap};
 mod wall_aspect;
 
 pub use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
@@ -59,6 +60,7 @@ pub use pending::{PrecinctStatus, SceneryPending};
 pub use precinct_cache::PrecinctCache;
 pub use scenery_aspect::{SceneryColliders, SceneryModel};
 pub use scenery_colliders::{ColliderDesc, ColliderShape, ColliderType};
+pub use simulation::SimulatedPrecinct;
 
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
@@ -129,6 +131,7 @@ impl Plugin for PanoplySceneryPlugin {
                 Update,
                 (
                     spawn_precincts,
+                    simulation::mark_simulated_precincts.after(spawn_precincts),
                     mark_precinct_data,
                     read_precinct_data.after(mark_precinct_data),
                     // Floor processing

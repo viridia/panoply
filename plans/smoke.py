@@ -119,8 +119,13 @@ SCENERY_SELECTION = "panoply_editor::instance_selection::ScenerySelection"
 OUTLINE = "panoply_editor::instance_selection::InstanceOutline"
 # The playground precinct under `SPOT`, and one with no file, which the realm's bounds hold.
 SPOT_PRECINCT = "scenery/precincts/playground/p001-p002.msgpack"
+# The same precinct's entity, simulated while the view is at `SPOT`, so the game builds its
+# navigation mesh.
+SPOT_PRECINCT_ENTITY = "Precinct:playground:1:2"
+NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
 EMPTY_SPOT = [160.0, 0.0, 160.0]
 EMPTY_PRECINCT = "scenery/precincts/playground/p002-p002.msgpack"
+EMPTY_PRECINCT_ENTITY = "Precinct:playground:2:2"
 WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
@@ -456,16 +461,43 @@ def terrain_effects(driver):
     driver.goto(SPOT, 20.0)
 
 
+def nav_vertices(driver, precinct=SPOT_PRECINCT_ENTITY):
+    """The vertices of the navigation mesh of `precinct`, or `None` while it has none."""
+    entities = driver.select(precinct)
+    if len(entities) != 1:
+        return None
+    result = driver.call(
+        "world.get_components",
+        {"entity": entities[0], "components": [NAV_MESH], "strict": False},
+    )
+    mesh = result["components"].get(NAV_MESH)
+    return mesh and mesh["vertices"]
+
+
+def wait_nav(driver, passes, expected, precinct=SPOT_PRECINCT_ENTITY):
+    driver.wait(
+        lambda: (passes(nav_vertices(driver, precinct)), "another mesh, or none"),
+        expected,
+        WAIT,
+    )
+
+
 def wall_tool(driver):
     """The wall tool, over the playground at `SPOT`: a click places a wall, and a drag a row of
     them, which undo and redo take back and put again; `(erase)` erases one. Save writes the
     precinct (restored afterwards). ] turns the walls to place, . and , step the tier, and Escape
     during a drag cancels it without quitting. Placed into a precinct with no file, a wall is saved
-    into a new one (deleted afterwards)."""
+    into a new one (deleted afterwards).
+
+    The precinct is simulated, so the game builds its navigation mesh with the navigation view
+    off; the wall placed rebuilds it, and the precinct put back builds it as it was. The precinct
+    with no file gets a mesh too, of its ground alone."""
     driver.goto(SPOT, 20.0, azimuth=0.0)
     window, scale, middle, _ = view_points(driver)
     precinct = ASSETS / SPOT_PRECINCT
     original = precinct.read_bytes()
+    wait_nav(driver, lambda v: v is not None, "the simulated precinct's navigation mesh")
+    built = nav_vertices(driver)
 
     def count():
         return element_count(driver)
@@ -484,6 +516,7 @@ def wall_tool(driver):
     try:
         drag(middle)
         expect_count(base + 1)
+        wait_nav(driver, lambda v: v not in (None, built), "the mesh rebuilt around the wall")
         # Hovering over the wall just placed hides it, as a release there would replace it; off
         # it, it shows again.
         driver.frames(2)
@@ -528,8 +561,9 @@ def wall_tool(driver):
         assert precinct.read_bytes() != original, "Save did not write the precinct"
     finally:
         restore(precinct, original)
-    # The watcher's reload puts the precinct back as it was.
+    # The watcher's reload puts the precinct back as it was, and its mesh.
     expect_count(base)
+    wait_nav(driver, lambda v: v == built, "the mesh as it was before the walls")
 
     # ] turns the walls to place; . and , step the tier, which the tile grid shows.
     driver.key("BracketRight")
@@ -553,6 +587,13 @@ def wall_tool(driver):
     window, scale, middle, _ = view_points(driver)
     created = ASSETS / EMPTY_PRECINCT
     assert not created.exists(), f"{created} exists already"
+    # Its ground is navigated though it has no file.
+    wait_nav(
+        driver,
+        lambda v: bool(v),
+        "a navigation mesh for the precinct with no file",
+        EMPTY_PRECINCT_ENTITY,
+    )
     base = count()
     try:
         drag(middle)

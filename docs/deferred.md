@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X120.**
+**Next: X122.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -484,11 +484,14 @@ dropped, not deferred. Numbers are never reused.
   editor, layers are shown or hidden for authoring, and a control picks the current layer, to which
   every wall, fixture and floor placed then belongs; the scenery palette's Layers button
   (`SceneryTool::Layers`) is its place. faery had layers too (`engine/src/world/structures/`), not
-  ported, and never finished their editor: the editor is designed anew. No phased terrain or terrain
-  effects: possible, with no customer. A mod's scenery is the same additive patch: it adds walls,
-  fixtures and actors to the game's precincts, and precincts where the game has none, so a mod ships
-  its own precinct index (PAN100), joined with the game's. *Gate:* the first quest stage that
-  changes scenery, or the first mod that adds scenery.
+  ported, and never finished their editor: the editor is designed anew. A switch rebuilds the
+  navigation mesh of each precinct holding scenery on that layer, and only those, by queueing
+  `MarkNavMeshStale` for it, since a removal despawns elements without the markers that rebuild a
+  mesh otherwise (D100). No phased terrain or terrain effects: possible, with no customer. A mod's
+  scenery is the same additive patch: it adds walls, fixtures and actors to the game's precincts,
+  and precincts where the game has none, so a mod ships its own precinct index (PAN100), joined with
+  the game's. *Gate:* the first quest stage that changes scenery, or the first mod that adds
+  scenery.
 - **X110** The game UI's typeface (`GAME_UI_FONT`, Macondo Swash Caps). Plain Macondo reads better,
   its capital E most of all (X75); the choice is to switch to it, or to make a font of the author's
   own that combines the best of both. Neither has bold or italics, so emphasis in a book's text or a
@@ -543,3 +546,10 @@ dropped, not deferred. Numbers are never reused.
 - **X119** Simulation through portals: faery simulated, and built navigation meshes for, the
   precincts within 8 m of each active portal's target in its realm (`SECONDARY_SIMULATION_RADIUS` in
   `NavigationController.ts`), after the viewpoint's (R8). *Gate:* PAN16f lands.
+- **X120** Navigation meshes for large actors: a second mesh per precinct, its obstacles grown by a
+  larger agent radius, built only where an actor larger than human is simulated (R83), which closes
+  the doorways it does not fit. Every character is human-sized today (`CollisionSize` radius 0.3);
+  the generator's radius is a constant (`AGENT_RADIUS`). *Gate:* the first actor larger than human.
+- **X121** The editor flags door volumes that touch, which merge into one door polygon. A double
+  door is one double-wide element today (`IronFenceGate`), whose two leaves are named as one door.
+  *Gate:* the first door made of two door elements opened in tandem.

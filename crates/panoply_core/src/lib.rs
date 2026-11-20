@@ -38,7 +38,7 @@ use realm_physics::{cap_catch_up, realm_physics_system};
 pub use realm_physics::{OwnedColliders, RealmPhysics};
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
-pub use viewpoint::{GotoLocation, Viewpoint};
+pub use viewpoint::{GotoLocation, Viewpoint, SIMULATION_HALF_SIZE};
 pub use viewport::{GameViewNode, ViewOverlay, ViewportInset};
 
 /// Marker which identifies the primary camera.

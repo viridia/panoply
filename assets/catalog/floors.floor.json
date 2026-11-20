@@ -12,7 +12,8 @@
       "Unlit": {
         "color": "#000000"
       }
-    }
+    },
+    "blocked": true
   },
   "BrownMarble": {
     "material": {

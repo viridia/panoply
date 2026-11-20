@@ -274,33 +274,6 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16f Navmesh generation.** The port of faery's builder (`panoply_nav::clipping`, D99) in the
-  game, one mesh per precinct.
-  - Built for each precinct the simulation box overlaps (R8), nearest the viewpoint first, as
-    faery's `NavigationController` ordered them.
-  - Built from the precinct's own geometry alone: the neighbours' obstacles are PAN16g's, which
-    intersects the two sides' boundary edges when a route crosses. An obstacle just across the line
-    does not narrow this side's mesh, so a route running beside the seam may pass within the agent
-    radius of it.
-  - Off the main thread, as ground, floor and flora meshes are (`AsyncComputeTaskPool`): the main
-    thread only takes the input (`NavInputCapture`, D97), which copies descriptors and triangles
-    rather than building anything, and the task does the rest. A route asked of a precinct whose
-    mesh is not ready gets "not ready". An edit in the editor regenerates when the edit ends, a
-    generation count discarding stale results. No cache or baked meshes: a precinct builds in about
-    20 ms (D99).
-  - Doors (R98): the door collider is the closed leaf, kinematic once PAN59 builds it, so it stays
-    out of the input, which takes static colliders only. The task maps each `DOOR` polygon to its
-    door by testing the polygon's centroid against the precinct's door list (a `Vec`; a precinct has
-    a few dozen doors at most) into a table indexed by polygon. Areas are kept for cost classes. The
-    editor flags door volumes that touch, which would merge into one polygon.
-  - Hints: a hint collider is where routes do not go but actors may stand: beside the stone
-    sarcophagus, where its lid lands, and on the hinge side of a door, where the open leaf rests
-    (`CottageWallDoorway`). A usage mark placed on the mesh then lands outside it.
-  - Floors that block: faery's `BlackoutFloor` was `blocked`, the unlit black fill between cave
-    walls in the underground, where no one walks. Panoply's floor entries have no such field yet.
-  - Agent radius is part of a mesh. Two size classes: human (0.3 m), used by smaller actors too, and
-    large, for actors larger than human, built only for precincts where one is simulated (R83). A
-    large mesh closes the doorways a large actor does not fit, which is the behavior wanted.
 - **PAN16g Pathfinding.** Routes across the joined precinct meshes, with the route drawn in PAN16b's
   view. A crate, if its Bevy-free core takes costs or filters per query and joins meshes
   (`landmass`, `polyanya` under `vleue_navigator`); else a port of `NavRouteTask.ts` (A*, a funnel
@@ -314,7 +287,12 @@ components and every layer restartable from saved state (R104).
   - Doors: faery read each door's `open` signal inside its search, but a door does not change during
     one query, so its cost is set before the query from PAN16f's table (passable at a cost, or
     blocked if automatic, or locked) and the door-use waypoints added after it, along the corridor
-    (`findDoorUseLocation`).
+    (`findDoorUseLocation`). A door is its element's entity (`NavMesh::doors`); one missing is a
+    door despawned while its precinct's mesh is rebuilt (D100), skipped.
+  - Not ready: a precinct without a `PrecinctNavMesh` is not ready, and a route asked of it says so.
+  - Seams beside obstacles: each precinct's mesh is built from its own geometry alone, so an
+    obstacle just across the line does not narrow this side's mesh, and a route running beside the
+    seam may pass within the agent radius of it.
   - Portals: the portal area is set per query too, open to the player's click-to-move routes and
     closed to NPCs' (R31), as faery's portal areas were.
   - Ladders: the mesh has no off-mesh links, so they are the query side's.

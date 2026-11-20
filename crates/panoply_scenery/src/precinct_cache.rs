@@ -45,7 +45,8 @@ impl PrecinctCache {
 }
 
 /// System that manages the spawning and despawning of Precincts (scenery units) based on proximity
-/// to the camera viewpoint (either the primary camera or a portal camera).
+/// to the camera viewpoint (either the primary camera or a portal camera), and keeps the simulated
+/// precincts loaded.
 pub fn spawn_precincts(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
@@ -140,6 +141,11 @@ pub fn spawn_precincts(
     };
 
     fetch_precincts(&query_rect);
+    // The simulated precincts too, though out of view (R8).
+    fetch_precincts(&QueryRect {
+        realm: query_rect.realm,
+        bounds: viewpoint.simulated_precincts(),
+    });
 
     let size = precinct_cache.size;
     let cache = &mut precinct_cache.precincts;

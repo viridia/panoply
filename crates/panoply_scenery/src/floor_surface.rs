@@ -29,6 +29,10 @@ pub struct FloorSurface {
     /// Whether the slab's sides are drawn.
     #[reflect(@DisplayName("Sides"))]
     pub sides: bool,
+    /// Whether no one walks on it, as on the black fill between cave walls: navigation leaves it
+    /// and the ground under it out.
+    #[reflect(@DisplayName("Blocked"))]
+    pub blocked: bool,
 }
 
 impl Default for FloorSurface {
@@ -37,6 +41,7 @@ impl Default for FloorSurface {
             material: FloorMaterial::default(),
             raise: 0.,
             sides: true,
+            blocked: false,
         }
     }
 }

@@ -11,8 +11,10 @@ the probe or the navigation view is suspect.
 - The Show menu turns a collider group off, and Space toggles the checkbox just clicked, so keys
   reach widgets; Physics turns the drawing off. The menu is clicked twice: the second click lands
   only if the first left the menu open.
-- A navigation mesh made by hand, put on the village's precinct, gets a view, hidden until
-  Navigation is checked; a changed mesh replaces it, and a removed one takes it away. In
+- The village's precinct, simulated at the view, gets the game's navigation mesh with the view
+  off. A mesh made by hand, put on it in its place, gets a view, hidden until
+  Navigation is checked; a changed mesh replaces it, and a removed one takes it away, the game
+  building none again while the precinct stays simulated. In
   `nav_view.png`, a row of three polygons, blue, amber (a doorway), blue: red walls along their
   sides, faint lines where they meet, and a green edge on the precinct's side at x 128.
 - Navigation on builds the lair's mesh, doorways, footpaths and its portal included, and leaves
@@ -145,6 +147,7 @@ def hand_made_mesh(door="Door"):
             "vertices": [2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2],
             "edges": edges,
             "area": area,
+            "door": 0 if area == "Door" else None,
         }
 
     return {
@@ -154,6 +157,7 @@ def hand_made_mesh(door="Door"):
             square(1, [{"Neighbor": 0}, "Wall", {"Neighbor": 2}, "Wall"], door),
             square(2, [{"Neighbor": 1}, "Wall", {"Boundary": "PosX"}, "Wall"], "Walkable"),
         ],
+        "doors": None,
     }
 
 
@@ -161,7 +165,20 @@ def nav_view(driver):
     """Follows `show_menu`, whose menu is still open."""
     assert driver.get_resource(VIEWS, at="navigation") is False, "navigation view on at start"
     driver.goto([116.0, 0.0, 49.0], 30.0)
+    # The village is simulated here, so the game builds its mesh with the view off; waited for, so
+    # it does not land over the hand-made one.
+    driver.wait(
+        lambda: (bool(driver.select(NAV_VIEW)), "no view"),
+        "the village's mesh, built by the game",
+        {"seconds": 30},
+    )
+    built = driver.get(PRECINCT, NAV_MESH, at="polygons")
+    print(f"village: {len(built)} polygons")
+    assert len(built) > 3, f"the village's mesh has {len(built)} polygons"
+    assert driver.get(NAV_VIEW, VISIBILITY) == "Hidden", "navigation view shown while off"
     driver.set(PRECINCT, NAV_MESH, hand_made_mesh())
+    # The game's view is replaced a frame or two after.
+    driver.frames(3)
     driver.present(NAV_VIEW)
     assert driver.get(NAV_VIEW, VISIBILITY) == "Hidden", "navigation view shown while off"
     fills = driver.select(NAV_FILLS)
@@ -190,8 +207,8 @@ def nav_view(driver):
 
 def lair_mesh(driver):
     """Turning Navigation on builds the meshes of the loaded precincts that have none, the lair
-    among them, doorways, footpaths and its stone portal marked; the hand-made one is left as it
-    is."""
+    among them, outside the simulation box, doorways, footpaths and its stone portal marked, each
+    door polygon naming a door; the hand-made one is left as it is."""
     driver.wait(
         lambda: (bool(driver.select(LAIR_VIEW)), "no view"),
         "the lair's mesh",
@@ -203,6 +220,11 @@ def lair_mesh(driver):
     print(f"lair: {len(polygons)} polygons, {areas}")
     for area in kinds:
         assert areas[area], f"the lair's mesh has no {area} polygons"
+    doors = driver.get(LAIR, NAV_MESH, at="doors")
+    named = {p["door"] for p in polygons if p["area"] == "Door"}
+    print(f"lair: {len(doors)} doors, {len(named)} named by door polygons")
+    assert None not in named, "a door polygon names no door"
+    assert max(named) < len(doors), f"a door polygon names a door past {len(doors)}"
     hand_made = driver.get(PRECINCT, NAV_MESH, at="polygons")
     assert len(hand_made) == 3, f"the hand-made mesh became {len(hand_made)} polygons"
     driver.goto(DOORWAY, 12.0)

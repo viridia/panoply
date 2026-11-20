@@ -13,7 +13,10 @@
 
 use std::collections::HashMap;
 
-use bevy::math::{IVec2, Quat, Vec2, Vec3, Vec3Swizzles};
+use bevy::{
+    ecs::entity::Entity,
+    math::{IVec2, Quat, Vec2, Vec3, Vec3Swizzles},
+};
 use i_overlay::{
     core::{
         extract::BooleanExtractionBuffer, fill_rule::FillRule, overlay::Overlay,
@@ -44,10 +47,11 @@ const PRECINCT_UNITS: i32 = PRECINCT_SIZE * UNITS_PER_METER as i32;
 /// fewer planes.
 const GROUND_HEIGHT_STEP: f32 = 0.25;
 
-/// Ground this deep is under water and not walked: faery's `MAX_WATER_DEPTH`, 0.7 m below the
-/// water's surface (`WATER_HEIGHT`). Faery applied it only to parcels with water; the input does
-/// not say which have it.
-const DEEP_GROUND: f32 = -1.1;
+/// Ground this deep in a parcel with water is under water and not walked: faery's
+/// `MAX_WATER_DEPTH`, 0.3 m below the water's surface (`WATER_HEIGHT`). A triangle reaching it is
+/// cut along this height and its shallow part kept, where faery dropped the whole triangle. A dry
+/// parcel's ground is walked at any depth: a pit.
+const DEEP_GROUND: f32 = -0.7;
 
 /// How far a rounded box's footprint is cut back at each corner, along each side: faery's
 /// `RBOX_BEVEL`.
@@ -74,12 +78,16 @@ pub fn build(input: &NavInput) -> NavMesh {
     let layers = layers(input);
     let covers = covers(&layers);
     let obstacles = obstacles(input);
-    let doors = areas(input, ColliderType::Door);
+    let doors = doors(input);
     let portals = areas(input, ColliderType::Portal);
     let paths = footpaths(input);
 
     let mut pieces = Vec::new();
     for (index, layer) in layers.iter().enumerate() {
+        // Its cover has taken what lies under it already.
+        if layer.source == Source::Blocked {
+            continue;
+        }
         let cut = |marks: &mut dyn Iterator<Item = &Mark>| -> Vec<IntContour<i32>> {
             marks
                 .filter(|m| m.overlaps(layer))
@@ -95,6 +103,11 @@ pub fn build(input: &NavInput) -> NavMesh {
                 .iter()
                 .filter(|c| c.layer != index && c.mark.overlaps(layer))
                 .filter_map(|c| {
+                    if c.overhead {
+                        return (layer.source != Source::Top)
+                            .then(|| c.mark.on(&layer.plane))
+                            .flatten();
+                    }
                     let top_less = match (c.source, layer.source) {
                         (Source::Ground, Source::Ground) => return None,
                         (Source::Ground, _) => HEIGHT_TOLERANCE,
@@ -114,7 +127,11 @@ pub fn build(input: &NavInput) -> NavMesh {
             *walkable = rest;
             pieces.push((marked, layer.plane, area));
         };
-        split(&mut walkable, cut(&mut doors.iter()), NavAreaKind::Door);
+        split(
+            &mut walkable,
+            cut(&mut doors.iter().flat_map(|d| &d.marks)),
+            NavAreaKind::Door,
+        );
         split(&mut walkable, cut(&mut portals.iter()), NavAreaKind::Portal);
         if layer.source == Source::Ground {
             let paths = paths
@@ -136,7 +153,9 @@ pub fn build(input: &NavInput) -> NavMesh {
             builder.add(&contour, &plane, area);
         }
     }
-    builder.finish()
+    let mut mesh = builder.finish();
+    name_doors(&mut mesh, &doors);
+    mesh
 }
 
 /// A surface's plane, as a height over x and z.
@@ -193,6 +212,8 @@ enum Source {
     /// The ground, which footpaths mark.
     Ground,
     Floor,
+    /// A floor no one walks, which covers what lies under it and keeps none of itself.
+    Blocked,
     /// The top of a collider marked walkable.
     Top,
 }
@@ -217,11 +238,24 @@ impl Layer {
 fn layers(input: &NavInput) -> Vec<Layer> {
     let mut layers: Vec<Layer> = Vec::new();
     let mut index: HashMap<(Source, (i32, i32, i32)), usize> = HashMap::new();
-    let mut add = |points: [Vec3; 3], source: Source| {
+    // A triangle, or in deep water the part of it shallow enough to walk.
+    let mut add = |points: [Vec3; 3], source: Source, water: bool| {
         let Some(plane) = Plane::walkable(points[0], points[1], points[2]) else {
             return;
         };
-        let outline = clip_to_precinct(points.iter().map(|p| p.xz()).collect());
+        let mut outline: Vec<Vec2> = points.iter().map(|p| p.xz()).collect();
+        if water {
+            // Above the depth: the triangle's height less it is positive.
+            let shallow = Plane {
+                y0: plane.y0 - DEEP_GROUND,
+                ..plane
+            };
+            outline = clip_half_plane(&outline, &shallow);
+            if double_area(&outline).abs() <= MIN_DOUBLE_AREA {
+                return;
+            }
+        }
+        let outline = clip_to_precinct(outline);
         if outline.len() < 3 {
             return;
         }
@@ -246,30 +280,25 @@ fn layers(input: &NavInput) -> Vec<Layer> {
 
     for surface in &input.surfaces {
         let ground = surface.kind == SurfaceKind::Ground;
+        let source = match surface.kind {
+            SurfaceKind::Ground => Source::Ground,
+            SurfaceKind::Floor => Source::Floor,
+            SurfaceKind::BlockedFloor => Source::Blocked,
+        };
         for &[a, b, c] in &surface.indices {
             let mut points = [a, b, c].map(|i| surface.vertices[i as usize]);
             if ground {
                 for p in &mut points {
                     p.y = (p.y / GROUND_HEIGHT_STEP).round() * GROUND_HEIGHT_STEP;
                 }
-                if points.iter().any(|p| p.y <= DEEP_GROUND) {
-                    continue;
-                }
             }
-            add(
-                points,
-                if ground {
-                    Source::Ground
-                } else {
-                    Source::Floor
-                },
-            );
+            add(points, source, ground && surface.water);
         }
     }
     for collider in input.colliders.iter().filter(|c| is_walkable(c)) {
         if let Some((vertices, indices)) = placed_triangles(collider) {
             for face in upper_faces(&vertices, &indices) {
-                add(face, Source::Top);
+                add(face, Source::Top, false);
             }
         }
     }
@@ -300,6 +329,10 @@ struct Cover {
     layer: usize,
     source: Source,
     mark: Mark,
+    /// Whether this is a floor's triangle grown by the agent's radius, which blocks the ground
+    /// and floors more than a climb below it, as an obstacle's edge does: a body standing that
+    /// close hits the slab. Its mark carries its own `top_less`.
+    overhead: bool,
 }
 
 /// Each layer's triangles, covering any other layer under them within an agent's height: the
@@ -307,25 +340,74 @@ struct Cover {
 /// ground. Where two meet at one height, only one keeps that part: a floor or a walkable top over
 /// the ground, and between two others the one built first. The ground never lies over itself, so
 /// it covers only the others. Each mark's `top_less` is set where it is applied (`build`).
+///
+/// A floor's triangles cover again grown by the agent's radius ([`Cover::overhead`]), as an
+/// obstacle's footprint is grown, so the ground beside a floor raised past a climb keeps clear of
+/// its edge. Walkable tops are left out of that: a stair's ramp meets the floor at its edge.
 fn covers(layers: &[Layer]) -> Vec<Cover> {
     let mut covers = Vec::new();
     for (index, layer) in layers.iter().enumerate() {
+        let floor = matches!(layer.source, Source::Floor | Source::Blocked);
         for triangle in &layer.triangles {
             let outline: Vec<Vec2> = triangle.iter().map(|&p| to_meters(p)).collect();
             let lowest = outline
                 .iter()
                 .map(|&p| layer.plane.height(p))
                 .fold(f32::MAX, f32::min);
-            covers.extend(
-                Mark::new(outline, lowest - AGENT_HEIGHT, layer.plane, 0.).map(|mark| Cover {
-                    layer: index,
-                    source: layer.source,
-                    mark,
-                }),
-            );
+            let bottom = lowest - AGENT_HEIGHT;
+            let cover = |mark, overhead| Cover {
+                layer: index,
+                source: layer.source,
+                mark,
+                overhead,
+            };
+            if floor {
+                let grown = grown_square(&outline, AGENT_RADIUS);
+                covers.extend(
+                    Mark::new(grown, bottom, layer.plane, WALKABLE_CLIMB).map(|m| cover(m, true)),
+                );
+            }
+            covers.extend(Mark::new(outline, bottom, layer.plane, 0.).map(|m| cover(m, false)));
         }
     }
     covers
+}
+
+/// A convex outline grown by `grow` on x and z as a square grows it, square-cornered as an
+/// obstacle's footprint is: the hull of each point moved `grow` either way on both, counter-
+/// clockwise.
+fn grown_square(outline: &[Vec2], grow: f32) -> Vec<Vec2> {
+    let mut points: Vec<Vec2> = outline
+        .iter()
+        .flat_map(|&p| {
+            [(-1., -1.), (1., -1.), (1., 1.), (-1., 1.)].map(|(x, z)| p + Vec2::new(x, z) * grow)
+        })
+        .collect();
+    points.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
+    points.dedup();
+    // Andrew's monotone chain: the lower hull, then the upper.
+    let mut hull: Vec<Vec2> = Vec::with_capacity(points.len() + 1);
+    for pass in [false, true] {
+        let start = hull.len();
+        let order: Box<dyn Iterator<Item = &Vec2>> = if pass {
+            Box::new(points.iter().rev())
+        } else {
+            Box::new(points.iter())
+        };
+        for &p in order {
+            while hull.len() >= start + 2 {
+                let (a, b) = (hull[hull.len() - 2], hull[hull.len() - 1]);
+                if (b - a).perp_dot(p - b) > 0. {
+                    break;
+                }
+                hull.pop();
+            }
+            hull.push(p);
+        }
+        // Each pass's last point is the next's first.
+        hull.pop();
+    }
+    hull
 }
 
 fn is_walkable(collider: &NavCollider) -> bool {
@@ -374,6 +456,20 @@ impl Mark {
         layer.overlaps_box(self.min, self.max)
     }
 
+    /// Whether `point` lies inside the outline, which is convex, whichever way it winds, and
+    /// within the band.
+    fn holds(&self, point: Vec3) -> bool {
+        let p = point.xz();
+        let n = self.outline.len();
+        let turns = (0..n).map(|i| {
+            let (a, b) = (self.outline[i], self.outline[(i + 1) % n]);
+            (b - a).perp_dot(p - a)
+        });
+        let (left, right) = turns.fold((true, true), |(l, r), t| (l && t >= 0., r && t <= 0.));
+        let inside = left || right;
+        inside && point.y > self.bottom && point.y < self.top.height(p) - self.top_less
+    }
+
     /// The part of the outline where `layer` lies in this mark's band, as a contour; `None` where
     /// it lies outside it throughout. Both bounds are linear over the layer, so each cuts the
     /// outline along a line.
@@ -413,8 +509,8 @@ impl Mark {
 /// below its top: a body that stands there hits it, and one that stands above it steps up. A
 /// walkable collider's top is its walkable face, so the ramp it is lets the ground meet its foot,
 /// held to its highest point, so past its top edge it does not rise over the floor it climbs to;
-/// an unwalkable one's top is flat across. Floors are not obstacles, as in faery: a
-/// floor's cover takes the ground under it, and the ground beside a raised floor stays.
+/// an unwalkable one's top is flat across. Floors are not obstacles, as in faery: a floor's cover
+/// takes the ground under it and, grown by the agent's radius, beside it ([`covers`]).
 fn obstacles(input: &NavInput) -> Vec<Obstacle> {
     let mut obstacles = Vec::new();
     for collider in &input.colliders {
@@ -498,25 +594,110 @@ fn footprint(collider: &NavCollider, grow: f32) -> Option<Vec<Vec2>> {
     )
 }
 
-/// The colliders of `kind` as areas, as faery took a door's closed leaf and a portal's aperture:
-/// each one's footprint, on the layers within a climb of its bottom.
+/// The colliders of `kind` as areas ([`area`]).
 fn areas(input: &NavInput, kind: ColliderType) -> Vec<Mark> {
     input
         .colliders
         .iter()
         .filter(|c| c.collider.kind == kind)
-        .filter_map(|door| {
-            let (vertices, _) = placed_triangles(door)?;
-            let (bottom, _) = height_range(&vertices);
-            let outline = footprint(door, 0.)?;
-            Mark::new(
-                outline,
-                bottom - WALKABLE_CLIMB,
-                Plane::flat(bottom + WALKABLE_CLIMB),
-                0.,
-            )
-        })
+        .filter_map(area)
         .collect()
+}
+
+/// A collider as an area, as faery took a door's closed leaf and a portal's aperture: its
+/// footprint, on the layers within a climb of its bottom.
+fn area(collider: &NavCollider) -> Option<Mark> {
+    let (vertices, _) = placed_triangles(collider)?;
+    let (bottom, _) = height_range(&vertices);
+    let outline = footprint(collider, 0.)?;
+    Mark::new(
+        outline,
+        bottom - WALKABLE_CLIMB,
+        Plane::flat(bottom + WALKABLE_CLIMB),
+        0.,
+    )
+}
+
+/// One door: the element holding it, where the input has one, and its colliders' areas. A door
+/// may have several, as a gate has a leaf each side.
+struct Door {
+    element: Option<Entity>,
+    marks: Vec<Mark>,
+}
+
+/// What a door collider belongs to: its element, or, in an input read from a file, which has
+/// none, where the element stands, which its colliders share.
+#[derive(PartialEq)]
+enum DoorOwner {
+    Element(Entity),
+    Place([u32; 4]),
+}
+
+/// The door colliders grouped by the element that holds them, in the input's order.
+fn doors(input: &NavInput) -> Vec<Door> {
+    let mut owners: Vec<DoorOwner> = Vec::new();
+    let mut doors: Vec<Door> = Vec::new();
+    for collider in input
+        .colliders
+        .iter()
+        .filter(|c| c.collider.kind == ColliderType::Door)
+    {
+        let Some(mark) = area(collider) else {
+            continue;
+        };
+        let owner = match collider.element {
+            Some(element) => DoorOwner::Element(element),
+            None => {
+                let (p, facing) = (collider.position, collider.facing);
+                DoorOwner::Place([p.x, p.y, p.z, facing].map(f32::to_bits))
+            }
+        };
+        match owners.iter().position(|o| *o == owner) {
+            Some(index) => doors[index].marks.push(mark),
+            None => {
+                owners.push(owner);
+                doors.push(Door {
+                    element: collider.element,
+                    marks: vec![mark],
+                });
+            }
+        }
+    }
+    doors
+}
+
+/// Names each door polygon's door: the one whose area holds its centroid, or failing that, as
+/// rounding at an area's edge may leave it, the one whose area's middle is nearest. Fills the
+/// mesh's table of doors when every door has its element.
+fn name_doors(mesh: &mut NavMesh, doors: &[Door]) {
+    mesh.doors = doors.iter().map(|d| d.element).collect();
+    if doors.is_empty() {
+        return;
+    }
+    for polygon in &mut mesh.polygons {
+        if polygon.area != NavAreaKind::Door {
+            continue;
+        }
+        let centroid = polygon
+            .vertices
+            .iter()
+            .map(|&v| mesh.vertices[v as usize])
+            .sum::<Vec3>()
+            / polygon.vertices.len() as f32;
+        let holds = |door: &Door| door.marks.iter().any(|m| m.holds(centroid));
+        let distance = |door: &Door| {
+            door.marks
+                .iter()
+                .map(|m| ((m.min + m.max) / 2.).distance_squared(centroid.xz()))
+                .fold(f32::MAX, f32::min)
+        };
+        let door = doors.iter().position(holds).unwrap_or_else(|| {
+            (0..doors.len())
+                .min_by(|&a, &b| distance(&doors[a]).total_cmp(&distance(&doors[b])))
+                .unwrap_or(0)
+        });
+        polygon.door = Some(door as u32);
+    }
 }
 
 /// The lowest and highest of `points`.
@@ -798,12 +979,14 @@ impl MeshBuilder {
                     vertices,
                     edges,
                     area,
+                    door: None,
                 }
             })
             .collect();
         NavMesh {
             vertices: self.vertices,
             polygons,
+            doors: None,
         }
     }
 
@@ -893,7 +1076,58 @@ mod tests {
                 Vec3::new(0., 0., s),
             ],
             indices: vec![[0, 1, 2], [0, 2, 3]],
+            water: false,
         }
+    }
+
+    /// Ground sloping down along x, from 0 at x 0 to -2 at x 4, then flat at -2 to the far side:
+    /// a shore into deep water, with water or, `water` false, a dry pit.
+    fn shore(water: bool) -> NavSurface {
+        let s = PRECINCT_SIZE_F;
+        NavSurface {
+            kind: SurfaceKind::Ground,
+            vertices: vec![
+                Vec3::new(0., 0., 0.),
+                Vec3::new(4., -2., 0.),
+                Vec3::new(4., -2., s),
+                Vec3::new(0., 0., s),
+                Vec3::new(s, -2., 0.),
+                Vec3::new(s, -2., s),
+            ],
+            indices: vec![[0, 1, 2], [0, 2, 3], [1, 4, 5], [1, 5, 2]],
+            water,
+        }
+    }
+
+    /// In water, the slope is cut where it reaches the depth, half a meter down per meter of x,
+    /// and the ground beyond is left out; dry, all of it is kept. Holds for a depth between the
+    /// slope's ends, 0 and -2.
+    #[test]
+    fn deep_water_is_cut_along_its_depth() {
+        let cut = -DEEP_GROUND * 2.;
+        let build_shore = |water| {
+            let input = NavInput {
+                surfaces: vec![shore(water)],
+                ..Default::default()
+            };
+            let mesh = build(&input);
+            assert_eq!(mesh.check(), Ok(()));
+            mesh
+        };
+        let wet = build_shore(true);
+        let deepest = wet.vertices.iter().map(|v| v.x).fold(f32::MIN, f32::max);
+        assert!((deepest - cut).abs() < 1e-3, "kept to x {deepest}, not {cut}");
+        let area = total_area(&wet);
+        // The cut snaps to the fixed-point grid, up to half a unit along the 64 m edge.
+        let snap = PRECINCT_SIZE_F / UNITS_PER_METER;
+        assert!((area - cut * PRECINCT_SIZE_F).abs() <= snap, "{area}");
+
+        let dry = build_shore(false);
+        let area = total_area(&dry);
+        assert!(
+            (area - PRECINCT_SIZE_F * PRECINCT_SIZE_F).abs() < 0.01,
+            "{area}"
+        );
     }
 
     fn post(x: f32, z: f32) -> NavCollider {
@@ -906,7 +1140,175 @@ mod tests {
                 },
                 ..Default::default()
             },
+            element: None,
         }
+    }
+
+    /// The polygons' centroids seen from above.
+    fn centroids(mesh: &NavMesh) -> impl Iterator<Item = (&NavPolygon, Vec2)> + '_ {
+        mesh.polygons.iter().map(|polygon| {
+            let n = polygon.vertices.len() as f32;
+            let sum = polygon
+                .vertices
+                .iter()
+                .map(|&v| mesh.vertices[v as usize].xz())
+                .sum::<Vec2>();
+            (polygon, sum / n)
+        })
+    }
+
+    /// A hint is where routes do not go, so it is cut out as a solid is, with the agent's radius.
+    #[test]
+    fn a_hint_is_cut_out() {
+        let mut hint = post(32., 32.);
+        hint.collider.kind = ColliderType::Hint;
+        let input = NavInput {
+            surfaces: vec![flat_ground()],
+            colliders: vec![hint],
+            ..Default::default()
+        };
+        let mesh = build(&input);
+        assert_eq!(mesh.check(), Ok(()));
+        let reach = 0.5 + AGENT_RADIUS * 0.98;
+        for (_, centroid) in centroids(&mesh) {
+            let off = (centroid - Vec2::splat(32.)).abs();
+            assert!(off.x > reach || off.y > reach, "{centroid}");
+        }
+    }
+
+    /// A floor a meter up, a tier's, keeps the ground under it and an agent's radius beside it
+    /// clear, since a body standing there hits its slab; the floor itself stays whole.
+    #[test]
+    fn the_ground_keeps_clear_of_a_raised_floors_edge() {
+        let y = 1.02;
+        let floor = NavSurface {
+            kind: SurfaceKind::Floor,
+            vertices: vec![
+                Vec3::new(30., y, 30.),
+                Vec3::new(34., y, 30.),
+                Vec3::new(34., y, 34.),
+                Vec3::new(30., y, 34.),
+            ],
+            indices: vec![[0, 1, 2], [0, 2, 3]],
+            water: false,
+        };
+        let input = NavInput {
+            surfaces: vec![flat_ground(), floor],
+            ..Default::default()
+        };
+        let mesh = build(&input);
+        assert_eq!(mesh.check(), Ok(()));
+        let on_ground = |p: &NavPolygon| {
+            p.vertices
+                .iter()
+                .all(|&v| mesh.vertices[v as usize].y.abs() < 0.1)
+        };
+        let ground = NavMesh {
+            vertices: mesh.vertices.clone(),
+            polygons: mesh
+                .polygons
+                .iter()
+                .filter(|p| on_ground(p))
+                .cloned()
+                .collect(),
+            doors: None,
+        };
+        let floor_area = total_area(&mesh) - total_area(&ground);
+        assert!((floor_area - 16.).abs() < 0.01, "{floor_area}");
+        let grown = 4. + 2. * AGENT_RADIUS;
+        let expected = PRECINCT_SIZE_F * PRECINCT_SIZE_F - grown * grown;
+        let area = total_area(&ground);
+        assert!((area - expected).abs() < 0.01, "{area}, not {expected}");
+    }
+
+    #[test]
+    fn a_square_grows_a_triangle_square_cornered() {
+        let triangle = [Vec2::ZERO, Vec2::new(2., 0.), Vec2::new(0., 2.)];
+        let grown = grown_square(&triangle, 0.5);
+        assert!(double_area(&grown) > 0., "not counter-clockwise: {grown:?}");
+        // The triangle's bounds grown by 0.5 (9), less the corner beyond its diagonal, from
+        // (2.5, 0.5) to (0.5, 2.5) (2).
+        let area = double_area(&grown) / 2.;
+        assert!((area - 7.).abs() < 1e-4, "{area}");
+        assert_eq!(grown.len(), 5, "{grown:?}");
+    }
+
+    /// A blocked floor takes the ground under it and keeps none of itself: a hole.
+    #[test]
+    fn a_blocked_floor_leaves_a_hole() {
+        let y = 0.02;
+        let floor = NavSurface {
+            kind: SurfaceKind::BlockedFloor,
+            vertices: vec![
+                Vec3::new(30., y, 30.),
+                Vec3::new(34., y, 30.),
+                Vec3::new(34., y, 34.),
+                Vec3::new(30., y, 34.),
+            ],
+            indices: vec![[0, 1, 2], [0, 2, 3]],
+            water: false,
+        };
+        let input = NavInput {
+            surfaces: vec![flat_ground(), floor],
+            ..Default::default()
+        };
+        let mesh = build(&input);
+        assert_eq!(mesh.check(), Ok(()));
+        let area = total_area(&mesh);
+        let expected = PRECINCT_SIZE_F * PRECINCT_SIZE_F - 16.;
+        assert!((area - expected).abs() < 0.01, "{area}");
+    }
+
+    /// A gate's two leaves, as `IronFenceGate`'s, are two door colliders of one element, so their
+    /// polygons name one door; a door elsewhere is another.
+    #[test]
+    fn a_gates_leaves_are_one_door() {
+        let leaf = |z: f32, element: Option<Entity>| NavCollider {
+            position: Vec3::new(32., 0., 32.),
+            facing: 0.,
+            collider: ColliderDesc {
+                shape: ColliderShape::Box {
+                    half_extents: Vec3::new(0.05, 0.8, 0.45),
+                },
+                kind: ColliderType::Door,
+                offset: Some(Vec3::new(0., 0., z)),
+                ..Default::default()
+            },
+            element,
+        };
+        let gate = Entity::from_raw_u32(7).unwrap();
+        let other = Entity::from_raw_u32(8).unwrap();
+        let mut far = leaf(0., Some(other));
+        far.position = Vec3::new(10., 0., 10.);
+        let input = NavInput {
+            surfaces: vec![flat_ground()],
+            colliders: vec![leaf(0.45, Some(gate)), leaf(-0.5, Some(gate)), far],
+            ..Default::default()
+        };
+        let mesh = build(&input);
+        assert_eq!(mesh.check(), Ok(()));
+        assert_eq!(mesh.doors, Some(vec![gate, other]));
+        let named = |door| {
+            centroids(&mesh)
+                .filter(|(p, _)| p.door == Some(door))
+                .map(|(_, c)| c)
+                .collect::<Vec<_>>()
+        };
+        // Both leaves' polygons, either side of z 32, name the gate.
+        let leaves = named(0);
+        assert!(leaves.iter().any(|c| c.y > 32.2), "{leaves:?}");
+        assert!(leaves.iter().any(|c| c.y < 31.8), "{leaves:?}");
+        assert!(named(1).iter().all(|c| c.distance(Vec2::splat(10.)) < 1.));
+
+        // Read from a file, with no entities, the colliders group by where they stand.
+        let mut saved = input.clone();
+        saved.colliders.iter_mut().for_each(|c| c.element = None);
+        let mesh = build(&saved);
+        assert_eq!(mesh.check(), Ok(()));
+        assert_eq!(mesh.doors, None);
+        let numbers: std::collections::BTreeSet<_> =
+            mesh.polygons.iter().filter_map(|p| p.door).collect();
+        assert_eq!(numbers.into_iter().collect::<Vec<_>>(), [0, 1]);
     }
 
     #[test]
@@ -947,14 +1349,7 @@ mod tests {
         assert_eq!(mesh.check(), Ok(()));
         // Nothing within the post grown by the agent's radius, short of the circumscribed ring.
         let reach = 0.5 + AGENT_RADIUS * 0.98;
-        for polygon in &mesh.polygons {
-            let n = polygon.vertices.len() as f32;
-            let centroid = polygon
-                .vertices
-                .iter()
-                .map(|&v| mesh.vertices[v as usize].xz())
-                .sum::<Vec2>()
-                / n;
+        for (_, centroid) in centroids(&mesh) {
             let off = (centroid - Vec2::splat(32.)).abs();
             assert!(off.x > reach || off.y > reach, "{centroid}");
         }
@@ -1013,6 +1408,7 @@ mod tests {
                 Vec3::new(30., y, 34.),
             ],
             indices: vec![[0, 1, 2], [0, 2, 3]],
+            water: false,
         };
         let input = NavInput {
             surfaces: vec![flat_ground(), floor],
@@ -1049,6 +1445,7 @@ mod tests {
                 walkable: Some(true),
                 ..Default::default()
             },
+            element: None,
         };
         let floor = NavSurface {
             kind: SurfaceKind::Floor,
@@ -1059,6 +1456,7 @@ mod tests {
                 Vec3::new(28., 2., 36.),
             ],
             indices: vec![[0, 1, 2], [0, 2, 3]],
+            water: false,
         };
         let input = NavInput {
             surfaces: vec![flat_ground(), floor],
@@ -1098,6 +1496,7 @@ mod tests {
                 })
                 .cloned()
                 .collect(),
+            doors: None,
         };
         let area = total_area(&floor);
         assert!((area - 32.).abs() < 0.01, "{area}");
@@ -1116,6 +1515,7 @@ mod tests {
                 walkable: Some(true),
                 ..Default::default()
             },
+            element: None,
         };
         let half_extents = Vec3::new(0.5, 0.4, 0.5);
         let input = NavInput {

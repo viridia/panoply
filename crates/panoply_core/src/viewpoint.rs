@@ -1,3 +1,4 @@
+use crate::metrics::PRECINCT_SIZE_F;
 use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
 use bevy::camera::visibility::RenderLayers;
@@ -23,7 +24,25 @@ pub struct Viewpoint {
     pub camera_distance_transition: Option<Transition<f32>>,
 }
 
+/// How far the simulation box reaches either way about the viewpoint, on x and z: faery's
+/// `PRIMARY_SIMULATION_RADIUS`.
+pub const SIMULATION_HALF_SIZE: f32 = 32.;
+
 impl Viewpoint {
+    /// The precincts the simulation box overlaps, in precinct coordinates, the max exclusive (R8):
+    /// usually the four nearest the viewpoint. Their scenery and every parcel under them stay
+    /// loaded, drawn or not, since NPCs run there and each needs a navigation mesh.
+    pub fn simulated_precincts(&self) -> IRect {
+        let center = self.position.xz();
+        let reach = Vec2::splat(SIMULATION_HALF_SIZE);
+        // A precinct overlaps the box when its far side passes the box's near one, so the box's
+        // edges on a precinct line take in only the precinct inside.
+        IRect::from_corners(
+            ((center - reach) / PRECINCT_SIZE_F).floor().as_ivec2(),
+            ((center + reach) / PRECINCT_SIZE_F).ceil().as_ivec2(),
+        )
+    }
+
     /// Follow `entity`, landing on it at once whatever the distance, as after a change of realm or
     /// a loaded game. The azimuth stays as it is.
     pub fn follow_snapped(&mut self, entity: Entity) -> &mut Self {

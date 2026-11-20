@@ -3,6 +3,7 @@
 
 use std::{
     alloc::{GlobalAlloc, Layout, System},
+    collections::BTreeSet,
     path::PathBuf,
     sync::atomic::{AtomicIsize, Ordering},
     time::Instant,
@@ -67,12 +68,16 @@ fn the_fixtures_build() {
         };
         let boundary = edges(|e| matches!(e, NavEdge::Boundary(_)));
         let walls = edges(|e| matches!(e, NavEdge::Wall));
+        // The doors the door polygons name; `check` has seen that each names one.
+        let named: BTreeSet<u32> = mesh.polygons.iter().filter_map(|p| p.door).collect();
         println!(
-            "{name}: {:.0} ms, peak {:.1} MB, {} polygons ({doors} doors, {paths} paths, \
-             {portals} portals), {} vertices, {walls} wall and {boundary} boundary edges",
+            "{name}: {:.0} ms, peak {:.1} MB, {} polygons ({doors} door polygons of {} doors, \
+             {paths} paths, {portals} portals), {} vertices, {walls} wall and {boundary} \
+             boundary edges",
             elapsed.as_secs_f64() * 1000.,
             peak as f64 / 1e6,
             mesh.polygons.len(),
+            named.len(),
             mesh.vertices.len(),
         );
 

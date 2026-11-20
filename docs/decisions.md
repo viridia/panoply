@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D100.**
+**Next: D102.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -821,3 +821,24 @@ never reused.
   and joined edges collinear in 3D, which shared fixed-point vertices and the join tolerance cover.
   So `rerecast`, the editor's choice of generator and the polygons' detail triangles are gone.
   Reversing it means a generator filling the same `NavMesh` from the same input. (PAN16e)
+- **D100** A precinct's navigation mesh is rebuilt when one of the markers that rebuild what it is
+  built from is inserted (its scenery, an element's colliders, a floor, its terrain effects, a
+  parcel's ground or flora), not when a tool's edit ends: one rule covers every tool, the catalog's
+  live edits and a reload, and a drag's rebuilds mid-way cost about 20 ms each off the main thread.
+  Only a precinct that has a mesh or a build is marked, so loading builds none unasked. A stale
+  build is dropped, which cancels its task, in place of a generation count; the old mesh stays until
+  the new one lands. What changes navigation without those markers queues `MarkNavMeshStale`. A door
+  polygon names its door by element, so a gate's two leaves are one door, and the element's entity
+  is held because a door's state lives there; the mesh's lifetime fits within the entity's, except
+  while the old mesh outlives a despawned door, which a reader takes as stale. Reversing it means a
+  counter on the precinct and an end-of-edit signal from each tool. (PAN16f)
+- **D101** The simulated precincts (R8, `Viewpoint::simulated_precincts`) stay loaded with every
+  parcel under them, whatever the camera sees: the precinct and parcel caches load them beside the
+  camera's own area, and a parcel out of every camera's view stays hidden, colliders built but not
+  drawn. A navigation mesh needs all sixteen of a precinct's parcels, and the camera's area at game
+  zoom (about 28 m about the viewpoint) is smaller than one precinct, so before this a mesh waited
+  until wandering had cached them all; actors there need the same ground. The box's rule has one
+  owner, read by both caches and `SimulatedPrecinct`. No ring of parcels beyond is needed: a
+  parcel's edges blend its neighbours' contours, but from the realm map, copied into the parcel. The
+  cost is at most 64 parcels building ground and flora out of view. Reversing it means meshes that
+  wait on the camera, or built from the parcels loaded. (PAN16f)

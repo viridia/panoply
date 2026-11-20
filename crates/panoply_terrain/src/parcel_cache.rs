@@ -14,11 +14,11 @@ use bevy::{
 };
 use rapier3d::prelude::{ColliderHandle, RigidBodyBuilder};
 
-use panoply_core::{Realm, RealmPhysics, ToRapier, Viewpoint};
+use panoply_core::{metrics::PRECINCT_SIZE, Realm, RealmPhysics, ToRapier, Viewpoint};
 
 use super::{
     terrain_map::{TerrainMap, TerrainMapAsset},
-    PARCEL_HEIGHT_SCALE, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
+    PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_TERRAIN_FX_AREA,
 };
 
 /// Height allowance above the ground for what stands on a parcel: the tallest flora model
@@ -296,6 +296,15 @@ pub fn spawn_parcels(
     };
 
     fetch_parcels(realm_id, query_rect);
+    // Every parcel under the simulated precincts too, though out of view (R8): their colliders
+    // are actors' ground and navigation's input. The show test below leaves those out of a
+    // camera's view undrawn.
+    let simulated = viewpoint.simulated_precincts();
+    let per_precinct = PRECINCT_SIZE / PARCEL_SIZE;
+    fetch_parcels(
+        realm_id,
+        IRect::from_corners(simulated.min * per_precinct, simulated.max * per_precinct),
+    );
 
     // Loaded parcels are shown only if they, or the shadows they cast, can be in view of a
     // camera that renders their realm: the primary camera, or a portal camera looking into

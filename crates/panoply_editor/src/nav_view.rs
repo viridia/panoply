@@ -248,6 +248,7 @@ mod tests {
             vertices: vec![2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2],
             edges: edges.to_vec(),
             area,
+            door: (area == NavAreaKind::Door).then_some(0),
         };
         use NavEdge::*;
         NavMesh {
@@ -261,6 +262,7 @@ mod tests {
                     NavAreaKind::Walkable,
                 ),
             ],
+            doors: None,
         }
     }
 

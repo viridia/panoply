@@ -8,8 +8,9 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use panoply_core::{realm_physics::collision_groups, RealmPhysics, ToBevy, ToRapier};
 use panoply_portals::Portal;
 use panoply_scenery::{
-    precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, ColliderShape, ColliderType,
-    SceneryColliders, TerrainFxMap, PRECINCT_SIZE, PRECINCT_SIZE_F,
+    floor_region::FloorRegion, precinct::Precinct, scenery_element::SceneryElement, ColliderDesc,
+    ColliderShape, ColliderType, FloorSurface, SceneryColliders, TerrainFxMap, PRECINCT_SIZE,
+    PRECINCT_SIZE_F,
 };
 use panoply_terrain::{coarse_ground, Parcel, TerrainTypes, PARCEL_SIZE};
 use rapier3d::prelude::{Collider, Group, RigidBodyHandle};
@@ -17,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Parcels along each side of a precinct.
-const PARCELS_PER_SIDE: i32 = PRECINCT_SIZE / PARCEL_SIZE;
+pub(crate) const PARCELS_PER_SIDE: i32 = PRECINCT_SIZE / PARCEL_SIZE;
 
 /// Everything a precinct's navigation mesh is built from.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -62,6 +63,10 @@ pub struct NavCollider {
     /// The element's turn about y, in radians.
     pub facing: f32,
     pub collider: ColliderDesc,
+    /// The scenery element the descriptor belongs to, which a door polygon names
+    /// ([`crate::NavMesh::doors`]). Not saved: an input read from a file has none.
+    #[serde(skip)]
+    pub element: Option<Entity>,
 }
 
 /// A walkable surface as triangles, in the precinct's coordinates.
@@ -70,6 +75,14 @@ pub struct NavSurface {
     pub kind: SurfaceKind,
     pub vertices: Vec<Vec3>,
     pub indices: Vec<[u32; 3]>,
+    /// Whether this is the ground of a parcel with water, under which deep ground is not walked;
+    /// a dry pit is. An input saved before the flag reads as wet, as every parcel was taken then.
+    #[serde(default = "saved_without_water")]
+    pub water: bool,
+}
+
+fn saved_without_water() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -78,6 +91,9 @@ pub enum SurfaceKind {
     Ground,
     /// A precinct's floor region, a closed slab.
     Floor,
+    /// A floor no one walks ([`FloorSurface::blocked`]), such as the black fill between cave
+    /// walls: it takes what lies under it, as a floor does, and is not walkable itself.
+    BlockedFloor,
 }
 
 /// Why a precinct's input could not be captured.
@@ -135,7 +151,9 @@ pub struct NavInputCapture<'w, 's> {
         's,
         (
             &'static Precinct,
-            &'static Children,
+            // None for a precinct with no file (most have none) or an empty one: no tiers or
+            // elements, though its ground is navigated as any other's.
+            Option<&'static Children>,
             Option<&'static TerrainFxMap>,
         ),
     >,
@@ -143,6 +161,7 @@ pub struct NavInputCapture<'w, 's> {
         'w,
         's,
         (
+            Entity,
             &'static SceneryElement,
             &'static SceneryColliders,
             Option<&'static Portal>,
@@ -150,6 +169,8 @@ pub struct NavInputCapture<'w, 's> {
     >,
     parcels: Query<'w, 's, &'static Parcel>,
     realms: Query<'w, 's, &'static RealmPhysics>,
+    regions: Query<'w, 's, &'static FloorRegion>,
+    floor_surfaces: Res<'w, Assets<FloorSurface>>,
 }
 
 impl NavInputCapture<'_, '_> {
@@ -174,10 +195,11 @@ impl NavInputCapture<'_, '_> {
         };
 
         // Children that are not elements with colliders (tiers, floors) are skipped.
-        for (element, colliders, portal) in self.elements.iter_many(children).flatten() {
-            input
-                .colliders
-                .extend(portal.map(|p| portal_aperture(element.position, element.facing, p)));
+        let children = children.into_iter().flatten();
+        for (entity, element, colliders, portal) in self.elements.iter_many(children).flatten() {
+            input.colliders.extend(
+                portal.map(|p| portal_aperture(element.position, element.facing, p, entity)),
+            );
             input.colliders.extend(
                 colliders
                     .0
@@ -187,13 +209,19 @@ impl NavInputCapture<'_, '_> {
                         position: element.position,
                         facing: element.facing,
                         collider: desc.clone(),
+                        element: Some(entity),
                     }),
             );
         }
         let floors = body_colliders(physics, precinct.physics, collision_groups::FLOOR);
-        input
-            .surfaces
-            .extend(floors.filter_map(|c| surface(c, SurfaceKind::Floor, origin)));
+        input.surfaces.extend(floors.filter_map(|c| {
+            let kind = if self.floor_blocked(c) {
+                SurfaceKind::BlockedFloor
+            } else {
+                SurfaceKind::Floor
+            };
+            surface(c, kind, origin)
+        }));
 
         let first = coords * PARCELS_PER_SIDE;
         for z in first.y..first.y + PARCELS_PER_SIDE {
@@ -205,9 +233,13 @@ impl NavInputCapture<'_, '_> {
                     .find(|p| p.realm == realm && p.coords == parcel_coords)
                     .ok_or(CaptureError::ParcelNotLoaded(parcel_coords))?;
                 let ground = body_colliders(physics, parcel.physics, collision_groups::TERRAIN);
-                input
-                    .surfaces
-                    .extend(ground.filter_map(|c| surface(c, SurfaceKind::Ground, origin)));
+                input.surfaces.extend(ground.filter_map(|c| {
+                    let ground = surface(c, SurfaceKind::Ground, origin)?;
+                    Some(NavSurface {
+                        water: parcel.has_water,
+                        ..ground
+                    })
+                }));
                 for trunks in body_colliders(physics, parcel.physics, collision_groups::FLORA) {
                     input.colliders.extend(trunk_colliders(trunks, origin));
                 }
@@ -215,6 +247,15 @@ impl NavInputCapture<'_, '_> {
         }
         input.sort();
         Ok(input)
+    }
+
+    /// Whether a floor collider's surface is [`FloorSurface::blocked`]: its user data is its
+    /// floor region's entity (`insert_floor_meshes`).
+    fn floor_blocked(&self, collider: &Collider) -> bool {
+        Entity::try_from_bits(collider.user_data as u64)
+            .and_then(|region| self.regions.get(region).ok())
+            .and_then(|region| self.floor_surfaces.get(&region.surface))
+            .is_some_and(|surface| surface.blocked)
     }
 }
 
@@ -238,8 +279,8 @@ fn footpaths(effects: Option<&TerrainFxMap>) -> Vec<bool> {
 /// tall as the aperture, which the generator marks as a portal area, as faery did, so a route
 /// crosses it or not by who asks (R31: the player's click-to-move may, NPCs may not). The aperture
 /// faces the element's x, turned by its `y_rotation` (`active_portal.rs`); its other turns are
-/// left out. `position` and `facing` are the element's.
-fn portal_aperture(position: Vec3, facing: f32, portal: &Portal) -> NavCollider {
+/// left out. `position`, `facing` and `element` are the element's.
+fn portal_aperture(position: Vec3, facing: f32, portal: &Portal, element: Entity) -> NavCollider {
     // The collider's offset turns with its facing, so the offset is turned back by the
     // aperture's own turn first.
     let turn = portal.y_rotation.unwrap_or(0.);
@@ -255,6 +296,7 @@ fn portal_aperture(position: Vec3, facing: f32, portal: &Portal) -> NavCollider 
             offset: Some(offset),
             ..default()
         },
+        element: Some(element),
     }
 }
 
@@ -283,7 +325,7 @@ fn body_colliders(
 fn surface(collider: &Collider, kind: SurfaceKind, origin: Vec3) -> Option<NavSurface> {
     let mesh = collider.shape().as_trimesh()?;
     let (vertices, indices) = match kind {
-        SurfaceKind::Floor => (
+        SurfaceKind::Floor | SurfaceKind::BlockedFloor => (
             mesh.vertices().iter().map(|&v| v.to_bevy()).collect(),
             mesh.indices().to_vec(),
         ),
@@ -300,6 +342,7 @@ fn surface(collider: &Collider, kind: SurfaceKind, origin: Vec3) -> Option<NavSu
             .map(|v: Vec3| pose.transform_point(v.to_rapier()).to_bevy() - origin)
             .collect(),
         indices,
+        water: false,
     })
 }
 
@@ -327,6 +370,7 @@ fn trunk_colliders(collider: &Collider, origin: Vec3) -> Vec<NavCollider> {
                     },
                     ..default()
                 },
+                element: None,
             })
         })
         .collect()
@@ -346,7 +390,7 @@ mod tests {
             offset: Vec3::new(0.3, 0.8, 0.5),
             ..default()
         };
-        let aperture = portal_aperture(Vec3::new(10., 0., 20.), 0., &portal);
+        let aperture = portal_aperture(Vec3::new(10., 0., 20.), 0., &portal, Entity::PLACEHOLDER);
         assert_eq!(aperture.collider.kind, ColliderType::Portal);
         let (vertices, _) = placed_triangles(&aperture).unwrap();
         let min = vertices.iter().copied().fold(Vec3::MAX, Vec3::min);

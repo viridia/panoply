@@ -3,7 +3,7 @@
 //! one of those lines.
 
 use bevy::{
-    ecs::{component::Component, reflect::ReflectComponent},
+    ecs::{component::Component, entity::Entity, reflect::ReflectComponent},
     math::Vec3,
     reflect::{std_traits::ReflectDefault, Reflect},
 };
@@ -18,6 +18,10 @@ const TOLERANCE: f32 = 1e-4;
 pub struct NavMesh {
     pub vertices: Vec<Vec3>,
     pub polygons: Vec<NavPolygon>,
+    /// The precinct's doors, as the scenery elements that hold them, which a door polygon names
+    /// by index ([`NavPolygon::door`]). `None` for a mesh built from a saved input, which has no
+    /// entities.
+    pub doors: Option<Vec<Entity>>,
 }
 
 /// A precinct's navigation mesh, on the precinct's entity.
@@ -34,6 +38,9 @@ pub struct NavPolygon {
     /// back to the first.
     pub edges: Vec<NavEdge>,
     pub area: NavAreaKind,
+    /// The door a [`NavAreaKind::Door`] polygon lies under, numbered as [`NavMesh::doors`]; one
+    /// door's leaves may make several polygons. `None` for every other area.
+    pub door: Option<u32>,
 }
 
 /// What lies across a polygon's edge.
@@ -102,12 +109,17 @@ pub enum NavMeshError {
     NeighborNotReciprocated(usize, usize),
     #[error("polygon {0}'s edge {1} is not on its side's line")]
     BoundaryOffLine(usize, usize),
+    #[error("polygon {0} is a door that names no door, or names one and is not a door")]
+    DoorMissing(usize),
+    #[error("polygon {0} names a door past the mesh's")]
+    DoorIndex(usize),
 }
 
 impl NavMesh {
     /// Checks what every generator's mesh promises: each polygon convex and counter-clockwise
     /// seen from above, an edge per vertex, each neighbor naming this polygon back over the same
-    /// two vertices, and each boundary edge on its side's line.
+    /// two vertices, each boundary edge on its side's line, and each door polygon, and only those,
+    /// naming a door.
     pub fn check(&self) -> Result<(), NavMeshError> {
         for (index, polygon) in self.polygons.iter().enumerate() {
             self.check_polygon(index, polygon)?;
@@ -122,6 +134,14 @@ impl NavMesh {
         }
         if polygon.edges.len() != count {
             return Err(NavMeshError::EdgeCount(index));
+        }
+        if polygon.door.is_some() != (polygon.area == NavAreaKind::Door) {
+            return Err(NavMeshError::DoorMissing(index));
+        }
+        if let (Some(door), Some(doors)) = (polygon.door, &self.doors) {
+            if door as usize >= doors.len() {
+                return Err(NavMeshError::DoorIndex(index));
+            }
         }
         let points = polygon
             .vertices
@@ -203,6 +223,7 @@ mod tests {
                         NavEdge::Boundary(PrecinctSide::NegZ),
                     ],
                     area: NavAreaKind::Walkable,
+                    door: None,
                 },
                 NavPolygon {
                     vertices: vec![3, 2, 4, 5],
@@ -213,8 +234,10 @@ mod tests {
                         NavEdge::Wall,
                     ],
                     area: NavAreaKind::Door,
+                    door: Some(0),
                 },
             ],
+            doors: Some(vec![Entity::PLACEHOLDER]),
         }
     }
 
@@ -257,6 +280,23 @@ mod tests {
         let mut mesh = two_squares();
         mesh.polygons[0].edges[0] = NavEdge::Boundary(PrecinctSide::PosX);
         assert_eq!(mesh.check(), Err(NavMeshError::BoundaryOffLine(0, 0)));
+    }
+
+    #[test]
+    fn a_door_naming_no_door_fails() {
+        let mut mesh = two_squares();
+        mesh.polygons[1].door = None;
+        assert_eq!(mesh.check(), Err(NavMeshError::DoorMissing(1)));
+    }
+
+    #[test]
+    fn a_door_past_the_table_fails() {
+        let mut mesh = two_squares();
+        mesh.polygons[1].door = Some(1);
+        assert_eq!(mesh.check(), Err(NavMeshError::DoorIndex(1)));
+        // A mesh without its table cannot be checked against it.
+        mesh.doors = None;
+        assert_eq!(mesh.check(), Ok(()));
     }
 
     #[test]
