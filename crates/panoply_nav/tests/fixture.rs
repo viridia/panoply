@@ -1,4 +1,4 @@
-//! The navigation input the generators' tests start from: two playground precincts, written by
+//! The navigation input the generator's tests start from: two playground precincts, written by
 //! `plans/actors.py` (`capture_nav_input`).
 
 use std::path::PathBuf;

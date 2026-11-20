@@ -1,10 +1,10 @@
 //! A precinct's navigation mesh built by clipping polygons, a port of faery's builder
-//! (`NavigationMeshBuilder.ts`), one of the two generators PAN16e compares.
+//! (`NavigationMeshBuilder.ts`), chosen over Recast (D99).
 //!
 //! Each walkable surface is a layer: a plane and the 2D outline of where it lies, the ground's
 //! triangles joined wherever they share a plane. From each layer, the obstacles' footprints are
 //! subtracted, each grown by the agent's radius and cut to the band of the layer the obstacle
-//! blocks; doors and footpaths split what is left by area; and each piece is divided into convex
+//! blocks; doors, portals and footpaths split what is left by area; and each piece is divided into convex
 //! polygons. Where the polygons of separate pieces meet, each edge is split at the other side's
 //! vertices, so neighbours share their edges' vertices exactly.
 //!
@@ -798,7 +798,6 @@ impl MeshBuilder {
                     vertices,
                     edges,
                     area,
-                    detail: Vec::new(),
                 }
             })
             .collect();

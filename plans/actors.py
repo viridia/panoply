@@ -80,7 +80,7 @@ HOME = "panoply_actors::precinct_actors::HomePrecinct"
 FIRST_PRECINCT = "Precinct:playground:0:0"
 PRECINCT_SIZE = 64
 PARCEL_SIZE = 16
-# Where the navigation generators' tests read their input (`NavInput`).
+# Where the navigation generator's tests read their input (`NavInput`).
 NAV_FIXTURES = Path(__file__).resolve().parent.parent / "crates/panoply_nav/tests/fixtures"
 # Groups of precinct actors, a wide variety in a small area each, and the azimuth to see them
 # from. The creatures and townsfolk stand in ranks along z, facing +x, so they are seen from
@@ -352,7 +352,7 @@ def run(driver):
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
 
-    # The navigation generators' tests read these two precincts' input: the lair and the village.
+    # The navigation generator's tests read these two precincts' input: the lair and the village.
     # A parcel without terrain, as under the lair, has no ground.
     lair = capture_nav_input(driver, 0, 0)
     assert lair["ground"] > 0 and lair["doors"] > 0, f"lair: {lair}"

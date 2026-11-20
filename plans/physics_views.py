@@ -15,12 +15,10 @@ the probe or the navigation view is suspect.
   Navigation is checked; a changed mesh replaces it, and a removed one takes it away. In
   `nav_view.png`, a row of three polygons, blue, amber (a doorway), blue: red walls along their
   sides, faint lines where they meet, and a green edge on the precinct's side at x 128.
-- Navigation on builds the lair's mesh with Recast, doorways and footpaths included, and leaves
-  the hand-made one alone. In `nav_recast.png`, the doorway near (50.5, 50.5) from above, amber
-  between its jambs.
-- Clipping under Navigation builds every mesh again with the port of faery's builder. In
-  `nav_clipping.png`, the same doorway: a thin amber strip across it where the leaf closes, and
-  the jambs cut back square by the agent's radius.
+- Navigation on builds the lair's mesh, doorways, footpaths and its portal included, and leaves
+  the hand-made one alone. In `nav_lair.png`, the doorway near (50.5, 50.5) from above: a thin
+  amber strip across it where the leaf closes, and the jambs cut back square by the agent's
+  radius.
 
 Settings start empty, so physics drawing and the navigation view start off and the panel hidden.
 """
@@ -60,8 +58,7 @@ VISIBILITY = "bevy_camera::visibility::Visibility"
 PRECINCT = "Precinct:playground:1:0"
 NAV_VIEW = f"{PRECINCT}/NavMeshView"
 NAV_FILLS = f"{NAV_VIEW}/NavAreaFill"
-# The lair, whose corner is at the origin, built by Recast once Navigation is on, and one of its
-# doorways.
+# The lair, whose corner is at the origin, built once Navigation is on, and one of its doorways.
 LAIR = "Precinct:playground:0:0"
 LAIR_VIEW = f"{LAIR}/NavMeshView"
 DOORWAY = [50.5, 0.0, 50.75]
@@ -175,7 +172,7 @@ def nav_view(driver):
     assert driver.get_resource(VIEWS, at="navigation") is True, "Navigation did not turn on"
     assert driver.get(NAV_VIEW, VISIBILITY) == "Inherited", "navigation view still hidden"
     driver.screenshot("nav_view")
-    recast_mesh(driver)
+    lair_mesh(driver)
 
     # The doorway made walkable: one view still, with one fill.
     view = driver.select(NAV_VIEW)
@@ -189,50 +186,26 @@ def nav_view(driver):
     entity = driver.select(PRECINCT)[0]
     driver.call("world.remove_components", {"entity": entity, "components": [NAV_MESH]})
     driver.absent(NAV_VIEW)
-    clipping_mesh(driver)
 
 
-def recast_mesh(driver):
-    """Turning Navigation on builds the meshes of the loaded precincts that have none with Recast,
-    the lair among them; the hand-made one is left as it is."""
+def lair_mesh(driver):
+    """Turning Navigation on builds the meshes of the loaded precincts that have none, the lair
+    among them, doorways, footpaths and its stone portal marked; the hand-made one is left as it
+    is."""
     driver.wait(
         lambda: (bool(driver.select(LAIR_VIEW)), "no view"),
-        "the lair's Recast mesh",
+        "the lair's mesh",
         {"seconds": 30},
     )
     polygons = driver.get(LAIR, NAV_MESH, at="polygons")
-    areas = {area: sum(1 for p in polygons if p["area"] == area) for area in ("Door", "Path")}
+    kinds = ("Door", "Path", "Portal")
+    areas = {area: sum(1 for p in polygons if p["area"] == area) for area in kinds}
     print(f"lair: {len(polygons)} polygons, {areas}")
-    assert areas["Door"], "the lair's mesh has no doorways"
+    for area in kinds:
+        assert areas[area], f"the lair's mesh has no {area} polygons"
     hand_made = driver.get(PRECINCT, NAV_MESH, at="polygons")
     assert len(hand_made) == 3, f"the hand-made mesh became {len(hand_made)} polygons"
     driver.goto(DOORWAY, 12.0)
     driver.frames(10)
-    driver.screenshot("nav_recast")
+    driver.screenshot("nav_lair")
     driver.goto([116.0, 0.0, 49.0], 30.0)
-
-
-def clipping_mesh(driver):
-    """Choosing Clipping under Navigation builds every loaded precinct's mesh again with the port of
-    faery's builder, whose polygons are planar, so none carries detail triangles as Recast's do."""
-    driver.click("Clipping")
-    driver.frames(5)
-    generator = driver.get_resource(VIEWS, at="nav_generator")
-    assert generator == "Clipping", f"the generator is {generator}"
-
-    def built():
-        if not driver.select(LAIR_VIEW):
-            return False, "no view"
-        polygons = driver.get(LAIR, NAV_MESH, at="polygons")
-        with_detail = sum(1 for p in polygons if p["detail"])
-        return with_detail == 0, f"{with_detail} polygons with detail"
-
-    driver.wait(built, "the lair's clipping mesh", {"seconds": 30})
-    polygons = driver.get(LAIR, NAV_MESH, at="polygons")
-    areas = {area: sum(1 for p in polygons if p["area"] == area) for area in ("Door", "Path")}
-    print(f"lair, clipping: {len(polygons)} polygons, {areas}")
-    assert areas["Door"], "the lair's clipping mesh has no doorways"
-    assert areas["Path"], "the lair's clipping mesh has no footpaths"
-    driver.goto(DOORWAY, 12.0)
-    driver.frames(10)
-    driver.screenshot("nav_clipping")

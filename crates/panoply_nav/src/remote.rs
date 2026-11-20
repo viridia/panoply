@@ -1,5 +1,5 @@
 //! The BRP method `panoply.nav_input`, for test plans: captures a loaded precinct's navigation
-//! input and writes it to a file, as the generators' tests read it, and reports what it holds.
+//! input and writes it to a file, as the generator's tests read it, and reports what it holds.
 
 use std::path::PathBuf;
 

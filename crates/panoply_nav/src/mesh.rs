@@ -34,10 +34,6 @@ pub struct NavPolygon {
     /// back to the first.
     pub edges: Vec<NavEdge>,
     pub area: NavAreaKind,
-    /// The polygon's surface as triangles, where it is not planar (Recast's polygons follow the
-    /// ground only at their vertices); empty where the polygon is its own surface.
-    #[reflect(default)]
-    pub detail: Vec<[Vec3; 3]>,
 }
 
 /// What lies across a polygon's edge.
@@ -207,7 +203,6 @@ mod tests {
                         NavEdge::Boundary(PrecinctSide::NegZ),
                     ],
                     area: NavAreaKind::Walkable,
-                    detail: Vec::new(),
                 },
                 NavPolygon {
                     vertices: vec![3, 2, 4, 5],
@@ -218,7 +213,6 @@ mod tests {
                         NavEdge::Wall,
                     ],
                     area: NavAreaKind::Door,
-                    detail: Vec::new(),
                 },
             ],
         }

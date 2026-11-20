@@ -235,7 +235,7 @@ fn footpaths(effects: Option<&TerrainFxMap>) -> Vec<bool> {
 }
 
 /// A portal's aperture as a `Portal` collider: a thin box standing on its bottom edge, as wide and
-/// tall as the aperture, which the generators mark as a portal area, as faery did, so a route
+/// tall as the aperture, which the generator marks as a portal area, as faery did, so a route
 /// crosses it or not by who asks (R31: the player's click-to-move may, NPCs may not). The aperture
 /// faces the element's x, turned by its `y_rotation` (`active_portal.rs`); its other turns are
 /// left out. `position` and `facing` are the element's.

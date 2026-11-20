@@ -274,15 +274,8 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16e Generator decision.** Recast's and the port's (`clipping`, D98) meshes compared on build
-  time, peak memory (`tests/generators.rs` prints both), whether the doorways stay open and how wide
-  the stairways stay (Recast's squeezes them tight, though open), polygon count, how closely the
-  edges follow the obstacles and the footpaths, in PAN16b's view. The port joins surfaces only where
-  their edges meet within half a climb; faery's joining (`isSamePlane`, `projectVertexToPlane` in
-  `NavRegion.ts`) judged by reading for what it would add. Lands as a decision. The loser's module
-  and dependencies are removed, and with them the setting that chose between them; the winner's
-  grows into PAN16f.
-- **PAN16f Navmesh generation.** The winning generator in the game, one mesh per precinct.
+- **PAN16f Navmesh generation.** The port of faery's builder (`panoply_nav::clipping`, D99) in the
+  game, one mesh per precinct.
   - Built for each precinct the simulation box overlaps (R8), nearest the viewpoint first, as
     faery's `NavigationController` ordered them.
   - Built from the precinct's own geometry alone: the neighbours' obstacles are PAN16g's, which
@@ -293,7 +286,8 @@ components and every layer restartable from saved state (R104).
     thread only takes the input (`NavInputCapture`, D97), which copies descriptors and triangles
     rather than building anything, and the task does the rest. A route asked of a precinct whose
     mesh is not ready gets "not ready". An edit in the editor regenerates when the edit ends, a
-    generation count discarding stale results. A cache or baked meshes wait on PAN16e's build times.
+    generation count discarding stale results. No cache or baked meshes: a precinct builds in about
+    20 ms (D99).
   - Doors (R98): the door collider is the closed leaf, kinematic once PAN59 builds it, so it stays
     out of the input, which takes static colliders only. The task maps each `DOOR` polygon to its
     door by testing the polygon's centroid against the precinct's door list (a `Vec`; a precinct has
@@ -323,29 +317,29 @@ components and every layer restartable from saved state (R104).
     (`findDoorUseLocation`).
   - Portals: the portal area is set per query too, open to the player's click-to-move routes and
     closed to NPCs' (R31), as faery's portal areas were.
-  - Ladders: rerecast has no off-mesh links, so with either generator they are the query side's.
+  - Ladders: the mesh has no off-mesh links, so they are the query side's.
 
   Settle the choice with one scenario walkthrough: a guard routes through a door into the next
   precinct.
 - **PAN16h Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
   mesh is not ready, opens doors on the way (R52), and an actor that cannot advance plays R33's
   blocked state and replans (R22).
-- **PAN16i Routing around actors.** Exclusion zones where actors stand (R86): neither generator cuts
-  them in at run time (rerecast has no tile cache, and the port drops faery's patching). Likely
-  relaxed to two parts. A cost per query, as faery's `actor` surface already was in its search, but
-  only on a polygon the actor leaves no way past: one too narrow at the actor for the agent to go
-  around it, judged by width, not area, since a corridor is large but narrow. The cost follows the
-  two actors' weights (PAN90): one the agent outweighs costs the time to shove it, and one far
-  heavier blocks the polygon for this query. An actor in a field costs nothing, so polygon size need
-  not be capped; faery capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of
-  cutting actors in, which Panoply does not do. Then the smoothed path bends around the actors near
-  it: where a segment passes within an actor's radius plus the agent's, waypoints on the tangents of
-  that circle, on the side whose segments stay on the mesh (a raycast along it). Bending suits
-  standing actors, who are where the plan saw them; moving ones are the aura's (R23). Where neither
-  side stays on the mesh, the route replans. Before bending is built, an artifact for the author:
-  its test cases, illustrated, to find the edge cases. Crowd and follower behavior (R86, R87) needs
-  test scenarios: driver plans that stage, for example, eight skeletons rushing the player, or two
-  followers through a doorway.
+- **PAN16i Routing around actors.** Exclusion zones where actors stand (R86): the generator does not
+  cut them in at run time, having left out faery's patching (D99). Likely relaxed to two parts. A
+  cost per query, as faery's `actor` surface already was in its search, but only on a polygon the
+  actor leaves no way past: one too narrow at the actor for the agent to go around it, judged by
+  width, not area, since a corridor is large but narrow. The cost follows the two actors' weights
+  (PAN90): one the agent outweighs costs the time to shove it, and one far heavier blocks the
+  polygon for this query. An actor in a field costs nothing, so polygon size need not be capped;
+  faery capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in,
+  which Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
+  passes within an actor's radius plus the agent's, waypoints on the tangents of that circle, on the
+  side whose segments stay on the mesh (a raycast along it). Bending suits standing actors, who are
+  where the plan saw them; moving ones are the aura's (R23). Where neither side stays on the mesh,
+  the route replans. Before bending is built, an artifact for the author: its test cases,
+  illustrated, to find the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios:
+  driver plans that stage, for example, eight skeletons rushing the player, or two followers through
+  a doorway.
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The
