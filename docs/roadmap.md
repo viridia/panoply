@@ -260,17 +260,6 @@ components and every layer restartable from saved state (R104).
   solid scenery is rescued the same way at once: an authored place that a phased layer (X109) or a
   mod covered. Each rescue goes in PAN34's log, so the content can be fixed. Tune the canopy and
   trunk height (`CANOPY_HEIGHT`, D39).
-- **PAN90 Bumping.** The player walking into a standing actor pushes it aside, and it plays R33's
-  stumble state, at most 4 m/s (R28). A repulsion between actors (R23, R86), not a collision: the
-  aura is added to an actor's travel before the controller moves it, so a pushed actor is still
-  swept against the world and is never pushed through a wall. A smoothed velocity rather than a
-  force, so it does not jitter; a weight per actor, so NPCs yield to the player more than the player
-  to them. The weight follows size and stance: a dwarf does not shove a giant, a guard on duty
-  stands planted, and a scripted goal may make an actor immovable, to block a path for a scene.
-  Whether it is computed or an aspect's value that goals change is settled here; PAN16i's route
-  costs read it. Its radius leaves melee in reach. An actor inside another's space wakes (PAN3p).
-  Neighbours by testing every pair in the realm until a grid is needed. The playground's townsfolk
-  are the test. X50 builds NPCs' steering on it.
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
@@ -307,17 +296,18 @@ components and every layer restartable from saved state (R104).
   cost per query, as faery's `actor` surface already was in its search, but only on a polygon the
   actor leaves no way past: one too narrow at the actor for the agent to go around it, judged by
   width, not area, since a corridor is large but narrow. The cost follows the two actors' weights
-  (PAN90): one the agent outweighs costs the time to shove it, and one far heavier blocks the
-  polygon for this query. An actor in a field costs nothing, so polygon size need not be capped;
-  faery capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in,
-  which Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
-  passes within an actor's radius plus the agent's, waypoints on the tangents of that circle, on the
-  side whose segments stay on the mesh (a raycast along it). Bending suits standing actors, who are
-  where the plan saw them; moving ones are the aura's (R23). Where neither side stays on the mesh,
-  the route replans. Before bending is built, an artifact for the author: its test cases,
-  illustrated, to find the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios:
-  driver plans that stage, for example, eight skeletons rushing the player, or two followers through
-  a doorway.
+  (D102): one the agent outweighs costs the time to shove it, and one far heavier blocks the polygon
+  for this query. An actor in a field costs nothing, so polygon size need not be capped; faery
+  capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in, which
+  Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
+  passes within an actor's radius plus the agent's plus a margin, waypoints on the tangents of that
+  circle, on the side whose segments stay on the mesh (a raycast along it). The margin keeps a path
+  out of personal space where there is room, though the push lets capsules overlap (D102): an actor
+  enters another's space only when forced to. Bending suits standing actors, who are where the plan
+  saw them; moving ones are the aura's (R23). Where neither side stays on the mesh, the route
+  replans. Before bending is built, an artifact for the author: its test cases, illustrated, to find
+  the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios: driver plans that
+  stage, for example, eight skeletons rushing the player, or two followers through a doorway.
 - **PAN17 Click to move.** Clicking an actor or fixture needs clicks in the world
   (`bevy_remote_driver`'s X9). Clicking ground to walk to is Panoply's own: a server method of its
   own (the driver's X2), or a waypoint entity spawned there and clicked through the driver's X9. The

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X122.**
+**Next: X123.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -553,3 +553,7 @@ dropped, not deferred. Numbers are never reused.
 - **X121** The editor flags door volumes that touch, which merge into one door polygon. A double
   door is one double-wide element today (`IronFenceGate`), whose two leaves are named as one door.
   *Gate:* the first door made of two door elements opened in tandem.
+- **X122** Shoving in combat. PAN90's bump (D102) is how actors yield outside a fight; a shove in
+  combat is likely a skill, and stylized ([combat.md](combat.md)), perhaps dramatic, so it may share
+  nothing with the bump but the controller sweeping the shoved actor. *Gate:* combat's strategies
+  are designed.

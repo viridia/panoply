@@ -272,6 +272,7 @@ fn show_actor_preview(
             ground_normal: Vec3::Y,
             falling: false,
             last_stood: position,
+            push: Vec2::ZERO,
         },
         InstanceAspects::default(),
         ActorRebuildAspects,

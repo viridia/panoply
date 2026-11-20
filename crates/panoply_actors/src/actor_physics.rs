@@ -58,14 +58,16 @@ pub struct ActorMotion {
     /// The feet, at the last tick the actor was `grounded`: where it goes back to if it falls out
     /// of the world (R27).
     pub last_stood: Vec3,
+    /// The velocity other actors push it at, on the ground plane, in m/s (`bump_actors`).
+    pub push: Vec2,
 }
 
 /// How far below where it last stood an actor falling with nothing under it goes before it is put
 /// back there, in m: far enough that the fall shows.
 const FALL_OUT_DEPTH: f32 = 2.0;
 
-/// Marks an actor that `move_actors` skips: standing on walkable ground, facing its heading and
-/// asked for no speed, so that moving it would leave it where it is. It wakes when that stops
+/// Marks an actor that `move_actors` skips: standing on walkable ground, facing its heading, asked
+/// for no speed and pushed by no one, so that moving it would leave it where it is. It wakes when that stops
 /// being true, or when the colliders of its realm change.
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -90,6 +92,7 @@ fn rests(motion: &ActorMotion, intent: &ActorIntent) -> bool {
     motion.grounded
         && !motion.falling
         && intent.speed == 0.0
+        && motion.push == Vec2::ZERO
         && angle_between(motion.facing, intent.heading).abs() < FACING_TOLERANCE
 }
 
@@ -190,13 +193,14 @@ pub(crate) fn start_actor_physics(
                 falling: false,
                 // Over ground, as the ray found.
                 last_stood: position,
+                push: Vec2::ZERO,
             });
         }
     }
 }
 
 /// Moves actors one fixed tick: turning toward their intent's heading, travelling along their
-/// facing, falling under gravity, stopped and slid by what they meet, and pushed out of what they
+/// facing and as other actors push them (`bump_actors`), falling under gravity, stopped and slid by what they meet, and pushed out of what they
 /// are inside (R26), and put back where they last stood when they fall out of the world (R27).
 /// Runs after the realm steps, so colliders inserted since the last tick are in its broad phase.
 /// Only the viewpoint's realm steps, so actors in other realms hold still, and so do actors whose
@@ -251,7 +255,8 @@ pub(crate) fn move_actors(
         let turn = angle_between(motion.facing, intent.heading);
         motion.facing = (motion.facing + turn.clamp(-TURN_RATE * dt, TURN_RATE * dt))
             .rem_euclid(std::f32::consts::TAU);
-        let mut travel = Quat::from_rotation_y(motion.facing) * Vec3::Z * intent.speed;
+        let mut travel = Quat::from_rotation_y(motion.facing) * Vec3::Z * intent.speed
+            + Vec3::new(motion.push.x, 0.0, motion.push.y);
         // On a slope, travel along the ground at the full horizontal pace. Left to the controller,
         // travel into a slope is projected onto it, which slows the climb but not the sideways
         // part, so actors drift off the sides of ramps and stairs.

@@ -8,6 +8,7 @@ use panoply_scenery::CutawaySystems;
 
 mod actor_animation;
 mod actor_aspect;
+mod actor_bump;
 mod actor_colors;
 mod actor_control;
 mod actor_cutaways;
@@ -24,6 +25,7 @@ mod world_pick;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
 pub use actor_aspect::{ActorScale, ClipsFile, CollisionSize, Skin};
+pub use actor_bump::{actor_weight, ActorFooting};
 pub use actor_control::{
     ActorIntent, PlayerActor, PlayerControl, PlayerFast, PlayerInteract, PlayerTurn, PlayerWalk,
 };
@@ -35,6 +37,7 @@ pub use actor_wield::WieldedItem;
 pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
 
 use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
+use self::actor_bump::bump_actors;
 use self::actor_colors::{color_actor_part, ActorMaterials};
 use self::actor_control::{drive_player, follow_player, goto_player};
 use self::actor_cutaways::{choose_player_cutaways, hide_cut_away_actors};
@@ -91,6 +94,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<ActorResting>()
             .register_type::<ActorHeld>()
             .register_type::<ActorIntent>()
+            .register_type::<ActorFooting>()
             .register_type::<TravelTo>()
             .register_type::<ActorAnimationState>()
             .register_type::<ActorIdle>()
@@ -171,7 +175,7 @@ impl Plugin for ActorsPlugin {
             )
             .add_systems(
                 FixedUpdate,
-                (travel_actors, move_actors, place_actor_colliders)
+                (travel_actors, bump_actors, move_actors, place_actor_colliders)
                     .chain()
                     .after(realm_physics_system),
             )

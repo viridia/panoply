@@ -42,6 +42,7 @@ MOTION = "panoply_actors::actor_physics::ActorMotion"
 RESTING = "panoply_actors::actor_physics::ActorResting"
 INTENT = "panoply_actors::actor_control::ActorIntent"
 TRAVEL = "panoply_actors::actor_travel::TravelTo"
+FOOTING = "panoply_actors::actor_bump::ActorFooting"
 PLAYER = "bevy_animation::AnimationPlayer"
 STATE = "panoply_actors::actor_animation::ActorAnimationState"
 IDLE = "panoply_actors::actor_animation::ActorIdle"
@@ -351,6 +352,7 @@ def run(driver):
     for name, (position, azimuth) in GROUPS.items():
         driver.goto(position, 20.0, azimuth=azimuth)
         driver.screenshot(name)
+    check_bumping(driver)
 
     # The navigation generator's tests read these two precincts' input: the lair and the village.
     # A parcel without terrain, as under the lair, has no ground.
@@ -634,6 +636,75 @@ def check_precinct_actors(driver):
     # In the next precinct east, `ActorScale` draws the black bear 1.3 times its model's size.
     scale = driver.get("Actor:BlackBear/ActorBody", TRANSFORM)["scale"]
     assert all(s == Between(1.299, 1.301) for s in scale), f"bear scale {scale}"
+
+
+def check_bumping(driver):
+    """The player's actor, travelling into a townsperson, shoves it aside (R23, R28):
+    it stumbles, moves, and rests again, and the player goes on to its target. Made immovable, the
+    townsperson holds, and the player is held off short of the target."""
+    home = driver.get("Actor", MOTION)["position"]
+    position, azimuth = GROUPS["townsfolk"]
+    driver.goto(position, 12.0, azimuth=azimuth)
+    rows = driver.call(
+        "world.query", {"data": {"components": [NAME, MOTION]}, "filter": {"with": [HOME]}}
+    )
+
+    def away(row):
+        return flat_distance(row["components"][MOTION]["position"], position)
+
+    townsperson = min(rows, key=away)["components"][NAME]
+    skeleton = f"{townsperson}/HumanoidArmature"
+    wait_resting(driver, townsperson, True)
+    stood = driver.get(townsperson, MOTION)["position"]
+    # The player walks straight at the townsperson, out of the rank (which runs along z). Pushed
+    # along the line between them, it slips aside, by an amount that varies from run to run.
+    start = [stood[0] - 2.0, stood[1] + 0.5, stood[2]]
+    target = [stood[0] + 2.0, stood[1], stood[2]]
+    place(driver, start)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.set("Actor", TRAVEL, {"target": target, "speed": TROT})
+    states = []
+    shot = False
+    while not travelling(driver)[0]:
+        states.append(driver.get(skeleton, STATE))
+        if not shot and states[-1] == "Stumble":
+            driver.screenshot("bump")
+            shot = True
+        driver.seconds(0.05)
+    print(f"{townsperson} while bumped: {states}")
+    assert "Stumble" in states, f"{townsperson} never stumbled: {states}"
+    gaits = {"Walk", "WalkFast", "Run"} & set(states)
+    assert not gaits, f"{townsperson} walked while shoved: {states}"
+    wait_resting(driver, townsperson, True)
+    shoved = driver.get(townsperson, MOTION)["position"]
+    print(f"{townsperson} shoved from {stood} to {shoved}")
+    assert flat_distance(shoved, stood) > 0.01, f"{townsperson} not shoved: {shoved}"
+    assert flat_distance(driver.get("Actor", MOTION)["position"], target) < 0.1
+
+    # Immovable, the townsperson stays put, and the player walking at it slides round it, as round
+    # a pillar, never through it: their two radii (0.6), less the overlap the push starts at (0.1),
+    # the trot's settling (0.15) and the ease's lag. 0.27 m measured (PAN90).
+    driver.set(townsperson, FOOTING, "Immovable")
+    held = driver.get(townsperson, MOTION)["position"]
+    start = [held[0] - 2.0, held[1] + 0.5, held[2] + 0.1]
+    target = [held[0] + 2.0, held[1], held[2] + 0.1]
+    place(driver, start)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.set("Actor", TRAVEL, {"target": target, "speed": TROT})
+    nearest = math.inf
+    while not travelling(driver)[0]:
+        nearest = min(nearest, flat_distance(driver.get("Actor", MOTION)["position"], held))
+        driver.seconds(0.05)
+    stayed = driver.get(townsperson, MOTION)["position"]
+    driver.set(townsperson, FOOTING, "Free")
+    print(f"went round {townsperson}, nearest {nearest:.2f} m; it stayed at {stayed}")
+    assert flat_distance(stayed, held) < 0.01, f"{townsperson} moved: {held} to {stayed}"
+    assert nearest > 0.2, f"came within {nearest} m of {townsperson}"
+
+    # Back where it was, in the first precinct, which the steps after this rely on.
+    driver.goto(home, 20.0)
+    place(driver, [home[0], home[1] + 0.5, home[2]])
+    driver.expect("Actor", MOTION, {"grounded": True})
 
 
 def gait(driver):

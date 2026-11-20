@@ -8,7 +8,7 @@ use bevy::{
 use std::time::Duration;
 
 use super::ActorBody;
-use crate::{actor_control::angle_between, ActorMotion};
+use crate::{actor_control::angle_between, ActorIntent, ActorMotion};
 
 /// Gaits by ground speed, in m/s (R18): walk up to `MAX_WALK_SPEED`, fast walk up to
 /// `MAX_WALK_FAST_SPEED`, run above it. At exactly 3.5, the player's jog, a humanoid fast walks.
@@ -20,6 +20,9 @@ const STAND_SPEED: f32 = 0.1;
 
 /// Standing and turning faster than this, in radians per second, an actor plays its turn.
 const TURN_SPEED: f32 = 1.0;
+
+/// Pushed faster than this, in m/s, an actor asked for no speed of its own stumbles (R28).
+const STUMBLE_SPEED: f32 = 0.3;
 
 /// How long a landing holds its first frame, the deepest crouch, before it plays out the rise.
 /// The crossfade from falling (0.1 s) blends away the start of the clip, so without a hold the
@@ -38,6 +41,8 @@ pub enum ActorAnimationState {
     CombatStance,
     CombatStanceUnarmed,
     Turn,
+    /// Pushed aside by another actor (R28).
+    Stumble,
     Walk,
     WalkFast,
     Run,
@@ -83,11 +88,12 @@ const fn looping(clips: &'static [&'static str], fade_ms: u64) -> StateClips {
 }
 
 impl ActorAnimationState {
-    const ALL: [Self; 9] = [
+    const ALL: [Self; 10] = [
         Self::Stand,
         Self::CombatStance,
         Self::CombatStanceUnarmed,
         Self::Turn,
+        Self::Stumble,
         Self::Walk,
         Self::WalkFast,
         Self::Run,
@@ -103,6 +109,7 @@ impl ActorAnimationState {
                 looping(&["CombatStanceUnarmed", "CombatStance", "Stand"], 300)
             }
             Self::Turn => looping(&["Turn", "Stand"], 100),
+            Self::Stumble => looping(&["Stumble", "Turn", "Stand"], 100),
             // Gaits fall back to each other, by speed, in `ActorClips::gait`.
             Self::Walk => looping(&["Walk"], 300),
             Self::WalkFast => looping(&["WalkFast"], 300),
@@ -314,7 +321,8 @@ pub(crate) fn build_actor_graph(
 }
 
 /// Plays each actor's state: falling while it falls (R25), then landing once on touchdown when
-/// the species has a landing clip, then its gait, its turn or its idle. The gait follows its speed
+/// the species has a landing clip, then its stumble while another actor pushes it and it is asked
+/// for no speed of its own, then its gait, its turn or its idle. The gait follows its speed
 /// along its facing over the last fixed tick, so backing up plays the clip backward; a new gait
 /// crossfades in at the old one's phase of the stride (R19), and any other state starts its clip
 /// from the beginning.
@@ -326,11 +334,11 @@ pub(crate) fn animate_actor_state(
         &mut AnimationPlayer,
         &mut AnimationTransitions,
     )>,
-    actors: Query<(&ActorMotion, Option<&ActorIdle>)>,
+    actors: Query<(&ActorMotion, Option<&ActorIntent>, Option<&ActorIdle>)>,
     clip_assets: Res<Assets<AnimationClip>>,
     time: Res<Time<Fixed>>,
 ) {
-    use ActorAnimationState::{Falling, Landing, Turn};
+    use ActorAnimationState::{Falling, Landing, Stumble, Turn};
     let dt = time.timestep().as_secs_f32();
     let duration = |clip: &StateClip| {
         clip_assets
@@ -339,13 +347,17 @@ pub(crate) fn animate_actor_state(
             .filter(|duration| *duration > 0.0)
     };
     for (armature, clips, mut state, mut player, mut transitions) in &mut armatures {
-        let Ok((motion, idle)) = actors.get(armature.actor) else {
+        let Ok((motion, intent, idle)) = actors.get(armature.actor) else {
             continue;
         };
         let forward = Vec2::new(motion.facing.sin(), motion.facing.cos());
         let speed = (motion.position - motion.previous).xz().dot(forward) / dt;
         let turn = angle_between(motion.previous_facing, motion.facing) / dt;
-        let gait = clips.gait(speed);
+        // Pushed with no speed of its own, an actor's drift is no stride: it stumbles once the push
+        // is strong enough, and stands until then.
+        let idle_pushed =
+            motion.push != Vec2::ZERO && intent.is_none_or(|intent| intent.speed == 0.0);
+        let gait = clips.gait(speed).filter(|_| !idle_pushed);
         // How long the landing has played, and whether it has finished.
         let landing = transitions
             .get_main_animation()
@@ -361,6 +373,8 @@ pub(crate) fn animate_actor_state(
             Falling
         } else if touched_down || still_landing {
             Landing
+        } else if idle_pushed && motion.push.length() > STUMBLE_SPEED {
+            Stumble
         } else if let Some(gait) = gait {
             gait
         } else if turn.abs() > TURN_SPEED {

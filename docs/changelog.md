@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN90** Walking into an actor shoves it aside, stumbling; the smaller yields more.
 - **PAN16f** The game builds simulated precincts' navigation meshes, and rebuilds them after edits.
 - **PAN16e** Navigation meshes come from the port of faery's builder alone; Recast is gone.
 - **PAN16d** The Show menu chooses Recast or a port of faery's builder for the navigation meshes.

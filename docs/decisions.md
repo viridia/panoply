@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D102.**
+**Next: D103.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -842,3 +842,13 @@ never reused.
   parcel's edges blend its neighbours' contours, but from the realm map, copied into the parcel. The
   cost is at most 64 parcels building ground and flora out of view. Reversing it means meshes that
   wait on the camera, or built from the parcels loaded. (PAN16f)
+- **D102** Actors push each other apart as a velocity added to their travel, eased and capped at 4
+  m/s, rather than as contacts between bodies, so the controller still sweeps a pushed actor against
+  the world (`actor_bump.rs`). The push starts once two capsules overlap by 0.1 m: a capsule is
+  personal space, wider than the body, so overlapping capsules still read as one actor stepping
+  aside, and a player walking up to talk does not shove. Who yields is decided by weight, computed
+  from the capsule's volume, not set in an aspect, since size is already authored; an `ActorFooting`
+  of immovable makes it infinite, a state a goal sets, as for a guard blocking a door. The player
+  weighs what its size does; a heavier player made NPCs give way unnaturally. PAN16i's route costs
+  read the same `actor_weight`. Reversing it means rapier bodies for actors, or an authored weight.
+  (PAN90)
