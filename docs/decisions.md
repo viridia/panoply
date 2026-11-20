@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D98.**
+**Next: D99.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -780,14 +780,32 @@ never reused.
   coordinates (its corner at the origin), so a boundary edge lies exactly on x or z = 0 or 64 and a
   saved input does not depend on where its precinct is. The input is plain data: scenery as its
   `ColliderDesc`s where each element stands, so a collider's type, margin and walkability reach the
-  generators, and tree trunks as solid cylinders beside them; floors as triangles; and the ground at
-  one vertex per meter, taken from the ground collider's corners, not its sixteen triangles to the
-  cell, so its heights carry the smoothing and terrain effects but not the 0.25 m detail between;
-  and each 1 m cell's footpath flag (cobbled effects), with a ring of the neighbours' cells, as
-  faery's builder took them for its path regions (PAN16c). The canopy (D39) is left out, since no
-  route goes over the trees. Rapier's own shapes were the alternative, but saving them needs its
-  `serde-serialize` feature and writes each trimesh's BVH, tying the fixtures to parry's version.
-  The mesh holds 3D vertices, not faery's plane and 2D vertices per polygon, which stay inside the
-  port (PAN16d), since Recast's polygons are not exactly planar; a polygon carries its surface as
-  triangles where it is not planar, which the port leaves empty (PAN16c). Reversing it means
-  changing both generators' input and output. (PAN16a)
+  generators, and tree trunks as solid cylinders beside them, and each portal's aperture as a
+  `Portal` collider, which both generators mark as a portal area, as faery's builder did, so a route
+  crosses it or not by who asks: the player's click-to-move may, NPCs may not (R31, PAN16d); floors
+  as triangles; and the ground at one vertex per meter, taken from the ground collider's corners,
+  not its sixteen triangles to the cell, so its heights carry the smoothing and terrain effects but
+  not the 0.25 m detail between; and each 1 m cell's footpath flag (cobbled effects), with a ring of
+  the neighbours' cells, as faery's builder took them for its path regions (PAN16c). The canopy
+  (D39) is left out, since no route goes over the trees. Rapier's own shapes were the alternative,
+  but saving them needs its `serde-serialize` feature and writes each trimesh's BVH, tying the
+  fixtures to parry's version. The mesh holds 3D vertices, not faery's plane and 2D vertices per
+  polygon, which stay inside the port (PAN16d), since Recast's polygons are not exactly planar; a
+  polygon carries its surface as triangles where it is not planar, which the port leaves empty
+  (PAN16c). Reversing it means changing both generators' input and output. (PAN16a)
+- **D98** The port of faery's builder (`panoply_nav::clipping`) favours a lean mesh over an exact
+  one: navigation approximates how a creature moves, an actor's capsule is round, and its motion
+  smooths the corners of a route, so a turn's exact curvature goes unseen, while each vertex costs
+  in every later step, the route search included. So footprints are faery's per shape, a box
+  square-cornered and a round shape an octagon, grown by the agent's radius and margin; footprints
+  grown exactly, as rounded hulls, tripled the lair's polygons (2,878 to 997). Outlines are cut in
+  one fixed-point space, about a millimeter, so the same point from two operations is one point and
+  neighbours are found by their shared edges, each split first where another piece's vertex lies on
+  it; faery's R-trees went. A surface removes whatever lies under it within an agent's height; at
+  one height only one keeps the part, a floor over the ground and otherwise the first built, since
+  two that both win leave a gap between them. Surfaces whose edges meet within half a climb join,
+  where faery rounded a floor's height to the meter to join it. A walkable collider blocks the
+  ground and floors but not other walkable colliders' tops, so a piece's ramps and platform join, as
+  faery's ramps did not cut ramps; its top past its own edge is held to its highest point, so a
+  stair does not cut the floor it climbs to. Floors are not obstacles, as in faery, so the ground
+  beside a raised floor stays. (PAN16d)

@@ -274,40 +274,21 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16d Port prototype.** The fixtures and `NavMesh` Recast builds from (D97), from a port of
-  faery's builder, chosen at run time beside Recast (`panoply_nav::recast`) by a setting beside the
-  Show menu's Navigation checkbox, which the editor's build (`nav_build`) reads; the setting waited
-  for a second generator, since one would be a select of one option. The port: 2D polygons cut by
-  exact boolean operations and joined as a graph, about 2,000 lines of TypeScript
-  (`NavigationMeshBuilder.ts`, `NavigationMesh.ts`, `NavRegion.ts`, the tract files), whose cost
-  follows the obstacles, where Recast's follows the area over the cell size squared, empty ground
-  included, and whose edges are exact, where Recast's fall on its grid. Ported lean: without faery's
-  4 m cells, which bounded the cost of cutting actors in (PAN16i routes around them instead), and
-  without its broad phase (`rbush`) or half-edge editing, both for patching a mesh in place.
-  Instead, a layer's obstacle outlines, inflated by the agent radius, merged and subtracted in batch
-  by `i_overlay` (Bevy-free, integer-robust; it replaces `polygon-clipping` and `inflatePolygon`),
-  then split into convex polygons (Hertel–Mehlhorn over a Delaunay triangulation, `i_triangle`),
-  with adjacency from shared edges. Read faery's code for bugs as it is ported.
-  - Input as footprints: the collider shapes' outlines, the floor regions, and the terrain's
-    walkability ported from faery's (`navHeightMap`), read from the ground's one vertex per meter.
-  - Faery's polygons as a plane and 2D vertices, projected along y, for the boolean operations, are
-    this module's own; its output is `NavMesh`'s 3D vertices.
-  - Doors are the leaf's footprint, as faery's were, and hints are subtracted as solids are, as
-    faery did; a solid's `margin` grows its footprint (`TODO(PAN16)` in `scenery_colliders.rs`).
-  - Footpaths as faery's `addTerrainPaths` cut them, from the input's path cells.
-  - Joining layers at stairs and ramps (`isSamePlane`, `projectVertexToPlane` in `NavRegion.ts`) is
-    left out and judged by reading in PAN16e, since it is where faery's bugs are likeliest.
-- **PAN16e Generator decision.** Recast's and PAN16d's meshes compared on build time, peak memory
-  (`tests/recast.rs` prints Recast's), whether the doorways stay open and how wide the stairways
-  stay (Recast's squeezes them tight, though open), polygon count, how closely the edges follow the
-  obstacles and the footpaths, in PAN16b's view; the port's layer joining judged by reading. Lands
-  as a decision. The loser's module and dependencies are removed, and with them the setting that
-  chose between them; the winner's grows into PAN16f.
+- **PAN16e Generator decision.** Recast's and the port's (`clipping`, D98) meshes compared on build
+  time, peak memory (`tests/generators.rs` prints both), whether the doorways stay open and how wide
+  the stairways stay (Recast's squeezes them tight, though open), polygon count, how closely the
+  edges follow the obstacles and the footpaths, in PAN16b's view. The port joins surfaces only where
+  their edges meet within half a climb; faery's joining (`isSamePlane`, `projectVertexToPlane` in
+  `NavRegion.ts`) judged by reading for what it would add. Lands as a decision. The loser's module
+  and dependencies are removed, and with them the setting that chose between them; the winner's
+  grows into PAN16f.
 - **PAN16f Navmesh generation.** The winning generator in the game, one mesh per precinct.
-  - Built from the precinct's own geometry alone, when it loads: the neighbours' obstacles are
-    PAN16g's, which intersects the two sides' boundary edges when a route crosses. An obstacle just
-    across the line does not narrow this side's mesh, so a route running beside the seam may pass
-    within the agent radius of it.
+  - Built for each precinct the simulation box overlaps (R8), nearest the viewpoint first, as
+    faery's `NavigationController` ordered them.
+  - Built from the precinct's own geometry alone: the neighbours' obstacles are PAN16g's, which
+    intersects the two sides' boundary edges when a route crosses. An obstacle just across the line
+    does not narrow this side's mesh, so a route running beside the seam may pass within the agent
+    radius of it.
   - Off the main thread, as ground, floor and flora meshes are (`AsyncComputeTaskPool`): the main
     thread only takes the input (`NavInputCapture`, D97), which copies descriptors and triangles
     rather than building anything, and the task does the rest. A route asked of a precinct whose
@@ -340,6 +321,8 @@ components and every layer restartable from saved state (R104).
     one query, so its cost is set before the query from PAN16f's table (passable at a cost, or
     blocked if automatic, or locked) and the door-use waypoints added after it, along the corridor
     (`findDoorUseLocation`).
+  - Portals: the portal area is set per query too, open to the player's click-to-move routes and
+    closed to NPCs' (R31), as faery's portal areas were.
   - Ladders: rerecast has no off-mesh links, so with either generator they are the query side's.
 
   Settle the choice with one scenario walkthrough: a guard routes through a door into the next

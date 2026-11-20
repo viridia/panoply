@@ -118,8 +118,7 @@ pub struct ColliderDesc {
     pub walkable: Option<bool>,
 
     /// Extra clearance kept around the collider when navigation maps are built: its footprint
-    /// grows by this much before the maps' boolean operations.
-    // TODO(PAN16d): read by the port; Recast reads it.
+    /// grows by this much beyond the agent's radius.
     #[reflect(@DisplayName("Margin"))]
     pub margin: Option<f32>,
 }

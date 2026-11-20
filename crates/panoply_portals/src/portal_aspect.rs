@@ -18,7 +18,7 @@ pub enum PortalSide {
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
 pub struct Portal {
-    /// Half-size of the aperture.
+    /// The aperture's width and height, centered on `offset`.
     #[reflect(@DisplayName("Size"))]
     pub size: Vec2,
 

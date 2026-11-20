@@ -18,6 +18,9 @@ the probe or the navigation view is suspect.
 - Navigation on builds the lair's mesh with Recast, doorways and footpaths included, and leaves
   the hand-made one alone. In `nav_recast.png`, the doorway near (50.5, 50.5) from above, amber
   between its jambs.
+- Clipping under Navigation builds every mesh again with the port of faery's builder. In
+  `nav_clipping.png`, the same doorway: a thin amber strip across it where the leaf closes, and
+  the jambs cut back square by the agent's radius.
 
 Settings start empty, so physics drawing and the navigation view start off and the panel hidden.
 """
@@ -186,6 +189,7 @@ def nav_view(driver):
     entity = driver.select(PRECINCT)[0]
     driver.call("world.remove_components", {"entity": entity, "components": [NAV_MESH]})
     driver.absent(NAV_VIEW)
+    clipping_mesh(driver)
 
 
 def recast_mesh(driver):
@@ -206,3 +210,29 @@ def recast_mesh(driver):
     driver.frames(10)
     driver.screenshot("nav_recast")
     driver.goto([116.0, 0.0, 49.0], 30.0)
+
+
+def clipping_mesh(driver):
+    """Choosing Clipping under Navigation builds every loaded precinct's mesh again with the port of
+    faery's builder, whose polygons are planar, so none carries detail triangles as Recast's do."""
+    driver.click("Clipping")
+    driver.frames(5)
+    generator = driver.get_resource(VIEWS, at="nav_generator")
+    assert generator == "Clipping", f"the generator is {generator}"
+
+    def built():
+        if not driver.select(LAIR_VIEW):
+            return False, "no view"
+        polygons = driver.get(LAIR, NAV_MESH, at="polygons")
+        with_detail = sum(1 for p in polygons if p["detail"])
+        return with_detail == 0, f"{with_detail} polygons with detail"
+
+    driver.wait(built, "the lair's clipping mesh", {"seconds": 30})
+    polygons = driver.get(LAIR, NAV_MESH, at="polygons")
+    areas = {area: sum(1 for p in polygons if p["area"] == area) for area in ("Door", "Path")}
+    print(f"lair, clipping: {len(polygons)} polygons, {areas}")
+    assert areas["Door"], "the lair's clipping mesh has no doorways"
+    assert areas["Path"], "the lair's clipping mesh has no footpaths"
+    driver.goto(DOORWAY, 12.0)
+    driver.frames(10)
+    driver.screenshot("nav_clipping")

@@ -11,7 +11,8 @@ use bevy::{
     feathers::{
         controls::{
             FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuPopup,
-            FeathersMenuToolButton, FeathersPane, FeathersSplitPane, FeathersSplitPaneHandle,
+            FeathersMenuToolButton, FeathersPane, FeathersRadio, FeathersSplitPane,
+            FeathersSplitPaneHandle,
         },
         display::icon,
         theme::{ThemeBackgroundColor, ThemedText},
@@ -20,7 +21,7 @@ use bevy::{
     prelude::*,
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
     ui::{InteractionDisabled, UiGlobalTransform, UiSystems},
-    ui_widgets::{split_pane_self_update, Activate, Pane, ValueChange},
+    ui_widgets::{split_pane_self_update, Activate, Pane, RadioGroup, ValueChange},
     window::PrimaryWindow,
 };
 use bevy_action_map::prelude::*;
@@ -30,6 +31,7 @@ use bevy_immediate::{
     Imm, ImmEntity,
 };
 use panoply_core::{realm_physics::collision_groups, GameViewNode, ViewOverlay, ViewportInset};
+use panoply_nav::NavGenerator;
 use rapier3d::prelude::Group;
 
 use crate::{
@@ -461,6 +463,19 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
                                     .checked(&mut views.tile_grid);
                                 checkbox(ui.ch_id("navigation"), "Navigation")
                                     .checked(&mut views.navigation);
+                                // The generator, indented under Navigation as the groups are
+                                // under Physics.
+                                ui.ch()
+                                    .on_spawn_insert(|| (column(UiRect::left(px(16))), RadioGroup))
+                                    .add(|ui| {
+                                        for (caption, generator) in [
+                                            ("Recast", NavGenerator::Recast),
+                                            ("Clipping", NavGenerator::Clipping),
+                                        ] {
+                                            radio(ui.ch_id(caption), caption)
+                                                .checked_if_eq(generator, &mut views.nav_generator);
+                                        }
+                                    });
                             });
                     });
             });
@@ -486,6 +501,17 @@ fn checkbox<'r, 'w, 's>(
 ) -> ImmEntity<'r, 'w, 's, CapsUiFeathers> {
     item.on_spawn_apply_scene(move || {
         bsn! { @FeathersCheckbox { @caption: bsn! { Text(caption) ThemedText } } }
+    })
+    .on_spawn_insert(move || Name::new(caption))
+}
+
+/// A feathers radio button showing `caption`, named after it.
+fn radio<'r, 'w, 's>(
+    item: ImmEntity<'r, 'w, 's, CapsUiFeathers>,
+    caption: &'static str,
+) -> ImmEntity<'r, 'w, 's, CapsUiFeathers> {
+    item.on_spawn_apply_scene(move || {
+        bsn! { @FeathersRadio { @caption: bsn! { Text(caption) ThemedText } } }
     })
     .on_spawn_insert(move || Name::new(caption))
 }

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X119.**
+**Next: X120.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -540,3 +540,6 @@ dropped, not deferred. Numbers are never reused.
   checked once its catalog loads: a missing label, or an exemplar of the wrong instance type for the
   function given it. A spawn or loot table could then be a function rather than data with paths
   written as strings. Shares X65's id scheme. *Gate:* the first spawn or loot table.
+- **X119** Simulation through portals: faery simulated, and built navigation meshes for, the
+  precincts within 8 m of each active portal's target in its realm (`SECONDARY_SIMULATION_RADIUS` in
+  `NavigationController.ts`), after the viewpoint's (R8). *Gate:* PAN16f lands.

@@ -28,8 +28,11 @@ unused number, so ids within a section are not always in order.
   actor (the player, followers) is defined in a global asset and always exists, but its model
   is spawned only near the viewpoint. Transient actors are deleted when their precinct stops
   being simulated.
-- **R8** A local actor is simulated only while its precinct is simulated. A global actor far
-  from the viewpoint is not simulated: there is no terrain loaded for it to navigate.
+- **R8** A local actor is simulated only while its precinct is simulated. A global actor far from
+  the viewpoint is not simulated: there is no terrain loaded for it to navigate. A precinct is
+  simulated while it overlaps the simulation box, 32 m either way about the viewpoint in its realm
+  (faery's `PRIMARY_SIMULATION_RADIUS`), usually the four precincts nearest it; NPCs run their own
+  logic there, and each such precinct needs a navigation mesh. Portals' targets are X119.
 - **R9** An actor is shown only while it is simulated, inside a visible area, and phased in.
 - **R100** Usually no more than a dozen actors are on screen at once.
 - **R10** Phasing: an aspect can make an actor present only in some quest stages. An actor

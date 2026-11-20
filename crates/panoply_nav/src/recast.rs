@@ -9,13 +9,9 @@
 
 use std::collections::HashMap;
 
-use bevy::math::{Quat, Vec2, Vec3, Vec3Swizzles};
-use panoply_core::{
-    metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F},
-    ToBevy,
-};
+use bevy::math::{Vec3, Vec3Swizzles};
+use panoply_core::metrics::{PRECINCT_SIZE, PRECINCT_SIZE_F};
 use panoply_scenery::{ColliderShape, ColliderType};
-use rapier3d::parry::shape::TypedShape;
 use rerecast::{
     AreaType, BuildContoursFlags, CompactHeightfield, ConvexVolume, DetailNavmesh, Heightfield,
     HeightfieldBuilder, PolygonNavmesh, Span, TriMesh,
@@ -23,20 +19,14 @@ use rerecast::{
 use thiserror::Error;
 
 use crate::{
+    agent::{
+        grown_hull, placed_triangles, AGENT_HEIGHT, AGENT_RADIUS, WALKABLE_CLIMB, WALKABLE_NORMAL_Y,
+    },
     NavAreaKind, NavCollider, NavEdge, NavInput, NavMesh, NavPolygon, PrecinctSide, SurfaceKind,
 };
 
-/// The agent the mesh is for: a human's capsule (`characters.exem.json`).
-const AGENT_RADIUS: f32 = 0.3;
-const AGENT_HEIGHT: f32 = 1.4;
-
-/// The steepest walkable ground: a normal's y of at least 0.7, as the character controller has
-/// (`WALKABLE_NORMAL_Y` in `actor_physics.rs`).
-const WALKABLE_NORMAL_Y: f32 = 0.7;
-
-/// The highest ledge counted as walkable from one cell to the next. A 45° slope rises a cell's
-/// width per cell, so this must exceed the largest cell size, or walkable slopes break apart.
-const WALKABLE_CLIMB: f32 = 0.2;
+// The climb (`WALKABLE_CLIMB`) must exceed the largest cell size: a 45° slope rises a cell's
+// width per cell, so a smaller climb breaks walkable slopes apart.
 
 /// Rerecast's defaults: polygons of at most six vertices; regions under 8² cells dropped and under
 /// 20² merged; contours kept within 1.3 cells, their edges at most 8 agent radii long; the detail
@@ -49,18 +39,16 @@ const MAX_EDGE_RADII: u16 = 8;
 const DETAIL_SAMPLE_CELLS: f32 = 6.;
 const DETAIL_MAX_ERROR_CELLS: f32 = 1.;
 
-/// The areas a door's footprint and a footpath mark; Recast reserves 0 for unwalkable and 255 for
-/// walkable.
+/// The areas a door's footprint, a footpath and a portal's aperture mark; Recast reserves 0 for
+/// unwalkable and 255 for walkable.
 const DOOR_AREA: AreaType = AreaType(1);
 const PATH_AREA: AreaType = AreaType(2);
+const PORTAL_AREA: AreaType = AreaType(3);
 
 /// How far a footpath's area reaches either side of its cells' middles. Narrower than the cells,
 /// as faery's paths were, so routes keep off a path's lip; wide enough to stay several cells
 /// across on the grid.
 const PATH_HALF_WIDTH: f32 = 0.3;
-
-/// The sides of a round shape's triangles, and of the polygon a footprint is grown by.
-const ROUND_SEGMENTS: u32 = 16;
 
 /// How Recast builds a mesh.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -185,8 +173,8 @@ pub fn build(input: &NavInput, settings: &RecastSettings) -> Result<NavMesh, Rec
 }
 
 /// The input as triangles: the ground and floors walkable where their slope allows, and the solid
-/// colliders' surfaces, walkable only on a collider marked walkable. Doors, hints and the other
-/// types are not rasterized: [`mark_areas`] takes doors and hints.
+/// colliders' surfaces, walkable only on a collider marked walkable. Doors, hints, portals and the
+/// other types are not rasterized: [`mark_areas`] takes doors, portals and hints.
 fn triangles(input: &NavInput) -> TriMesh {
     let mut trimesh = TriMesh::default();
     let mut add = |vertices: &[Vec3], indices: &[[u32; 3]], walkable: bool| {
@@ -220,25 +208,6 @@ fn triangles(input: &NavInput) -> TriMesh {
         }
     }
     trimesh
-}
-
-/// A collider's volume as triangles, where it stands in the precinct.
-fn placed_triangles(collider: &NavCollider) -> Option<(Vec<Vec3>, Vec<[u32; 3]>)> {
-    let (shape, pose) = collider.collider.volume()?;
-    let (vertices, indices) = match shape.as_typed_shape() {
-        TypedShape::Cuboid(cuboid) => cuboid.to_trimesh(),
-        TypedShape::Cylinder(cylinder) => cylinder.to_trimesh(ROUND_SEGMENTS),
-        TypedShape::Ball(ball) => ball.to_trimesh(ROUND_SEGMENTS, ROUND_SEGMENTS / 2),
-        TypedShape::ConvexPolyhedron(hull) => hull.to_trimesh(),
-        _ => return None,
-    };
-    let (offset, turn) = (pose.translation.to_bevy(), pose.rotation.to_bevy());
-    let facing = Quat::from_rotation_y(collider.facing);
-    let vertices = vertices
-        .into_iter()
-        .map(|v| collider.position + facing * (offset + turn * v.to_bevy()))
-        .collect();
-    Some((vertices, indices))
 }
 
 /// Fills the padding around the precinct with copies of its edge columns, each padding column
@@ -286,19 +255,21 @@ fn extend_edges(heightfield: &mut Heightfield, grid: &Grid) {
     }
 }
 
-/// Marks, after erosion, the areas the input gives: footpaths, then doors, then what blocks, each
-/// over the last where they overlap, so a hint beside a door wins. Marking only changes spans
-/// already walkable.
+/// Marks, after erosion, the areas the input gives: footpaths, then doors and portals, then what
+/// blocks, each over the last where they overlap, so a hint beside a door wins. Marking only
+/// changes spans already walkable.
 fn mark_areas(compact: &mut CompactHeightfield, input: &NavInput) {
+    let crossing = |kind: ColliderType, area: AreaType| {
+        input
+            .colliders
+            .iter()
+            .filter(move |c| c.collider.kind == kind)
+            .filter_map(move |c| door_volume(c, area))
+    };
     let volumes = path_volumes(input)
         .into_iter()
-        .chain(
-            input
-                .colliders
-                .iter()
-                .filter(|c| c.collider.kind == ColliderType::Door)
-                .filter_map(door_volume),
-        )
+        .chain(crossing(ColliderType::Door, DOOR_AREA))
+        .chain(crossing(ColliderType::Portal, PORTAL_AREA))
         .chain(input.colliders.iter().filter_map(blocking_volume));
     for volume in volumes {
         compact.mark_convex_poly_area(&volume);
@@ -382,11 +353,11 @@ fn path_volumes(input: &NavInput) -> Vec<ConvexVolume> {
     volumes
 }
 
-/// A door's doorway, as the `DOOR` area: the closed leaf's footprint grown by the agent's radius
-/// on each side across its thickness. The leaf alone is a cell or two thick on the grid, a sliver
-/// that contour simplification would lose and close the doorway with; grown, it spans walls up to
-/// 0.6 m thick (the cottage's are 0.4 m).
-fn door_volume(door: &NavCollider) -> Option<ConvexVolume> {
+/// A door's doorway, or a portal's, as `area`: the closed leaf's or the aperture's footprint grown
+/// by the agent's radius on each side across its thickness. The leaf alone is a cell or two thick
+/// on the grid, a sliver that contour simplification would lose and close the doorway with; grown,
+/// it spans walls up to 0.6 m thick (the cottage's are 0.4 m).
+fn door_volume(door: &NavCollider, area: AreaType) -> Option<ConvexVolume> {
     let mut desc = door.collider.clone();
     if let ColliderShape::Box { half_extents } = &mut desc.shape {
         if half_extents.x < half_extents.z {
@@ -399,7 +370,7 @@ fn door_volume(door: &NavCollider) -> Option<ConvexVolume> {
         collider: desc,
         ..door.clone()
     };
-    volume(&grown, 0., DOOR_AREA)
+    volume(&grown, 0., area)
 }
 
 /// Where routes do not go: a hint's footprint, and a solid's grown by its margin, each grown by
@@ -422,58 +393,13 @@ fn volume(collider: &NavCollider, grow: f32, area: AreaType) -> Option<ConvexVol
     let (min_y, max_y) = vertices.iter().fold((f32::MAX, f32::MIN), |(lo, hi), v| {
         (lo.min(v.y), hi.max(v.y))
     });
-    let mut points: Vec<Vec2> = vertices.iter().map(|v| v.xz()).collect();
-    if grow > 0. {
-        // Each point ringed by a polygon circumscribing a circle of `grow`, so the hull of them
-        // all covers every point within `grow` of the shape.
-        let reach = grow / (std::f32::consts::PI / ROUND_SEGMENTS as f32).cos();
-        points = points
-            .iter()
-            .flat_map(|&p| {
-                (0..ROUND_SEGMENTS).map(move |i| {
-                    let angle = i as f32 / ROUND_SEGMENTS as f32 * std::f32::consts::TAU;
-                    p + Vec2::from_angle(angle) * reach
-                })
-            })
-            .collect();
-    }
-    let hull = convex_hull(points);
+    let hull = grown_hull(vertices.iter().map(|v| v.xz()), grow);
     (hull.len() >= 3).then(|| ConvexVolume {
         vertices: hull.iter().map(|p| p.to_array().into()).collect(),
         min_y: min_y - WALKABLE_CLIMB,
         max_y,
         area,
     })
-}
-
-/// The convex hull of `points` (Andrew's monotone chain), counter-clockwise in x and y.
-fn convex_hull(mut points: Vec<Vec2>) -> Vec<Vec2> {
-    points.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
-    points.dedup();
-    if points.len() < 3 {
-        return points;
-    }
-    let turn = |o: Vec2, a: Vec2, b: Vec2| (a - o).perp_dot(b - o);
-    let mut hull: Vec<Vec2> = Vec::with_capacity(points.len() * 2);
-    for pass in 0..2 {
-        let start = hull.len();
-        let ordered: Box<dyn Iterator<Item = &Vec2>> = if pass == 0 {
-            Box::new(points.iter())
-        } else {
-            Box::new(points.iter().rev())
-        };
-        for &p in ordered {
-            while hull.len() >= start + 2
-                && turn(hull[hull.len() - 2], hull[hull.len() - 1], p) <= 0.
-            {
-                hull.pop();
-            }
-            hull.push(p);
-        }
-        // The last point of each chain starts the other.
-        hull.pop();
-    }
-    hull
 }
 
 /// Rerecast's polygons and detail as a [`NavMesh`]: vertices in meters, their heights from the
@@ -526,6 +452,7 @@ fn nav_mesh(polygons: &PolygonNavmesh, detail: &DetailNavmesh, grid: &Grid) -> N
             edges,
             area: match polygons.areas[index] {
                 DOOR_AREA => NavAreaKind::Door,
+                PORTAL_AREA => NavAreaKind::Portal,
                 PATH_AREA => NavAreaKind::Path,
                 _ => NavAreaKind::Walkable,
             },
@@ -563,20 +490,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_hull_drops_inner_points() {
-        let points = vec![
-            Vec2::new(0., 0.),
-            Vec2::new(1., 0.),
-            Vec2::new(0.5, 0.5),
-            Vec2::new(1., 1.),
-            Vec2::new(0., 1.),
-        ];
-        let hull = convex_hull(points);
-        assert_eq!(hull.len(), 4);
-        assert!(!hull.contains(&Vec2::new(0.5, 0.5)));
-    }
-
-    #[test]
     fn a_door_grows_across_its_thickness() {
         let door = NavCollider {
             position: Vec3::ZERO,
@@ -589,7 +502,7 @@ mod tests {
                 ..Default::default()
             },
         };
-        let volume = door_volume(&door).unwrap();
+        let volume = door_volume(&door, DOOR_AREA).unwrap();
         let xs = volume.vertices.iter().map(|v| v.x);
         let width = xs.clone().fold(f32::MIN, f32::max) - xs.fold(f32::MAX, f32::min);
         assert!((width - 0.7).abs() < 1e-4, "{width}");

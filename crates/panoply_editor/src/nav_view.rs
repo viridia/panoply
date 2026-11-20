@@ -27,6 +27,11 @@ const FILL_LIFT: f32 = 0.02;
 /// A fraction of the depth, not a distance (`Gizmo`).
 const EDGE_DEPTH_BIAS: f32 = -0.001;
 
+/// How opaque the fills and edges are where the ground or scenery hides them, as a fraction of
+/// their alpha: enough to follow a polygon that runs under the terrain.
+const UNDERLAY: f32 = 0.8;
+const EDGE_UNDERLAY: f32 = 0.35;
+
 /// The view of one precinct's mesh, a child of the precinct: its edges, and a [`NavAreaFill`]
 /// child for each area kind the mesh has.
 #[derive(Component)]
@@ -73,6 +78,7 @@ fn area_color(area: NavAreaKind) -> Color {
         NavAreaKind::Walkable => tailwind::SKY_500.with_alpha(0.3).into(),
         NavAreaKind::Door => tailwind::AMBER_400.with_alpha(0.6).into(),
         NavAreaKind::Path => tailwind::VIOLET_400.with_alpha(0.4).into(),
+        NavAreaKind::Portal => tailwind::EMERALD_400.with_alpha(0.6).into(),
     }
 }
 
@@ -106,19 +112,23 @@ fn rebuild_views(
             warn!("Precinct {}: bad navigation mesh: {error}", precinct.coords);
         }
         let mut lines = GizmoAsset::default();
+        let mut hidden_lines = GizmoAsset::default();
         for (a, b, edge) in edges(mesh) {
-            lines.line(a, b, edge_color(edge));
+            let color = edge_color(edge);
+            lines.line(a, b, color);
+            hidden_lines.line(a, b, color.with_alpha(color.alpha() * EDGE_UNDERLAY));
         }
+        let line_config = GizmoLineConfig {
+            width: 2.0,
+            ..default()
+        };
         let view = commands
             .spawn((
                 Name::new("NavMeshView"),
                 NavMeshView,
                 Gizmo {
                     handle: gizmos.add(lines),
-                    line_config: GizmoLineConfig {
-                        width: 2.0,
-                        ..default()
-                    },
+                    line_config: line_config.clone(),
                     depth_bias: EDGE_DEPTH_BIAS,
                 },
                 Propagate(precinct.render_layer.clone()),
@@ -127,13 +137,25 @@ fn rebuild_views(
                 ChildOf(entity),
             ))
             .id();
+        // Retained gizmos have no underlay, so the edges are drawn again, faint, in front of
+        // everything (a depth bias of -1), as the fills' underlay shows them where hidden.
+        commands.spawn((
+            Name::new("NavEdgeUnderlay"),
+            Gizmo {
+                handle: gizmos.add(hidden_lines),
+                line_config,
+                depth_bias: -1.,
+            },
+            Transform::default(),
+            ChildOf(view),
+        ));
         for (area, polygons) in fills(mesh) {
             commands.spawn((
                 Name::new("NavAreaFill"),
                 NavAreaFill(polygons),
                 OverlayColor {
                     base: area_color(area),
-                    underlay: 0.3,
+                    underlay: UNDERLAY,
                 },
                 Transform::default(),
                 ChildOf(view),

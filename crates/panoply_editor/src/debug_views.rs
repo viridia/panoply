@@ -14,6 +14,7 @@ use panoply_core::{
     realm_physics::{collision_groups, group_filter},
     RealmPhysics, ToBevy, ToRapier, Viewpoint,
 };
+use panoply_nav::NavGenerator;
 use panoply_terrain::Parcel;
 use rapier3d::{
     pipeline::{DebugColor, DebugRenderBackend, DebugRenderMode, DebugRenderObject},
@@ -33,6 +34,8 @@ pub struct DebugViews {
     pub tile_grid: bool,
     /// Draw each precinct's navigation mesh (`nav_view`).
     pub navigation: bool,
+    /// Which generator builds the meshes drawn (`nav_build`).
+    pub nav_generator: NavGenerator,
 }
 
 impl Default for DebugViews {
@@ -42,6 +45,7 @@ impl Default for DebugViews {
             physics_groups: Group::ALL.bits(),
             tile_grid: true,
             navigation: false,
+            nav_generator: NavGenerator::default(),
         }
     }
 }

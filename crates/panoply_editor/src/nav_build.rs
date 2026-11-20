@@ -1,18 +1,17 @@
-//! Builds the loaded precincts' navigation meshes for the navigation view (`nav_view`), with
-//! Recast: each precinct without a mesh when Navigation turns on, and each that loads while it is
-//! on, once the precinct and its parcels are ready. Built once: an edit does not rebuild a mesh,
-//! and a mesh removed stays removed.
+//! Builds the loaded precincts' navigation meshes for the navigation view (`nav_view`), with the
+//! generator the Show menu chooses: each precinct without a mesh when Navigation turns on, and each
+//! that loads while it is on, once the precinct and its parcels are ready. Built once: an edit does
+//! not rebuild a mesh, and a mesh removed stays removed, until another generator is chosen, which
+//! builds every precinct's again.
 
 use bevy::{
     prelude::*,
     tasks::{futures::check_ready, AsyncComputeTaskPool, Task},
 };
-use panoply_nav::{
-    recast::{self, RecastError, RecastSettings},
-    NavInputCapture, NavMesh, PrecinctNavMesh,
-};
-use panoply_scenery::{precinct::Precinct, SceneryPending, PRECINCT_SIZE};
-use panoply_terrain::{TerrainPending, PARCEL_SIZE};
+use panoply_core::Viewpoint;
+use panoply_nav::{NavGenerator, NavInputCapture, NavMesh, PrecinctNavMesh};
+use panoply_scenery::{precinct::Precinct, SceneryPending, PRECINCT_SIZE_F};
+use panoply_terrain::TerrainPending;
 
 use crate::debug_views::DebugViews;
 
@@ -22,7 +21,7 @@ struct WantsNavMesh;
 
 /// A precinct's mesh being built.
 #[derive(Component)]
-struct NavMeshBuild(Task<Result<NavMesh, RecastError>>);
+struct NavMeshBuild(Task<Result<NavMesh, String>>);
 
 pub struct NavBuildPlugin;
 
@@ -41,17 +40,30 @@ impl Plugin for NavBuildPlugin {
     }
 }
 
-/// When Navigation turns on, every loaded precinct without a mesh wants one.
+/// When Navigation turns on, every loaded precinct without a mesh wants one; while it is on with a
+/// generator other than the one the meshes were built with, every precinct wants a new one, and
+/// the builds under way are dropped.
 fn want_meshes(
     views: Res<DebugViews>,
     mut was_on: Local<bool>,
-    precincts: Query<Entity, (With<Precinct>, Without<PrecinctNavMesh>)>,
+    mut built_with: Local<Option<NavGenerator>>,
+    precincts: Query<(Entity, Has<PrecinctNavMesh>), With<Precinct>>,
     mut commands: Commands,
 ) {
     let turned_on = views.navigation && !*was_on;
     *was_on = views.navigation;
-    if turned_on {
-        for entity in &precincts {
+    if !views.navigation {
+        return;
+    }
+    let rebuild = built_with.is_some_and(|g| g != views.nav_generator);
+    *built_with = Some(views.nav_generator);
+    for (entity, has_mesh) in &precincts {
+        if rebuild {
+            commands
+                .entity(entity)
+                .remove::<(PrecinctNavMesh, NavMeshBuild)>()
+                .insert(WantsNavMesh);
+        } else if turned_on && !has_mesh {
             commands.entity(entity).insert(WantsNavMesh);
         }
     }
@@ -70,9 +82,13 @@ fn want_new_precincts(
     }
 }
 
-/// Captures the input of each wanting precinct whose scenery and parcels are ready, and builds its
-/// mesh off the main thread.
+/// Captures the input of each wanting precinct in the viewpoint's realm whose colliders are ready,
+/// and builds its mesh off the main thread. Only the colliders navigation reads are waited on, as
+/// physics on that ground waits (`area_waiting`), not the scenes that are only drawn. A precinct
+/// seen through a portal, in another realm, waits until the viewpoint is in its realm.
 fn start_builds(
+    views: Res<DebugViews>,
+    viewpoint: Res<Viewpoint>,
     wanting: Query<(Entity, &Precinct), With<WantsNavMesh>>,
     scenery: SceneryPending,
     terrain: TerrainPending,
@@ -82,33 +98,29 @@ fn start_builds(
     if wanting.is_empty() {
         return;
     }
-    let precincts = scenery.survey();
-    let parcels = terrain.survey();
     for (entity, precinct) in &wanting {
-        let ready = precincts.iter().any(|p| {
-            p.realm == precinct.realm && p.coords == precinct.coords && p.pending.is_empty()
-        });
-        let side = PRECINCT_SIZE / PARCEL_SIZE;
-        let first = precinct.coords * side;
-        let parcels_ready = parcels
-            .iter()
-            .filter(|p| {
-                p.realm == precinct.realm
-                    && p.pending.is_empty()
-                    && (first.x..first.x + side).contains(&p.coords.x)
-                    && (first.y..first.y + side).contains(&p.coords.y)
-            })
-            .count()
-            == (side * side) as usize;
-        if !(ready && parcels_ready) {
+        if viewpoint.realm != Some(precinct.realm) {
+            continue;
+        }
+        let area = Rect::from_corners(
+            precinct.coords.as_vec2() * PRECINCT_SIZE_F,
+            (precinct.coords + 1).as_vec2() * PRECINCT_SIZE_F,
+        );
+        // The rect's far edges lie on the next parcels' near edges; pulled in so they are not
+        // waited on.
+        let area = area.inflate(-0.5);
+        if scenery.area_waiting(precinct.realm, area).is_some()
+            || terrain.area_waiting(precinct.realm, area).is_some()
+        {
             continue;
         }
         let mut entity_commands = commands.entity(entity);
         entity_commands.remove::<WantsNavMesh>();
         match capture.capture(precinct.realm, precinct.coords) {
             Ok(input) => {
-                let task = AsyncComputeTaskPool::get()
-                    .spawn(async move { recast::build(&input, &RecastSettings::default()) });
+                let generator = views.nav_generator;
+                let task =
+                    AsyncComputeTaskPool::get().spawn(async move { generator.build(&input) });
                 entity_commands.insert(NavMeshBuild(task));
             }
             Err(error) => warn!("Precinct {}: no navigation input: {error}", precinct.coords),

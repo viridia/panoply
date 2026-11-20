@@ -59,6 +59,8 @@ pub enum NavAreaKind {
     Door,
     /// A footpath, narrower than its cobbles, so routes keep off its edge.
     Path,
+    /// A portal's aperture, which the player's routes cross and NPCs' do not (R31).
+    Portal,
 }
 
 /// A side of a precinct.

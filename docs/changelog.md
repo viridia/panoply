@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN16d** The Show menu chooses Recast or a port of faery's builder for the navigation meshes.
 - **PAN16c** The navigation view shows Recast's meshes, doorways and footpaths marked; doors placed.
 - **PAN16b** The editor's Show menu draws each precinct's navigation mesh, by area and edge kind.
 - **PAN16a** Navigation's mesh type, and two playground precincts' input saved for its tests.

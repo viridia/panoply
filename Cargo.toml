@@ -46,6 +46,8 @@ bevy_immediate = { git = "https://github.com/viridia/bevy_immediate", branch = "
 bitflags = "2.4.2"
 earcutr = "0.4.3"
 futures-lite = "2.2.0"
+i_overlay = "9.2.0"
+i_triangle = "0.51.0"
 lru = "0.11.0"
 panoply_actors = { path = "crates/panoply_actors" }
 panoply_core = { path = "crates/panoply_core" }

@@ -6,6 +6,7 @@ use std::path::Path;
 
 use bevy::{ecs::system::SystemParam, prelude::*};
 use panoply_core::{realm_physics::collision_groups, RealmPhysics, ToBevy, ToRapier};
+use panoply_portals::Portal;
 use panoply_scenery::{
     precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, ColliderShape, ColliderType,
     SceneryColliders, TerrainFxMap, PRECINCT_SIZE, PRECINCT_SIZE_F,
@@ -138,7 +139,15 @@ pub struct NavInputCapture<'w, 's> {
             Option<&'static TerrainFxMap>,
         ),
     >,
-    elements: Query<'w, 's, (&'static SceneryElement, &'static SceneryColliders)>,
+    elements: Query<
+        'w,
+        's,
+        (
+            &'static SceneryElement,
+            &'static SceneryColliders,
+            Option<&'static Portal>,
+        ),
+    >,
     parcels: Query<'w, 's, &'static Parcel>,
     realms: Query<'w, 's, &'static RealmPhysics>,
 }
@@ -165,7 +174,10 @@ impl NavInputCapture<'_, '_> {
         };
 
         // Children that are not elements with colliders (tiers, floors) are skipped.
-        for (element, colliders) in self.elements.iter_many(children).flatten() {
+        for (element, colliders, portal) in self.elements.iter_many(children).flatten() {
+            input
+                .colliders
+                .extend(portal.map(|p| portal_aperture(element.position, element.facing, p)));
             input.colliders.extend(
                 colliders
                     .0
@@ -221,6 +233,34 @@ fn footpaths(effects: Option<&TerrainFxMap>) -> Vec<bool> {
         })
         .collect()
 }
+
+/// A portal's aperture as a `Portal` collider: a thin box standing on its bottom edge, as wide and
+/// tall as the aperture, which the generators mark as a portal area, as faery did, so a route
+/// crosses it or not by who asks (R31: the player's click-to-move may, NPCs may not). The aperture
+/// faces the element's x, turned by its `y_rotation` (`active_portal.rs`); its other turns are
+/// left out. `position` and `facing` are the element's.
+fn portal_aperture(position: Vec3, facing: f32, portal: &Portal) -> NavCollider {
+    // The collider's offset turns with its facing, so the offset is turned back by the
+    // aperture's own turn first.
+    let turn = portal.y_rotation.unwrap_or(0.);
+    let offset = Quat::from_rotation_y(-turn) * (portal.offset - Vec3::Y * portal.size.y / 2.);
+    NavCollider {
+        position,
+        facing: facing + turn,
+        collider: ColliderDesc {
+            shape: ColliderShape::Box {
+                half_extents: Vec3::new(PORTAL_HALF_DEPTH, portal.size.y / 2., portal.size.x / 2.),
+            },
+            kind: ColliderType::Portal,
+            offset: Some(offset),
+            ..default()
+        },
+    }
+}
+
+/// Half a portal's depth through its aperture: thin, as the aperture is a plane; faery's was 0.1 m
+/// at least.
+const PORTAL_HALF_DEPTH: f32 = 0.05;
 
 /// The colliders on `body` in `group`.
 fn body_colliders(
@@ -290,4 +330,29 @@ fn trunk_colliders(collider: &Collider, origin: Vec3) -> Vec<NavCollider> {
             })
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::agent::placed_triangles;
+
+    /// The brick entrance's aperture: 2 m wide and 1.6 m tall, centered 0.8 m up, 0.3 m along x
+    /// and 0.5 m along z, so its collider stands on the ground across the doorway.
+    #[test]
+    fn a_portal_collider_covers_its_aperture() {
+        let portal = Portal {
+            size: Vec2::new(2., 1.6),
+            offset: Vec3::new(0.3, 0.8, 0.5),
+            ..default()
+        };
+        let aperture = portal_aperture(Vec3::new(10., 0., 20.), 0., &portal);
+        assert_eq!(aperture.collider.kind, ColliderType::Portal);
+        let (vertices, _) = placed_triangles(&aperture).unwrap();
+        let min = vertices.iter().copied().fold(Vec3::MAX, Vec3::min);
+        let max = vertices.iter().copied().fold(Vec3::MIN, Vec3::max);
+        let close = |a: Vec3, b: Vec3| (a - b).abs().max_element() < 1e-4;
+        assert!(close(min, Vec3::new(10.25, 0., 19.5)), "{min}");
+        assert!(close(max, Vec3::new(10.35, 1.6, 21.5)), "{max}");
+    }
 }
