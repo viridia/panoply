@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D103.**
+**Next: D109.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -680,7 +680,7 @@ never reused.
   remarks). An aspect per package needs keyed or external aspects, still open for goals; one
   ordinary aspect needs neither, can be built now, and keeps a guard's quest lines an override, not
   an added aspect. Given up: a quest's goals and lines travelling as one bundle, and two mods adding
-  lines to one character both surviving (X74). Reversing it means dialogue in behavior packages.
+  lines to one character both surviving (X123). Reversing it means dialogue in behavior packages.
   (PAN99)
 - **D87** A precinct instance's `SceneryInstanceId` is `External`, a name saved with it, or
   `Internal`, a number assigned as the precinct loads, neither saved nor stable across edits.
@@ -852,3 +852,72 @@ never reused.
   weighs what its size does; a heavier player made NPCs give way unnaturally. PAN16i's route costs
   read the same `actor_weight`. Reversing it means rapier bodies for actors, or an authored weight.
   (PAN90)
+- **D103** An override replaces a whole aspect, and fields set at different stages go in different
+  aspects, as `Portal` and `PortalTarget` do: a chest's container type in `Container`, its key in
+  `Lock` ([Exemplars.md](Exemplars.md), Config and state). No field inherits alone; X99 keeps its
+  gate. In faery no field was set at both stages, and instances changed an aspect's config only
+  twice, by mistake ([faery.md](faery.md), Aspects), so the split follows lines its aspects already
+  drew. A scripted aspect splits the same way: its `instance` block is an aspect of its own,
+  overridden apart (PAN104). Given up: an instance that wants a field of its exemplar's stage
+  restates that whole aspect. Reversing it means `Inherit<T>` fields and a property editor that
+  shows each as inherited or set. (PAN99)
+- **D104** An instance may add aspects its exemplar chain lacks, but never remove an inherited one,
+  as in faery, which added them 23 times, for per-character behavior and for logic doors
+  ([faery.md](faery.md), Aspects). So `Lock` is a mixin any chest takes, rather than a chest and a
+  lockable chest being two exemplars. A formula on the exemplar that reads an aspect only instances
+  add reads it as optional (`?.`, `??`), which D71's check allows ([Exemplars.md](Exemplars.md),
+  Config and state), and an instance that adds an aspect with state gets an external id, as D88
+  gives one whose chain has it. Dropping inherited content is the aspect's own, as `Dialogues`'
+  `inherit` flag does (D86). Reversing it means behavior and wiring on per-instance exemplars.
+  (PAN99)
+- **D105** State that native systems read is a native component, and behavior over it may be
+  scripted. A scripted aspect writes its own state and the native components declared for scripts to
+  write, never another scripted aspect's fields, so native code never knows a script's field names,
+  and one scripted aspect drives another only through native state or formulas reading it. faery's
+  aspects composed through one namespace of fields per instance, so `wall:directDoor` drove `door`'s
+  `open` by name, and its container screen closed the lid by writing it ([faery.md](faery.md),
+  Aspects). A door's open and locked state stays native, since routing reads it (PAN16j), while a
+  key check or a trap's timing can be a script (PAN106). Reversing it means native systems reading
+  scripted fields by name. (PAN99)
+- **D106** Whether an actor is present (R10) is a native component, since the actor controller, the
+  editor and paused goals read it (D105), and the conditions it combines come from aspects: a
+  behavior package's `present` hook, a reactive formula in PAN104's set, and a native
+  `Presence { when }` aspect, which an instance placed for one quest stage adds (R85, D104). The
+  actor is present when it has no condition or any condition holds, as in faery, whose three uses
+  phase *Up in Arms*' Sergeant Stone and Crimson Watch (`heroncreek.tsx`); the latch that keeps an
+  actor on screen until it leaves, and the editor showing every actor, stay native. faery's other
+  actor hook, `idle`, has no successor: its one use, `combatant`'s stance while in combat, is an
+  animation state (D48) that comes with combat, falling back to `Stand`; a character's own idle clip
+  is `ClipNames`', and idle activities are `Pose` goals. Reversing it means presence decided by one
+  aspect, or an idle hook choosing clips. (PAN99)
+- **D107** An aspect is native, a Rust type, or scripted, declared in a `.saga` module (PAN104);
+  behavior packages are scripted aspects ([Exemplars.md](Exemplars.md), Packages written in SAGA).
+  Both are aspects in every sense: the union, `OwnedAspects`, the editor, undo and the files key
+  them by an aspect key, not a `TypeId`: a native aspect's short type name, as the files write it
+  now, or a scripted one's package path and name, whose `::` keeps the two apart. An aspect's state
+  is a component on its entity, as D74 has it for native aspects, so reactions and saves treat both
+  kinds alike. So is its config by default: attach inserts the resolved config, as every native
+  aspect does now, so systems query it, formulas track it, and a reapplied aspect reaches them as a
+  change; an aspect whose config nothing queries may skip it, where memory or archetype counts ask.
+  A native aspect's config is a `Bundle`: several components where systems want them apart, `()`
+  where nothing queries it, so skipping is a type, and detaching is a generic `remove` of the bundle
+  rather than a hand-written detach per aspect. `Aspect` itself stays dyn-compatible, the bundle
+  typed behind a per-type erased layer, as `GoalEval::of::<Self>()` is for goals (X17). A scripted
+  aspect's config is one registered component, or none when it declares no config. The entity's
+  union also keeps each aspect's resolved definition, beside its detach, so that gathering like data
+  from aspects of different kinds (an actor's goals from several packages), which Bevy's queries
+  cannot, iterates one entity's aspect list and calls trait methods; where there is no entity, as
+  for an item in an inventory, the definition is read from the asset (`find_aspect`). Gathering
+  across kinds for every entity every frame stays dear, and nothing needs it. Native and scripted
+  aspects look and behave the same in the editor, as far as that can be made true: one aspect list,
+  one add menu, the same inherited and overridden display, rows edited through reflection, and an
+  instance part grouped with its aspect, whether it is a scripted `instance` block or a native pair
+  such as `Portal` and `PortalTarget`. So an author never needs to know which kind an aspect is.
+  Given up: a package as an asset type of its own. Reversing it means behavior kept out of the
+  aspect list. (PAN99)
+- **D108** A missing piece costs only itself. A quest role whose actor is missing stays unbound and
+  is logged, as a missing fixture is, and the quest goes on (D47). A scripted aspect whose module is
+  missing or fails to compile is not attached, and its instance's data for it is kept as written, so
+  a save writes it back unchanged (X20). A goal `tree` that fails to compile disables the aspects
+  that use it, not its module, as a formula in an asset fails alone (D69). Reversing it means a
+  module's error taking its precinct or its character with it. (PAN99)

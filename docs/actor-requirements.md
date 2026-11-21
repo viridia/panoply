@@ -133,11 +133,10 @@ what counts as a valid route) or behavior. Which part handles each is not yet de
   view and walks in. Skyrim's followers are the model. *Open:* when a stuck follower cheats
   (distance, time, out of view), and how a quest or scene keeps a follower from reaching the
   player.
-- **R85** An NPC who meets the player in several places is a separate placed instance at each,
-  each present only in its quest stages (R10); none travels between them. Quest NPCs cannot be
-  killed or targeted, so their inventory is never reachable (R74). *Open:* whether the
-  instances share an identity (instance variables, the quest role R72 resolving to the present
-  one).
+- **R85** An NPC who meets the player in several places is a separate placed instance at each, each
+  present only in its quest stages (R10); none travels between them. Quest NPCs cannot be killed or
+  targeted, so their inventory is never reachable (R74). *Open:* whether the instances share an
+  identity (instance variables, a reference (R72) resolving to the present one).
 - **R86** Followers keep out of the player's personal space and out of each other's way. Both the
   pathfinder and the controller contribute. The pathfinder cuts exclusion zones where other actors
   stand out of the navigation mesh (boolean operations), so routes and destinations avoid them.
@@ -346,7 +345,9 @@ fireplace with a spoon, Poul alternating between the anvil and the forge.
 - **R70** The player has a target instance (what they are attacking or talking to); setting it
   turns the player toward it.
 - **R71** Aspects provide the interactions the player sees on an actor, depending on combat.
-- **R72** Quest roles name actors for quests; the quest system finds an actor by role.
+- **R72** A quest or cut scene names the actors it involves by instance reference, as faery's cut
+  scenes did (`resolveInstanceRef`); naming across precincts is PAN79's. faery's quest roles, a role
+  list on aspects that filled a quest's cast, were never read, and have no successor.
 - **R73** Queries: actors overlapping a box, actors within a radius of a point (each with a
   predicate), actors in a group, actors with an aspect.
 

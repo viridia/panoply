@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN108.**
+**Next: PAN111.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -127,46 +127,95 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   one fixture with an ordered list of points, not a fixture per point: a guard's field names one id,
   and the order is the list's. Its points are stored relative to the fixture, so PAN92's gizmo moves
   and turns the whole route; faery's were in world space.
-- **PAN93 Make global**, on PAN88's selection. A toggle that takes the selected actor out of its
-  precinct, as faery's did. Where a global actor is kept, and how it loads and saves, is decided in
-  the chunk; read faery's first.
+- **PAN93 Make global.** *Needs:* PAN110. On PAN88's selection, a toggle that takes the selected
+  actor out of its precinct, as faery's did. Where a global actor is kept, and how it loads and
+  saves, is decided in the chunk; read faery's first. If quests compose behavior by roles
+  ([Exemplars.md](Exemplars.md), Quest-side composition), every actor a quest names is global: then
+  whether its goal trees spawn only while it is simulated, and whether its place saves, unlike D80's
+  local actors.
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
   drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
   `SelectSceneryRectTool` made a rect into a cutaway is read in the chunk.
+
+## Review
+
+The engine's design, seen whole, and what follows from it.
+
+- **PAN109 Engine review.** A de novo review of the engine's design: about 50,000 lines of Rust,
+  which fit no one context, so map, then reduce. The map is distillation by a cheap model, file by
+  file, as `local_sweep.py` does now: a fixed set of factual questions (what a file defines, the
+  systems it runs and where they are scheduled, the components, resources and events it reads and
+  writes, what it cites from the ledgers), answered with line citations and never judgments, since a
+  weaker model drifts and invents sooner. It gains a DeepSeek backend beside Ollama's, the author's
+  choice over a week of Claude's tokens; sending the source to a hosted API is the author's to
+  approve, and a local DeepSeek through Ollama is the other way. A checker, `sweep_check.py`, tests
+  each citation mechanically: the lines exist and hold the identifier the claim names, so drift is
+  caught before anything builds on it. Then Claude reduces: per crate, a brief from its files'
+  answers (responsibilities, data flow, public surface, dependencies, where it disagrees with the
+  decisions it cites, and what looks accidental: duplication, faery-shaped structure, D23, dead
+  ends); then one pass over the briefs with the ledgers and design docs, for what no crate shows
+  alone: layering, which code owns which fact, identity and lifetime (PAN110), systems' order across
+  crates. Findings go to [issues.md](issues.md) for the author to route; any acted on is read at the
+  source first.
+- **PAN110 Instance identity.** *Needs:* PAN109. How an instance is named and found across the
+  world, for actors, walls and fixtures alike: ids unique per realm or game-wide, kept in a global
+  index from id to realm and precinct (beside PAN100's precinct index), so a reference never names a
+  precinct and survives its instance moving to another; which records stay resident while a quest or
+  relay names them, as the Creation Kit makes a referenced object persistent, its model still loaded
+  only nearby; references filled by picking, never typed. It may rethink actors: whether R7's local
+  and global actors become one kind, with D80's authored places, PAN93's toggle and R85's open
+  question of one identity across appearances. Prior art: Bethesda's FormIDs and persistent
+  references; Unreal World Partition's actor paths, soft references, actors not spatially loaded,
+  and Data Layers; Unity's GUID-based references across scenes. Proved by a walkthrough over
+  [Exemplars.md](Exemplars.md)'s three quests and PAN79's relay. Revises D87; X123 and PAN79's
+  naming follow it.
 
 ## Aspects
 
 What an aspect is, and how an instance overrides its exemplar's, for behavior and for the scripted
 aspects that mechanisms, containers and signs are built on.
 
-- **PAN99 Aspect model, decided.** Research, then a branch: settles [Exemplars.md](Exemplars.md),
-  Composing behavior, whether an aspect is a component or a definition, and with it whether an
-  instance may add aspects (PAN28e); dialogue and remarks are settled (D86). It settles too
-  [Exemplars.md](Exemplars.md), Config and state, which revises D88 or meets X99's gate. A scenario
-  walkthrough of the leading alternatives (aspects as definitions; native and external aspects),
-  each step tagged asset, formula or native, over a sample: faery's 15 per-character aspects
-  (`behaviors/demo.tsx`, `tambry.tsx`, `heroncreek.tsx`) and its generic behavior (`standard.ts`,
-  `work.ts`); its aspects that touch behavior (`conversant`, `follower`, `shop`, `combat`) and logic
-  doors (`mechanisms.ts`); the portal and container aspects; quests at Marheim's scale, which the
-  author supplies; and the scripted cases to come: PAN79's relay, binding its roles while keeping
-  its exemplar's tuning, PAN106's chest that the silver key opens, and PAN78's sign. Its gaps answer
-  the open questions: an aspect an exemplar declares and an instance must supply (`PortalTarget`), a
-  package on disk before BSN (X1), formulas embedded in assets, and a missing or unknown piece (D47,
-  X20). Then a branch, in its own worktree, implements the chosen alternative's plumbing, with no
-  goal runtime: an aspect key in place of the `TypeId` in the union, the short type path in the
-  editor and the type name in the files; an external aspect, attached but inert; the add menu
-  listing package assets; saving and undo with keyed entries; `find_aspect` still reading native
-  aspects along the chain. It measures the cost and finds what the audit missed, and is kept if it
-  stands on its own. Lands as a decision, with X17, PAN28e and X74 brought in line.
-- **PAN104 Scripted aspects.** *Needs:* PAN99, PAN105. An aspect declared in a SAGA script, as
-  faery's scripted aspects were, with fields and hooks. Its fields are config or state as PAN99
-  divides them (the syntax is open: perhaps `@` marks config, after BSN), each of a reflected Rust
-  type the property editor already edits, so the layer above reflection (X64) is a list of rows,
-  each edited through reflection; a field of a struct declared in SAGA waits for a use. Its hooks
-  are not methods but a fixed set of reactive callbacks the engine knows. Proved by one aspect on
-  one entity, whose state a formula elsewhere reads; wiring across entities is PAN79's. This
-  reverses [modding.md](modding.md), Types a mod declares, and meets X64's gate.
+- **PAN108 Aspect keys.** D107's plumbing, native only, with no goal runtime: an aspect key in place
+  of the `TypeId` in `UpdateAspects` and `OwnedAspects`, the short type path in the editor (adding,
+  removing, undo, each aspect's property root) and the type name in the files; each native aspect's
+  config a `Bundle` behind a dyn-compatible `Aspect`, detached by a generic `remove` in place of the
+  hand-written `RemoveComponent` statics; `OwnedAspects` keeping each aspect's resolved definition
+  beside its detach, with a per-entity iteration over them for gathering across kinds; a test aspect
+  registered by a key that is not a Rust type, attached and detached but inert, standing in for a
+  scripted one until PAN104; `find_aspect` still reading native aspects along the chain. Nothing a
+  player or author sees changes.
+- **PAN104 Scripted aspects.** *Needs:* PAN105, PAN108. An aspect declared in a SAGA script, as
+  faery's scripted aspects were, with fields and hooks. A `.saga` module declares any number of
+  named aspects, keyed by package path and name, each naming the kinds of instance it attaches to
+  (`aspect Lock for Fixture, Wall`), as `Aspect::can_attach` does. A field is config, unmarked;
+  `state`, which play changes and a save keeps, starting from its authored value (D74); or
+  `derived`, a formula recomputed as what it reads changes, never stored. A keyword changes what a
+  field means; an attribute (`#[range(0.0, 4.0)]`) only how the editor shows it. Fields an instance
+  sets go in one unnamed `instance { ... }` block, an aspect of its own keyed by the aspect's with a
+  fixed suffix (D103); one there without a default is one the instance must supply, checked as it
+  spawns, as QML's `required property` is. Each field is of a reflected Rust type the property
+  editor already edits, so the layer above reflection (X64) is a list of rows, each edited through
+  reflection; a field of a struct declared in SAGA waits for a use. Its hooks are not methods but a
+  fixed set of reactive callbacks the engine knows, written `on <name>(...)` and checked by name, so
+  a misspelled hook is an error; `present` is one (D106). So are `attach`, an effect run once as the
+  aspect attaches, whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one
+  that fires when a deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a
+  door's auto-close or a button's release, where faery's `init` subscribed to every frame.
+  Precedents: Unreal's `EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's
+  `$props`, `$state` and `$derived`, Verilog's `parameter`, `reg` and `assign`. An aspect's state is
+  a component (D107). Leaning, at runtime: as `bevy_mod_scripting` does, each scripted aspect's
+  state registers its own `ComponentId` (`ComponentDescriptor::new_with_layout`), all with one Rust
+  type's layout and drop, holding the aspect's key and its slots, so change ticks are per aspect and
+  the value reflects and serializes as that one type; what reads them goes by id through Panoply's
+  registry, never `ReflectComponent`, which would insert the shared type's own id. To check: entity
+  cloning of such a component, and saved state keyed by field name, so a changed schema still loads.
+  Its config registers a component of its own the same way, inserted as it attaches (D107). A hook
+  or an interaction's action is an effect (D105): it writes its own aspect's state, the native
+  components declared for scripts to write, and host commands, all through SAGA's buffer, so D59's
+  actions also take an effect in place of a native event. Proved by one aspect on one entity, whose
+  state a formula elsewhere reads; wiring across entities is PAN79's. This reverses
+  [modding.md](modding.md), Types a mod declares, and meets X64's gate.
 
 ## Interaction
 
@@ -186,41 +235,51 @@ aspects that mechanisms, containers and signs are built on.
   a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
   ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
   scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
-  Beside them: triggers (a circle or rectangle the player enters), encounter zones, waymarks for
-  scripted NPC events, and patrol paths, fixtures that goals name ([goal-format.md](goal-format.md),
-  Open). One element signals another through cells, a formula over the other's state, wherever a
-  formula can say it, and through an event only where none can: engines built on events, such as the
-  Creation Kit, tangle when several signals must be correlated. Which parts are native aspects and
-  which are SAGA is to decide. Proposed: logic that spans several entities lives on a relay, an
-  exemplar placed in the precinct, not as wiring stored on its participants, which in faery left no
-  list of what was wired and no owner when several took part. A relay holds two aspects. A native
-  visualization aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a
-  scripted aspect (PAN104). A field of the instance-reference type is a role: the editor draws a
-  wire to its target and fills it by picking, never by typing. Logic on one entity is a scripted
-  aspect on that entity. A placed relay binds its roles on the instance and keeps its exemplar's
-  tuning, as PAN99 settles. A bound instance gets an external id (D87). The editor lists a
-  precinct's relays, draws a selected one's wires, and lists those that name a selected instance;
-  selecting, moving and copying apply to relays, and copying a trap with its relay binds the copy's
-  roles to the copied instances. One wiring gesture places a stock relay for a button opening a
-  door, so the simplest case stays one step. Precedents: Planet's Edge's logic tiles beyond the
-  map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with picked references.
-  The hard part is referencing and naming. A precinct is named by its realm and coordinates, and is
-  like a module: its walls and fixtures that others can refer to are its exports, by their export id
-  (`SceneryInstanceId::External`). That name is clumsy to type into a text box, so the field for a
-  signal source browses the available signals with a filter, as PAN35's chooser does. A reference
-  into a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md), Values).
-  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
-  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
-  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
-  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
-  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
-  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
-  a button ([goals.md](goals.md), step 4).
+  What a sensor senses is native, by collision group, as faery's `canSense` sensed actors only, with
+  a formula filter only once a puzzle needs one (a heavy object on a plate). Beside them: triggers
+  (a circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
+  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
+  signals another through cells, a formula over the other's state, wherever a formula can say it,
+  and through an event only where none can: engines built on events, such as the Creation Kit,
+  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
+  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
+  the precinct, not as wiring stored on its participants, which in faery left no list of what was
+  wired and no owner when several took part. A relay holds two aspects. A native visualization
+  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
+  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target
+  and fills it by picking, never by typing. Logic on one entity is a scripted aspect on that entity.
+  A placed relay's roles are its logic aspect's `instance` block, set on the instance, while its
+  tuning stays inherited from the exemplar (D103). A bound instance gets an external id (D87). The
+  editor lists a precinct's relays, draws a selected one's wires, and lists those that name a
+  selected instance; selecting, moving and copying apply to relays, and copying a trap with its
+  relay binds the copy's roles to the copied instances. One wiring gesture places a stock relay for
+  a button opening a door, so the simplest case stays one step. Precedents: Planet's Edge's logic
+  tiles beyond the map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with
+  picked references. The hard part is referencing and naming, which PAN110 may change. A precinct is
+  named by its realm and coordinates, and is like a module: its walls and fixtures that others can
+  refer to are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy
+  to type into a text box, so the field for a signal source browses the available signals with a
+  filter, as PAN35's chooser does. A reference into a precinct that is not loaded suspends the
+  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
+  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
+  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
+  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
+  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
+  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
+  first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
 - **PAN106 Containers.** *Needs:* PAN104. What a container holds. An open chest shows its contents
   on an inventory screen whose background its container type chooses, and items move between it and
   the player; a locked one opens for the key its instance names, and a corpse, once combat kills
   (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that moves items,
-  so it brings in X42.
+  so it brings in X42. Built as D105 divides it: `Container` and `Lock` become scripted aspects over
+  native components that routing (PAN16j), colliders and `SceneryAnimations` read, whether open and
+  whether locked, which the native `Lock` and `ContainerState` hold now; the item list is a native
+  `Inventory`, which scripts reach through host functions (`has_item(actor, key)`). The screen is
+  native, opened by a host command naming its style. Closing it is an event to the entity that
+  opened it, which a hook handles (`on screen_closed`), so the screen never writes a script's field,
+  as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with
+  no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after faery's fixed
+  `openDelay`, which needs that event.
 - **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
   is a scenery aspect whose interaction shows its text; a document is an inventory item that links
   to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
@@ -241,15 +300,13 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN93, PAN99. Roots for an
+- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN93, PAN108. Roots for an
   instance picked in selection mode and for the realm panel's selected nav point (faery's
-  `NavPointEditor`). An instance's aspects show as overrides of its exemplar's. Whether an instance
-  may also add aspects its exemplar lacks is settled with how behavior composes
-  ([Exemplars.md](Exemplars.md), Composing behavior), helped by a read-only scan of the precincts
-  for instances that do (Poul Ryba's carries `tambry:poul`, his goals at the forge). The scenery
-  panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits
-  into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old
-  name joins its `alias` list, so that precincts naming it keep working until they are saved again.
+  `NavPointEditor`). An instance's aspects show as overrides of its exemplar's, and those it adds
+  (D104) as added. The scenery panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a
+  catalog: saving merges edits into the file (D73), so a new exemplar needs an insert beside it.
+  Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming it keep
+  working until they are saved again.
 - **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
   apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
   Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts
@@ -477,7 +534,8 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 ## First playable
 
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106. The first playable: the "Up in Arms" quest,
-  end to end. Its steps and what each needs are in [goals.md](goals.md).
+  end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases Sergeant
+  Stone and the Crimson Watch, so it builds presence (D106).
 
 ## Technical debt
 

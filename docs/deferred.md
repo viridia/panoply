@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X123.**
+**Next: X124.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -99,18 +99,18 @@ dropped, not deferred. Numbers are never reused.
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
   between worlds (an actor crossing a portal); and a release supports the Bevy in use.
 - **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`) move to
-  ECS and BSN assets. Goals are not aspects, since an actor can hold several goals of one type with
-  different parameters. Behavior packages own them, and packages are most of what a mod holds
-  ([modding.md](modding.md)).
-  - **Behavior packages.** A package is an asset of goal trees and presence. How an actor composes
-    them, so that a guard with a quest names only the quest's package beside the guard's, is open
-    ([Exemplars.md](Exemplars.md), Composing behavior). Dialogue and remark sets are listed apart,
-    by the `Dialogues` aspect and its remarks counterpart (D86). Each actor has one conversation and
-    one remark goal, drawing on the union of those sets in order, farthest ancestor first. faery's
-    rules carry over (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro
-    whose conditions hold; each state's options are pooled by state name across sets, sorted stably
-    by `order`, and the first option with a given `id` hides the rest. Remarks choose among the sets
-    whose conditions hold (R53).
+  ECS, their trees declared in SAGA. Goals are not aspects, since an actor can hold several goals of
+  one type with different parameters. Behavior packages own them, and packages are most of what a
+  mod holds ([modding.md](modding.md)).
+  - **Behavior packages.** A package is a scripted aspect (D107) declaring goal trees, with a
+    presence condition (D106). Whether a quest's behavior reaches an actor through a package on it
+    or a role in the quest is X123. Dialogue and remark sets are listed apart, by the `Dialogues`
+    aspect and its remarks counterpart (D86). Each actor has one conversation and one remark goal,
+    drawing on the union of those sets in order, farthest ancestor first. faery's rules carry over
+    (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro whose conditions
+    hold; each state's options are pooled by state name across sets, sorted stably by `order`, and
+    the first option with a given `id` hides the rest. Remarks choose among the sets whose
+    conditions hold (R53).
   - **Instanced trees.** Each actor spawns its own copy of each goal tree its packages hold: an
     entity per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside
     transform propagation) and rooted at the actor by `GoalOf`.
@@ -121,12 +121,12 @@ dropped, not deferred. Numbers are never reused.
     evaluates them. One system walks each tree from the top through those pointers, because a
     combinator calls its active child and acts on the result in the same pass. The Rust goal types
     are a closed set per build; mods compose them.
-  - **Format.** A prototype in JSON, with what it leaves open (parameters, scoped values), is in
-    [goal-format.md](goal-format.md).
+  - **Format.** Trees are SAGA declarations, sketched in [Exemplars.md](Exemplars.md), Packages
+    written in SAGA; a JSON prototype, the comparison, is in [goal-format.md](goal-format.md).
   - **Formulas.** A goal's condition is a reactive formula; an effect is usually a Rust type with
-    parameters, but can be a formula. So SAGA (X7) needs a way to embed formulas in assets, as
-    quests and dialogues do. A node's memo cells live on its entity. Landing re-evaluates an actor's
-    goals (R37).
+    parameters, but can be a formula. Both are written inline in the tree's declaration, so goals
+    need no formulas embedded in assets. A node's memo cells live on its entity. Landing
+    re-evaluates an actor's goals (R37).
   - **Saves** (PAN82) hold only state that differs from the reset state: per package, a hash of its
     goal definition and each changed node's state, keyed by its path of child indices. When the hash
     no longer matches (a mod or content edit changed the tree), that package's state is dropped and
@@ -143,7 +143,8 @@ dropped, not deferred. Numbers are never reused.
   back unchanged, so the editor cannot drop data owned by a mod or module that is not loaded.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
   need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
-  optional module whose aspects sit on instances.
+  optional module whose aspects sit on instances, or the first scripted aspect on an instance
+  (PAN104), whose module may be missing or fail to compile (D108).
 - **X21** A show set for precincts like D20 (scenery taller than D20's 4 m allowance also needs its
   own). *Gate:* scenery restored; take it when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
@@ -334,10 +335,7 @@ dropped, not deferred. Numbers are never reused.
   is a saved-at position per asset in the history. *Gate:* PAN44.
 - **X74** Merging `Interactions` entries by `id` along `extends`, so a variant such as a trapped
   chest restates only the entry it changes; an override now replaces the whole list (D59). Needs a
-  way to remove an inherited entry. *Gate:* that repetition hurting in real content. Behavior
-  packages (X17) may need the same merge, appending only, and come first
-  ([Exemplars.md](Exemplars.md), Composing behavior). So does `Dialogues` (D86), for mods: two that
-  each add lines to one character override the same aspect, and only the later survives.
+  way to remove an inherited entry. *Gate:* that repetition hurting in real content.
 - **X75** The look of the interaction prompt (PAN21): the decorative box around the key, and the
   key's font, for now `KEY_PROMPT_FONT` (Rubik). The key should be somewhat hefty in weight, and in
   a different-looking font from the caption, though non-swash Macondo has a far more readable
@@ -558,3 +556,13 @@ dropped, not deferred. Numbers are never reused.
   combat is likely a skill, and stylized ([combat.md](combat.md)), perhaps dramatic, so it may share
   nothing with the bump but the controller sweeping the shoved actor. *Gate:* combat's strategies
   are designed.
+- **X123** How what a quest changes reaches the things it changes: actors' goals, lines and
+  presence, realm layers (X109), and stateful walls and fixtures, such as a portcullis open once a
+  stage is reached. World-side, each thing carries its own condition, naming the quest, which is
+  global, and the logic is spread across the world's data. Quest-side, the quest names each thing:
+  actors as roles, which must then be global (R7, PAN93), layers by realm and name, walls and
+  fixtures by precinct and external id (D87), the awkward path. Or split by kind
+  ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests, Leaning).
+  Roles would also let two mods each give one character lines or a quest, both surviving, which D86
+  gave up. A global index of instance names (PAN110) would make every kind as cheap to name as a
+  quest. *Gate:* the first quest that gives an actor goals or lines, or changes scenery (PAN6).

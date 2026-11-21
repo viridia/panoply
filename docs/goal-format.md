@@ -2,7 +2,8 @@
 
 A prototype of goal trees written as JSON, to test what a goal format must express before asset BSN
 exists ([asset-bsn.md](asset-bsn.md)). Nothing here is decided; how behavior composes is open
-([Exemplars.md](Exemplars.md), Composing behavior).
+([Exemplars.md](Exemplars.md), Composing behavior), and the same trees declared in SAGA are sketched
+there (Packages written in SAGA).
 
 The sample is faery's Ivy (`packages/game/src/behaviors/tambry.tsx`) and the work trees she uses
 (`behaviors/work.ts`).

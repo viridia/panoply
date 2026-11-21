@@ -62,50 +62,38 @@ during attachment.
 
 ## Config and state
 
-Open; PAN99 settles it. D88 divides an aspect's fields into config, what is authored, and state,
-what play changes. But config is authored at two stages: on the exemplar, as a kind is designed, and
-on the instance, as it is placed. A chest has all three:
+An aspect's fields are config, what is authored, or state, what play changes (D88). Config is
+authored at two stages: on the exemplar, as a kind is designed, and on the instance, as it is
+placed. A chest has all three:
 
 - its container type, which background the inventory screen shows when it opens, set on the
   exemplar;
 - its key id, which key unlocks it, set on the instance;
 - whether it is open, changed in play.
 
-An override replaces a whole aspect, so if the container type and the key id are fields of one
-aspect, a chest that the silver key opens restates its container type, in a new exemplar or in an
-instance override, and no longer follows the exemplar's.
+Fields set at different stages go in different aspects (D103): the container type in `Container`,
+the key id in `Lock`, as `Portal` and `PortalTarget` already split a portal's shape from its target.
+An override replaces a whole aspect, so an instance that overrides `Lock` leaves `Container`
+inherited, and no field inherits on its own (X99).
 
-Does an aspect need three sets of fields with distinct life cycles, or will two do, and are two
-possible only with per-field overrides?
-
-- **Three sets.** An aspect declares exemplar config, instance config and state apart, and an
-  instance sets only its own. Against: a field's stage is fixed by the aspect's author, so the rare
-  instance that wants another container type needs an exemplar of its own.
-- **Two, with per-field overrides (X99).** An instance sets any field, and the rest stay inherited.
-  Against: X99's cost, `Inherit<T>` resolved at evaluation, on every field an instance may set, and
-  a property editor that shows each field as inherited or set, which is hard to present.
-- **Two, split by aspect.** Fields set at different stages go in different aspects, as `Portal` and
-  `PortalTarget` already do: the key id in `Lock`, the container type in `Container`, so overriding
-  `Lock` leaves `Container` inherited. Against: the split is the aspect author's to get right, the
-  aspect list grows, and a scripted aspect whose tuning is set on the exemplar and whose roles on
-  the instance, as PAN79's relay logic, splits one concept across two aspects.
-
-Leaning: two, split by aspect, with instances adding aspects their exemplars lack. Without that, a
-chest and a lockable chest are two exemplars; with it, `Lock` is a mixin any chest takes. Adding an
-aspect is a smaller lift than per-field overrides, since an added aspect shows in the property
-editor as an aspect, not as a field's state.
+An instance may add aspects its exemplar lacks, and never removes an inherited one (D104). So `Lock`
+is a mixin any chest takes, and a lockable chest needs no exemplar of its own. An added aspect shows
+in the property editor as an aspect, beside the inherited ones.
 
 - Bevy's required components do not express this. `Container` cannot require `Lock`, since not every
   container is locked, and `Lock` cannot require `Container`, since doors take it too. What the
   editor wants is the "suggested components" idea floated for Bevy and not taken far: aspects known
-  to work with another, which the add menu offers first. Which side declares the pairing is open.
+  to work with another, which the add menu offers first. Which side declares the pairing is open;
+  whichever it is, native and scripted aspects declare it the same way (D107).
 - A formula on the exemplar may read an aspect only some instances add: `Proto.Container`'s "Open"
-  is offered not while locked, reading `LockState`. D71 checks a formula against its exemplar's
-  chain, so the formula needs to read an absent aspect as a default, or the check moves to the
-  instance. Leaning: the container's entries know about locks, reading a missing `LockState` as
-  unlocked through SAGA's `Option` (`?.`, `??`; [saga.md](saga.md), Values), so D71 checks such a
-  read as optional rather than composing entries from the aspects an instance has, which would ask
-  far more of overriding.
+  is offered not while locked, reading `LockState`. The container's entries read a missing
+  `LockState` as unlocked through SAGA's `Option` (`?.`, `??`; [saga.md](saga.md), Values), and D71
+  checks such a read as optional, rather than composing entries from the aspects an instance has.
+- A scripted aspect whose fields span both stages, as a sign's frame and text or a relay's tuning
+  and roles, declares its instance's fields in an `instance` block, which is an aspect of its own
+  (PAN104). A native aspect names its instance part the same way, as `Portal` names `PortalTarget`,
+  and the editor shows both kinds of pair as one group with two override states (D107); a part with
+  a field that has no default is one the instance must supply, checked as it spawns.
 
 ## Loading Exemplars
 
@@ -131,9 +119,9 @@ runtime instance data back into a form which is serializable.
 
 ## Composing behavior
 
-Open for goal trees and presence; dialogue and remarks are settled (D86). It decides how X17's
-behavior reaches an actor, and with it whether an instance may add aspects its exemplar lacks
-(PAN28e).
+Open for goal trees; dialogue and remarks are settled (D86), and so is presence (D106). It decides
+how X17's behavior reaches an actor. An instance may add aspects its exemplar lacks (D104), so
+whatever a piece of behavior becomes, an instance can take one.
 
 An actor's behavior is goal trees, dialogue sets, remark sets and presence, and a character combines
 pieces of it that vary independently: a town guard has the guards' patrol and dialogue, the town's
@@ -166,8 +154,8 @@ an inherited set is dropped. `Proto.NPC` carries an empty `Dialogues`, so a guar
 override an aspect it has rather than add one. Remarks compose the same way. The panel shows the
 list and the flag, and while the flag is on, the inherited sets above them, read-only.
 
-Two mods each adding lines to one guard override the same `Dialogues`, and the later wins; merging
-them is X74's.
+Two mods each adding lines to one guard override the same `Dialogues`, and the later wins; quest
+roles would let both survive (X123).
 
 ### Alternatives
 
@@ -278,6 +266,48 @@ faery's `Converse` and `Remark` lists did. A bundle of goals, dialogue, remarks 
 have given a quest one name to travel and page by; a quest's goals and its lines are now edited in
 two places.
 
+**Quest-side composition.** The other alternatives put a piece of behavior on the actor that has it.
+This one lets a quest name the actors it involves and carry what it gives each, as the Creation
+Kit's quest aliases do: a role, bound to an actor by name, holding goals, lines and presence. Its
+prerequisite is that every actor a quest names is global (R7), held in a global asset and always in
+memory, so that a role names it without a precinct's path and a quest's formulas never find it not
+loaded; a few hundred actors at most, their goal trees perhaps spawned only while they are simulated
+(R8, R54). Making an actor global is PAN93's. The binding is authored and static, so behavior is
+still never added or removed at runtime; the quest's stage gates what a role gives through `when`,
+as any goal is gated. What a role gives joins the actor's own in one union, competing by priority,
+its dialogue sets after the actor's own. It is a relay for actors: PAN79's argument for keeping
+wiring off its participants applies, and a quest's goals and lines travel as one bundle again, and
+two mods that each give one guard a quest both survive, since neither edits the guard. Against:
+inspecting an actor does not show what quests do to it, so the editor lists the quests that name an
+actor, as PAN79 lists relays; an actor becomes global when a quest first names it; and a role's
+target may be missing (D47).
+
+A quest changes scenery too, and the choice is the same there: realm layers that appear at a stage
+(X109), and stateful walls and fixtures, such as a castle's portcullis open only once a stage is
+reached. Each is a reactive formula testing the quest. World-side, it is written on the thing, a
+layer's `when` as X109 has it or a formula on the portcullis's open state, naming the quest, which
+is global; the logic is spread across the world's data. Quest-side, the quest names the thing and
+gives its condition, as a role does an actor: a layer by realm and name, which is short, but a wall
+or fixture by precinct and external id (D87), the awkward path that global actors avoid. A sketch,
+in a `.saga` module beside scripted aspects:
+
+```rust
+quest UpInArms {
+    state stage: Stage = Stage::Offered,
+
+    role sergeant = actor("stone") {
+        present: stage < Stage::Complete,
+        lines: ["tambry.dialogue#Stone.UpInArms"],
+    }
+
+    role leader = actor("keep-leader") {
+        goals {
+            Attack { when: self.sees(player()), target: player(), priority: Mission }
+        }
+    }
+}
+```
+
 ### BSN
 
 Stock BSN composes by mixins, which merge by field, and holds one component per type. Panoply's
@@ -295,21 +325,60 @@ over.
 
 ### Packages written in SAGA
 
-A variation of native and external aspects, or of aspects as definitions: an external aspect is a
-SAGA source file, declaring its fields, goal trees, interactions and presence together, with
-formulas inline, in place of an asset of data. It composes as any external aspect does; what changes
-is how it is written. Two forms, unspecified:
+A variation of native and external aspects, or of aspects as definitions: a package is a scripted
+aspect (PAN104), declaring its fields, goal trees, interactions and presence together, with formulas
+inline, in place of an asset of data. It composes as any external aspect does; what changes is how
+it is written. Two forms:
 
 - **Aspects as values.** A function or constant returns an aspect, and goal trees are SAGA values of
-  types the native goals expose. Parameters are a package's fields, so its signature is the schema
-  X64 needs, and the language builds trees (a patrol from a list of points) and reuses them. But a
-  tree mixes two times: what the function computes once, as the package loads, and the conditions
-  that must stay formulas, evaluated as the world changes, so SAGA has to tell them apart.
-- **A declarative format.** A syntax outside functions, with SAGA embedded for conditions and
-  effects, as BSN embeds Rust expressions. This extends SAGA less than it defines a format of its
-  own, the bespoke format for goals that is the other way past X1. It is read without evaluating
-  anything, so the editor sees its fields and trees, but it abstracts only as far as its syntax
-  does.
+  types the native goals expose, written as literals, as a Python dict display is. Parameters are a
+  package's fields, and the language builds trees (a patrol from a list of points) and reuses them.
+  But a tree mixes two times: what the function computes once, as the package loads, and the
+  conditions that must stay formulas, evaluated as the world changes, so SAGA has to tell them
+  apart, and the editor sees a tree only by running code. Against.
+- **Declarations.** A tree is declared, as a scripted aspect is, with formulas embedded, as BSN
+  embeds Rust expressions. Its shape is static, read without evaluating anything, so the editor sees
+  its fields and trees. Whether a field is a formula is the goal type's: a `Formula<bool>` such as
+  `when` compiles its expression as a formula, re-evaluated as the world changes; any other field
+  takes a constant or a parameter of its tree, fixed as the tree is instantiated, as BSN's props
+  are. A `tree` declares its parameters with types, and a node that publishes a value to its subtree
+  is bound by name (`as interaction`). Nodes nest as QML's objects do, children in `[ ... ]` as in
+  BSN. faery's Ivy, sketched:
+
+  ```rust
+  aspect Ivy {
+      goals {
+          Converse { when: self.targeted_by_player, priority: Social }
+          Sleep { when: hour_between(11, 7), priority: Health, target: fixture("ivy.bed") }
+          Sequence { loop: true } [
+              Random { norepeat: true } [
+                  UseFixture { fixture: "inn.cookpot", distance: 0.4,
+                               tool: StirringSpoon, clips: [KitchenStir, KitchenWork] }
+                  UseFixture { fixture: "inn.worktable.0", distance: 0.6, ... }
+                  UseBroom { area: "ivy.sweep" }
+                  Contingent [ WalkTo { target: "ivy.counter" }  Wait { delay: 10 } ]
+              ]
+              Wait { delay: 2 }
+          ]
+      }
+  }
+
+  tree UseFixture(fixture: FixtureRef, mark: String = "use", distance: f32,
+                  tool: ItemRef, clips: [Clip]) {
+      SceneryInteraction { target: fixture, mark, distance } as interaction [
+          Contingent [
+              LookAt { target: interaction.position }
+              Equip { item: tool, instant: true }
+              Pose { delay: 4, clips, repeat: true }
+              Unequip { instant: true }
+          ]
+      ]
+  }
+  ```
+
+  It answers most of what [goal-format.md](goal-format.md)'s JSON leaves open: parameters are typed
+  in the signature, scoped values are bindings, faery's four work trees are one, and it is about as
+  long as faery's TSX.
 
 Either way:
 
@@ -324,8 +393,102 @@ Either way:
   X64 needs, as an external aspect's fields do. Values that vary by placement are mostly references:
   a patrol path is a fixture, edited in the world, which a guard package's field names (naming
   across precincts is PAN79's).
-- Against: SAGA grows from formulas to declarations, with tooling to match, and a file that fails to
-  compile loses its character's behavior whole, where a bad field loses one value.
+- Each declaration fails alone, as a formula in an asset does: a `tree` that fails to compile
+  disables the aspects that use it, not its module.
+- Against: SAGA grows from formulas to declarations, with tooling to match, though scripted aspects
+  (PAN104) already pay most of it.
+
+### Worked example: three quests
+
+The first three quests of one chain, beats told only as far as the engine sees them. **Asset** is
+content, **formula** is SAGA, **native** is Panoply's Rust. Where the two leading forms differ,
+**actor-side** is packages as scripted aspects on the actors (Packages written in SAGA, with D104)
+and **quest-side** is roles (above).
+
+The first quest, *Up in Arms*:
+
+1. **Beforehand.** *Asset:* the quest, with its stages and its state. A sergeant placed in Tambry's
+   inn; animals, a squad and its leader placed in an abandoned keep; a switch and a door, wired by a
+   relay (PAN79); a ledger placed on a table; a letter in the leader's inventory. The animals and
+   the squad attack on sight through a generic hostile package on their exemplars, the same either
+   way.
+2. **The sergeant offers it.** *Native:* the player targets him; his conversation goal draws on his
+   dialogue sets (X17). *Asset:* the quest's lines. Actor-side, his instance lists them in
+   `Dialogues` (D86); quest-side, his role does. *Formula, effect:* the accepting option starts the
+   quest. *Formula, on demand:* until the player returns with the letter, an option asks him about
+   the task, offered across every step between.
+3. **The keep.** *Native:* combat, routing through the switched door (PAN16j), the relay (PAN79). No
+   quest behavior; nothing differs.
+4. **The leader.** *Asset:* her goal, on sight, to bark and attack. Actor-side, a package on her
+   instance, as faery's `heroncreek:cwLeader` was; quest-side, her role.
+5. **The ledger and the letter.** *Native:* taking an item; looting a corpse (PAN106). *Formula,
+   reactive:* the stage advances when the player holds the ledger.
+6. **Paid, and gone.** *Formula, on demand:* the sergeant's option is offered while the player holds
+   the letter. *Formula, effect:* it takes the letter, pays, and advances the stage. *Asset:* his
+   presence, ending once the next stage is accepted (D106); he stays where he is until then, and the
+   latch keeps him until he is off the screen, so he never leaves in view and needs no goal to walk
+   out. Actor-side, his instance holds it, and each later appearance is another instance with its
+   own (R85); quest-side, each chapter's quest binds its own sergeant.
+
+The second, at an inn in Marheim:
+
+7. **The way in.** *Formula, on demand:* the innkeeper's option naming the sergeant is offered only
+   once the first quest is done, reading its stage.
+8. **The guards' own day.** *Asset:* a patrol package on the guards' exemplar: a route through the
+   district, and a shift break at the inn by the hour (R89). Persistent, placed, the same either
+   way. *Native:* routes through doors (PAN16j), fixtures named across precincts (PAN79).
+9. **Waiting.** *Asset:* patrons' lines that change with the stage: entries in their sets with
+   conditions on it, the same either way.
+10. **The shakedown and the duel.** *Asset:* goals on three of those guards, only while the quest is
+    at its evening stage: approach the player and start a conversation; for the leader, an unarmed
+    duel; for his men, to watch. Actor-side, a package added on each of three instances, placed in
+    whatever precinct their patrol starts in; quest-side, three roles in the quest. *Native:* the
+    duel, and a yield the stage reads.
+11. **After.** *Native:* the quest goals' `when` fails and the patrol package wins again. *Formula,
+    reactive:* later quests read this one's stage, which is the grudge.
+
+The third, at a boarded-up shop:
+
+12. **Getting in.** *Asset:* the shop's door with a `Lock`, and a way to force it, as an entry in
+    its interactions (D59) whose effect clears native lock state (D105).
+13. **The evidence.** *Asset:* a notice on the door and records inside, documents the player takes
+    (PAN78). *Formula, reactive:* the stage advances once the player holds both. A clue is an object
+    the player carries, never a fact only read, so the player never knows what their character does
+    not, and the quest reads it as possession.
+14. **The official.** *Asset:* four options, one gated on an item the player found and shows.
+    *Formula, effect:* each advances the stage and records the method chosen, which later quests
+    read.
+15. **Released.** *Asset:* the freed weaver placed in the town, present once released, and another
+    in the camp, present until then (R85). Actor-side, each instance holds a `Presence`; quest-side,
+    each is a role.
+
+What the walk shows:
+
+- **Behavior falls in two kinds.** A character's own (the patrol, the hostility, a character's
+  habits) belongs on its exemplar, the same in both forms. What exists because of a quest (steps 2,
+  4, 6, 10, 15) is where the forms differ, and it is most of what a quest adds. The same holds for
+  scenery a quest changes (Quest-side composition, above), which these quests do not exercise.
+- **Actor-side scatters a quest.** Step 10 edits three instances, wherever their patrol starts, and
+  a quest's goals, lines and presence spread over each instance it touches; a second quest for the
+  same guard edits him again. Quest-side keeps each quest in one place.
+- **Each side references the other's things.** Actor-side, an actor's package names quests, which
+  are global already, by name. Quest-side, a quest names actors, which is why the actors it names
+  must be global. With global actors, step 10's three guards are three entries in the global asset,
+  not edits in whatever precincts their patrols start in, so actor-side scatters less than above,
+  though a second quest for one guard still edits him. A global actor can also be one identity
+  across its appearances, moved between homes by stage while off screen, which R85 leaves open.
+- **A quest's state is more than a stage:** objectives that complete in any order, and the method
+  chosen in step 14. It is declared as a scripted aspect's state is, and saved with the quest.
+- **What a quest gives an actor spans its states** (step 2's question about the task). It is listed
+  once, for the quest's whole life, and each entry conditions itself by a formula over the quest's
+  state, as a dialogue set's entries already do (X17); by default a quest gives it while it is
+  offered or in progress, so few entries repeat that.
+- **Clues are possessions** (steps 6, 13), so quests read inventory through host functions and need
+  no record of what the player has read.
+- **A quest's roles apply from the start of play,** before it is offered: the sergeant offers it.
+  Its `when`s and presence keep them inert until a stage asks.
+- **A missing target** (D47): a role whose instance is gone stays unbound and is logged, as a
+  missing fixture is; actor-side, a package whose module is missing waits on X20.
 
 ### Dialogue text
 
@@ -339,10 +502,14 @@ text compiles, and lines need stable ids, mostly generated, so translations surv
 
 ### Leaning
 
-Aspects as definitions, or native and external aspects, over a list in one aspect: composition stays
-in the aspect list with one merge. Both put external pieces in the aspect list, so the rule on
-instances adding aspects is settled with this, not after. Packages written in SAGA are against: they
-disrupt much for an uncertain return.
+Settled by D107: native and external aspects, with packages declared in SAGA as scripted aspects, no
+package asset type of their own, and composition kept in the aspect list, where an instance can add
+them (D104). Aspects as values are against.
+
+After the worked example, both sides of composition, by kind: a character's own behavior is a
+package on its exemplar, and what exists because of a quest is a role in that quest, declared in
+SAGA as packages are, joining the actor's union, with every actor a quest names global. Instances
+then rarely take packages; D104 still lets them.
 
 ## Aspect example
 

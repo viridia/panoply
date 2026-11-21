@@ -167,8 +167,8 @@ Migration scripts below, and X1), `artwork/`.
 
 ## Game rules (later)
 
-- `game/src/aspects/`: book, combat, container, conversant, door, follower, mechanisms, music,
-  shop, sign, stairs.
+- `game/src/aspects/`: book, combat, container, conversant, door, follower, mechanisms, music, shop,
+  sign, stairs (Aspects, below).
 - `game/src/sim/`: damage, damage types, effectors, predicates, side effects, skills.
 - `game/src/systems/`: `GameClock`, `RealmLighting` (see X12), `MusicSystem`, `OceanSounds`,
   `ParticleDamage`, `PlayerDeath`.
@@ -176,6 +176,44 @@ Migration scripts below, and X1), `artwork/`.
   `scripting/predicates.md`, `Particles.md`, `UI.md`, `Bootstrapping.md`, `missing.md`;
   `archive/SAGA.md` (see X7).
 - `TODO.md` at the root (21 KB): the old engine's own open items.
+
+## Aspects (*read*, *counted* 2026-11-20)
+
+The mechanism is `engine/src/archetypes/Aspect.ts` and `Instance.ts`; the aspects are in
+`game/src/aspects/`, `game/src/behaviors/` and a few engine folders (`portals`, `audio`, `lighting`,
+`particles`, `world/scenery/markers.ts`). The counts are over `los-data`: 659 archetypes in
+`meta/archetypes/` and `meta/regional/`, and every precinct.
+
+- An aspect had two sets of fields. `config` was set on an archetype; a child archetype or an
+  instance overrode it only by restating the whole aspect. `properties` were per instance: the
+  precinct wrote each one's starting value (`instanceVars` on actors, `properties` on scenery), play
+  changed it, and a save kept it only where it differed from that value.
+- Properties were one flat namespace per instance, so aspects composed by field name:
+  `wall:directDoor`'s formula for `open` drove the `door` aspect's `open`. The UI did the same: a
+  chest's "Open" set `open` and showed the container screen after the aspect's `openDelay` (a
+  timeout, `engine/src/player/GameUiState.ts`), and the screen, shown while `open` held, closed by
+  writing `open = false`, which closed the lid too
+  (`game-ui/src/modals/container/ItemContainer.tsx`).
+- An instance could add aspects (`setAspect` copies the archetype's map first) but not remove an
+  inherited one: `removeAspect` only drops an override.
+- No field was set at both stages. What instances set was start state (`open` 339 times, 3 of them
+  true; `locked` 45, all false; `active`), references (`portalTarget` 24, `content` 12, `source` 10,
+  the spawners' tables, Poul's `stock`) and placement geometry (`radius`, `halfSizeX`/`halfSizeZ`,
+  `waypoints`, `track`). No instance changed an aspect's config but two Kreekin given `enemy.loot`
+  (Migration scripts). `key` was never set, so no content had a chest or door that a given key
+  opens.
+- Aspects whose fields spanned both stages: `portal` (shape on the archetype, target on the
+  instance), `container` (type and delay; key and start state), `sign` and `book` (frame; content)
+  and `encounter:encounter` (interval; what it spawns).
+- Instances added aspects 23 times: the 17 per-character behaviors (`tambry:poul` and the rest),
+  which have no fields and name precinct fixtures in code (`'poul.bed'`, `'bsmith.forge'`), even
+  where the character has an archetype of its own; and 6 logic doors and groups (`wall:directDoor`,
+  `wall:flipFlopDoor`, `playground:spearTrap2`, `playground:proximityDoor`, `triggerGroup`).
+- Archetypes restated an inherited aspect 17 times, all actor combat (`combatant`, `enemy`).
+  `FeralDogAlpha` restates `combatant` as `{}`, which drops `Proto.FeralDog`'s `healthMax: 50` for
+  the default 100; whether that was meant is unknown.
+- 57 actors carry `movementSpeed`, `fireResist` and `poisonResist` of 0, which look like defaults
+  the editor wrote out.
 
 ## Catalog entries (from the author, not yet read in the code)
 
