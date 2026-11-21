@@ -1,7 +1,8 @@
 //! The navigation view, the Show menu's Navigation: each precinct's [`PrecinctNavMesh`], its
 //! polygons filled by area and its edges coloured by what lies across them, so doorways, walls and
-//! the seams with the neighbouring precincts stand out. Rebuilt only when a mesh changes; the Show
-//! menu only hides and shows it.
+//! the seams with the neighbouring precincts stand out; and each actor's [`PlannedRoute`], a line
+//! ending in an arrowhead. Rebuilt only when a mesh or route changes; the Show menu only hides and
+//! shows it.
 //!
 //! After `bevy_rerecast`'s `debug.rs` (<https://github.com/janhohenheim/rerecast>, MIT or
 //! Apache-2.0): outlines into a retained gizmo, and a translucent fill. Its fill is an unlit
@@ -14,8 +15,11 @@ use bevy::{
     gizmos::{config::GizmoLineConfig, retained::Gizmo, GizmoAsset},
     prelude::*,
 };
-use panoply_nav::{NavAreaKind, NavEdge, NavMesh, PrecinctNavMesh};
-use panoply_overlays::{AddOverlay, OverlayColor, OverlayShape, ShapeBuilder};
+use panoply_core::{Realm, Viewpoint};
+use panoply_nav::{NavAreaKind, NavEdge, NavMesh, PlannedRoute, PrecinctNavMesh};
+use panoply_overlays::{
+    AddOverlay, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder, StrokeMarker,
+};
 use panoply_scenery::precinct::Precinct;
 
 use crate::debug_views::DebugViews;
@@ -31,6 +35,33 @@ const EDGE_DEPTH_BIAS: f32 = -0.001;
 /// their alpha: enough to follow a polygon that runs under the terrain.
 const UNDERLAY: f32 = 0.8;
 const EDGE_UNDERLAY: f32 = 0.35;
+
+/// How far above the ground a route is drawn, as faery drew them, and how wide.
+const ROUTE_LIFT: f32 = 0.06;
+const ROUTE_WIDTH: f32 = 0.08;
+
+/// The view of one actor's route, holding its [`NavRouteLine`].
+#[derive(Component)]
+pub struct NavRouteView {
+    actor: Entity,
+}
+
+/// A route's line, through its waypoints, ending in an arrowhead.
+#[derive(Component, Clone, PartialEq, Default)]
+struct NavRouteLine(Vec<Vec3>);
+
+impl OverlayShape for NavRouteLine {
+    fn draw(&self, builder: &mut ShapeBuilder) {
+        let options = PolygonOptions {
+            end_marker: StrokeMarker::Arrowhead,
+            ..default()
+        };
+        builder
+            .with_stroke_width(ROUTE_WIDTH)
+            .with_offset(ROUTE_LIFT)
+            .stroke_polyline_3d(&self.0, options);
+    }
+}
 
 /// The view of one precinct's mesh, a child of the precinct: its edges, and a [`NavAreaFill`]
 /// child for each area kind the mesh has.
@@ -54,11 +85,14 @@ pub struct NavViewPlugin;
 impl Plugin for NavViewPlugin {
     fn build(&self, app: &mut App) {
         app.add_overlay::<NavAreaFill>()
+            .add_overlay::<NavRouteLine>()
             .add_observer(remove_view)
+            .add_observer(remove_route_view)
             .add_systems(
                 Update,
                 (
                     rebuild_views,
+                    rebuild_route_views,
                     show_views.run_if(resource_changed::<DebugViews>),
                 ),
             );
@@ -179,7 +213,62 @@ fn remove_view(
     }
 }
 
-fn show_views(views: Res<DebugViews>, mut q_views: Query<&mut Visibility, With<NavMeshView>>) {
+/// Draws each new or changed route, in the viewed realm's layer.
+fn rebuild_route_views(
+    routes: Query<(Entity, &PlannedRoute), Changed<PlannedRoute>>,
+    route_views: Query<(&NavRouteView, &Children)>,
+    viewpoint: Res<Viewpoint>,
+    realms: Query<&Realm>,
+    views: Res<DebugViews>,
+    mut commands: Commands,
+) {
+    for (actor, PlannedRoute(route)) in &routes {
+        let line = NavRouteLine(route.waypoints.clone());
+        if let Some((_, children)) = route_views.iter().find(|(view, _)| view.actor == actor) {
+            for &child in children {
+                commands.entity(child).insert(line.clone());
+            }
+            continue;
+        }
+        let Some(realm) = viewpoint.realm.and_then(|realm| realms.get(realm).ok()) else {
+            continue;
+        };
+        commands.spawn((
+            Name::new("NavRouteView"),
+            NavRouteView { actor },
+            Propagate(realm.layer.clone()),
+            Transform::default(),
+            visibility(&views),
+            children![(
+                Name::new("NavRouteLine"),
+                line,
+                OverlayColor {
+                    base: tailwind::YELLOW_300.with_alpha(0.8).into(),
+                    underlay: UNDERLAY,
+                },
+                Transform::default(),
+            )],
+        ));
+    }
+}
+
+/// Despawns an actor's route view when its route is removed, or the actor despawns.
+fn remove_route_view(
+    remove: On<Remove<PlannedRoute>>,
+    route_views: Query<(Entity, &NavRouteView)>,
+    mut commands: Commands,
+) {
+    for (view, NavRouteView { actor }) in &route_views {
+        if *actor == remove.entity {
+            commands.entity(view).try_despawn();
+        }
+    }
+}
+
+fn show_views(
+    views: Res<DebugViews>,
+    mut q_views: Query<&mut Visibility, Or<(With<NavMeshView>, With<NavRouteView>)>>,
+) {
     for mut shown in &mut q_views {
         shown.set_if_neq(visibility(&views));
     }

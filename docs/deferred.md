@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X124.**
+**Next: X127.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -566,3 +566,13 @@ dropped, not deferred. Numbers are never reused.
   Roles would also let two mods each give one character lines or a quest, both surviving, which D86
   gave up. A global index of instance names (PAN110) would make every kind as cheap to name as a
   quest. *Gate:* the first quest that gives an actor goals or lines, or changes scenery (PAN6).
+- **X124** Area costs by haste, faery's `hurry`: an actor rushing an enemy cuts across a lawn rather
+  than keeping to the footpaths, but not through a bog. Whether some enemies are stupid enough to be
+  lured across one is a tactic to weigh. Costs are per query (`NavCosts`), so it is a table the
+  asker chooses. No marsh or bog exists yet. *Gate:* the first combat chunk that moves actors.
+- **X125** Seams beside obstacles: each precinct's mesh is built from its own geometry alone, so an
+  obstacle just across a seam does not narrow this side's mesh, and a route along the seam may pass
+  within the agent's radius of it. *Gate:* a route seen clipping an obstacle across a seam.
+- **X126** Ladders in routes: the mesh has no links off it, so a ladder is joined into a route by
+  the search, as a crossing between the polygons at its foot and its top. faery cut a route short at
+  its first ladder, for the actor to climb and ask again. *Gate:* the first ladder an actor climbs.

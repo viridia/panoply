@@ -4835,6 +4835,7 @@ dependencies = [
  "bevy_action_map",
  "panoply_core",
  "panoply_exemplar",
+ "panoply_nav",
  "panoply_precinct",
  "panoply_saga",
  "panoply_scenery",

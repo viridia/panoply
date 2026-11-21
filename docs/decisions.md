@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D109.**
+**Next: D110.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -921,3 +921,11 @@ never reused.
   a save writes it back unchanged (X20). A goal `tree` that fails to compile disables the aspects
   that use it, not its module, as a formula in an asset fails alone (D69). Reversing it means a
   module's error taking its precinct or its character with it. (PAN99)
+- **D109** Routes come from a port of faery's `NavRouteTask`, not a crate, since Panoply builds its
+  own meshes; it keeps faery's costs per area and its getting as near as it can, and fixes its
+  search, which took the first route found rather than the cheapest (`route.rs`). A goal off the
+  mesh is reached as near as can be, or within the query's reach, as a chest is opened from any
+  side, so a route fails only for a start off the mesh or a precinct whose mesh is not built. A
+  click on a wall routes to the ground at its foot on the side clicked, not to the floor just behind
+  it, which is nearer. Reversing it means a crate's mesh format, or routes that fail outright where
+  faery got close. (PAN16g)

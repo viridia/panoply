@@ -332,34 +332,13 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN16g Pathfinding.** Routes across the joined precinct meshes, first for the player's click to
-  move: a click on the ground asks for a route from the player to that point, drawn in PAN16b's view
-  as faery drew routes, a stroked line ending in an arrowhead (`strokePolyline` in faery's
-  `packages/editor/src/helpers/drawShapes.ts`); the player does not walk it yet (PAN17). A click
-  that misses every interactive thing lands on `WorldBackstop` (D61), which must report the ground
-  point; a plan clicks ground through a server method of Panoply's own (the driver's X2), or a
-  waypoint entity spawned there and clicked through the driver's X9. Ground clicks run only in
-  `GameMode::Play`. A crate, if its Bevy-free core takes costs or filters per query and joins meshes
-  (`landmass`, `polyanya` under `vleue_navigator`); else a port of `NavRouteTask.ts` (A*, a funnel
-  pass, tract seams), which runs on any mesh of convex polygons. Read with `local_sweep.py`
-  inventories first, faery's `nav` and the candidate crates, then the files they point to: an
-  inventory finds where to read, but misses what one file guarantees and another relies on.
-  - Seams: a route crosses a precinct boundary only where the boundary edges of the two sides
-    overlap, a 1D intersection along the line, as faery's `perimeter` edges were
-    (`neighborTransition` in `NavRouteTask.ts`); each side's edges are already cut short by its own
-    obstacles.
-  - Not ready: a precinct without a `PrecinctNavMesh` is not ready, and a route asked of it says so.
-  - Seams beside obstacles: each precinct's mesh is built from its own geometry alone, so an
-    obstacle just across the line does not narrow this side's mesh, and a route running beside the
-    seam may pass within the agent radius of it.
-  - Ladders: the mesh has no off-mesh links, so they are the query side's.
-
-  The search takes a cost per area per query, which PAN16j's doors and PAN16k's portals set. Settle
-  the choice with one scenario walkthrough: the player clicks a point in the next precinct, and the
-  route crosses the seam; then check it against PAN16j's guard routing through a door.
-- **PAN16h Routes in behaviors.** *Needs:* PAN16g. Actors follow routes: a behavior asks for one,
-  waits while the mesh is not ready, and an actor that cannot advance plays R33's blocked state and
-  replans (R22).
+- **PAN16h Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
+  mesh is not ready, and an actor that cannot advance plays R33's blocked state and replans (R22). A
+  route is searched on the main thread, under a millisecond across the lair and village fixtures
+  (`tests/route.rs`), an unreachable goal included. NPCs' requests wait in a queue, run each frame
+  until a budget is spent, the player's click ahead of them; a search paused across frames, which
+  restarts when a precinct it touched gets a new mesh, only if one search alone exceeds the budget;
+  tasks off the main thread only if both fall short.
 - **PAN16j Doors in routes.** *Needs:* PAN16h, PAN59. faery read each door's `open` signal inside
   its search, but a door does not change during one query, so its cost is set before the query from
   PAN16f's table (passable at a cost, or blocked if automatic, or locked) and the door-use waypoints
@@ -367,8 +346,8 @@ components and every layer restartable from saved state (R104).
   (`NavMesh::doors`); one missing is a door despawned while its precinct's mesh is rebuilt (D100),
   skipped. Following the route, an actor stops at the door's use mark, plays the opening, then goes
   through (R52).
-- **PAN16k Portals in routes.** *Needs:* PAN16g, PAN4c. The portal area is set per query, open to
-  the player's click-to-move routes and closed to NPCs' (R31), as faery's portal areas were.
+- **PAN16k Portals in routes.** *Needs:* PAN4c. The portal area is set per query, open to the
+  player's click-to-move routes and closed to NPCs' (R31), as faery's portal areas were.
 - **PAN16i Routing around actors.** *Needs:* PAN16h. Exclusion zones where actors stand (R86): the
   generator does not cut them in at run time, having left out faery's patching (D99). Likely relaxed
   to two parts. A cost per query, as faery's `actor` surface already was in its search, but only on
@@ -386,8 +365,9 @@ components and every layer restartable from saved state (R104).
   replans. Before bending is built, an artifact for the author: its test cases, illustrated, to find
   the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios: driver plans that
   stage, for example, eight skeletons rushing the player, or two followers through a doorway.
-- **PAN17 Click to move.** *Needs:* PAN16g. The player walks the route PAN16g draws for a ground
-  click. Clicking an actor or fixture walks to it, which a plan does through clicks in the world
+- **PAN17 Click to move.** The player walks the route a ground click gives it (`PlannedRoute`),
+  steering only by the points where its heading changes. Clicking an actor or fixture walks to it,
+  within the route's reach (D109), which a plan does through clicks in the world
   (`bevy_remote_driver`'s X9).
 
 ## Portals

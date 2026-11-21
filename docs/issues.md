@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I68.**
+**Next: I69.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -294,3 +294,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   a field on the terrain effect entry (`Surface`) saying whether it is a footpath, set on the roads
   and trails, which the capture reads through the precinct's effect table rather than the vertex
   attributes. Discussed with the author.
+- **I68** Roofs have navigation polygons: shingles under about 45° pass the walkable slope
+  (`WALKABLE_NORMAL_Y`), though no route reaches them. A click on a roof makes it the goal, and the
+  route ends at the reachable point nearest it, which may be the floor under it indoors rather than
+  the ground outside, as a click on a wall did before D109. Candidates: leave roofs out of the mesh
+  (an element's collider kind, or polygons no route can reach), or treat a click on an unreachable
+  surface as a wall click. Seen by the author in the navigation view; the click read, not run.

@@ -8,6 +8,7 @@ bevy = { workspace = true }
 bevy_action_map = { workspace = true }
 panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
+panoply_nav = { workspace = true }
 panoply_precinct = { workspace = true }
 panoply_saga = { workspace = true }
 panoply_scenery = { workspace = true }

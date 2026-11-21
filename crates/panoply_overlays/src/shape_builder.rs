@@ -125,25 +125,40 @@ impl ShapeBuilder {
     }
 
     fn vertex(&mut self, p: Vec2) -> u32 {
+        self.vertex_at(p, 0.)
+    }
+
+    /// A vertex `height` further from the draw plane than the offset.
+    fn vertex_at(&mut self, p: Vec2, height: f32) -> u32 {
         let index = self.vertices.len() as u32;
         self.vertices
-            .push(self.draw_plane.project(p.x, p.y, self.offset));
+            .push(self.draw_plane.project(p.x, p.y, self.offset + height));
         index
     }
 
     fn triangle(&mut self, a: Vec2, b: Vec2, c: Vec2) {
-        let start = self.vertex(a);
-        self.vertex(b);
-        self.vertex(c);
+        self.triangle_at(a, b, c, 0.);
+    }
+
+    fn triangle_at(&mut self, a: Vec2, b: Vec2, c: Vec2, height: f32) {
+        let start = self.vertex_at(a, height);
+        self.vertex_at(b, height);
+        self.vertex_at(c, height);
         self.indices.extend([start, start + 1, start + 2]);
     }
 
     /// A quad from its corners in order around it.
     fn quad(&mut self, a: Vec2, b: Vec2, c: Vec2, d: Vec2) {
-        let start = self.vertex(a);
-        self.vertex(b);
-        self.vertex(c);
-        self.vertex(d);
+        self.quad_at(a, b, c, d, 0., 0.);
+    }
+
+    /// A quad whose corners `d` and `a` are `height_a` from the draw plane, past the offset, and
+    /// `b` and `c` are `height_b`: a piece of a stroke, from one end to the other.
+    fn quad_at(&mut self, a: Vec2, b: Vec2, c: Vec2, d: Vec2, height_a: f32, height_b: f32) {
+        let start = self.vertex_at(a, height_a);
+        self.vertex_at(b, height_b);
+        self.vertex_at(c, height_b);
+        self.vertex_at(d, height_a);
         self.indices
             .extend([start, start + 1, start + 2, start, start + 2, start + 3]);
     }
@@ -262,36 +277,64 @@ impl ShapeBuilder {
     /// Strokes a polyline, or with `options.closed` a polygon, centered on its points: mitered
     /// where segments join, square at open ends, dashed if `options` say so.
     pub fn stroke_polygon(&mut self, points: &[Vec2], options: PolygonOptions) -> &mut Self {
+        let flat = vec![0.; points.len()];
+        self.stroke(points, &flat, options)
+    }
+
+    /// Strokes a polyline given in 3D, as [`Self::stroke_polygon`] does in the ground plane, each
+    /// piece of the stroke rising and falling with its own segment, so the stroke follows stairs
+    /// and slopes, and a route that passes over itself is drawn at both heights. Ignores the draw
+    /// plane, and lifts the stroke by the offset.
+    pub fn stroke_polyline_3d(&mut self, points: &[Vec3], options: PolygonOptions) -> &mut Self {
+        let plane = self.draw_plane;
+        self.draw_plane = DrawPlane::XZ;
+        let flat: Vec<Vec2> = points.iter().map(|p| Vec2::new(p.x, p.z)).collect();
+        let heights: Vec<f32> = points.iter().map(|p| p.y).collect();
+        self.stroke(&flat, &heights, options);
+        self.draw_plane = plane;
+        self
+    }
+
+    /// Strokes `points`, each `heights` from the draw plane past the offset.
+    fn stroke(&mut self, points: &[Vec2], heights: &[f32], options: PolygonOptions) -> &mut Self {
         let mut pts: Vec<Vec2> = Vec::with_capacity(points.len());
-        for &p in points {
+        let mut hs: Vec<f32> = Vec::with_capacity(points.len());
+        for (&p, &h) in points.iter().zip(heights) {
             if pts.last().is_none_or(|q| q.distance(p) > MIN_SEGMENT) {
                 pts.push(p);
+                hs.push(h);
             }
         }
         if options.closed && pts.len() > 2 && pts[0].distance(pts[pts.len() - 1]) <= MIN_SEGMENT {
             pts.pop();
+            hs.pop();
         }
         if pts.len() < 2 {
             return self;
         }
         let closed = options.closed && pts.len() > 2;
-        let n = pts.len();
 
         // Markers take their length from the ends of an open line.
         if !closed {
-            let dir = (pts[1] - pts[0]).normalize();
-            let length = self.marker_length(options.start_marker, pts[0].distance(pts[1]));
+            pts.reverse();
+            hs.reverse();
+            let length = self.room_at_end(options.start_marker, &mut pts, &mut hs);
+            pts.reverse();
+            hs.reverse();
             if length > 0. {
+                let dir = (pts[1] - pts[0]).normalize();
                 pts[0] += dir * length;
-                self.fill_marker(options.start_marker, pts[0], -dir, length);
+                self.fill_marker(options.start_marker, pts[0], -dir, length, hs[0]);
             }
-            let dir = (pts[n - 1] - pts[n - 2]).normalize();
-            let length = self.marker_length(options.end_marker, pts[n - 2].distance(pts[n - 1]));
+            let length = self.room_at_end(options.end_marker, &mut pts, &mut hs);
+            let n = pts.len();
             if length > 0. {
+                let dir = (pts[n - 1] - pts[n - 2]).normalize();
                 pts[n - 1] -= dir * length;
-                self.fill_marker(options.end_marker, pts[n - 1], dir, length);
+                self.fill_marker(options.end_marker, pts[n - 1], dir, length, hs[n - 1]);
             }
         }
+        let n = pts.len();
 
         let segments = if closed { n } else { n - 1 };
         let dirs: Vec<Vec2> = (0..segments)
@@ -336,7 +379,12 @@ impl ShapeBuilder {
                 }
                 .unwrap_or(side);
                 let (a, b) = (pts[k] + dirs[k] * t0, pts[k] + dirs[k] * t1);
-                builder.quad(a + start, b + end, b - end, a - start);
+                let rise = hs[(k + 1) % n] - hs[k];
+                let (ha, hb) = (
+                    hs[k] + rise * t0 / lengths[k],
+                    hs[k] + rise * t1 / lengths[k],
+                );
+                builder.quad_at(a + start, b + end, b - end, a - start, ha, hb);
             };
             if solid {
                 piece(self, 0., lengths[k]);
@@ -359,15 +407,48 @@ impl ShapeBuilder {
         self
     }
 
-    /// A marker with its base at `base`, pointing along `direction` for `length`.
-    fn fill_marker(&mut self, marker: StrokeMarker, base: Vec2, direction: Vec2, length: f32) {
+    /// A marker with its base at `base`, pointing along `direction` for `length`, `height` from
+    /// the draw plane past the offset.
+    fn fill_marker(
+        &mut self,
+        marker: StrokeMarker,
+        base: Vec2,
+        direction: Vec2,
+        length: f32,
+        height: f32,
+    ) {
         match marker {
             StrokeMarker::Arrowhead => {
                 let side = perp(direction) * length;
-                self.triangle(base + direction * length, base - side, base + side);
+                self.triangle_at(base + direction * length, base - side, base + side, height);
             }
             StrokeMarker::None => {}
         }
+    }
+
+    /// The length of `marker` at the end of `pts`, sized from the straight run leading to the
+    /// end, not only the last segment, so points along the run (a route's crossings from one
+    /// polygon to the next) do not shrink it. Drops the points the marker covers, with their
+    /// heights.
+    fn room_at_end(&self, marker: StrokeMarker, pts: &mut Vec<Vec2>, hs: &mut Vec<f32>) -> f32 {
+        let n = pts.len();
+        let end = pts[n - 1];
+        let dir = (end - pts[n - 2]).normalize();
+        let mut run_start = n - 2;
+        while run_start > 0 {
+            let step = pts[run_start] - pts[run_start - 1];
+            if step.dot(dir) <= 0. || perp(dir).dot(step).abs() > 1e-3 * step.length() {
+                break;
+            }
+            run_start -= 1;
+        }
+        let length = self.marker_length(marker, end.distance(pts[run_start]));
+        while pts.len() > 2 && pts[pts.len() - 2].distance(end) <= length {
+            let covered = pts.len() - 2;
+            pts.remove(covered);
+            hs.remove(covered);
+        }
+        length
     }
 
     /// A marker's length on a segment of `segment` length: twice the stroke width, up to 40% of
@@ -547,6 +628,25 @@ mod tests {
     }
 
     #[test]
+    fn a_point_just_before_the_end_does_not_shrink_the_arrowhead() {
+        let options = PolygonOptions {
+            end_marker: StrokeMarker::Arrowhead,
+            ..Default::default()
+        };
+        let mut builder = ShapeBuilder::new();
+        builder.with_stroke_width(0.2).stroke_polygon(
+            &[Vec2::ZERO, Vec2::new(5., 0.), Vec2::new(9.98, 0.), Vec2::new(10., 0.)],
+            options,
+        );
+        // The arrowhead's base, its widest vertices, a full 0.4 before the tip.
+        let triangle = &builder.vertices[..3];
+        let base = triangle.iter().map(|v| v.x).fold(f32::MAX, f32::min);
+        assert!((base - 9.6).abs() < 1e-4, "the arrowhead's base is at {base}");
+        // The point it covers is dropped: two pieces, not three.
+        assert_eq!(builder.indices.len(), 3 + 2 * 6);
+    }
+
+    #[test]
     fn a_circle_is_centered_on_its_center() {
         let mut builder = ShapeBuilder::new();
         builder.fill_circle(Vec2::new(5., 5.), 1., 12);
@@ -590,5 +690,50 @@ mod tests {
             .grid(Rect::new(0., 0., 64., 32.), 16.);
         // x = 16, 32, 48 and y = 16.
         assert_eq!(quads(&builder), 4);
+    }
+
+    #[test]
+    fn a_3d_polyline_follows_its_heights() {
+        // Level, then up a 2 m rise over 4 m, then level again: a flight of stairs.
+        let points = [
+            Vec3::new(0., 0., 0.),
+            Vec3::new(4., 0., 0.),
+            Vec3::new(8., 2., 0.),
+            Vec3::new(12., 2., 0.),
+        ];
+        let mut builder = ShapeBuilder::new();
+        builder
+            .with_stroke_width(0.2)
+            .with_offset(0.05)
+            .stroke_polyline_3d(&points, PolygonOptions::default());
+        assert_eq!(quads(&builder), 3);
+        for v in &builder.vertices {
+            let expected = (v.x - 4.).clamp(0., 4.) * 0.5 + 0.05;
+            assert!((v.y - expected).abs() < 0.06, "{v} not at {expected}");
+            assert!(v.z.abs() <= 0.11, "{v} off the line");
+        }
+        // The builder's own plane and offset are left as they were.
+        assert!(matches!(builder.draw_plane, DrawPlane::XY));
+        assert_eq!(builder.offset, 0.05);
+    }
+
+    #[test]
+    fn a_3d_polyline_over_itself_keeps_each_height() {
+        // Out along x at the ground, up 2 m over a short step, and back over the first segment.
+        let points = [
+            Vec3::new(0., 0., 0.),
+            Vec3::new(4., 0., 0.),
+            Vec3::new(4., 2., 0.1),
+            Vec3::new(0., 2., 0.1),
+        ];
+        let mut builder = ShapeBuilder::new();
+        builder
+            .with_stroke_width(0.2)
+            .stroke_polyline_3d(&points, PolygonOptions::default());
+        assert_eq!(quads(&builder), 3);
+        // Each quad's four vertices, in order.
+        let heights = |quad: usize| builder.vertices[quad * 4..quad * 4 + 4].iter().map(|v| v.y);
+        assert!(heights(0).all(|y| y.abs() < 1e-4), "{:?}", &builder.vertices[0..4]);
+        assert!(heights(2).all(|y| (y - 2.).abs() < 1e-4), "{:?}", &builder.vertices[8..12]);
     }
 }

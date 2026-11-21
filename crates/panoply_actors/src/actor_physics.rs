@@ -100,7 +100,7 @@ fn rests(motion: &ActorMotion, intent: &ActorIntent) -> bool {
 const FALL_HEIGHT: f32 = 0.7;
 
 /// Surfaces whose normal's y is under this are walls (R24).
-const WALKABLE_NORMAL_Y: f32 = 0.7;
+pub(crate) const WALKABLE_NORMAL_Y: f32 = 0.7;
 
 /// The gap the controller keeps from what it touches, and how far down the walkable-ground cast
 /// reaches beyond it.

@@ -12,7 +12,8 @@ Fallen into a hole or off the map, the actor is put back where it last stood. It
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
-opens and shuts it. In a house, in play, the floor above is cut away (R15).
+opens and shuts it. A click on the ground gives the player a route there. In a house, in play,
+the floor above is cut away (R15).
 The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
 its tests read; over unchanged content it writes the same bytes.
 
@@ -32,7 +33,7 @@ from pathlib import Path
 
 from bevy_remote_driver import Between
 
-from _panoply_driver import PanoplyDriver
+from _panoply_driver import PanoplyDriver, button, move_pointer, view_points
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
@@ -56,9 +57,11 @@ WINDOW = "bevy_window::window::Window"
 NAME = "bevy_ecs::name::Name"
 CURSOR_ICON = "bevy_window::cursor::CursorIcon"
 CURSOR_OPTIONS = "bevy_window::window::CursorOptions"
-WINDOW_EVENT = "bevy_window::event::WindowEvent"
 VIEWPORT_INSET = "panoply_core::viewport::ViewportInset"
 POINTER_INTERACTION = "bevy_picking::pointer::PointerInteraction"
+PLANNED_ROUTE = "panoply_nav::route::PlannedRoute"
+NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
+DEBUG_VIEWS = "panoply_editor::debug_views::DebugViews"
 # Under the player's spot, `PLAYER_POSITION` in `panoply_actors`.
 SPOT = [37.0, 0.0, 47.0]
 # South of the small hill whose top is near 41, 74, on flat ground; and over its south face,
@@ -113,6 +116,16 @@ def reload(driver, relative):
 
 def flat_distance(a, b):
     return math.hypot(a[0] - b[0], a[2] - b[2])
+
+
+def component(driver, selector, type_path):
+    """`type_path` on the one entity `selector` matches, as BRP gives it, or None while it has
+    none."""
+    entity = driver.select(selector)[0]
+    result = driver.call(
+        "world.get_components", {"entity": entity, "components": [type_path], "strict": False}
+    )
+    return result["components"].get(type_path)
 
 
 def place(driver, position):
@@ -347,6 +360,7 @@ def run(driver):
     assert flat_distance(back["position"], lip["position"]) < 0.1, f"not at the lip: {back}"
 
     check_chest(driver)
+    check_route(driver)
     check_cutaways(driver)
 
     for name, (position, azimuth) in GROUPS.items():
@@ -436,18 +450,7 @@ def check_cursor(driver, chest):
     middle = (inset["left"] + width / 2, inset["top"] + height / 2)
 
     def hover(x, y):
-        driver.message(
-            WINDOW_EVENT,
-            {
-                "CursorMoved": {
-                    "window": window,
-                    "position": [x, y],
-                    "physical_position": [x * scale, y * scale],
-                    "delta": None,
-                }
-            },
-        )
-        driver.frames(3)
+        move_pointer(driver, window, scale, (x, y))
         rows = driver.call(
             "world.query",
             {
@@ -574,6 +577,44 @@ def check_chest(driver):
     driver.set("Actor", MOTION, motion)
     driver.frames(5)
     assert prompt(driver) == "", f"prompt not cleared: {prompt(driver)!r}"
+    driver.mode("Edit")
+
+
+def check_route(driver):
+    """In play, at `SPOT`, a click on the ground below the player in the view gives the player a
+    route there (`PlannedRoute`), from where it stands. With Navigation shown, checked by eye in
+    `route.png`: a yellow line from the player to the point clicked, ending in an arrowhead,
+    lying on the mesh."""
+    driver.goto(SPOT, 20.0)
+    place(driver, SPOT)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.wait(
+        lambda: (component(driver, FIRST_PRECINCT, NAV_MESH) is not None, "no mesh"),
+        "the navigation mesh under the player",
+        {"seconds": 30},
+    )
+    driver.mode("Play")
+    driver.set_resource(DEBUG_VIEWS, True, at="navigation")
+    window, scale, middle, _ = view_points(driver)
+    move_pointer(driver, window, scale, (middle[0] + 60, middle[1] + 150))
+    button(driver, window, "Pressed")
+    button(driver, window, "Released")
+    driver.wait(
+        lambda: (component(driver, "Actor", PLANNED_ROUTE) is not None, "no route"),
+        "the player's route",
+        {"seconds": 2},
+    )
+    route = component(driver, "Actor", PLANNED_ROUTE)
+    waypoints, reached = route["waypoints"], route["reached"]
+    print(f"route: {len(waypoints)} points, reached {reached}, from {waypoints[0]} to {waypoints[-1]}")
+    assert reached, f"the click's point was not reached: {route}"
+    assert len(waypoints) >= 2, f"a route of {len(waypoints)} points"
+    start = driver.get("Actor", MOTION)["position"]
+    assert flat_distance(waypoints[0], start) < 1.0, f"starts at {waypoints[0]}, not {start}"
+    driver.present("NavRouteView/NavRouteLine")
+    driver.frames(3)
+    driver.screenshot("route")
+    driver.set_resource(DEBUG_VIEWS, False, at="navigation")
     driver.mode("Edit")
 
 

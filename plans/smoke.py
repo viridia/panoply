@@ -54,7 +54,7 @@ from pathlib import Path
 
 from bevy_remote_driver import Between
 
-from _panoply_driver import PanoplyDriver, readiness_grid
+from _panoply_driver import PanoplyDriver, button, move_pointer, readiness_grid, view_points
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
@@ -110,7 +110,6 @@ CHECKED = "bevy_ui::interaction_states::Checked"
 SCENERY_CHOICES = "panoply_editor::exemplar_list::SceneryChoices"
 TERRAIN_CURSOR = "panoply_editor::terrain_cursor::TerrainCursor"
 REALM_GRID = "panoply_editor::mode_overlays::RealmGrid"
-WINDOW = "bevy_window::window::Window"
 NODE = "bevy_ui::ui_node::Node"
 WALL_SETTINGS = "panoply_editor::wall_tool::WallToolSettings"
 FIXTURE_SETTINGS = "panoply_editor::fixture_tool::FixtureToolSettings"
@@ -126,7 +125,6 @@ NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
 EMPTY_SPOT = [160.0, 0.0, 160.0]
 EMPTY_PRECINCT = "scenery/precincts/playground/p002-p002.msgpack"
 EMPTY_PRECINCT_ENTITY = "Precinct:playground:2:2"
-WINDOW_EVENT = "bevy_window::event::WindowEvent"
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOCATIONS = ASSETS / "world.locations.json"
 CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
@@ -1642,47 +1640,6 @@ def terrain_cursor(driver):
     wait_mode(driver, terrain_tool, tool)
     move_pointer(driver, window, scale, middle)
     assert cursor() is None, f"a cursor for {tool}: {cursor()}"
-
-
-def view_points(driver):
-    """The window, its scale, and two points in logical pixels: the middle of the view and one
-    near its top-left corner."""
-    row = driver.call(
-        "world.query", {"data": {"components": [WINDOW]}, "filter": {"with": [WINDOW]}}
-    )[0]
-    resolution = row["components"][WINDOW]["resolution"]
-    scale = resolution["scale_factor_override"] or resolution["scale_factor"]
-    inset = driver.get_resource(INSET)
-    width = resolution["physical_width"] / scale - inset["left"] - inset["right"]
-    height = resolution["physical_height"] / scale - inset["top"] - inset["bottom"]
-    middle = (inset["left"] + width / 2, inset["top"] + height / 2)
-    corner = (inset["left"] + 20, inset["top"] + 20)
-    return row["entity"], scale, middle, corner
-
-
-def move_pointer(driver, window, scale, point):
-    x, y = point
-    driver.message(
-        WINDOW_EVENT,
-        {
-            "CursorMoved": {
-                "window": window,
-                "position": [x, y],
-                "physical_position": [x * scale, y * scale],
-                "delta": None,
-            }
-        },
-    )
-    driver.frames(3)
-
-
-def button(driver, window, state):
-    """Presses or releases the primary mouse button where the pointer is."""
-    driver.message(
-        WINDOW_EVENT,
-        {"MouseButtonInput": {"button": "Left", "state": state, "window": window}},
-    )
-    driver.frames(3)
 
 
 def select_parcel(driver, realm, parcel):

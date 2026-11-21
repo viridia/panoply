@@ -4,8 +4,9 @@ use bevy::{
     picking::{
         backend::{ray::RayMap, HitData, PointerHits},
         cursor::EntityCursor,
+        events::PointerClick,
         hover::HoverMap,
-        pointer::{PointerAction, PointerId, PointerInput},
+        pointer::{PointerAction, PointerButton, PointerId, PointerInput},
     },
     platform::collections::HashMap,
     prelude::*,
@@ -16,10 +17,17 @@ use panoply_core::{
     GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
+use panoply_nav::{NavCosts, NavRoutes, PlannedRoute, RouteQuery};
 use panoply_saga::SagaHost;
+
+use crate::{actor_control::PlayerActor, actor_physics::WALKABLE_NORMAL_Y};
 
 /// How far from the camera a pointer's ray can hit something, in meters.
 const PICK_RANGE: f32 = 500.;
+
+/// How far out from a clicked wall the ground under the click is looked for: past the band the
+/// navigation mesh leaves along a wall for the agent's radius.
+const WALL_STEP_OUT: f32 = 0.4;
 
 /// Below every backend but the window's, which reports at negative infinity.
 const BACKSTOP_ORDER: f32 = f32::MIN;
@@ -72,11 +80,50 @@ pub(crate) fn spawn_world_backstop(
             .0
             .insert(name, EntityCursor::Custom(CustomCursor::Image(image)));
     }
-    commands.spawn((
-        Name::new("WorldBackstop"),
-        WorldBackstop,
-        cursors.get(WORLD_CURSOR).clone(),
-    ));
+    commands
+        .spawn((
+            Name::new("WorldBackstop"),
+            WorldBackstop,
+            cursors.get(WORLD_CURSOR).clone(),
+        ))
+        .observe(route_to_click);
+}
+
+/// A click on the world where nothing offers an interaction asks for a route from the player to
+/// the point clicked, which the player is given to walk, or loses with a warning when there is
+/// none. A click on the sky, which hits nothing, is ignored.
+fn route_to_click(
+    mut click: On<PointerClick>,
+    mode: Res<State<GameMode>>,
+    viewpoint: Res<Viewpoint>,
+    player: Query<(Entity, &GlobalTransform), With<PlayerActor>>,
+    routes: NavRoutes,
+    mut commands: Commands,
+) {
+    if click.button != PointerButton::Primary || *mode.get() != GameMode::Play {
+        return;
+    }
+    click.propagate(false);
+    let (Some(goal), Some(realm), Ok((player, transform))) =
+        (click.hit.position, viewpoint.realm, player.single())
+    else {
+        return;
+    };
+    let query = RouteQuery {
+        start: transform.translation(),
+        goal,
+        reach: 0.,
+        costs: NavCosts::default(),
+    };
+    match routes.route(realm, &query) {
+        Ok(route) => {
+            commands.entity(player).insert(PlannedRoute(route));
+        }
+        Err(error) => {
+            warn!("No route to {goal}: {error}");
+            commands.entity(player).remove::<PlannedRoute>();
+        }
+    }
 }
 
 /// Hides the cursor while it rests over the 3D view during play, as it would otherwise sit in the
@@ -110,12 +157,34 @@ pub(crate) fn hide_idle_cursor(
     }
 }
 
+/// Where a click on the world at `hit` asks a route to: the hit itself, unless the surface there
+/// is too steep to stand on, a wall; then the first surface below a point stepped out from the wall
+/// toward the side it faces. So a click on a wall's outside walks to its foot, not to the floor
+/// just behind it, which is nearer.
+fn ground_point(
+    physics: &RealmPhysics,
+    hit: Vec3,
+    normal: Vec3,
+    shown: impl Fn(Entity) -> bool,
+) -> Vec3 {
+    if normal.y >= WALKABLE_NORMAL_Y {
+        return hit;
+    }
+    let out = Vec3::new(normal.x, 0., normal.z).normalize_or_zero();
+    let down = Ray3d::new(hit + out * WALL_STEP_OUT, Dir3::NEG_Y);
+    let groups = collision_groups::BLOCKING.difference(collision_groups::CANOPY);
+    physics
+        .pick(down, PICK_RANGE, groups, shown)
+        .map_or(hit, |(_, distance)| down.get_point(distance))
+}
+
 /// A picking backend. Casts each pointer's ray into the viewed realm's colliders, and reports the
 /// first thing it hits if that offers an interaction, so that nothing is picked through a wall. Its
 /// cursor is set here, on that entity alone, so it follows the entries offered at the moment. Actors
 /// stop the ray as walls do. The canopy is passed through (D39), and so are the editor's markers
 /// and whatever is hidden, such as cutaways (R15).
-/// Every ray also reports the backstop.
+/// Every ray also reports the backstop, with the point the ray first hits, if any, which a click
+/// on the backstop routes to.
 pub(crate) fn pick_world(
     rays: Res<RayMap>,
     cameras: Query<&Camera, With<PrimaryCamera>>,
@@ -140,14 +209,19 @@ pub(crate) fn pick_world(
         let Ok(camera) = cameras.get(id.camera) else {
             continue;
         };
+        let Some(physics) = physics else {
+            continue;
+        };
+        let picked = physics.pick_surface(ray, PICK_RANGE, groups, &shown);
+        let point = picked.map(|(_, distance, normal)| {
+            ground_point(physics, ray.get_point(distance), normal, &shown)
+        });
         commands.write_message(PointerHits::new(
             id.pointer,
-            vec![(*backstop, HitData::new(id.camera, 0., None, None))],
+            vec![(*backstop, HitData::new(id.camera, 0., point, None))],
             BACKSTOP_ORDER,
         ));
-        let Some((target, distance)) =
-            physics.and_then(|physics| physics.pick(ray, PICK_RANGE, groups, &shown))
-        else {
+        let Some((target, distance, _)) = picked else {
             continue;
         };
         let Ok((interactions, current)) = interactions.get(target) else {

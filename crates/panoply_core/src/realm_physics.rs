@@ -4,7 +4,7 @@ use bevy::{
 };
 use rapier3d::prelude::*;
 
-use crate::{Realm, ToRapier, Viewpoint};
+use crate::{Realm, ToBevy, ToRapier, Viewpoint};
 
 /// Collision groups, as rapier membership and filter bits. Each is defined when its kind of
 /// collider arrives, after the three.js version's nine (see `docs/faery.md`, Physics).
@@ -137,6 +137,24 @@ impl RealmPhysics {
         let filter = group_filter(groups).predicate(&predicate);
         let (handle, distance) = self.world.cast_ray(&ray, range, true, filter)?;
         Some((owner(self.world.colliders.get(handle)?)?, distance))
+    }
+
+    /// As [`Self::pick`], with the normal of the surface where the ray hit it.
+    pub fn pick_surface(
+        &self,
+        ray: Ray3d,
+        range: f32,
+        groups: Group,
+        shown: impl Fn(Entity) -> bool,
+    ) -> Option<(Entity, f32, bevy::math::Vec3)> {
+        let rapier_ray = Ray::new(ray.origin.to_rapier(), ray.direction.to_rapier());
+        let predicate = |_, collider: &Collider| owner(collider).is_none_or(&shown);
+        let filter = group_filter(groups).predicate(&predicate);
+        let (handle, hit) = self
+            .world
+            .cast_ray_and_get_normal(&rapier_ray, range, true, filter)?;
+        let owner = owner(self.world.colliders.get(handle)?)?;
+        Some((owner, hit.time_of_impact, hit.normal.to_bevy()))
     }
 
     /// Number of colliders in this realm's physics world.
