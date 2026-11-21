@@ -313,9 +313,9 @@ catalog that has it (faery's precincts named `wall-tiles` for `furnishings`' `Fo
 catalog has is dropped with its instances. Precincts holding only tiers in faery's older layout
 (`walls` and `floors`, which Panoply does not read) are skipped, and their output deleted.
 
-The realm map converter also wrote `terrain/maps/underworld.terrain`, a 3x3 placeholder the three.js
-version needed for a floors-only realm; it was deleted (see PAN84). X1 needs the archetype converter
-(or a successor) to emit BSN.
+The realm map converter also wrote `terrain/maps/underworld.terrain`, a 3x3 placeholder for a realm
+that has no scenery in faery either; the map and the realm were deleted (PAN84). X1 needs the
+archetype converter (or a successor) to emit BSN.
 
 Conversions baked into Panoply's data: wall and fixture facings from quarter turns to degrees
 (`* 90`); actor facings from radians to degrees, turned a quarter (faery's 0 faced +x, Panoply's

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN84** The empty `underworld` realm and its Go To entry are gone.
 - **PAN99** The aspect model is decided: overrides, added aspects, scripted aspects and presence.
 - **PAN90** Walking into an actor shoves it aside, stumbling; the smaller yields more.
 - **PAN16f** The game builds simulated precincts' navigation meshes, and rebuilds them after edits.

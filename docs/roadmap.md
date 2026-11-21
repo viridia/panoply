@@ -47,11 +47,6 @@ asset unsaved and goes on the undo stack.
   sit in it is to be decided. `blend_var` sets how much of a parcel the transition spans and the gap
   between `blend_t0` and `blend_t1` the sharpness of a clump's border; separate fields for the two
   would suit sliders better.
-- **PAN84 Realms without terrain.** `underworld` (in `world.locations.json`) is floors only, with
-  black everywhere else; the three.js version needed a placeholder terrain map for it (a 3x3 stub,
-  which `convert_realm_maps.mts` writes; deleted here). Go To's `underworld` nav point is the way
-  in. Check that a realm with no `.terrain` file spawns no parcels and no errors, and that parcels'
-  wait for precinct effects (D11) does not hang; make a stub map only if it must.
 
 ## Water
 
