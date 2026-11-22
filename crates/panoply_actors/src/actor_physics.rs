@@ -28,6 +28,10 @@ const GRAVITY: f32 = 9.81;
 /// How fast an actor turns toward its heading, in radians per second.
 const TURN_RATE: f32 = 5.0;
 
+/// How far an actor may face from its heading and still walk, in radians; further, and it turns
+/// in place first.
+const TURN_IN_PLACE: f32 = std::f32::consts::FRAC_PI_3;
+
 /// How far up from the actor's feet the readiness ray starts, and how far down it reaches.
 const GROUND_RAY_RISE: f32 = 2.0;
 const GROUND_RAY_LENGTH: f32 = 1000.0;
@@ -212,7 +216,7 @@ pub(crate) fn start_actor_physics(
 }
 
 /// Moves actors one fixed tick: turning toward their intent's heading, travelling along their
-/// facing and as other actors push them (`bump_actors`), falling under gravity, stopped and slid by what they meet, and pushed out of what they
+/// facing once it is within `TURN_IN_PLACE` of that heading and as other actors push them (`bump_actors`), falling under gravity, stopped and slid by what they meet, and pushed out of what they
 /// are inside (R26), and put back where they last stood when they fall out of the world (R27).
 /// Runs after the realm steps, so colliders inserted since the last tick are in its broad phase.
 /// Only the viewpoint's realm steps, so actors in other realms hold still, and so do actors whose
@@ -267,7 +271,13 @@ pub(crate) fn move_actors(
         let turn = angle_between(motion.facing, intent.heading);
         motion.facing = (motion.facing + turn.clamp(-TURN_RATE * dt, TURN_RATE * dt))
             .rem_euclid(std::f32::consts::TAU);
-        let mut travel = Quat::from_rotation_y(motion.facing) * Vec3::Z * intent.speed
+        // An actor facing too far from its heading turns where it stands before it walks.
+        let speed = if angle_between(motion.facing, intent.heading).abs() > TURN_IN_PLACE {
+            0.0
+        } else {
+            intent.speed
+        };
+        let mut travel = Quat::from_rotation_y(motion.facing) * Vec3::Z * speed
             + Vec3::new(motion.push.x, 0.0, motion.push.y);
         // On a slope, travel along the ground at the full horizontal pace. Left to the controller,
         // travel into a slope is projected onto it, which slows the climb but not the sideways

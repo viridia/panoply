@@ -1,7 +1,8 @@
 """Actors: the player's actor falls onto a floor in the playground and stays there, with one
 skeleton (D28), plays its idle clip from the shared clips file, wears its hair and its exemplar's
 colors, and holds a sword in its right hand. W walks it away from the camera, turning it to
-match, with the camera following, and S backs it up. A slope steeper than 45° stops it, and it
+match, with the camera following, and S backs it up; facing the camera, W turns it in place
+before it walks. A slope steeper than 45° stops it, and it
 slides down one it is dropped onto. It steps up a curb's height. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
 Its clip follows its speed: stand, walk (backward when backing up), fast walk and run. Dropped,
 it plays falling, landing, then standing; it turns on the spot toward a target behind it; and
@@ -122,6 +123,11 @@ def flat_distance(a, b):
     return math.hypot(a[0] - b[0], a[2] - b[2])
 
 
+def angle_between(a, b):
+    """The signed angle from `a` to `b`, in (-π, π], as `actor_control::angle_between`."""
+    return (b - a + math.pi) % math.tau - math.pi
+
+
 def component(driver, selector, type_path):
     """`type_path` on the one entity `selector` matches, as BRP gives it, or None while it has
     none."""
@@ -222,6 +228,25 @@ def run(driver):
     back = flat_distance(walked["position"], backed["position"])
     assert back == Between(0.5 * WALK, 1.2 * WALK), f"backed {back} m: {backed}"
     assert driver.get("Actor", INTENT)["speed"] == 0.0, "still moving with no key held"
+
+    # With the camera turned to face the actor, W turns it where it stands, about 0.4 s, until it
+    # faces within 60° of away from the camera, and only then walks.
+    driver.mode("Edit")
+    driver.goto(backed["position"], 20.0, azimuth=-math.pi / 2)
+    driver.mode("Play")
+    driver.press("KeyW")
+    samples = []
+    for _ in range(20):
+        samples.append(driver.get("Actor", MOTION))
+        driver.seconds(0.05)
+    driver.release("KeyW")
+    driver.frames(5)
+    turning = [m for m in samples if abs(angle_between(m["facing"], -math.pi / 2)) > math.pi / 3]
+    assert len(turning) >= 4, f"did not turn first: {samples}"
+    for motion in turning:
+        moved = flat_distance(motion["position"], backed["position"])
+        assert moved < 1e-3, f"moved {moved} m while turning: {motion}"
+    assert flat_distance(samples[-1]["position"], backed["position"]) > 0.5, f"stuck: {samples}"
 
     # The hill's south face rises from about 0.1 at z 75 to 1.8 at z 74, too steep to walk up
     # (R24): W toward it stops the actor at its foot.

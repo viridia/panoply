@@ -44,8 +44,8 @@ pub(crate) fn travel_actors(
             continue;
         }
         let heading = offset.x.atan2(offset.y);
-        // Slowed while turning, to a stop when the target is abeam or behind, so the actor turns
-        // toward a near target rather than circling it. Never past the target in one tick.
+        // Slowed while turning, so the actor turns toward a near target rather than circling it;
+        // further off, `move_actors` turns it in place. Never past the target in one tick.
         let alignment = angle_between(motion.facing, heading).cos().max(0.0);
         let speed = (travel.speed * alignment).min(distance / dt);
         *intent = ActorIntent { heading, speed };

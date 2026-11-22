@@ -320,13 +320,6 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
-- **PAN3r Turn in place.** An actor whose intended heading is more than 60° from its facing turns
-  where it stands before walking, as faery did (`moveTowardsWaypoint` in `Actor.ts`): physics holds
-  its travel at zero until the heading is within that (`actor_physics.rs`, where it already turns at
-  faery's 5 rad/s), and the `Turn` clip follows, since the animation plays it for a turn without a
-  gait. Today, forward with the camera turned 180° walks the actor in a tight arc. Applies to every
-  actor, so NPCs on PAN16h's routes turn the same way. Checked in `plans/actors.py`: forward with
-  the camera turned away leaves the position unchanged until the facing comes within 60°.
 - **PAN3t Reach to open.** An actor opening or shutting a container plays a reach, `StandPoint` (an
   arm raised, 1.5 s), as faery played it for an actor opening a door, a one-second gesture faded in
   over 0.1 s (`createRoutePlanner.ts`). A gesture state played once over the idle, then back to it;
