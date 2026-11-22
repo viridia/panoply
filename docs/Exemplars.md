@@ -268,28 +268,26 @@ two places.
 
 **Quest-side composition.** The other alternatives put a piece of behavior on the actor that has it.
 This one lets a quest name the actors it involves and carry what it gives each, as the Creation
-Kit's quest aliases do: a role, bound to an actor by name, holding goals, lines and presence. Its
-prerequisite is that every actor a quest names is global (R7), held in a global asset and always in
-memory, so that a role names it without a precinct's path and a quest's formulas never find it not
-loaded; a few hundred actors at most, their goal trees perhaps spawned only while they are simulated
-(R8, R54). Making an actor global is PAN93's. The binding is authored and static, so behavior is
+Kit's quest aliases do: a role, bound to an actor by name, holding goals, lines and presence. A role
+names its actor by key, which needs no precinct's path, and the actor stays a precinct actor: it
+takes the role's bindings as it spawns ([instances.md](instances.md), Instances take their bindings
+from quests), so the quest never needs it loaded. The binding is authored and static, so behavior is
 still never added or removed at runtime; the quest's stage gates what a role gives through `when`,
 as any goal is gated. What a role gives joins the actor's own in one union, competing by priority,
 its dialogue sets after the actor's own. It is a relay for actors: PAN79's argument for keeping
 wiring off its participants applies, and a quest's goals and lines travel as one bundle again, and
 two mods that each give one guard a quest both survive, since neither edits the guard. Against:
 inspecting an actor does not show what quests do to it, so the editor lists the quests that name an
-actor, as PAN79 lists relays; an actor becomes global when a quest first names it; and a role's
-target may be missing (D47).
+actor, as PAN79 lists relays; and a role's target may be missing (D47).
 
 A quest changes scenery too, and the choice is the same there: realm layers that appear at a stage
 (X109), and stateful walls and fixtures, such as a castle's portcullis open only once a stage is
 reached. Each is a reactive formula testing the quest. World-side, it is written on the thing, a
 layer's `when` as X109 has it or a formula on the portcullis's open state, naming the quest, which
 is global; the logic is spread across the world's data. Quest-side, the quest names the thing and
-gives its condition, as a role does an actor: a layer by realm and name, which is short, but a wall
-or fixture by precinct and external id (D87), the awkward path that global actors avoid. A sketch,
-in a `.saga` module beside scripted aspects:
+gives its condition, as a role does an actor: a layer by realm and name, a wall or fixture by key,
+which the thing pulls as it spawns, as an actor does ([instances.md](instances.md)). A sketch, in a
+`.saga` module beside scripted aspects:
 
 ```rust
 quest UpInArms {
@@ -472,13 +470,12 @@ What the walk shows:
   a quest's goals, lines and presence spread over each instance it touches; a second quest for the
   same guard edits him again. Quest-side keeps each quest in one place.
 - **Each side references the other's things.** Actor-side, an actor's package names quests, which
-  are global already, by name. Quest-side, a quest names actors, which is why the actors it names
-  must be global. With global actors, step 10's three guards are three entries in the global asset,
-  not edits in whatever precincts their patrols start in, so actor-side scatters less than above,
-  though a second quest for one guard still edits him. A global actor can also be one identity
-  across its appearances, moved between homes by stage while off screen, which R85 leaves open.
-- **A quest's state is more than a stage:** objectives that complete in any order, and the method
-  chosen in step 14. It is declared as a scripted aspect's state is, and saved with the quest.
+  are global already, by name. Quest-side, a quest names actors, by key, and each takes what its
+  roles give as it spawns, so the actors stay in their precincts ([instances.md](instances.md),
+  Instances take their bindings from quests).
+- **A quest's state is its stage alone.** Objectives that complete in any order are subquests, and
+  the method chosen in step 14 is a branch, its own span of stages ([instances.md](instances.md),
+  Quest state).
 - **What a quest gives an actor spans its states** (step 2's question about the task). It is listed
   once, for the quest's whole life, and each entry conditions itself by a formula over the quest's
   state, as a dialogue set's entries already do (X17); by default a quest gives it while it is
@@ -508,8 +505,8 @@ them (D104). Aspects as values are against.
 
 After the worked example, both sides of composition, by kind: a character's own behavior is a
 package on its exemplar, and what exists because of a quest is a role in that quest, declared in
-SAGA as packages are, joining the actor's union, with every actor a quest names global. Instances
-then rarely take packages; D104 still lets them.
+SAGA as packages are, joining the actor's union as the actor spawns ([instances.md](instances.md)).
+Instances then rarely take packages; D104 still lets them.
 
 ## Aspect example
 

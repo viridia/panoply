@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I69.**
+**Next: I72.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -281,12 +281,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   keeping only those it injects; and hold the display awake for the run (as `caffeinate -d` does on
   macOS), or read the frame from the render target rather than the screen. Seen by the author; the
   causes read, not run.
-- **I66** With the camera turned 180° from the player's facing, pressing forward walks the actor
-  forward from its own view, turning in a tight arc until its heading meets the camera's. People
-  turn in place first. faery stopped and played its turn clip while the target heading was more than
-  60° off, turning at 5 rad/s, and walked only within that (`moveTowardsWaypoint` in `Actor.ts`,
-  `DEFAULT_TURN_RATE`). Panoply has a `Turn` gait already. Seen by the author; faery's rule read,
-  Panoply's cause not looked into.
 - **I67** Navigation takes a footpath from a terrain effect's look: a cell is a path when its effect
   is cobbled (`footpaths` in `panoply_nav`'s `input.rs`), as faery took its road and stone. The
   author expects two dirt effects that look the same but navigate differently, a trail through a
@@ -300,3 +294,21 @@ confirmed by running something or only by reading. Numbers are never reused.
   the ground outside, as a click on a wall did before D109. Candidates: leave roofs out of the mesh
   (an element's collider kind, or polygons no route can reach), or treat a click on an unreachable
   surface as a wall click. Seen by the author in the navigation view; the click read, not run.
+- **I69** Feathers' checkbox squeezes its box when its caption is wider than the space it is given:
+  the outline node has a fixed width and height but the default `flex_shrink` (`checkbox.rs`), so in
+  the actor features' two-column grid `FacialHairMuttonChops` narrows its box to a sliver. The fix
+  upstream: `flex_shrink: 0` on the outline
+  ([bevy#26630](https://github.com/bevyengine/bevy/issues/26630)). Panoply cannot set it meanwhile
+  without matching the node by position, since its marker (`CheckboxOutline`) is private. The
+  caption then overflows its column rather than squeezing the box; how the grid should take long
+  keys is a separate question. Seen by the author; the cause read in `checkbox.rs`.
+- **I70** Whether an actor can climb onto furniture at sitting height (benches, hay bales, about
+  0.45 m), above R105's 0.25 m step. The author leans to yes, with resistance: slower than walking,
+  perhaps a clip of its own, rather than the stride that takes a curb. A new feature, not part of
+  stepping. Discussed with the author.
+- **I71** Every launch warns that `editor.history.undo` and `.redo` read `KeyZ` twice: `undo.rs`
+  binds each once with Ctrl and once with Super, as it should. A false positive in
+  `bevy_action_map`: its duplicate check (`plan.rs`, `DuplicateBinding`) compares a binding's
+  `input` and not its `chord`, where `.with()` puts the modifiers, so two chords of one key count as
+  one binding. The fix is in the mapper, comparing the chord too; then bump the lock here. Panoply
+  has nothing to change. Seen in every run's log; the cause read in `plan.rs` and `builder.rs`.

@@ -74,21 +74,5 @@ always available (stab, block); on the right, stronger actions that are not alwa
 
 ## Thematic skills
 
-Each of the four virtues owns a kind of moment, so its opportunity actions are variations on "when
-this happens, this opens". faery's `design/talents.md` holds the seeds.
-
-| Virtue  | Its moment                                  | Its payoff                             | Owns            |
-| ------- | ------------------------------------------- | -------------------------------------- | --------------- |
-| Justice | an enemy harms an ally, or is brought low   | retribution, finishing                 | the circle      |
-| Mercy   | someone is hurt, or an enemy is beaten      | healing, protecting, sparing           | —               |
-| Wit     | an enemy telegraphs                         | reading, interrupting, deceiving       | support roles   |
-| Grit    | the hero takes the hit and stays standing   | enduring, holding ground               | the comeback    |
-
-- Justice punishes the henchman who steps in; Wit sees the man with the rope coming; Grit's Resolve
-  drives the comeback.
-- Sparing is Mercy's mechanic: Clemency on a beaten enemy makes them yield and lowers their allies'
-  morale, so a Mercy build wins fights differently, not only with more healing.
-- Since each virtue fires in different situations, the virtues a party leans on decide which
-  encounters suit it.
-- A deep tree needs few ideas: four to six signature skills per virtue, and nodes that upgrade them
-  (Retaliation II also answers harm to a bystander) as passive modifiers (X53).
+Each virtue owns a kind of moment in combat, and its combat skills are opportunity actions that
+answer it ([virtues.md](virtues.md), Combat skills).

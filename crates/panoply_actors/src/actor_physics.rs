@@ -12,7 +12,7 @@ use panoply_core::{
 use panoply_scenery::SceneryPending;
 use panoply_terrain::TerrainPending;
 use rapier3d::{
-    control::{CharacterLength, KinematicCharacterController},
+    control::{CharacterAutostep, CharacterLength, KinematicCharacterController},
     parry::query::details::ShapeCastOptions,
     prelude::{
         Capsule, Collider, ColliderBuilder, Group, InteractionGroups, InteractionTestMode, Pose,
@@ -107,11 +107,23 @@ pub(crate) const WALKABLE_NORMAL_Y: f32 = 0.7;
 const GROUND_CAST_GAP: f32 = 0.01;
 const GROUND_CAST_LENGTH: f32 = 0.06;
 
+/// The highest ledge an actor steps up onto as it walks (R105), in m, and the depth of free space
+/// it needs on top.
+const STEP_HEIGHT: f32 = 0.25;
+const STEP_DEPTH: f32 = 0.1;
+
 fn controller() -> KinematicCharacterController {
     KinematicCharacterController {
         offset: CharacterLength::Absolute(GROUND_CAST_GAP),
         max_slope_climb_angle: WALKABLE_NORMAL_Y.acos(),
         min_slope_slide_angle: WALKABLE_NORMAL_Y.acos(),
+        // R105. Without it, a capsule meets a ledge's edge on its rounded bottom, at a normal too
+        // steep to climb, so even a curb is a wall.
+        autostep: Some(CharacterAutostep {
+            max_height: CharacterLength::Absolute(STEP_HEIGHT),
+            min_width: CharacterLength::Absolute(STEP_DEPTH),
+            include_dynamic_bodies: false,
+        }),
         // R25.
         snap_to_ground: Some(CharacterLength::Absolute(0.1)),
         ..default()

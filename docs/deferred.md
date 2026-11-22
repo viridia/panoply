@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X127.**
+**Next: X128.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -517,13 +517,14 @@ dropped, not deferred. Numbers are never reused.
   it on screen.
 - **X115** Catalogs held by their owners: a live precinct holds the catalog roots and behavior
   packages (X17) its tables name, and they unload when it leaves the cache; a global set holds the
-  rest: items, generic exemplars, the player, and every NPC that can become a follower (D24), with
-  its packages. Now `CatalogRoots` holds every catalog it loads for good (D27), as one global set.
-  No LRU: every path has an owner, and the precinct cache already keeps a precinct a while after it
-  leaves the view; faery's LRU made up for references with no owner. A root keeps its labels only
-  because its loader stores their handles in it (D27; Bevy drops its own once the load is
-  processed), so a package's loader must do the same. First measure the memory a catalog holds and
-  the hitch of loading one. *Gate:* the first regional behavior packages (Marheim's).
+  rest: items, generic exemplars and the player. A global actor holds its own definitions while it
+  is embodied ([instances.md](instances.md), Global actors). Now `CatalogRoots` holds every catalog
+  it loads for good (D27), as one global set. No LRU: every path has an owner, and the precinct
+  cache already keeps a precinct a while after it leaves the view; faery's LRU made up for
+  references with no owner. A root keeps its labels only because its loader stores their handles in
+  it (D27; Bevy drops its own once the load is processed), so a package's loader must do the same.
+  First measure the memory a catalog holds and the hitch of loading one. *Gate:* the first regional
+  behavior packages (Marheim's).
 - **X116** Editing a patrol path's points in the world (PAN102), as Blender edits a curve's: while
   the path is selected, a handle at each point, dragged across the ground with PAN96's cast; points
   added and removed in the property editor's list until then. Beside it, faery's button by a
@@ -559,13 +560,14 @@ dropped, not deferred. Numbers are never reused.
 - **X123** How what a quest changes reaches the things it changes: actors' goals, lines and
   presence, realm layers (X109), and stateful walls and fixtures, such as a portcullis open once a
   stage is reached. World-side, each thing carries its own condition, naming the quest, which is
-  global, and the logic is spread across the world's data. Quest-side, the quest names each thing:
-  actors as roles, which must then be global (R7, PAN93), layers by realm and name, walls and
-  fixtures by precinct and external id (D87), the awkward path. Or split by kind
-  ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests, Leaning).
-  Roles would also let two mods each give one character lines or a quest, both surviving, which D86
-  gave up. A global index of instance names (PAN110) would make every kind as cheap to name as a
-  quest. *Gate:* the first quest that gives an actor goals or lines, or changes scenery (PAN6).
+  global, and the logic is spread across the world's data. Quest-side, the quest's file holds a
+  binding for each thing, by key, which the thing takes as it spawns ([instances.md](instances.md),
+  Instances take their bindings from quests): a quest stays in one place, and two mods can each give
+  one character lines or a quest, both surviving, which D86 gave up, but inspecting a thing does not
+  show what quests do to it. With keys, neither side needs global actors or names a precinct. Or
+  split by kind ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests,
+  Leaning). Settled by reading one quest written each way, as example code side by side. *Gate:* the
+  first quest that gives an actor goals or lines, or changes scenery (PAN6).
 - **X124** Area costs by haste, faery's `hurry`: an actor rushing an enemy cuts across a lawn rather
   than keeping to the footpaths, but not through a bog. Whether some enemies are stupid enough to be
   lured across one is a tactic to weigh. Costs are per query (`NavCosts`), so it is a table the
@@ -576,3 +578,11 @@ dropped, not deferred. Numbers are never reused.
 - **X126** Ladders in routes: the mesh has no links off it, so a ladder is joined into a route by
   the search, as a crossing between the polygons at its foot and its top. faery cut a route short at
   its first ladder, for the actor to climb and ask again. *Gate:* the first ladder an actor climbs.
+- **X127** Pathfinding queries: the nearest reachable place that meets a predicate, by path distance
+  over the loaded navigation meshes (R8), searching outward from the actor and stopping at the first
+  place that passes or at a cost limit, with none found a result of its own. Customers: `Exit`, a
+  goal that sends an actor to the nearest place out of the player's view, if there is one, so a
+  released or dismissed actor walks out of sight rather than standing until the player leaves
+  ([instances.md](instances.md), Becoming global, and going home); fleeing to nearby allies (R95);
+  and R79's nearest use mark, which a plain path search covers until then. *Gate:* `Exit`, or the
+  first actor that flees.

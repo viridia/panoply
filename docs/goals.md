@@ -25,6 +25,16 @@ What Panoply is for. For how far the earlier engine got, see `faery.md`.
   taking turns in a martial arts film. Waiting monsters don't freeze; they idle.
 - A brainstorm of film conventions that could become mechanics is in [combat.md](combat.md).
 
+## Fun risks
+
+- Whether a design is fun is known only once it is built and played, and many promising designs turn
+  out tedious. The riskiest parts are built early and cheaply, and kept cheap to change: tuning is
+  an edit to an asset, not a rebuild.
+- The risks are combat, the skill trees and the virtue system ([virtues.md](virtues.md)). Quests and
+  exploration follow established formulas.
+- Combat comes first: the skill trees and virtues show only through it, so until combat is fun,
+  nothing learned about them holds.
+
 ## Party
 
 - Undecided. Followers have their own personalities and ambient dialogue, and must be

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN111.**
+**Next: PAN112.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -122,12 +122,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   one fixture with an ordered list of points, not a fixture per point: a guard's field names one id,
   and the order is the list's. Its points are stored relative to the fixture, so PAN92's gizmo moves
   and turns the whole route; faery's were in world space.
-- **PAN93 Make global.** *Needs:* PAN110. On PAN88's selection, a toggle that takes the selected
-  actor out of its precinct, as faery's did. Where a global actor is kept, and how it loads and
-  saves, is decided in the chunk; read faery's first. If quests compose behavior by roles
-  ([Exemplars.md](Exemplars.md), Quest-side composition), every actor a quest names is global: then
-  whether its goal trees spawn only while it is simulated, and whether its place saves, unlike D80's
-  local actors.
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
   drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
@@ -153,18 +147,12 @@ The engine's design, seen whole, and what follows from it.
   alone: layering, which code owns which fact, identity and lifetime (PAN110), systems' order across
   crates. Findings go to [issues.md](issues.md) for the author to route; any acted on is read at the
   source first.
-- **PAN110 Instance identity.** *Needs:* PAN109. How an instance is named and found across the
-  world, for actors, walls and fixtures alike: ids unique per realm or game-wide, kept in a global
-  index from id to realm and precinct (beside PAN100's precinct index), so a reference never names a
-  precinct and survives its instance moving to another; which records stay resident while a quest or
-  relay names them, as the Creation Kit makes a referenced object persistent, its model still loaded
-  only nearby; references filled by picking, never typed. It may rethink actors: whether R7's local
-  and global actors become one kind, with D80's authored places, PAN93's toggle and R85's open
-  question of one identity across appearances. Prior art: Bethesda's FormIDs and persistent
-  references; Unreal World Partition's actor paths, soft references, actors not spatially loaded,
-  and Data Layers; Unity's GUID-based references across scenes. Proved by a walkthrough over
-  [Exemplars.md](Exemplars.md)'s three quests and PAN79's relay. Revises D87; X123 and PAN79's
-  naming follow it.
+- **PAN110 Instance identity.** *Needs:* PAN109. Builds [instances.md](instances.md): keys and
+  labels with a checked-in index, bindings pulled as an instance spawns, global actors as kernels in
+  `ActorRoster`, and the despawn latch. Its Open section is settled first. Proved by a walkthrough
+  over [Exemplars.md](Exemplars.md)'s three quests and PAN79's relay. Revises D87, D88, R7, R10,
+  R72, R83 and [save-games.md](save-games.md)'s followers and moved homes; X69's matching and
+  PAN79's naming follow it.
 
 ## Aspects
 
@@ -223,9 +211,9 @@ aspects that mechanisms, containers and signs are built on.
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79 Mechanisms.** *Needs:* PAN59, PAN102, PAN104. The stock elements puzzles are built from,
-  and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted aspects.
-  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
+- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104. The stock elements puzzles are built
+  from, and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted
+  aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
   automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
   a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
   ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
@@ -262,19 +250,19 @@ aspects that mechanisms, containers and signs are built on.
   references by realm and coordinates in `design/scripting/predicates.md`; animated instances
   (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
   first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN104. What a container holds. An open chest shows its contents
-  on an inventory screen whose background its container type chooses, and items move between it and
-  the player; a locked one opens for the key its instance names, and a corpse, once combat kills
-  (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that moves items,
-  so it brings in X42. Built as D105 divides it: `Container` and `Lock` become scripted aspects over
-  native components that routing (PAN16j), colliders and `SceneryAnimations` read, whether open and
-  whether locked, which the native `Lock` and `ContainerState` hold now; the item list is a native
-  `Inventory`, which scripts reach through host functions (`has_item(actor, key)`). The screen is
-  native, opened by a host command naming its style. Closing it is an event to the entity that
-  opened it, which a hook handles (`on screen_closed`), so the screen never writes a script's field,
-  as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with
-  no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after faery's fixed
-  `openDelay`, which needs that event.
+- **PAN106 Containers.** *Needs:* PAN71, PAN104. What a container holds. An open chest shows its
+  contents on an inventory screen whose background its container type chooses, and items move
+  between it and the player; a locked one opens for the key its instance names, and a corpse, once
+  combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that
+  moves items, so it brings in X42. Built as D105 divides it: `Container` and `Lock` become scripted
+  aspects over native components that routing (PAN16j), colliders and `SceneryAnimations` read,
+  whether open and whether locked, which the native `Lock` and `ContainerState` hold now; the item
+  list is a native `Inventory`, which scripts reach through host functions (`has_item(actor, key)`).
+  The screen is native, opened by a host command naming its style. Closing it is an event to the
+  entity that opened it, which a hook handles (`on screen_closed`), so the screen never writes a
+  script's field, as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse
+  handles it with no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after
+  faery's fixed `openDelay`, which needs that event.
 - **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
   is a scenery aspect whose interaction shows its text; a document is an inventory item that links
   to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
@@ -295,13 +283,13 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN93, PAN108. Roots for an
-  instance picked in selection mode and for the realm panel's selected nav point (faery's
-  `NavPointEditor`). An instance's aspects show as overrides of its exemplar's, and those it adds
-  (D104) as added. The scenery panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a
-  catalog: saving merges edits into the file (D73), so a new exemplar needs an insert beside it.
-  Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming it keep
-  working until they are saved again.
+- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN108. Roots for an instance
+  picked in selection mode and for the realm panel's selected nav point (faery's `NavPointEditor`).
+  An instance's aspects show as overrides of its exemplar's, and those it adds (D104) as added. The
+  scenery panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges
+  edits into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar,
+  whose old name joins its `alias` list, so that precincts naming it keep working until they are
+  saved again.
 - **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
   apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
   Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts
@@ -332,6 +320,21 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
+- **PAN3r Turn in place.** An actor whose intended heading is more than 60° from its facing turns
+  where it stands before walking, as faery did (`moveTowardsWaypoint` in `Actor.ts`): physics holds
+  its travel at zero until the heading is within that (`actor_physics.rs`, where it already turns at
+  faery's 5 rad/s), and the `Turn` clip follows, since the animation plays it for a turn without a
+  gait. Today, forward with the camera turned 180° walks the actor in a tight arc. Applies to every
+  actor, so NPCs on PAN16h's routes turn the same way. Checked in `plans/actors.py`: forward with
+  the camera turned away leaves the position unchanged until the facing comes within 60°.
+- **PAN3t Reach to open.** An actor opening or shutting a container plays a reach, `StandPoint` (an
+  arm raised, 1.5 s), as faery played it for an actor opening a door, a one-second gesture faded in
+  over 0.1 s (`createRoutePlanner.ts`). A gesture state played once over the idle, then back to it;
+  no clip is named for it, so the state names `StandPoint` and falls back to `Stand`. Interaction
+  actions are given only the element (`register_interaction_action`), so the actor using one has to
+  reach the action, and `ContainerToggle` names it. The actor faces the container as it reaches.
+  PAN59's door uses the same gesture. Checked in `plans/actors.py`, at the chest check: E plays the
+  gesture, then the idle.
 - **PAN16h Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
   mesh is not ready, and an actor that cannot advance plays R33's blocked state and replans (R22). A
   route is searched on the main thread, under a millisecond across the lair and village fixtures
@@ -478,21 +481,25 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 
 ## SAGA
 
-- **PAN71 Imports**, modeled on WESL's ([saga.md](saga.md), Modules). `ModuleResolver`, implemented
-  on Bevy's `LoadContext`: check how Bevy main loads a dependency from within a loader. A module
-  recompiles when one it imports reloads, and an import cycle is a compile error.
-- **PAN107 Value slots.** *Needs:* PAN71. Step 2 of [saga.md](saga.md), Order of work, as its Values
-  section lays them out: host-declared structs and fixed-size arrays flattened into slots, and a
-  stack with no owned data, replacing what The crate lists under what value slots change. The
-  `TODO(PAN107)`s in `panoply_saga` include tuples, tuple structs and enums, which Values does not
-  cover and whose enums it wraps rather than flattens: each is built here or routed elsewhere.
+- **PAN71 Imports**, modeled on WESL's ([saga.md](saga.md), Modules), of a `.saga` module's `pub`
+  functions. Its constants wait on X91, its structs on X87, and imported exemplars on X118.
+  `ModuleResolver`, implemented on Bevy's `LoadContext`: check how Bevy main loads a dependency from
+  within a loader. A module recompiles when one it imports reloads, and an import cycle is a compile
+  error. The parser also takes a bare `import a::b;`, which becomes a namespace (`b::f`) or an
+  error.
+- **PAN107 Value slots.** Step 2 of [saga.md](saga.md), Order of work, as its Values section lays
+  them out: host-declared structs and fixed-size arrays flattened into slots, and a stack with no
+  owned data, replacing what The crate lists under what value slots change. The `TODO(PAN107)`s in
+  `panoply_saga` include tuples, tuple structs and enums, which Values does not cover and whose
+  enums it wraps rather than flattens: each is built here or routed elsewhere.
 - **PAN105 Cells and reactions.** *Needs:* PAN107. Step 3 of [saga.md](saga.md), Order of work, its
   first customer an animation's `when` (Early customers).
-- **PAN72 SAGA language reference.** *Needs:* PAN71. For mod authors, in `docs/saga-language.md`:
-  syntax, types, literals and their suffixes, operators and casts, locals, `if`, functions, modules
-  and imports, how a formula embeds in an asset (PAN45b), and the host functions and component reads
-  a formula may use, each with a short example. It describes the language as it is, not
-  [saga.md](saga.md)'s plans, and later chunks that change the language update it.
+- **PAN72 SAGA language reference.** *Needs:* PAN71, PAN104. For mod authors, in
+  `docs/saga-language.md`: syntax, types, literals and their suffixes, operators and casts, locals,
+  `if`, functions, modules and imports, how a formula embeds in an asset (PAN45b), and the host
+  functions and component reads a formula may use, each with a short example. It describes the
+  language as it is, not [saga.md](saga.md)'s plans, and later chunks that change the language
+  update it.
 
 ## Saves
 
@@ -508,9 +515,16 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 
 ## First playable
 
-- **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106. The first playable: the "Up in Arms" quest,
-  end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases Sergeant
-  Stone and the Crimson Watch, so it builds presence (D106).
+- **PAN111 Combat arena.** *Needs:* PAN16h, X53. The first test of combat's fun, the biggest fun
+  risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few henchmen in
+  the playground (`p002-p001`), with health, the action bar's plain actions, and Justice's signature
+  skills as opportunity actions ([combat.md](combat.md), The action bar; [virtues.md](virtues.md),
+  Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
+  are enough to judge the decisions; whether players accept enemies waiting as a convention depends
+  on presentation, and is judged here only roughly.
+- **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111. The first playable: the "Up in Arms"
+  quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases
+  Sergeant Stone and the Crimson Watch, so it builds presence (D106).
 
 ## Technical debt
 

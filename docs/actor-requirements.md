@@ -90,6 +90,8 @@ what counts as a valid route) or behavior. Which part handles each is not yet de
   from the camera's distance the difference does not show.
 - **R25** An actor within 0.1 m of the ground snaps to it. Beyond that it falls: the falling
   state over 0.7 m above ground, and a landing state on touchdown when the species has one.
+- **R105** An actor walking into a ledge up to 0.25 m high, a curb or a step, steps up onto it
+  without stopping, given 0.1 m of room on top. Higher ledges are walls.
 - **R26** An actor embedded in geometry is pushed out to free space.
 - **R27** An actor that falls out of the world is put back on walkable ground. Stopping the fall is
   not enough: faery's slab under the world caught falls but left the actor stuck below it (recovery

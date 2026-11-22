@@ -163,3 +163,11 @@ calls for work becomes an issue in [issues.md](issues.md).
   field that does not convert, so the whole enum falls back to its default, the fields the file did
   give included: every textured floor drew white. Recipe: mark a variant's optional fields
   `#[reflect(default)]`; a test reading the real files catches it (`floor_surface.rs`).
+- Dependency graph recipe: a private artifact, not checked in, at
+  https://claude.ai/artifact/YRzi7zBPM2dBesZF57e2a2, regenerated when asked. Read it first (the
+  Artifact tool's `read`) and republish to the same URL. From the roadmap's entry lines and their
+  `*Needs:*` fields: a Mermaid `flowchart LR`, an arrow from each needed id to the chunk needing it;
+  the longest chain, its nodes and edges drawn thick; the chunks that can start now, dashed: those
+  with an edge out but no `*Needs:*` of their own; the chunks with no edge either way, listed below
+  in roadmap order; and the date of the snapshot. Landed chunks are left out: the changelog does not
+  record what each needed, and they would crowd the graph.

@@ -2,7 +2,7 @@
 skeleton (D28), plays its idle clip from the shared clips file, wears its hair and its exemplar's
 colors, and holds a sword in its right hand. W walks it away from the camera, turning it to
 match, with the camera following, and S backs it up. A slope steeper than 45° stops it, and it
-slides down one it is dropped onto. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
+slides down one it is dropped onto. It steps up a curb's height. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
 Its clip follows its speed: stand, walk (backward when backing up), fast walk and run. Dropped,
 it plays falling, landing, then standing; it turns on the spot toward a target behind it; and
 its idle is the one its aspects choose.
@@ -68,6 +68,10 @@ SPOT = [37.0, 0.0, 47.0]
 # whose ground there is about 1 m up.
 HILL_FOOT = [41.0, 0.2, 77.0]
 HILL_FACE = [41.0, 2.5, 74.6]
+# On flat ground north of a roof tile lying in the playground, whose edge is about 0.1 m high, a
+# curb's height; and past it to the south, over the tile.
+CURB_FOOT = [34.5, 0.5, 42.0]
+OVER_CURB = [34.5, 0.0, 39.5]
 # 4 m east of `SPOT`, over the same flat ground W walks on.
 TRAVEL_TARGET = [41.0, 0.0, 47.0]
 # A metre east of the lip at (31.8, 47.1), past the gravestone west of `SPOT`; due west of it, in
@@ -248,6 +252,25 @@ def run(driver):
 
     driver.wait(slid, "the actor to slide down the face", {"seconds": 2})
     print(f"slid: {driver.get('Actor', MOTION)}")
+
+    # Sent south into the roof tile, the actor steps up onto its edge (R105) and goes on, rather
+    # than stopping at it as at a wall.
+    place(driver, CURB_FOOT)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    floor = driver.get("Actor", MOTION)["position"][1]
+    driver.set("Actor", TRAVEL, {"target": OVER_CURB, "speed": WALK})
+    highest = -math.inf
+
+    def crossed():
+        nonlocal highest
+        highest = max(highest, driver.get("Actor", MOTION)["position"][1])
+        return travelling(driver)
+
+    driver.wait(crossed, "the actor to cross the roof tile", {"seconds": 5})
+    over = driver.get("Actor", MOTION)
+    print(f"over the curb: {over}, from {floor:.2f} up to {highest:.2f}")
+    assert highest - floor > 0.08, f"never stepped up: from {floor} up to {highest}"
+    assert flat_distance(over["position"], OVER_CURB) < 0.1, f"stopped at the curb: {over}"
 
     # Dropped from 3 m, the actor falls, lands on touchdown, and stands once the landing ends.
     place(driver, [SPOT[0], 3.0, SPOT[2]])
