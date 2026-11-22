@@ -64,6 +64,30 @@ pub struct ActorMotion {
     pub last_stood: Vec3,
     /// The velocity other actors push it at, on the ground plane, in m/s (`bump_actors`).
     pub push: Vec2,
+    /// The ticks in a row over which it has advanced under a tenth of the distance it meant to,
+    /// from `stalled_from`, along the ground the way it meant to go (R22); none while it means to
+    /// stand or turns in place.
+    pub stalled_ticks: u32,
+    /// The feet, when the stall began.
+    pub stalled_from: Vec3,
+}
+
+/// The ticks in a row an actor stalls before it counts as blocked (R22), as faery's.
+const BLOCKED_TICKS: u32 = 3;
+
+/// Moving under this fraction of the distance meant is a stall (R22).
+const STALL_FRACTION: f32 = 0.1;
+
+impl ActorMotion {
+    /// Unable to advance: stalled for more than [`BLOCKED_TICKS`] (R22).
+    pub fn blocked(&self) -> bool {
+        self.stalled_ticks > BLOCKED_TICKS
+    }
+
+    /// How long the actor has been blocked, in ticks, 0 while it is not.
+    pub fn blocked_ticks(&self) -> u32 {
+        self.stalled_ticks.saturating_sub(BLOCKED_TICKS)
+    }
 }
 
 /// How far below where it last stood an actor falling with nothing under it goes before it is put
@@ -210,6 +234,8 @@ pub(crate) fn start_actor_physics(
                 // Over ground, as the ray found.
                 last_stood: position,
                 push: Vec2::ZERO,
+                stalled_ticks: 0,
+                stalled_from: position,
             });
         }
     }
@@ -299,6 +325,21 @@ pub(crate) fn move_actors(
         );
         let moved = movement.translation.to_bevy();
         motion.position += moved;
+        // Progress is counted from where the stall began, along the way meant: an actor pressed
+        // against a slope climbs a little and slides back, and a tick's climb is no progress.
+        let meant = speed * dt;
+        if meant == 0.0 {
+            motion.stalled_ticks = 0;
+        } else {
+            if motion.stalled_ticks == 0 {
+                motion.stalled_from = motion.previous;
+            }
+            let ticks = motion.stalled_ticks + 1;
+            let along = Vec2::new(motion.facing.sin(), motion.facing.cos()) * meant.signum();
+            let progress = (motion.position - motion.stalled_from).xz().dot(along);
+            let enough = meant.abs() * ticks as f32 * STALL_FRACTION;
+            motion.stalled_ticks = if progress < enough { ticks } else { 0 };
+        }
         // The controller's `grounded` includes steep slopes, where the actor must keep falling to
         // slide down (R24). From the pose the next tick starts at, so it serves that tick too.
         let ground = movement

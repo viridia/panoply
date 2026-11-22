@@ -8,7 +8,7 @@ use bevy_action_map::prelude::*;
 use panoply_core::{GotoLocation, Realm, Viewpoint};
 use std::f32::consts::PI;
 
-use crate::{Actor, ActorMotion, TravelTo};
+use crate::{Actor, ActorMotion, RouteTo, TravelTo};
 
 /// Walk away from the camera (+) or back toward it (-).
 #[derive(InputAction)]
@@ -37,7 +37,7 @@ pub struct PlayerControl;
 
 /// Paces, in m/s (R17).
 const WALK_SPEED: f32 = 1.5;
-const TROT_SPEED: f32 = 3.0;
+pub(crate) const TROT_SPEED: f32 = 3.0;
 const JOG_SPEED: f32 = 3.5;
 
 /// Marks the actor the player controls.
@@ -55,24 +55,33 @@ pub struct ActorIntent {
 }
 
 /// Turns the player's keys into their actor's intent. Pressing W or S has the camera follow the
-/// actor again after the free camera left it, and pre-empts travel (R45).
+/// actor again after the free camera left it, and pre-empts travel, a route's included (R45).
 pub(crate) fn drive_player(
     mut commands: Commands,
     input: ContextActions<PlayerControl>,
     mut viewpoint: ResMut<Viewpoint>,
-    mut players: Query<(Entity, &ActorMotion, &mut ActorIntent, Has<TravelTo>), With<PlayerActor>>,
+    mut players: Query<
+        (
+            Entity,
+            &ActorMotion,
+            &mut ActorIntent,
+            Has<TravelTo>,
+            Has<RouteTo>,
+        ),
+        With<PlayerActor>,
+    >,
 ) {
-    let Ok((entity, motion, mut intent, travelling)) = players.single_mut() else {
+    let Ok((entity, motion, mut intent, travelling, routed)) = players.single_mut() else {
         return;
     };
     let walk = input.value::<PlayerWalk>();
     let forward = walk > 0.0;
     let back = walk < 0.0;
-    if travelling {
+    if travelling || routed {
         if !(forward || back) {
             return;
         }
-        commands.entity(entity).remove::<TravelTo>();
+        commands.entity(entity).remove::<(TravelTo, RouteTo)>();
     }
     let fast = input.value::<PlayerFast>();
     let away = viewpoint.azimuth;
@@ -144,7 +153,7 @@ pub(crate) fn goto_player(
     transform.translation = goto.position;
     commands
         .entity(player)
-        .remove::<(ActorMotion, TravelTo)>()
+        .remove::<(ActorMotion, TravelTo, RouteTo)>()
         .insert((ActorIntent::default(), Propagate(realm.layer.clone())));
     // After `goto_location`'s command, which leaves the view following nothing.
     commands.queue(move |world: &mut World| {

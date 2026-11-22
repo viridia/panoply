@@ -43,6 +43,8 @@ pub enum ActorAnimationState {
     Turn,
     /// Pushed aside by another actor (R28).
     Stumble,
+    /// Unable to advance (R22).
+    Blocked,
     Walk,
     WalkFast,
     Run,
@@ -88,12 +90,13 @@ const fn looping(clips: &'static [&'static str], fade_ms: u64) -> StateClips {
 }
 
 impl ActorAnimationState {
-    const ALL: [Self; 10] = [
+    const ALL: [Self; 11] = [
         Self::Stand,
         Self::CombatStance,
         Self::CombatStanceUnarmed,
         Self::Turn,
         Self::Stumble,
+        Self::Blocked,
         Self::Walk,
         Self::WalkFast,
         Self::Run,
@@ -110,6 +113,8 @@ impl ActorAnimationState {
             }
             Self::Turn => looping(&["Turn", "Stand"], 100),
             Self::Stumble => looping(&["Stumble", "Turn", "Stand"], 100),
+            // As faery's: no clip of its own.
+            Self::Blocked => looping(&["Stand"], 300),
             // Gaits fall back to each other, by speed, in `ActorClips::gait`.
             Self::Walk => looping(&["Walk"], 300),
             Self::WalkFast => looping(&["WalkFast"], 300),
@@ -322,7 +327,8 @@ pub(crate) fn build_actor_graph(
 
 /// Plays each actor's state: falling while it falls (R25), then landing once on touchdown when
 /// the species has a landing clip, then its stumble while another actor pushes it and it is asked
-/// for no speed of its own, then its gait, its turn or its idle. The gait follows its speed
+/// for no speed of its own, its blocked state while it cannot advance (R22), then its gait, its
+/// turn or its idle. The gait follows its speed
 /// along its facing over the last fixed tick, so backing up plays the clip backward; a new gait
 /// crossfades in at the old one's phase of the stride (R19), and any other state starts its clip
 /// from the beginning.
@@ -338,7 +344,7 @@ pub(crate) fn animate_actor_state(
     clip_assets: Res<Assets<AnimationClip>>,
     time: Res<Time<Fixed>>,
 ) {
-    use ActorAnimationState::{Falling, Landing, Stumble, Turn};
+    use ActorAnimationState::{Blocked, Falling, Landing, Stumble, Turn};
     let dt = time.timestep().as_secs_f32();
     let duration = |clip: &StateClip| {
         clip_assets
@@ -375,6 +381,8 @@ pub(crate) fn animate_actor_state(
             Landing
         } else if idle_pushed && motion.push.length() > STUMBLE_SPEED {
             Stumble
+        } else if motion.blocked() {
+            Blocked
         } else if let Some(gait) = gait {
             gait
         } else if turn.abs() > TURN_SPEED {

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN17a** In play, the player walks to a clicked spot, W or S taking over; no detours at borders.
 - **PAN3r** An actor facing more than 60° from where it is headed turns on the spot before walking.
 - **PAN3s** Actors step up onto curbs and ledges up to 25 cm high rather than stopping at them.
 - **PAN16g** In play, a click on the ground plans the player a route there, drawn by Navigation.

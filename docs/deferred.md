@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X128.**
+**Next: X130.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -586,3 +586,17 @@ dropped, not deferred. Numbers are never reused.
   ([instances.md](instances.md), Becoming global, and going home); fleeing to nearby allies (R95);
   and R79's nearest use mark, which a plain path search covers until then. *Gate:* `Exit`, or the
   first actor that flees.
+- **X128** Keyboard-only and mouse-only playthroughs: driver plans that play the major features,
+  combat and a quest's actions, end to end, once with only the keyboard and once with only the
+  mouse, so that neither way of playing loses a feature. Long, so tagged `manual`, which a run of
+  `plans/` leaves out unless asked for. *Gate:* PAN6, the first quest with combat end to end.
+- **X129** Route smoothing: a pass over a route's turns (`Route::turns`) that mitres corners sharper
+  than some angle and merges runs of small turns, as around a round trunk, keeping each change only
+  where it stays on the mesh, by PAN16i's raycast along it. Either cuts inside a corner, toward what
+  the route bends around, so the mesh's agent radius (`AGENT_RADIUS`) goes a little above the
+  capsule's first; today they are equal (D110). Along a footpath in walkable ground the funnel's
+  corners are the inside edge of each bend, not obstacles: cutting them is safe, a winding path is
+  where small turns pile up, and the taut line hugs the path's edge where a walker keeps to its
+  middle, so there the route may follow the path's middle, or the funnel run through crossings
+  narrowed by a margin, rather than be smoothed after. *Gate:* PAN16i, or corners that look stiff in
+  play.

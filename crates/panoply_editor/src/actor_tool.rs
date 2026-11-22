@@ -273,6 +273,8 @@ fn show_actor_preview(
             falling: false,
             last_stood: position,
             push: Vec2::ZERO,
+            stalled_ticks: 0,
+            stalled_from: position,
         },
         InstanceAspects::default(),
         ActorRebuildAspects,

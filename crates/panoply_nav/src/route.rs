@@ -101,6 +101,30 @@ pub struct Route {
     pub reached: bool,
 }
 
+impl Route {
+    /// The points where the route's heading changes, seen from above, and its ends: all that
+    /// following it needs.
+    pub fn turns(&self) -> Vec<Vec3> {
+        let points = &self.waypoints;
+        let mut kept: Vec<Vec3> = points.first().copied().into_iter().collect();
+        for (i, &p) in points.iter().enumerate().skip(1) {
+            let from = *kept.last().unwrap();
+            let straight = points.get(i + 1).is_some_and(|&next| {
+                let (a, b) = ((p - from).xz(), (next - p).xz());
+                cross(a.normalize_or_zero(), b.normalize_or_zero()).abs() < TURN_EPSILON
+                    && a.dot(b) > 0.
+            });
+            if !straight {
+                kept.push(p);
+            }
+        }
+        kept
+    }
+}
+
+/// The sine of the smallest angle [`Route::turns`] counts as a turn.
+const TURN_EPSILON: f32 = 1e-3;
+
 /// The route an actor was given, for it to walk.
 #[derive(Component, Debug, Clone, Default, PartialEq, Reflect)]
 #[reflect(Component, Default)]
@@ -192,7 +216,11 @@ fn closest_point(points: &[Vec3], point: Vec3) -> Vec3 {
             let t = ((p - a.xz()).dot(ab) / ab.length_squared().max(EPSILON)).clamp(0., 1.);
             a.lerp(b, t)
         })
-        .min_by(|a, b| a.xz().distance_squared(p).total_cmp(&b.xz().distance_squared(p)))
+        .min_by(|a, b| {
+            a.xz()
+                .distance_squared(p)
+                .total_cmp(&b.xz().distance_squared(p))
+        })
         .unwrap_or(point)
 }
 
@@ -320,7 +348,7 @@ fn nearest_polygon<'m>(
 struct Node {
     coords: IVec2,
     polygon: u32,
-    /// Where the route enters it: the middle of the crossing it came through.
+    /// Where the route enters it, on the crossing it came through ([`entry_point`]).
     entry: Vec3,
     cost: f32,
     parent: Option<usize>,
@@ -464,16 +492,16 @@ pub fn find_route<'m>(
             if !query.costs.of(area).is_finite() {
                 continue;
             }
-            let middle = (crossing.right + crossing.left) * 0.5;
-            if !in_bounds(middle) {
+            let entry = entry_point(crossing.right, crossing.left, nodes[here].entry, goal);
+            if !in_bounds(entry) {
                 continue;
             }
-            let cost = nodes[here].cost + nodes[here].entry.distance(middle) * area_cost;
+            let cost = nodes[here].cost + nodes[here].entry.distance(entry) * area_cost;
             let key = (crossing.coords, crossing.polygon);
             let node = Node {
                 coords: crossing.coords,
                 polygon: crossing.polygon,
-                entry: middle,
+                entry,
                 cost,
                 parent: Some(here),
                 crossing: (crossing.right, crossing.left),
@@ -492,7 +520,7 @@ pub fn find_route<'m>(
                 }
             };
             queue.push(Open {
-                estimate: cost + estimate(middle),
+                estimate: cost + estimate(entry),
                 cost,
                 node: next,
             });
@@ -517,6 +545,36 @@ pub fn find_route<'m>(
         waypoints: route_through(&portals),
         reached,
     })
+}
+
+/// Where the search enters a polygon through the crossing from `right` to `left`: the point on it
+/// that makes the walk from `from` through it to `goal` shortest, seen from above. Where the line
+/// from `from` to `goal` crosses it, that crossing; otherwise the point toward the goal reflected
+/// across its line, kept to the crossing. A crossing's middle would cost a long edge, as along a
+/// precinct's seam, metres the route never walks. Since polygons are convex, each step it costs is
+/// one a walker can take.
+fn entry_point(right: Vec3, left: Vec3, from: Vec3, goal: Vec3) -> Vec3 {
+    let (r, a) = (right.xz(), from.xz());
+    let d = left.xz() - r;
+    let length_squared = d.length_squared();
+    if length_squared < EPSILON * EPSILON {
+        return right;
+    }
+    let mut b = goal.xz();
+    let (side_a, side_b) = (cross(d, a - r), cross(d, b - r));
+    if side_a * side_b > 0. {
+        // Both on one side: the goal's mirror image, on the other.
+        b -= Vec2::new(-d.y, d.x) * (2. * side_b / length_squared);
+    }
+    let run = b - a;
+    let denominator = cross(d, run);
+    let t = if denominator.abs() < EPSILON {
+        // Along the crossing's line: the point nearest `from`.
+        (a - r).dot(d) / length_squared
+    } else {
+        cross(a - r, run) / denominator
+    };
+    right.lerp(left, t.clamp(0., 1.))
 }
 
 /// Whether two points are one, seen from above.
@@ -688,19 +746,9 @@ mod tests {
         points.iter().map(|p| (p.x, p.z)).collect()
     }
 
-    /// The points where a route's heading changes, seen from above, and its ends.
-    fn turns(points: &[Vec3]) -> Vec<(f32, f32)> {
-        let mut kept = vec![points[0]];
-        for (i, &p) in points.iter().enumerate().skip(1) {
-            let next = points.get(i + 1);
-            let straight = next.is_some_and(|&n| {
-                side(kept.last().unwrap().xz(), p.xz(), n.xz()).abs() < 1e-3
-            });
-            if !straight {
-                kept.push(p);
-            }
-        }
-        flat(&kept)
+    /// A route's turns, seen from above.
+    fn turns(route: &Route) -> Vec<(f32, f32)> {
+        flat(&route.turns())
     }
 
     fn near(a: (f32, f32), b: (f32, f32)) -> bool {
@@ -726,7 +774,7 @@ mod tests {
         let cells: Vec<_> = (0..6).map(|x| (x + 2, 2)).collect();
         let mesh = grid(&cells, walkable);
         let route = find_route(one(&mesh), &query((2.5, 2.5), (7.5, 2.8))).unwrap();
-        assert_eq!(turns(&route.waypoints), [(2.5, 2.5), (7.5, 2.8)]);
+        assert_eq!(turns(&route), [(2.5, 2.5), (7.5, 2.8)]);
         // A point on each of the five edges crossed.
         assert_eq!(route.waypoints.len(), 7, "{route:?}");
     }
@@ -746,7 +794,10 @@ mod tests {
         let route = find_route(one(&mesh), &asked).unwrap();
         assert!(route.reached);
         for p in &route.waypoints {
-            assert!((p.y - height(p.x)).abs() < 1e-3, "{p} off the ramp: {route:?}");
+            assert!(
+                (p.y - height(p.x)).abs() < 1e-3,
+                "{p} off the ramp: {route:?}"
+            );
         }
         assert!(route.waypoints.iter().any(|p| (p.x - 3.).abs() < 1e-3));
         assert!(route.waypoints.iter().any(|p| (p.x - 5.).abs() < 1e-3));
@@ -765,7 +816,7 @@ mod tests {
         let mesh = ell();
         for (start, goal) in [((2.5, 2.5), (6.5, 6.5)), ((6.5, 6.5), (2.5, 2.5))] {
             let route = find_route(one(&mesh), &query(start, goal)).unwrap();
-            let points = turns(&route.waypoints);
+            let points = turns(&route);
             assert_eq!(points.len(), 3, "{points:?}");
             assert!(near(points[1], (6., 3.)), "{points:?}");
         }
@@ -880,6 +931,59 @@ mod tests {
         };
         let result = find_route(meshes, &query((63.5, 2.5), (64.5, 6.5)));
         assert_eq!(result, Err(RouteError::NotReady(IVec2::new(1, 0))));
+    }
+
+    /// A mesh of the given rectangles, each `(x0, z0, x1, z1)` with the edges as `grid`'s, in
+    /// order -x, +z, +x, -z.
+    fn rects(rects: &[((u32, u32, u32, u32), [NavEdge; 4])]) -> NavMesh {
+        let mut vertices = Vec::new();
+        let mut vertex = |x: u32, z: u32| {
+            let p = Vec3::new(x as f32, 0., z as f32);
+            match vertices.iter().position(|&v| v == p) {
+                Some(i) => i as u32,
+                None => {
+                    vertices.push(p);
+                    vertices.len() as u32 - 1
+                }
+            }
+        };
+        let polygons = rects
+            .iter()
+            .map(|&((x0, z0, x1, z1), edges)| NavPolygon {
+                vertices: [(x0, z0), (x0, z1), (x1, z1), (x1, z0)]
+                    .iter()
+                    .map(|&(x, z)| vertex(x, z))
+                    .collect(),
+                edges: edges.to_vec(),
+                area: NavAreaKind::Walkable,
+                door: None,
+            })
+            .collect();
+        NavMesh {
+            vertices,
+            polygons,
+            doors: None,
+        }
+    }
+
+    #[test]
+    fn long_edges_do_not_turn_the_route_aside() {
+        use NavEdge::{Neighbor as N, Wall as W};
+        // Three tall polygons side by side from x 1 to 7, z 5 to 25, their shared edges 20 m long,
+        // and under them a row of three small squares, z 3 to 5. Straight along z 6 from the
+        // first tall one to the third is 4 m; down through the squares and back up, about 4.8.
+        let mesh = rects(&[
+            ((1, 5, 3, 25), [W, W, N(1), N(3)]),
+            ((3, 5, 5, 25), [N(0), W, N(2), N(4)]),
+            ((5, 5, 7, 25), [N(1), W, W, N(5)]),
+            ((1, 3, 3, 5), [W, N(0), N(4), W]),
+            ((3, 3, 5, 5), [N(3), N(1), N(5), W]),
+            ((5, 3, 7, 5), [N(4), N(2), W, W]),
+        ]);
+        assert_eq!(mesh.check(), Ok(()));
+        let route = find_route(one(&mesh), &query((2., 6.), (6., 6.))).unwrap();
+        assert!(route.reached);
+        assert_eq!(turns(&route), [(2., 6.), (6., 6.)], "{route:?}");
     }
 
     #[test]

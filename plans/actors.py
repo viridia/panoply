@@ -3,7 +3,8 @@ skeleton (D28), plays its idle clip from the shared clips file, wears its hair a
 colors, and holds a sword in its right hand. W walks it away from the camera, turning it to
 match, with the camera following, and S backs it up; facing the camera, W turns it in place
 before it walks. A slope steeper than 45° stops it, and it
-slides down one it is dropped onto. It steps up a curb's height. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
+slides down one it is dropped onto, and plays its blocked state where it cannot advance. It steps
+up a curb's height. Travel (`TravelTo`) takes it to a point, and W pre-empts it.
 Its clip follows its speed: stand, walk (backward when backing up), fast walk and run. Dropped,
 it plays falling, landing, then standing; it turns on the spot toward a target behind it; and
 its idle is the one its aspects choose.
@@ -13,7 +14,7 @@ Fallen into a hole or off the map, the actor is put back where it last stood. It
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
-opens and shuts it. A click on the ground gives the player a route there. In a house, in play,
+opens and shuts it. A click on the ground sends the player there by a route. In a house, in play,
 the floor above is cut away (R15).
 The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
 its tests read; over unchanged content it writes the same bytes.
@@ -42,6 +43,7 @@ TRANSFORM = "bevy_transform::components::transform::Transform"
 GLOBAL_TRANSFORM = "bevy_transform::components::global_transform::GlobalTransform"
 MOTION = "panoply_actors::actor_physics::ActorMotion"
 RESTING = "panoply_actors::actor_physics::ActorResting"
+HELD = "panoply_actors::actor_physics::ActorHeld"
 INTENT = "panoply_actors::actor_control::ActorIntent"
 TRAVEL = "panoply_actors::actor_travel::TravelTo"
 FOOTING = "panoply_actors::actor_bump::ActorFooting"
@@ -249,7 +251,7 @@ def run(driver):
     assert flat_distance(samples[-1]["position"], backed["position"]) > 0.5, f"stuck: {samples}"
 
     # The hill's south face rises from about 0.1 at z 75 to 1.8 at z 74, too steep to walk up
-    # (R24): W toward it stops the actor at its foot.
+    # (R24): W toward it stops the actor at its foot, where it plays its blocked state (R22).
     place(driver, HILL_FOOT)
     driver.mode("Edit")
     driver.goto(HILL_FOOT, 20.0, azimuth=math.pi)
@@ -259,12 +261,18 @@ def run(driver):
     for _ in range(8):
         driver.seconds(0.25)
         highest = max(highest, driver.get("Actor", MOTION)["position"][1])
+    blocked = driver.get(SKELETON, STATE)
+    # Blocked over a second, as long as a route waits before it replans (R22), though the actor
+    # climbs a little and slides back: 64 ticks a second.
+    stalled = driver.get("Actor", MOTION)["stalled_ticks"]
     driver.release("KeyW")
     driver.frames(5)
     foot = driver.get("Actor", MOTION)
     print(f"at the hill: {foot}, highest {highest:.2f}")
     assert highest < 0.6, f"climbed the slope to {highest}: {foot}"
     assert foot["position"][2] == Between(74.0, 76.0), f"not stopped at the slope: {foot}"
+    assert blocked == "Blocked", f"{blocked} at the slope, not blocked"
+    assert stalled > 64, f"blocked for only {stalled} ticks at the slope"
     driver.screenshot("slope")
 
     # Dropped onto the face, the actor slides down it rather than standing there.
@@ -283,7 +291,7 @@ def run(driver):
     place(driver, CURB_FOOT)
     driver.expect("Actor", MOTION, {"grounded": True})
     floor = driver.get("Actor", MOTION)["position"][1]
-    driver.set("Actor", TRAVEL, {"target": OVER_CURB, "speed": WALK})
+    driver.set("Actor", TRAVEL, {"waypoints": [OVER_CURB], "speed": WALK})
     highest = -math.inf
 
     def crossed():
@@ -315,7 +323,7 @@ def run(driver):
     # Resting until then, it wakes when sent.
     driver.expect("Actor", MOTION, {"grounded": True})
     wait_resting(driver, "Actor", True)
-    driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": TROT})
+    driver.set("Actor", TRAVEL, {"waypoints": [TRAVEL_TARGET], "speed": TROT})
     wait_resting(driver, "Actor", False)
     driver.wait(lambda: travelling(driver), "the actor to finish travelling", {"seconds": 5})
     arrived = driver.get("Actor", MOTION)
@@ -339,7 +347,7 @@ def run(driver):
     # stride, not a walk. The speed ramps up as the actor turns toward the target; the
     # screenshot, which takes about 2 s while the actor runs on to it, waits for a sample at the
     # nominal rate, so the rate check never loses its sample to it.
-    driver.set("Actor", TRAVEL, {"target": SPOT, "speed": RUN})
+    driver.set("Actor", TRAVEL, {"waypoints": [SPOT], "speed": RUN})
     gaits = []
     shot = False
     while not travelling(driver)[0]:
@@ -359,7 +367,7 @@ def run(driver):
 
     # In play, Up pre-empts travel as W does: it ends short of its target.
     driver.mode("Play")
-    driver.set("Actor", TRAVEL, {"target": TRAVEL_TARGET, "speed": WALK})
+    driver.set("Actor", TRAVEL, {"waypoints": [TRAVEL_TARGET], "speed": WALK})
     driver.seconds(0.5)
     driver.key("ArrowUp", hold=10)
     driver.wait(lambda: travelling(driver), "Up to end the travel", {"seconds": 1})
@@ -391,7 +399,7 @@ def run(driver):
     # nothing under it, and is put back where it last stood, at the lip, its fall stopped (R27).
     place(driver, BRINK)
     driver.expect("Actor", MOTION, {"grounded": True})
-    driver.set("Actor", TRAVEL, {"target": HOLE, "speed": TROT})
+    driver.set("Actor", TRAVEL, {"waypoints": [HOLE], "speed": TROT})
     fell = wait_fallen(driver)
     entity = driver.select("Actor")[0]
     driver.call("world.remove_components", {"entity": entity, "components": [TRAVEL]})
@@ -630,9 +638,9 @@ def check_chest(driver):
 
 def check_route(driver):
     """In play, at `SPOT`, a click on the ground below the player in the view gives the player a
-    route there (`PlannedRoute`), from where it stands. With Navigation shown, checked by eye in
-    `route.png`: a yellow line from the player to the point clicked, ending in an arrowhead,
-    lying on the mesh."""
+    route there (`PlannedRoute`), from where it stands, which it walks to its end (R92). With
+    Navigation shown, checked by eye in `route.png`: a yellow line from the player to the point
+    clicked, ending in an arrowhead, lying on the mesh."""
     driver.goto(SPOT, 20.0)
     place(driver, SPOT)
     driver.expect("Actor", MOTION, {"grounded": True})
@@ -643,6 +651,8 @@ def check_route(driver):
     )
     driver.mode("Play")
     driver.set_resource(DEBUG_VIEWS, True, at="navigation")
+    # Held where it stands until the route is seen, which would otherwise end with the walk.
+    driver.set("Actor", HELD, {})
     window, scale, middle, _ = view_points(driver)
     move_pointer(driver, window, scale, (middle[0] + 60, middle[1] + 150))
     button(driver, window, "Pressed")
@@ -663,6 +673,18 @@ def check_route(driver):
     driver.frames(3)
     driver.screenshot("route")
     driver.set_resource(DEBUG_VIEWS, False, at="navigation")
+
+    # Let go, it walks there, and the route goes with the walk's end.
+    entity = driver.select("Actor")[0]
+    driver.call("world.remove_components", {"entity": entity, "components": [HELD]})
+    def arrived():
+        route = component(driver, "Actor", PLANNED_ROUTE)
+        return route is None, lambda: f"still on its way: {driver.get('Actor', MOTION)}"
+
+    driver.wait(arrived, "the player to walk its route", {"seconds": 10})
+    there = driver.get("Actor", MOTION)["position"]
+    print(f"walked the route to {there}")
+    assert flat_distance(there, waypoints[-1]) < 0.25, f"stopped at {there}, not {waypoints[-1]}"
     driver.mode("Edit")
 
 
@@ -751,7 +773,7 @@ def check_bumping(driver):
     target = [stood[0] + 2.0, stood[1], stood[2]]
     place(driver, start)
     driver.expect("Actor", MOTION, {"grounded": True})
-    driver.set("Actor", TRAVEL, {"target": target, "speed": TROT})
+    driver.set("Actor", TRAVEL, {"waypoints": [target], "speed": TROT})
     states = []
     shot = False
     while not travelling(driver)[0]:
@@ -779,7 +801,7 @@ def check_bumping(driver):
     target = [held[0] + 2.0, held[1], held[2] + 0.1]
     place(driver, start)
     driver.expect("Actor", MOTION, {"grounded": True})
-    driver.set("Actor", TRAVEL, {"target": target, "speed": TROT})
+    driver.set("Actor", TRAVEL, {"waypoints": [target], "speed": TROT})
     nearest = math.inf
     while not travelling(driver)[0]:
         nearest = min(nearest, flat_distance(driver.get("Actor", MOTION)["position"], held))

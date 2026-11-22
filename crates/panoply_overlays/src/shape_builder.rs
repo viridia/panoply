@@ -635,13 +635,21 @@ mod tests {
         };
         let mut builder = ShapeBuilder::new();
         builder.with_stroke_width(0.2).stroke_polygon(
-            &[Vec2::ZERO, Vec2::new(5., 0.), Vec2::new(9.98, 0.), Vec2::new(10., 0.)],
+            &[
+                Vec2::ZERO,
+                Vec2::new(5., 0.),
+                Vec2::new(9.98, 0.),
+                Vec2::new(10., 0.),
+            ],
             options,
         );
         // The arrowhead's base, its widest vertices, a full 0.4 before the tip.
         let triangle = &builder.vertices[..3];
         let base = triangle.iter().map(|v| v.x).fold(f32::MAX, f32::min);
-        assert!((base - 9.6).abs() < 1e-4, "the arrowhead's base is at {base}");
+        assert!(
+            (base - 9.6).abs() < 1e-4,
+            "the arrowhead's base is at {base}"
+        );
         // The point it covers is dropped: two pieces, not three.
         assert_eq!(builder.indices.len(), 3 + 2 * 6);
     }
@@ -733,7 +741,15 @@ mod tests {
         assert_eq!(quads(&builder), 3);
         // Each quad's four vertices, in order.
         let heights = |quad: usize| builder.vertices[quad * 4..quad * 4 + 4].iter().map(|v| v.y);
-        assert!(heights(0).all(|y| y.abs() < 1e-4), "{:?}", &builder.vertices[0..4]);
-        assert!(heights(2).all(|y| (y - 2.).abs() < 1e-4), "{:?}", &builder.vertices[8..12]);
+        assert!(
+            heights(0).all(|y| y.abs() < 1e-4),
+            "{:?}",
+            &builder.vertices[0..4]
+        );
+        assert!(
+            heights(2).all(|y| (y - 2.).abs() < 1e-4),
+            "{:?}",
+            &builder.vertices[8..12]
+        );
     }
 }

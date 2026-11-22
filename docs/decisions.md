@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D110.**
+**Next: D111.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -923,9 +923,21 @@ never reused.
   module's error taking its precinct or its character with it. (PAN99)
 - **D109** Routes come from a port of faery's `NavRouteTask`, not a crate, since Panoply builds its
   own meshes; it keeps faery's costs per area and its getting as near as it can, and fixes its
-  search, which took the first route found rather than the cheapest (`route.rs`). A goal off the
-  mesh is reached as near as can be, or within the query's reach, as a chest is opened from any
-  side, so a route fails only for a start off the mesh or a precinct whose mesh is not built. A
-  click on a wall routes to the ground at its foot on the side clicked, not to the floor just behind
-  it, which is nearer. Reversing it means a crate's mesh format, or routes that fail outright where
-  faery got close. (PAN16g)
+  search, which took the first route found rather than the cheapest (`route.rs`), and which entered
+  each polygon at its crossing's middle: a long edge, as along a precinct's seam, cost metres no
+  route walks, and turned routes aside, so a polygon is entered where the walk toward the goal is
+  shortest (PAN17a). A goal off the mesh is reached as near as can be, or within the query's reach,
+  as a chest is opened from any side, so a route fails only for a start off the mesh or a precinct
+  whose mesh is not built. A click on a wall routes to the ground at its foot on the side clicked,
+  not to the floor just behind it, which is nearer. Reversing it means a crate's mesh format, or
+  routes that fail outright where faery got close. (PAN16g)
+- **D110** Following a route is a body action, `TravelTo` through the route's turns, below a
+  request, `RouteTo`, that plans it, waits while a mesh is not built, and replans when blocked; the
+  player's click and NPCs' behaviors make the same request, as faery gave its player a temporary
+  action of the kind it gave NPCs (R92). Blocked (R22) counts from where the stall began, not tick
+  by tick as faery's did: pressed against a slope, an actor climbs a little and slides back, and a
+  tick's climb reset faery's count, so it never replanned. A waypoint overshot slightly is passed if
+  the actor is near the next leg, rather than turned back to; the slack is after the corner, not
+  before it, since a route's corners lie the agent's radius from what they bend around, and that is
+  the humanoids' capsule radius with no margin. Reversing it means a planner per kind of actor,
+  actors that stay pressed against a slope, or actors that turn back at a corner. (PAN17a)

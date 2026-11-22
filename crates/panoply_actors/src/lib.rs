@@ -16,6 +16,7 @@ mod actor_features;
 mod actor_model;
 mod actor_physics;
 mod actor_probe;
+mod actor_route;
 mod actor_slots;
 mod actor_travel;
 mod actor_wield;
@@ -32,6 +33,7 @@ pub use actor_control::{
 pub use actor_features::ActorFeature;
 pub use actor_model::*;
 pub use actor_physics::{capsule, ActorHeld, ActorMotion, ActorResting};
+pub use actor_route::RouteTo;
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
@@ -49,6 +51,7 @@ use self::actor_probe::{
     clear_probed_interaction, probe_interaction, spawn_interaction_prompt, update_interaction_key,
     update_interaction_prompt, InteractionKey, ProbedInteraction,
 };
+use self::actor_route::{end_route, finish_route, plan_routes, replace_route, replan_blocked};
 use self::actor_travel::travel_actors;
 use self::actor_wield::{attach_wielded_items, spawn_wielded_items};
 use self::precinct_actors::{mark_precinct_actors, spawn_precinct_actors};
@@ -96,6 +99,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<ActorIntent>()
             .register_type::<ActorFooting>()
             .register_type::<TravelTo>()
+            .register_type::<RouteTo>()
             .register_type::<ActorAnimationState>()
             .register_type::<ActorIdle>()
             .register_type::<Colors>()
@@ -175,7 +179,14 @@ impl Plugin for ActorsPlugin {
             )
             .add_systems(
                 FixedUpdate,
-                (travel_actors, bump_actors, move_actors, place_actor_colliders)
+                (
+                    replan_blocked,
+                    plan_routes,
+                    travel_actors,
+                    bump_actors,
+                    move_actors,
+                    place_actor_colliders,
+                )
                     .chain()
                     .after(realm_physics_system),
             )
@@ -184,6 +195,9 @@ impl Plugin for ActorsPlugin {
                 interpolate_actors.in_set(RunFixedMainLoopSystems::AfterFixedMainLoop),
             )
             .init_resource::<ActorMaterials>()
+            .add_observer(replace_route)
+            .add_observer(end_route)
+            .add_observer(finish_route)
             .add_observer(bind_actor_skeleton)
             .add_observer(spawn_actor_features)
             .add_observer(bind_actor_feature)

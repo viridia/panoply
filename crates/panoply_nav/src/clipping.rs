@@ -1116,7 +1116,10 @@ mod tests {
         };
         let wet = build_shore(true);
         let deepest = wet.vertices.iter().map(|v| v.x).fold(f32::MIN, f32::max);
-        assert!((deepest - cut).abs() < 1e-3, "kept to x {deepest}, not {cut}");
+        assert!(
+            (deepest - cut).abs() < 1e-3,
+            "kept to x {deepest}, not {cut}"
+        );
         let area = total_area(&wet);
         // The cut snaps to the fixed-point grid, up to half a unit along the 64 m edge.
         let snap = PRECINCT_SIZE_F / UNITS_PER_METER;

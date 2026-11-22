@@ -328,15 +328,22 @@ components and every layer restartable from saved state (R104).
   reach the action, and `ContainerToggle` names it. The actor faces the container as it reaches.
   PAN59's door uses the same gesture. Checked in `plans/actors.py`, at the chest check: E plays the
   gesture, then the idle.
-- **PAN16h Routes in behaviors.** Actors follow routes: a behavior asks for one, waits while the
-  mesh is not ready, and an actor that cannot advance plays R33's blocked state and replans (R22). A
-  route is searched on the main thread, under a millisecond across the lair and village fixtures
-  (`tests/route.rs`), an unreachable goal included. NPCs' requests wait in a queue, run each frame
-  until a budget is spent, the player's click ahead of them; a search paused across frames, which
-  restarts when a precinct it touched gets a new mesh, only if one search alone exceeds the budget;
-  tasks off the main thread only if both fall short.
-- **PAN16j Doors in routes.** *Needs:* PAN16h, PAN59. faery read each door's `open` signal inside
-  its search, but a door does not change during one query, so its cost is set before the query from
+- **PAN17b Click to interact.** *Needs:* PAN3t. A click on a fixture that offers an interaction,
+  which the cursor over it already shows (`pick_world`), walks the player into position to use it,
+  then performs it with its pose, as E does at the probe (R92). The position is its nearest use mark
+  where it has them (R79), which this chunk introduces, or else within the interaction distance (1.5
+  m, the probe's reach), facing it. A door is clicked the same way once PAN59 lands. W or S on the
+  way cancels it, as for a ground click. Actors, which offer no interaction yet, join with the first
+  that does.
+- **PAN16h Routes in behaviors.** Its first customer is PAN111's henchmen, the first NPCs whose
+  behavior walks somewhere, asking for a route as PAN17a's click does. A route is searched on the
+  main thread, under a millisecond across the lair and village fixtures (`tests/route.rs`), an
+  unreachable goal included. NPCs' requests wait in a queue, run each frame until a budget is spent,
+  the player's click ahead of them; a search paused across frames, which restarts when a precinct it
+  touched gets a new mesh, only if one search alone exceeds the budget; tasks off the main thread
+  only if both fall short.
+- **PAN16j Doors in routes.** *Needs:* PAN59. faery read each door's `open` signal inside its
+  search, but a door does not change during one query, so its cost is set before the query from
   PAN16f's table (passable at a cost, or blocked if automatic, or locked) and the door-use waypoints
   added after it, along the corridor (`findDoorUseLocation`). A door is its element's entity
   (`NavMesh::doors`); one missing is a door despawned while its precinct's mesh is rebuilt (D100),
@@ -344,15 +351,15 @@ components and every layer restartable from saved state (R104).
   through (R52).
 - **PAN16k Portals in routes.** *Needs:* PAN4c. The portal area is set per query, open to the
   player's click-to-move routes and closed to NPCs' (R31), as faery's portal areas were.
-- **PAN16i Routing around actors.** *Needs:* PAN16h. Exclusion zones where actors stand (R86): the
-  generator does not cut them in at run time, having left out faery's patching (D99). Likely relaxed
-  to two parts. A cost per query, as faery's `actor` surface already was in its search, but only on
-  a polygon the actor leaves no way past: one too narrow at the actor for the agent to go around it,
-  judged by width, not area, since a corridor is large but narrow. The cost follows the two actors'
-  weights (D102): one the agent outweighs costs the time to shove it, and one far heavier blocks the
-  polygon for this query. An actor in a field costs nothing, so polygon size need not be capped;
-  faery capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in,
-  which Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
+- **PAN16i Routing around actors.** Exclusion zones where actors stand (R86): the generator does not
+  cut them in at run time, having left out faery's patching (D99). Likely relaxed to two parts. A
+  cost per query, as faery's `actor` surface already was in its search, but only on a polygon the
+  actor leaves no way past: one too narrow at the actor for the agent to go around it, judged by
+  width, not area, since a corridor is large but narrow. The cost follows the two actors' weights
+  (D102): one the agent outweighs costs the time to shove it, and one far heavier blocks the polygon
+  for this query. An actor in a field costs nothing, so polygon size need not be capped; faery
+  capped its regions at 4 m cells (`REGION_QUANTA`) to bound the cost of cutting actors in, which
+  Panoply does not do. Then the smoothed path bends around the actors near it: where a segment
   passes within an actor's radius plus the agent's plus a margin, waypoints on the tangents of that
   circle, on the side whose segments stay on the mesh (a raycast along it). The margin keeps a path
   out of personal space where there is room, though the push lets capsules overlap (D102): an actor
@@ -361,10 +368,6 @@ components and every layer restartable from saved state (R104).
   replans. Before bending is built, an artifact for the author: its test cases, illustrated, to find
   the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios: driver plans that
   stage, for example, eight skeletons rushing the player, or two followers through a doorway.
-- **PAN17 Click to move.** The player walks the route a ground click gives it (`PlannedRoute`),
-  steering only by the points where its heading changes. Clicking an actor or fixture walks to it,
-  within the route's reach (D109), which a plan does through clicks in the world
-  (`bevy_remote_driver`'s X9).
 
 ## Portals
 

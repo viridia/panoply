@@ -60,7 +60,8 @@ impl Command for MarkNavMeshStale {
         let Ok(mut precinct) = world.get_entity_mut(self.0) else {
             return;
         };
-        let has_mesh = precinct.contains::<PrecinctNavMesh>() || precinct.contains::<NavMeshBuild>();
+        let has_mesh =
+            precinct.contains::<PrecinctNavMesh>() || precinct.contains::<NavMeshBuild>();
         if has_mesh {
             precinct.remove::<NavMeshBuild>().insert(NavMeshWanted);
         }

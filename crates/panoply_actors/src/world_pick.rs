@@ -17,13 +17,19 @@ use panoply_core::{
     GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
 };
 use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
-use panoply_nav::{NavCosts, NavRoutes, PlannedRoute, RouteQuery};
 use panoply_saga::SagaHost;
 
-use crate::{actor_control::PlayerActor, actor_physics::WALKABLE_NORMAL_Y};
+use crate::{
+    actor_control::{PlayerActor, TROT_SPEED},
+    actor_physics::WALKABLE_NORMAL_Y,
+    RouteTo,
+};
 
 /// How far from the camera a pointer's ray can hit something, in meters.
 const PICK_RANGE: f32 = 500.;
+
+/// How near the point a ground click sends the player to is near enough, in meters (R92).
+const CLICK_REACH: f32 = 0.2;
 
 /// How far out from a clicked wall the ground under the click is looked for: past the band the
 /// navigation mesh leaves along a wall for the agent's radius.
@@ -89,41 +95,24 @@ pub(crate) fn spawn_world_backstop(
         .observe(route_to_click);
 }
 
-/// A click on the world where nothing offers an interaction asks for a route from the player to
-/// the point clicked, which the player is given to walk, or loses with a warning when there is
-/// none. A click on the sky, which hits nothing, is ignored.
+/// A click on the world where nothing offers an interaction sends the player there at a trot, by
+/// a route (R92). A click on the sky, which hits nothing, is ignored.
 fn route_to_click(
     mut click: On<PointerClick>,
     mode: Res<State<GameMode>>,
-    viewpoint: Res<Viewpoint>,
-    player: Query<(Entity, &GlobalTransform), With<PlayerActor>>,
-    routes: NavRoutes,
+    player: Query<Entity, With<PlayerActor>>,
     mut commands: Commands,
 ) {
     if click.button != PointerButton::Primary || *mode.get() != GameMode::Play {
         return;
     }
     click.propagate(false);
-    let (Some(goal), Some(realm), Ok((player, transform))) =
-        (click.hit.position, viewpoint.realm, player.single())
-    else {
+    let (Some(goal), Ok(player)) = (click.hit.position, player.single()) else {
         return;
     };
-    let query = RouteQuery {
-        start: transform.translation(),
-        goal,
-        reach: 0.,
-        costs: NavCosts::default(),
-    };
-    match routes.route(realm, &query) {
-        Ok(route) => {
-            commands.entity(player).insert(PlannedRoute(route));
-        }
-        Err(error) => {
-            warn!("No route to {goal}: {error}");
-            commands.entity(player).remove::<PlannedRoute>();
-        }
-    }
+    commands
+        .entity(player)
+        .insert(RouteTo::new(goal, CLICK_REACH, TROT_SPEED));
 }
 
 /// Hides the cursor while it rests over the 3D view during play, as it would otherwise sit in the
