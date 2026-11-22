@@ -11,7 +11,10 @@ use std::path::{Path, PathBuf};
 
 use bevy::ecs::message::MessageCursor;
 use bevy::{
-    asset::{io::file::FileAssetReader, io::AssetSourceId, AssetLoadFailedEvent, UntypedAssetId},
+    asset::{
+        io::file::FileAssetReader, io::AssetSourceId, AssetLoadFailedEvent, AssetMut,
+        UntypedAssetId,
+    },
     picking::cursor::{EntityCursor, OverrideCursor},
     platform::collections::HashSet,
     prelude::*,
@@ -24,7 +27,11 @@ use panoply_exemplar::{CatalogEntry, EntryCatalog, Exemplar, ExemplarCatalog};
 use panoply_precinct::PrecinctAsset;
 use panoply_terrain::TerrainMapAsset;
 
-use crate::{json::to_asset_json, toast::ShowToast};
+use crate::{
+    instance_index::{update_index, InstanceIndex, PrecinctPlace},
+    json::to_asset_json,
+    toast::ShowToast,
+};
 
 /// The assets changed since they were last written.
 #[derive(Resource, Default, Debug)]
@@ -84,9 +91,17 @@ pub(crate) enum SaveSystems {
 }
 
 /// An asset type the editor can write back to its file.
-pub trait SaveableAsset: Asset {
+pub trait SaveableAsset: Asset + Sized {
     /// The file's contents. `file` is where they go, and `world` holds what else they need.
     fn to_bytes(&self, file: &Path, world: &World) -> Result<Vec<u8>, BevyError>;
+
+    /// Changes the asset `id` as saving it changes it, before it is written.
+    fn prepare(_id: AssetId<Self>, _world: &mut World) {}
+
+    /// Writes what else follows from the asset `id`, once its file is written.
+    fn saved(_id: AssetId<Self>, _world: &mut World) -> Result<(), BevyError> {
+        Ok(())
+    }
 }
 
 impl SaveableAsset for NavPointsAsset {
@@ -128,14 +143,24 @@ impl<T: CatalogEntry> SaveableAsset for EntryCatalog<T> {
     }
 }
 
-/// The precinct's file, with an external id given to each scenery instance whose exemplar has
-/// state and that lacks one (D87). The ids go into the file only; the watcher's reload brings them
-/// into the asset in memory.
 impl SaveableAsset for PrecinctAsset {
     fn to_bytes(&self, _file: &Path, world: &World) -> Result<Vec<u8>, BevyError> {
+        Ok(PrecinctAsset::to_bytes(
+            self,
+            &world.resource::<AppTypeRegistry>().read(),
+        )?)
+    }
+
+    /// Gives a key to each instance with a reason for one, and takes it from each with none left
+    /// (D87). While the watcher runs, the asset changes without an event, so that the reload, not
+    /// this, ends the save's wait, and brings the keys to the precinct's entities.
+    fn prepare(id: AssetId<Self>, world: &mut World) {
+        let Some(precinct) = world.resource::<Assets<PrecinctAsset>>().get(id) else {
+            return;
+        };
         let server = world.resource::<AssetServer>();
         let exemplars = world.resource::<Assets<Exemplar>>();
-        let has_state: Vec<bool> = self
+        let has_state: Vec<bool> = precinct
             .scenery_types
             .iter()
             .map(|path| {
@@ -144,12 +169,36 @@ impl SaveableAsset for PrecinctAsset {
                     .is_some_and(|handle| Exemplar::has_state(exemplars, handle.id()))
             })
             .collect();
-        let mut precinct = self.clone();
-        let named = precinct.assign_external_ids(|index| has_state[index]);
-        if named > 0 {
-            info!("Gave {named} scenery instances external ids");
+        let watching = server.watching_for_changes();
+        let mut assets = world.resource_mut::<Assets<PrecinctAsset>>();
+        let precinct = match watching {
+            true => assets.get_mut_untracked(id),
+            false => assets.get_mut(id).map(AssetMut::into_inner),
+        };
+        let Some(precinct) = precinct else {
+            return;
+        };
+        let (given, taken) = precinct.update_keys(|index| has_state[index]);
+        if given + taken > 0 {
+            info!("Gave {given} instances keys, and took {taken} keys");
         }
-        Ok(precinct.to_bytes(&world.resource::<AppTypeRegistry>().read())?)
+    }
+
+    /// Rewrites the precinct's lines in the instance index.
+    fn saved(id: AssetId<Self>, world: &mut World) -> Result<(), BevyError> {
+        let path = world
+            .resource::<AssetServer>()
+            .get_path(id)
+            .ok_or("the precinct has no path")?;
+        let place = PrecinctPlace::of_path(path.path())
+            .ok_or_else(|| format!("{path} is not named for a precinct"))?;
+        world.resource_scope(|world, mut index: Mut<InstanceIndex>| {
+            let precinct = world
+                .resource::<Assets<PrecinctAsset>>()
+                .get(id)
+                .ok_or("the precinct is not loaded")?;
+            update_index(&mut index, &place, precinct)
+        })
     }
 }
 
@@ -285,9 +334,16 @@ fn save_assets<A: SaveableAsset>(
         .filter_map(|id| id.try_typed::<A>().ok())
         .collect();
     for id in ids {
+        A::prepare(id, world);
         match save(id, world) {
             Ok(path) => {
                 info!("Saved {}", path.display());
+                if let Err(error) = A::saved(id, world) {
+                    error!("After saving {}: {error}", path.display());
+                    world.write_message(ShowToast(
+                        format!("Could not finish saving {}", path.display()).into(),
+                    ));
+                }
                 world
                     .resource_mut::<UnsavedAssets>()
                     .0
@@ -330,9 +386,15 @@ fn save<A: SaveableAsset>(id: AssetId<A>, world: &World) -> Result<PathBuf, Bevy
         return Err(format!("{path} is not in the assets folder").into());
     }
     let file = asset_file(path.path());
-    let mut temporary = file.clone().into_os_string();
-    temporary.push(".new");
-    std::fs::write(&temporary, asset.to_bytes(&file, world)?)?;
-    std::fs::rename(&temporary, &file)?;
+    write_replacing(&file, &asset.to_bytes(&file, world)?)?;
     Ok(file)
+}
+
+/// Writes `bytes` to a temporary file beside `file`, then renames it over `file`, so a failed write
+/// leaves `file` whole.
+pub(crate) fn write_replacing(file: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let mut temporary = file.to_path_buf().into_os_string();
+    temporary.push(".new");
+    std::fs::write(&temporary, bytes)?;
+    std::fs::rename(&temporary, file)
 }

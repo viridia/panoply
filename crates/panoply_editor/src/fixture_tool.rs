@@ -14,7 +14,7 @@ use bevy::{
 use bevy_action_map::prelude::*;
 use panoply_core::{Realm, Viewpoint};
 use panoply_exemplar::Exemplar;
-use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
+use panoply_precinct::PrecinctAsset;
 use panoply_scenery::{
     precinct::Precinct,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
@@ -202,10 +202,10 @@ fn show_fixture_target(
                 Name::new("FixturePreviewElement"),
                 FixturePreviewElement,
                 SceneryElement {
-                    iid: SceneryInstanceId::None,
                     exemplar: handle,
                     facing,
                     position,
+                    ..default()
                 },
                 transform,
                 Visibility::Inherited,

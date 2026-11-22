@@ -6,7 +6,7 @@ use floor_surface::{build_floor_materials, FloorMaterials};
 use panoply_exemplar::{
     CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt,
 };
-use panoply_precinct::{PrecinctAsset, PrecinctAssetLoader};
+use panoply_precinct::{KeyedInstances, PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::spawn_precincts;
 
@@ -85,6 +85,7 @@ impl Plugin for PanoplySceneryPlugin {
         app.insert_resource(PrecinctCache::new())
             .init_asset_loader::<PrecinctAssetLoader>()
             .init_asset::<PrecinctAsset>()
+            .init_resource::<KeyedInstances>()
             .register_catalog_entry::<FloorSurface>()
             .register_catalog_entry::<TerrainEffect>()
             .init_resource::<FloorMaterials>()

@@ -348,8 +348,9 @@ fireplace with a spoon, Poul alternating between the anvil and the forge.
   turns the player toward it.
 - **R71** Aspects provide the interactions the player sees on an actor, depending on combat.
 - **R72** A quest or cut scene names the actors it involves by instance reference, as faery's cut
-  scenes did (`resolveInstanceRef`); naming across precincts is PAN79's. faery's quest roles, a role
-  list on aspects that filled a quest's cast, were never read, and have no successor.
+  scenes did (`resolveInstanceRef`): a picked reference stores the actor's key, and text names it by
+  its label ([instances.md](instances.md), Ids). faery's quest roles, a role list on aspects that
+  filled a quest's cast, were never read, and have no successor.
 - **R73** Queries: actors overlapping a box, actors within a radius of a point (each with a
   predicate), actors in a group, actors with an aspect.
 

@@ -45,8 +45,8 @@ DISTANCE = float(os.environ.get("DIST", "20"))
 # Forest, shoreline, water, grass and rocks in view at distance 20: a representative, near
 # worst-case spot. (At distance 20, (80, 80) frames only water.)
 # Townsfolk: where `plans/actors.py` views them, from their front at 45°.
-# Portal: the mine entrance `meo0` from its open side, as `plans/portals.py` sees it, at the game's
-# camera distance unless DIST is set.
+# Portal: the mine entrance `playground.mine.1` from its open side, as `plans/portals.py` sees it,
+# at the game's camera distance unless DIST is set.
 LOCATIONS = {
     "forest": ("playground", [110.0, 0.0, 150.0], None),
     "townsfolk": ("playground", [145.0, 0.0, 6.0], -0.75 * math.pi),

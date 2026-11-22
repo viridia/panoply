@@ -18,7 +18,6 @@ use panoply_core::{
     PortalViewRegion, PortalViewRegions, PrimaryCamera, Realm, Viewpoint, PORTAL_APERTURE_LAYER,
     PORTAL_VIEW_HALF_SIZE,
 };
-use panoply_precinct::SceneryInstanceId;
 use panoply_scenery::scenery_element::SceneryElement;
 
 use crate::{
@@ -76,12 +75,14 @@ pub fn aperture_transform(portal: &Portal, element: &GlobalTransform) -> Transfo
         ))
 }
 
-/// A portal camera's name: `PortalCamera:` and its element's external id, as plans select it, or
-/// the element's entity if it has none.
+/// A portal camera's name, as plans select it: `PortalCamera:` and its element's label, or its key
+/// without one, or its entity without either.
 fn camera_name(element: Entity, scenery: Option<&SceneryElement>) -> Name {
-    match scenery.map(|scenery| &scenery.iid) {
-        Some(SceneryInstanceId::External(id)) => Name::new(format!("PortalCamera:{id}")),
-        _ => Name::new(format!("PortalCamera:{element}")),
+    let label = scenery.and_then(|scenery| scenery.label.as_deref());
+    match (label, scenery.and_then(|scenery| scenery.iid.key())) {
+        (Some(label), _) => Name::new(format!("PortalCamera:{label}")),
+        (None, Some(key)) => Name::new(format!("PortalCamera:{key}")),
+        (None, None) => Name::new(format!("PortalCamera:{element}")),
     }
 }
 

@@ -682,22 +682,21 @@ never reused.
   an added aspect. Given up: a quest's goals and lines travelling as one bundle, and two mods adding
   lines to one character both surviving (X123). Reversing it means dialogue in behavior packages.
   (PAN99)
-- **D87** A precinct instance's `SceneryInstanceId` is `External`, a name saved with it, or
-  `Internal`, a number assigned as the precinct loads, neither saved nor stable across edits.
-  Scripting and saved state ([save-games.md](save-games.md)) refer to instances by external id only,
-  so an instance gets one when it is an actor, or when its exemplar has an aspect whose state saves
-  (a container's contents, a lock); the editor assigns it and the author may rename it. Other walls
-  and fixtures, most of a precinct, carry none, which keeps them featherweight. Whether a door or
-  chest is open does not save, so it needs no id for that. Reversing it means internal ids saved and
-  kept stable through every edit. (PAN99)
+- **D87** A precinct instance's `SceneryInstanceId` is `Keyed`, a key saved with it, or `Internal`,
+  a number assigned as the precinct loads, neither saved nor stable across edits. Its label, the
+  name text uses, is kept beside the id, so a rename changes no identity. Scripting and saved state
+  ([save-games.md](save-games.md)) refer to instances by key only, so an instance has one while it
+  has a reason, and saving gives and takes keys ([instances.md](instances.md), Ids). Other walls and
+  fixtures, most of a precinct, carry none, which keeps them featherweight. Whether a door or chest
+  is open does not save, so it needs no key for that. Reversing it means internal ids saved and kept
+  stable through every edit. (PAN99, PAN110)
 - **D88** An aspect's config is what is authored: its fields, written on an exemplar, or on an
   instance to override the exemplar's aspect of that type; the two are layers of one kind, not two
   kinds as faery's props and config were. Its state is what play changes and a saved game keeps (a
   container's contents, a lock), declared by `Aspect::has_state`; app preferences are settings
-  (`SettingsGroup`). So an instance whose exemplar chain has an aspect with state gets an external
-  id (D87) when its precinct saves, named for the exemplar's label in kebab case and the lowest
-  number its precinct does not use, as `wooden-chest-2`. Reversing it means a save game finding an
-  instance some other way. (PAN94)
+  (`SettingsGroup`). So an instance whose exemplar chain has an aspect with state gets a key (D87)
+  when its precinct saves. Reversing it means a save game finding an instance some other way.
+  (PAN94, PAN110)
 - **D89** A placing tool only places: a press puts the instance where its own shapes, cast along the
   pointer's ray, first touch, dropped onto what is under them, and a drag turns it toward the
   pointer on a dial, before the release commits it (`placement.rs`). So a mug goes on a table

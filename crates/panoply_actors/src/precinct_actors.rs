@@ -41,8 +41,8 @@ pub(crate) fn mark_precinct_actors(
     }
 }
 
-/// What placed an actor: its entry in its precinct's asset, without its aspects. An edit to the
-/// precinct that leaves the entry as it was leaves the actor alone.
+/// What placed an actor: its entry in its precinct's asset, without its label and aspects. An edit
+/// to the precinct that leaves the entry as it was leaves the actor alone.
 #[derive(Component, Debug, Clone, PartialEq)]
 pub struct PlacedAs {
     iid: SceneryInstanceId,
@@ -52,7 +52,7 @@ pub struct PlacedAs {
 }
 
 impl PlacedAs {
-    /// The actor's id in its precinct.
+    /// The actor's identity.
     pub fn iid(&self) -> &SceneryInstanceId {
         &self.iid
     }
@@ -111,7 +111,8 @@ pub(crate) fn spawn_precinct_actors(
                 .exemplar
                 .rsplit_once('#')
                 .map_or(data.exemplar.as_str(), |(_, label)| label);
-            commands.spawn((
+            let key = data.iid.key();
+            let mut actor = commands.spawn((
                 Name::new(format!("Actor:{label}")),
                 Actor {
                     exemplar,
@@ -131,6 +132,9 @@ pub(crate) fn spawn_precinct_actors(
                 Visibility::default(),
                 Propagate(precinct.render_layer.clone()),
             ));
+            if let Some(key) = key {
+                actor.insert(key);
+            }
         }
         for (actor, _) in existing {
             commands.entity(actor).despawn();

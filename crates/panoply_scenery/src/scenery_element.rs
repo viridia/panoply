@@ -5,12 +5,15 @@ use bevy::{
 
 use panoply_exemplar::*;
 use panoply_precinct::SceneryInstanceId;
+use std::sync::Arc;
 
 use super::scenery_aspect::{ModelComponent, SceneryModels};
 
 #[derive(Debug, Component, Clone, Default)]
 pub struct SceneryElement {
     pub iid: SceneryInstanceId,
+    /// The instance's label, if it has one.
+    pub label: Option<Arc<str>>,
     pub exemplar: Handle<Exemplar>,
     pub facing: f32,
     pub position: Vec3,

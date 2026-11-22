@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X132.**
+**Next: X133.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -316,12 +316,13 @@ dropped, not deferred. Numbers are never reused.
   share one scheme. *Gate:* a second package loads beside the game.
 - **X69** Make faery's precinct converter merge, as the archetype converter does (D56), not
   overwrite: once Panoply edits a precinct, a rerun would undo it, and faery's precincts hold much
-  Panoply has not taken ([faery.md](faery.md), Migration scripts). It matches an instance by
-  external id where faery gave one, otherwise by exemplar and position; adds the per-instance
-  aspects an instance lacks; and keeps what Panoply has. So a save may drop aspects no plugin
-  registers (D25), and a rerun restores them. It writes no id where faery had none, since internal
-  ids are not saved (D87): it numbers them now, 16,880 walls and fixtures. *Gate:* the editor saves
-  a precinct (PAN94), or one is edited by hand.
+  Panoply has not taken ([faery.md](faery.md), Migration scripts). It matches an instance by label
+  where faery's name became one, otherwise by exemplar and position; adds the per-instance aspects
+  an instance lacks; and keeps what Panoply has, keys and labels included. So a save may drop
+  aspects no plugin registers (D25), and a rerun restores them. Like the key migration (PAN110), it
+  writes faery's other names nowhere, and gives a new instance a key only if it has a reason for one
+  ([instances.md](instances.md), Ids). *Gate:* the editor saves a precinct (PAN94), or one is edited
+  by hand.
 - **X70** Rebuild demorun's cottages. Demorun was made to film a character running through many
   biomes and kinds of scenery; its cottages (`p002-p002`) are mangled and mostly roofless, since
   they were built from wall tiles that faery's later rethink of the cottage set removed. *Gate:* the
@@ -489,8 +490,9 @@ dropped, not deferred. Numbers are never reused.
   mesh otherwise (D100). No phased terrain or terrain effects: possible, with no customer. A mod's
   scenery is the same additive patch: it adds walls, fixtures and actors to the game's precincts,
   and precincts where the game has none, so a mod ships its own precinct index (PAN100), joined with
-  the game's. *Gate:* the first quest stage that changes scenery, or the first mod that adds
-  scenery.
+  the game's, and its own instance index. Loading reports a key that two mods, or a mod and the
+  game, both hold, naming both owners ([instances.md](instances.md), Ids). *Gate:* the first quest
+  stage that changes scenery, or the first mod that adds scenery.
 - **X110** The game UI's typeface (`GAME_UI_FONT`, Macondo Swash Caps). Plain Macondo reads better,
   its capital E most of all (X75); the choice is to switch to it, or to make a font of the author's
   own that combines the best of both. Neither has bold or italics, so emphasis in a book's text or a
@@ -612,3 +614,12 @@ dropped, not deferred. Numbers are never reused.
   kernel while far from the player, and going home with its state, which the home takes as it next
   loads. Revises R7, R83 and [save-games.md](save-games.md)'s followers and moved homes. *Gate:* the
   first follower or escort.
+- **X132** Saved state across patches. Once a release has shipped saves, two edits lose an
+  instance's saved state. A patch that moves a keyed instance to another precinct strands its
+  entries in the old precinct's chunk, which the new precinct never reads. And an instance whose
+  reason for a key goes loses the key at save ([instances.md](instances.md), Ids); if the reason
+  returns it gets a new key, which old saves do not match. Proposed: a map of every key to its
+  precinct, built when the game is packaged (the checked-in index lists only labelled and
+  cross-referenced instances), so that on load an entry whose chunk's precinct no longer holds its
+  key moves to the precinct that does; and saving stops taking keys from instances that shipped in a
+  release. *Gate:* the first release with save games (PAN82 or later).

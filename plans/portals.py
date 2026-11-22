@@ -19,18 +19,18 @@ DRIVER = PanoplyDriver
 
 CAMERA = "bevy_camera::camera::Camera"
 DEBUG_VIEWS = "panoply_editor::debug_views::DebugViews"
-PORTAL_CAMERA = "PortalCamera:meo0"
+PORTAL_CAMERA = "PortalCamera:playground.mine.1"
 
-# The ground under the aperture of the mine entrance `meo0` (precinct p001-p002), open from +x,
-# whose target is its pair `meo1`.
+# The ground under the aperture of the mine entrance `playground.mine.1` (precinct p001-p002), open
+# from +x, whose target is its pair `playground.mine.2`.
 MINE = [67.5, 0.0, 163.0]
 # Facing -x, so the camera is on the aperture's open side.
 FACING_WEST = 3 * pi / 2
 
-# The ground under the aperture of the stone portal `sp0` (p000-p000), open from both sides, its
-# aperture facing -z; its target is across the playground at (45.5, 0.75, 35.5).
+# The ground under the aperture of the stone portal `playground.portal` (p000-p000), open from both
+# sides, its aperture facing -z; its target is across the playground at (45.5, 0.75, 35.5).
 STONE = [21.5, -1.98, 3.5]
-STONE_CAMERA = "PortalCamera:sp0"
+STONE_CAMERA = "PortalCamera:playground.portal"
 
 
 def run(driver):
@@ -39,7 +39,7 @@ def run(driver):
     driver.goto(MINE, 11.0, FACING_WEST)
     driver.present(PORTAL_CAMERA)
     # Its pair, open toward the camera but behind it, has no camera.
-    driver.absent("PortalCamera:meo1", {"frames": 0})
+    driver.absent("PortalCamera:playground.mine.2", {"frames": 0})
     driver.frames(4)
     driver.screenshot("mine_portal")
 

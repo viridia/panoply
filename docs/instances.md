@@ -1,10 +1,11 @@
 # Instances
 
 How an instance (an actor, wall, fixture or relay) is named, how a reference finds it anywhere in
-the world, and what of it stays in memory while its precinct is not loaded. None of it is built yet:
-PAN110 builds the Ids section, PAN6 the latches, and X131 global actors, while X123 decides whether
-bindings are needed. Parts marked *Settled* are decided, those marked *Provisional* hang on a choice
-not yet made, the rest is the current leaning, and the last section lists what is still open.
+the world, and what of it stays in memory while its precinct is not loaded. The Ids section is
+built, but for references, which PAN79 adds; PAN6 builds the latches, and X131 global actors, while
+X123 decides whether bindings are needed. Parts marked *Settled* are decided, those marked
+*Provisional* hang on a choice not yet made, the rest is the current leaning, and the last section
+lists what is still open.
 
 ## What "global" means
 
@@ -28,43 +29,58 @@ An instance's id has two parts: a **key**, generated once and never changed, and
 `actor("stone")`). The Creation Kit makes the same split between FormID and EditorID, and Unreal and
 Unity between a GUID and a display name.
 
-Saves and picked references store the key, so renaming a label never breaks either. The editor shows
-the label, or, for an instance without one, its exemplar and place ("Door, Tambry inn (3,4)").
+Saves and picked references store the key, so renaming a label never breaks either. The editor's
+instance list shows the label, or, for an instance without one, its exemplar and place
+("WoodenChest, holm-overland (10, 16)").
 
-- **Format.** 64 random bits within a mod's namespace, so the author's two machines and any number
-  of mods can create keys without coordinating, and a diagnostic can say which mod a key came from.
-  A key is never typed or shown.
-- **Which instances get one.** Those D87 gives an id: actors, instances whose aspects save state,
-  and instances something references. Picking an instance as a reference's target gives it a key and
-  marks its precinct as changed. Most walls and fixtures have none. A key the editor creates has no
-  label: D88's generated names (`wooden-chest-2`) are unique only within their precinct, and a label
-  is for the author to choose.
-- **The index.** A file checked in beside PAN100's precinct index, with one line per key, sorted:
-  key, label, realm, precinct and kind. One line per key keeps diffs readable and merge conflicts
-  rare. The editor rewrites it as it saves, and `asset_xref.py` regenerates and compares it, and
-  reports references to keys that do not exist. It is checked in rather than built by scanning
+- **Format.** A random UUID (version 4). The author's two machines and any number of mods create
+  keys without coordinating, and a collision is too unlikely to plan for. A duplicate comes from
+  copying, not chance, and is found: `verify.sh` fails on one in the game's files, and loading mods
+  reports one between mods, naming both (X109). A precinct file holds a key as 16 bytes, and JSON
+  and the screen in its hyphenated form. A key is never typed.
+- **Which instances get one.** An instance has a key while it has a reason for one: it is an actor,
+  its exemplar chain has an aspect with state (D88), it has a label, or something references it.
+  Picking an instance as a reference's target gives it a key and marks its precinct as changed. Most
+  walls and fixtures have none. A key goes when its reason goes: saving takes the key from an
+  instance with no reason left, such as one whose label was cleared, and if a reason returns, it
+  gets a new key. Members of a class, such as a town's guards, have keys and no labels, and a
+  guard's own patrol path, referenced only from its precinct, has a key and no label. Encounter
+  monsters are transient (R7), with no keys: what saves is the encounter's state, under its
+  fixture's key.
+- **Labels.** The author gives them, in the instance pane, and clears them there. A label is for an
+  instance found from outside its precinct, or by name, as a quest names Sergeant Stone. It is also
+  how an instance that is hard to pick is found: a music region covering a wide area cannot be
+  picked across its middle, which would block picking what is inside it, but its label lists it.
+- **The index.** One file for the game, `assets/scenery/precincts/instances.json`, with a line for
+  each instance that is labelled or referenced from another precinct, sorted by key: key, label,
+  realm, precinct coordinates and kind. It is a register of what is found from outside, not of
+  everything keyed: of holm-overland's roughly 3,000 keyed instances ([goals.md](goals.md), Scale),
+  a few hundred. One line per key keeps diffs readable and merge conflicts rare. The editor rewrites
+  a precinct's lines as it saves the precinct, and `asset_xref.py` regenerates and compares it, and
+  finds duplicate keys by scanning the precincts. It is checked in rather than built by scanning
   precincts at startup, because web builds cannot list folders, and the editor needs the labels of
-  precincts it has not loaded. Only the editor reads it, for Go To and find references. The game
-  itself needs only a map from key to live entity, kept as instances spawn and despawn.
+  precincts it has not loaded. Only the editor reads it, to refuse a label in use, and later for Go
+  To and find references. The game itself needs only a map from key to live entity
+  (`KeyedInstances`), kept as instances spawn and despawn.
 - **Mods.** A mod ships its own index, joined with the game's, as it ships its own precinct index
   (X109). It lists the keys the mod adds, in its own precincts and in what its patches add to the
-  game's, each line naming the realm and precinct. Keys are created in the mod's namespace, so two
-  mods never claim one key. A mod's reference to the game's instance stores the game's key, and
-  since mods only add scenery (X109), a mod never rekeys what the game owns. A mod's labels carry
-  its prefix, as its aspects' names do ([modding.md](modding.md)), so two mods can each label a
-  guard `stone`.
-- **Migration.** Today's `SceneryInstanceId::External` names become labels, and each gets a key.
+  game's, each line naming the realm and precinct. A mod's reference to the game's instance stores
+  the game's key, and since mods only add scenery (X109), a mod never rekeys what the game owns. A
+  mod's labels carry its prefix, as its aspects' names do ([modding.md](modding.md)), so two mods
+  can each label a guard `stone`.
 
 How each edit treats a key:
 
 | Edit                                  | Key                                                    |
 | ------------------------------------- | ------------------------------------------------------ |
 | Place                                 | created when the instance first needs one              |
+| Save                                  | given where a reason holds, taken where none does      |
 | Move, even into another precinct      | kept: a move is never a delete followed by an add      |
 | Copy and paste                        | new; a copied relay's roles bind to the copies (PAN79) |
 | Delete                                | removed; the editor first lists references naming it   |
 | Undo a delete                         | the same key restored                                  |
 | Rename a label                        | kept; `.saga` text using the old label is rewritten    |
+| Clear a label                         | kept until saved, then taken if no reason is left      |
 | Copy a precinct file, or merge in git | may duplicate a key; `verify.sh` fails on duplicates   |
 
 ## Instances take their bindings from quests

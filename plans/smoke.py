@@ -812,7 +812,7 @@ def select_instance(driver):
         assert driver.get("InstanceOutline:Hovered", OUTLINE)["polygons"], "no outline on hover"
         click_at(middle)
         assert selected()["instance"] is not None, "the click selected nothing"
-        driver.expect("InstanceId", TEXT, "none")
+        driver.expect("InstanceLabel", TEXT, "none")
         driver.screenshot("instance_selected")
 
         # The actor is outlined on hover once it stands there with its collider, and a click
@@ -828,14 +828,13 @@ def select_instance(driver):
         clicked = selected()["instance"]
         driver.screenshot("actor_selected")
 
-        # The actor placed has a name, so the list holds it, and choosing it there selects the
-        # actor the click did.
-        rows = by_name(driver, "marcus-")
+        # The actor placed has a key, so the list holds it, by exemplar and place, as it has no
+        # label; choosing it there selects the actor the click did.
+        rows = [r for r in by_name(driver, "Marcus") if ", " in r["components"][NAME]]
         assert rows, "no actor in the list"
         row = rows[-1]["components"][NAME]
-        name = row.split(" ")[0]
         driver.click(f"Exemplars/{row}")
-        driver.expect("InstanceId", TEXT, name)
+        driver.expect("InstanceLabel", TEXT, "none")
         actor = selected()["instance"]
         assert actor == clicked, f"the click selected {clicked}, the list {actor}"
 
@@ -846,16 +845,24 @@ def select_instance(driver):
         driver.absent("TextEntryDialog")
         assert selected()["instance"] == actor, "a click outside the dialog changed the selection"
 
+        # A label replaces the row, and the dialog's × clears it again.
         driver.click("RenameInstance")
         driver.present("TextEntryDialog")
         retype(driver, "TextEntryDialog/Entry", "smoke-guard")
         driver.click("TextEntryDialog/Ok")
-        driver.expect("InstanceId", TEXT, "smoke-guard")
-        assert any(
-            r["components"][NAME].startswith("smoke-guard ") for r in named(driver)
-        ), "the list lacks the new name"
+        driver.expect("InstanceLabel", TEXT, "smoke-guard")
+        driver.present("Exemplars/smoke-guard")
+        driver.click("RenameInstance")
+        driver.present("TextEntryDialog")
+        driver.click("TextEntryDialog/Clear")
+        driver.click("TextEntryDialog/Ok")
+        driver.expect("InstanceLabel", TEXT, "none")
+        driver.absent("Exemplars/smoke-guard")
         undo(driver)
-        driver.expect("Toast/ToastText", TEXT, f"Undo: Rename {name} to smoke-guard")
+        driver.expect("Toast/ToastText", TEXT, "Undo: Clear label smoke-guard")
+        driver.expect("InstanceLabel", TEXT, "smoke-guard")
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Label smoke-guard")
 
         driver.click("Save")
         expect_disabled(driver, "Save", True)

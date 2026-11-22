@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN110** Instances keep a key through renames and moves; labels are set and cleared by Rename….
 - **PAN4b** Portals show their far end, their lost targets restored; Show's Portals outlines them.
 - **PAN17a** In play, the player walks to a clicked spot, W or S taking over; no detours at borders.
 - **PAN3r** An actor facing more than 60° from where it is headed turns on the spot before walking.

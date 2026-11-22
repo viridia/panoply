@@ -9,7 +9,7 @@
 use std::borrow::Cow;
 
 use bevy::{ecs::system::SystemParam, platform::collections::HashSet, prelude::*};
-use panoply_precinct::PrecinctAsset;
+use panoply_precinct::{PrecinctAsset, SceneryInstanceId, TakenInstance};
 
 use crate::{
     mode_selector::EditorMode,
@@ -19,7 +19,7 @@ use crate::{
 
 /// The precincts edited this session, held so they stay loaded.
 #[derive(Resource, Default)]
-struct EditedPrecincts(HashSet<Handle<PrecinctAsset>>);
+pub(crate) struct EditedPrecincts(HashSet<Handle<PrecinctAsset>>);
 
 pub struct PrecinctEditPlugin;
 
@@ -53,66 +53,113 @@ impl PrecinctEdits<'_> {
         handle: &Handle<PrecinctAsset>,
         edit: impl FnOnce(&mut PrecinctAsset) -> Option<Cow<'static, str>>,
     ) {
+        self.edit_all(std::array::from_ref(handle), |assets| {
+            let [asset] = assets;
+            edit(asset)
+        });
+    }
+
+    /// Changes the two precincts `a` and `b` together with `edit`, as one entry in the history,
+    /// as [`edit`](Self::edit) changes one. Refused if they are the same precinct.
+    #[allow(dead_code)] // The instance gizmo moves instances across precinct edges (PAN92).
+    pub(crate) fn edit_two(
+        &mut self,
+        a: &Handle<PrecinctAsset>,
+        b: &Handle<PrecinctAsset>,
+        edit: impl FnOnce(&mut PrecinctAsset, &mut PrecinctAsset) -> Option<Cow<'static, str>>,
+    ) {
+        if a == b {
+            return;
+        }
+        self.edit_all(&[a.clone(), b.clone()], |assets| {
+            let [a, b] = assets;
+            edit(a, b)
+        });
+    }
+
+    /// Moves the instance whose id is `iid` from the precinct `from` to `to`, keeping its key and
+    /// label, to `position`: for scenery, relative to `to`, and for an actor, in the world.
+    #[allow(dead_code)] // The instance gizmo moves instances across precinct edges (PAN92).
+    pub(crate) fn move_instance(
+        &mut self,
+        from: &Handle<PrecinctAsset>,
+        to: &Handle<PrecinctAsset>,
+        iid: &SceneryInstanceId,
+        position: Vec3,
+    ) {
+        self.edit_two(from, to, |from, to| {
+            let mut taken = from.take_instance(iid)?;
+            match &mut taken {
+                TakenInstance::Scenery { instance, .. } => instance.position = position,
+                TakenInstance::Actor(actor) => actor.position = position,
+            }
+            to.insert_instance(taken);
+            Some("Move instance to another precinct".into())
+        });
+    }
+
+    /// Changes the precincts `handles` with `edit`, given their assets in the same order.
+    fn edit_all<const N: usize>(
+        &mut self,
+        handles: &[Handle<PrecinctAsset>; N],
+        edit: impl FnOnce(&mut [PrecinctAsset; N]) -> Option<Cow<'static, str>>,
+    ) {
         let Some(mode) = self.mode.as_ref().map(|mode| *mode.get()) else {
             return;
         };
-        let before = self.assets.get(handle).cloned().unwrap_or_default();
+        let before = handles
+            .each_ref()
+            .map(|handle| self.assets.get(handle).cloned().unwrap_or_default());
         let mut after = before.clone();
         let Some(label) = edit(&mut after) else {
             return;
         };
-        if let Err(error) = self.assets.insert(handle, after) {
-            warn!("{label} did nothing: {error}");
-            return;
+        for (handle, asset) in handles.iter().zip(after) {
+            if let Err(error) = self.assets.insert(handle, asset) {
+                warn!("{label} did nothing: {error}");
+                return;
+            }
         }
         info!("{label}");
-        self.held.0.insert(handle.clone());
-        self.unsaved.mark(handle);
-        self.history.push(
-            mode,
-            PrecinctUndo {
-                label,
-                asset: handle.id(),
-                precinct: before,
-            },
-        );
+        for handle in handles {
+            self.held.0.insert(handle.clone());
+            self.unsaved.mark(handle);
+        }
+        let precincts = handles
+            .iter()
+            .map(|handle| handle.id())
+            .zip(before)
+            .collect();
+        self.history.push(mode, PrecinctUndo { label, precincts });
     }
 }
 
-/// Puts back a precinct as it was before an edit.
+/// Puts back precincts as they were before an edit.
 struct PrecinctUndo {
     label: Cow<'static, str>,
-    asset: AssetId<PrecinctAsset>,
-    precinct: PrecinctAsset,
+    precincts: Vec<(AssetId<PrecinctAsset>, PrecinctAsset)>,
 }
 
 impl UndoAction for PrecinctUndo {
     fn apply(self: Box<Self>, world: &mut World) -> Box<dyn UndoAction> {
-        let PrecinctUndo {
-            label,
-            asset,
-            precinct,
-        } = *self;
-        let replaced = {
-            let mut assets = world.resource_mut::<Assets<PrecinctAsset>>();
-            assets
-                .get_mut(asset)
-                .map(|mut current| std::mem::replace(&mut *current, precinct.clone()))
-        };
-        let Some(replaced) = replaced else {
+        let PrecinctUndo { label, precincts } = *self;
+        let mut assets = world.resource_mut::<Assets<PrecinctAsset>>();
+        if precincts.iter().any(|(id, _)| !assets.contains(*id)) {
             warn!("{label} did nothing: the precinct is gone");
-            return Box::new(PrecinctUndo {
-                label,
-                asset,
-                precinct,
-            });
-        };
-        world.resource_mut::<UnsavedAssets>().mark(asset);
-        Box::new(PrecinctUndo {
-            label,
-            asset,
-            precinct: replaced,
-        })
+            return Box::new(PrecinctUndo { label, precincts });
+        }
+        let precincts: Vec<_> = precincts
+            .into_iter()
+            .map(|(id, precinct)| {
+                let mut current = assets.get_mut(id).unwrap();
+                (id, std::mem::replace(&mut *current, precinct))
+            })
+            .collect();
+        let mut unsaved = world.resource_mut::<UnsavedAssets>();
+        for (id, _) in &precincts {
+            unsaved.mark(*id);
+        }
+        Box::new(PrecinctUndo { label, precincts })
     }
 
     fn label(&self) -> Cow<'static, str> {

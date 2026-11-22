@@ -1,7 +1,8 @@
-//! Selection mode's panel. Its list holds the selected precinct's named instances, scenery and
-//! actors, as `wooden-chest-2 (WoodenChest)`, as faery's `SceneryInstanceChooser` did; choosing one
-//! selects it, and a click in the view moves the list's selection to the instance clicked. Below,
-//! a pane names the selected instance's kind and exemplar, and shows its id, which Rename… changes.
+//! Selection mode's panel. Its list holds the selected precinct's keyed instances, scenery and
+//! actors, each by its label or else its exemplar and place, as faery's `SceneryInstanceChooser`
+//! listed its named ones; choosing one selects it, and a click in the view moves the list's
+//! selection to the instance clicked. Below, a pane names the selected instance's kind and
+//! exemplar, and shows its label, which Rename… sets or clears.
 
 use bevy::{
     app::PropagateOver,
@@ -13,7 +14,7 @@ use bevy::{
         theme::{ThemeTextColor, ThemedText},
         tokens,
     },
-    platform::collections::HashSet,
+    platform::collections::{HashMap, HashSet},
     prelude::*,
     text::{FontSourceTemplate, FontStyle},
 };
@@ -29,15 +30,16 @@ use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement, WALL_
 
 use crate::{
     chooser::{chooser, Chooser},
+    instance_index::{InstanceIndex, PrecinctPlace},
     instance_selection::ScenerySelection,
     mode_selector::SceneryTool,
     precinct_edit::PrecinctEdits,
     properties::{caption_cell, CapsPanel, CAPTION_WIDTH},
     scenery_properties::header_text,
-    text_entry::{text_entry_dialog_with_text, TextEntered},
+    text_entry::{clearable_text_entry_dialog, TextEntered},
 };
 
-/// The chooser of the selected precinct's named instances.
+/// The chooser of the selected precinct's keyed instances.
 #[derive(Component, Default, Clone)]
 pub struct InstanceChooser;
 
@@ -45,9 +47,9 @@ pub struct InstanceChooser;
 #[derive(Component, Default, Clone)]
 pub(crate) struct InstancePane;
 
-/// The rename dialog, holding the instance it renames.
+/// The label dialog, holding the instance it labels.
 #[derive(Component, Clone)]
-struct RenameInstance {
+struct LabelInstance {
     precinct: Entity,
     iid: SceneryInstanceId,
 }
@@ -78,30 +80,53 @@ fn label(path: &str) -> &str {
     path.rsplit_once('#').map_or(path, |(_, label)| label)
 }
 
-/// The named instances of `asset`, each with its row in the list, sorted by row.
-fn named_rows(asset: &PrecinctAsset) -> Vec<(String, SceneryInstanceId)> {
+/// The keyed instances of `asset`, the precinct at `place`, each with its row in the list, sorted
+/// by row. A row is the instance's label, or else its exemplar and place, as
+/// `WoodenChest, holm-overland (10, 16)`; a second instance of an exemplar is
+/// `WoodenChest 2, holm-overland (10, 16)`, numbered in the precinct's order, so that each row
+/// names one instance.
+fn keyed_rows(asset: &PrecinctAsset, place: Option<&PrecinctPlace>) -> Vec<(String, SceneryInstanceId)> {
     let scenery = asset.scenery.iter().map(|instance| {
         let path = asset
             .scenery_types
             .get(instance.id)
             .map_or("", String::as_str);
-        (&instance.iid, path)
+        (&instance.iid, instance.label.as_deref(), path)
     });
     let actors = asset
         .actors
         .iter()
-        .map(|actor| (&actor.iid, actor.exemplar.as_str()));
+        .map(|actor| (&actor.iid, actor.label.as_deref(), actor.exemplar.as_str()));
+    let mut seen = HashMap::<&str, usize>::new();
     let mut rows: Vec<_> = scenery
         .chain(actors)
-        .filter_map(|(iid, path)| match iid {
-            SceneryInstanceId::External(name) => {
-                Some((format!("{name} ({})", label(path)), iid.clone()))
-            }
-            _ => None,
+        .filter(|(iid, ..)| iid.key().is_some())
+        .map(|(iid, instance_label, path)| {
+            let row = match instance_label {
+                Some(instance_label) => instance_label.to_string(),
+                None => {
+                    let count = seen.entry(label(path)).or_default();
+                    *count += 1;
+                    let mut row = label(path).to_string();
+                    if *count > 1 {
+                        row += &format!(" {count}");
+                    }
+                    if let Some(place) = place {
+                        row += &format!(", {place}");
+                    }
+                    row
+                }
+            };
+            (row, iid.clone())
         })
         .collect();
     rows.sort_by(|a, b| a.0.cmp(&b.0));
     rows
+}
+
+/// The place of the precinct whose asset is `handle`.
+fn place_of(server: &AssetServer, handle: &Handle<PrecinctAsset>) -> Option<PrecinctPlace> {
+    PrecinctPlace::of_path(server.get_path(handle)?.path())
 }
 
 /// The scenery elements and actors of a precinct.
@@ -148,6 +173,7 @@ fn sync_instance_list(
     mut selection: ResMut<ScenerySelection>,
     instances: PrecinctInstances,
     assets: Res<Assets<PrecinctAsset>>,
+    server: Res<AssetServer>,
     mut choosers: Query<&mut Chooser, With<InstanceChooser>>,
     mut shown: Local<Option<String>>,
 ) {
@@ -157,8 +183,10 @@ fn sync_instance_list(
     let precinct = selection.precinct;
     let rows = precinct
         .and_then(|precinct| instances.precincts.get(precinct).ok())
-        .and_then(|(record, ..)| assets.get(&record.asset))
-        .map(named_rows)
+        .and_then(|(record, ..)| {
+            let place = place_of(&server, &record.asset);
+            Some(keyed_rows(assets.get(&record.asset)?, place.as_ref()))
+        })
         .unwrap_or_default();
     let items: Vec<String> = rows.iter().map(|(row, _)| row.clone()).collect();
     if chooser.items != items {
@@ -198,6 +226,7 @@ pub(crate) struct InstancePaneParams<'w, 's> {
     exemplars: Res<'w, Assets<Exemplar>>,
     assets: Res<'w, Assets<PrecinctAsset>>,
     server: Res<'w, AssetServer>,
+    index: Res<'w, InstanceIndex>,
 }
 
 impl InstancePaneParams<'_, '_> {
@@ -216,13 +245,20 @@ impl InstancePaneParams<'_, '_> {
         let actor = self.actors.get(entity).ok()?;
         Some(("Actor", label(actor.exemplar()).to_string()))
     }
+
+    /// The selected instance's label, if it has one.
+    fn current_label(&self) -> Option<String> {
+        let record = self.precincts.get(self.selection.precinct?).ok()?;
+        let asset = self.assets.get(&record.asset)?;
+        asset.label(&self.selection.iid).map(str::to_string)
+    }
 }
 
 impl ImmediateAttach<CapsPanel> for InstancePane {
     type Params = InstancePaneParams<'static, 'static>;
 
     /// In selection mode, a pane for the selected instance: "Fixture: WoodenChest" in its header,
-    /// then its id, or "none" for an instance with no name, and Rename….
+    /// then its label, or "none" for an instance with no label, and Rename….
     fn construct(ui: &mut Imm<CapsPanel>, params: &mut InstancePaneParams) {
         let selecting = params
             .tool
@@ -232,9 +268,9 @@ impl ImmediateAttach<CapsPanel> for InstancePane {
             return;
         };
         let kind = format!("{kind}:");
-        let current = current_name(&params.selection.iid);
-        let named = current.is_some();
-        let id = current.unwrap_or_else(|| "none".to_string());
+        let current = params.current_label();
+        let labelled = current.is_some();
+        let shown = current.unwrap_or_else(|| "none".to_string());
         ui.ch_id("pane")
             .on_spawn_apply_scene(|| bsn! { @pane() Node { flex_grow: 1.0, min_height: px(0) } })
             .add(|ui| {
@@ -269,11 +305,11 @@ impl ImmediateAttach<CapsPanel> for InstancePane {
                             ..default()
                         })
                         .add(|ui| {
-                            caption_cell(ui, "Id".to_string(), CAPTION_WIDTH);
-                            // An instance with no name shows "none", dim and italic, as a value
+                            caption_cell(ui, "Label".to_string(), CAPTION_WIDTH);
+                            // An instance with no label shows "none", dim and italic, as a value
                             // that is not there.
-                            let (key, style, color) = match named {
-                                true => ("id", FontStyle::Normal, tokens::TEXT_MAIN),
+                            let (key, style, color) = match labelled {
+                                true => ("label", FontStyle::Normal, tokens::TEXT_MAIN),
                                 false => ("none", FontStyle::Italic, tokens::TEXT_DIM),
                             };
                             ui.ch_id(key)
@@ -291,8 +327,8 @@ impl ImmediateAttach<CapsPanel> for InstancePane {
                                         Node { min_width: px(0), overflow: Overflow::clip_x() }
                                     }
                                 })
-                                .on_spawn_insert(|| Name::new("InstanceId"))
-                                .on_hash_change_text_fn(&id, || id.clone());
+                                .on_spawn_insert(|| Name::new("InstanceLabel"))
+                                .on_hash_change_text_fn(&shown, || shown.clone());
                             ui.ch().on_spawn_insert(|| Node {
                                 flex_grow: 1.0,
                                 ..default()
@@ -309,15 +345,15 @@ impl ImmediateAttach<CapsPanel> for InstancePane {
                                 .on_spawn_insert(|| Name::new("RenameInstance"))
                                 .activated();
                             if let Some((taken, target)) =
-                                rename.then(|| rename_target(params)).flatten()
+                                rename.then(|| label_target(params)).flatten()
                             {
-                                let current = current_name(&target.iid).unwrap_or_default();
+                                let current = params.current_label().unwrap_or_default();
                                 ui.commands_mut()
-                                    .spawn_scene(text_entry_dialog_with_text(
-                                        "Rename", "Id", taken, current,
+                                    .spawn_scene(clearable_text_entry_dialog(
+                                        "Rename", "Label", taken, current,
                                     ))
                                     .insert(target)
-                                    .observe(rename_instance);
+                                    .observe(label_instance);
                             }
                         });
                 });
@@ -325,88 +361,104 @@ impl ImmediateAttach<CapsPanel> for InstancePane {
     }
 }
 
-/// The name an instance's id gives it, if it has one.
-fn current_name(iid: &SceneryInstanceId) -> Option<String> {
-    match iid {
-        SceneryInstanceId::External(id) => Some(id.to_string()),
-        _ => None,
-    }
-}
-
-/// What a rename of the selected instance refuses, the names its precinct's other instances use,
-/// and the instance.
-fn rename_target(params: &InstancePaneParams) -> Option<(HashSet<String>, RenameInstance)> {
+/// The labels a label for the selected instance may not take, those of every other instance in the
+/// game, and the instance. The precincts loaded give their labels as they are now, unsaved edits
+/// and all, and the index gives the rest.
+fn label_target(params: &InstancePaneParams) -> Option<(HashSet<String>, LabelInstance)> {
     let precinct = params.selection.precinct?;
-    let record = params.precincts.get(precinct).ok()?;
-    let mut taken = params
-        .assets
-        .get(&record.asset)
-        .map(PrecinctAsset::external_ids)
-        .unwrap_or_default();
-    if let Some(current) = current_name(&params.selection.iid) {
+    params.precincts.get(precinct).ok()?;
+    let mut loaded = HashSet::new();
+    let mut taken = HashSet::new();
+    for (id, asset) in params.assets.iter() {
+        let place = params
+            .server
+            .get_path(id)
+            .and_then(|path| PrecinctPlace::of_path(path.path()));
+        loaded.extend(place);
+        taken.extend(asset.labels().map(str::to_string));
+    }
+    taken.extend(params.index.labels_outside(&loaded).map(str::to_string));
+    if let Some(current) = params.current_label() {
         taken.remove(&current);
     }
-    let target = RenameInstance {
+    let target = LabelInstance {
         precinct,
         iid: params.selection.iid.clone(),
     };
     Some((taken, target))
 }
 
-/// Observer on the rename dialog: gives the instance the name entered, as an edit of its precinct,
-/// and keeps it selected under that name.
-fn rename_instance(
+/// Observer on the label dialog: gives the instance the label entered, or clears its label if the
+/// text is empty, as an edit of its precinct.
+fn label_instance(
     entered: On<TextEntered>,
-    dialogs: Query<&RenameInstance>,
+    dialogs: Query<&LabelInstance>,
     precincts: Query<&Precinct>,
     mut edits: PrecinctEdits,
-    mut selection: ResMut<ScenerySelection>,
 ) {
-    let Ok(rename) = dialogs.get(entered.dialog) else {
+    let Ok(target) = dialogs.get(entered.dialog) else {
         return;
     };
-    let Ok(record) = precincts.get(rename.precinct) else {
+    let Ok(record) = precincts.get(target.precinct) else {
         return;
     };
-    let name = entered.text.clone();
-    let old = match &rename.iid {
-        SceneryInstanceId::External(id) => id.to_string(),
-        _ => "instance".to_string(),
-    };
-    let mut renamed = false;
+    let label = Some(entered.text.as_str()).filter(|text| !text.is_empty());
     edits.edit(&record.asset, |asset| {
-        renamed = asset.rename_instance(&rename.iid, &name);
-        renamed.then(|| format!("Rename {old} to {name}").into())
+        let old = asset.label(&target.iid).map(str::to_string);
+        if old.as_deref() == label {
+            return None;
+        }
+        asset.set_label(&target.iid, label)?;
+        Some(match (old, label) {
+            (Some(old), Some(label)) => format!("Rename {old} to {label}").into(),
+            (None, Some(label)) => format!("Label {label}").into(),
+            (Some(old), None) => format!("Clear label {old}").into(),
+            (None, None) => unreachable!(),
+        })
     });
-    if renamed && selection.iid == rename.iid {
-        selection.iid = SceneryInstanceId::External(name.into());
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use bevy::math::Vec3;
+    use bevy::math::{IVec2, Vec3};
 
     use super::*;
 
-    /// The list names scenery and actors alike, sorted, and leaves out instances with no name.
+    /// The list holds keyed instances, scenery and actors alike, sorted: by label, or else by
+    /// exemplar and place, numbered from the second of an exemplar on.
     #[test]
-    fn the_list_holds_the_named_instances() {
+    fn the_list_holds_the_keyed_instances() {
         let mut asset = PrecinctAsset {
             scenery_types: vec!["exemplars/furnishings.exem.json#WoodenChest".into()],
             ..default()
         };
         asset.add_scenery_element(0, 0., Vec3::ZERO, None);
-        asset.add_scenery_element(
-            0,
-            0.,
-            Vec3::X,
-            Some(SceneryInstanceId::External(
-                "wooden-chest-1".to_string().into(),
-            )),
+        for position in [Vec3::X, Vec3::Y, Vec3::Z] {
+            asset.add_scenery_element(0, 0., position, None);
+        }
+        asset.update_keys(|_| false);
+        let second = asset.scenery[1].iid.clone();
+        asset.set_label(&second, Some("strongbox"));
+        asset.update_keys(|_| true);
+        let guard = asset.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::Z);
+        asset.set_label(&guard, Some("sgt.stone"));
+        let place = PrecinctPlace {
+            realm: "holm-overland".into(),
+            coords: IVec2::new(10, 16),
+        };
+        let rows: Vec<String> = keyed_rows(&asset, Some(&place))
+            .into_iter()
+            .map(|(row, _)| row)
+            .collect();
+        assert_eq!(
+            rows,
+            [
+                "WoodenChest 2, holm-overland (10, 16)",
+                "WoodenChest 3, holm-overland (10, 16)",
+                "WoodenChest, holm-overland (10, 16)",
+                "sgt.stone",
+                "strongbox",
+            ]
         );
-        asset.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::Z);
-        let rows: Vec<String> = named_rows(&asset).into_iter().map(|(row, _)| row).collect();
-        assert_eq!(rows, ["guard-1 (Guard)", "wooden-chest-1 (WoodenChest)"]);
     }
 }

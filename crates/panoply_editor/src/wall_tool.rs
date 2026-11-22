@@ -25,7 +25,6 @@ use bevy_action_map::prelude::*;
 use panoply_core::{Realm, Viewpoint};
 use panoply_exemplar::Exemplar;
 use panoply_overlays::{AddOverlay, DrawPlane, OverlayColor, OverlayShape, ShapeBuilder};
-use panoply_precinct::SceneryInstanceId;
 use panoply_scenery::{
     cutaways::CutawayVolume,
     precinct::Precinct,
@@ -470,10 +469,10 @@ fn show_wall_target(
         commands.spawn((
             Name::new("WallPreviewElement"),
             SceneryElement {
-                iid: SceneryInstanceId::None,
                 exemplar: handle,
                 facing: wanted.facing,
                 position,
+                ..default()
             },
             element_transform,
             Visibility::Inherited,

@@ -1,6 +1,5 @@
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
-    platform::collections::HashSet,
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
@@ -17,7 +16,9 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::{actor_instance::ActorInstanceListDeserializer, ActorInstanceData, FloorRegionSer};
+use crate::{
+    actor_instance::ActorInstanceListDeserializer, ActorInstanceData, FloorRegionSer, InstanceKey,
+};
 
 extern crate rmp_serde as rmps;
 
@@ -58,87 +59,166 @@ impl PrecinctAsset {
         })
     }
 
-    /// Gives an external id to each scenery instance that lacks one and for which `needs_id`,
-    /// given its index in `scenery_types`, is true. Each is named for its exemplar's label in
-    /// kebab case, numbered with the lowest number the precinct does not yet use, as `chest-2`.
-    /// Returns how many were given one.
-    pub fn assign_external_ids(&mut self, needs_id: impl Fn(usize) -> bool) -> usize {
-        let mut taken = self.external_ids();
-        let bases: Vec<String> = self
-            .scenery_types
-            .iter()
-            .map(|path| id_base(path))
-            .collect();
-        let mut next = vec![1usize; bases.len()];
-        let mut count = 0;
+    /// Gives a key to each instance with a reason for one that lacks it, and takes the key from
+    /// each with no reason left (`docs/instances.md`, Ids). The reasons: being an actor, having a
+    /// label, or, for scenery, an exemplar with state, which `needs_key`, given the exemplar's
+    /// index in `scenery_types`, says. Returns how many keys were given and how many taken.
+    pub fn update_keys(&mut self, needs_key: impl Fn(usize) -> bool) -> (usize, usize) {
+        let mut next = self.next_scenery_id();
+        let (mut given, mut taken) = (0, 0);
         for instance in &mut self.scenery {
-            if matches!(instance.iid, SceneryInstanceId::External(_)) || !needs_id(instance.id) {
-                continue;
+            let reason = instance.label.is_some() || needs_key(instance.id);
+            match (instance.iid.key(), reason) {
+                (None, true) => {
+                    instance.iid = SceneryInstanceId::Keyed(InstanceKey::generate());
+                    given += 1;
+                }
+                (Some(_), false) => {
+                    instance.iid = SceneryInstanceId::Internal(next);
+                    next += 1;
+                    taken += 1;
+                }
+                _ => {}
             }
-            let name = unused_id(&bases[instance.id], &mut next[instance.id], &mut taken);
-            instance.iid = SceneryInstanceId::External(Arc::new(name));
-            count += 1;
         }
-        count
+        for actor in &mut self.actors {
+            if actor.iid.key().is_none() {
+                actor.iid = SceneryInstanceId::Keyed(InstanceKey::generate());
+                given += 1;
+            }
+        }
+        (given, taken)
     }
 
     /// Places an actor of the exemplar at `exemplar`, a `file#Label` path, at `position` in the
-    /// world's coordinates, facing `facing` degrees. It gets an external id, named as
-    /// [`assign_external_ids`](Self::assign_external_ids) names scenery, which it returns.
+    /// world's coordinates, facing `facing` degrees. It gets a key, and its id is returned.
     pub fn add_actor(
         &mut self,
         exemplar: String,
         facing: f32,
         position: Vec3,
     ) -> SceneryInstanceId {
-        let name = unused_id(&id_base(&exemplar), &mut 1, &mut self.external_ids());
-        let iid = SceneryInstanceId::External(Arc::new(name));
+        let iid = SceneryInstanceId::Keyed(InstanceKey::generate());
         self.actors.push(ActorInstanceData {
             exemplar,
             position,
             facing,
             iid: iid.clone(),
+            label: None,
             aspects: InstanceAspects::default(),
         });
         iid
     }
 
-    /// Gives the instance, scenery or actor, whose id is `from` the external id `to`. Refused, and
-    /// `false` returned, if no instance has that id, or `to` is empty or already used here.
-    pub fn rename_instance(&mut self, from: &SceneryInstanceId, to: &str) -> bool {
-        if to.is_empty() || self.external_ids().contains(to) {
-            return false;
+    /// Labels the instance, scenery or actor, whose id is `iid`, or with `None` clears its label.
+    /// A label is a reason for a key, so an instance without one is given one. Returns the
+    /// instance's id after, or `None`, changing nothing, if no instance has `iid`, the label is
+    /// empty, or another instance here has it. Uniqueness across the game is the editor's to check.
+    pub fn set_label(
+        &mut self,
+        iid: &SceneryInstanceId,
+        label: Option<&str>,
+    ) -> Option<SceneryInstanceId> {
+        if label.is_some_and(|label| label.is_empty()) {
+            return None;
         }
-        let iid = self
-            .scenery
-            .iter_mut()
-            .map(|instance| &mut instance.iid)
-            .chain(self.actors.iter_mut().map(|actor| &mut actor.iid))
-            .find(|iid| *iid == from);
-        let Some(iid) = iid else {
-            return false;
-        };
-        *iid = SceneryInstanceId::External(Arc::new(to.to_string()));
-        true
+        let clash = label.is_some()
+            && self
+                .instances()
+                .any(|(other, other_label)| other != iid && other_label == label);
+        if clash {
+            return None;
+        }
+        let (target, target_label) = self.instances_mut().find(|(other, _)| **other == *iid)?;
+        if label.is_some() && target.key().is_none() {
+            *target = SceneryInstanceId::Keyed(InstanceKey::generate());
+        }
+        *target_label = label.map(Arc::from);
+        Some(target.clone())
     }
 
     /// Whether an instance, scenery or actor, has the id `iid`.
     pub fn has_instance(&self, iid: &SceneryInstanceId) -> bool {
-        self.scenery.iter().any(|instance| instance.iid == *iid)
-            || self.actors.iter().any(|actor| actor.iid == *iid)
+        self.instances().any(|(other, _)| other == iid)
     }
 
-    /// The external ids the precinct's scenery and actors use.
-    pub fn external_ids(&self) -> HashSet<String> {
+    /// The label of the instance, scenery or actor, whose id is `iid`, if it has one.
+    pub fn label(&self, iid: &SceneryInstanceId) -> Option<&str> {
+        self.instances()
+            .find(|(other, _)| *other == iid)
+            .and_then(|(_, label)| label)
+    }
+
+    /// The labels of the precinct's scenery and actors.
+    pub fn labels(&self) -> impl Iterator<Item = &str> {
+        self.instances().filter_map(|(_, label)| label)
+    }
+
+    /// Each instance's id and label, scenery first, then actors.
+    fn instances(&self) -> impl Iterator<Item = (&SceneryInstanceId, Option<&str>)> {
         self.scenery
             .iter()
-            .map(|instance| &instance.iid)
-            .chain(self.actors.iter().map(|actor| &actor.iid))
-            .filter_map(|iid| match iid {
-                SceneryInstanceId::External(name) => Some((**name).clone()),
-                _ => None,
-            })
-            .collect()
+            .map(|instance| (&instance.iid, instance.label.as_deref()))
+            .chain(
+                self.actors
+                    .iter()
+                    .map(|actor| (&actor.iid, actor.label.as_deref())),
+            )
+    }
+
+    fn instances_mut(
+        &mut self,
+    ) -> impl Iterator<Item = (&mut SceneryInstanceId, &mut Option<Arc<str>>)> {
+        self.scenery
+            .iter_mut()
+            .map(|instance| (&mut instance.iid, &mut instance.label))
+            .chain(
+                self.actors
+                    .iter_mut()
+                    .map(|actor| (&mut actor.iid, &mut actor.label)),
+            )
+    }
+
+    /// Takes out the instance, scenery or actor, whose id is `iid`, to be put in another precinct
+    /// with [`insert_instance`](Self::insert_instance). Its exemplar type stays in this precinct's
+    /// table.
+    pub fn take_instance(&mut self, iid: &SceneryInstanceId) -> Option<TakenInstance> {
+        if let Some(index) = self.scenery.iter().position(|instance| instance.iid == *iid) {
+            let instance = self.scenery.remove(index);
+            let exemplar = self.scenery_types.get(instance.id)?.clone();
+            return Some(TakenInstance::Scenery { exemplar, instance });
+        }
+        let index = self.actors.iter().position(|actor| actor.iid == *iid)?;
+        Some(TakenInstance::Actor(self.actors.remove(index)))
+    }
+
+    /// Puts in an instance taken from another precinct, with its key and label, adding its exemplar
+    /// to `scenery_types` if the table lacks it. An instance with no key is numbered here. Its
+    /// position is taken as it is: the caller makes a scenery instance's relative to this precinct.
+    /// Returns its id here.
+    pub fn insert_instance(&mut self, taken: TakenInstance) -> SceneryInstanceId {
+        match taken {
+            TakenInstance::Scenery {
+                exemplar,
+                mut instance,
+            } => {
+                instance.id = match self.scenery_type_index(&exemplar) {
+                    Some(index) => index,
+                    None => self.add_scenery_type(exemplar),
+                };
+                if instance.iid.key().is_none() {
+                    instance.iid = SceneryInstanceId::Internal(self.next_scenery_id());
+                }
+                let iid = instance.iid.clone();
+                self.scenery.push(instance);
+                iid
+            }
+            TakenInstance::Actor(actor) => {
+                let iid = actor.iid.clone();
+                self.actors.push(actor);
+                iid
+            }
+        }
     }
 
     /// Return the tier with the given level.
@@ -197,6 +277,7 @@ impl PrecinctAsset {
             facing,
             position,
             iid: iid.clone(),
+            label: None,
             aspects: InstanceAspects::default(),
         });
         iid
@@ -254,45 +335,6 @@ impl PrecinctAsset {
             }
         }
     }
-}
-
-/// The base of an external id for an instance of the exemplar at `path`: its label in kebab case.
-fn id_base(path: &str) -> String {
-    kebab_case(path.rsplit('#').next().unwrap_or(path))
-}
-
-/// `base` numbered with the lowest number from `next` up that is not in `taken`, as `chest-2`;
-/// taken, and `next` moved past it.
-fn unused_id(base: &str, next: &mut usize, taken: &mut HashSet<String>) -> String {
-    loop {
-        let name = format!("{base}-{next}");
-        *next += 1;
-        if taken.insert(name.clone()) {
-            return name;
-        }
-    }
-}
-
-/// `label` in kebab case: `WoodenChest` as `wooden-chest`.
-fn kebab_case(label: &str) -> String {
-    let mut result = String::with_capacity(label.len() + 4);
-    let mut previous: Option<char> = None;
-    for c in label.chars() {
-        if c.is_uppercase() {
-            if previous.is_some_and(|p| p.is_lowercase() || p.is_ascii_digit()) {
-                result.push('-');
-            }
-            result.extend(c.to_lowercase());
-        } else if matches!(c, '.' | '_' | ' ' | '-') {
-            if !result.ends_with('-') {
-                result.push('-');
-            }
-        } else {
-            result.push(c);
-        }
-        previous = Some(c);
-    }
-    result
 }
 
 /// Writes a [`PrecinctAsset`] as a named map, each instance's aspects through reflection.
@@ -360,9 +402,9 @@ impl Serialize for SceneryInstanceSer<'_> {
         state.serialize_element(&instance.id)?;
         state.serialize_element(&instance.facing)?;
         state.serialize_element(&instance.position)?;
-        state.serialize_element(match &instance.iid {
-            SceneryInstanceId::Internal(_) => &SceneryInstanceId::None,
-            iid => iid,
+        state.serialize_element(&InstanceIdSer {
+            iid: &instance.iid,
+            label: instance.label.as_deref(),
         })?;
         if has_aspects {
             state.serialize_element(&instance.aspects.serializable(self.registry))?;
@@ -387,15 +429,105 @@ pub struct TierSer {
     pub cutaways: Vec<Rect>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
+/// An instance's identity in its precinct. Its label, which names it, is kept beside it, so a
+/// rename changes no identity.
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub enum SceneryInstanceId {
+    /// Read without a key, and not yet numbered.
     #[default]
     None,
+    /// A number given as the precinct loads, neither saved nor stable across edits (D87).
     Internal(usize),
+    /// A key, saved with the instance.
+    Keyed(InstanceKey),
+}
 
-    #[serde(with = "panoply_exemplar::ser::arcstring")]
-    External(Arc<String>),
+impl SceneryInstanceId {
+    /// The key, if the instance has one.
+    pub fn key(&self) -> Option<InstanceKey> {
+        match self {
+            SceneryInstanceId::Keyed(key) => Some(*key),
+            _ => None,
+        }
+    }
+}
+
+/// An instance's id as a precinct file holds it: nil, its key, or its key and label as a pair.
+/// Internal ids are written as nil, since the loader numbers instances itself (D87).
+pub(crate) struct InstanceIdSer<'a> {
+    pub(crate) iid: &'a SceneryInstanceId,
+    pub(crate) label: Option<&'a str>,
+}
+
+impl Serialize for InstanceIdSer<'_> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        match (self.iid.key(), self.label) {
+            (Some(key), None) => key.serialize(serializer),
+            (Some(key), Some(label)) => (key, label).serialize(serializer),
+            (None, _) => serializer.serialize_unit(),
+        }
+    }
+}
+
+/// Reads what [`InstanceIdSer`] writes. A name where a key belongs, faery's ids as they were
+/// before keys, is an error.
+struct InstanceIdField(Option<(InstanceKey, Option<Arc<str>>)>);
+
+impl<'de> Deserialize<'de> for InstanceIdField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct IdVisitor;
+
+        impl<'de> Visitor<'de> for IdVisitor {
+            type Value = InstanceIdField;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("nil, an instance key, or a key and a label")
+            }
+
+            fn visit_unit<E>(self) -> Result<Self::Value, E> {
+                Ok(InstanceIdField(None))
+            }
+
+            fn visit_none<E>(self) -> Result<Self::Value, E> {
+                Ok(InstanceIdField(None))
+            }
+
+            fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {
+                let uuid = bevy::asset::uuid::Uuid::from_slice(bytes).map_err(E::custom)?;
+                Ok(InstanceIdField(Some((uuid.into(), None))))
+            }
+
+            fn visit_str<E: serde::de::Error>(self, text: &str) -> Result<Self::Value, E> {
+                match text.parse() {
+                    Ok(key) => Ok(InstanceIdField(Some((key, None)))),
+                    Err(_) => Err(E::custom(format!(
+                        "instance id {text:?} is a name, not a key"
+                    ))),
+                }
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let key = seq
+                    .next_element::<InstanceKey>()?
+                    .ok_or_else(|| serde::de::Error::invalid_length(0, &self))?;
+                let label = seq
+                    .next_element::<String>()?
+                    .ok_or_else(|| serde::de::Error::invalid_length(1, &self))?;
+                Ok(InstanceIdField(Some((key, Some(label.into())))))
+            }
+        }
+
+        deserializer.deserialize_any(IdVisitor)
+    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -406,14 +538,29 @@ pub struct SceneryInstanceData {
     /// Facing direction, in degrees: 0 faces +z, 90 faces +x.
     pub facing: f32,
 
-    /// Position
+    /// Position, relative to the precinct.
     pub position: Vec3,
 
-    /// Optional instance identifier
+    /// The instance's identity.
     pub iid: SceneryInstanceId,
+
+    /// The name text uses for the instance, unique across the game. Only a keyed instance has one.
+    pub label: Option<Arc<str>>,
 
     /// List of aspects for this instance.
     pub aspects: InstanceAspects,
+}
+
+/// An instance taken out of a precinct, to be put in another
+/// ([`PrecinctAsset::take_instance`]). A scenery instance carries its exemplar's path, since its
+/// index in `scenery_types` is its old precinct's.
+#[derive(Debug, Clone)]
+pub enum TakenInstance {
+    Scenery {
+        exemplar: String,
+        instance: SceneryInstanceData,
+    },
+    Actor(ActorInstanceData),
 }
 
 struct CompressedInstanceVisitor<'a, 'b> {
@@ -448,9 +595,13 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
             Ok(Some(position)) => result.position = position,
             _ => return Err(serde::de::Error::invalid_length(2, &self)),
         }
-        match seq.next_element::<SceneryInstanceId>() {
-            Ok(Some(iid)) => result.iid = iid,
-            _ => return Err(serde::de::Error::invalid_length(3, &self)),
+        match seq.next_element::<InstanceIdField>()? {
+            Some(InstanceIdField(Some((key, label)))) => {
+                result.iid = SceneryInstanceId::Keyed(key);
+                result.label = label;
+            }
+            Some(InstanceIdField(None)) => {}
+            None => return Err(serde::de::Error::invalid_length(3, &self)),
         }
         // The aspects are optional, but an error in them must not be swallowed: the rest of the
         // tuple would be left unread, and the next instance would parse from the wrong place.
@@ -702,95 +853,135 @@ impl AssetLoader for PrecinctAssetLoader {
 mod tests {
     use super::*;
 
-    #[test]
-    fn labels_in_kebab_case() {
-        assert_eq!(kebab_case("WoodenChest"), "wooden-chest");
-        assert_eq!(kebab_case("Chest2Large"), "chest2-large");
-        assert_eq!(kebab_case("Proto.Guard"), "proto-guard");
-        assert_eq!(kebab_case("chest"), "chest");
-    }
+    const CHEST: &str = "exemplars/furnishings.exem.json#WoodenChest";
+    const WALL: &str = "exemplars/walls.exem.json#Wall";
+    const GUARD: &str = "exemplars/characters.exem.json#Guard";
 
-    /// Ids go to the instances that need them, numbered from the lowest free number, around the
-    /// names the precinct already uses; an instance with an id keeps it.
+    /// Keys go to the instances with a reason for one, and are taken from those with none left:
+    /// a chest, a labelled wall and an actor keep or gain keys, while a wall whose label was
+    /// cleared loses its own.
     #[test]
-    fn external_ids_take_the_lowest_free_number() {
+    fn keys_follow_their_reasons() {
         let mut precinct = PrecinctAsset {
-            scenery_types: vec![
-                "exemplars/furnishings.exem.json#WoodenChest".into(),
-                "exemplars/walls.exem.json#Wall".into(),
-            ],
+            scenery_types: vec![CHEST.into(), WALL.into()],
             ..default()
         };
-        let named = SceneryInstanceId::External(Arc::new("wooden-chest-1".into()));
-        precinct.add_scenery_element(0, 0., Vec3::ZERO, Some(named.clone()));
-        precinct.add_scenery_element(0, 0., Vec3::X, None);
-        precinct.add_scenery_element(1, 0., Vec3::Y, None);
-        precinct.add_scenery_element(0, 0., Vec3::Z, None);
-        assert_eq!(precinct.assign_external_ids(|index| index == 0), 2);
+        let chest = precinct.add_scenery_element(0, 0., Vec3::ZERO, None);
+        let plain = precinct.add_scenery_element(1, 0., Vec3::X, None);
+        let labelled = precinct.add_scenery_element(1, 0., Vec3::Y, None);
+        let cleared = precinct.add_scenery_element(1, 0., Vec3::Z, None);
+        let labelled = precinct.set_label(&labelled, Some("gate")).unwrap();
+        let cleared = precinct.set_label(&cleared, Some("door")).unwrap();
+        precinct.set_label(&cleared, None).unwrap();
+        precinct.actors.push(ActorInstanceData {
+            exemplar: GUARD.into(),
+            ..default()
+        });
+
+        assert_eq!(precinct.update_keys(|index| index == 0), (2, 1));
         let ids: Vec<_> = precinct.scenery.iter().map(|s| s.iid.clone()).collect();
-        assert_eq!(ids[0], named);
-        assert_eq!(
-            ids[1],
-            SceneryInstanceId::External(Arc::new("wooden-chest-2".into()))
-        );
-        assert_eq!(ids[2], SceneryInstanceId::Internal(1));
-        assert_eq!(
-            ids[3],
-            SceneryInstanceId::External(Arc::new("wooden-chest-3".into()))
-        );
+        assert!(ids[0].key().is_some() && ids[0] != chest);
+        assert_eq!(ids[1], plain);
+        assert_eq!(ids[2], labelled);
+        assert!(matches!(ids[3], SceneryInstanceId::Internal(_)));
+        assert!(precinct.actors[0].iid.key().is_some());
+        assert_eq!(precinct.update_keys(|index| index == 0), (0, 0));
     }
 
-    /// A placed actor is named for its exemplar, around the names scenery and actors already use.
+    /// A label keeps the key it was given with, through a change and a clear; a label another
+    /// instance here has, or an empty one, is refused.
     #[test]
-    fn a_placed_actor_takes_the_lowest_free_name() {
+    fn a_label_keeps_the_key() {
         let mut precinct = PrecinctAsset {
-            scenery_types: vec!["exemplars/furnishings.exem.json#Guard".into()],
-            ..default()
-        };
-        let named = SceneryInstanceId::External(Arc::new("guard-1".into()));
-        precinct.add_scenery_element(0, 0., Vec3::ZERO, Some(named));
-        let path = "exemplars/characters.exem.json#Guard";
-        let first = precinct.add_actor(path.into(), 90., Vec3::X);
-        let second = precinct.add_actor(path.into(), 0., Vec3::Z);
-        assert_eq!(
-            first,
-            SceneryInstanceId::External(Arc::new("guard-2".into()))
-        );
-        assert_eq!(
-            second,
-            SceneryInstanceId::External(Arc::new("guard-3".into()))
-        );
-        let placed: Vec<_> = precinct
-            .actors
-            .iter()
-            .map(|a| (a.facing, a.position))
-            .collect();
-        assert_eq!(placed, [(90., Vec3::X), (0., Vec3::Z)]);
-    }
-
-    /// A rename takes a name no instance uses, scenery or actor, and gives an internal id a name.
-    #[test]
-    fn a_rename_refuses_a_name_in_use() {
-        let mut precinct = PrecinctAsset {
-            scenery_types: vec!["exemplars/furnishings.exem.json#Chest".into()],
+            scenery_types: vec![WALL.into()],
             ..default()
         };
         let wall = precinct.add_scenery_element(0, 0., Vec3::ZERO, None);
-        let guard = precinct.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::X);
-        assert!(!precinct.rename_instance(&wall, "guard-1"));
-        assert!(!precinct.rename_instance(&wall, ""));
-        assert!(precinct.rename_instance(&wall, "strongbox"));
-        assert!(!precinct.rename_instance(&guard, "strongbox"));
-        assert!(precinct.rename_instance(&guard, "captain"));
-        let missing = SceneryInstanceId::External(Arc::new("guard-1".into()));
-        assert!(!precinct.rename_instance(&missing, "sergeant"));
-        assert_eq!(
-            precinct.scenery[0].iid,
-            SceneryInstanceId::External(Arc::new("strongbox".into()))
-        );
-        assert_eq!(
-            precinct.actors[0].iid,
-            SceneryInstanceId::External(Arc::new("captain".into()))
-        );
+        let guard = precinct.add_actor(GUARD.into(), 0., Vec3::X);
+        let keyed = precinct.set_label(&wall, Some("gate")).unwrap();
+        assert!(keyed.key().is_some());
+        assert_eq!(precinct.set_label(&keyed, Some("postern")), Some(keyed.clone()));
+        assert_eq!(precinct.set_label(&guard, Some("postern")), None);
+        assert_eq!(precinct.set_label(&guard, Some("")), None);
+        assert_eq!(precinct.set_label(&guard, Some("stone")), Some(guard.clone()));
+        assert_eq!(precinct.set_label(&keyed, None), Some(keyed.clone()));
+        assert_eq!(precinct.set_label(&wall, Some("gate")), None);
+        let labels: Vec<_> = precinct.labels().collect();
+        assert_eq!(labels, ["stone"]);
+    }
+
+    /// An instance moved from one precinct to another keeps its key and label, and the receiving
+    /// precinct gains its exemplar.
+    #[test]
+    fn a_move_keeps_the_key() {
+        let mut a = PrecinctAsset {
+            scenery_types: vec![WALL.into(), CHEST.into()],
+            ..default()
+        };
+        let mut b = PrecinctAsset {
+            scenery_types: vec![WALL.into()],
+            ..default()
+        };
+        b.add_scenery_element(0, 0., Vec3::ZERO, None);
+        let chest = a.add_scenery_element(1, 0., Vec3::ZERO, None);
+        let chest = a.set_label(&chest, Some("strongbox")).unwrap();
+
+        let taken = a.take_instance(&chest).unwrap();
+        assert_eq!(b.insert_instance(taken), chest);
+        assert!(!a.has_instance(&chest));
+        assert_eq!(b.scenery_types, [WALL, CHEST]);
+        let moved = &b.scenery[1];
+        assert_eq!((moved.id, &moved.iid), (1, &chest));
+        assert_eq!(moved.label.as_deref(), Some("strongbox"));
+    }
+
+    /// A moved instance with no key is numbered in its new precinct.
+    #[test]
+    fn a_moved_wall_is_numbered_anew() {
+        let mut a = PrecinctAsset {
+            scenery_types: vec![WALL.into()],
+            ..default()
+        };
+        let mut b = a.clone();
+        b.add_scenery_element(0, 0., Vec3::ZERO, None);
+        a.add_scenery_element(0, 0., Vec3::ZERO, None);
+        let wall = a.add_scenery_element(0, 0., Vec3::X, None);
+        let taken = a.take_instance(&wall).unwrap();
+        assert_eq!(b.insert_instance(taken), SceneryInstanceId::Internal(1));
+    }
+
+    /// An id round-trips through msgpack and JSON: none, a key, and a key with a label.
+    #[test]
+    fn ids_round_trip() {
+        let key = SceneryInstanceId::Keyed(InstanceKey::generate());
+        let cases = [
+            (SceneryInstanceId::Internal(3), None),
+            (key.clone(), None),
+            (key.clone(), Some("sgt.stone")),
+        ];
+        for (iid, label) in cases {
+            let written = InstanceIdSer { iid: &iid, label };
+            let expected = iid.key().map(|key| (key, label.map(Arc::from)));
+            let packed = rmps::to_vec_named(&written).unwrap();
+            let read: InstanceIdField = rmps::from_slice(&packed).unwrap();
+            assert_eq!(read.0, expected);
+            let json = serde_json::to_string(&written).unwrap();
+            let read: InstanceIdField = serde_json::from_str(&json).unwrap();
+            assert_eq!(read.0, expected);
+        }
+        // msgpack's `bin 8` of 16 bytes: the key, not its text.
+        let packed = rmps::to_vec_named(&InstanceIdSer {
+            iid: &key,
+            label: None,
+        })
+        .unwrap();
+        assert_eq!(packed[..2], [0xC4, 16]);
+    }
+
+    /// A name where a key belongs is an error.
+    #[test]
+    fn a_name_is_not_a_key() {
+        let packed = rmps::to_vec_named("swd0").unwrap();
+        assert!(rmps::from_slice::<InstanceIdField>(&packed).is_err());
     }
 }

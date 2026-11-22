@@ -68,11 +68,12 @@ rarely matters.
 
 ## Chunk format
 
-A precinct's chunk is MessagePack: a map from an instance's external id (D87) to that instance's
-entries, each a map from an aspect's name to the state that aspect saved.
+A precinct's chunk is MessagePack: a map from an instance's key (D87) to that instance's entries,
+each a map from an aspect's name to the state that aspect saved. A patch that moves a keyed instance
+to another precinct, or takes its key, would strand its entries; X132 keeps them.
 
 ```text
-{ <iid>: { "Lock": { locked: false } }, ... }
+{ <key>: { "Lock": { locked: false } }, ... }
 ```
 
 - **Aspects save their own state.** `Aspect` has `save`, which writes an entry from the entity's
@@ -115,8 +116,8 @@ component field by field would fix that, if it ever matters.
 ## What it asks of Panoply
 
 - **Persisted state is a delta over the authored asset.** A precinct's chunk holds only what changed
-  in play (an NPC killed, a door unlocked, a chest looted), keyed by external instance id, which
-  stays stable across edits of the authored precinct; internal ids do not (D87).
+  in play (an NPC killed, a door unlocked, a chest looted), keyed by instance key, which stays
+  stable across edits of the authored precinct; internal ids do not (D87).
 - **Collecting a precinct's state works on a live precinct,** not only at despawn, because a save
   flushes every cached precinct. Eviction is "collect state, then despawn"; save is "collect
   state" for every precinct. So this is an operation both call, not an observer on despawn.

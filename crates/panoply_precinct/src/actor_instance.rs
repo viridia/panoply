@@ -6,7 +6,7 @@ use serde::{
     ser::SerializeMap,
     Deserialize, Serialize,
 };
-use std::fmt;
+use std::{fmt, sync::Arc};
 
 use crate::SceneryInstanceId;
 
@@ -24,8 +24,11 @@ pub struct ActorInstanceData {
     /// The way the actor faces, in degrees: 0 faces +z, 90 faces +x.
     pub facing: f32,
 
-    /// Identifies the actor within its precinct.
+    /// The actor's identity: its key, once the editor has given it one.
     pub iid: SceneryInstanceId,
+
+    /// The name text uses for the actor, unique across the game.
+    pub label: Option<Arc<str>>,
 
     /// Aspects of this actor that override its exemplar's.
     pub aspects: InstanceAspects,
@@ -59,8 +62,11 @@ impl Serialize for ActorInstanceSer<'_> {
         if actor.facing != 0.0 {
             map.serialize_entry("facing", &actor.facing)?;
         }
-        if let SceneryInstanceId::External(_) = actor.iid {
-            map.serialize_entry("iid", &actor.iid)?;
+        if let Some(key) = actor.iid.key() {
+            map.serialize_entry("key", &key)?;
+        }
+        if let Some(label) = &actor.label {
+            map.serialize_entry("label", &**label)?;
         }
         if !actor.aspects.is_empty() {
             map.serialize_entry("aspects", &actor.aspects.serializable(self.registry))?;
@@ -75,7 +81,8 @@ enum Field {
     Exemplar,
     Position,
     Facing,
-    Iid,
+    Key,
+    Label,
     Aspects,
 }
 
@@ -104,7 +111,8 @@ impl<'de> Visitor<'de> for ActorInstanceVisitor<'_, '_> {
                 Field::Exemplar => exemplar = Some(map.next_value()?),
                 Field::Position => result.position = map.next_value()?,
                 Field::Facing => result.facing = map.next_value()?,
-                Field::Iid => result.iid = map.next_value()?,
+                Field::Key => result.iid = SceneryInstanceId::Keyed(map.next_value()?),
+                Field::Label => result.label = Some(map.next_value::<String>()?.into()),
                 Field::Aspects => {
                     result.aspects =
                         InstanceAspects(map.next_value_seed(AspectListDeserializer {

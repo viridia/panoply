@@ -1,16 +1,18 @@
 //! A modal dialog asking for a line of text, such as a new name. OK, or Enter in the box, triggers
 //! [`TextEntered`] on the dialog and closes it; the opener observes the event on the entity it
-//! spawned. OK is disabled while the text, trimmed, is empty, one of the dialog's taken values, or
-//! refused by its rule. The taken values are given when it opens: a modal dialog's taken names
+//! spawned. OK is disabled while the text, trimmed, is empty (unless the dialog is clearable), one
+//! of the dialog's taken values, or refused by its rule. The taken values are given when it opens: a modal dialog's taken names
 //! cannot change while it is open.
 
 use bevy::{
     feathers::{
+        constants::icons,
         controls::{
             ButtonVariant, FeathersButton, FeathersDialog, FeathersDialogBody, FeathersDialogClose,
             FeathersDialogFooter, FeathersDialogHeader, FeathersTextInput,
-            FeathersTextInputContainer,
+            FeathersTextInputContainer, FeathersToolButton,
         },
+        display::icon,
         theme::ThemedText,
     },
     input_focus::{AutoFocus, InputFocus},
@@ -30,6 +32,9 @@ pub struct TextEntryDialog {
     pub rule: Option<TextEntryRule>,
     /// The box's text as the dialog opens, selected, so typing replaces it.
     pub text: String,
+    /// Whether the text may be empty: the box has a × that empties it, and an empty text is
+    /// accepted, as clearing a value.
+    pub clearable: bool,
 }
 
 /// A check on the text in a [`TextEntryDialog`], returning why it fails.
@@ -38,6 +43,10 @@ pub type TextEntryRule = fn(&str) -> Option<&'static str>;
 /// The text box.
 #[derive(Component, Default, Clone)]
 struct TextEntryInput;
+
+/// The × that empties a clearable dialog's box.
+#[derive(Component, Default, Clone)]
+struct TextEntryClear;
 
 /// The line under the box saying why OK is disabled.
 #[derive(Component, Default, Clone)]
@@ -86,7 +95,7 @@ impl Plugin for TextEntryPlugin {
 
 /// The dialog, titled `title`, its box labeled `label`. Its root is named `#TextEntryDialog`.
 pub fn text_entry_dialog(title: &str, label: &str, taken: HashSet<String>) -> impl Scene {
-    entry_dialog(title, label, taken, None, String::new())
+    entry_dialog(title, label, TextEntryDialog { taken, ..default() })
 }
 
 /// As [`text_entry_dialog`], with a further check on the text.
@@ -96,36 +105,49 @@ pub fn text_entry_dialog_with_rule(
     taken: HashSet<String>,
     rule: Option<TextEntryRule>,
 ) -> impl Scene {
-    entry_dialog(title, label, taken, rule, String::new())
+    let dialog = TextEntryDialog {
+        taken,
+        rule,
+        ..default()
+    };
+    entry_dialog(title, label, dialog)
 }
 
-/// As [`text_entry_dialog`], its box starting with `text`, as a rename starts with the name.
-pub fn text_entry_dialog_with_text(
+/// As [`text_entry_dialog`], its box starting with `text`, as a rename starts with the name, and
+/// clearable: a × empties the box, and OK then clears the value.
+pub fn clearable_text_entry_dialog(
     title: &str,
     label: &str,
     taken: HashSet<String>,
     text: String,
 ) -> impl Scene {
-    entry_dialog(title, label, taken, None, text)
+    let dialog = TextEntryDialog {
+        taken,
+        text,
+        clearable: true,
+        ..default()
+    };
+    entry_dialog(title, label, dialog)
 }
 
-fn entry_dialog(
-    title: &str,
-    label: &str,
-    taken: HashSet<String>,
-    rule: Option<TextEntryRule>,
-    text: String,
-) -> impl Scene {
+fn entry_dialog(title: &str, label: &str, dialog: TextEntryDialog) -> impl Scene {
     let (title, label) = (title.to_string(), label.to_string());
+    let clearable = dialog.clearable;
     bsn! {
         @FeathersDialog {
             @width: px(320),
             @contents: {
-                Box::new(dialog_contents(title.clone(), label.clone())) as Box<dyn SceneList>
+                Box::new(dialog_contents(title.clone(), label.clone(), clearable))
+                    as Box<dyn SceneList>
             },
         }
         #TextEntryDialog
-        TextEntryDialog { taken: {taken.clone()}, rule: {rule}, text: {text.clone()} }
+        TextEntryDialog {
+            taken: {dialog.taken.clone()},
+            rule: {dialog.rule},
+            text: {dialog.text.clone()},
+            clearable: {clearable},
+        }
         on(|close: On<RequestClose>, mut commands: Commands| {
             commands.entity(close.event_target()).despawn();
         })
@@ -133,7 +155,7 @@ fn entry_dialog(
 }
 
 /// The contents, in a function of their own, as `goto.rs` explains for its own.
-fn dialog_contents(title: String, label: String) -> impl SceneList {
+fn dialog_contents(title: String, label: String, clearable: bool) -> impl SceneList {
     bsn_list! {
         @FeathersDialogHeader Children [
             Text({title.clone()}) ThemedText
@@ -146,12 +168,7 @@ fn dialog_contents(title: String, label: String) -> impl SceneList {
         Children [
             Text({label.clone()}) ThemedText
             --
-            @FeathersTextInputContainer Children [
-                @FeathersTextInput
-                #Entry
-                TextEntryInput
-                AutoFocus
-            ]
+            @entry_box(clearable)
             --
             Text("") ThemedText
             #Hint
@@ -177,11 +194,64 @@ fn dialog_contents(title: String, label: String) -> impl SceneList {
     }
 }
 
-/// Why `text` cannot be accepted by `dialog`, if it cannot: `Some("")` when it is empty, which
-/// needs no hint.
+/// The text box, and in a clearable dialog the × after it, as the chooser's filter box has one.
+fn entry_box(clearable: bool) -> Box<dyn Scene> {
+    if clearable {
+        Box::new(bsn! {
+            @FeathersTextInputContainer Children [
+                @FeathersTextInput
+                #Entry
+                TextEntryInput
+                AutoFocus
+                --
+                @FeathersToolButton {
+                    @variant: ButtonVariant::Plain,
+                    @caption: bsn! { @icon(icons::X) },
+                }
+                #Clear
+                TextEntryClear
+                on(clear_entry)
+            ]
+        })
+    } else {
+        Box::new(bsn! {
+            @FeathersTextInputContainer Children [
+                @FeathersTextInput
+                #Entry
+                TextEntryInput
+                AutoFocus
+            ]
+        })
+    }
+}
+
+/// Observer on the ×: empties the box.
+fn clear_entry(
+    activate: On<Activate>,
+    parents: Query<&ChildOf>,
+    children: Query<&Children>,
+    dialogs: Query<(), With<TextEntryDialog>>,
+    mut inputs: Query<&mut EditableText, With<TextEntryInput>>,
+) {
+    let Some(root) = parents
+        .iter_ancestors(activate.event_target())
+        .find(|&e| dialogs.contains(e))
+    else {
+        return;
+    };
+    if let Some(input) = children
+        .iter_descendants(root)
+        .find(|&e| inputs.contains(e))
+    {
+        inputs.get_mut(input).unwrap().clear();
+    }
+}
+
+/// Why `text` cannot be accepted by `dialog`, if it cannot: `Some("")` when it is empty and the
+/// dialog not clearable, which needs no hint.
 fn rejection(dialog: &TextEntryDialog, text: &str) -> Option<&'static str> {
     if text.is_empty() {
-        Some("")
+        (!dialog.clearable).then_some("")
     } else if dialog.taken.contains(text) {
         Some("Name in use")
     } else {

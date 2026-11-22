@@ -6,7 +6,7 @@ use bevy::{
 };
 use panoply_core::RealmPhysics;
 use panoply_exemplar::*;
-use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
+use panoply_precinct::{InstanceKey, PrecinctAsset, SceneryInstanceId};
 use rapier3d::prelude::RigidBodyHandle;
 
 use super::{
@@ -205,6 +205,9 @@ impl Precinct {
             if let Some(se_ent) = existing.remove(&sid.iid) {
                 let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
                 if scenery_element.exemplar == scenery_exemplars[sid.id] {
+                    if scenery_element.label != sid.label {
+                        scenery_element.label.clone_from(&sid.label);
+                    }
                     if scenery_element.position != sid.position || scenery_element.facing != facing
                     {
                         scenery_element.position = sid.position;
@@ -244,15 +247,24 @@ impl Precinct {
             if let Some(se_ent) = alike.get_mut(&key).and_then(Vec::pop) {
                 let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
                 existing.remove(&scenery_element.iid);
+                // A save gives keys and takes them away (D87).
+                if scenery_element.iid.key() != sid.iid.key() {
+                    match sid.iid.key() {
+                        Some(key) => commands.entity(se_ent).insert(key),
+                        None => commands.entity(se_ent).remove::<InstanceKey>(),
+                    };
+                }
                 scenery_element.iid = sid.iid.clone();
+                scenery_element.label.clone_from(&sid.label);
                 continue;
             }
 
             // Otherwise, spawn a new instance.
-            commands.spawn((
+            let mut spawned = commands.spawn((
                 Name::new("SceneryElement"),
                 SceneryElement {
                     iid: sid.iid.clone(),
+                    label: sid.label.clone(),
                     exemplar: scenery_exemplars[sid.id].clone(),
                     facing,
                     position: sid.position,
@@ -264,6 +276,9 @@ impl Precinct {
                 SceneryElementRebuildAspects,
                 ChildOf(entity),
             ));
+            if let Some(key) = sid.iid.key() {
+                spawned.insert(key);
+            }
         }
 
         // Despawn any remaining scenery elements that were not found in the asset.

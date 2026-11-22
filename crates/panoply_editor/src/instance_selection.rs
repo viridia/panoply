@@ -176,11 +176,11 @@ fn spawn_tool(mut commands: Commands) {
     }
 }
 
-/// Keeps the selection on its instance, and clears it when the precinct leaves the cache. A named
-/// instance is found by its name while the precinct's asset has it, so a rename, which spawns an
-/// actor again, keeps it; the old entity stands in until the new one is there. Otherwise, as after
-/// an undone rename, or for an internal id, which a reload numbers anew (D87), the entity is
-/// followed and its id taken.
+/// Keeps the selection on its instance, and clears it when the precinct leaves the cache. A keyed
+/// instance is found by its key while the precinct's asset has it, so an edit that spawns an actor
+/// again keeps it; the old entity stands in until the new one is there. Otherwise, as after an
+/// undone edit that gave a key, or for an internal id, which a reload numbers anew (D87), the
+/// entity is followed and its id taken.
 fn follow_selection(
     mut selection: ResMut<ScenerySelection>,
     precincts: Query<(&Precinct, Option<&Children>, Option<&PrecinctActors>)>,
@@ -206,11 +206,11 @@ fn follow_selection(
             .ok()
     };
     let iid = selection.iid.clone();
-    let named = matches!(iid, SceneryInstanceId::External(_))
+    let keyed = iid.key().is_some()
         && assets
             .get(&record.asset)
             .is_some_and(|asset| asset.has_instance(&iid));
-    let next = if named {
+    let next = if keyed {
         children
             .into_iter()
             .flatten()

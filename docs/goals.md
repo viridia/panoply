@@ -42,6 +42,16 @@ What Panoply is for. For how far the earlier engine got, see `faery.md`.
 - The world is open, so content can't assume the player's party: a quest must work with or
   without followers.
 
+## Scale
+
+The author's estimates for the finished world, for designs to size against:
+
+- holm-overland has room for 841 precincts.
+- About 10% of them are dense, each with about a dozen actors, a dozen doors and a dozen containers.
+- Most instances are local: nothing outside their precinct names them.
+- Every actor has goals or dialogue. Actors point to dialogue as they point to meshes.
+- About 10% of actors take part in a quest.
+
 ## Art
 
 - Panoply simulates genre conventions, not reality. Its art is a cinematic language of its own: the

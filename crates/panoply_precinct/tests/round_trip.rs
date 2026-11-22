@@ -1,6 +1,6 @@
 //! Every precinct file, loaded and saved, holds what it held, apart from what saving is meant to
-//! drop or change: faery's `layers`, aspect types no plugin registers (D25), internal ids, which
-//! are not saved (D87), and fields at their defaults or null. Floats compare at `f32`, which is what the
+//! drop or change: faery's `layers`, aspect types no plugin registers (D25), and fields at their
+//! defaults or null. Keys and labels come back as they were. Floats compare at `f32`, which is what the
 //! game reads them as.
 
 use std::path::{Path, PathBuf};
@@ -21,6 +21,74 @@ fn precinct_files(assets: &Path, dir: &Path, found: &mut Vec<PathBuf>) {
     }
 }
 
+/// A msgpack value read as JSON, its byte strings (instance keys) as arrays of numbers, since
+/// `serde_json::Value` has no bytes of its own.
+struct Packed(Value);
+
+impl<'de> serde::Deserialize<'de> for Packed {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(PackedVisitor).map(Packed)
+    }
+}
+
+struct PackedVisitor;
+
+impl<'de> serde::de::Visitor<'de> for PackedVisitor {
+    type Value = Value;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("any msgpack value")
+    }
+
+    fn visit_bool<E>(self, v: bool) -> Result<Value, E> {
+        Ok(Value::Bool(v))
+    }
+
+    fn visit_i64<E>(self, v: i64) -> Result<Value, E> {
+        Ok(Value::from(v))
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Value, E> {
+        Ok(Value::from(v))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Value, E> {
+        Ok(Value::from(v))
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Value, E> {
+        Ok(Value::from(v))
+    }
+
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Value, E> {
+        Ok(Value::Array(v.iter().map(|&b| Value::from(b)).collect()))
+    }
+
+    fn visit_unit<E>(self) -> Result<Value, E> {
+        Ok(Value::Null)
+    }
+
+    fn visit_none<E>(self) -> Result<Value, E> {
+        Ok(Value::Null)
+    }
+
+    fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Value, A::Error> {
+        let mut items = Vec::new();
+        while let Some(Packed(item)) = seq.next_element()? {
+            items.push(item);
+        }
+        Ok(Value::Array(items))
+    }
+
+    fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Value, A::Error> {
+        let mut fields = Map::new();
+        while let Some((key, Packed(value))) = map.next_entry::<String, Packed>()? {
+            fields.insert(key, value);
+        }
+        Ok(Value::Object(fields))
+    }
+}
+
 /// `value` as the comparison sees it.
 fn normalized(value: &Value, registry: &TypeRegistry) -> Value {
     let mut precinct = value.as_object().unwrap().clone();
@@ -37,9 +105,6 @@ fn normalized(value: &Value, registry: &TypeRegistry) -> Value {
     if let Some(Value::Array(scenery)) = precinct.get_mut("scenery") {
         for instance in scenery.iter_mut() {
             let tuple = instance.as_array_mut().unwrap();
-            if tuple[3].is_number() {
-                tuple[3] = Value::Null;
-            }
             if let Some(Value::Object(aspects)) = tuple.get_mut(4) {
                 registered_only(aspects, registry);
                 if aspects.is_empty() {
@@ -174,9 +239,9 @@ fn every_precinct_saves_as_it_loads() {
             failures.push(format!("{}: did not load", file.display()));
             continue;
         };
-        let original: Value = rmp_serde::from_slice(&std::fs::read(assets.join(file)).unwrap())
+        let Packed(original) = rmp_serde::from_slice(&std::fs::read(assets.join(file)).unwrap())
             .expect("the file decodes");
-        let saved: Value = rmp_serde::from_slice(&precinct.to_bytes(&registry).unwrap())
+        let Packed(saved) = rmp_serde::from_slice(&precinct.to_bytes(&registry).unwrap())
             .expect("the saved file decodes");
         let (original, saved) = (
             normalized(&original, &registry),

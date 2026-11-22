@@ -22,12 +22,17 @@ A missing reference shows in the game only as an error when something loads it, 
 unseen until someone visits the precinct. Known breaks are listed in KNOWN against the ledger entry
 that owns them: the check passes while they stay broken, fails on any other, and fails when a listed
 one resolves, so that it is removed from the list.
+
+Instances' identities are checked too: no two instances share a key or a label, and the instance
+index (`assets/scenery/precincts/instances.json`) lists exactly the labelled instances. A copied
+precinct file or a git merge can duplicate a key, which only this check finds.
 """
 
 import argparse
 import json
 import struct
 import sys
+import uuid
 from collections import defaultdict
 from pathlib import Path, PurePosixPath
 
@@ -282,6 +287,66 @@ class Assets:
         return None
 
 
+INDEX = PRECINCTS / "instances.json"
+
+
+def place_of(file):
+    """A precinct file's realm and coordinates, `["holm-overland", [10, 16]]`."""
+    coords = [int(c[1:]) * (1 if c[0] == "p" else -1) for c in file.stem.split("-")]
+    return file.parent.name, coords
+
+
+def check_instances():
+    """Failures of the instances' identities (`docs/instances.md`, Ids): a key two instances share,
+    a label two share, a name or number where a key belongs, and an index that is not what the
+    precincts give. The index lists each labelled instance as `[key, label, realm, [x, y], kind]`."""
+    failures = []
+    keys, labels, index = defaultdict(list), defaultdict(list), []
+    for file in sorted(PRECINCTS.glob("*/*.msgpack")):
+        source = asset_name(file)
+        precinct, _ = unpack(file.read_bytes())
+        realm, coords = place_of(file)
+        ids = [("scenery", instance[3]) for instance in precinct.get("scenery", [])]
+        for actor in precinct.get("actors", []):
+            if "iid" in actor:
+                failures.append(f"{source}: actor id {actor['iid']!r} is not a key")
+            key = actor.get("key")
+            ids.append(("actor", [key, actor["label"]] if "label" in actor else key))
+        for kind, iid in ids:
+            key, label = iid if isinstance(iid, list) else (iid, None)
+            if key is None:
+                continue
+            if not isinstance(key, bytes) or len(key) != 16:
+                failures.append(f"{source}: instance id {key!r} is not a key")
+                continue
+            key = str(uuid.UUID(bytes=key))
+            keys[key].append(source)
+            if label is not None:
+                labels[label].append(source)
+                index.append([key, label, realm, coords, kind])
+    for key, sources in sorted(keys.items()):
+        if len(sources) > 1:
+            failures.append(f"key {key} is on {len(sources)} instances, in {', '.join(sources)}")
+    for label, sources in sorted(labels.items()):
+        if len(sources) > 1:
+            failures.append(f"label {label} is on {len(sources)} instances, in {', '.join(sources)}")
+    try:
+        listed = json.loads(INDEX.read_text())
+    except (OSError, ValueError) as e:
+        return failures + [f"{asset_name(INDEX)}: {e}"]
+    listed, index = sorted(listed), sorted(index)
+    if listed != index:
+        missing = [entry for entry in index if entry not in listed]
+        extra = [entry for entry in listed if entry not in index]
+        for entry in missing:
+            failures.append(f"{asset_name(INDEX)} lacks {json.dumps(entry)}")
+        for entry in extra:
+            failures.append(f"{asset_name(INDEX)} lists {json.dumps(entry)}, which no precinct has")
+        if not missing and not extra:
+            failures.append(f"{asset_name(INDEX)} repeats a line")
+    return failures
+
+
 def check_precincts(assets, report):
     for file in sorted(PRECINCTS.glob("*/*.msgpack")):
         source = asset_name(file)
@@ -390,7 +455,7 @@ def main():
     check_exemplars(assets, report)
     check_entries(assets, report)
 
-    failures = []
+    failures = check_instances()
     for (reference, problem), sources in sorted(broken.items()):
         if reference in KNOWN:
             continue
