@@ -1,8 +1,9 @@
-//! Selection mode's panel. Its list holds the selected precinct's keyed instances, scenery and
-//! actors, each by its label or else its exemplar and place, as faery's `SceneryInstanceChooser`
-//! listed its named ones; choosing one selects it, and a click in the view moves the list's
-//! selection to the instance clicked. Below, a pane names the selected instance's kind and
-//! exemplar, and shows its label, which Rename… sets or clears.
+//! Selection mode's panel. Its list holds the selected precinct's instances, scenery and actors,
+//! each by its label or else its exemplar and place, as faery's `SceneryInstanceChooser` listed its
+//! named ones; choosing one selects it, and a click in the view moves the list's selection to the
+//! instance clicked. A menu in the filter box narrows the list by kind and to the labelled. Below,
+//! a pane names the selected instance's kind and exemplar, and shows its label, which Rename… sets
+//! or clears.
 
 use bevy::{
     app::PropagateOver,
@@ -10,7 +11,7 @@ use bevy::{
     feathers::{
         constants::{fonts, size},
         containers::{pane, pane_body, pane_header},
-        controls::FeathersButton,
+        controls::{FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuDivider},
         theme::{ThemeTextColor, ThemedText},
         tokens,
     },
@@ -20,8 +21,8 @@ use bevy::{
 };
 use bevy_immediate::{
     attach::{BevyImmediateAttachPlugin, ImmediateAttach},
-    ui::{activated::ImmUiActivated, text::ImmUiText},
-    Imm,
+    ui::{activated::ImmUiActivated, checked::ImmUiChecked, text::ImmUiText, CapsUiFeathers},
+    Imm, ImmEntity,
 };
 use panoply_actors::{PlacedAs, PrecinctActors};
 use panoply_exemplar::Exemplar;
@@ -29,19 +30,66 @@ use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement, WALL_TYPE};
 
 use crate::{
+    adornment::adornment_menu_button,
     chooser::{chooser, Chooser},
     instance_index::{InstanceIndex, PrecinctPlace},
     instance_selection::ScenerySelection,
     mode_selector::SceneryTool,
     precinct_edit::PrecinctEdits,
-    properties::{caption_cell, CapsPanel, CAPTION_WIDTH},
+    properties::{caption_cell, right_aligned_popup, CapsPanel, CAPTION_WIDTH},
     scenery_properties::header_text,
     text_entry::{clearable_text_entry_dialog, TextEntered},
+    wall_tool::wall_types,
 };
 
-/// The chooser of the selected precinct's keyed instances.
+/// The chooser of the selected precinct's instances.
 #[derive(Component, Default, Clone)]
 pub struct InstanceChooser;
+
+/// The immediate-mode root of the filter menu, in the chooser's filter box.
+#[derive(Component, Default, Clone)]
+pub(crate) struct InstanceFilterMenu;
+
+/// Which instances the list holds: those of the kinds checked, and with `labelled`, only the
+/// labelled among them.
+#[derive(Resource, Clone, PartialEq, Eq, Debug)]
+pub struct InstanceFilter {
+    pub actor: bool,
+    pub wall: bool,
+    pub fixture: bool,
+    pub labelled: bool,
+}
+
+impl Default for InstanceFilter {
+    fn default() -> Self {
+        Self {
+            actor: true,
+            wall: true,
+            fixture: true,
+            labelled: true,
+        }
+    }
+}
+
+/// What an instance is, as the pane names it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum InstanceKind {
+    Actor,
+    Wall,
+    Fixture,
+}
+
+impl InstanceFilter {
+    /// Whether the list holds an instance of `kind`, labelled or not.
+    fn keeps(&self, kind: InstanceKind, labelled: bool) -> bool {
+        let kind_kept = match kind {
+            InstanceKind::Actor => self.actor,
+            InstanceKind::Wall => self.wall,
+            InstanceKind::Fixture => self.fixture,
+        };
+        kind_kept && (labelled || !self.labelled)
+    }
+}
 
 /// The immediate-mode root of the selected instance's pane.
 #[derive(Component, Default, Clone)]
@@ -58,7 +106,11 @@ pub struct InstanceListPlugin;
 
 impl Plugin for InstanceListPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(BevyImmediateAttachPlugin::<CapsPanel, InstancePane>::new())
+        app.init_resource::<InstanceFilter>()
+            .add_plugins((
+                BevyImmediateAttachPlugin::<CapsPanel, InstancePane>::new(),
+                BevyImmediateAttachPlugin::<CapsUiFeathers, InstanceFilterMenu>::new(),
+            ))
             .add_systems(
                 Update,
                 sync_instance_list.run_if(in_state(SceneryTool::SelectInstance)),
@@ -66,11 +118,11 @@ impl Plugin for InstanceListPlugin {
     }
 }
 
-/// The list, empty until `sync_instance_list` fills it. Its filter box must not take the focus,
-/// as the tools' lists' must not.
+/// The list, empty until `sync_instance_list` fills it, with the filter menu in its filter box.
+/// Its filter box must not take the focus, as the tools' lists' must not.
 pub fn instance_chooser() -> impl Scene {
     bsn! {
-        @chooser(false, Vec::new(), None)
+        @chooser(false, Vec::new(), None, bsn_list! { InstanceFilterMenu Node })
         InstanceChooser
     }
 }
@@ -80,35 +132,51 @@ fn label(path: &str) -> &str {
     path.rsplit_once('#').map_or(path, |(_, label)| label)
 }
 
-/// The keyed instances of `asset`, the precinct at `place`, each with its row in the list, sorted
-/// by row. A row is the instance's label, or else its exemplar and place, as
-/// `WoodenChest, holm-overland (10, 16)`; a second instance of an exemplar is
-/// `WoodenChest 2, holm-overland (10, 16)`, numbered in the precinct's order, so that each row
-/// names one instance.
-fn keyed_rows(asset: &PrecinctAsset, place: Option<&PrecinctPlace>) -> Vec<(String, SceneryInstanceId)> {
+/// The instances of `asset`, the precinct at `place`, that `filter` keeps, each with its row in the
+/// list, sorted by row. `walls` says which of its scenery types are walls. A row is the instance's
+/// label, or else its exemplar and place, as `WoodenChest, holm-overland (10, 16)`; a second
+/// instance of an exemplar is `WoodenChest 2, holm-overland (10, 16)`, numbered in the precinct's
+/// order among those with no label, shown or not, so that each row names one instance and keeps its
+/// name as the filter changes.
+fn instance_rows(
+    asset: &PrecinctAsset,
+    place: Option<&PrecinctPlace>,
+    walls: &[bool],
+    filter: &InstanceFilter,
+) -> Vec<(String, SceneryInstanceId)> {
     let scenery = asset.scenery.iter().map(|instance| {
         let path = asset
             .scenery_types
             .get(instance.id)
             .map_or("", String::as_str);
-        (&instance.iid, instance.label.as_deref(), path)
+        let kind = match walls.get(instance.id) {
+            Some(true) => InstanceKind::Wall,
+            _ => InstanceKind::Fixture,
+        };
+        (&instance.iid, instance.label.as_deref(), path, kind)
     });
-    let actors = asset
-        .actors
-        .iter()
-        .map(|actor| (&actor.iid, actor.label.as_deref(), actor.exemplar.as_str()));
+    let actors = asset.actors.iter().map(|actor| {
+        let path = actor.exemplar.as_str();
+        (&actor.iid, actor.label.as_deref(), path, InstanceKind::Actor)
+    });
     let mut seen = HashMap::<&str, usize>::new();
     let mut rows: Vec<_> = scenery
         .chain(actors)
-        .filter(|(iid, ..)| iid.key().is_some())
-        .map(|(iid, instance_label, path)| {
-            let row = match instance_label {
-                Some(instance_label) => instance_label.to_string(),
-                None => {
-                    let count = seen.entry(label(path)).or_default();
-                    *count += 1;
+        .filter_map(|(iid, instance_label, path, kind)| {
+            // Counted whether kept or not, so a row's number does not depend on the filter.
+            let count = instance_label.is_none().then(|| {
+                let count = seen.entry(label(path)).or_default();
+                *count += 1;
+                *count
+            });
+            if !filter.keeps(kind, instance_label.is_some()) {
+                return None;
+            }
+            let row = match (instance_label, count) {
+                (Some(instance_label), _) => instance_label.to_string(),
+                (None, count) => {
                     let mut row = label(path).to_string();
-                    if *count > 1 {
+                    if let Some(count) = count.filter(|&count| count > 1) {
                         row += &format!(" {count}");
                     }
                     if let Some(place) = place {
@@ -117,7 +185,7 @@ fn keyed_rows(asset: &PrecinctAsset, place: Option<&PrecinctPlace>) -> Vec<(Stri
                     row
                 }
             };
-            (row, iid.clone())
+            Some((row, iid.clone()))
         })
         .collect();
     rows.sort_by(|a, b| a.0.cmp(&b.0));
@@ -173,7 +241,9 @@ fn sync_instance_list(
     mut selection: ResMut<ScenerySelection>,
     instances: PrecinctInstances,
     assets: Res<Assets<PrecinctAsset>>,
+    exemplars: Res<Assets<Exemplar>>,
     server: Res<AssetServer>,
+    filter: Res<InstanceFilter>,
     mut choosers: Query<&mut Chooser, With<InstanceChooser>>,
     mut shown: Local<Option<String>>,
 ) {
@@ -185,7 +255,9 @@ fn sync_instance_list(
         .and_then(|precinct| instances.precincts.get(precinct).ok())
         .and_then(|(record, ..)| {
             let place = place_of(&server, &record.asset);
-            Some(keyed_rows(assets.get(&record.asset)?, place.as_ref()))
+            let asset = assets.get(&record.asset)?;
+            let walls = wall_types(&server, &exemplars, asset);
+            Some(instance_rows(asset, place.as_ref(), &walls, &filter))
         })
         .unwrap_or_default();
     let items: Vec<String> = rows.iter().map(|(row, _)| row.clone()).collect();
@@ -214,6 +286,60 @@ fn sync_instance_list(
         chooser.selected = desired.clone();
         *shown = desired;
     }
+}
+
+impl ImmediateAttach<CapsUiFeathers> for InstanceFilterMenu {
+    type Params = ResMut<'static, InstanceFilter>;
+
+    /// A funnel opening a checkbox per kind, then, below a divider, Labeled, each named by its
+    /// caption. Checkboxes keep the menu open, as the Show menu's do.
+    fn construct(ui: &mut Imm<CapsUiFeathers>, filter: &mut ResMut<InstanceFilter>) {
+        // Edit a copy, so the filter is marked changed only when a toggle changes it.
+        let mut edited = (**filter).clone();
+        ui.ch_id("menu")
+            .on_spawn_apply_scene(|| bsn! { @FeathersMenu })
+            .add(|ui| {
+                ui.ch().on_spawn_apply_scene(|| {
+                    bsn! {
+                        @adornment_menu_button("editor/icons/lucide/filter.png")
+                        #InstanceFilter
+                    }
+                });
+                ui.ch()
+                    .on_spawn_apply_scene(right_aligned_popup)
+                    .add(|ui| {
+                        let section = || Node {
+                            flex_direction: FlexDirection::Column,
+                            padding: UiRect::axes(px(8), px(4)),
+                            row_gap: px(4),
+                            ..default()
+                        };
+                        ui.ch().on_spawn_insert(section).add(|ui| {
+                            checkbox(ui.ch_id("actor"), "Actor").checked(&mut edited.actor);
+                            checkbox(ui.ch_id("wall"), "Wall").checked(&mut edited.wall);
+                            checkbox(ui.ch_id("fixture"), "Fixture")
+                                .checked(&mut edited.fixture);
+                        });
+                        ui.ch().on_spawn_apply_scene(|| bsn! { @FeathersMenuDivider });
+                        ui.ch().on_spawn_insert(section).add(|ui| {
+                            checkbox(ui.ch_id("labelled"), "Labeled")
+                                .checked(&mut edited.labelled);
+                        });
+                    });
+            });
+        filter.set_if_neq(edited);
+    }
+}
+
+/// A feathers checkbox showing `caption`, named after it.
+fn checkbox<'r, 'w, 's>(
+    item: ImmEntity<'r, 'w, 's, CapsUiFeathers>,
+    caption: &'static str,
+) -> ImmEntity<'r, 'w, 's, CapsUiFeathers> {
+    item.on_spawn_apply_scene(move || {
+        bsn! { @FeathersCheckbox { @caption: bsn! { Text(caption) ThemedText } } }
+    })
+    .on_spawn_insert(move || Name::new(caption))
 }
 
 #[derive(SystemParam)]
@@ -424,40 +550,63 @@ mod tests {
 
     use super::*;
 
-    /// The list holds keyed instances, scenery and actors alike, sorted: by label, or else by
-    /// exemplar and place, numbered from the second of an exemplar on.
+    /// The list holds the instances the filter keeps, scenery and actors alike, sorted: by label,
+    /// or else by exemplar and place, numbered from the second of an exemplar on, whether or not
+    /// the filter shows the others.
     #[test]
-    fn the_list_holds_the_keyed_instances() {
+    fn the_list_holds_the_instances_the_filter_keeps() {
         let mut asset = PrecinctAsset {
-            scenery_types: vec!["exemplars/furnishings.exem.json#WoodenChest".into()],
+            scenery_types: vec![
+                "exemplars/furnishings.exem.json#WoodenChest".into(),
+                "exemplars/walls.exem.json#BrickWall".into(),
+            ],
             ..default()
         };
-        asset.add_scenery_element(0, 0., Vec3::ZERO, None);
-        for position in [Vec3::X, Vec3::Y, Vec3::Z] {
+        for position in [Vec3::ZERO, Vec3::X, Vec3::Y] {
             asset.add_scenery_element(0, 0., position, None);
         }
-        asset.update_keys(|_| false);
+        asset.add_scenery_element(1, 0., Vec3::Z, None);
         let second = asset.scenery[1].iid.clone();
         asset.set_label(&second, Some("strongbox"));
-        asset.update_keys(|_| true);
-        let guard = asset.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::Z);
-        asset.set_label(&guard, Some("sgt.stone"));
+        asset.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::Z);
+        let marcus = asset.add_actor("exemplars/characters.exem.json#Guard".into(), 0., Vec3::X);
+        asset.set_label(&marcus, Some("sgt.stone"));
         let place = PrecinctPlace {
             realm: "holm-overland".into(),
             coords: IVec2::new(10, 16),
         };
-        let rows: Vec<String> = keyed_rows(&asset, Some(&place))
-            .into_iter()
-            .map(|(row, _)| row)
-            .collect();
+        let rows = |filter: InstanceFilter| -> Vec<String> {
+            instance_rows(&asset, Some(&place), &[false, true], &filter)
+                .into_iter()
+                .map(|(row, _)| row)
+                .collect()
+        };
+        assert_eq!(rows(InstanceFilter::default()), ["sgt.stone", "strongbox"]);
+        let every = InstanceFilter {
+            labelled: false,
+            ..default()
+        };
         assert_eq!(
-            rows,
+            rows(every.clone()),
             [
+                "BrickWall, holm-overland (10, 16)",
+                "Guard, holm-overland (10, 16)",
                 "WoodenChest 2, holm-overland (10, 16)",
-                "WoodenChest 3, holm-overland (10, 16)",
                 "WoodenChest, holm-overland (10, 16)",
                 "sgt.stone",
                 "strongbox",
+            ]
+        );
+        let walls_and_actors = InstanceFilter {
+            fixture: false,
+            ..every
+        };
+        assert_eq!(
+            rows(walls_and_actors),
+            [
+                "BrickWall, holm-overland (10, 16)",
+                "Guard, holm-overland (10, 16)",
+                "sgt.stone",
             ]
         );
     }

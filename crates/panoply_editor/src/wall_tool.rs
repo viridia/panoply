@@ -362,7 +362,10 @@ fn update_wall_tool(
                 Ok(exemplar) => {
                     if let Ok(precinct) = precincts.get(done.precinct) {
                         let tiles = tiles(done.anchor, done.corner, height);
-                        let walls = wall_types(&server, &exemplars, &edits, &precinct.asset);
+                        let walls = edits
+                            .get(&precinct.asset)
+                            .map(|asset| wall_types(&server, &exemplars, asset))
+                            .unwrap_or_default();
                         let path = exemplar
                             .and_then(|id| server.get_path(id))
                             .map(|path| path.to_string());
@@ -489,15 +492,11 @@ fn show_wall_target(
 
 /// Whether each of the precinct's scenery types is a wall; a type whose exemplar is not loaded
 /// counts as none.
-fn wall_types(
+pub(crate) fn wall_types(
     server: &AssetServer,
     exemplars: &Assets<Exemplar>,
-    edits: &PrecinctEdits,
-    precinct: &Handle<panoply_precinct::PrecinctAsset>,
+    asset: &panoply_precinct::PrecinctAsset,
 ) -> Vec<bool> {
-    let Some(asset) = edits.get(precinct) else {
-        return Vec::new();
-    };
     asset
         .scenery_types
         .iter()

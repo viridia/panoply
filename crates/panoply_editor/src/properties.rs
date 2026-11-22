@@ -1924,7 +1924,7 @@ pub(crate) fn icon_button(
 
 /// A feathers menu popup aligned to its button's right edge, for a menu button at a row's right
 /// end.
-fn right_aligned_popup() -> impl Scene {
+pub(crate) fn right_aligned_popup() -> impl Scene {
     bsn! {
         @FeathersMenuPopup
         Popover {

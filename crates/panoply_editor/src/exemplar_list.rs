@@ -120,7 +120,7 @@ impl Plugin for ExemplarListPlugin {
 /// the focus: in the panel, the keys that move the view would type into it.
 pub fn tool_chooser(tool: SceneryTool, selected: Option<String>) -> impl Scene {
     bsn! {
-        @chooser(false, Vec::new(), selected.clone())
+        @chooser(false, Vec::new(), selected.clone(), bsn_list! {})
         ToolChooser { tool: {tool} }
     }
 }

@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN114.**
+**Next: PAN115.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -108,15 +108,10 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   as an overlay and kept as the scenery selection with its precinct. As faery's
   `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
   rect to include it.
-- **PAN113 Instance list filter.** An instance with no model or overlay and no label can be neither
-  picked nor listed, so the editor cannot select, label or delete it; a region too wide to pick
-  across its middle is the same. A funnel button with a small chevron, an adornment in the chooser's
-  filter box, as the Bevy editor's mocks draw it, opens a popup of toggles: Labelled only, on by
-  default, and one per kind (Wall, Fixture, Actor). With Labelled only off, the instance list holds
-  every instance of the selected precinct, by exemplar and place, numbered as keyed rows are.
-  Feathers has no adornment that opens a popup: it is built here, kept general, so that it may be
-  offered upstream. Filtering by exemplar within a kind waits until a precinct holds enough
-  instances to need it.
+- **PAN114 Selected precinct shown.** In selection mode, nothing shows which precinct the instance
+  list comes from, and labelled rows name no place. Outline the selected precinct on the ground, as
+  terrain mode draws the selected parcel's contour (`mode_overlays.rs`), and name it, as
+  `holm-overland (10, 16)`, above the list.
 - **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one

@@ -144,7 +144,14 @@ impl Plugin for ChooserPlugin {
 
 /// The list, with `selected` selected; with `autofocus`, its filter box takes the focus as it
 /// spawns. A list in the panel must not, or the keys that move the view would type into it.
-pub fn chooser(autofocus: bool, items: Vec<String>, selected: Option<String>) -> impl Scene {
+/// `adornments` go in the filter box after its ×, such as a menu narrowing the items further
+/// (`adornment_menu_button`).
+pub fn chooser(
+    autofocus: bool,
+    items: Vec<String>,
+    selected: Option<String>,
+    adornments: impl SceneList,
+) -> impl Scene {
     bsn! {
         Chooser { items: {items.clone()}, selected: {selected.clone()} }
         Node {
@@ -192,6 +199,8 @@ pub fn chooser(autofocus: bool, items: Vec<String>, selected: Option<String>) ->
                 }
                 #ClearFilter
                 on(clear_filter)
+                --
+                {adornments}
             ]
         ]
     }
@@ -271,7 +280,7 @@ fn dialog_contents(title: String, confirm: String, items: Vec<String>) -> impl S
         --
         @FeathersDialogBody
         Node { height: vh(60), min_height: px(0) }
-        Children [ @chooser(true, items.clone(), None) ]
+        Children [ @chooser(true, items.clone(), None, bsn_list! {}) ]
         --
         @FeathersDialogFooter Children [
             @FeathersButton { @caption: bsn! { Text("Cancel") ThemedText } }

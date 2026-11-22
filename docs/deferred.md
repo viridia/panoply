@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X133.**
+**Next: X135.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -623,3 +623,8 @@ dropped, not deferred. Numbers are never reused.
   cross-referenced instances), so that on load an entry whose chunk's precinct no longer holds its
   key moves to the precinct that does; and saving stops taking keys from instances that shipped in a
   release. *Gate:* the first release with save games (PAN82 or later).
+- **X133** The instance list filtered by exemplar within a kind, beside its kind toggles. *Gate:* a
+  precinct holding more instances than the kind toggles and the filter box can narrow.
+- **X134** The instance list's funnel (`adornment_menu_button`) offered to feathers, which has no
+  adornment that opens a popup for a text input's box. *Gate:* the author's call, once the editor
+  has used it for a while.

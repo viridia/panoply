@@ -774,8 +774,9 @@ def actor_tool(driver):
 
 def select_instance(driver):
     """Selection mode, over the playground at `SPOT`: hovering a fixture outlines it and a click
-    selects it, its pane showing it has no name. An actor is selected by a click too, and chosen
-    from the list of named instances, then renamed through Rename…, whose box starts with the name;
+    selects it, its pane showing it has no name. An actor is selected by a click too. The list's
+    filter menu shows unlabelled instances, the pot among them, and narrows them by kind to actors,
+    where the actor is chosen, then renamed through Rename…, whose box starts with the name;
     a click outside the dialog closes it and keeps the selection, and undo takes the rename back.
     The precinct is restored afterwards."""
     driver.click("PlaceFixture")
@@ -828,15 +829,53 @@ def select_instance(driver):
         clicked = selected()["instance"]
         driver.screenshot("actor_selected")
 
-        # The actor placed has a key, so the list holds it, by exemplar and place, as it has no
-        # label; choosing it there selects the actor the click did.
-        rows = [r for r in by_name(driver, "Marcus") if ", " in r["components"][NAME]]
+        # The list holds labelled instances only, until the filter menu's Labeled is turned off;
+        # then it holds every instance, the flower pot, which has no key, among them, by exemplar
+        # and place.
+        def unlabelled(prefix):
+            return [r for r in by_name(driver, prefix) if ", " in r["components"][NAME]]
+
+        assert not unlabelled("Marcus"), "an unlabelled actor listed with Labeled on"
+        driver.click("Exemplars/InstanceFilter")
+        expect_checked(driver, "Exemplars/Labeled", True)
+        driver.click("Exemplars/Labeled")
+        expect_checked(driver, "Exemplars/Labeled", False)
+        driver.screenshot("instance_filter")
+        pots = unlabelled("FlowerPot")
+        assert pots, "no flower pot in the list with Labeled off"
+        driver.click(f"Exemplars/{pots[-1]['components'][NAME]}")
+        driver.wait(
+            lambda: (selected()["instance"] not in (None, clicked), lambda: str(selected())),
+            "the flower pot chosen in the list",
+            {"seconds": 5},
+        )
+
+        # Wall and Fixture off narrow the list to actors; choosing the actor there selects the one
+        # the click did.
+        driver.click("Exemplars/InstanceFilter")
+        expect_checked(driver, "Exemplars/Actor", True)
+        driver.click("Exemplars/Wall")
+        driver.click("Exemplars/Fixture")
+        expect_checked(driver, "Exemplars/Fixture", False)
+        driver.absent(f"Exemplars/{pots[-1]['components'][NAME]}")
+        rows = unlabelled("Marcus")
         assert rows, "no actor in the list"
         row = rows[-1]["components"][NAME]
         driver.click(f"Exemplars/{row}")
         driver.expect("InstanceLabel", TEXT, "none")
         actor = selected()["instance"]
         assert actor == clicked, f"the click selected {clicked}, the list {actor}"
+
+        # Back to the filter's defaults, which leave the actor out again.
+        driver.click("Exemplars/InstanceFilter")
+        driver.click("Exemplars/Wall")
+        driver.click("Exemplars/Fixture")
+        driver.click("Exemplars/Labeled")
+        expect_checked(driver, "Exemplars/Labeled", True)
+        driver.absent(f"Exemplars/{row}")
+        # Focus elsewhere closes the menu, whose popup hangs over the pane's Rename….
+        driver.click("Exemplars/Filter")
+        driver.expect("Exemplars/Labeled", INHERITED, False)
 
         # A click outside the dialog closes it, and the press does not reach the view.
         driver.click("RenameInstance")

@@ -17,6 +17,7 @@ use bevy::{
 };
 
 pub mod actor_tool;
+pub mod adornment;
 pub mod aspect_chooser;
 pub mod catalog_entries;
 pub mod chooser;
