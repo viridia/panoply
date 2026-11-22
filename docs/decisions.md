@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D111.**
+**Next: D112.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -941,3 +941,18 @@ never reused.
   before it, since a route's corners lie the agent's radius from what they bend around, and that is
   the humanoids' capsule radius with no margin. Reversing it means a planner per kind of actor,
   actors that stay pressed against a slope, or actors that turn back at a corner. (PAN17a)
+- **D111** A portal's view is a camera of its own (D21): the primary camera moved by the offset from
+  the near aperture to the far one, keeping its rotation and lens, as faery's was, so a portal
+  translates and never turns. Its projection, `PortalProjection`, is the primary camera's
+  perspective cut to the aperture's rectangle on screen, with Lengyel's oblique near plane at the
+  far aperture, built into one matrix. Bevy's `SubCameraView` makes the same cut for drawing only: a
+  camera's frustum comes from `get_clip_from_view`, which ignores the sub view, and the camera
+  system resets the aspect ratio to the camera's own viewport, so culling, Bevy's and D20's, and the
+  shadow cascade would fit a frustum centered on the view. The camera renders into the corner of an
+  image the size of the primary camera's viewport, which the aperture shows texel for pixel. The
+  aperture is on a render layer of its own (`PORTAL_APERTURE_LAYER`), which the primary camera
+  renders and portal cameras do not: a portal may look into its own realm, and a camera may not read
+  the image it writes. The far end loads 8 m about, as the viewpoint's surroundings do, for every
+  portal within 24 m of the viewpoint, so that it is there before the aperture comes into view;
+  nothing there is simulated (X119). Reversing it means culling that drops what an aperture shows,
+  or a camera that can read its own image. (PAN4b)

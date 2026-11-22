@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I72.**
+**Next: I74.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -280,7 +280,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   placement. Candidates, in `bevy_remote_driver`: drop the OS's pointer events while a plan drives,
   keeping only those it injects; and hold the display awake for the run (as `caffeinate -d` does on
   macOS), or read the frame from the render target rather than the screen. Seen by the author; the
-  causes read, not run.
+  causes read, not run. Again in PAN4b's directory run, the author's mouse moving: a click on a wall
+  row after `text_property`'s saves left the choice on `SpearTrap`; `smoke.py` alone, untouched,
+  passed.
 - **I67** Navigation takes a footpath from a terrain effect's look: a cell is a path when its effect
   is cobbled (`footpaths` in `panoply_nav`'s `input.rs`), as faery took its road and stone. The
   author expects two dirt effects that look the same but navigate differently, a trail through a
@@ -312,3 +314,15 @@ confirmed by running something or only by reading. Numbers are never reused.
   `input` and not its `chord`, where `.with()` puts the modifiers, so two chords of one key count as
   one binding. The fix is in the mapper, comparing the chord too; then bump the lock here. Panoply
   has nothing to change. Seen in every run's log; the cause read in `plan.rs` and `builder.rs`.
+- **I72** Five portals have no target, in faery's precincts as in Panoply's: in the playground,
+  `sp1`, `mbep1` and `mbep2` (`p000-p000`) and `kwbp0` (`p002-p000`) name no realm; in
+  `holm-underground/p016-p013`, a portal with no instance id targets `holm-overland` at `[0, 0, 0]`.
+  Candidates: set them by hand once PAN4d's portal chooser lands, or delete the test portals no one
+  needs. Read in the precinct files by `repair_portal_targets.mts` (faery's `scripts/`), which
+  restored the targets the converter had zeroed.
+- **I73** `plans/ablate.py`'s `camera inactive` panics the app when it switches the primary camera
+  back on: `prepare_lights` unwraps the camera's shadow cascades (`light.rs:1918`), which
+  `build_directional_light_cascades` builds only for cameras already active, and a BRP write lands
+  after it in the frame. Any camera's `is_active` set from a plan does the same; the game, setting
+  none, is safe. Candidates: measure without rendering some other way, or report it upstream, the
+  cascades lookup skipping a view it has none for. Confirmed by running (PAN4b's portal ablation).

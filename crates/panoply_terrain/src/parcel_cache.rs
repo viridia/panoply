@@ -14,7 +14,9 @@ use bevy::{
 };
 use rapier3d::prelude::{ColliderHandle, RigidBodyBuilder};
 
-use panoply_core::{metrics::PRECINCT_SIZE, Realm, RealmPhysics, ToRapier, Viewpoint};
+use panoply_core::{
+    metrics::PRECINCT_SIZE, PortalViewRegions, Realm, RealmPhysics, ToRapier, Viewpoint,
+};
 
 use super::{
     terrain_map::{TerrainMap, TerrainMapAsset},
@@ -105,6 +107,7 @@ impl Iterator for ParcelRectIterator<'_> {
 pub fn spawn_parcels(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
+    portal_regions: Res<PortalViewRegions>,
     mut parcel_cache: ResMut<ParcelCache>,
     mut q_parcels: Query<(&mut Parcel, Option<&ParcelThumbnail>, &mut Visibility)>,
     mut q_realms: Query<(&Realm, &mut RealmPhysics, &TerrainMap)>,
@@ -305,6 +308,10 @@ pub fn spawn_parcels(
         realm_id,
         IRect::from_corners(simulated.min * per_precinct, simulated.max * per_precinct),
     );
+    // The far ends of nearby portals, in whatever realm they lie.
+    for region in portal_regions.0.iter() {
+        fetch_parcels(region.realm, region.cells(PARCEL_SIZE_F));
+    }
 
     // Loaded parcels are shown only if they, or the shadows they cast, can be in view of a
     // camera that renders their realm: the primary camera, or a portal camera looking into

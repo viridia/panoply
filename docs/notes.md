@@ -163,11 +163,42 @@ calls for work becomes an issue in [issues.md](issues.md).
   field that does not convert, so the whole enum falls back to its default, the fields the file did
   give included: every textured floor drew white. Recipe: mark a variant's optional fields
   `#[reflect(default)]`; a test reading the real files catches it (`floor_surface.rs`).
+- Directional shadows with several cameras (locked Bevy a35f1b5, PAN4b). Cascades are built per
+  camera (`build_directional_light_cascades`), and each light's shadow casters are listed per camera
+  (`CascadesVisibleEntities`). Every view writes its cascades into the same shadow map layers,
+  starting at 0 (`prepare_lights`), but a camera's directional shadow pass runs in its own `Core3d`
+  schedule, just before its main pass, and `camera_driver` runs the cameras one after another, so a
+  portal camera leaves the primary camera's shadows alone. Confirmed by running:
+  `plans/portals.py`'s `mine_portal.png` and `mine_no_portal.png`, with the portal camera on and
+  off, show the same shadows. Older Bevy listed a light's casters once for all cameras, the likely
+  cause of the main view's shadows vanishing under the old portals.
+- A system that sets a camera's `Projection` each frame must run before `CameraUpdateSystems`
+  (locked Bevy a35f1b5, PAN4b). `camera_system` turns a changed projection into the matrix the
+  camera renders with, and is not ordered against other `PostUpdate` systems, so after it the change
+  waits a frame while the camera's transform does not: the portal view slipped against the main view
+  while the camera moved. A material changed each frame likewise needs to be changed before
+  `AssetEventSystems`. Confirmed by the author: the jitter went with the ordering.
+- A portal's cost, at the playground's mine entrance (67.5, 163), camera distance 11, vsync off, M1
+  Pro, dev build (PAN4b, 2026-11-22): 11.8 ms a frame with its view, 9.3 ms without
+  (`AT=portal plans/ablate.py`); about 0.8 ms of that stays with the portal camera running but
+  drawing nothing. Capping its culling at its far end's region (27 m, from 100) changed nothing. The
+  samply profile (recipe above), with the view and without, put most of the extra CPU in recording
+  the GPU commands of the portal camera's passes, its view, its shadow pass and Bevy's per-view
+  preprocessing; per-entity visibility, camera and shadow casters, was about 0.6 ms. In that
+  recording about 2 ms was objc2 checking each Metal message's signature, which it does with debug
+  assertions on (`msg_send_check`); the main view paid the same. With objc2's debug assertions off
+  in the dev profile (`Cargo.toml`): 8.4 ms a frame without the portal, 10.0 with it. Of the 1.6 ms
+  left, command recording is about 0.7 ms and visibility 0.3; the rest is spread over Bevy's
+  per-view systems and executor, none large. The spot has about 37,500 entities.
+- `Camera` cannot be read over BRP (locked Bevy a35f1b5): `Viewport`'s `depth`, a `Range<f32>`, has
+  no `ReflectSerialize`, so `world.get_components` fails for the whole component. Writing one field
+  (`world.mutate_components`, as `set` with `at="is_active"`) works. Plans find cameras by `Name`.
 - Dependency graph recipe: a private artifact, not checked in, at
   https://claude.ai/artifact/YRzi7zBPM2dBesZF57e2a2, regenerated when asked. Read it first (the
   Artifact tool's `read`) and republish to the same URL. From the roadmap's entry lines and their
-  `*Needs:*` fields: a Mermaid `flowchart LR`, an arrow from each needed id to the chunk needing it;
-  the longest chain, its nodes and edges drawn thick; the chunks that can start now, dashed: those
-  with an edge out but no `*Needs:*` of their own; the chunks with no edge either way, listed below
-  in roadmap order; and the date of the snapshot. Landed chunks are left out: the changelog does not
-  record what each needed, and they would crowd the graph.
+  `*Needs:*` fields: a Mermaid `flowchart LR`, an arrow from each needed id to the chunk needing it
+  (a needed deferral drawn dotted, with dotted arrows from the chunks its gate names); the longest
+  chain, its nodes and edges drawn thick; the chunks that can start now, dashed: those with an edge
+  out but no `*Needs:*` of their own; the chunks with no edge either way, listed below in roadmap
+  order; and the date of the snapshot. Landed chunks are left out: the changelog does not record
+  what each needed, and they would crowd the graph.

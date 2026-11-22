@@ -4868,6 +4868,7 @@ dependencies = [
  "panoply_exemplar",
  "panoply_nav",
  "panoply_overlays",
+ "panoply_portals",
  "panoply_precinct",
  "panoply_render",
  "panoply_scenery",
@@ -4920,7 +4921,9 @@ name = "panoply_portals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "panoply_core",
  "panoply_exemplar",
+ "panoply_precinct",
  "panoply_scenery",
  "serde",
  "serde_json",

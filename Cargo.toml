@@ -106,6 +106,13 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+# objc2 checks every Objective-C message's signature at runtime when debug assertions are on, so
+# each Metal call wgpu makes paid for it: turning that off took a frame at the playground's mine
+# entrance from 9.7 to 8.4 ms, and a portal's cost there from 2.4 to 1.6 ms (`docs/notes.md`).
+# Release builds never check.
+[profile.dev.package.objc2]
+debug-assertions = false
+
 [lints.clippy]
 type_complexity = "allow"
 too_many_arguments = "allow"

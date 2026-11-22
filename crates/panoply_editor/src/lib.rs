@@ -38,6 +38,7 @@ pub mod nav_view;
 pub mod new_realm;
 pub mod parcel_selection;
 pub mod placement;
+pub mod portal_gizmos;
 pub mod precinct_edit;
 pub mod properties;
 pub mod quit_dialog;
@@ -95,6 +96,7 @@ impl PluginGroup for EditorPlugins {
             .add(precinct_edit::PrecinctEditPlugin)
             .add(wall_tool::WallToolPlugin)
             .add(placement::PlacementPlugin)
+            .add(portal_gizmos::PortalGizmosPlugin)
             .add(fixture_tool::FixtureToolPlugin)
             .add(actor_tool::ActorToolPlugin)
             .add(instance_selection::InstanceSelectionPlugin)

@@ -27,7 +27,7 @@ use fonts::GameFonts;
 pub use fonts::{GAME_UI_FONT, KEY_PROMPT_FONT};
 pub use game_mode::GameMode;
 pub use hex_color::HexColor;
-pub use layers::ReservedLayers;
+pub use layers::{ReservedLayers, PORTAL_APERTURE_LAYER};
 use nav_point::NavPointsLoader;
 pub use nav_point::{NavPoint, NavPointsAsset, NavPointsHandleResource};
 pub use quit::{QuitGate, QuitRequest};
@@ -38,7 +38,10 @@ use realm_physics::{cap_catch_up, realm_physics_system};
 pub use realm_physics::{OwnedColliders, RealmPhysics};
 pub use sunlight::Sunlight;
 use viewpoint::{fit_shadow_cascades, goto_location, viewpoint_transitions};
-pub use viewpoint::{GotoLocation, Viewpoint, SIMULATION_HALF_SIZE};
+pub use viewpoint::{
+    GotoLocation, PortalViewRegion, PortalViewRegions, Viewpoint, PORTAL_VIEW_HALF_SIZE,
+    SIMULATION_HALF_SIZE,
+};
 pub use viewport::{GameViewNode, ViewOverlay, ViewportInset};
 
 /// Marker which identifies the primary camera.
@@ -67,6 +70,7 @@ impl Plugin for PanoplyCorePlugin {
             .init_resource::<GameFonts>()
             .init_resource::<Sunlight>()
             .init_resource::<ViewportInset>()
+            .init_resource::<PortalViewRegions>()
             .init_resource::<QuitGate>()
             .add_message::<QuitRequest>()
             .add_message::<GotoLocation>()

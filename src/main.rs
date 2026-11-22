@@ -10,10 +10,9 @@ use panoply_exemplar::ExemplarPlugin;
 use std::f32::consts::PI;
 use window_settings::WindowSettingsPlugin;
 
-// REFERENCE(PAN4, PAN95): uncompiled, deleted as the rewrites replace them.
+// REFERENCE(PAN95): uncompiled, deleted as the rewrites replace it.
 // #[cfg(feature = "editor")]
 // mod editor;
-// mod portals;
 
 mod diagnostics;
 mod input;
@@ -32,8 +31,6 @@ use panoply_portals::PanoplyPortalsPlugin;
 use panoply_render::PanoplyRenderPlugin;
 use panoply_scenery::PanoplySceneryPlugin;
 use panoply_terrain::PanoplyTerrainPlugin;
-// TODO(PAN4): restore
-// use crate::portals::PortalPlugin;
 
 // REFERENCE(PAN95)
 // #[derive(Resource)]
@@ -99,8 +96,7 @@ fn main() {
         ActorsPlugin,
         PanoplyNavPlugin,
         PanoplyPortalsPlugin,
-        // TODO(PAN4, X5): restore
-        // PortalPlugin,
+        // TODO(X5): restore
         // WorldInspectorPlugin::new(),
     ));
 

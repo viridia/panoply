@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
+panoply_core = { workspace = true }
 panoply_exemplar = { workspace = true }
+panoply_precinct = { workspace = true }
 panoply_scenery = { workspace = true }
 serde = { workspace = true }
 

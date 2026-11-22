@@ -33,6 +33,8 @@ pub struct DebugViews {
     pub tile_grid: bool,
     /// Draw each precinct's navigation mesh (`nav_view`).
     pub navigation: bool,
+    /// Draw portals' apertures (`portal_gizmos`).
+    pub portals: bool,
 }
 
 impl Default for DebugViews {
@@ -42,6 +44,7 @@ impl Default for DebugViews {
             physics_groups: Group::ALL.bits(),
             tile_grid: true,
             navigation: false,
+            portals: false,
         }
     }
 }

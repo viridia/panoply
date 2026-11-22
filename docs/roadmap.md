@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN112.**
+**Next: PAN113.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -371,19 +371,14 @@ components and every layer restartable from saved state (R104).
 
 ## Portals
 
-PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/portals` is reference
-(`REFERENCE(PAN4)`), deleted when PAN4c lands.
+PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). What an aperture shows is
+D111.
 
-- **PAN4b Portal view.** What the aperture shows: the far end, rendered by a camera of its own (D21:
-  off-axis projection fitted to the aperture, its own load region), with gizmos showing each
-  aperture to judge it against. Bevy's `examples/3d/mirror.rs` (a second camera on a render target)
-  and `examples/camera/custom_projection.rs` (an oblique clip plane) are the starting point,
-  replacing the old `active_portal.rs`. `panoply_portals` depends on scenery only; crossing (PAN4c)
-  adds actors.
-- **PAN4c Crossing.** *Needs:* PAN4b. The player crosses a portal into the target realm, keeping
-  offset and velocity (R31), detected by a volume at the aperture. Decide here, once crossing can be
-  felt, how the view changes at a crossing (D64) and which way a hard cut faces: `follow_snapped`
-  keeps the heading, while `follow_active_entity`'s far jump turns to the actor's facing.
+- **PAN4c Crossing.** The player crosses a portal into the target realm, keeping offset and velocity
+  (R31), detected by a volume at the aperture, which brings actors into `panoply_portals`. Decide
+  here, once crossing can be felt, how the view changes at a crossing (D64) and which way a hard cut
+  faces: `follow_snapped` keeps the heading, while `follow_active_entity`'s far jump turns to the
+  actor's facing.
 - **PAN4d Portal editing.** Helpers that keep a portal's two ends in step: a portal chooser
   (`chooser_dialog`) to pick the far end, which sets both ends' `PortalTarget`, and whatever else
   syncing them needs, decided in the chunk.
@@ -521,6 +516,19 @@ PAN4, Portals, in lettered parts: a rewrite, not a restoration (D21). `src/porta
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111. The first playable: the "Up in Arms"
   quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases
   Sergeant Stone and the Crimson Watch, so it builds presence (D106).
+
+## Performance
+
+- **PAN112 Entity budget.** The playground's mine entrance holds about 37,500 entities, 15,600 of
+  them meshes, and every camera checks each mesh's visibility, so a portal pays for them again
+  ([notes.md](notes.md), a portal's cost). Flora is most of them: a tree is about seven entities
+  (its scene root, a node and a mesh each for bark and leaves, and outline children), and about
+  3,800 trees and shrubs were loaded; outline children are 5,900 more. First the rest of the census:
+  parcels shown and hidden, and flora per parcel, since D101 loads the simulated precincts' parcels
+  with their flora's models though actors need only their colliders. Then, from what it shows: flora
+  models only for parcels near the view; trees spawned as their meshes, without the glTF scene's
+  root and nodes; flora instanced, an entity per parcel, model and part; or outlines drawn by a pass
+  of their own rather than as child entities. The last two are structural, proposed before code.
 
 ## Technical debt
 

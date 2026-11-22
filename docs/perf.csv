@@ -6,8 +6,9 @@
 # stop, vsync off. Stops are named for their playground position (x_z, camera distance 11) or for
 # what they view (townsfolk at 145_6, distance 11; editor at 128_128, distance 40). Lines before
 # PAN55's are at distance 40 (townsfolk 20) with the sun on the z axis, so compare only lines after
-# them. Compare runs only on the same host and window
-# size. A stop added later gets a new column at the end; older lines leave it empty.
+# them. Lines before PAN4b's include objc2 checking each Metal call in the dev build, which made
+# every stop slower by about 0.5 to 2 ms (notes.md, a portal's cost). Compare runs only on the same
+# host and window size. A stop added later gets a new column at the end; older lines leave it empty.
 # A line is committed with the change it measures, so git log on this file names that change.
 date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfolk,editor
 2026-11-02,Falryn,4d56721,yes,2560x1440,,8.93,9.06,10.37,9.97,9.92,11.72
@@ -101,3 +102,4 @@ date,host,commit,dirty,window,settings,16_16,48_48,80_80,112_112,128_128,townsfo
 2026-11-21,Falryn,05f70ce,yes,2560x1440,,9.23,10.36,7.86,8.28,7.83,11.29,10.67
 2026-11-21,Falryn,6b26c21,yes,2560x1440,,9.66,10.66,7.79,8.18,7.89,11.37,10.63
 2026-11-21,Falryn,0c25363,yes,2560x1440,,9.38,10.94,7.94,8.20,7.87,11.48,10.74
+2026-11-22,Falryn,09758a4,yes,2560x1440,,8.11,8.64,7.48,7.66,7.45,9.71,9.26

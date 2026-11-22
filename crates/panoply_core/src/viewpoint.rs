@@ -1,3 +1,4 @@
+use crate::layers::PORTAL_APERTURE_LAYER;
 use crate::metrics::PRECINCT_SIZE_F;
 use crate::transition::Transition;
 use crate::{PrimaryCamera, Realm};
@@ -27,6 +28,35 @@ pub struct Viewpoint {
 /// How far the simulation box reaches either way about the viewpoint, on x and z: faery's
 /// `PRIMARY_SIMULATION_RADIUS`.
 pub const SIMULATION_HALF_SIZE: f32 = 32.;
+
+/// How far a portal's view region reaches either way about its far end, on x and z. An aperture
+/// is about 2 m square, seen from above at an angle, so little beyond it shows.
+pub const PORTAL_VIEW_HALF_SIZE: f32 = 8.;
+
+/// The far ends of the portals near the viewpoint, each loaded `PORTAL_VIEW_HALF_SIZE` around, as
+/// the viewpoint's surroundings are: terrain and scenery, not simulation. Written by
+/// `panoply_portals`, read by the parcel and precinct loaders.
+#[derive(Resource, Default, Debug, PartialEq)]
+pub struct PortalViewRegions(pub Vec<PortalViewRegion>);
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PortalViewRegion {
+    pub realm: Entity,
+    /// The far end: the ground under the far aperture's center.
+    pub center: Vec3,
+}
+
+impl PortalViewRegion {
+    /// The region in units of `cell` meters (a parcel or precinct), the max exclusive.
+    pub fn cells(&self, cell: f32) -> IRect {
+        let center = self.center.xz();
+        let reach = Vec2::splat(PORTAL_VIEW_HALF_SIZE);
+        IRect::from_corners(
+            ((center - reach) / cell).floor().as_ivec2(),
+            ((center + reach) / cell).ceil().as_ivec2(),
+        )
+    }
+}
 
 impl Viewpoint {
     /// The precincts the simulation box overlaps, in precinct coordinates, the max exclusive (R8):
@@ -235,19 +265,12 @@ pub fn update_camera_pos(
     // Update the camera transform
     viewpoint.get_camera_transform(&mut transform);
 
-    // Update the camera render layers
-    match viewpoint.realm {
-        Some(realm) => {
-            if let Ok(realm) = q_realms.get(realm) {
-                *layers = realm.layer.clone();
-            } else {
-                *layers = RenderLayers::none();
-            }
-        }
-        None => {
-            *layers = RenderLayers::none();
-        }
-    }
+    // The camera renders its realm's layer, and the portal apertures in it.
+    let wanted = match viewpoint.realm.and_then(|realm| q_realms.get(realm).ok()) {
+        Some(realm) => realm.layer.clone().with(PORTAL_APERTURE_LAYER),
+        None => RenderLayers::none(),
+    };
+    layers.set_if_neq(wanted);
 }
 
 // import { ease, EaseFunction, invariant } from '@faery/common';

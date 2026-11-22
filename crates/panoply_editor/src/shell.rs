@@ -461,6 +461,8 @@ impl ImmediateAttach<CapsUiFeathers> for ShowMenu {
                                     .checked(&mut views.tile_grid);
                                 checkbox(ui.ch_id("navigation"), "Navigation")
                                     .checked(&mut views.navigation);
+                                checkbox(ui.ch_id("portals"), "Portals")
+                                    .checked(&mut views.portals);
                             });
                     });
             });

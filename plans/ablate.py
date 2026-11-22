@@ -19,6 +19,11 @@ and stops after the baseline's report. `ABLATE=model` hides each flora model loa
 measures among the playground's townsfolk instead. The last experiments cannot be undone, so
 each is measured on top of the one before: actors' animation off, then actors despawned, then
 the environment map off.
+
+    AT=portal ABLATE=portal,camera bevy-remote-driver plans/ablate.py
+
+measures a portal's cost, at the mine entrance with its far end in view: with every portal's
+view ended, and with the portal camera running but drawing nothing.
 """
 
 import math
@@ -40,13 +45,18 @@ DISTANCE = float(os.environ.get("DIST", "20"))
 # Forest, shoreline, water, grass and rocks in view at distance 20: a representative, near
 # worst-case spot. (At distance 20, (80, 80) frames only water.)
 # Townsfolk: where `plans/actors.py` views them, from their front at 45°.
+# Portal: the mine entrance `meo0` from its open side, as `plans/portals.py` sees it, at the game's
+# camera distance unless DIST is set.
 LOCATIONS = {
     "forest": ("playground", [110.0, 0.0, 150.0], None),
     "townsfolk": ("playground", [145.0, 0.0, 6.0], -0.75 * math.pi),
     # Only trees, terrain and a little water, facing north-west (+x, +z).
     "trees": ("playground", [47.0, 0.0, 78.0], 0.25 * math.pi),
+    "portal": ("playground", [67.5, 0.0, 163.0], 1.5 * math.pi, 11.0),
 }
 LOCATION = LOCATIONS[os.environ.get("AT", "forest")]
+if "DIST" not in os.environ and len(LOCATION) > 3:
+    DISTANCE = LOCATION[3]
 # Flora's node names, in the models' glTF files.
 LEAF_NODES = ["leaf", "leaves"]
 BARK_NODES = ["bark"]
@@ -253,12 +263,65 @@ def set_camera_active(driver, active):
     mutate(driver, driver.camera(), CAMERA, ".is_active", active)
 
 
+NAME = "bevy_ecs::name::Name"
+RENDER_LAYERS = "bevy_camera::visibility::render_layers::RenderLayers"
+
+
+def portal_cameras(driver):
+    """The portal cameras, by their names (`PortalCamera:<instance id>`)."""
+    rows = driver.call("world.query", {"data": {"components": [NAME]}, "filter": {"with": [NAME]}})
+    return [row["entity"] for row in rows if str(row["components"][NAME]).startswith("PortalCamera:")]
+
+
+PORTAL_TARGET = "panoply_portals::portal_aspect::PortalTarget"
+portal_targets = {}
+
+
+def end_portal_views(driver):
+    """Empties every portal target's realm, which ends their views. Switching a portal camera's
+    `is_active` instead panics Bevy's light preparation when it comes back on: the cascades for it
+    are built before the change."""
+    rows = driver.call(
+        "world.query", {"data": {"components": [PORTAL_TARGET]}, "filter": {"with": [PORTAL_TARGET]}}
+    )
+    for row in rows:
+        realm = row["components"][PORTAL_TARGET]["realm"]
+        portal_targets[row["entity"]] = realm
+        mutate(driver, row["entity"], PORTAL_TARGET, ".realm", "")
+
+
+def restore_portal_views(driver):
+    for entity, realm in portal_targets.items():
+        mutate(driver, entity, PORTAL_TARGET, ".realm", realm)
+    portal_targets.clear()
+
+
+portal_layers = {}
+
+
+def blind_portals(driver):
+    """Empties the portal cameras' render layers: each still runs, and Bevy still checks every
+    entity's visibility for it, but it draws nothing and no light casts a shadow pass for it."""
+    for camera in portal_cameras(driver):
+        layers = driver.call(
+            "world.get_components", {"entity": camera, "components": [RENDER_LAYERS]}
+        )["components"][RENDER_LAYERS]
+        portal_layers[camera] = layers
+        insert(driver, camera, {RENDER_LAYERS: []})
+
+
+def restore_portals(driver):
+    for camera, layers in portal_layers.items():
+        insert(driver, camera, {RENDER_LAYERS: layers})
+    portal_layers.clear()
+
+
 def run(driver):
     driver.present("PrimaryCamera")
     mutate(driver, driver.window, WINDOW, ".present_mode", "AutoNoVsync")
     driver.frames(30)
     driver.screenshot("focus")
-    realm, position, azimuth = LOCATION
+    realm, position, azimuth = LOCATION[:3]
     driver.goto(position, DISTANCE, azimuth, realm=realm)
     base = frame_time(driver)
     original_cascades = get_cascades(driver)
@@ -317,6 +380,10 @@ def run(driver):
         ("cascades 3 [18,30,50]", lambda: set_cascades(driver, cascades([18.0, 30.0, 50.0])), lambda: set_cascades(driver, original_cascades)),
         ("depth prepass", lambda: set_depth_prepass(driver, True), lambda: set_depth_prepass(driver, False)),
         ("2x2 shadow filter", lambda: insert(driver, driver.camera(), {SHADOW_FILTER: "Hardware2x2"}), lambda: insert(driver, driver.camera(), {SHADOW_FILTER: "Gaussian"})),
+        # A portal's cost, where one is in view (AT=portal): all of it, then all but drawing and its
+        # shadow pass.
+        ("portal views ended", lambda: end_portal_views(driver), lambda: restore_portal_views(driver)),
+        ("portal sees nothing", lambda: blind_portals(driver), lambda: restore_portals(driver)),
         # Nothing rendered at all: what remains is the main world's own systems.
         ("camera inactive", lambda: set_camera_active(driver, False), lambda: set_camera_active(driver, True)),
     ]

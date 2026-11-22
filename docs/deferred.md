@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X130.**
+**Next: X131.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -600,3 +600,10 @@ dropped, not deferred. Numbers are never reused.
   middle, so there the route may follow the path's middle, or the funnel run through crossings
   narrowed by a margin, rather than be smoothed after. *Gate:* PAN16i, or corners that look stiff in
   play.
+- **X130** Cheaper portal views: about 1.6 ms a frame each on an M1 Pro ([notes.md](notes.md), a
+  portal's cost), beyond what fewer entities (PAN112) saves. Candidates: portal cameras lit by a
+  shadowless copy of their realm's sun, on a layer of its own, since Bevy cannot turn a light's
+  shadows off per camera; or no redraw while neither the camera nor the far end moves, which freezes
+  water and animation seen through it. Aerdra's GPU timestamps (`plans/ablate.py`, `AT=portal`) tell
+  the shadow pass's share. *Gate:* PAN112 lands, then two portals on screen at once, or one that
+  costs a frame budget.

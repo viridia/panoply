@@ -1,6 +1,6 @@
 use bevy::{math::IRect, prelude::*};
 
-use panoply_core::{Realm, RealmPhysics, ToRapier, Viewpoint};
+use panoply_core::{PortalViewRegions, Realm, RealmPhysics, ToRapier, Viewpoint};
 use rapier3d::prelude::RigidBodyBuilder;
 
 use super::{
@@ -50,6 +50,7 @@ impl PrecinctCache {
 pub fn spawn_precincts(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
+    portal_regions: Res<PortalViewRegions>,
     mut precinct_cache: ResMut<PrecinctCache>,
     mut query: Query<&mut Precinct>,
     mut realm_query: Query<(&Realm, &mut RealmPhysics)>,
@@ -146,6 +147,13 @@ pub fn spawn_precincts(
         realm: query_rect.realm,
         bounds: viewpoint.simulated_precincts(),
     });
+    // The far ends of nearby portals, in whatever realm they lie.
+    for region in portal_regions.0.iter() {
+        fetch_precincts(&QueryRect {
+            realm: region.realm,
+            bounds: region.cells(PRECINCT_SIZE_F),
+        });
+    }
 
     let size = precinct_cache.size;
     let cache = &mut precinct_cache.precincts;

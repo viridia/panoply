@@ -63,9 +63,10 @@ impl Aspect for Portal {
     }
 }
 
-/// The far end of a portal, per instance: its realm and place.
+/// The far end of a portal, per instance: its realm and place. A reflected component, so plans can
+/// read and set it.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default)]
+#[reflect(Component, Aspect, Default)]
 pub struct PortalTarget {
     #[reflect(@DisplayName("Realm"))]
     pub realm: String,
