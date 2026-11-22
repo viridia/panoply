@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X131.**
+**Next: X132.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -607,3 +607,8 @@ dropped, not deferred. Numbers are never reused.
   water and animation seen through it. Aerdra's GPU timestamps (`plans/ablate.py`, `AT=portal`) tell
   the shadow pass's share. *Gate:* PAN112 lands, then two portals on screen at once, or one that
   costs a frame budget.
+- **X131** Global actors, as [instances.md](instances.md)'s Global actors section has them:
+  `ActorRoster`, an actor becoming global as a travelling goal starts and released by `Release`, a
+  kernel while far from the player, and going home with its state, which the home takes as it next
+  loads. Revises R7, R83 and [save-games.md](save-games.md)'s followers and moved homes. *Gate:* the
+  first follower or escort.

@@ -1,9 +1,10 @@
 # Instances
 
 How an instance (an actor, wall, fixture or relay) is named, how a reference finds it anywhere in
-the world, and what of it stays in memory while its precinct is not loaded. This is PAN110's design,
-not yet built. Parts marked *Settled* are decided, those marked *Provisional* hang on a choice not
-yet made, the rest is the current leaning, and the last section lists what is still open.
+the world, and what of it stays in memory while its precinct is not loaded. None of it is built yet:
+PAN110 builds the Ids section, PAN6 the latches, and X131 global actors, while X123 decides whether
+bindings are needed. Parts marked *Settled* are decided, those marked *Provisional* hang on a choice
+not yet made, the rest is the current leaning, and the last section lists what is still open.
 
 ## What "global" means
 
@@ -45,6 +46,13 @@ the label, or, for an instance without one, its exemplar and place ("Door, Tambr
   precincts at startup, because web builds cannot list folders, and the editor needs the labels of
   precincts it has not loaded. Only the editor reads it, for Go To and find references. The game
   itself needs only a map from key to live entity, kept as instances spawn and despawn.
+- **Mods.** A mod ships its own index, joined with the game's, as it ships its own precinct index
+  (X109). It lists the keys the mod adds, in its own precincts and in what its patches add to the
+  game's, each line naming the realm and precinct. Keys are created in the mod's namespace, so two
+  mods never claim one key. A mod's reference to the game's instance stores the game's key, and
+  since mods only add scenery (X109), a mod never rekeys what the game owns. A mod's labels carry
+  its prefix, as its aspects' names do ([modding.md](modding.md)), so two mods can each label a
+  guard `stone`.
 - **Migration.** Today's `SceneryInstanceId::External` names become labels, and each gets a key.
 
 How each edit treats a key:

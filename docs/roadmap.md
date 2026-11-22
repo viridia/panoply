@@ -112,16 +112,16 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
   is read in the chunk.
-- **PAN102 Marker fixtures**, on PAN88's picking. Fixtures with no model, standing for abstract
-  things (a waymark, a region, a patrol path, a music cue), drawn by the editor alone. faery's
-  marker aspects (`engine/src/world/scenery/markers.ts`: `waymark`, `circle`, `rect`, `waypoints`),
-  dropped by the converter ([faery.md](faery.md), Migration scripts), become aspects whose overlays
-  the editor draws while their precinct is selected, with faery's map pin as a billboard at each,
-  picked through their `marker` colliders. Regions are read by wander's tether (R52) and music on
-  entry (X61), and the converter keeps the instances Tambry and Heron Creek place. A patrol path is
-  one fixture with an ordered list of points, not a fixture per point: a guard's field names one id,
-  and the order is the list's. Its points are stored relative to the fixture, so PAN92's gizmo moves
-  and turns the whole route; faery's were in world space.
+- **PAN102 Marker fixtures**, on PAN88's picking. *Needs:* PAN110. Fixtures with no model, standing
+  for abstract things (a waymark, a region, a patrol path, a music cue), drawn by the editor alone.
+  faery's marker aspects (`engine/src/world/scenery/markers.ts`: `waymark`, `circle`, `rect`,
+  `waypoints`), dropped by the converter ([faery.md](faery.md), Migration scripts), become aspects
+  whose overlays the editor draws while their precinct is selected, with faery's map pin as a
+  billboard at each, picked through their `marker` colliders. Regions are read by wander's tether
+  (R52) and music on entry (X61), and the converter keeps the instances Tambry and Heron Creek
+  place. A patrol path is one fixture with an ordered list of points, not a fixture per point: a
+  guard's field names one id, and the order is the list's. Its points are stored relative to the
+  fixture, so PAN92's gizmo moves and turns the whole route; faery's were in world space.
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
   drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
@@ -147,12 +147,14 @@ The engine's design, seen whole, and what follows from it.
   alone: layering, which code owns which fact, identity and lifetime (PAN110), systems' order across
   crates. Findings go to [issues.md](issues.md) for the author to route; any acted on is read at the
   source first.
-- **PAN110 Instance identity.** *Needs:* PAN109. Builds [instances.md](instances.md): keys and
-  labels with a checked-in index, bindings pulled as an instance spawns, global actors as kernels in
-  `ActorRoster`, and the despawn latch. Its Open section is settled first. Proved by a walkthrough
-  over [Exemplars.md](Exemplars.md)'s three quests and PAN79's relay. Revises D87, D88, R7, R10,
-  R72, R83 and [save-games.md](save-games.md)'s followers and moved homes; X69's matching and
-  PAN79's naming follow it.
+- **PAN110 Instance identity.** Keys and labels, as [instances.md](instances.md)'s Ids section has
+  them: `SceneryInstanceId::External` becomes a generated key with an optional label, created when
+  an instance first needs one; the editor keeps keys through moves, copies and deletes; the
+  checked-in index, which `asset_xref.py` checks; and a map from key to live entity. Proved by an
+  instance moved into another precinct keeping its key, the index following it, and a duplicated key
+  failing `verify.sh`. Revises D87, D88 and R72; X69's matching, [save-games.md](save-games.md)'s
+  chunk keys and PAN79's naming follow it. Not in it: bindings (X123), global actors (X131), and the
+  latches, which come with presence (PAN6).
 
 ## Aspects
 
@@ -211,45 +213,46 @@ aspects that mechanisms, containers and signs are built on.
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104. The stock elements puzzles are built
-  from, and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted
-  aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
-  automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
-  a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
-  ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
-  scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
-  What a sensor senses is native, by collision group, as faery's `canSense` sensed actors only, with
-  a formula filter only once a puzzle needs one (a heavy object on a plate). Beside them: triggers
-  (a circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
-  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
-  signals another through cells, a formula over the other's state, wherever a formula can say it,
-  and through an event only where none can: engines built on events, such as the Creation Kit,
-  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
-  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
-  the precinct, not as wiring stored on its participants, which in faery left no list of what was
-  wired and no owner when several took part. A relay holds two aspects. A native visualization
-  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
-  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target
-  and fills it by picking, never by typing. Logic on one entity is a scripted aspect on that entity.
-  A placed relay's roles are its logic aspect's `instance` block, set on the instance, while its
-  tuning stays inherited from the exemplar (D103). A bound instance gets an external id (D87). The
-  editor lists a precinct's relays, draws a selected one's wires, and lists those that name a
-  selected instance; selecting, moving and copying apply to relays, and copying a trap with its
-  relay binds the copy's roles to the copied instances. One wiring gesture places a stock relay for
-  a button opening a door, so the simplest case stays one step. Precedents: Planet's Edge's logic
-  tiles beyond the map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with
-  picked references. The hard part is referencing and naming, which PAN110 may change. A precinct is
-  named by its realm and coordinates, and is like a module: its walls and fixtures that others can
-  refer to are its exports, by their export id (`SceneryInstanceId::External`). That name is clumsy
-  to type into a text box, so the field for a signal source browses the available signals with a
-  filter, as PAN35's chooser does. A reference into a precinct that is not loaded suspends the
-  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
-  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
-  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
-  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
-  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
-  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
-  first customer is PAN6's door opened by a button ([goals.md](goals.md), step 4).
+- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104, PAN110. The stock elements puzzles
+  are built from, and how they are wired together, on SAGA's cells and reactions (PAN105) and
+  scripted aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled
+  openables, automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes
+  scripted: when a trap fires), wired by reactive formulas so that elaborate puzzles combine simple
+  parts ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under
+  Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
+  (`wall-tiles.exem.json`). What a sensor senses is native, by collision group, as faery's
+  `canSense` sensed actors only, with a formula filter only once a puzzle needs one (a heavy object
+  on a plate). Beside them: triggers (a circle or rectangle the player enters), encounter zones,
+  waymarks for scripted NPC events, and patrol paths, fixtures that goals name
+  ([goal-format.md](goal-format.md), Open). One element signals another through cells, a formula
+  over the other's state, wherever a formula can say it, and through an event only where none can:
+  engines built on events, such as the Creation Kit, tangle when several signals must be correlated.
+  Which parts are native aspects and which are SAGA is to decide. Proposed: logic that spans several
+  entities lives on a relay, an exemplar placed in the precinct, not as wiring stored on its
+  participants, which in faery left no list of what was wired and no owner when several took part. A
+  relay holds two aspects. A native visualization aspect gives its gizmo in the editor (icon, shape,
+  color). A logic aspect is a scripted aspect (PAN104). A field of the instance-reference type is a
+  role: the editor draws a wire to its target and fills it by picking, never by typing. Logic on one
+  entity is a scripted aspect on that entity. A placed relay's roles are its logic aspect's
+  `instance` block, set on the instance, while its tuning stays inherited from the exemplar (D103).
+  A bound instance gets an external id (D87). The editor lists a precinct's relays, draws a selected
+  one's wires, and lists those that name a selected instance; selecting, moving and copying apply to
+  relays, and copying a trap with its relay binds the copy's roles to the copied instances. One
+  wiring gesture places a stock relay for a button opening a door, so the simplest case stays one
+  step. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`, and
+  Unreal's placed Blueprint actors with picked references. The hard part is referencing and naming,
+  which PAN110 may change. A precinct is named by its realm and coordinates, and is like a module:
+  its walls and fixtures that others can refer to are its exports, by their export id
+  (`SceneryInstanceId::External`). That name is clumsy to type into a text box, so the field for a
+  signal source browses the available signals with a filter, as PAN35's chooser does. A reference
+  into a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md), Values).
+  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
+  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
+  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
+  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
+  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
+  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
+  a button ([goals.md](goals.md), step 4).
 - **PAN106 Containers.** *Needs:* PAN71, PAN104. What a container holds. An open chest shows its
   contents on an inventory screen whose background its container type chooses, and items move
   between it and the player; a locked one opens for the key its instance names, and a corpse, once
@@ -498,10 +501,10 @@ D111.
   them and spawn them again from their assets and exemplars. Saves are sparse, holding only what
   play changed (PAN82), so loading a save is a new game with the save's changes applied. R12 is the
   same reset for one actor.
-- **PAN82 Save games.** *Needs:* PAN19. Save games with structural sharing: one chunk of play
-  changes per precinct, written on eviction; a save is only a root index of chunk versions. Design
-  and what it asks of the engine in [save-games.md](save-games.md). X14's picked cells would live in
-  the precinct chunk. The camera angle is saved too; a load follows the player with
+- **PAN82 Save games.** *Needs:* PAN19, PAN110. Save games with structural sharing: one chunk of
+  play changes per precinct, written on eviction; a save is only a root index of chunk versions.
+  Design and what it asks of the engine in [save-games.md](save-games.md). X14's picked cells would
+  live in the precinct chunk. The camera angle is saved too; a load follows the player with
   `Viewpoint::follow_snapped`, which keeps it. The first state to save: a chest left open.
 
 ## First playable
@@ -515,7 +518,10 @@ D111.
   on presentation, and is judged here only roughly.
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111. The first playable: the "Up in Arms"
   quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases
-  Sergeant Stone and the Crimson Watch, so it builds presence (D106).
+  Sergeant Stone and the Crimson Watch, so it builds presence (D106), with both latches: an actor
+  appears and disappears only out of view, whether its presence changes or its precinct is evicted
+  ([instances.md](instances.md), Actors far from home). Revises R10, which latches only
+  disappearing.
 
 ## Performance
 
@@ -529,6 +535,14 @@ D111.
   models only for parcels near the view; trees spawned as their meshes, without the glTF scene's
   root and nodes; flora instanced, an entity per parcel, model and part; or outlines drawn by a pass
   of their own rather than as child entities. The last two are structural, proposed before code.
+
+  An experiment to run with the census: give flora meshes `NoCpuCulling`. Each frame, Bevy visits
+  every entity with `Visibility` three times, the culling pass once per camera, even under a parcel
+  already hidden, since it has no hierarchical culling; with the marker, flora leaves those passes
+  and the cascades' culling, the parcel's show test culls coarsely, and the GPU culls the rest (the
+  Mac logs "GPU preprocessing is fully supported"). Measure `AT=portal plans/ablate.py` with and
+  without it, on the Mac and on Aerdra, and check that flora shadows and outlines still draw. If it
+  pays, the instancing above may not be needed.
 
 ## Technical debt
 
