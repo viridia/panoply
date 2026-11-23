@@ -70,6 +70,22 @@ The author's estimates for the finished world, for designs to size against:
 - The goal is new story content from modders, as in Skyrim. That needs a scripting language.
 - Can be dropped if it proves too difficult.
 
+## First quest: "A Free Lunch"
+
+A fetch quest in the playground's lair, built before "Up in Arms" because it needs no combat
+(PAN120). faery had its dialogue and quest. The steps, and what each needs:
+
+1. A guardsman walks a patrol path, and makes a remark as he passes the player: patrol paths, goals,
+   remarks.
+2. Talking to him stops him and starts a conversation: an interaction on an actor, dialogue.
+3. He answers questions: dialogue, and topics learned from his remarks.
+4. A second, quest-specific set of lines replaces his goodbye: asked to leave, he says "Actually,
+   before you go...", and asks the player to fetch the lunch he left in the other room: dialogue
+   sets combined, quest stages.
+5. The lunch is in a stone sarcophagus nearby, and the player takes it: containers, inventory.
+6. Back with the guardsman, he accepts the lunch, which leaves the player's inventory: quest stages,
+   item exchange.
+
 ## First playable: "Up in Arms"
 
 The starter quest, mostly complete in faery. The steps, and what each needs:

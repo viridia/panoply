@@ -129,9 +129,9 @@ An actor's behavior is goal trees, dialogue sets, remark sets and presence, and 
 pieces of it that vary independently: a town guard has the guards' patrol and dialogue, the town's
 regional lines, and one guard also a quest's questions and remarks. faery's guardsman
 (`packages/game/src/behaviors/demo.tsx`) lists three dialogue sets: generic, regional and quest.
-faery wrote an aspect type per character, which Panoply cannot: `UpdateAspects` keys aspects by
-`TypeId`, the nearest of each type winning, so two pieces of behavior cannot both be aspects of one
-type.
+faery wrote an aspect type per character, and so does Panoply: the union keys aspects by
+`Aspect::key` (D107), so each piece of behavior is a scripted aspect with a key of its own, and two
+pieces never displace each other as the nearest of one type would.
 
 Whatever the mechanism, these hold:
 
@@ -176,7 +176,7 @@ or is split, every guard holding a copy must be edited.
 `ComponentId`, composes packages unchanged. A package is then an aspect in every sense, queryable by
 Bevy. Against: component ids are per run, so files and saves still use names; the editor, the
 serializer and `Aspect::id` assume Rust types. Its distinctive gains, querying an actor by package
-and gating an action on one (D59), are excluded above.
+and gating an interaction on one (D114), are excluded above.
 
 **Keyed aspects.** An aspect type may name a key field, and the union keys on type and key. One
 reflected type, `BehaviorPackage { path }`, keyed by `path`, adds its path to a runtime component
@@ -185,29 +185,28 @@ show as inherited or overridden as other aspects do. Against: whatever iterates 
 (D71's checks, the add menu, saving) must learn keys, and the grid shows a package as a struct with
 a `path` field.
 
-**Native and external aspects.** Keyed aspects in their best form: a native aspect is a Rust type
-and a component; an external aspect is an asset, keyed by its path and collected into one component.
-The list shows `tambry:poul` itself. Both share the aspect list, the union, adding and removing, and
-the inherited display, so most of what an author touches is shared. faery's aspects split the same
-way ([modding.md](modding.md), What mods need): its 15 per-character scripts had no fields. It is
-two mechanisms presented as one, and the presentation shows at the seams:
+**Native and scripted aspects.** Keyed aspects in their best form: a native aspect is a Rust type
+and a component; a scripted aspect is declared in a SAGA module, keyed by its module's path and its
+name, its config and state each a component of its own (D107, D113). The list shows `tambry:poul`
+itself. Both share the aspect list, the union, adding and removing, and the inherited display, so
+most of what an author touches is shared. faery's aspects split the same way
+([modding.md](modding.md), What mods need): its 15 per-character scripts had no fields. It is two
+mechanisms presented as one, and the presentation shows at the seams:
 
-- An external aspect has no fields until the property grid can edit types declared in data, the
-  layer X64 needs, which Panoply would build itself; until then per-instance data goes in a native
-  aspect or the variables aspect (X53).
-- External aspects are not part of `self`'s interface: formulas cannot see them, and D59's actions
-  need native ones.
-- Order matters for external aspects only.
+- A scripted aspect's fields are types declared in data, which the property grid edits only through
+  the layer X64 needs (PAN104b).
+- A formula reads a scripted aspect through its accessor (D117); one without an accessor is not part
+  of `self`'s interface.
 - Detaching one despawns its goal trees and drops its saved state, and its formulas need their own
   check, as X96's do.
 
-Mods could author external aspects, which gives them aspects without declaring Rust types (X64).
+Mods author scripted aspects, which gives them aspects without declaring Rust types.
 
 **Aspects as definitions.** An aspect stops being a component: it is a definition in an exemplar or
 instance, keyed by a Rust type's name or an asset path, and what it does when attached is its own. A
 native aspect's `attach` inserts components (its state, as D74 already has `ContainerState`, and the
 config its systems read); a package's spawns goal trees. The aspect list, the union and the editor
-work on definitions alone, so the native and external split moves from what an aspect is to how one
+work on definitions alone, so the native and scripted split moves from what an aspect is to how one
 is implemented.
 
 - Uniqueness moves to the components: no two aspects may attach the same component, checked as an
@@ -237,10 +236,10 @@ is implemented.
   The registries already tell a component from the aspect that supplies it (`ScriptComponents` maps
   `ContainerState` to `Container`; interactions register actions by aspect). The union
   (`UpdateAspects`, `OwnedAspects`), the editor and the files know an aspect by its key
-  (`Aspect::key`), not its type, as keyed aspects and native and external aspects both need. Over
-  native aspects this alternative and native and external aspects then do the same; they differ in
+  (`Aspect::key`), not its type, as keyed aspects and native and scripted aspects both need. Over
+  native aspects this alternative and native and scripted aspects then do the same; they differ in
   what a package is called and where uniqueness is checked.
-- D59's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
+- D114's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
   attach, which is what formulas read.
 - A BSN entity is one component per type, so definitions, several of one kind among them, do not map
   onto it directly. They compile to it: an exemplar to a patch, `extends` to an `@` mixin, and
@@ -323,10 +322,10 @@ over.
 
 ### Packages written in SAGA
 
-A variation of native and external aspects, or of aspects as definitions: a package is a scripted
+A variation of native and scripted aspects, or of aspects as definitions: a package is a scripted
 aspect (PAN104), declaring its fields, goal trees, interactions and presence together, with formulas
-inline, in place of an asset of data. It composes as any external aspect does; what changes is how
-it is written. Two forms:
+inline, in place of an asset of data. It composes as any other aspect does; what changes is how it
+is written. Two forms:
 
 - **Aspects as values.** A function or constant returns an aspect, and goal trees are SAGA values of
   types the native goals expose, written as literals, as a Python dict display is. Parameters are a
@@ -387,10 +386,10 @@ Either way:
 - A package is checked as it compiles, and find references covers what it names. The native goal
   runtime runs its trees, so scripts still hold no memory but the world's.
 - Behavior then needs no BSN (X1), and no formulas embedded in assets.
-- A field declared in SAGA is a type declared in data, so setting one per actor waits on the layer
-  X64 needs, as an external aspect's fields do. Values that vary by placement are mostly references:
-  a patrol path is a fixture, edited in the world, which a guard package's field names (naming
-  across precincts is PAN79's).
+- A field declared in SAGA is a type declared in data, so setting one per actor goes through the
+  layer X64 needs and an `instance` block (PAN104b). Values that vary by placement are mostly
+  references: a patrol path is a fixture, edited in the world, which a guard package's field names
+  (naming across precincts is PAN79's).
 - Each declaration fails alone, as a formula in an asset does: a `tree` that fails to compile
   disables the aspects that use it, not its module.
 - Against: SAGA grows from formulas to declarations, with tooling to match, though scripted aspects
@@ -447,8 +446,8 @@ The second, at an inn in Marheim:
 
 The third, at a boarded-up shop:
 
-12. **Getting in.** *Asset:* the shop's door with a `Lock`, and a way to force it, as an entry in
-    its interactions (D59) whose effect clears native lock state (D105).
+12. **Getting in.** *Asset:* the shop's door with a `Lock`, and a way to force it, as an interaction
+    of its scripted `Lock` (D114) whose effect clears native lock state (D105).
 13. **The evidence.** *Asset:* a notice on the door and records inside, documents the player takes
     (PAN78). *Formula, reactive:* the stage advances once the player holds both. A clue is an object
     the player carries, never a fact only read, so the player never knows what their character does
@@ -499,9 +498,9 @@ text compiles, and lines need stable ids, mostly generated, so translations surv
 
 ### Leaning
 
-Settled by D107: native and external aspects, with packages declared in SAGA as scripted aspects, no
-package asset type of their own, and composition kept in the aspect list, where an instance can add
-them (D104). Aspects as values are against.
+Settled by D107: native and scripted aspects, packages among the scripted ones, with no package
+asset type of their own, and composition kept in the aspect list, where an instance can add them
+(D104). Aspects as values are against.
 
 After the worked example, both sides of composition, by kind: a character's own behavior is a
 package on its exemplar, and what exists because of a quest is a role in that quest, declared in

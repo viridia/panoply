@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D114.**
+**Next: D118.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -459,15 +459,15 @@ never reused.
   in, and undoing or redoing returns there, so the change lands where its panel shows it. Switching
   modes is not an entry: browsing would add steps to undo and clear redo. Reversing it means
   deciding which history Ctrl+Z means in each mode. (PAN42)
-- **D59** What can be done to a thing is one universal aspect, `Interactions`, a list of entries in
-  the asset, on anything: a mod can add assets and formulas but no Rust aspects, and actions like
-  Unlock cross kinds of thing, where faery wrote them per aspect. Aspects for a kind (`Container`)
-  hold its data and native code and no entries, and an exemplar's aspects are the interface `self`
-  has. An entry's `when` is a formula, `None` meaning always offered; its `action` names a native
-  event registered with the aspect it needs, so an exemplar without that aspect cannot perform it.
-  An override replaces the whole list (X74). The probe sweeps a box from feet to head rather than
-  casting a ray, to find a chest on the ground and a sign at eye level alike. Reversing it means
-  per-kind entries, which only Rust could extend. (PAN21)
+- **D59** Superseded by D114. What can be done to a thing is one universal aspect, `Interactions`, a
+  list of entries in the asset, on anything: a mod can add assets and formulas but no Rust aspects,
+  and actions like Unlock cross kinds of thing, where faery wrote them per aspect. Aspects for a
+  kind (`Container`) hold its data and native code and no entries, and an exemplar's aspects are the
+  interface `self` has. An entry's `when` is a formula, `None` meaning always offered; its `action`
+  names a native event registered with the aspect it needs, so an exemplar without that aspect
+  cannot perform it. An override replaces the whole list. The probe sweeps a box from feet to head
+  rather than casting a ray, to find a chest on the ground and a sign at eye level alike. Reversing
+  it means per-kind entries, which only Rust could extend. (PAN21)
 - **D60** UI that shows or edits dynamic data is written as if Bevy had a reactive framework, as
   faery had solid.js, so that adopting one when it arrives changes little. A view is a function of
   its state: it reads the model where the model lives and keeps no copy, each read standing in for a
@@ -971,8 +971,40 @@ never reused.
   id through `ScriptedComponents`, never `ReflectComponent`, which would go by `ScriptedFields`' own
   id. A scripted aspect's key is its module's path from the asset root and its name
   (`scripts::toggle_switch::ToggleSwitch`), absolute, so no `package::`. A formula reads it by the
-  accessor its `#[accessor(...)]` names; one without it cannot be read. Until imports, a formula
-  sees the scripted aspects its own catalog file names, the modules its loader loads anyway (X139).
+  accessor its `#[accessor(...)]` names; one without it cannot be read. Until D117's index (X139), a
+  formula sees the scripted aspects its own catalog file names, the modules its loader loads anyway.
   Given up: a scripted aspect is opaque to Bevy's reflection, so the inspector, BRP and saves reach
   its fields only through Panoply's code. Reversing it means one component holding every scripted
   aspect of an entity, whose change ticks cannot tell them apart. (PAN104a)
+- **D114** Interactions are declared in scripted aspects, beside the state they act on, each with a
+  caption, a `when` and an effect run as it is performed (D105); the JSON `Interactions` aspect and
+  `register_interaction_action` go. D59 made one universal aspect because a mod could add no Rust
+  aspect; a scripted aspect is how a mod adds behavior, so the reason holds, and an aspect's
+  behavior stays in one place. An exemplar offers the interactions of every aspect it has, and its
+  aspects are the interface `self` has, as in D59. The probe sweeps a box from feet to head, as D59
+  had it. Reversing it means interactions written in exemplars again, apart from the state they
+  change.
+- **D115** Behavior lives in assets, not Rust. Rust holds the state that native systems read
+  (physics, routing, animation), host functions and host commands; what is done with them is SAGA by
+  default: a sensor's filter, a lock's key check, a trap's timing, an interaction's action. Native
+  code needs a reason, a system that reads the result or a cost a script cannot meet. So a mod
+  reaches as far as the game's own content does, and game design is tuned without a rebuild. With
+  D105, which keeps the state native. Reversing it means behavior that only Rust can change.
+- **D116** A native aspect follows scripted state through a read-only formula in its config: a
+  scenery animation's `when`, replacing the `AnimationInput` enum, plays its clips forward while it
+  is true. Native code holds the author's formula and never a script's field name, so D105 holds.
+  Not marker components that a script sets: those need a marker per state (open, active, ...), and
+  give a save two sources of truth to keep in step; with a formula the state is the one source, and
+  a save loaded mid-transition snaps to the pose its `when` gives. The line between assets and
+  modules: a read-only formula that binds a native aspect's config stays embedded in the asset (an
+  animation's `when`, `Presence { when }`, a dialogue option's condition); anything with an effect
+  lives in a module. Reversing it means native state mirrored for every scripted state an animation
+  shows.
+- **D117** Scripted accessors share one namespace with native components, so a formula embedded in
+  an asset reads `self.toggle_switch.on`, typed, without an import: the import's only job was the
+  type, which a dynamically typed language would not need. An accessor is unique across loaded
+  modules. The modules that declare one are listed in an index and load at startup, so behavior
+  packages, large and regional, need not ([saga.md](saga.md), Aspects). Given up: a pass reading
+  only declarations, which reads every regional file at startup, and finding a module from an
+  accessor's name, which a renamed file breaks. Reversing it means imports in assets that embed
+  formulas. (X139)

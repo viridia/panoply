@@ -1,10 +1,11 @@
 # SAGA
 
-SAGA is Panoply's scripting language, and the only code a mod can ship ([modding.md](modding.md)).
-Scripts are for what the runtime gives them, not for syntax: behaviors that hot reload, and logic
-that ships outside the engine. Most scripts are like spreadsheet formulas: short, not long-running,
-holding no memory but the world's. The game's logic emerges from many of them working together. This
-doc records the design; nothing here is implemented yet (X7).
+SAGA, Scripts for Animated Graphic Adventures, a name the author chose in 1992, is Panoply's
+scripting language, and the only code a mod can ship ([modding.md](modding.md)). Scripts are for
+what the runtime gives them, not for syntax: behaviors that hot reload, and logic that ships outside
+the engine. Most scripts are like spreadsheet formulas: short, not long-running, holding no memory
+but the world's. The game's logic emerges from many of them working together. This doc records the
+design; nothing here is implemented yet (X7).
 
 ## Early customers
 
@@ -21,7 +22,8 @@ The first customers each add one mechanism:
 1. **An interaction's `when`** (PAN45c), on demand: a chest's "Open" and "Close" are offered by
    whether its `ContainerState` is open, and "Open" not while it is locked, formulas in
    `Proto.Container` over two aspects. It needs no cells or reaction passes, and PAN21's native
-   action already has the effect, so SAGA only returns a boolean.
+   action already has the effect, so SAGA only returns a boolean. Interactions move into their
+   scripted aspects with PAN104c (D114).
 2. **An animation's `when`**, reactive: an object that changes state as the player comes near,
    through the `proximity` memo (Memos). The first cells, memos and reaction pass.
 3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
@@ -170,8 +172,21 @@ aspect ToggleSwitch for Wall, Fixt {
   gives it its default, and a field a file names that the aspect does not declare is skipped, so a
   file written before the module changed still loads; a save keeps state by field name the same way.
 - `#[accessor(name)]` lets formulas read its fields from an entity, `self.toggle_switch.on`. An
-  aspect without it cannot be read. A formula sees the scripted aspects its catalog file names
-  (X139).
+  aspect without it cannot be read. A formula sees the scripted aspects its catalog file names,
+  until the accessor index (X139):
+  - An accessor joins the namespace of native components (D117), so a formula anywhere reads it,
+    typed, without an import. Two loaded modules declaring one accessor is a load error naming both.
+  - The modules that declare accessors are listed in their package's `scripts/index.json` and load
+    at startup; the rest load when a catalog names one of their aspects. A module outside the index
+    that declares an accessor is an error as it loads, and a `cargo test` over `assets/` checks the
+    index. It lists modules, not accessors, which loading them gives.
+  - An aspect whose state others read is small and has an accessor; a behavior package is large,
+    regional, and has none. One that needs both keeps its readable state in a small aspect beside
+    it, so a large file in the index is a question for review.
+  - A reloaded module recompiles the formulas that read its accessors, found through the list of
+    what each formula reads.
+- An aspect declares the interactions it offers, each with a caption, a `when` and an effect
+  performed when the player chooses it (D114); its syntax is PAN104c's.
 - Attached, its config and its state are each a component, registered at runtime (D113): the config
   inserted as it attaches and removed as it detaches, the state inserted only where the entity has
   none.
@@ -181,6 +196,9 @@ aspect ToggleSwitch for Wall, Fixt {
 - A formula is a string in the field it drives, a `Formula<T>` in Rust returning a `T`:
   `"when": "!self.container.open"`. A JSON string holds one line, so anything longer goes in a
   `.saga` module that the formula calls.
+- A formula embedded in an asset is read-only: it binds a native aspect's config to state, as an
+  animation's `when` or a dialogue option's condition does (D116). Anything with an effect lives in
+  a module.
 - It compiles as its asset loads, against one host, `SagaHost`. Plugins register types and functions
   on `SagaHostBuilder` while they build, and `SagaPlugin` freezes it when the app finishes building.
   A loader deserializes aspects through a `FormulaQueue`, a reflection processor that collects every

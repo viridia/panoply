@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X140.**
+**Next: X141.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -25,9 +25,9 @@ dropped, not deferred. Numbers are never reused.
   HTTP requests: small models (e.g. flora) are combined into one file, and large Blender
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
-- **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
-  [saga.md](saga.md) and [modding.md](modding.md), beyond the steps the roadmap holds (PAN71,
-  PAN105, PAN104). *Gate:* PAN105, when the next step of saga.md's Order of work becomes a chunk.
+- **X7** Scripting and modding in SAGA, designed in [saga.md](saga.md) and [modding.md](modding.md),
+  beyond the steps the roadmap holds (PAN71, PAN105, PAN104). *Gate:* PAN105, when the next step of
+  saga.md's Order of work becomes a chunk.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about
@@ -332,9 +332,6 @@ dropped, not deferred. Numbers are never reused.
 - **X73** Undoing back to the saved state leaves the asset marked unsaved, so Save stays enabled.
   Harmless, since Save rewrites the same content, but PAN44's prompt would ask needlessly. The fix
   is a saved-at position per asset in the history. *Gate:* PAN44.
-- **X74** Merging `Interactions` entries by `id` along `extends`, so a variant such as a trapped
-  chest restates only the entry it changes; an override now replaces the whole list (D59). Needs a
-  way to remove an inherited entry. *Gate:* that repetition hurting in real content.
 - **X75** The look of the interaction prompt (PAN21): the decorative box around the key, and the
   key's font, for now `KEY_PROMPT_FONT` (Rubik). The key should be somewhat hefty in weight, and in
   a different-looking font from the caption, though non-swash Macondo has a far more readable
@@ -567,7 +564,8 @@ dropped, not deferred. Numbers are never reused.
   show what quests do to it. With keys, neither side needs global actors or names a precinct. Or
   split by kind ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests,
   Leaning). Settled by reading one quest written each way, as example code side by side. *Gate:* the
-  first quest that gives an actor goals or lines, or changes scenery (PAN6).
+  first quest that gives an actor goals or lines, or changes scenery: PAN120b, whose quest gives the
+  guardsman lines.
 - **X124** Area costs by haste, faery's `hurry`: an actor rushing an enemy cuts across a lawn rather
   than keeping to the footpaths, but not through a bog. Whether some enemies are stupid enough to be
   lured across one is a tactic to weigh. Costs are per query (`NavCosts`), so it is a table the
@@ -639,8 +637,12 @@ dropped, not deferred. Numbers are never reused.
   scripted aspects to `AspectListDeserializer`, so one there is skipped, with a warning. A precinct
   would load the modules its scripted aspects name, as a catalog does. *Gate:* the first scripted
   aspect set on an instance, as PAN104b's `instance` block is.
-- **X139** Formulas that read a scripted aspect their catalog file does not name, as a derived
-  exemplar in another catalog would. Two ways: interactions declared inside the scripted aspect, as
-  faery had them and as goals are planned ([Exemplars.md](Exemplars.md), Packages written in SAGA),
-  so the formula lives in the module beside its aspect; or a key in a catalog file holding import
-  statements its formulas compile with. *Gate:* the first such formula.
+- **X139** The accessor index, as D117 decides it and [saga.md](saga.md)'s Aspects has it, so that a
+  formula reads a scripted aspect its catalog file does not name, as a derived exemplar in another
+  catalog, a quest or a dialogue would. *Gate:* the first such formula.
+- **X140** Movable weights: something the player pushes or carries onto a pressure plate. Every
+  candidate today (a barrel, a crate) is a fixture, and fixtures do not move. Either the weight is
+  an actor, which already has a body, push-out and a place in saves, or a new kind of entity, a
+  movable prop, which faery's sliding blocks and stones pushed in front of a fireball emitter, never
+  built, would also need ([faery.md](faery.md), How far faery got). A plate's sensor then senses
+  heavy objects beside actors (PAN79a). *Gate:* the first puzzle that needs a weight.

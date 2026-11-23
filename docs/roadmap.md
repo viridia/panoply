@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN120.**
+**Next: PAN121.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -179,11 +179,20 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a door's auto-close
   or a button's release, where faery's `init` subscribed to every frame. A hook or an interaction's
   action is an effect (D105): it writes its own aspect's state, the native components declared for
-  scripts to write, and host commands, all through SAGA's buffer, so D59's actions also take an
-  effect in place of a native event. Proved by a hook writing state that a formula reads, and by the
-  mossy wall switch: Use toggles `ToggleSwitch`'s `on` in place of PAN104a's `DebugLog`, and the
-  switch plays its two-state animation, once I80 settles how a native animation follows a scripted
-  cell. Wiring across entities is PAN79's.
+  scripts to write, and host commands, all through SAGA's buffer.
+  - Interactions move into their aspects (D114): each declared in the module with its caption, its
+    `when` and the effect it performs. The two JSON uses move with them, `Proto.Container`
+    (`furnishings.exem.json`), whose Open and Close write `ContainerState`, and the mossy wall
+    switch (`wall-tiles.exem.json`); then the `Interactions` aspect, `register_interaction_action`,
+    `DebugLog` and `ContainerToggle` go.
+  - Before the syntax is fixed, the parsimony check: written side by side, keywords
+    (`interaction use { ... }`, `on attach`) against one general declaration whose slots may hold
+    functions, checked against a schema the host registers for each kind (aspect, interaction, later
+    goal), so the host gains schemas rather than the parser keywords.
+  - A scenery animation's input becomes a `when` formula (D116), replacing `AnimationInput`.
+  - Proved by a hook writing state that a formula reads, and by the mossy wall switch: Use toggles
+    `ToggleSwitch`'s `on`, and the switch plays its two-state animation, its `when` reading `on`.
+    Wiring across entities is PAN79's.
 
 ## Interaction
 
@@ -196,59 +205,78 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104b, PAN104c. The stock elements puzzles
-  are built from, and how they are wired together, on SAGA's cells and reactions (PAN105) and
-  scripted aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled
-  openables, automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes
-  scripted: when a trap fires), wired by reactive formulas so that elaborate puzzles combine simple
-  parts ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under
-  Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
-  (`wall-tiles.exem.json`). What a sensor senses is native, by collision group, as faery's
-  `canSense` sensed actors only, with a formula filter only once a puzzle needs one (a heavy object
-  on a plate). Beside them: triggers (a circle or rectangle the player enters), encounter zones,
-  waymarks for scripted NPC events, and patrol paths, fixtures that goals name
-  ([goal-format.md](goal-format.md), Open). One element signals another through cells, a formula
-  over the other's state, wherever a formula can say it, and through an event only where none can:
-  engines built on events, such as the Creation Kit, tangle when several signals must be correlated.
-  Which parts are native aspects and which are SAGA is to decide. Proposed: logic that spans several
-  entities lives on a relay, an exemplar placed in the precinct, not as wiring stored on its
-  participants, which in faery left no list of what was wired and no owner when several took part. A
-  relay holds two aspects. A native visualization aspect gives its gizmo in the editor (icon, shape,
-  color). A logic aspect is a scripted aspect (PAN104). A field of the instance-reference type is a
-  role: the editor draws a wire to its target, and fills it two ways, never by typing: by picking in
-  the world, or from a popup listing instances to browse, with a filter, as PAN35's chooser does.
-  The popup lists the labelled instances in the index, across the game, and the loaded precincts'
-  unlabelled keyed instances by exemplar and place. Logic on one entity is a scripted aspect on that
-  entity. A placed relay's roles are its logic aspect's `instance` block, set on the instance, while
-  its tuning stays inherited from the exemplar (D103). A bound instance gets a key (D87). The editor
-  lists a precinct's relays, draws a selected one's wires, and lists those that name a selected
-  instance; selecting, moving and copying apply to relays, and copying a trap with its relay binds
-  the copy's roles to the copied instances. One wiring gesture places a stock relay for a button
-  opening a door, so the simplest case stays one step. Precedents: Planet's Edge's logic tiles
-  beyond the map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with picked
-  references. A precinct is named by its realm and coordinates, and is like a module: its walls and
-  fixtures that others can refer to are its exports, by key ([instances.md](instances.md), Ids). A
-  reference into a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md),
-  Values). faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
-  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
-  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
-  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
-  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
-  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
-  a button ([goals.md](goals.md), step 4).
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN104c, PAN105, PAN116. The first
+  mechanism, from faery's `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
+  `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
+  the plate, so the player must get a follower or a weight onto it to pass.
+  - A native `SensorState`, written by physics from the `PressurePlate`'s sensor collider, sensing
+    actors only, as faery's `canSense` did.
+  - `SpearTrapControlled` gets a scripted aspect whose `instance` block holds `plate`, a role, and
+    its `SceneryAnimations` open the spears while `self.spear_trap.plate?.sensor.active ?? false`
+    (D116); which way the `Spears` clip plays is read in the chunk. Its collider follows the
+    animated node, as PAN59's door leaf does.
+  - Picking the role in the world comes with it; the popup chooser stays PAN79's. It meets X138's
+    gate.
+  - Proved by the player standing on the plate, since there are no followers yet (X131) and nothing
+    to use as a weight (X140). No relay, and no damage until actors have health (PAN111). Where it
+    is placed is decided in the chunk.
+- **PAN79 Mechanisms.** *Needs:* PAN71, PAN79a, PAN102. The stock elements puzzles are built from,
+  and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted aspects.
+  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
+  automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
+  a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
+  ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
+  scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
+  What a sensor senses is native, by collision group, as faery's `canSense` sensed actors only, with
+  a formula filter only once a puzzle needs one (a heavy object on a plate). Beside them: triggers
+  (a circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
+  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
+  signals another through cells, a formula over the other's state, wherever a formula can say it,
+  and through an event only where none can: engines built on events, such as the Creation Kit,
+  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
+  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
+  the precinct, not as wiring stored on its participants, which in faery left no list of what was
+  wired and no owner when several took part. A relay holds two aspects. A native visualization
+  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
+  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target,
+  and fills it two ways, never by typing: by picking in the world, or from a popup listing instances
+  to browse, with a filter, as PAN35's chooser does. The popup lists the labelled instances in the
+  index, across the game, and the loaded precincts' unlabelled keyed instances by exemplar and
+  place. Logic on one entity is a scripted aspect on that entity. A placed relay's roles are its
+  logic aspect's `instance` block, set on the instance, while its tuning stays inherited from the
+  exemplar (D103). A bound instance gets a key (D87). The editor lists a precinct's relays, draws a
+  selected one's wires, and lists those that name a selected instance; selecting, moving and copying
+  apply to relays, and copying a trap with its relay binds the copy's roles to the copied instances.
+  One wiring gesture places a stock relay for a button opening a door, so the simplest case stays
+  one step. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`,
+  and Unreal's placed Blueprint actors with picked references. A precinct is named by its realm and
+  coordinates, and is like a module: its walls and fixtures that others can refer to are its
+  exports, by key ([instances.md](instances.md), Ids). A reference into a precinct that is not
+  loaded suspends the formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown
+  currency, and likely to differ from what Panoply builds: in `design/Scripting.md`, a reference
+  syntax, an `Instance` observable that is null while its target is not loaded, a `StructureRefNode`
+  watching structures load and unload, and global variables or lazily loaded scope objects for
+  long-range wiring; global references by realm and coordinates in `design/scripting/predicates.md`;
+  animated instances (moving parts) kept apart from static instancing in
+  `engine/src/models/InstancedModels.ts`. The first relay is PAN79a's trap's second part, which
+  faery never built: once past the spears, the player throws a switch that locks them down, so the
+  follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
+  the switch is on, logic across three entities. Then PAN6's door opened by a button
+  ([goals.md](goals.md), step 4).
 - **PAN106 Containers.** *Needs:* PAN71, PAN104c. What a container holds. An open chest shows its
   contents on an inventory screen whose background its container type chooses, and items move
   between it and the player; a locked one opens for the key its instance names, and a corpse, once
-  combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that
-  moves items, so it brings in X42. Built as D105 divides it: `Container` and `Lock` become scripted
-  aspects over native components that routing (PAN16j), colliders and `SceneryAnimations` read,
-  whether open and whether locked, which the native `Lock` and `ContainerState` hold now; the item
-  list is a native `Inventory`, which scripts reach through host functions (`has_item(actor, key)`).
-  The screen is native, opened by a host command naming its style. Closing it is an event to the
-  entity that opened it, which a hook handles (`on screen_closed`), so the screen never writes a
-  script's field, as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse
-  handles it with no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after
-  faery's fixed `openDelay`, which needs that event.
+  combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). It or PAN120b,
+  whichever comes first, moves the first items, and so brings in X42's items. Built as D105 divides
+  it: `Container` and `Lock` become scripted aspects over native components that routing (PAN16j),
+  colliders and `SceneryAnimations` read, whether open and whether locked, which the native `Lock`
+  and `ContainerState` hold now; the item list is a native `Inventory`, which scripts reach through
+  host functions (`has_item(actor, key)`). The screen is native, opened by a host command naming its
+  style. Closing it is an event to the entity that opened it, which a hook handles
+  (`on screen_closed`), so the screen never writes a script's field, as faery's wrote the
+  container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with no lid. It opens once
+  `SceneryAnimations` reports the lid's clip done, not after faery's fixed `openDelay`, which needs
+  that event.
 - **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
   is a scenery aspect whose interaction shows its text; a document is an inventory item that links
   to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
@@ -496,6 +524,37 @@ D111.
   the precinct chunk. The camera angle is saved too; a load follows the player with
   `Viewpoint::follow_snapped`, which keeps it. The first state to save: a chest left open.
 
+## A Free Lunch
+
+PAN120, the first quest, in lettered parts: "A Free Lunch", whose steps are in [goals.md](goals.md).
+It needs no combat, so the quest path (dialogue, quest stages, inventory) is proved before "Up in
+Arms". faery's `Guardsman.Remarks`, `Guardsman.Dialogue` and `Guardsman.Lunch`
+(`los-data/meta/regional/tambry.json`) and its `Freelunch` quest (`regional/playground.json`) are
+converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
+
+- **PAN120a Dialogue.** *Needs:* PAN104c. The `DialogueSet` catalog kind (D90) and a native
+  conversation controller on faery's rules (X17, Behavior packages), with its screen. The screen
+  always offers a way out, which a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit
+  came from whichever set held a `goodbye` (one in `village.json`), so a conversation could lose its
+  exit with no error. A Talk interaction on an actor (D114), its effect a host command that starts
+  the conversation; the guardsman stands at his post. Option conditions are on-demand formulas
+  (D116).
+- **PAN120b Quest and inventory.** *Needs:* PAN105, PAN120a. The `Quest` catalog kind and quest
+  state: stages whose conditions are reactive formulas (`has_item(player, GuardLunch)`), set from
+  dialogue by `gostage`, and a stage's entry taking the lunch from the player. A native `Inventory`
+  with `has_item` and host commands to give and remove items, X42's items. The lunch in a stone
+  sarcophagus near the guardsman. Settled in the chunk: whether a quest is JSON with embedded
+  formulas, as faery's were and as json-schema completion serves, or a SAGA module; whether taking
+  the lunch uses PAN106's container screen or a plain Take; and X123, whose gate this quest meets.
+- **PAN120c Remarks and topics.** *Needs:* PAN104c, PAN105, PAN120a. A remark is a scripted event,
+  not a `RemarkSet` with weights in JSON: a hook on the guardsman's aspect fires as he passes the
+  player (the `proximity` memo), and its effect picks a line by SAGA logic, a seeded roll, and
+  speaks it through a host command, shown in a speech bubble. The lines stay in JSON, by id, for
+  localization (X77), each with the topic it teaches; the topics the player knows unlock dialogue
+  options ("You mentioned a festival?"). Revises X17's remark sets and D86's remarks aspect.
+- **PAN120d Patrol.** *Needs:* PAN16h, PAN102, PAN120a. The guardsman walks a patrol path in the
+  lair, the first goal tree (X17), and stops and faces the player when talked to.
+
 ## First playable
 
 - **PAN111 Combat arena.** *Needs:* PAN16h, X53. The first test of combat's fun, the biggest fun
@@ -505,11 +564,11 @@ D111.
   Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
   are enough to judge the decisions; whether players accept enemies waiting as a convention depends
   on presentation, and is judged here only roughly.
-- **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111. The first playable: the "Up in Arms"
-  quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest phases
-  Sergeant Stone and the Crimson Watch, so it builds presence (D106), with both latches: an actor
-  appears and disappears only out of view, whether its presence changes or its precinct is evicted
-  ([instances.md](instances.md), Actors far from home). Revises R10, which latches only
+- **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111, PAN120. The first playable: the "Up
+  in Arms" quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its quest
+  phases Sergeant Stone and the Crimson Watch, so it builds presence (D106), with both latches: an
+  actor appears and disappears only out of view, whether its presence changes or its precinct is
+  evicted ([instances.md](instances.md), Actors far from home). Revises R10, which latches only
   disappearing.
 
 ## Performance

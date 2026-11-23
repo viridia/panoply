@@ -341,8 +341,3 @@ confirmed by running something or only by reading. Numbers are never reused.
   the next save wrote. Candidates: a longer timeout, or the real fix, a reload of an asset edited
   since its save not replacing it. Confirmed by running (the run's `app.log`: save 07.823, timeout
   08.829, undo 08.996, reload 09.092, save 09.153).
-- **I80** D105 may be too narrow: it keeps native systems from reading a scripted field, so a native
-  animation cannot follow a scripted cell, as the wall switch's two-state animation would follow
-  `ToggleSwitch`'s `on` (`SceneryAnimations` reads only native state, `AnimationInput`). The author
-  expects animations driven by scripted cells to matter. To discuss before PAN104c, which animates
-  the switch and must not settle it in passing. Discussed with the author.
