@@ -76,7 +76,7 @@ fn exemplar_json(
     let mut aspects = Map::new();
     for aspect in &exemplar.aspects {
         aspects.insert(
-            aspect.reflect_short_type_path().to_string(),
+            aspect.key().to_string(),
             reflect_json(aspect.as_partial_reflect(), registry)?,
         );
     }

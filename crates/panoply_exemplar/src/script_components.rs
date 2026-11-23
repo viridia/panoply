@@ -13,8 +13,8 @@ use crate::{exemplar::ExemplarData, Aspect, Exemplar};
 pub struct ScriptComponents(HashMap<TypeId, ScriptComponent>);
 
 struct ScriptComponent {
-    aspect: TypeId,
-    aspect_name: &'static str,
+    /// The key of the aspect that gives an instance the component.
+    aspect: &'static str,
     accessor: &'static str,
 }
 
@@ -45,8 +45,7 @@ impl ScriptComponentAppExt for App {
             .insert(
                 TypeId::of::<C>(),
                 ScriptComponent {
-                    aspect: TypeId::of::<A>(),
-                    aspect_name: A::short_type_path(),
+                    aspect: A::short_type_path(),
                     accessor,
                 },
             );
@@ -83,7 +82,7 @@ pub(crate) fn missing_aspects<'a>(
                 missing.push(MissingAspect {
                     formula: formula.source(),
                     accessor: component.accessor,
-                    aspect: component.aspect_name,
+                    aspect: component.aspect,
                 });
             }
         }
@@ -128,35 +127,29 @@ mod tests {
     use super::*;
     use crate::{
         interaction::tests::{lid_host, load_interactions, Lid},
-        DetachAspect, InstanceType, RemoveComponent,
+        AspectList, InstanceType, NativeAspect,
     };
 
-    /// The aspect that gives an instance a [`Lid`].
+    /// The aspect that gives an instance a [`Lid`], its state, and has no config.
     #[derive(Reflect, Clone, Default)]
     struct Lidded;
 
-    impl Aspect for Lidded {
-        fn name(&self) -> &str {
-            "Lidded"
+    impl NativeAspect for Lidded {
+        type Config = ();
+
+        fn config(&self) {}
+
+        fn attach_state(&self, entity: &mut EntityWorldMut) {
+            entity.insert_if_new(Lid::default());
         }
 
         fn can_attach(&self, _meta_type: InstanceType) -> bool {
             true
         }
-
-        fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-            static DETACH: RemoveComponent<Lid> = RemoveComponent::<Lid>::new();
-            entity.insert_if_new(Lid::default());
-            &DETACH
-        }
-
-        fn clone_boxed(&self) -> Box<dyn Aspect> {
-            Box::new(self.clone())
-        }
     }
 
     fn exemplar(
-        aspects: Vec<Box<dyn Aspect>>,
+        aspects: AspectList,
         extends: Option<Handle<Exemplar>>,
         formulas: Vec<panoply_saga::FormulaRef>,
     ) -> ExemplarData {
@@ -182,14 +175,13 @@ mod tests {
         components.0.insert(
             TypeId::of::<Lid>(),
             ScriptComponent {
-                aspect: TypeId::of::<Lidded>(),
-                aspect_name: "Lidded",
+                aspect: "Lidded",
                 accessor: "lid",
             },
         );
         let mut exemplars = Assets::<Exemplar>::default();
 
-        let lidded = exemplar(vec![Box::new(Lidded)], None, formulas.clone());
+        let lidded = exemplar(vec![Arc::new(Lidded)], None, formulas.clone());
         assert!(missing_aspects(&exemplars, &lidded, &components).is_empty());
 
         let lidless = exemplar(Vec::new(), None, formulas.clone());
@@ -204,7 +196,7 @@ mod tests {
 
         // An aspect inherited along the chain counts.
         let base = exemplars.add(Exemplar(Arc::new(exemplar(
-            vec![Box::new(Lidded)],
+            vec![Arc::new(Lidded)],
             None,
             Vec::new(),
         ))));

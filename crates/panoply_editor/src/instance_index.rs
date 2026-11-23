@@ -241,7 +241,10 @@ mod tests {
         let path = Path::new("scenery/precincts/holm-overland/p010-n003.msgpack");
         assert_eq!(PrecinctPlace::of_path(path), Some(place(10, -3)));
         assert_eq!(place(10, 16).to_string(), "holm-overland (10, 16)");
-        assert_eq!(PrecinctPlace::of_path(Path::new("x/q010-p000.msgpack")), None);
+        assert_eq!(
+            PrecinctPlace::of_path(Path::new("x/q010-p000.msgpack")),
+            None
+        );
     }
 
     /// The index lists only labelled instances, one to a line, and reads back as it was written.
@@ -283,7 +286,10 @@ mod tests {
         let loaded = HashSet::from_iter([place(10, 16)]);
         assert_eq!(index.labels_outside(&loaded).count(), 0);
         let loaded = HashSet::from_iter([place(1, 1)]);
-        assert_eq!(index.labels_outside(&loaded).collect::<Vec<_>>(), ["sgt.stone"]);
+        assert_eq!(
+            index.labels_outside(&loaded).collect::<Vec<_>>(),
+            ["sgt.stone"]
+        );
     }
 
     /// A labelled instance moved into another precinct keeps its key, and its line in the index

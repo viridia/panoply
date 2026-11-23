@@ -43,23 +43,15 @@ pub struct Portal {
     pub displacement: Option<f32>,
 }
 
-impl Aspect for Portal {
-    fn name(&self) -> &str {
-        "Portal"
+impl NativeAspect for Portal {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Portal> = RemoveComponent::<Portal>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -74,23 +66,15 @@ pub struct PortalTarget {
     pub pos: Vec3,
 }
 
-impl Aspect for PortalTarget {
-    fn name(&self) -> &str {
-        "PortalTarget"
+impl NativeAspect for PortalTarget {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<PortalTarget> = RemoveComponent::<PortalTarget>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 

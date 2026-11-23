@@ -183,7 +183,11 @@ impl PrecinctAsset {
     /// with [`insert_instance`](Self::insert_instance). Its exemplar type stays in this precinct's
     /// table.
     pub fn take_instance(&mut self, iid: &SceneryInstanceId) -> Option<TakenInstance> {
-        if let Some(index) = self.scenery.iter().position(|instance| instance.iid == *iid) {
+        if let Some(index) = self
+            .scenery
+            .iter()
+            .position(|instance| instance.iid == *iid)
+        {
             let instance = self.scenery.remove(index);
             let exemplar = self.scenery_types.get(instance.id)?.clone();
             return Some(TakenInstance::Scenery { exemplar, instance });
@@ -900,10 +904,16 @@ mod tests {
         let guard = precinct.add_actor(GUARD.into(), 0., Vec3::X);
         let keyed = precinct.set_label(&wall, Some("gate")).unwrap();
         assert!(keyed.key().is_some());
-        assert_eq!(precinct.set_label(&keyed, Some("postern")), Some(keyed.clone()));
+        assert_eq!(
+            precinct.set_label(&keyed, Some("postern")),
+            Some(keyed.clone())
+        );
         assert_eq!(precinct.set_label(&guard, Some("postern")), None);
         assert_eq!(precinct.set_label(&guard, Some("")), None);
-        assert_eq!(precinct.set_label(&guard, Some("stone")), Some(guard.clone()));
+        assert_eq!(
+            precinct.set_label(&guard, Some("stone")),
+            Some(guard.clone())
+        );
         assert_eq!(precinct.set_label(&keyed, None), Some(keyed.clone()));
         assert_eq!(precinct.set_label(&wall, Some("gate")), None);
         let labels: Vec<_> = precinct.labels().collect();

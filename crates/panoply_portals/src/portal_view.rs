@@ -142,7 +142,9 @@ impl PrimaryView {
         let origin = self.viewport.min.as_vec2();
         let size = self.viewport.size().as_vec2();
         let to_pixels = |ndc: Vec2| origin + Vec2::new(ndc.x + 1., 1. - ndc.y) / 2. * size;
-        let min = to_pixels(Vec2::new(ndc.min.x, ndc.max.y)).floor().as_uvec2();
+        let min = to_pixels(Vec2::new(ndc.min.x, ndc.max.y))
+            .floor()
+            .as_uvec2();
         let max = to_pixels(Vec2::new(ndc.max.x, ndc.min.y)).ceil().as_uvec2();
         let pixels = URect::from_corners(min, max).intersect(self.viewport);
         (!pixels.is_empty()).then_some(pixels)
@@ -164,10 +166,13 @@ impl PrimaryView {
 /// takes it, facing away from the camera; `None` if the camera is all but on it.
 fn far_clip_plane(camera: &Transform, far_center: Vec3, normal: Vec3) -> Option<Vec4> {
     let toward = far_center - camera.translation;
-    let normal = if toward.dot(normal) >= 0. { normal } else { -normal };
+    let normal = if toward.dot(normal) >= 0. {
+        normal
+    } else {
+        -normal
+    };
     let distance = toward.dot(normal);
-    (distance >= MIN_CLIP_DISTANCE)
-        .then(|| (camera.rotation.inverse() * normal).extend(-distance))
+    (distance >= MIN_CLIP_DISTANCE).then(|| (camera.rotation.inverse() * normal).extend(-distance))
 }
 
 /// Starts, places and ends each portal's view, and lists the far ends to load. After the primary
@@ -189,12 +194,21 @@ pub(crate) fn update_portal_views(
         Option<&mut PortalView>,
     )>,
     mut q_cameras: Query<
-        (&mut Transform, &mut Projection, &mut Camera, &mut RenderTarget),
+        (
+            &mut Transform,
+            &mut Projection,
+            &mut Camera,
+            &mut RenderTarget,
+        ),
         (With<PortalCamera>, Without<PrimaryCamera>),
     >,
     mut q_apertures: Query<
         &mut Transform,
-        (With<PortalAperture>, Without<PortalCamera>, Without<PrimaryCamera>),
+        (
+            With<PortalAperture>,
+            Without<PortalCamera>,
+            Without<PrimaryCamera>,
+        ),
     >,
     mut materials: ResMut<Assets<ApertureMaterial>>,
     mut images: ResMut<Assets<Image>>,
@@ -273,11 +287,7 @@ pub(crate) fn update_portal_views(
             // cap, a portal into its own realm culled against the primary camera's 100 m.
             far: (far_center - camera_transform.translation).length() + 2. * PORTAL_VIEW_HALF_SIZE,
             rect: primary.to_ndc(rect),
-            clip_plane: far_clip_plane(
-                &camera_transform,
-                far_center,
-                aperture.rotation * Vec3::Z,
-            ),
+            clip_plane: far_clip_plane(&camera_transform, far_center, aperture.rotation * Vec3::Z),
         });
         let viewport = Viewport {
             physical_position: UVec2::ZERO,
@@ -447,10 +457,26 @@ mod tests {
     #[test]
     fn front_is_seen_against_the_normal() {
         let aperture = Transform::IDENTITY; // Facing +z.
-        assert!(faces_viewer(PortalSide::Front, &aperture, Vec3::new(0., 0., -5.)));
-        assert!(!faces_viewer(PortalSide::Front, &aperture, Vec3::new(0., 0., 5.)));
-        assert!(faces_viewer(PortalSide::Back, &aperture, Vec3::new(0., 0., 5.)));
-        assert!(faces_viewer(PortalSide::Both, &aperture, Vec3::new(0., 0., 5.)));
+        assert!(faces_viewer(
+            PortalSide::Front,
+            &aperture,
+            Vec3::new(0., 0., -5.)
+        ));
+        assert!(!faces_viewer(
+            PortalSide::Front,
+            &aperture,
+            Vec3::new(0., 0., 5.)
+        ));
+        assert!(faces_viewer(
+            PortalSide::Back,
+            &aperture,
+            Vec3::new(0., 0., 5.)
+        ));
+        assert!(faces_viewer(
+            PortalSide::Both,
+            &aperture,
+            Vec3::new(0., 0., 5.)
+        ));
     }
 
     /// The far plane faces away from the camera whichever way the aperture faces.

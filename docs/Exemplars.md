@@ -54,11 +54,10 @@ attached to the exemplar since there will be many instances of a given portal ty
 each portal will reference a different target location, so the `PortalTarget` aspect is separate,
 and is generally attached directly to the instance rather than to the exemplar.
 
-Most aspects are also ECS `Components`: when the aspect is attached to an instance, a clone
-of the aspect is inserted into the entity. However, this is not always the case: the `attach()`
-method can insert multiple components or perform other operations on the entity. The only
-requirement is that the changes be undoable, via the `DetachAspect` trait which is produced
-during attachment.
+An aspect is known by its key (`Aspect::key`): a native aspect's short type name, a scripted one's
+package path and name (D107). A native aspect implements `NativeAspect`, whose `Config` bundle
+attaching inserts and detaching removes: usually the aspect itself, `()` when nothing queries it.
+Its state, if it has any, `attach_state` inserts where the entity lacks it, and detaching leaves.
 
 ## Config and state
 
@@ -105,10 +104,10 @@ any extension exemplars, eliminating duplicate aspects. If the entity already ha
 attached, then the command will do a "diff" of the old and new state, adding and removing
 aspects as needed, while preserving the state of aspects that didn't change.
 
-This `diffing` is facilitated by the `OwnedAspects` component, which is a bookkeeping component
-on the entity that stores the `Detach` trait object for each aspect that has been attached to the
-entity. `OwnedAspect` is a newtype struct which contains a `HashMap<TypeId, &'static dyn Detach>`.
-This allows any aspect to be removed from the entity simply by knowing it's type id.
+The entity's `OwnedAspects` holds the definition of each aspect attached, shared with the asset
+(`Arc<dyn Aspect>`), in the order they were resolved. An aspect whose key is no longer resolved is
+detached through its old definition. Gathering like data from aspects of different kinds iterates
+it, calling trait methods.
 
 ## Editing workflow
 
@@ -233,13 +232,11 @@ is implemented.
 
   So reading a native aspect from its definition by Rust type, along the chain, has to keep working.
   The registries already tell a component from the aspect that supplies it (`ScriptComponents` maps
-  `ContainerState` to `Container`; interactions register actions by aspect). What keys on an
-  aspect's type is the union (`TypeId`, in `UpdateAspects` and `OwnedAspects`), the editor (the
-  short type path, in adding, removing, undo and each aspect's property root), and the files
-  (`aspects` keyed by short type name). An aspect key replaces those three; keyed aspects and native
-  and external aspects need the same change. Over native aspects this alternative and native and
-  external aspects then do the same; they differ in what a package is called and where uniqueness is
-  checked.
+  `ContainerState` to `Container`; interactions register actions by aspect). The union
+  (`UpdateAspects`, `OwnedAspects`), the editor and the files know an aspect by its key
+  (`Aspect::key`), not its type, as keyed aspects and native and external aspects both need. Over
+  native aspects this alternative and native and external aspects then do the same; they differ in
+  what a package is called and where uniqueness is checked.
 - D59's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
   attach, which is what formulas read.
 - A BSN entity is one component per type, so definitions, several of one kind among them, do not map
@@ -522,29 +519,17 @@ pub struct PortalTarget {
     pub(crate) pos: Vec3,
 }
 
-impl Aspect for PortalTarget {
-    /// The name to display in the editor.
-    fn name(&self) -> &str {
-        "PortalTarget"
+impl NativeAspect for PortalTarget {
+    /// What attaching inserts and detaching removes.
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
-    /// Predicate function which defines what kind of instances the aspect can be attached to.
-    /// This is used in the interactive aspect chooser UI when editing an instance or exemplar.
+    /// Which kinds of instance the aspect can be attached to, as the aspect chooser offers it.
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    /// Attach an aspect to an instance. This must return a "detach" object, which is responsible
-    /// for "undoing" the attach operation when the aspect is removed.
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<PortalTarget> = RemoveComponent::<PortalTarget>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    /// Method to clone an aspect, used during instance deserialization.
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 ```

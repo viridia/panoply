@@ -200,7 +200,7 @@ impl AspectHolder for ExemplarRoot {
     fn modify_aspects(
         &self,
         world: &mut World,
-        change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
+        change: &mut dyn FnMut(&mut Vec<Arc<dyn Aspect>>) -> Result<(), BevyError>,
     ) -> Result<(), BevyError> {
         self.edit(world, |data, _| change(&mut data.aspects))
     }
@@ -297,7 +297,7 @@ fn inspect_chosen_exemplar(
     roots.extend(exemplar.0.aspects.iter().map(|aspect| {
         Arc::new(ExemplarAspect {
             exemplar: path.clone_owned(),
-            aspect: aspect.reflect_short_type_path().to_string(),
+            aspect: aspect.key().to_string(),
         }) as Arc<dyn PropertyRoot>
     }));
     let same = inspected.roots.len() == roots.len()

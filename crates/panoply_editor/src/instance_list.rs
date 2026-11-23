@@ -157,7 +157,12 @@ fn instance_rows(
     });
     let actors = asset.actors.iter().map(|actor| {
         let path = actor.exemplar.as_str();
-        (&actor.iid, actor.label.as_deref(), path, InstanceKind::Actor)
+        (
+            &actor.iid,
+            actor.label.as_deref(),
+            path,
+            InstanceKind::Actor,
+        )
     });
     let mut seen = HashMap::<&str, usize>::new();
     let mut rows: Vec<_> = scenery
@@ -305,27 +310,24 @@ impl ImmediateAttach<CapsUiFeathers> for InstanceFilterMenu {
                         #InstanceFilter
                     }
                 });
-                ui.ch()
-                    .on_spawn_apply_scene(right_aligned_popup)
-                    .add(|ui| {
-                        let section = || Node {
-                            flex_direction: FlexDirection::Column,
-                            padding: UiRect::axes(px(8), px(4)),
-                            row_gap: px(4),
-                            ..default()
-                        };
-                        ui.ch().on_spawn_insert(section).add(|ui| {
-                            checkbox(ui.ch_id("actor"), "Actor").checked(&mut edited.actor);
-                            checkbox(ui.ch_id("wall"), "Wall").checked(&mut edited.wall);
-                            checkbox(ui.ch_id("fixture"), "Fixture")
-                                .checked(&mut edited.fixture);
-                        });
-                        ui.ch().on_spawn_apply_scene(|| bsn! { @FeathersMenuDivider });
-                        ui.ch().on_spawn_insert(section).add(|ui| {
-                            checkbox(ui.ch_id("labelled"), "Labeled")
-                                .checked(&mut edited.labelled);
-                        });
+                ui.ch().on_spawn_apply_scene(right_aligned_popup).add(|ui| {
+                    let section = || Node {
+                        flex_direction: FlexDirection::Column,
+                        padding: UiRect::axes(px(8), px(4)),
+                        row_gap: px(4),
+                        ..default()
+                    };
+                    ui.ch().on_spawn_insert(section).add(|ui| {
+                        checkbox(ui.ch_id("actor"), "Actor").checked(&mut edited.actor);
+                        checkbox(ui.ch_id("wall"), "Wall").checked(&mut edited.wall);
+                        checkbox(ui.ch_id("fixture"), "Fixture").checked(&mut edited.fixture);
                     });
+                    ui.ch()
+                        .on_spawn_apply_scene(|| bsn! { @FeathersMenuDivider });
+                    ui.ch().on_spawn_insert(section).add(|ui| {
+                        checkbox(ui.ch_id("labelled"), "Labeled").checked(&mut edited.labelled);
+                    });
+                });
             });
         filter.set_if_neq(edited);
     }

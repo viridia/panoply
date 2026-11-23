@@ -158,18 +158,9 @@ The engine's design, seen whole, and what follows from it.
 What an aspect is, and how an instance overrides its exemplar's, for behavior and for the scripted
 aspects that mechanisms, containers and signs are built on.
 
-- **PAN108 Aspect keys.** D107's plumbing, native only, with no goal runtime: an aspect key in place
-  of the `TypeId` in `UpdateAspects` and `OwnedAspects`, the short type path in the editor (adding,
-  removing, undo, each aspect's property root) and the type name in the files; each native aspect's
-  config a `Bundle` behind a dyn-compatible `Aspect`, detached by a generic `remove` in place of the
-  hand-written `RemoveComponent` statics; `OwnedAspects` keeping each aspect's resolved definition
-  beside its detach, with a per-entity iteration over them for gathering across kinds; a test aspect
-  registered by a key that is not a Rust type, attached and detached but inert, standing in for a
-  scripted one until PAN104; `find_aspect` still reading native aspects along the chain. Nothing a
-  player or author sees changes.
-- **PAN104 Scripted aspects.** *Needs:* PAN105, PAN108. An aspect declared in a SAGA script, as
-  faery's scripted aspects were, with fields and hooks. A `.saga` module declares any number of
-  named aspects, keyed by package path and name, each naming the kinds of instance it attaches to
+- **PAN104 Scripted aspects.** *Needs:* PAN105. An aspect declared in a SAGA script, as faery's
+  scripted aspects were, with fields and hooks. A `.saga` module declares any number of named
+  aspects, keyed by package path and name, each naming the kinds of instance it attaches to
   (`aspect Lock for Fixture, Wall`), as `Aspect::can_attach` does. A field is config, unmarked;
   `state`, which play changes and a save keeps, starting from its authored value (D74); or
   `derived`, a formula recomputed as what it reads changes, never stored. A keyword changes what a
@@ -283,9 +274,9 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92, PAN108. Roots for an instance
-  picked in selection mode and for the realm panel's selected nav point (faery's `NavPointEditor`).
-  An instance's aspects show as overrides of its exemplar's, and those it adds (D104) as added. The
+- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92. Roots for an instance picked in
+  selection mode and for the realm panel's selected nav point (faery's `NavPointEditor`). An
+  instance's aspects show as overrides of its exemplar's, and those it adds (D104) as added. The
   scenery panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges
   edits into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar,
   whose old name joins its `alias` list, so that precincts naming it keep working until they are

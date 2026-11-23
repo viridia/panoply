@@ -183,7 +183,11 @@ mod tests {
             let nearer = on_plane - normal * 1.;
             let beyond = on_plane + normal * 1.;
             let far_beyond = on_plane + normal * 40.;
-            assert!(depth(matrix, nearer) > 1., "nearer: {}", depth(matrix, nearer));
+            assert!(
+                depth(matrix, nearer) > 1.,
+                "nearer: {}",
+                depth(matrix, nearer)
+            );
             for point in [beyond, far_beyond] {
                 let d = depth(matrix, point);
                 assert!((0. ..=1.).contains(&d), "beyond: {d}");

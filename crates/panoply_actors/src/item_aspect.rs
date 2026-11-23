@@ -10,23 +10,15 @@ use super::ITEM_TYPE;
 #[reflect(@AspectIcon("editor/icons/lucide/gem.png"))]
 pub struct ItemModel(pub String);
 
-impl Aspect for ItemModel {
-    fn name(&self) -> &str {
-        "ItemModel"
+impl NativeAspect for ItemModel {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ITEM_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<ItemModel> = RemoveComponent::<ItemModel>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -36,22 +28,14 @@ impl Aspect for ItemModel {
 #[reflect(@AspectIcon("editor/icons/lucide/backpack.png"))]
 pub struct EquipSlot(pub String);
 
-impl Aspect for EquipSlot {
-    fn name(&self) -> &str {
-        "EquipSlot"
+impl NativeAspect for EquipSlot {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ITEM_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<EquipSlot> = RemoveComponent::<EquipSlot>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }

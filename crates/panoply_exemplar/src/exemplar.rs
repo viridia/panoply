@@ -1,13 +1,13 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use panoply_saga::FormulaRef;
-use std::any::TypeId;
 use std::sync::Arc;
 
 use crate::InstanceType;
 
-/// Defines a prototype for instantiating a game object.
-#[derive(TypePath)]
+/// Defines a prototype for instantiating a game object. A clone shares its aspects; one changed
+/// through [`aspect_mut`](crate::aspect_mut) is copied first.
+#[derive(TypePath, Clone)]
 pub struct ExemplarData {
     /// Type of instance that this exemplar can create.
     pub meta_type: InstanceType,
@@ -20,7 +20,7 @@ pub struct ExemplarData {
     pub alias: Vec<String>,
 
     /// List of aspects that this exemplar has.
-    pub aspects: Vec<Box<dyn crate::Aspect>>,
+    pub aspects: Vec<Arc<dyn crate::Aspect>>,
 
     /// Inherited prototype for this exemplar.
     pub extends: Option<Handle<Exemplar>>,
@@ -31,24 +31,6 @@ pub struct ExemplarData {
 
     /// The formulas written in this exemplar's aspects, checked once its chain has loaded.
     pub(crate) formulas: Vec<FormulaRef>,
-}
-
-impl Clone for ExemplarData {
-    fn clone(&self) -> Self {
-        Self {
-            meta_type: self.meta_type,
-            display_name: self.display_name.clone(),
-            alias: self.alias.clone(),
-            aspects: self
-                .aspects
-                .iter()
-                .map(|aspect| aspect.clone_boxed())
-                .collect(),
-            extends: self.extends.clone(),
-            is_abstract: self.is_abstract,
-            formulas: self.formulas.clone(),
-        }
-    }
 }
 
 /// An exemplar is like a blueprint or template for an entity.
@@ -155,16 +137,12 @@ impl Exemplar {
         false
     }
 
-    /// Whether an instance of `exemplar` would get the aspect whose type is `aspect`, from it or
+    /// Whether an instance of `exemplar` would get the aspect whose key is `aspect`, from it or
     /// along its inheritance chain.
-    pub fn has_aspect(
-        exemplars: &Assets<Exemplar>,
-        exemplar: &ExemplarData,
-        aspect: TypeId,
-    ) -> bool {
+    pub fn has_aspect(exemplars: &Assets<Exemplar>, exemplar: &ExemplarData, aspect: &str) -> bool {
         let mut next = Some(exemplar);
         while let Some(exemplar) = next {
-            if exemplar.aspects.iter().any(|a| a.id() == aspect) {
+            if exemplar.aspects.iter().any(|a| a.key() == aspect) {
                 return true;
             }
             next = exemplar
@@ -192,28 +170,20 @@ pub struct ExemplarCatalog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Aspect, DetachAspect, RemoveComponent};
+    use crate::{aspect_mut, NativeAspect};
 
     #[derive(Component, Reflect, Clone, Default)]
     struct Height(f32);
 
-    impl Aspect for Height {
-        fn name(&self) -> &str {
-            "Height"
+    impl NativeAspect for Height {
+        type Config = Self;
+
+        fn config(&self) -> Self {
+            self.clone()
         }
 
         fn can_attach(&self, _meta_type: InstanceType) -> bool {
             true
-        }
-
-        fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-            static DETACH: RemoveComponent<Height> = RemoveComponent::<Height>::new();
-            entity.insert(self.clone());
-            &DETACH
-        }
-
-        fn clone_boxed(&self) -> Box<dyn Aspect> {
-            Box::new(self.clone())
         }
     }
 
@@ -222,7 +192,7 @@ mod tests {
             meta_type: InstanceType::NONE,
             display_name: None,
             alias: Vec::new(),
-            aspects: vec![Box::new(Height(height))],
+            aspects: vec![Arc::new(Height(height))],
             extends,
             is_abstract: false,
             formulas: Vec::new(),
@@ -235,7 +205,7 @@ mod tests {
     }
 
     fn set_height(data: &mut ExemplarData, value: f32) {
-        let aspect = data.aspects[0].as_reflect_mut();
+        let aspect = aspect_mut(&mut data.aspects[0]).as_reflect_mut();
         aspect.downcast_mut::<Height>().unwrap().0 = value;
     }
 

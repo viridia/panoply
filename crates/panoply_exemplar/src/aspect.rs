@@ -1,4 +1,3 @@
-use bevy::platform::collections::HashMap;
 use bevy::{
     asset::LoadContext,
     prelude::*,
@@ -10,25 +9,22 @@ use bevy::{
 use panoply_saga::FormulaQueue;
 use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
 use std::{
-    any::TypeId,
     fmt::{self, Debug},
+    sync::Arc,
 };
 
 use crate::InstanceType;
 
-/// An Aspect is like an ECS component for a prototype.
+/// An Aspect is like an ECS component for a prototype. It is native, a Rust type implementing
+/// [`NativeAspect`], or scripted, declared in SAGA; both are keyed by [`Aspect::key`] (D107).
 #[reflect_trait]
 pub trait Aspect: Reflect
 where
     Self: 'static + Sync + Send,
 {
-    /// Type name of this aspect
-    fn name(&self) -> &str;
-
-    /// Get the [`TypeId`] for this aspect.
-    fn id(&self) -> TypeId {
-        std::any::TypeId::of::<Self>()
-    }
+    /// The aspect key, which the files, the editor and an entity's [`OwnedAspects`] know it by: a
+    /// native aspect's short type path, a scripted one's package path and name.
+    fn key(&self) -> &str;
 
     /// Whether this aspect can be applied/attached to an instance of the given type.
     fn can_attach(&self, meta_type: InstanceType) -> bool;
@@ -38,7 +34,10 @@ where
     fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {}
 
     /// Attach or apply this aspect to the given entity.
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect;
+    fn attach(&self, entity: &mut EntityWorldMut);
+
+    /// Remove from the given entity what [`attach`](Aspect::attach) inserted, its state aside.
+    fn detach(&self, entity: &mut EntityWorldMut);
 
     /// Clone this aspect as a boxed trait object.
     fn clone_boxed(&self) -> Box<dyn Aspect>;
@@ -76,49 +75,93 @@ where
     //   present?: (self: SelfType, props: Props) => boolean;
 }
 
-/// Tracks the aspects currently attached to this entity.
+/// An aspect that is a Rust type. Its config is a [`Bundle`], which attaching inserts and
+/// detaching removes; the [`Aspect`] it gets from this is the typed layer behind the trait object.
+pub trait NativeAspect: Reflect + TypePath + Clone
+where
+    Self: 'static + Sync + Send,
+{
+    /// The components attaching inserts: usually the aspect itself, several where systems want
+    /// them apart, `()` where nothing queries it.
+    type Config: Bundle;
+
+    /// The config to insert.
+    fn config(&self) -> Self::Config;
+
+    /// Insert the aspect's state where the entity lacks it, so reapplying leaves it as it was
+    /// (D74). Detaching leaves it.
+    #[allow(unused_variables)]
+    fn attach_state(&self, entity: &mut EntityWorldMut) {}
+
+    /// See [`Aspect::can_attach`].
+    fn can_attach(&self, meta_type: InstanceType) -> bool;
+
+    /// See [`Aspect::load_dependencies`].
+    #[allow(unused_variables)]
+    fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {}
+
+    /// See [`Aspect::has_state`].
+    fn has_state(&self) -> bool {
+        false
+    }
+}
+
+impl<T: NativeAspect> Aspect for T {
+    fn key(&self) -> &str {
+        T::short_type_path()
+    }
+
+    fn can_attach(&self, meta_type: InstanceType) -> bool {
+        NativeAspect::can_attach(self, meta_type)
+    }
+
+    fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {
+        NativeAspect::load_dependencies(self, label, load_context);
+    }
+
+    fn attach(&self, entity: &mut EntityWorldMut) {
+        entity.insert(self.config());
+        self.attach_state(entity);
+    }
+
+    fn detach(&self, entity: &mut EntityWorldMut) {
+        entity.remove::<T::Config>();
+    }
+
+    fn clone_boxed(&self) -> Box<dyn Aspect> {
+        Box::new(self.clone())
+    }
+
+    fn has_state(&self) -> bool {
+        NativeAspect::has_state(self)
+    }
+}
+
+/// The aspects attached to this entity, each as its resolved definition, in the order they were
+/// resolved: the instance's own, then its exemplar's, nearest first. Gathering like data from
+/// aspects of different kinds iterates them (D107).
 #[derive(Component)]
-pub struct OwnedAspects(pub(crate) HashMap<TypeId, &'static dyn DetachAspect>);
+pub struct OwnedAspects(pub(crate) Vec<Arc<dyn Aspect>>);
 
-/// Object which can remove an aspect from an entity.
-pub trait DetachAspect: Send + Sync {
-    /// Get the [`TypeId`] for this aspect.
-    fn type_id(&self) -> TypeId;
+impl OwnedAspects {
+    /// Each attached aspect's definition.
+    pub fn iter(&self) -> impl Iterator<Item = &dyn Aspect> {
+        self.0.iter().map(|aspect| aspect.as_ref())
+    }
 
-    /// Remove the aspect from the entity.
-    fn detach_aspect(&self, entity: &mut EntityWorldMut);
-}
-
-/// An `DetachAspect` that removes a specific component from an entity.
-pub struct RemoveComponent<T: Component> {
-    _marker: std::marker::PhantomData<T>,
-}
-
-impl<T: Component> RemoveComponent<T> {
-    /// Create a new `RemoveComponent` for the given component type.
-    pub const fn new() -> Self {
-        RemoveComponent {
-            _marker: std::marker::PhantomData,
-        }
+    /// The definition of the attached aspect whose key is `key`.
+    pub fn get(&self, key: &str) -> Option<&dyn Aspect> {
+        self.iter().find(|aspect| aspect.key() == key)
     }
 }
 
-impl<T: Component> Default for RemoveComponent<T> {
-    fn default() -> Self {
-        Self {
-            _marker: Default::default(),
-        }
+/// `aspect`, to change: shared, it is copied first, since an aspect's definition is never
+/// changed under those holding it.
+pub fn aspect_mut(aspect: &mut Arc<dyn Aspect>) -> &mut dyn Aspect {
+    if Arc::get_mut(aspect).is_none() {
+        *aspect = Arc::from(aspect.clone_boxed());
     }
-}
-
-impl<T: Component> DetachAspect for RemoveComponent<T> {
-    fn type_id(&self) -> TypeId {
-        TypeId::of::<T>()
-    }
-
-    fn detach_aspect(&self, entity: &mut EntityWorldMut) {
-        entity.remove::<T>();
-    }
+    Arc::get_mut(aspect).expect("a fresh copy is not shared")
 }
 
 pub(crate) struct AspectDeserializer<'a> {
@@ -164,8 +207,8 @@ impl<'de> DeserializeSeed<'de> for AspectDeserializer<'_> {
 }
 
 /// A list of aspects associated with a specific instance, rather than an exemplar.
-#[derive(Component, Default)]
-pub struct InstanceAspects(pub Vec<Box<dyn Aspect>>);
+#[derive(Component, Default, Clone)]
+pub struct InstanceAspects(pub Vec<Arc<dyn Aspect>>);
 
 impl InstanceAspects {
     /// True if there are no aspects owned by this entity. Note that "owned" is different from
@@ -180,14 +223,14 @@ impl InstanceAspects {
 impl Debug for InstanceAspects {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for aspect in self.0.iter() {
-            write!(f, "{:?}", aspect.as_reflect().type_id())?;
+            write!(f, "{:?}", aspect.key())?;
         }
         Ok(())
     }
 }
 
 impl InstanceAspects {
-    /// The aspects as a file holds them, a map from each aspect's short type path to its fields,
+    /// The aspects as a file holds them, a map from each aspect's key to its fields,
     /// the form [`AspectListDeserializer`](crate::AspectListDeserializer) reads.
     pub fn serializable<'a>(&'a self, registry: &'a TypeRegistry) -> SerializableAspects<'a> {
         SerializableAspects {
@@ -199,7 +242,7 @@ impl InstanceAspects {
 
 /// Serializes a list of aspects through reflection; see [`InstanceAspects::serializable`].
 pub struct SerializableAspects<'a> {
-    aspects: &'a [Box<dyn Aspect>],
+    aspects: &'a [Arc<dyn Aspect>],
     registry: &'a TypeRegistry,
 }
 
@@ -211,20 +254,10 @@ impl Serialize for SerializableAspects<'_> {
         let mut map = serializer.serialize_map(Some(self.aspects.len()))?;
         for aspect in self.aspects {
             map.serialize_entry(
-                aspect.reflect_short_type_path(),
+                aspect.key(),
                 &TypedReflectSerializer::new(aspect.as_partial_reflect(), self.registry),
             )?;
         }
         map.end()
-    }
-}
-
-impl Clone for InstanceAspects {
-    fn clone(&self) -> Self {
-        let mut aspects = Vec::with_capacity(self.0.len());
-        for aspect in self.0.iter() {
-            aspects.push(aspect.clone_boxed());
-        }
-        InstanceAspects(aspects)
     }
 }

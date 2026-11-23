@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::{
     annotations::{AspectIcon, PropertySummary, ReflectPropertySummary},
-    Aspect, DetachAspect, InstanceType, ReflectAspect, RemoveComponent,
+    InstanceType, NativeAspect, ReflectAspect,
 };
 
 /// How close an interaction can be performed from, when its entry does not say.
@@ -112,23 +112,15 @@ impl Interactions {
     }
 }
 
-impl Aspect for Interactions {
-    fn name(&self) -> &str {
-        "Interactions"
+impl NativeAspect for Interactions {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, _meta_type: InstanceType) -> bool {
         true
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Interactions> = RemoveComponent::<Interactions>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 

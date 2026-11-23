@@ -238,7 +238,9 @@ fn spawn_player(
         },
         PlayerActor,
         ActorIntent::default(),
-        InstanceAspects(vec![Box::new(WieldedItems(vec![PLAYER_WIELDS.to_owned()]))]),
+        InstanceAspects(vec![std::sync::Arc::new(WieldedItems(vec![
+            PLAYER_WIELDS.to_owned()
+        ]))]),
         ActorRebuildAspects,
         Transform::from_translation(PLAYER_POSITION),
         Visibility::default(),

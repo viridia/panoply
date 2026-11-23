@@ -130,24 +130,15 @@ impl SceneryAnimation {
 #[reflect(@AspectIcon("editor/icons/lucide/clapperboard.png"))]
 pub struct SceneryAnimations(pub Vec<SceneryAnimation>);
 
-impl Aspect for SceneryAnimations {
-    fn name(&self) -> &str {
-        "SceneryAnimations"
+impl NativeAspect for SceneryAnimations {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<SceneryAnimations> =
-            RemoveComponent::<SceneryAnimations>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 

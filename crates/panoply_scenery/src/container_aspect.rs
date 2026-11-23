@@ -11,24 +11,19 @@ use super::{FIXTURE_TYPE, WALL_TYPE};
 #[reflect(@AspectIcon("editor/icons/lucide/package-open.png"))]
 pub struct Container {}
 
-impl Aspect for Container {
-    fn name(&self) -> &str {
-        "Container"
+impl NativeAspect for Container {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
     }
 
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Container> = RemoveComponent::<Container>::new();
-        entity.insert(self.clone());
+    fn attach_state(&self, entity: &mut EntityWorldMut) {
         entity.insert_if_new(ContainerState::default());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 
     /// Its contents.

@@ -53,10 +53,10 @@ pub(crate) fn open_aspect_chooser(
         .0
         .aspects
         .iter()
-        .map(|aspect| aspect.reflect_short_type_path().to_string())
+        .map(|aspect| aspect.key().to_string())
         .collect();
     let registry = registry.read();
-    let mut groups: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    let mut groups: BTreeMap<&str, Vec<String>> = BTreeMap::new();
     for registration in registry.iter() {
         let (Some(reflect_aspect), Some(default)) = (
             registration.data::<ReflectAspect>(),
@@ -71,11 +71,11 @@ pub(crate) fn open_aspect_chooser(
         if !aspect.can_attach(data.0.meta_type) {
             continue;
         }
-        let table = registration.type_info().type_path_table();
+        let group = registration.type_info().type_path_table().crate_name();
         groups
-            .entry(table.crate_name().unwrap_or("other"))
+            .entry(group.unwrap_or("other"))
             .or_default()
-            .push(table.short_path());
+            .push(aspect.key().to_string());
     }
     let rows: Vec<Box<dyn SceneList>> = groups
         .into_iter()
@@ -91,11 +91,11 @@ pub(crate) fn open_aspect_chooser(
 }
 
 /// A group's heading, then a checkbox per aspect in it, checked where `had` holds it.
-fn group_rows(group: &str, names: &[&str], had: &HashSet<String>) -> Box<dyn SceneList> {
+fn group_rows(group: &str, names: &[String], had: &HashSet<String>) -> Box<dyn SceneList> {
     let group = group.to_string();
     let checkboxes: Vec<Box<dyn SceneList>> = names
         .iter()
-        .map(|&name| checkbox(name, had.contains(name)))
+        .map(|name| checkbox(name, had.contains(name)))
         .collect();
     let checkboxes: Box<dyn SceneList> = Box::new(checkboxes);
     Box::new(bsn_list! {
@@ -206,14 +206,14 @@ fn save_aspects(
         .map(|(option, _)| option.0.clone())
         .collect();
     let registry = registry.read();
-    let mut add: Vec<Box<dyn Aspect>> = Vec::new();
+    let mut add: Vec<Arc<dyn Aspect>> = Vec::new();
     for name in checked.difference(&chooser.had) {
         match new_aspect(&registry, name) {
             Some(aspect) => add.push(aspect),
             None => error!("Cannot make a {name}"),
         }
     }
-    add.sort_by(|a, b| a.reflect_short_type_path().cmp(b.reflect_short_type_path()));
+    add.sort_by(|a, b| a.key().cmp(b.key()));
     let mut remove: Vec<String> = chooser.had.difference(&checked).cloned().collect();
     remove.sort();
     edits.change_aspects(&chooser.root, add, remove);
@@ -221,11 +221,12 @@ fn save_aspects(
 }
 
 /// A new aspect of the type whose short type path is `name`, at its default.
-fn new_aspect(registry: &bevy::reflect::TypeRegistry, name: &str) -> Option<Box<dyn Aspect>> {
+fn new_aspect(registry: &bevy::reflect::TypeRegistry, name: &str) -> Option<Arc<dyn Aspect>> {
     let registration = registry.get_with_short_type_path(name)?;
     let default = registration.data::<ReflectDefault>()?.default();
-    registration
+    let aspect = registration
         .data::<ReflectAspect>()?
         .get_boxed(default)
-        .ok()
+        .ok()?;
+    Some(Arc::from(aspect))
 }

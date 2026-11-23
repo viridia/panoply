@@ -16,26 +16,21 @@ pub struct Lock {
     pub locked: bool,
 }
 
-impl Aspect for Lock {
-    fn name(&self) -> &str {
-        "Lock"
+impl NativeAspect for Lock {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
     }
 
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Lock> = RemoveComponent::<Lock>::new();
-        entity.insert(self.clone());
+    fn attach_state(&self, entity: &mut EntityWorldMut) {
         entity.insert_if_new(LockState {
             locked: self.locked,
         });
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 
     /// Whether it is locked.

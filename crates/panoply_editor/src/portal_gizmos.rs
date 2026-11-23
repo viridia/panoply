@@ -61,7 +61,11 @@ fn draw_portals(
             (css::GRAY, css::DIM_GRAY, css::DIM_GRAY)
         };
         let center = aperture.translation;
-        gizmos.rect(Isometry3d::new(center, aperture.rotation), portal.size, outline);
+        gizmos.rect(
+            Isometry3d::new(center, aperture.rotation),
+            portal.size,
+            outline,
+        );
         let normal = aperture.rotation * Vec3::Z;
         if portal.side != PortalSide::Back {
             gizmos.arrow(center, center + normal, front);
@@ -71,7 +75,11 @@ fn draw_portals(
         }
         if target.realm == realm.name {
             let far = target.pos + Vec3::Y * portal.size.y * 0.5;
-            gizmos.rect(Isometry3d::new(far, aperture.rotation), portal.size, css::ORCHID);
+            gizmos.rect(
+                Isometry3d::new(far, aperture.rotation),
+                portal.size,
+                css::ORCHID,
+            );
         }
     }
 }

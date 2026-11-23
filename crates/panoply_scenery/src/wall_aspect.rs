@@ -17,22 +17,14 @@ pub struct WallSize {
     y: u32,
 }
 
-impl Aspect for WallSize {
-    fn name(&self) -> &str {
-        "WallSize"
+impl NativeAspect for WallSize {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<WallSize> = RemoveComponent::<WallSize>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }

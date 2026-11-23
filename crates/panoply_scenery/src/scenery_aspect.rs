@@ -81,23 +81,15 @@ impl PropertySummary for ModelComponent {
 pub struct SceneryModels(pub Vec<ModelComponent>);
 //     public animations?: IAnimationSpec[];
 
-impl Aspect for SceneryModels {
-    fn name(&self) -> &str {
-        "SceneryModels"
+impl NativeAspect for SceneryModels {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<SceneryModels> = RemoveComponent::<SceneryModels>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -107,24 +99,15 @@ impl Aspect for SceneryModels {
 #[reflect(@AspectIcon("editor/icons/lucide/square-dashed.png"))]
 pub struct SceneryColliders(pub Vec<ColliderDesc>);
 
-impl Aspect for SceneryColliders {
-    fn name(&self) -> &str {
-        "SceneryColliders"
+impl NativeAspect for SceneryColliders {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<SceneryColliders> =
-            RemoveComponent::<SceneryColliders>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -134,23 +117,15 @@ impl Aspect for SceneryColliders {
 #[reflect(@AspectIcon("editor/icons/lucide/map-pin.png"))]
 pub struct SceneryMarks(pub BTreeMap<String, Vec<Vec3>>);
 
-impl Aspect for SceneryMarks {
-    fn name(&self) -> &str {
-        "SceneryMarks"
+impl NativeAspect for SceneryMarks {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<SceneryMarks> = RemoveComponent::<SceneryMarks>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -180,22 +155,14 @@ pub struct LightSource {
     enabled: Option<bool>,
 }
 
-impl Aspect for LightSource {
-    fn name(&self) -> &str {
-        "LightSource"
+impl NativeAspect for LightSource {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<LightSource> = RemoveComponent::<LightSource>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }

@@ -543,8 +543,14 @@ mod tests {
 
     fn listed(kind: ModelKind, scenes: &[&str], animated: bool) -> Option<Vec<String>> {
         let path = "characters/canine.glb".to_string();
-        model_file(kind, "canine".into(), path, scenes.iter().copied(), animated)
-            .map(|file| file.models)
+        model_file(
+            kind,
+            "canine".into(),
+            path,
+            scenes.iter().copied(),
+            animated,
+        )
+        .map(|file| file.models)
     }
 
     #[test]

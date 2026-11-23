@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN108** Aspects are keyed by `Aspect::key`; a native aspect implements `NativeAspect`.
 - **PAN118** The smoke plan is split by area, each runnable alone; `verify.sh` runs `cargo test`.
 - **PAN107** SAGA reads struct and tuple fields, and has fixed-size arrays: `[f32; 4]`, `a[i]`.
 - **PAN113** The instance list's funnel shows unlabelled instances too, and narrows them by kind.

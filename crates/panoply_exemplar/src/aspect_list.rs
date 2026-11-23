@@ -4,10 +4,10 @@ use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserializer,
 };
-use std::fmt;
+use std::{fmt, sync::Arc};
 
 /// A list of aspects.
-pub type AspectList = Vec<Box<dyn Aspect>>;
+pub type AspectList = Vec<Arc<dyn Aspect>>;
 
 use super::{aspect::Aspect, AspectDeserializer};
 
@@ -19,7 +19,7 @@ struct AspectListVisitor<'a, 'b> {
 }
 
 impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
-    type Value = Vec<Box<dyn Aspect>>;
+    type Value = AspectList;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("an aspect map")
@@ -29,7 +29,7 @@ impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
     where
         A: serde::de::MapAccess<'de>,
     {
-        let mut result: Vec<Box<dyn Aspect>> = Vec::with_capacity(map.size_hint().unwrap_or(0));
+        let mut result: AspectList = Vec::with_capacity(map.size_hint().unwrap_or(0));
         while let Some(key) = map.next_key::<String>()? {
             // An aspect type no plugin has registered is skipped rather than failing the whole
             // asset, so modules can be restored one at a time. Saving the asset drops it.
@@ -47,7 +47,7 @@ impl<'de> Visitor<'de> for AspectListVisitor<'_, '_> {
                 formulas: self.formulas,
             })?;
             aspect.load_dependencies(self.label_prefix, self.load_context);
-            result.push(aspect);
+            result.push(Arc::from(aspect));
         }
         Ok(result)
     }
@@ -69,7 +69,7 @@ pub struct AspectListDeserializer<'a, 'b> {
 }
 
 impl<'de> DeserializeSeed<'de> for AspectListDeserializer<'_, '_> {
-    type Value = Vec<Box<dyn Aspect>>;
+    type Value = AspectList;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where

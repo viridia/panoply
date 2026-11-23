@@ -16,7 +16,7 @@ use bevy::{
     prelude::*,
     reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath, TypeRegistry},
 };
-use panoply_exemplar::{annotations::ReflectPropertyMapKeys, Aspect, Exemplar};
+use panoply_exemplar::{annotations::ReflectPropertyMapKeys, aspect_mut, Aspect, Exemplar};
 
 use crate::{
     mode_selector::EditorModeSettings,
@@ -96,7 +96,7 @@ pub trait AspectHolder {
     fn modify_aspects(
         &self,
         world: &mut World,
-        change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
+        change: &mut dyn FnMut(&mut Vec<Arc<dyn Aspect>>) -> Result<(), BevyError>,
     ) -> Result<(), BevyError>;
 }
 
@@ -180,7 +180,7 @@ enum EditOp {
     /// Takes the aspects named (by short type path) out of an [`AspectHolder`] root, then puts
     /// the others in at their indices: an undone removal puts an aspect back where it was.
     Aspects {
-        add: Vec<(usize, Box<dyn Aspect>)>,
+        add: Vec<(usize, Arc<dyn Aspect>)>,
         remove: Vec<String>,
     },
 }
@@ -250,21 +250,21 @@ impl EditOp {
     /// Does the edit to `aspects`, and returns the edit that undoes it: the removed aspects put
     /// back at their indices, the added ones taken out.
     fn apply_aspects(
-        aspects: &mut Vec<Box<dyn Aspect>>,
-        add: &[(usize, Box<dyn Aspect>)],
+        aspects: &mut Vec<Arc<dyn Aspect>>,
+        add: &[(usize, Arc<dyn Aspect>)],
         remove: &[String],
     ) -> Result<EditOp, BevyError> {
         let mut removed = Vec::new();
         for name in remove {
             let index = aspects
                 .iter()
-                .position(|aspect| aspect.reflect_short_type_path() == name)
+                .position(|aspect| aspect.key() == name)
                 .ok_or_else(|| format!("there is no {name} to remove"))?;
             removed.push((index, name.clone()));
         }
         // Taken out from the last, so the indices kept are those before any came out.
         removed.sort_by_key(|(index, _)| std::cmp::Reverse(*index));
-        let mut undo_add: Vec<(usize, Box<dyn Aspect>)> = removed
+        let mut undo_add: Vec<(usize, Arc<dyn Aspect>)> = removed
             .iter()
             .map(|(index, _)| (*index, aspects.remove(*index)))
             .collect();
@@ -273,14 +273,11 @@ impl EditOp {
         let mut add: Vec<_> = add.iter().collect();
         add.sort_by_key(|(index, _)| *index);
         for (index, aspect) in add {
-            let name = aspect.reflect_short_type_path();
-            if aspects
-                .iter()
-                .any(|had| had.reflect_short_type_path() == name)
-            {
+            let name = aspect.key();
+            if aspects.iter().any(|had| had.key() == name) {
                 return Err(format!("there is a {name} already").into());
             }
-            aspects.insert((*index).min(aspects.len()), aspect.clone_boxed());
+            aspects.insert((*index).min(aspects.len()), aspect.clone());
             undo_remove.push(name.to_string());
         }
         Ok(EditOp::Aspects {
@@ -428,7 +425,7 @@ impl PropertyEdits {
     pub fn change_aspects(
         &mut self,
         root: &Arc<dyn PropertyRoot>,
-        add: Vec<Box<dyn Aspect>>,
+        add: Vec<Arc<dyn Aspect>>,
         remove: Vec<String>,
     ) {
         if add.is_empty() && remove.is_empty() {
@@ -497,9 +494,7 @@ fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &E
     let mut field = root.caption();
     if let EditOp::Aspects { add, remove } = op {
         match (add.as_slice(), remove.as_slice()) {
-            ([(_, aspect)], []) => {
-                return format!("Add {field}.{}", aspect.reflect_short_type_path())
-            }
+            ([(_, aspect)], []) => return format!("Add {field}.{}", aspect.key()),
             ([], [name]) => return format!("Remove {field}.{name}"),
             _ => {}
         }
@@ -672,7 +667,7 @@ impl PropertyRoot for ExemplarAspect {
             .0
             .aspects
             .iter()
-            .find(|aspect| aspect.reflect_short_type_path() == self.aspect)?;
+            .find(|aspect| aspect.key() == self.aspect)?;
         Some(aspect.clone_boxed().into_partial_reflect())
     }
 
@@ -693,9 +688,9 @@ impl PropertyRoot for ExemplarAspect {
                 let aspect = data
                     .aspects
                     .iter_mut()
-                    .find(|aspect| aspect.reflect_short_type_path() == self.aspect)
+                    .find(|aspect| aspect.key() == self.aspect)
                     .ok_or_else(|| format!("{} has no {}", self.exemplar, self.aspect))?;
-                change(aspect.as_partial_reflect_mut())
+                change(aspect_mut(aspect).as_partial_reflect_mut())
             })
         })?;
         world.resource_mut::<UnsavedAssets>().mark(catalog);
@@ -1088,27 +1083,15 @@ mod tests {
 
     macro_rules! test_aspect {
         ($type:ident) => {
-            impl Aspect for $type {
-                fn name(&self) -> &str {
-                    stringify!($type)
+            impl panoply_exemplar::NativeAspect for $type {
+                type Config = Self;
+
+                fn config(&self) -> Self {
+                    self.clone()
                 }
 
                 fn can_attach(&self, _meta_type: panoply_exemplar::InstanceType) -> bool {
                     true
-                }
-
-                fn attach(
-                    &self,
-                    entity: &mut EntityWorldMut,
-                ) -> &'static dyn panoply_exemplar::DetachAspect {
-                    static DETACH: panoply_exemplar::RemoveComponent<$type> =
-                        panoply_exemplar::RemoveComponent::<$type>::new();
-                    entity.insert(self.clone());
-                    &DETACH
-                }
-
-                fn clone_boxed(&self) -> Box<dyn Aspect> {
-                    Box::new(self.clone())
                 }
             }
         };
@@ -1119,7 +1102,7 @@ mod tests {
     test_aspect!(Tail);
 
     #[derive(Resource, Default)]
-    struct HeldAspects(Vec<Box<dyn Aspect>>);
+    struct HeldAspects(Vec<Arc<dyn Aspect>>);
 
     /// The aspects in [`HeldAspects`], as an exemplar named Marcus.
     #[derive(Reflect)]
@@ -1152,7 +1135,7 @@ mod tests {
         fn modify_aspects(
             &self,
             world: &mut World,
-            change: &mut dyn FnMut(&mut Vec<Box<dyn Aspect>>) -> Result<(), BevyError>,
+            change: &mut dyn FnMut(&mut Vec<Arc<dyn Aspect>>) -> Result<(), BevyError>,
         ) -> Result<(), BevyError> {
             change(&mut world.resource_mut::<HeldAspects>().0)
         }
@@ -1162,9 +1145,9 @@ mod tests {
     fn aspects_world() -> World {
         let mut world = world();
         world.insert_resource(HeldAspects(vec![
-            Box::new(Wings(2.)),
-            Box::new(Horns),
-            Box::new(Tail),
+            Arc::new(Wings(2.)),
+            Arc::new(Horns),
+            Arc::new(Tail),
         ]));
         world.init_resource::<AppTypeRegistry>();
         {
@@ -1181,14 +1164,14 @@ mod tests {
             .resource::<HeldAspects>()
             .0
             .iter()
-            .map(|aspect| aspect.reflect_short_type_path().to_string())
+            .map(|aspect| aspect.key().to_string())
             .collect()
     }
 
     fn change_aspects(
         world: &mut World,
         root: impl PropertyRoot,
-        add: Vec<Box<dyn Aspect>>,
+        add: Vec<Arc<dyn Aspect>>,
         remove: &[&str],
     ) {
         let root: Arc<dyn PropertyRoot> = Arc::new(root);
@@ -1211,10 +1194,7 @@ mod tests {
         assert_eq!(last_label(&world), "Remove Marcus.Horns");
         undo(&mut world);
         assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
-        assert_eq!(
-            world.resource::<HeldAspects>().0[0].reflect_short_type_path(),
-            "Wings"
-        );
+        assert_eq!(world.resource::<HeldAspects>().0[0].key(), "Wings");
         redo(&mut world);
         assert_eq!(held_aspects(&world), ["Wings", "Tail"]);
 
@@ -1222,7 +1202,7 @@ mod tests {
         change_aspects(
             &mut world,
             AspectsRoot,
-            vec![Box::new(Horns)],
+            vec![Arc::new(Horns)],
             &["Wings", "Tail"],
         );
         assert_eq!(held_aspects(&world), ["Horns"]);
@@ -1236,7 +1216,7 @@ mod tests {
     #[test]
     fn an_aspect_already_held_is_not_added_again() {
         let mut world = aspects_world();
-        change_aspects(&mut world, AspectsRoot, vec![Box::new(Tail)], &[]);
+        change_aspects(&mut world, AspectsRoot, vec![Arc::new(Tail)], &[]);
         assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
         assert!(world.resource::<UndoStack>().latest_label().is_none());
     }

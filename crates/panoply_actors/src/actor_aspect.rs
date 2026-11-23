@@ -33,23 +33,15 @@ pub struct Armature {
 #[reflect(Default)]
 pub struct ClipsFile(pub String);
 
-impl Aspect for Armature {
-    fn name(&self) -> &str {
-        "Armature"
+impl NativeAspect for Armature {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Armature> = RemoveComponent::<Armature>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -60,23 +52,15 @@ impl Aspect for Armature {
 #[reflect(@AspectIcon("editor/icons/lucide/film.png"))]
 pub struct ClipNames(pub BTreeMap<String, String>);
 
-impl Aspect for ClipNames {
-    fn name(&self) -> &str {
-        "ClipNames"
+impl NativeAspect for ClipNames {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<ClipNames> = RemoveComponent::<ClipNames>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -111,23 +95,15 @@ impl CollisionSize {
     }
 }
 
-impl Aspect for CollisionSize {
-    fn name(&self) -> &str {
-        "CollisionSize"
+impl NativeAspect for CollisionSize {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<CollisionSize> = RemoveComponent::<CollisionSize>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -144,23 +120,15 @@ impl Default for ActorScale {
     }
 }
 
-impl Aspect for ActorScale {
-    fn name(&self) -> &str {
-        "ActorScale"
+impl NativeAspect for ActorScale {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<ActorScale> = RemoveComponent::<ActorScale>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -171,23 +139,15 @@ impl Aspect for ActorScale {
 #[reflect(@AspectIcon("editor/icons/lucide/shirt.png"))]
 pub struct Skin(pub String);
 
-impl Aspect for Skin {
-    fn name(&self) -> &str {
-        "Skin"
+impl NativeAspect for Skin {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Skin> = RemoveComponent::<Skin>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -198,23 +158,15 @@ impl Aspect for Skin {
 #[reflect(@AspectIcon("editor/icons/lucide/palette.png"))]
 pub struct Colors(pub BTreeMap<String, HexColor>);
 
-impl Aspect for Colors {
-    fn name(&self) -> &str {
-        "Colors"
+impl NativeAspect for Colors {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Colors> = RemoveComponent::<Colors>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -225,23 +177,15 @@ impl Aspect for Colors {
 #[reflect(@AspectIcon("editor/icons/lucide/sparkles.png"))]
 pub struct Features(pub BTreeMap<String, bool>);
 
-impl Aspect for Features {
-    fn name(&self) -> &str {
-        "Features"
+impl NativeAspect for Features {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<Features> = RemoveComponent::<Features>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
 
@@ -252,22 +196,14 @@ impl Aspect for Features {
 #[reflect(@AspectIcon("editor/icons/lucide/sword.png"))]
 pub struct WieldedItems(pub Vec<String>);
 
-impl Aspect for WieldedItems {
-    fn name(&self) -> &str {
-        "WieldedItems"
+impl NativeAspect for WieldedItems {
+    type Config = Self;
+
+    fn config(&self) -> Self {
+        self.clone()
     }
 
     fn can_attach(&self, meta_type: InstanceType) -> bool {
         meta_type == ACTOR_TYPE
-    }
-
-    fn attach(&self, entity: &mut EntityWorldMut) -> &'static dyn DetachAspect {
-        static DETACH: RemoveComponent<WieldedItems> = RemoveComponent::<WieldedItems>::new();
-        entity.insert(self.clone());
-        &DETACH
-    }
-
-    fn clone_boxed(&self) -> Box<dyn Aspect> {
-        Box::new(self.clone())
     }
 }
