@@ -21,7 +21,7 @@ use bevy::{
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-    ExprType, HostState, NoImports, ScriptModule, ScriptVm, StackValue, TrackingScope,
+    ExprType, HostState, NoImports, ScriptModule, ScriptVm, TrackingScope,
     compiler::{compile_formula, format_error, format_span},
 };
 
@@ -88,9 +88,8 @@ impl Formula<bool> {
         let mut tracking = TrackingScope::default();
         let mut vm = ScriptVm::new(world, host, &mut tracking);
         vm.set_owner(owner);
-        let failure = match vm.run(module, ScriptModule::DEFAULT) {
-            Ok(StackValue::Bool(value)) => return Some(value),
-            Ok(other) => format!("returned {other:?}, not a bool"),
+        let failure = match vm.run_as::<bool>(module, ScriptModule::DEFAULT) {
+            Ok(value) => return Some(value),
             Err(err) => err.to_string(),
         };
         if !self.compiled.failure_logged.swap(true, Ordering::Relaxed) {

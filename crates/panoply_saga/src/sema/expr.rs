@@ -24,8 +24,12 @@ pub(crate) enum ExprKind<'e> {
     LocalRef(usize),
     /// A reference to a host global.
     GlobalRef(usize),
-    /// A field of a reflected struct, by index.
+    /// A field of a reflected struct, tuple struct or tuple, by index.
     Field(&'e Expr<'e>, usize),
+    /// `[a, b, c]`.
+    ArrayLit(&'e [&'e Expr<'e>]),
+    /// `a[i]`.
+    Index(&'e Expr<'e>, &'e Expr<'e>),
     /// A property of a host type, by its index in the host's members.
     NativeProp(&'e Expr<'e>, usize),
     Call(&'e Expr<'e>, &'e [&'e Expr<'e>]),
@@ -71,6 +75,7 @@ const _: () = assert!(!needs_drop::<Expr<'static>>());
 #[derive(Debug)]
 pub(crate) struct FunctionBody<'ex> {
     pub(crate) body: Option<&'ex Expr<'ex>>,
-    pub(crate) num_params: usize,
+    pub(crate) params: Vec<ExprType>,
     pub(crate) locals: Vec<ExprType>,
+    pub(crate) ret: ExprType,
 }

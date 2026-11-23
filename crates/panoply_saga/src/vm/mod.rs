@@ -1,24 +1,33 @@
 //! The bytecode interpreter, built per evaluation.
 
-use std::{any::Any, sync::Arc};
+mod slots;
+
+pub use slots::{FromSlots, SlotStore, ToSlots};
+
+use core::cell::Cell;
 
 use bevy::{
     ecs::{component::Component, entity::Entity, world::World},
-    reflect::{PartialReflect, ReflectRef, TypePath},
+    reflect::PartialReflect,
 };
 use thiserror::Error;
 
 use crate::{
     ScriptModule,
     codegen::instr,
-    host::{HostMember, HostState},
-    sema::{decl::DeclKind, types::ExprType},
+    host::{
+        HostMember, HostState,
+        layout::{Leaf, SlotSink, flatten},
+    },
+    sema::types::ExprType,
     tracking::TrackingScope,
 };
 
-/// Values on the stack
-#[derive(Debug, PartialEq, Clone)]
+/// One stack slot. A slot owns nothing: a string or a reflected value is an index into the
+/// evaluation's [`SlotStore`].
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum StackValue {
+    /// An uninitialized local.
     Void,
     Bool(bool),
     I32(i32),
@@ -26,39 +35,12 @@ pub enum StackValue {
     F32(f32),
     F64(f64),
     Entity(Entity),
-    String(Arc<String>),
-    /// An index into the table of world references, contains `&'world dyn PartialReflect`.
+    /// An index into the evaluation's strings.
+    Str(u32),
+    /// An index into the evaluation's references to reflected values in the world.
     WorldRef(usize),
-    /// An index into the VM's temporary heap, contains `Box<dyn PartialReflect>`.
+    /// An index into the evaluation's reflected temporaries.
     HeapRef(u16),
-}
-
-impl StackValue {
-    pub fn is_void(&self) -> bool {
-        *self == StackValue::Void
-    }
-
-    pub fn type_path(
-        &self,
-        world_refs: &[&dyn PartialReflect],
-        heap_refs: &[Box<dyn PartialReflect>],
-    ) -> &'static str {
-        let reflected = match self {
-            StackValue::Void => return "void",
-            StackValue::Bool(_) => return "bool",
-            StackValue::I32(_) => return "i32",
-            StackValue::I64(_) => return "i64",
-            StackValue::F32(_) => return "f32",
-            StackValue::F64(_) => return "f64",
-            StackValue::Entity(_) => return "Entity",
-            StackValue::String(_) => return "String",
-            StackValue::WorldRef(index) => world_refs.get(*index).copied(),
-            StackValue::HeapRef(index) => heap_refs.get(*index as usize).map(|r| r.as_ref()),
-        };
-        reflected
-            .and_then(|r| r.get_represented_type_info())
-            .map_or("none", |info| info.type_path())
-    }
 }
 
 #[non_exhaustive]
@@ -84,8 +66,8 @@ pub enum VMError {
     InvalidFunction(usize),
     #[error("Invalid local: {0}")]
     InvalidLocal(usize),
-    #[error("Invalid field: {0}")]
-    InvalidField(usize),
+    #[error("Invalid string: {0}")]
+    InvalidString(u32),
     #[error("Function not found: {0}")]
     MissingFunction(String),
     /// The entity lacks a component the script reads, named by its Rust type.
@@ -93,103 +75,67 @@ pub enum VMError {
     MissingComponent(&'static str),
     #[error("Function {0} expects {1} parameters, got {2}")]
     IncorrectParamCount(String, usize, usize),
+    #[error("Index {0} out of bounds for an array of {1}")]
+    IndexOutOfBounds(i32, usize),
+    /// A native wrote a result unlike the type it was registered with.
+    #[error("A native returned {1} slots where its type takes {0}")]
+    NativeResultSlots(usize, usize),
+    /// An evaluation's result is not the type it was read as.
+    #[error("The result takes {1} slots where {0} were expected")]
+    ResultSlots(usize, usize),
     #[error("Division by zero")]
     DivideByZero,
     #[error("Unsupported: {0}")]
     Unsupported(&'static str),
 }
 
-/// Saved state of VM for nested function calls
-struct CallStackEntry {
-    /// Module we are executing
-    module: *const ScriptModule,
-
-    /// Value stack
-    stack: Vec<StackValue>,
-
-    /// Instruction pointer
+/// A caller's state, saved during a call.
+struct CallStackEntry<'w> {
+    module: Option<&'w ScriptModule>,
+    frame_base: usize,
     iptr: *const u8,
 }
 
-/// A value's inner `T`, cloned out: a primitive's own, or a reflected one's by downcast.
-fn extract<T: TypePath + Clone + 'static>(
-    value: &StackValue,
-    world_refs: &[&dyn PartialReflect],
-    heap_refs: &[Box<dyn PartialReflect>],
-) -> Result<T, VMError> {
-    let primitive: Option<&dyn Any> = match value {
-        StackValue::Bool(b) => Some(b),
-        StackValue::I32(n) => Some(n),
-        StackValue::I64(n) => Some(n),
-        StackValue::F32(n) => Some(n),
-        StackValue::F64(n) => Some(n),
-        StackValue::Entity(e) => Some(e),
-        StackValue::String(s) => Some(s),
-        _ => None,
-    };
-    if let Some(t) = primitive.and_then(|p| p.downcast_ref::<T>()) {
-        return Ok(t.clone());
-    }
-    let reflected = match value {
-        StackValue::WorldRef(index) => world_refs.get(*index).copied(),
-        StackValue::HeapRef(index) => heap_refs.get(*index as usize).map(|r| r.as_ref()),
-        _ => None,
-    };
-    reflected
-        .and_then(|r| r.try_downcast_ref::<T>().cloned())
-        .ok_or_else(|| {
-            VMError::MismatchedTypes2(value.type_path(world_refs, heap_refs), T::short_type_path())
-        })
-}
-
-/// A simplified interface for calling native functions.
-pub struct InvocationContext<'vm, 'world, 'p> {
-    /// Bevy World
-    world: &'world World,
-
-    /// Reflected references to the world.
-    world_refs: &'vm mut Vec<&'world dyn PartialReflect>,
-
-    /// Reflected temporary objects
-    heap_refs: &'vm mut Vec<Box<dyn PartialReflect>>,
-
-    /// Calling arguments (used for function calls but not property accessors).
+/// What a native function sees: its arguments, where it writes its result, and the world.
+pub struct InvocationContext<'vm, 'w> {
+    world: &'w World,
+    store: &'vm mut SlotStore<'w>,
     args: &'vm [StackValue],
-
-    /// What the evaluation reads, for reactions.
-    tracking: &'p mut TrackingScope,
+    /// The slot of the next argument [`Self::arg`] reads.
+    next_arg: Cell<usize>,
+    out: &'vm mut Vec<StackValue>,
+    tracking: &'vm mut TrackingScope,
 }
 
-impl<'world> InvocationContext<'_, 'world, '_> {
-    /// Return the number of arguments to the function.
-    pub fn num_arguments(&self) -> usize {
-        self.args.len()
+impl<'w> InvocationContext<'_, 'w> {
+    /// The next argument, in the order the function's parameters are declared.
+    pub fn arg<'a, T: FromSlots<'a>>(&'a self) -> Result<T, VMError> {
+        let start = self.next_arg.get();
+        let slots = self
+            .args
+            .get(start..start + T::SLOTS)
+            .ok_or(VMError::StackUnderflow)?;
+        self.next_arg.set(start + T::SLOTS);
+        T::from_slots(slots, self.store)
     }
 
-    /// Get the nth calling argument and unwrap it, returning a clone of the inner value.
-    pub fn argument<T: TypePath + Clone + 'static>(&self, arg_index: usize) -> Result<T, VMError> {
-        let value = self.args.get(arg_index).ok_or(VMError::StackUnderflow)?;
-        extract(value, self.world_refs, self.heap_refs)
+    /// Writes the function's result.
+    pub fn ret(&mut self, value: impl ToSlots) -> Result<(), VMError> {
+        value.to_slots(self.out, self.store)
     }
 
-    /// Construct a `Value` holding a temporary `PartialReflect`, freed when the evaluation ends.
+    /// A slot holding a reflected temporary, freed when the evaluation ends.
     pub fn create_heap_ref<T: PartialReflect>(&mut self, value: T) -> Result<StackValue, VMError> {
-        let index = u16::try_from(self.heap_refs.len())
-            .map_err(|_| VMError::Unsupported("more than 65535 temporaries"))?;
-        self.heap_refs.push(Box::new(value).into_partial_reflect());
-        Ok(StackValue::HeapRef(index))
+        self.store.heap_ref(value)
     }
 
-    /// Construct a `Value` referring to a `PartialReflect` in the Bevy world.
-    pub fn create_world_ref(&mut self, reflected: &'world dyn PartialReflect) -> StackValue {
-        let index = self.world_refs.len();
-        self.world_refs.push(reflected);
-        StackValue::WorldRef(index)
+    /// A slot referring to a reflected value in the world.
+    pub fn create_world_ref(&mut self, reflected: &'w dyn PartialReflect) -> StackValue {
+        self.store.world_ref(reflected)
     }
 
-    /// Return a reference to the Component `C` on the given entity. Calling this function
-    /// adds the component as a dependency of the current tracking scope.
-    pub fn component<C: Component>(&mut self, entity: Entity) -> Option<&'world C> {
+    /// Component `C` on `entity`, recorded as a read of the evaluation.
+    pub fn component<C: Component>(&mut self, entity: Entity) -> Option<&'w C> {
         let comp = self.world.get_entity(entity).ok()?.get::<C>();
         self.tracking
             .track_component::<C>(entity, self.world, comp.is_some());
@@ -198,32 +144,33 @@ impl<'world> InvocationContext<'_, 'world, '_> {
 }
 
 /// A virtual machine for evaluating formulas.
-pub struct ScriptVm<'world, 'host, 'p> {
-    /// Bevy World
-    pub world: &'world World,
+pub struct ScriptVm<'w, 'p> {
+    pub world: &'w World,
 
-    /// Entity upon which this script is attached.
+    /// The entity the script runs on.
     pub owner: Entity,
 
-    /// Globals and entity members
-    pub host: &'host HostState,
+    /// Globals and entity members.
+    pub host: &'w HostState,
 
-    /// Module we are executing
-    module: *const ScriptModule,
+    /// The module executing.
+    module: Option<&'w ScriptModule>,
 
-    /// Execution stack
-    call_stack: Vec<CallStackEntry>,
+    /// The callers of the function executing.
+    call_stack: Vec<CallStackEntry<'w>>,
 
-    /// Reflected values.
-    world_refs: Vec<&'world dyn PartialReflect>,
+    /// Where the executing function's parameters start on the stack; its locals follow them.
+    frame_base: usize,
 
-    /// Temporary non-primitive values created during execution.
-    heap_refs: Vec<Box<dyn PartialReflect>>,
+    /// What slots refer to.
+    store: SlotStore<'w>,
 
-    /// Value stack: consists of [Value; num_params + num_locals + temporaries]
+    /// A native function's result, before it replaces the arguments.
+    out: Vec<StackValue>,
+
+    /// Every frame's parameters, locals and temporaries.
     stack: Vec<StackValue>,
 
-    /// Instruction pointer
     iptr: *const u8,
 
     /// What the evaluation reads, for reactions.
@@ -232,41 +179,34 @@ pub struct ScriptVm<'world, 'host, 'p> {
 
 type InstrHandler = fn(&mut ScriptVm) -> Result<(), VMError>;
 
-impl<'world, 'host, 'p> ScriptVm<'world, 'host, 'p> {
+impl<'w, 'p> ScriptVm<'w, 'p> {
     const JUMP_TABLE: [InstrHandler; 256] = build_jump_table();
 
-    // Initialize a new virtual machine.
-    pub fn new(
-        world: &'world World,
-        host: &'host HostState,
-        tracking: &'p mut TrackingScope,
-    ) -> Self {
+    pub fn new(world: &'w World, host: &'w HostState, tracking: &'p mut TrackingScope) -> Self {
         Self {
             world,
             owner: Entity::PLACEHOLDER,
             host,
-            module: core::ptr::null(),
+            module: None,
             call_stack: Vec::new(),
-            world_refs: Vec::new(),
-            heap_refs: Vec::new(),
+            frame_base: 0,
+            store: SlotStore::default(),
+            out: Vec::new(),
             stack: Vec::new(),
             iptr: core::ptr::null(),
             tracking,
         }
     }
 
-    /// Set the entity which owns the script being executed.
+    /// Set the entity the script runs on.
     pub fn set_owner(&mut self, owner: Entity) -> &mut Self {
         self.owner = owner;
         self
     }
 
-    /// A value's inner `T`, cloned out.
-    pub fn extract_value<T: TypePath + Clone + 'static>(
-        &self,
-        value: StackValue,
-    ) -> Result<T, VMError> {
-        extract(&value, &self.world_refs, &self.heap_refs)
+    /// What the result's slots refer to.
+    pub fn store(&self) -> &SlotStore<'w> {
+        &self.store
     }
 
     /// Read an immediate value following the current instruction.
@@ -282,122 +222,125 @@ impl<'world, 'host, 'p> ScriptVm<'world, 'host, 'p> {
     }
 
     #[inline(always)]
+    fn read_u16(&mut self) -> usize {
+        self.read_immediate::<u16>() as usize
+    }
+
+    #[inline(always)]
     fn pop(&mut self) -> Result<StackValue, VMError> {
         self.stack.pop().ok_or(VMError::StackUnderflow)
     }
 
-    /// Run at the instruction pointer until the outermost function returns.
-    fn start(&mut self) -> Result<StackValue, VMError> {
+    /// The start of the top `n` slots.
+    fn top(&self, n: usize) -> Result<usize, VMError> {
+        self.stack
+            .len()
+            .checked_sub(n)
+            .ok_or(VMError::StackUnderflow)
+    }
+
+    /// Run at the instruction pointer until the outermost function returns; its result is the
+    /// slots it leaves at the bottom of the stack, and this is their count.
+    fn start(&mut self) -> Result<usize, VMError> {
         loop {
             // SAFETY: as `read_immediate`.
             let op = unsafe { *self.iptr };
-            if op == instr::OP_RET {
-                let ret_val = self.pop()?;
-                if self.call_stack.is_empty() {
-                    return Ok(ret_val);
-                }
-                self.pop_call_stack()?;
-                if !ret_val.is_void() {
-                    self.stack.push(ret_val);
-                }
-                continue;
-            }
             // SAFETY: as `read_immediate`.
             self.iptr = unsafe { self.iptr.add(1) };
+            if op == instr::OP_RET {
+                let n = self.read_u16();
+                let start = self.top(n)?;
+                if start < self.frame_base {
+                    return Err(VMError::StackUnderflow);
+                }
+                self.stack.copy_within(start.., self.frame_base);
+                self.stack.truncate(self.frame_base + n);
+                let Some(caller) = self.call_stack.pop() else {
+                    return Ok(n);
+                };
+                self.module = caller.module;
+                self.frame_base = caller.frame_base;
+                self.iptr = caller.iptr;
+                continue;
+            }
             ScriptVm::JUMP_TABLE[op as usize](self)?;
         }
     }
 
-    /// Run a compiled function that takes no parameters, by name.
-    pub fn run(
-        &mut self,
-        module: &ScriptModule,
-        function_name: &str,
-    ) -> Result<StackValue, VMError> {
-        self.run_with(module, function_name, &[])
-    }
-
-    /// Run a compiled function by name with arguments.
+    /// Run a compiled function by name with arguments, returning its result's slots.
     pub fn run_with(
         &mut self,
-        module: &ScriptModule,
+        module: &'w ScriptModule,
         function_name: &str,
-        params: &[StackValue],
-    ) -> Result<StackValue, VMError> {
+        args: &[StackValue],
+    ) -> Result<&[StackValue], VMError> {
         let missing = || VMError::MissingFunction(function_name.to_string());
-        let entry_fn = module.module_decls.get(function_name).ok_or_else(missing)?;
-        let (DeclKind::Function { index }, ExprType::Function(ftype)) =
-            (&entry_fn.kind, &entry_fn.typ)
-        else {
-            return Err(missing());
-        };
-        if ftype.params.len() != params.len() {
-            return Err(VMError::IncorrectParamCount(
-                function_name.to_string(),
-                ftype.params.len(),
-                params.len(),
-            ));
-        }
+        let index = module.function_index(function_name).ok_or_else(missing)?;
         let function = module
             .functions
-            .get(*index)
-            .ok_or(VMError::InvalidFunction(*index))?;
-        self.module = module;
+            .get(index)
+            .ok_or(VMError::InvalidFunction(index))?;
+        if function.num_params != args.len() {
+            return Err(VMError::IncorrectParamCount(
+                function_name.to_string(),
+                function.num_params,
+                args.len(),
+            ));
+        }
+        self.module = Some(module);
         self.call_stack.clear();
+        self.store.clear();
+        self.frame_base = 0;
         self.stack.clear();
-        self.stack.extend_from_slice(params);
+        self.stack.extend_from_slice(args);
         self.stack
             .resize(self.stack.len() + function.num_locals, StackValue::Void);
         self.iptr = function.code.as_ptr();
-        self.start()
+        let n = self.start()?;
+        Ok(&self.stack[..n])
     }
 
-    fn push_call_stack(&mut self, new_stack: Vec<StackValue>) {
-        self.call_stack.push(CallStackEntry {
-            module: self.module,
-            stack: core::mem::replace(&mut self.stack, new_stack),
-            iptr: self.iptr,
-        });
+    /// Run a compiled function that takes no parameters, by name, returning its result's slots.
+    pub fn run(
+        &mut self,
+        module: &'w ScriptModule,
+        function_name: &str,
+    ) -> Result<&[StackValue], VMError> {
+        self.run_with(module, function_name, &[])
     }
 
-    fn pop_call_stack(&mut self) -> Result<(), VMError> {
-        let tos = self.call_stack.pop().ok_or(VMError::StackUnderflow)?;
-        self.module = tos.module;
-        self.stack = tos.stack;
-        self.iptr = tos.iptr;
-        Ok(())
+    /// Run a compiled function that takes no parameters, by name, returning its result as `T`.
+    pub fn run_as<T>(&mut self, module: &'w ScriptModule, function_name: &str) -> Result<T, VMError>
+    where
+        T: for<'a> FromSlots<'a>,
+    {
+        let n = self.run(module, function_name)?.len();
+        read_result(&self.stack[..n], &self.store)
     }
+}
 
-    /// Determine the type of this value, if possible.
-    pub(crate) fn value_type(&self, value: &StackValue) -> ExprType {
-        let reflected = match value {
-            StackValue::Void => return ExprType::Void,
-            StackValue::Bool(_) => return ExprType::Boolean,
-            StackValue::I32(_) => return ExprType::I32,
-            StackValue::I64(_) => return ExprType::I64,
-            StackValue::F32(_) => return ExprType::F32,
-            StackValue::F64(_) => return ExprType::F64,
-            StackValue::Entity(_) => return ExprType::Entity,
-            StackValue::String(_) => return ExprType::String,
-            StackValue::WorldRef(index) => self.world_refs.get(*index).copied(),
-            StackValue::HeapRef(index) => self.heap_refs.get(*index as usize).map(|r| r.as_ref()),
-        };
-        reflected
-            .and_then(|r| r.get_represented_type_info())
-            .map_or(ExprType::None, ExprType::Reflected)
+fn read_result<'a, T: FromSlots<'a>>(
+    slots: &[StackValue],
+    store: &'a SlotStore<'_>,
+) -> Result<T, VMError> {
+    if slots.len() != T::SLOTS {
+        return Err(VMError::ResultSlots(T::SLOTS, slots.len()));
     }
+    T::from_slots(slots, store)
+}
 
-    fn invocation_context<'vm>(
-        &'vm mut self,
-        args_start: usize,
-    ) -> InvocationContext<'vm, 'world, 'vm> {
-        InvocationContext {
-            world: self.world,
-            world_refs: &mut self.world_refs,
-            heap_refs: &mut self.heap_refs,
-            args: &self.stack[args_start..],
-            tracking: self.tracking,
-        }
+/// The type of what a slot holds, for errors.
+fn value_type(value: &StackValue) -> ExprType {
+    match value {
+        StackValue::Void => ExprType::Void,
+        StackValue::Bool(_) => ExprType::Boolean,
+        StackValue::I32(_) => ExprType::I32,
+        StackValue::I64(_) => ExprType::I64,
+        StackValue::F32(_) => ExprType::F32,
+        StackValue::F64(_) => ExprType::F64,
+        StackValue::Entity(_) => ExprType::Entity,
+        StackValue::Str(_) => ExprType::String,
+        StackValue::WorldRef(_) | StackValue::HeapRef(_) => ExprType::None,
     }
 }
 
@@ -405,7 +348,6 @@ impl<'world, 'host, 'p> ScriptVm<'world, 'host, 'p> {
 const fn build_jump_table() -> [InstrHandler; 256] {
     use instr::*;
     let mut table: [InstrHandler; 256] = [invalid; 256];
-    table[OP_CONST_VOID as usize] = const_void;
     table[OP_CONST_TRUE as usize] = const_true;
     table[OP_CONST_FALSE as usize] = const_false;
     table[OP_CONST_I32 as usize] = const_i32;
@@ -415,12 +357,12 @@ const fn build_jump_table() -> [InstrHandler; 256] {
     table[OP_CONST_STR as usize] = const_str;
     table[OP_DROP as usize] = drop1;
     table[OP_DROP_N as usize] = drop_n;
-    table[OP_LOAD_PARAM as usize] = load_local;
     table[OP_LOAD_LOCAL as usize] = load_local;
     table[OP_LOAD_GLOBAL as usize] = load_global;
-    table[OP_LOAD_NATIVE_PROP as usize] = load_native_prop;
-    table[OP_LOAD_FIELD as usize] = load_field;
+    table[OP_LOAD_COMPONENT as usize] = load_component;
     table[OP_STORE_LOCAL as usize] = store_local;
+    table[OP_EXTRACT as usize] = extract;
+    table[OP_INDEX as usize] = index;
 
     table[OP_NOT as usize] = not;
     table[OP_NEG_I32 as usize] = neg_i32;
@@ -515,11 +457,6 @@ fn invalid(_vm: &mut ScriptVm) -> Result<(), VMError> {
     Err(VMError::InvalidInstruction)
 }
 
-fn const_void(vm: &mut ScriptVm) -> Result<(), VMError> {
-    vm.stack.push(StackValue::Void);
-    Ok(())
-}
-
 fn const_true(vm: &mut ScriptVm) -> Result<(), VMError> {
     vm.stack.push(StackValue::Bool(true));
     Ok(())
@@ -555,14 +492,16 @@ fn const_f64(vm: &mut ScriptVm) -> Result<(), VMError> {
 }
 
 fn const_str(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let len = vm.read_immediate::<u16>() as usize;
-    // SAFETY: the compiler writes the string's `len` bytes after its length, from a `&str`.
+    let len = vm.read_u16();
+    // SAFETY: the compiler writes the string's `len` bytes after its length, from a `&str`, in
+    // the code of a module borrowed for the evaluation.
     let s = unsafe {
         let bytes = core::slice::from_raw_parts(vm.iptr, len);
         vm.iptr = vm.iptr.add(len);
         core::str::from_utf8_unchecked(bytes)
     };
-    vm.stack.push(StackValue::String(Arc::new(s.to_string())));
+    let slot = vm.store.borrowed_str(s)?;
+    vm.stack.push(slot);
     Ok(())
 }
 
@@ -580,23 +519,33 @@ fn drop_n(vm: &mut ScriptVm) -> Result<(), VMError> {
 
 /// Parameters and locals share the frame: parameters first.
 fn load_local(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let n = vm.read_immediate::<u16>() as usize;
-    let val = vm.stack.get(n).ok_or(VMError::InvalidLocal(n))?.clone();
-    vm.stack.push(val);
+    let slot = vm.read_u16();
+    let n = vm.read_u16();
+    let start = vm.frame_base + slot;
+    if start + n > vm.stack.len() {
+        return Err(VMError::InvalidLocal(slot));
+    }
+    vm.stack.extend_from_within(start..start + n);
     Ok(())
 }
 
 fn store_local(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let n = vm.read_immediate::<u16>() as usize;
-    let arg = vm.pop()?;
-    *vm.stack.get_mut(n).ok_or(VMError::InvalidLocal(n))? = arg;
+    let slot = vm.read_u16();
+    let n = vm.read_u16();
+    let source = vm.top(n)?;
+    let target = vm.frame_base + slot;
+    if target + n > source {
+        return Err(VMError::InvalidLocal(slot));
+    }
+    vm.stack.copy_within(source.., target);
+    vm.stack.truncate(source);
     Ok(())
 }
 
 fn load_global(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let n = vm.read_immediate::<u16>() as usize;
+    let n = vm.read_u16();
     let val = match vm.host.members.get(n) {
-        Some(HostMember::Const(val)) => val.clone(),
+        Some(HostMember::Const(val)) => *val,
         Some(HostMember::GlobalProperty(accessor)) => accessor(vm)?,
         Some(_) => return Err(VMError::InvalidNativeProp(n)),
         None => return Err(VMError::InvalidGlobalIndex(n)),
@@ -605,80 +554,83 @@ fn load_global(vm: &mut ScriptVm) -> Result<(), VMError> {
     Ok(())
 }
 
-fn load_native_prop(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let arg = vm.pop()?;
-    let prop_index = vm.read_immediate::<u16>() as usize;
-    let Some(HostMember::InstanceProperty(accessor)) = vm.host.members.get(prop_index) else {
-        return Err(VMError::InvalidNativeProp(prop_index));
-    };
-    let accessor = *accessor;
-    let args_start = vm.stack.len();
-    let val = accessor(&mut vm.invocation_context(args_start), arg)?;
-    vm.stack.push(val);
-    Ok(())
+/// Pushes a component's leaves.
+struct StackSink<'s, 'w> {
+    stack: &'s mut Vec<StackValue>,
+    store: &'s mut SlotStore<'w>,
 }
 
-/// The value of a reflected field that is a primitive.
-fn primitive_field(field: &dyn PartialReflect) -> Option<StackValue> {
-    if let Some(val) = field.try_downcast_ref::<bool>() {
-        Some(StackValue::Bool(*val))
-    } else if let Some(val) = field.try_downcast_ref::<i32>() {
-        Some(StackValue::I32(*val))
-    } else if let Some(val) = field.try_downcast_ref::<i64>() {
-        Some(StackValue::I64(*val))
-    } else if let Some(val) = field.try_downcast_ref::<f32>() {
-        Some(StackValue::F32(*val))
-    } else if let Some(val) = field.try_downcast_ref::<f64>() {
-        Some(StackValue::F64(*val))
-    } else {
-        field
-            .try_downcast_ref::<Entity>()
-            .map(|val| StackValue::Entity(*val))
+impl<'w> SlotSink<'w> for StackSink<'_, 'w> {
+    fn leaf(&mut self, leaf: Leaf, value: &'w dyn PartialReflect) -> Result<(), VMError> {
+        let mismatch = || VMError::Unsupported("a value unlike its type's layout");
+        let slot = match leaf {
+            Leaf::Bool => StackValue::Bool(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::I32 => StackValue::I32(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::I64 => StackValue::I64(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::F32 => StackValue::F32(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::F64 => StackValue::F64(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::Entity => StackValue::Entity(*value.try_downcast_ref().ok_or_else(mismatch)?),
+            Leaf::Str => {
+                let s: &'w String = value.try_downcast_ref().ok_or_else(mismatch)?;
+                self.store.borrowed_str(s)?
+            }
+            Leaf::Opaque => self.store.world_ref(value),
+        };
+        self.stack.push(slot);
+        Ok(())
     }
 }
 
-/// The field at `index` of a reflected struct.
-fn struct_field(
-    reflect: &dyn PartialReflect,
-    index: usize,
-) -> Result<&dyn PartialReflect, VMError> {
-    let ReflectRef::Struct(rstruct) = reflect.reflect_ref() else {
-        return Err(VMError::Unsupported("fields of a non-struct"));
+/// Replaces an entity with `n` slots of one of its components, from slot `offset`.
+fn load_component(vm: &mut ScriptVm) -> Result<(), VMError> {
+    let member = vm.read_u16();
+    let offset = vm.read_u16();
+    let n = vm.read_u16();
+    let StackValue::Entity(entity) = vm.pop()? else {
+        return Err(VMError::InvalidType(ExprType::Entity));
     };
-    rstruct.field_at(index).ok_or(VMError::InvalidField(index))
+    let Some(HostMember::Component(component)) = vm.host.members.get(member) else {
+        return Err(VMError::InvalidNativeProp(member));
+    };
+    let value = (component.read)(vm.world, entity, vm.tracking)?;
+    let mut sink = StackSink {
+        stack: &mut vm.stack,
+        store: &mut vm.store,
+    };
+    flatten(value, &component.layout, offset, offset + n, &mut sink)
 }
 
-fn load_field(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let arg = vm.pop()?;
-    let field_index = vm.read_immediate::<u16>() as usize;
-    let val = match arg {
-        StackValue::WorldRef(world_index) => {
-            let reflect = *vm
-                .world_refs
-                .get(world_index)
-                .ok_or(VMError::InvalidType(ExprType::None))?;
-            let field = struct_field(reflect, field_index)?;
-            match primitive_field(field) {
-                Some(val) => val,
-                None => {
-                    let index = vm.world_refs.len();
-                    vm.world_refs.push(field);
-                    StackValue::WorldRef(index)
-                }
-            }
-        }
-        StackValue::HeapRef(heap_index) => {
-            let reflect = vm
-                .heap_refs
-                .get(heap_index as usize)
-                .ok_or(VMError::InvalidType(ExprType::None))?;
-            let field = struct_field(reflect.as_ref(), field_index)?;
-            // TODO(PAN107): composite fields of temporaries, flattened into slots.
-            primitive_field(field).ok_or(VMError::Unsupported("composite fields of temporaries"))?
-        }
-        _ => return Err(VMError::InvalidType(vm.value_type(&arg))),
+/// Keeps `n` slots from `offset` of the top `total`: a field of a value.
+fn extract(vm: &mut ScriptVm) -> Result<(), VMError> {
+    let offset = vm.read_u16();
+    let n = vm.read_u16();
+    let total = vm.read_u16();
+    let start = vm.top(total)?;
+    if offset + n > total {
+        return Err(VMError::StackUnderflow);
+    }
+    vm.stack
+        .copy_within(start + offset..start + offset + n, start);
+    vm.stack.truncate(start + n);
+    Ok(())
+}
+
+/// Replaces an array of `len` elements of `size` slots, and an index above it, with the
+/// element.
+fn index(vm: &mut ScriptVm) -> Result<(), VMError> {
+    let size = vm.read_u16();
+    let len = vm.read_u16();
+    let StackValue::I32(i) = vm.pop()? else {
+        return Err(VMError::InvalidType(ExprType::I32));
     };
-    vm.stack.push(val);
+    let element = usize::try_from(i)
+        .ok()
+        .filter(|e| *e < len)
+        .ok_or(VMError::IndexOutOfBounds(i, len))?;
+    let start = vm.top(size * len)?;
+    let from = start + element * size;
+    vm.stack.copy_within(from..from + size, start);
+    vm.stack.truncate(start + size);
     Ok(())
 }
 
@@ -688,13 +640,9 @@ macro_rules! binop {
         fn $name(vm: &mut ScriptVm) -> Result<(), VMError> {
             let rhs = vm.pop()?;
             let lhs = vm.pop()?;
-            let (StackValue::$variant($l), StackValue::$variant($r)) = (&lhs, &rhs) else {
-                return Err(VMError::MismatchedTypes(
-                    vm.value_type(&lhs),
-                    vm.value_type(&rhs),
-                ));
+            let (StackValue::$variant($l), StackValue::$variant($r)) = (lhs, rhs) else {
+                return Err(VMError::MismatchedTypes(value_type(&lhs), value_type(&rhs)));
             };
-            let ($l, $r) = (*$l, *$r);
             let result: Result<StackValue, VMError> = $body;
             vm.stack.push(result?);
             Ok(())
@@ -708,7 +656,7 @@ macro_rules! unop {
         fn $name(vm: &mut ScriptVm) -> Result<(), VMError> {
             let arg = vm.pop()?;
             let StackValue::$variant($a) = arg else {
-                return Err(VMError::InvalidType(vm.value_type(&arg)));
+                return Err(VMError::InvalidType(value_type(&arg)));
             };
             vm.stack.push($body);
             Ok(())
@@ -816,86 +764,91 @@ fn convert(vm: &mut ScriptVm) -> Result<(), VMError> {
     let _from = vm.read_immediate::<u8>();
     let to = vm.read_immediate::<u8>();
     let arg = vm.pop()?;
-    let val = match (&arg, to) {
-        (Bool(b), instr::TYPE_I32) => I32(*b as i32),
-        (Bool(b), instr::TYPE_I64) => I64(*b as i64),
-        (I32(n), instr::TYPE_I32) => I32(*n),
-        (I32(n), instr::TYPE_I64) => I64(*n as i64),
-        (I32(n), instr::TYPE_F32) => F32(*n as f32),
-        (I32(n), instr::TYPE_F64) => F64(*n as f64),
-        (I64(n), instr::TYPE_I32) => I32(*n as i32),
-        (I64(n), instr::TYPE_I64) => I64(*n),
-        (I64(n), instr::TYPE_F32) => F32(*n as f32),
-        (I64(n), instr::TYPE_F64) => F64(*n as f64),
-        (F32(n), instr::TYPE_I32) => I32(*n as i32),
-        (F32(n), instr::TYPE_I64) => I64(*n as i64),
-        (F32(n), instr::TYPE_F32) => F32(*n),
-        (F32(n), instr::TYPE_F64) => F64(*n as f64),
-        (F64(n), instr::TYPE_I32) => I32(*n as i32),
-        (F64(n), instr::TYPE_I64) => I64(*n as i64),
-        (F64(n), instr::TYPE_F32) => F32(*n as f32),
-        (F64(n), instr::TYPE_F64) => F64(*n),
-        _ => return Err(VMError::InvalidType(vm.value_type(&arg))),
+    let val = match (arg, to) {
+        (Bool(b), instr::TYPE_I32) => I32(b as i32),
+        (Bool(b), instr::TYPE_I64) => I64(b as i64),
+        (I32(n), instr::TYPE_I32) => I32(n),
+        (I32(n), instr::TYPE_I64) => I64(n as i64),
+        (I32(n), instr::TYPE_F32) => F32(n as f32),
+        (I32(n), instr::TYPE_F64) => F64(n as f64),
+        (I64(n), instr::TYPE_I32) => I32(n as i32),
+        (I64(n), instr::TYPE_I64) => I64(n),
+        (I64(n), instr::TYPE_F32) => F32(n as f32),
+        (I64(n), instr::TYPE_F64) => F64(n as f64),
+        (F32(n), instr::TYPE_I32) => I32(n as i32),
+        (F32(n), instr::TYPE_I64) => I64(n as i64),
+        (F32(n), instr::TYPE_F32) => F32(n),
+        (F32(n), instr::TYPE_F64) => F64(n as f64),
+        (F64(n), instr::TYPE_I32) => I32(n as i32),
+        (F64(n), instr::TYPE_I64) => I64(n as i64),
+        (F64(n), instr::TYPE_F32) => F32(n as f32),
+        (F64(n), instr::TYPE_F64) => F64(n),
+        _ => return Err(VMError::InvalidType(value_type(&arg))),
     };
     vm.stack.push(val);
     Ok(())
 }
 
+/// Calls a script function: its arguments, the top `n` slots, become its frame's first.
 fn call(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let fn_index = vm.read_immediate::<u16>() as usize;
-    let num_params = vm.read_immediate::<u16>() as usize;
-    let stack_len = vm.stack.len();
-    if num_params > stack_len {
-        return Err(VMError::StackUnderflow);
-    }
-    // SAFETY: `run_with` set `module` from a reference that outlives this evaluation.
-    let module = unsafe { vm.module.as_ref() }.ok_or(VMError::InvalidFunction(fn_index))?;
+    let fn_index = vm.read_u16();
+    let n = vm.read_u16();
+    let base = vm.top(n)?;
+    let module = vm.module.ok_or(VMError::InvalidFunction(fn_index))?;
     let func = module
         .functions
         .get(fn_index)
         .ok_or(VMError::InvalidFunction(fn_index))?;
-    let iptr = func.code.as_ptr();
-    let num_locals = func.num_locals;
-    let mut new_stack = vm.stack.split_off(stack_len - num_params);
-    new_stack.resize(new_stack.len() + num_locals, StackValue::Void);
-    vm.push_call_stack(new_stack);
-    vm.iptr = iptr;
+    vm.call_stack.push(CallStackEntry {
+        module: vm.module,
+        frame_base: vm.frame_base,
+        iptr: vm.iptr,
+    });
+    vm.frame_base = base;
+    vm.stack
+        .resize(vm.stack.len() + func.num_locals, StackValue::Void);
+    vm.iptr = func.code.as_ptr();
     Ok(())
 }
 
 fn call_host_method(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let method_index = vm.read_immediate::<u16>() as usize;
-    let num_params = vm.read_immediate::<u16>() as usize;
-    let Some(HostMember::InstanceMethod(method)) = vm.host.members.get(method_index) else {
-        return Err(VMError::InvalidNativeMethod(method_index));
+    let method_index = vm.read_u16();
+    let f = match vm.host.members.get(method_index) {
+        Some(HostMember::InstanceMethod(f) | HostMember::InstanceProperty(f)) => *f,
+        _ => return Err(VMError::InvalidNativeMethod(method_index)),
     };
-    call_native(vm, *method, num_params)
+    call_native(vm, f)
 }
 
 fn call_host_function(vm: &mut ScriptVm) -> Result<(), VMError> {
-    let function_index = vm.read_immediate::<u16>() as usize;
-    let num_params = vm.read_immediate::<u16>() as usize;
+    let function_index = vm.read_u16();
     let Some(HostMember::Function(f)) = vm.host.members.get(function_index) else {
         return Err(VMError::InvalidGlobalIndex(function_index));
     };
-    call_native(vm, *f, num_params)
+    call_native(vm, *f)
 }
 
-/// Calls a native function on the top `num_params` values, which it replaces with its result.
-fn call_native(
-    vm: &mut ScriptVm,
-    f: crate::host::HostFunction,
-    num_params: usize,
-) -> Result<(), VMError> {
-    let stack_len = vm.stack.len();
-    let args_start = stack_len
-        .checked_sub(num_params)
-        .ok_or(VMError::StackUnderflow)?;
-    let val = f(&mut vm.invocation_context(args_start))?;
-    vm.stack.truncate(args_start);
-    if !val.is_void() {
-        vm.stack.push(val);
+/// Calls a native function on the top `n` slots, which it replaces with its result of
+/// `results` slots.
+fn call_native(vm: &mut ScriptVm, f: crate::host::HostFunction) -> Result<(), VMError> {
+    let n = vm.read_u16();
+    let results = vm.read_u16();
+    let args_start = vm.top(n)?;
+    vm.out.clear();
+    let mut ctx = InvocationContext {
+        world: vm.world,
+        store: &mut vm.store,
+        args: &vm.stack[args_start..],
+        next_arg: Cell::new(0),
+        out: &mut vm.out,
+        tracking: vm.tracking,
+    };
+    f(&mut ctx)?;
+    if vm.out.len() != results {
+        return Err(VMError::NativeResultSlots(results, vm.out.len()));
     }
+    vm.stack.truncate(args_start);
+    vm.stack.extend_from_slice(&vm.out);
     Ok(())
 }
 
@@ -921,7 +874,7 @@ fn branch_if(vm: &mut ScriptVm, when: bool) -> Result<(), VMError> {
             Ok(())
         }
         _ => Err(VMError::MismatchedTypes(
-            vm.value_type(&test),
+            value_type(&test),
             ExprType::Boolean,
         )),
     }
@@ -945,7 +898,7 @@ mod tests {
     use super::*;
     use crate::codegen::instr::InstructionBuilder;
 
-    /// Runs `build`'s code, with a `ret` appended.
+    /// Runs `build`'s code, with a `ret` of one slot appended.
     fn run_code(build: impl FnOnce(&mut InstructionBuilder)) -> Result<StackValue, VMError> {
         let world = World::new();
         let host = HostState::default();
@@ -953,10 +906,12 @@ mod tests {
         let mut builder = InstructionBuilder::default();
         build(&mut builder);
         builder.push_op(instr::OP_RET);
+        builder.push_immediate::<u16>(1);
         let code = builder.inner();
         let mut vm = ScriptVm::new(&world, &host, &mut tracking);
         vm.iptr = code.as_ptr();
-        vm.start()
+        vm.start()?;
+        vm.stack.first().copied().ok_or(VMError::StackUnderflow)
     }
 
     fn push_i32(b: &mut InstructionBuilder, n: i32) {
@@ -1094,6 +1049,20 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_keeps_a_field() {
+        let result = run_code(|b| {
+            for n in 1..=3 {
+                push_i32(b, n);
+            }
+            b.push_op(instr::OP_EXTRACT);
+            b.push_immediate::<u16>(1);
+            b.push_immediate::<u16>(1);
+            b.push_immediate::<u16>(3);
+        });
+        assert_eq!(result.unwrap(), StackValue::I32(2));
+    }
+
+    #[test]
     fn test_global() {
         let mut world = World::new();
         let actor_id = world.spawn(()).id();
@@ -1104,12 +1073,13 @@ mod tests {
         builder.push_op(instr::OP_LOAD_GLOBAL);
         builder.push_immediate::<u16>(self_id as u16);
         builder.push_op(instr::OP_RET);
+        builder.push_immediate::<u16>(1);
         let code = builder.inner();
         let mut vm = ScriptVm::new(&world, &host, &mut tracking);
         vm.owner = actor_id;
         vm.iptr = code.as_ptr();
-        let result = vm.start().unwrap();
-        assert_eq!(result, StackValue::Entity(actor_id));
+        assert_eq!(vm.start(), Ok(1));
+        assert_eq!(vm.stack[0], StackValue::Entity(actor_id));
     }
 
     fn get_self(vm: &ScriptVm) -> Result<StackValue, VMError> {

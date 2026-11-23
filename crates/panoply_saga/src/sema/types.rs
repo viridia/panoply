@@ -24,6 +24,8 @@ pub enum ExprType {
     String,
     Entity,
     Function(Arc<FunctionType>),
+    /// A fixed-size array: its element type and length.
+    Array(Arc<ExprType>, usize),
     Reflected(&'static TypeInfo),
 }
 
@@ -74,6 +76,7 @@ impl PartialEq for ExprType {
         match (self, other) {
             (Self::Infer(l0), Self::Infer(r0)) => l0 == r0,
             (Self::Function(l0), Self::Function(r0)) => l0 == r0,
+            (Self::Array(l0, l1), Self::Array(r0, r1)) => l0 == r0 && l1 == r1,
             (Self::Reflected(l0), Self::Reflected(r0)) => l0.type_id() == r0.type_id(),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
@@ -94,6 +97,7 @@ impl Display for ExprType {
             ExprType::String => write!(f, "String"),
             ExprType::Entity => write!(f, "Entity"),
             ExprType::Reflected(type_info) => write!(f, "{}", type_info.type_path()),
+            ExprType::Array(element, len) => write!(f, "[{element}; {len}]"),
             ExprType::Function(ftype) => {
                 write!(f, "fn(")?;
                 for (i, param) in ftype.params.iter().enumerate() {

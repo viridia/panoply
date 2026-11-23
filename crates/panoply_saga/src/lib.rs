@@ -23,11 +23,11 @@ pub use plugin::{SagaHost, SagaHostBuilder, SagaPlugin};
 pub use sema::types::{ExprType, HostParam};
 pub use syntax::location::TokenLocation;
 pub use tracking::TrackingScope;
-pub use vm::{InvocationContext, ScriptVm, StackValue, VMError};
+pub use vm::{FromSlots, InvocationContext, ScriptVm, SlotStore, StackValue, ToSlots, VMError};
 
 use std::any::TypeId;
 
-use sema::decl::DeclTable;
+use sema::decl::{DeclKind, DeclTable};
 
 /// The output of a compilation, either a module or a formula.
 /// - a "module" is a standalone asset containing declarations (functions and variables)
@@ -59,6 +59,14 @@ impl ScriptModule {
         &self.self_components
     }
 
+    /// The index of the function `name` declares.
+    pub(crate) fn function_index(&self, name: &str) -> Option<usize> {
+        match self.module_decls.get(name)?.kind {
+            DeclKind::Function { index } => Some(index),
+            _ => None,
+        }
+    }
+
     /// The code of each function, disassembled, for debugging.
     pub fn disassemble(&self) -> String {
         self.functions
@@ -69,9 +77,10 @@ impl ScriptModule {
     }
 }
 
-/// A function's bytecode and frame.
+/// A function's bytecode and frame, counted in slots.
 #[derive(Default, Debug)]
 pub(crate) struct CompiledFunction {
     pub(crate) code: Vec<u8>,
+    pub(crate) num_params: usize,
     pub(crate) num_locals: usize,
 }

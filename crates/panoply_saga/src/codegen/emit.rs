@@ -7,9 +7,13 @@ use super::{
 use crate::{
     CompiledFunction, ScriptModule,
     compiler::CompilationError,
+    host::{
+        HostState,
+        layout::{Layout, slot_count},
+    },
     sema::{
         build::ModuleExprs,
-        expr::{Expr, ExprKind, FunctionBody},
+        expr::{Expr, ExprKind},
         types::{ExprType, TypeTable},
     },
     syntax::{
@@ -45,39 +49,75 @@ fn imm16(location: TokenLocation, n: usize, what: &'static str) -> Result<u16, C
     u16::try_from(n).map_err(|_| CompilationError::Unsupported(location, what))
 }
 
+/// How many slots a value of `typ` takes.
+fn slots_of(location: TokenLocation, typ: &ExprType) -> Result<usize, CompilationError> {
+    slot_count(typ).ok_or(CompilationError::Internal(location, "a type with no slots"))
+}
+
+/// The offset of each of `types` in a frame starting at `start`, and where they end. A variable
+/// of a type with no slots (a function) takes none: its value is refused where it is made.
+fn offsets(types: &[ExprType], start: usize) -> (Vec<usize>, usize) {
+    let mut offset = start;
+    let mut result = Vec::with_capacity(types.len());
+    for typ in types {
+        result.push(offset);
+        offset += slot_count(typ).unwrap_or(0);
+    }
+    (result, offset)
+}
+
 pub(crate) fn gen_code(
     module: &mut ScriptModule,
     exprs: &ModuleExprs,
+    host: &HostState,
 ) -> Result<(), CompilationError> {
     module.functions.clear();
     for function in exprs.functions.iter() {
+        let location = function.body.map(|b| b.location).unwrap_or_default();
+        let (params, num_params) = offsets(&function.params, 0);
+        let (locals, frame_end) = offsets(&function.locals, num_params);
+        let ret_slots = imm16(
+            location,
+            slots_of(location, &function.ret)?,
+            "results of more than 65535 slots",
+        )?;
         let mut emitter = Emitter {
-            function,
             types: &exprs.types,
+            host,
+            params,
+            locals,
             out: BlockBuilder::default(),
         };
         emitter.out.current = emitter.out.new_block();
         if let Some(body) = function.body {
             emitter.visit_expr(body)?;
-            if exprs.types.get(body.typ).is_void() {
-                emitter.out.add_op(StackOp::ConstVoid);
-            }
-        } else {
-            emitter.out.add_op(StackOp::ConstVoid);
         }
         emitter.out.set_block_term(BlockTerminator::Return);
         module.functions.push(CompiledFunction {
-            code: build_instructions(emitter.out)?.inner(),
-            num_locals: function.locals.len(),
+            code: build_instructions(emitter.out, ret_slots)?.inner(),
+            num_params,
+            num_locals: frame_end - num_params,
         });
     }
     Ok(())
 }
 
 struct Emitter<'f, 'e> {
-    function: &'f FunctionBody<'e>,
     types: &'f TypeTable,
+    host: &'f HostState,
+    /// Each parameter's slot in the frame.
+    params: Vec<usize>,
+    /// Each local's slot in the frame, after the parameters.
+    locals: Vec<usize>,
     out: BlockBuilder<'e>,
+}
+
+/// Where a value can be read in place, without loading the value it is part of.
+enum Place<'e> {
+    /// A frame slot.
+    Local(usize),
+    /// A component of an entity: the entity's expression and the component's member.
+    Component(&'e Expr<'e>, usize),
 }
 
 /// The primitive type of a value, for typed operators.
@@ -100,13 +140,85 @@ impl<'f, 'e> Emitter<'f, 'e> {
         self.types.get(expr.typ)
     }
 
-    /// The stack slot of a local: after the parameters.
-    fn local_slot(&self, location: TokenLocation, index: usize) -> Result<u16, CompilationError> {
+    fn slots(&self, expr: &Expr) -> Result<usize, CompilationError> {
+        slots_of(expr.location, self.type_of(expr))
+    }
+
+    fn slots16(&self, expr: &Expr) -> Result<u16, CompilationError> {
         imm16(
-            location,
-            self.function.num_params + index,
-            "more than 65535 locals",
+            expr.location,
+            self.slots(expr)?,
+            "values of more than 65535 slots",
         )
+    }
+
+    /// The offset and slot count of field `index` of a value of `base`'s type.
+    fn field(&self, base: &Expr, index: usize) -> Result<(usize, usize), CompilationError> {
+        let ExprType::Reflected(info) = self.type_of(base) else {
+            return Err(CompilationError::Internal(
+                base.location,
+                "field of a non-struct",
+            ));
+        };
+        Layout::of(info)
+            .field(index)
+            .ok_or(CompilationError::Internal(base.location, "field index"))
+    }
+
+    /// Where `expr` can be read in place, and its offset there.
+    fn place(&self, expr: &'e Expr<'e>) -> Result<Option<(Place<'e>, usize)>, CompilationError> {
+        let internal = || CompilationError::Internal(expr.location, "variable index");
+        Ok(match &expr.kind {
+            ExprKind::LocalRef(index) => Some((
+                Place::Local(*self.locals.get(*index).ok_or_else(internal)?),
+                0,
+            )),
+            ExprKind::ParamRef(index) => Some((
+                Place::Local(*self.params.get(*index).ok_or_else(internal)?),
+                0,
+            )),
+            ExprKind::NativeProp(entity, member) if self.host.is_component(*member) => {
+                Some((Place::Component(entity, *member), 0))
+            }
+            ExprKind::Field(base, index) => match self.place(base)? {
+                Some((place, offset)) => Some((place, offset + self.field(base, *index)?.0)),
+                None => None,
+            },
+            _ => None,
+        })
+    }
+
+    /// Loads the `count` slots of `expr`, in place at `offset`.
+    fn load_place(
+        &mut self,
+        expr: &Expr,
+        place: Place<'e>,
+        offset: usize,
+    ) -> Result<(), CompilationError> {
+        let loc = expr.location;
+        let count = self.slots16(expr)?;
+        let offset = imm16(loc, offset, "more than 65535 slots")?;
+        match place {
+            Place::Local(slot) => {
+                if count > 0 {
+                    let slot = imm16(loc, slot, "more than 65535 locals")?;
+                    self.out.add_op(StackOp::LoadLocal {
+                        slot: slot + offset,
+                        count,
+                    });
+                }
+            }
+            Place::Component(entity, member) => {
+                self.visit_expr(entity)?;
+                let member = imm16(loc, member, "more than 65535 host members")?;
+                self.out.add_op(StackOp::LoadComponent {
+                    member,
+                    offset,
+                    count,
+                });
+            }
+        }
+        Ok(())
     }
 
     fn visit_expr(&mut self, expr: &'e Expr<'e>) -> Result<(), CompilationError> {
@@ -132,30 +244,52 @@ impl<'f, 'e> Emitter<'f, 'e> {
                 imm16(loc, s.len(), "string literals longer than 65535 bytes")?;
                 self.out.add_op(StackOp::ConstStr(s));
             }
-            ExprKind::ParamRef(index) => {
-                let index = imm16(loc, *index, "more than 65535 parameters")?;
-                self.out.add_op(StackOp::LoadParam(index));
-            }
-            ExprKind::LocalRef(index) => {
-                // A void local holds nothing.
-                if !self.type_of(expr).is_void() {
-                    let slot = self.local_slot(loc, *index)?;
-                    self.out.add_op(StackOp::LoadLocal(slot));
+            ExprKind::ParamRef(_) | ExprKind::LocalRef(_) | ExprKind::Field(..) => {
+                if let Some((place, offset)) = self.place(expr)? {
+                    return self.load_place(expr, place, offset);
                 }
-            }
-            ExprKind::Field(base, field_index) => {
+                let ExprKind::Field(base, index) = &expr.kind else {
+                    return Err(CompilationError::Internal(loc, "variable place"));
+                };
+                // A field of a temporary: load the whole value, then keep the field.
                 self.visit_expr(base)?;
-                let field_index = imm16(loc, *field_index, "more than 65535 fields")?;
-                self.out.add_op(StackOp::LoadField(field_index));
+                let (offset, count) = self.field(base, *index)?;
+                self.out.add_op(StackOp::Extract {
+                    offset: imm16(loc, offset, "more than 65535 slots")?,
+                    count: imm16(loc, count, "more than 65535 slots")?,
+                    total: self.slots16(base)?,
+                });
             }
             ExprKind::NativeProp(base, index) => {
+                if let Some((place, offset)) = self.place(expr)? {
+                    return self.load_place(expr, place, offset);
+                }
                 self.visit_expr(base)?;
-                let index = imm16(loc, *index, "more than 65535 host members")?;
-                self.out.add_op(StackOp::LoadNativeProp(index));
+                self.out.add_op(StackOp::CallHostMethod {
+                    method: imm16(loc, *index, "more than 65535 host members")?,
+                    num_args: self.slots16(base)?,
+                    num_results: self.slots16(expr)?,
+                });
             }
             ExprKind::GlobalRef(index) => {
                 let index = imm16(loc, *index, "more than 65535 host members")?;
                 self.out.add_op(StackOp::LoadGlobal(index));
+            }
+            ExprKind::ArrayLit(elements) => {
+                for element in elements.iter() {
+                    self.visit_expr(element)?;
+                }
+            }
+            ExprKind::Index(base, index) => {
+                let ExprType::Array(_, len) = self.type_of(base) else {
+                    return Err(CompilationError::Internal(loc, "index of a non-array"));
+                };
+                self.visit_expr(base)?;
+                self.visit_expr(index)?;
+                self.out.add_op(StackOp::Index {
+                    size: self.slots16(expr)?,
+                    len: imm16(loc, *len, "arrays longer than 65535")?,
+                });
             }
             ExprKind::BinaryExpr { op, lhs, rhs } => match op {
                 BinaryOp::LogAnd | BinaryOp::LogOr => self.visit_logical(*op, lhs, rhs)?,
@@ -184,40 +318,47 @@ impl<'f, 'e> Emitter<'f, 'e> {
                 }
             }
             ExprKind::Call(func, args) => {
-                let (num_args, make_op): (usize, fn(u16, u16) -> StackOp<'e>) = match &func.kind {
-                    ExprKind::HostFunctionRef(_) => (args.len(), |method, num_args| {
-                        StackOp::CallHostFunction { method, num_args }
-                    }),
-                    ExprKind::ScriptFunctionRef(_) => (args.len(), |method, num_args| {
-                        StackOp::CallScriptFunction { method, num_args }
-                    }),
-                    ExprKind::HostMethodRef(base, _) => {
-                        self.visit_expr(base)?;
-                        (args.len() + 1, |method, num_args| StackOp::CallHostMethod {
-                            method,
-                            num_args,
-                        })
+                let (index, base) = match func.kind {
+                    ExprKind::HostFunctionRef(index) | ExprKind::ScriptFunctionRef(index) => {
+                        (index, None)
                     }
+                    ExprKind::HostMethodRef(base, index) => (index, Some(base)),
                     _ => return Err(CompilationError::NotCallable(loc)),
                 };
-                let (ExprKind::HostFunctionRef(index)
-                | ExprKind::ScriptFunctionRef(index)
-                | ExprKind::HostMethodRef(_, index)) = func.kind
-                else {
-                    return Err(CompilationError::Internal(loc, "callee"));
-                };
+                let mut num_args = 0;
+                if let Some(base) = base {
+                    self.visit_expr(base)?;
+                    num_args += self.slots(base)?;
+                }
                 for arg in args.iter() {
                     self.visit_expr(arg)?;
+                    num_args += self.slots(arg)?;
                 }
                 let method = imm16(loc, index, "more than 65535 functions")?;
-                let num_args = imm16(loc, num_args, "more than 65535 arguments")?;
-                self.out.add_op(make_op(method, num_args));
+                let num_args = imm16(loc, num_args, "arguments of more than 65535 slots")?;
+                let num_results = self.slots16(expr)?;
+                self.out.add_op(match func.kind {
+                    ExprKind::HostFunctionRef(_) => StackOp::CallHostFunction {
+                        method,
+                        num_args,
+                        num_results,
+                    },
+                    ExprKind::ScriptFunctionRef(_) => {
+                        StackOp::CallScriptFunction { method, num_args }
+                    }
+                    _ => StackOp::CallHostMethod {
+                        method,
+                        num_args,
+                        num_results,
+                    },
+                });
             }
             ExprKind::Block(stmts, result) => {
                 for stmt in stmts.iter() {
                     self.visit_expr(stmt)?;
-                    if !matches!(self.type_of(stmt), ExprType::Void | ExprType::None) {
-                        self.out.add_op(StackOp::Drop(1));
+                    let count = slot_count(self.type_of(stmt)).unwrap_or(0);
+                    if count > 0 {
+                        self.out.add_op(StackOp::Drop(count));
                     }
                 }
                 if let Some(result) = result {
@@ -314,24 +455,33 @@ impl<'f, 'e> Emitter<'f, 'e> {
         let ExprKind::LocalRef(index) = lhs.kind else {
             return Err(CompilationError::InvalidAssignmentTarget(lhs.location));
         };
-        let void = self.type_of(lhs).is_void();
-        let slot = self.local_slot(lhs.location, index)?;
-        if op.is_some() && !void {
-            self.out.add_op(StackOp::LoadLocal(slot));
+        // As in `offsets`: a variable of a type with no slots takes none.
+        let count = slot_count(self.type_of(lhs)).unwrap_or(0);
+        let count = imm16(lhs.location, count, "values of more than 65535 slots")?;
+        let slot = *self
+            .locals
+            .get(index)
+            .ok_or(CompilationError::Internal(lhs.location, "variable index"))?;
+        let slot = imm16(lhs.location, slot, "more than 65535 locals")?;
+        if op.is_some() && count > 0 {
+            self.out.add_op(StackOp::LoadLocal { slot, count });
         }
         self.visit_expr(rhs)?;
         if let Some(op) = op {
             let typ = op_type(lhs.location, self.type_of(lhs))?;
             self.out.add_op(StackOp::BinaryOp(op, typ));
         }
-        if !void {
-            self.out.add_op(StackOp::StoreLocal(slot));
+        if count > 0 {
+            self.out.add_op(StackOp::StoreLocal { slot, count });
         }
         Ok(())
     }
 }
 
-fn build_instructions(builder: BlockBuilder) -> Result<InstructionBuilder, CompilationError> {
+fn build_instructions(
+    builder: BlockBuilder,
+    ret_slots: u16,
+) -> Result<InstructionBuilder, CompilationError> {
     struct BranchPatch {
         from_offset: usize,
         to_block: usize,
@@ -361,7 +511,10 @@ fn build_instructions(builder: BlockBuilder) -> Result<InstructionBuilder, Compi
                     "basic block with no terminator",
                 ));
             }
-            BlockTerminator::Return => out.push_op(instr::OP_RET),
+            BlockTerminator::Return => {
+                out.push_op(instr::OP_RET);
+                out.push_immediate(ret_slots);
+            }
             BlockTerminator::Jump { target } => {
                 if target != next {
                     branch(&mut out, instr::OP_BRANCH, target);
@@ -488,7 +641,6 @@ fn type_tag(typ: StackOpType) -> u8 {
 fn visit_stack_op(op: &StackOp, out: &mut InstructionBuilder) -> Result<(), CompilationError> {
     let internal = |what| CompilationError::Internal(TokenLocation::default(), what);
     match op {
-        StackOp::ConstVoid => out.push_op(instr::OP_CONST_VOID),
         StackOp::ConstBool(true) => out.push_op(instr::OP_CONST_TRUE),
         StackOp::ConstBool(false) => out.push_op(instr::OP_CONST_FALSE),
         StackOp::ConstI32(value) => {
@@ -519,29 +671,44 @@ fn visit_stack_op(op: &StackOp, out: &mut InstructionBuilder) -> Result<(), Comp
             out.push_op(instr::OP_DROP_N);
             out.push_immediate(n);
         }
-        StackOp::LoadParam(index) => {
-            out.push_op(instr::OP_LOAD_PARAM);
-            out.push_immediate(*index);
-        }
-        StackOp::LoadLocal(index) => {
+        StackOp::LoadLocal { slot, count } => {
             out.push_op(instr::OP_LOAD_LOCAL);
-            out.push_immediate(*index);
+            out.push_immediate(*slot);
+            out.push_immediate(*count);
         }
         StackOp::LoadGlobal(index) => {
             out.push_op(instr::OP_LOAD_GLOBAL);
             out.push_immediate(*index);
         }
-        StackOp::LoadNativeProp(index) => {
-            out.push_op(instr::OP_LOAD_NATIVE_PROP);
-            out.push_immediate(*index);
+        StackOp::LoadComponent {
+            member,
+            offset,
+            count,
+        } => {
+            out.push_op(instr::OP_LOAD_COMPONENT);
+            out.push_immediate(*member);
+            out.push_immediate(*offset);
+            out.push_immediate(*count);
         }
-        StackOp::LoadField(index) => {
-            out.push_op(instr::OP_LOAD_FIELD);
-            out.push_immediate(*index);
-        }
-        StackOp::StoreLocal(index) => {
+        StackOp::StoreLocal { slot, count } => {
             out.push_op(instr::OP_STORE_LOCAL);
-            out.push_immediate(*index);
+            out.push_immediate(*slot);
+            out.push_immediate(*count);
+        }
+        StackOp::Extract {
+            offset,
+            count,
+            total,
+        } => {
+            out.push_op(instr::OP_EXTRACT);
+            out.push_immediate(*offset);
+            out.push_immediate(*count);
+            out.push_immediate(*total);
+        }
+        StackOp::Index { size, len } => {
+            out.push_op(instr::OP_INDEX);
+            out.push_immediate(*size);
+            out.push_immediate(*len);
         }
         StackOp::UnaryOp(op, typ) => {
             out.push_op(unary_opcode(*op, *typ).ok_or_else(|| internal("unary operator"))?);
@@ -554,15 +721,23 @@ fn visit_stack_op(op: &StackOp, out: &mut InstructionBuilder) -> Result<(), Comp
             out.push_immediate(type_tag(*from));
             out.push_immediate(type_tag(*to));
         }
-        StackOp::CallHostMethod { method, num_args } => {
-            out.push_op(instr::OP_CALL_HOST_METHOD);
-            out.push_immediate(*method);
-            out.push_immediate(*num_args);
+        StackOp::CallHostMethod {
+            method,
+            num_args,
+            num_results,
         }
-        StackOp::CallHostFunction { method, num_args } => {
-            out.push_op(instr::OP_CALL_HOST_FUNCTION);
+        | StackOp::CallHostFunction {
+            method,
+            num_args,
+            num_results,
+        } => {
+            out.push_op(match op {
+                StackOp::CallHostMethod { .. } => instr::OP_CALL_HOST_METHOD,
+                _ => instr::OP_CALL_HOST_FUNCTION,
+            });
             out.push_immediate(*method);
             out.push_immediate(*num_args);
+            out.push_immediate(*num_results);
         }
         StackOp::CallScriptFunction { method, num_args } => {
             out.push_op(instr::OP_CALL);

@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use bevy::{
     ecs::{component::Component, entity::Entity, world::World},
-    math::Vec3,
+    math::{Quat, Vec3},
     reflect::{Reflect, Typed},
+    transform::components::Transform,
 };
 use futures_lite::future;
 use panoply_saga::{
-    CompilationError, ExprType, HostParam, HostState, InvocationContext, ModuleResolver, NoImports,
-    ScriptModule, ScriptVm, StackValue, TokenLocation, TrackingScope, VMError, compile_formula,
+    CompilationError, ExprType, FromSlots, HostParam, HostState, InvocationContext, ModuleResolver,
+    NoImports, ScriptModule, ScriptVm, TokenLocation, TrackingScope, VMError, compile_formula,
     compile_module, format_error,
 };
 use smol_str::SmolStr;
@@ -24,40 +25,60 @@ struct Lid {
     open: bool,
 }
 
-fn entity_health(ctx: &mut InvocationContext, actor: StackValue) -> Result<StackValue, VMError> {
-    let StackValue::Entity(entity) = actor else {
-        return Err(VMError::InvalidType(ExprType::None));
-    };
+/// A tuple struct, read as `self.charge.0`.
+#[derive(Component, Reflect)]
+struct Charge(f32);
+
+#[derive(Component, Reflect)]
+struct Label {
+    text: String,
+}
+
+#[derive(Reflect)]
+enum Mood {
+    Calm,
+}
+
+#[derive(Component, Reflect)]
+struct Temper {
+    mood: Mood,
+}
+
+fn entity_health(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let entity: Entity = ctx.arg()?;
     match ctx.component::<Health>(entity) {
-        Some(&Health(h)) => Ok(StackValue::F32(h)),
+        Some(&Health(h)) => ctx.ret(h),
         None => Err(VMError::MissingComponent("Health")),
     }
 }
 
-fn entity_heal(ctx: &mut InvocationContext) -> Result<StackValue, VMError> {
-    let entity: Entity = ctx.argument(0)?;
-    let amount: f32 = ctx.argument(1)?;
+fn entity_heal(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let entity: Entity = ctx.arg()?;
+    let amount: f32 = ctx.arg()?;
     match ctx.component::<Health>(entity) {
-        Some(&Health(h)) => Ok(StackValue::F32(h + amount)),
+        Some(&Health(h)) => ctx.ret(h + amount),
         None => Err(VMError::MissingComponent("Health")),
     }
 }
 
-fn entity_position(ctx: &mut InvocationContext, actor: StackValue) -> Result<StackValue, VMError> {
-    let StackValue::Entity(entity) = actor else {
-        return Err(VMError::InvalidType(ExprType::None));
-    };
+fn entity_position(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let entity: Entity = ctx.arg()?;
     match ctx.component::<Position>(entity) {
-        Some(Position(p)) => Ok(ctx.create_world_ref(p.as_reflect())),
+        Some(Position(p)) => ctx.ret(*p),
         None => Err(VMError::MissingComponent("Position")),
     }
 }
 
-fn vec3_new(ctx: &mut InvocationContext) -> Result<StackValue, VMError> {
-    let x = ctx.argument::<f32>(0)?;
-    let y = ctx.argument::<f32>(1)?;
-    let z = ctx.argument::<f32>(2)?;
-    ctx.create_heap_ref(Vec3 { x, y, z })
+fn vec3_new(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let x = ctx.arg::<f32>()?;
+    let y = ctx.arg::<f32>()?;
+    let z = ctx.arg::<f32>()?;
+    ctx.ret(Vec3 { x, y, z })
+}
+
+fn vec3_sum(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let v: Vec3 = ctx.arg()?;
+    ctx.ret(v.x + v.y + v.z)
 }
 
 fn param(name: &'static str, ty: ExprType) -> HostParam {
@@ -67,23 +88,33 @@ fn param(name: &'static str, ty: ExprType) -> HostParam {
     }
 }
 
-/// A host whose `Entity` has `health`, `position` and `heal(amount)`.
+/// A host whose `Entity` has `health`, `position` and `heal(amount)`, with `Vec3::new` and
+/// `Vec3::sum`.
 fn actor_host() -> HostState {
     let mut host = HostState::new();
+    let vec3 = ExprType::Reflected(Vec3::type_info());
     host.get_host_type_mut::<Entity>()
         .unwrap()
         .add_property("health", entity_health, ExprType::F32)
-        .add_property(
-            "position",
-            entity_position,
-            ExprType::Reflected(Vec3::type_info()),
-        )
+        .add_property("position", entity_position, vec3.clone())
         .add_method(
             "heal",
             entity_heal,
             vec![param("amount", ExprType::F32)],
             ExprType::F32,
         );
+    host.add_host_type::<Vec3>("Vec3")
+        .add_static_method(
+            "new",
+            vec3_new,
+            vec![
+                param("x", ExprType::F32),
+                param("y", ExprType::F32),
+                param("z", ExprType::F32),
+            ],
+            vec3.clone(),
+        )
+        .add_static_method("sum", vec3_sum, vec![param("v", vec3)], ExprType::F32);
     host
 }
 
@@ -95,21 +126,21 @@ fn module(src: &str, host: &HostState) -> Result<ScriptModule, CompilationError>
     future::block_on(compile_module("--str--", src, host, &NoImports))
 }
 
-fn run(
+fn run<T: for<'a> FromSlots<'a>>(
     module: &ScriptModule,
     function: &str,
     world: &World,
     host: &HostState,
     owner: Entity,
-) -> Result<StackValue, VMError> {
+) -> Result<T, VMError> {
     let mut tracking = TrackingScope::default();
     let mut vm = ScriptVm::new(world, host, &mut tracking);
     vm.owner = owner;
-    vm.run(module, function)
+    vm.run_as(module, function)
 }
 
 /// Compiles and runs a formula with no world state.
-fn eval(src: &str, ty: ExprType) -> Result<StackValue, VMError> {
+fn eval<T: for<'a> FromSlots<'a>>(src: &str, ty: ExprType) -> Result<T, VMError> {
     let host = HostState::new();
     let module = formula(src, &host, ty).unwrap_or_else(|e| panic!("{src}: {e}"));
     run(
@@ -122,7 +153,7 @@ fn eval(src: &str, ty: ExprType) -> Result<StackValue, VMError> {
 }
 
 /// Compiles and runs a formula on an actor with health 22 at (1, 2, 3).
-fn eval_actor(src: &str, ty: ExprType) -> Result<StackValue, VMError> {
+fn eval_actor<T: for<'a> FromSlots<'a>>(src: &str, ty: ExprType) -> Result<T, VMError> {
     let mut world = World::new();
     let actor = world
         .spawn((Health(22.0), Position(Vec3::new(1.0, 2.0, 3.0))))
@@ -132,16 +163,20 @@ fn eval_actor(src: &str, ty: ExprType) -> Result<StackValue, VMError> {
     run(&module, ScriptModule::DEFAULT, &world, &host, actor)
 }
 
+/// Compiles a module against [`actor_host`] and runs its `test`.
+fn eval_module<T: for<'a> FromSlots<'a>>(src: &str) -> Result<T, VMError> {
+    let host = actor_host();
+    let module = module(src, &host).unwrap_or_else(|e| panic!("{src}: {e}"));
+    run(&module, "test", &World::new(), &host, Entity::PLACEHOLDER)
+}
+
 #[test]
 fn compile_literals_and_arithmetic() {
-    assert_eq!(eval("20", ExprType::I32), Ok(StackValue::I32(20)));
-    assert_eq!(eval("20 + 10", ExprType::I32), Ok(StackValue::I32(30)));
-    assert_eq!(
-        eval("20.0 + 10.0", ExprType::F32),
-        Ok(StackValue::F32(30.0))
-    );
-    assert_eq!(eval("7 % 3 * 2 - 1", ExprType::I32), Ok(StackValue::I32(1)));
-    assert_eq!(eval("{ 20 }", ExprType::I32), Ok(StackValue::I32(20)));
+    assert_eq!(eval("20", ExprType::I32), Ok(20));
+    assert_eq!(eval("20 + 10", ExprType::I32), Ok(30));
+    assert_eq!(eval("20.0 + 10.0", ExprType::F32), Ok(30.0f32));
+    assert_eq!(eval("7 % 3 * 2 - 1", ExprType::I32), Ok(1));
+    assert_eq!(eval("{ 20 }", ExprType::I32), Ok(20));
 }
 
 #[test]
@@ -166,53 +201,34 @@ fn compile_relational() {
         ("true != false", true),
     ];
     for (src, expected) in cases {
-        assert_eq!(
-            eval(src, ExprType::Boolean),
-            Ok(StackValue::Bool(expected)),
-            "{src}"
-        );
+        assert_eq!(eval(src, ExprType::Boolean), Ok(expected), "{src}");
     }
 }
 
 #[test]
 fn compile_shifts_and_bits() {
-    assert_eq!(eval("1 << 3", ExprType::I32), Ok(StackValue::I32(8)));
-    assert_eq!(
-        eval("256i64 >> 4i64", ExprType::I64),
-        Ok(StackValue::I64(16))
-    );
-    assert_eq!(
-        eval("6 & 3 | 8 ^ 1", ExprType::I32),
-        Ok(StackValue::I32(11))
-    );
+    assert_eq!(eval("1 << 3", ExprType::I32), Ok(8));
+    assert_eq!(eval("256i64 >> 4i64", ExprType::I64), Ok(16i64));
+    assert_eq!(eval("6 & 3 | 8 ^ 1", ExprType::I32), Ok(11));
 }
 
 #[test]
 fn compile_unary() {
-    assert_eq!(eval("-5", ExprType::I32), Ok(StackValue::I32(-5)));
-    assert_eq!(eval("-2.5", ExprType::F32), Ok(StackValue::F32(-2.5)));
-    assert_eq!(
-        eval("!true", ExprType::Boolean),
-        Ok(StackValue::Bool(false))
-    );
-    assert_eq!(eval("~0", ExprType::I32), Ok(StackValue::I32(-1)));
+    assert_eq!(eval("-5", ExprType::I32), Ok(-5));
+    assert_eq!(eval("-2.5", ExprType::F32), Ok(-2.5f32));
+    assert_eq!(eval("!true", ExprType::Boolean), Ok(false));
+    assert_eq!(eval("~0", ExprType::I32), Ok(-1));
 }
 
 #[test]
 fn compile_casts() {
-    assert_eq!(eval("5 as f32", ExprType::F32), Ok(StackValue::F32(5.0)));
-    assert_eq!(eval("2.7 as i32", ExprType::I32), Ok(StackValue::I32(2)));
-    assert_eq!(eval("true as i32", ExprType::I32), Ok(StackValue::I32(1)));
-    assert_eq!(eval("5i64 as i32", ExprType::I32), Ok(StackValue::I32(5)));
-    assert_eq!(
-        eval("1.5f64 as f32", ExprType::F32),
-        Ok(StackValue::F32(1.5))
-    );
-    assert_eq!(eval("3 as i32", ExprType::I32), Ok(StackValue::I32(3)));
-    assert_eq!(
-        eval("{ let x = 2; x as f64 }", ExprType::F64),
-        Ok(StackValue::F64(2.0))
-    );
+    assert_eq!(eval("5 as f32", ExprType::F32), Ok(5.0f32));
+    assert_eq!(eval("2.7 as i32", ExprType::I32), Ok(2));
+    assert_eq!(eval("true as i32", ExprType::I32), Ok(1));
+    assert_eq!(eval("5i64 as i32", ExprType::I32), Ok(5));
+    assert_eq!(eval("1.5f64 as f32", ExprType::F32), Ok(1.5f32));
+    assert_eq!(eval("3 as i32", ExprType::I32), Ok(3));
+    assert_eq!(eval("{ let x = 2; x as f64 }", ExprType::F64), Ok(2.0f64));
 
     let host = HostState::new();
     let error = formula("1.0 as bool", &host, ExprType::Boolean).unwrap_err();
@@ -224,18 +240,12 @@ fn compile_casts() {
 
 #[test]
 fn compile_locals() {
-    assert_eq!(
-        eval("let x = 19; let y = x + 1; y", ExprType::I32),
-        Ok(StackValue::I32(20))
-    );
+    assert_eq!(eval("let x = 19; let y = x + 1; y", ExprType::I32), Ok(20));
     assert_eq!(
         eval("let x = 1; x += 2; x = x * 2; x", ExprType::I32),
-        Ok(StackValue::I32(6))
+        Ok(6)
     );
-    assert_eq!(
-        eval("let s = \"test\"; s.len()", ExprType::I32),
-        Ok(StackValue::I32(4))
-    );
+    assert_eq!(eval("let s = \"test\"; s.len()", ExprType::I32), Ok(4));
 
     let host = HostState::new();
     let error = formula("const x = 1; x = 2; x", &host, ExprType::I32).unwrap_err();
@@ -249,7 +259,7 @@ fn compile_locals() {
 fn compile_control_flow() {
     assert_eq!(
         eval("if 1 > 0 { 2.0 } else { 3.0 }", ExprType::F32),
-        Ok(StackValue::F32(2.0))
+        Ok(2.0f32)
     );
     // The inner `if` is not laid out after its condition, so it branches on true, then
     // unconditionally to the else block.
@@ -258,64 +268,57 @@ fn compile_control_flow() {
             "if true { if false { 1 } else { 2 } } else { 3 }",
             ExprType::I32
         ),
-        Ok(StackValue::I32(2))
+        Ok(2)
     );
     assert_eq!(
         eval(
             "if false { 1 } else if false { 2 } else { 3 }",
             ExprType::I32
         ),
-        Ok(StackValue::I32(3))
+        Ok(3)
     );
-    assert_eq!(
-        eval("false || true", ExprType::Boolean),
-        Ok(StackValue::Bool(true))
-    );
-    assert_eq!(
-        eval("true && false", ExprType::Boolean),
-        Ok(StackValue::Bool(false))
-    );
+    assert_eq!(eval("false || true", ExprType::Boolean), Ok(true));
+    assert_eq!(eval("true && false", ExprType::Boolean), Ok(false));
     assert_eq!(
         eval("(false || false) || (true && true)", ExprType::Boolean),
-        Ok(StackValue::Bool(true))
+        Ok(true)
     );
 }
 
 #[test]
 fn compile_runtime_errors() {
-    assert_eq!(eval("1 / 0", ExprType::I32), Err(VMError::DivideByZero));
-    assert_eq!(eval("1 % 0", ExprType::I32), Err(VMError::DivideByZero));
+    assert_eq!(
+        eval::<i32>("1 / 0", ExprType::I32),
+        Err(VMError::DivideByZero)
+    );
+    assert_eq!(
+        eval::<i32>("1 % 0", ExprType::I32),
+        Err(VMError::DivideByZero)
+    );
 }
 
 #[test]
 fn compile_string_method() {
-    assert_eq!(
-        eval("\"test\".len()", ExprType::I32),
-        Ok(StackValue::I32(4))
-    );
+    assert_eq!(eval("\"test\".len()", ExprType::I32), Ok(4));
+    assert_eq!(eval("\"test\"", ExprType::String), Ok("test".to_string()));
 }
 
 #[test]
 fn compile_entity_members() {
-    assert_eq!(
-        eval_actor("self.health", ExprType::F32),
-        Ok(StackValue::F32(22.0))
-    );
+    assert_eq!(eval_actor("self.health", ExprType::F32), Ok(22.0f32));
     assert_eq!(
         eval_actor("self.health > 0.0 && self.health < 1.0", ExprType::Boolean),
-        Ok(StackValue::Bool(false))
+        Ok(false)
     );
     assert_eq!(
         eval_actor("let e = self; e.health", ExprType::F32),
-        Ok(StackValue::F32(22.0))
+        Ok(22.0f32)
     );
+    assert_eq!(eval_actor("self.heal(3.0)", ExprType::F32), Ok(25.0f32));
+    assert_eq!(eval_actor("self.position.x", ExprType::F32), Ok(1.0f32));
     assert_eq!(
-        eval_actor("self.heal(3.0)", ExprType::F32),
-        Ok(StackValue::F32(25.0))
-    );
-    assert_eq!(
-        eval_actor("self.position.x", ExprType::F32),
-        Ok(StackValue::F32(1.0))
+        eval_actor("let p = self.position; p.z", ExprType::F32),
+        Ok(3.0f32)
     );
 }
 
@@ -328,7 +331,7 @@ fn compile_records_component_reads() {
     let mut tracking = TrackingScope::default();
     let mut vm = ScriptVm::new(&world, &host, &mut tracking);
     vm.owner = actor;
-    vm.run(&module, ScriptModule::DEFAULT).unwrap();
+    vm.run_as::<f32>(&module, ScriptModule::DEFAULT).unwrap();
     let health = world.component_id::<Health>().unwrap();
     assert_eq!(tracking.components(), &[(actor, health, true)]);
 }
@@ -340,7 +343,7 @@ fn self_is_the_owner() {
     let host = HostState::new();
     let module = formula("self", &host, ExprType::Entity).unwrap();
     let result = run(&module, ScriptModule::DEFAULT, &world, &host, actor);
-    assert_eq!(result, Ok(StackValue::Entity(actor)));
+    assert_eq!(result, Ok(actor));
 }
 
 #[test]
@@ -352,9 +355,9 @@ fn component_accessors_read_fields() {
     let mut host = HostState::new();
     host.add_component::<Lid>("lid");
     let module = formula("!self.lid.open", &host, ExprType::Boolean).unwrap();
-    let eval = |owner| run(&module, ScriptModule::DEFAULT, &world, &host, owner);
-    assert_eq!(eval(shut), Ok(StackValue::Bool(true)));
-    assert_eq!(eval(open), Ok(StackValue::Bool(false)));
+    let eval = |owner| run::<bool>(&module, ScriptModule::DEFAULT, &world, &host, owner);
+    assert_eq!(eval(shut), Ok(true));
+    assert_eq!(eval(open), Ok(false));
     assert_eq!(
         eval(lidless),
         Err(VMError::MissingComponent(core::any::type_name::<Lid>()))
@@ -368,31 +371,174 @@ fn component_accessors_read_fields() {
 }
 
 #[test]
-fn self_components_lists_reads_through_self() {
+fn component_fields_read_in_one_instruction() {
+    let mut world = World::new();
+    let transform = Transform {
+        translation: Vec3::new(4.0, 5.0, 6.0),
+        rotation: Quat::from_rotation_y(1.0),
+        scale: Vec3::splat(2.0),
+    };
+    let actor = world.spawn(transform).id();
     let mut host = HostState::new();
-    host.add_component::<Lid>("lid");
-    let module = formula("self.lid.open || !self.lid.open", &host, ExprType::Boolean).unwrap();
-    assert_eq!(module.self_components(), &[core::any::TypeId::of::<Lid>()]);
-    let module = formula("let s = self; s.lid.open", &host, ExprType::Boolean).unwrap();
-    assert!(module.self_components().is_empty());
+    host.add_component::<Transform>("transform");
+    let module = formula("self.transform.translation.y", &host, ExprType::F32).unwrap();
+    assert_eq!(
+        module.disassemble().matches("load component").count(),
+        1,
+        "{}",
+        module.disassemble()
+    );
+    assert_eq!(
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok(5.0f32)
+    );
+
+    let module = formula(
+        "self.transform",
+        &host,
+        ExprType::Reflected(Transform::type_info()),
+    )
+    .unwrap();
+    assert_eq!(
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok(transform)
+    );
+
+    let mut tracking = TrackingScope::default();
+    let mut vm = ScriptVm::new(&world, &host, &mut tracking);
+    vm.owner = actor;
+    vm.run_as::<Transform>(&module, ScriptModule::DEFAULT)
+        .unwrap();
+    assert_eq!(tracking.components().len(), 1);
+}
+
+#[test]
+fn tuple_struct_and_string_fields() {
+    let mut world = World::new();
+    let actor = world
+        .spawn((
+            Charge(0.5),
+            Label {
+                text: "chest".into(),
+            },
+            Temper { mood: Mood::Calm },
+        ))
+        .id();
+    let mut host = HostState::new();
+    host.add_component::<Charge>("charge");
+    host.add_component::<Label>("label");
+    host.add_component::<Temper>("temper");
+    let read = |src: &str, ty| {
+        let module = formula(src, &host, ty).unwrap_or_else(|e| panic!("{src}: {e}"));
+        let mut tracking = TrackingScope::default();
+        let mut vm = ScriptVm::new(&world, &host, &mut tracking);
+        vm.owner = actor;
+        vm.run(&module, ScriptModule::DEFAULT)
+            .map(|slots| slots.to_vec())
+    };
+    let module = formula("self.charge.0", &host, ExprType::F32).unwrap();
+    assert_eq!(
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok(0.5f32)
+    );
+    let module = formula("self.label.text.len()", &host, ExprType::I32).unwrap();
+    assert_eq!(
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok(5)
+    );
+    let module = formula("self.label.text", &host, ExprType::String).unwrap();
+    assert_eq!(
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok("chest".to_string())
+    );
+    // An enum field is one opaque slot: readable, with nothing to see inside.
+    assert_eq!(
+        read("self.temper", ExprType::Reflected(Temper::type_info())).map(|slots| slots.len()),
+        Ok(1)
+    );
+
+    for (src, expected) in [
+        ("self.charge.1", "UnknownField"),
+        ("self.charge.x", "UnknownField"),
+        ("self.temper.mood.x", "Unsupported"),
+        ("self.label.0", "NoFields"),
+    ] {
+        let error = formula(src, &host, ExprType::F32).unwrap_err();
+        assert!(
+            format!("{error:?}").starts_with(expected),
+            "{src}: {error:?}"
+        );
+    }
+}
+
+#[test]
+fn values_pass_through_helpers_and_natives() {
+    assert_eq!(
+        eval_module(
+            "fn up(v: Vec3) -> Vec3 { v } \
+             fn test() -> f32 { up(Vec3::new(1.0, 2.0, 3.0)).z }"
+        ),
+        Ok(3.0f32)
+    );
+    assert_eq!(
+        eval_module(
+            "fn up(v: Vec3) -> Vec3 { let w = v; w } \
+             fn test() -> f32 { Vec3::sum(up(Vec3::new(1.0, 2.0, 3.0))) }"
+        ),
+        Ok(6.0f32)
+    );
+    // Locals after a multi-slot one sit past its slots.
+    assert_eq!(
+        eval_module("fn test() -> f32 { let v = Vec3::new(1.0, 2.0, 3.0); let k = 10.0; v.y * k }"),
+        Ok(20.0f32)
+    );
+    assert_eq!(
+        eval_module("fn test() -> Vec3 { Vec3::new(1.0, 2.0, 3.0) }"),
+        Ok(Vec3::new(1.0, 2.0, 3.0))
+    );
+}
+
+#[test]
+fn arrays() {
+    assert_eq!(eval("[1.0, 2.0, 3.0][1]", ExprType::F32), Ok(2.0f32));
+    assert_eq!(
+        eval("let a = [1, 2, 3]; let b = 5; a[2] + b", ExprType::I32),
+        Ok(8)
+    );
+    assert_eq!(
+        eval::<i32>("[1, 2][2]", ExprType::I32),
+        Err(VMError::IndexOutOfBounds(2, 2))
+    );
+    assert_eq!(
+        eval::<i32>("[1, 2][-1]", ExprType::I32),
+        Err(VMError::IndexOutOfBounds(-1, 2))
+    );
+    assert_eq!(
+        eval_module(
+            "fn sum(a: [f32; 4]) -> f32 { a[0] + a[1] + a[2] + a[3] } \
+             fn test() -> f32 { sum([1.0, 2.0, 3.0, 4.0]) }"
+        ),
+        Ok(10.0f32)
+    );
+    assert_eq!(
+        eval_module("fn test() -> [i32; 3] { let a: [i32; 3] = [1, 2, 3]; a }"),
+        Ok([1, 2, 3])
+    );
+    assert_eq!(
+        eval_module(
+            "fn test() -> f32 { let vs = [Vec3::new(1.0, 2.0, 3.0), Vec3::new(4.0, 5.0, 6.0)]; \
+             vs[1].y }"
+        ),
+        Ok(5.0f32)
+    );
 }
 
 #[test]
 fn compile_static_method() {
-    let mut host = HostState::new();
-    host.add_host_type::<Vec3>("Vec3").add_static_method(
-        "new",
-        vec3_new,
-        vec![
-            param("x", ExprType::F32),
-            param("y", ExprType::F32),
-            param("z", ExprType::F32),
-        ],
-        ExprType::Reflected(Vec3::type_info()),
+    assert_eq!(
+        eval_module("fn test() -> f32 { Vec3::new(1.0, 2.0, 3.0).y }"),
+        Ok(2.0f32)
     );
-    let module = module("fn test() -> f32 { Vec3::new(1.0, 2.0, 3.0).y }", &host).unwrap();
-    let result = run(&module, "test", &World::new(), &host, Entity::PLACEHOLDER);
-    assert_eq!(result, Ok(StackValue::F32(2.0)));
 }
 
 #[test]
@@ -415,7 +561,7 @@ fn compile_module_functions() {
     for (src, expected) in cases {
         let module = module(src, &host).unwrap_or_else(|e| panic!("{src}: {e}"));
         let result = run(&module, "test", &World::new(), &host, Entity::PLACEHOLDER);
-        assert_eq!(result, Ok(StackValue::I32(expected)), "{src}");
+        assert_eq!(result, Ok(expected), "{src}");
     }
 }
 
@@ -460,7 +606,7 @@ fn compile_with_resolver() {
     ))
     .unwrap();
     let result = run(&compiled, "test", &World::new(), &host, Entity::PLACEHOLDER);
-    assert_eq!(result, Ok(StackValue::I32(2)));
+    assert_eq!(result, Ok(2));
 
     let error = future::block_on(compile_module(
         "--str--",
@@ -485,16 +631,16 @@ fn disassembles() {
         "fn 0:",
         "   0: const i32 2",
         "   5: store local 0",
-        "   8: load local 0",
-        "  11: const i32 1",
-        "  16: gt.i32",
-        "  17: branch_if_false 36 [+14]",
-        "  22: load local 0",
-        "  25: const i32 3",
-        "  30: mul.i32",
-        "  31: branch 41 [+5]",
-        "  36: const i32 0",
-        "  41: ret",
+        "  10: load local 0",
+        "  15: const i32 1",
+        "  20: gt.i32",
+        "  21: branch_if_false 42 [+16]",
+        "  26: load local 0",
+        "  31: const i32 3",
+        "  36: mul.i32",
+        "  37: branch 47 [+5]",
+        "  42: const i32 0",
+        "  47: ret 1",
         "",
     ];
     assert_eq!(module.disassemble(), expected.join("\n"));

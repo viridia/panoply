@@ -59,6 +59,17 @@ pub(crate) fn check_types(expr: &Expr, types: &TypeTable) -> Result<(), Compilat
             check_types(base, types)?;
         }
 
+        ExprKind::ArrayLit(elements) => {
+            for element in elements.iter() {
+                check_types(element, types)?;
+            }
+        }
+
+        ExprKind::Index(base, index) => {
+            check_types(base, types)?;
+            check_types(index, types)?;
+        }
+
         ExprKind::BinaryExpr { op, lhs, rhs } => {
             check_types(lhs, types)?;
             check_types(rhs, types)?;

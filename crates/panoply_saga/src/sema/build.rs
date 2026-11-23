@@ -75,7 +75,7 @@ pub(crate) fn build_formula_exprs<'e>(
     let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
     let body = builder.build_block(ast, &module_scope, stmts, result)?;
     builder.take_self_components(module);
-    let function = builder.finish(body, ret_type.clone(), 0)?;
+    let function = builder.finish(body, ret_type.clone(), Vec::new())?;
     exprs.functions.push(function);
 
     module.module_decls.insert(
@@ -118,8 +118,9 @@ fn create_decls(
                 let index = exprs.functions.len();
                 exprs.functions.push(FunctionBody {
                     body: None,
+                    params: Vec::new(),
                     locals: Vec::new(),
-                    num_params: 0,
+                    ret: ExprType::Void,
                 });
                 module.module_decls.insert(
                     (*name).into(),
@@ -265,8 +266,8 @@ fn build_function_bodies<'e>(
         let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
         let body_expr = builder.build_expr(body, &param_scope)?;
         builder.take_self_components(module);
-        exprs.functions[index] =
-            builder.finish(body_expr, ftype.ret.clone(), ftype.params.len())?;
+        let params = ftype.params.iter().map(|p| p.typ.clone()).collect();
+        exprs.functions[index] = builder.finish(body_expr, ftype.ret.clone(), params)?;
     }
     Ok(())
 }
@@ -320,10 +321,11 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
         mut self,
         body: &'e Expr<'e>,
         ret: ExprType,
-        num_params: usize,
+        params: Vec<ExprType>,
     ) -> Result<FunctionBody<'e>, CompilationError> {
         let body_type = self.types.get(body.typ).clone();
-        self.inference.add_constraint(ret, body_type, body.location);
+        self.inference
+            .add_constraint(ret.clone(), body_type, body.location);
         self.inference.solve_constraints()?;
         let inference = &self.inference;
         self.types
@@ -334,8 +336,9 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
         check_types(body, self.types)?;
         Ok(FunctionBody {
             body: Some(body),
-            num_params,
+            params,
             locals: self.locals,
+            ret,
         })
     }
 
@@ -483,8 +486,40 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
                 self.build_member(loc, base, name)
             }
 
-            // TODO(PAN107): tuple fields, laid out in slots.
-            NodeKind::FieldIndex => Err(CompilationError::Unsupported(loc, "tuple fields")),
+            NodeKind::FieldIndex(base, index) => {
+                let base = self.build_expr(base, scope)?;
+                self.build_tuple_field(loc, base, *index)
+            }
+
+            NodeKind::ArrayLit(elements) => {
+                let mut element_exprs = Vec::with_capacity(elements.len());
+                for element in elements.iter() {
+                    element_exprs.push(self.build_expr(element, scope)?);
+                }
+                // The parser takes only non-empty literals; every element has the first's type.
+                let Some(first) = element_exprs.first() else {
+                    return Err(CompilationError::Internal(loc, "empty array literal"));
+                };
+                let element_type = self.type_of(first);
+                for element in element_exprs.iter().skip(1) {
+                    self.constrain(element_type.clone(), element);
+                }
+                let typ = ExprType::Array(Arc::new(element_type), element_exprs.len());
+                let elements = self.arena.alloc_slice_copy(&element_exprs);
+                Ok(self.expr(loc, ExprKind::ArrayLit(elements), typ))
+            }
+
+            NodeKind::Index(base, index) => {
+                let base = self.build_expr(base, scope)?;
+                let index = self.build_expr(index, scope)?;
+                self.constrain(ExprType::I32, index);
+                let element = match self.type_of(base) {
+                    ExprType::Array(element, _) => (*element).clone(),
+                    ExprType::Infer(_) => return Err(CompilationError::UnresolvedType(loc)),
+                    other => return Err(CompilationError::NotIndexable(loc, other)),
+                };
+                Ok(self.expr(loc, ExprKind::Index(base, index), element))
+            }
 
             NodeKind::Empty => Ok(self.expr(loc, ExprKind::Empty, ExprType::Void)),
 
@@ -563,7 +598,7 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
 
             NodeKind::Decl(_) => Err(CompilationError::ExpectExpression(loc)),
 
-            NodeKind::Module(_) | NodeKind::Import(..) | NodeKind::ArrayType => {
+            NodeKind::Module(_) | NodeKind::Import(..) | NodeKind::ArrayType(..) => {
                 Err(CompilationError::ExpectExpression(loc))
             }
         }
@@ -694,13 +729,44 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
                     ExprType::from_type_info(field_info),
                 ))
             }
-            // TODO(PAN107): tuple structs, tuples and enums, through value slots.
-            ExprType::Reflected(_) => Err(CompilationError::Unsupported(
+            ExprType::Reflected(TypeInfo::Enum(_)) => Err(CompilationError::Unsupported(
                 loc,
-                "fields of this kind of type",
+                "fields of an enum; the host wraps enums",
             )),
+            ExprType::Reflected(TypeInfo::TupleStruct(_) | TypeInfo::Tuple(_)) => Err(unknown()),
+            ExprType::Reflected(_) => Err(CompilationError::NoFields(loc, base_type)),
             _ => Err(unknown()),
         }
+    }
+
+    /// Field `index` of a tuple struct or tuple: `v.0`.
+    fn build_tuple_field(
+        &mut self,
+        loc: TokenLocation,
+        base: &'e Expr<'e>,
+        index: usize,
+    ) -> Result<&'e Expr<'e>, CompilationError> {
+        let base_type = self.type_of(base);
+        let field = match &base_type {
+            ExprType::Reflected(TypeInfo::TupleStruct(info)) => info.field_at(index),
+            ExprType::Reflected(TypeInfo::Tuple(info)) => info.field_at(index),
+            _ => return Err(CompilationError::NoFields(loc, base_type)),
+        };
+        let Some(field) = field else {
+            return Err(CompilationError::UnknownField(
+                loc,
+                base_type.to_string().into(),
+                index.to_string().into(),
+            ));
+        };
+        let Some(field_info) = field.type_info() else {
+            return Err(CompilationError::Unsupported(loc, "fields of this type"));
+        };
+        Ok(self.expr(
+            loc,
+            ExprKind::Field(base, index),
+            ExprType::from_type_info(field_info),
+        ))
     }
 
     /// The target of an assignment: a mutable local.

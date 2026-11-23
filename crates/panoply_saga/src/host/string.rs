@@ -1,17 +1,15 @@
 //! String type and methods.
 
-use std::sync::Arc;
-
 use super::HostState;
 use crate::{
     sema::types::ExprType,
-    vm::{InvocationContext, StackValue, VMError},
+    vm::{InvocationContext, VMError},
 };
 
 /// string.len()
-fn string_len(ctx: &mut InvocationContext) -> Result<StackValue, VMError> {
-    let s: Arc<String> = ctx.argument(0)?;
-    Ok(StackValue::I32(i32::try_from(s.len()).unwrap_or(i32::MAX)))
+fn string_len(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let len = ctx.arg::<&str>()?.len();
+    ctx.ret(i32::try_from(len).unwrap_or(i32::MAX))
 }
 
 pub(crate) fn init_string_methods(host: &mut HostState) {

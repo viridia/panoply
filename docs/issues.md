@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I75.**
+**Next: I80.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -90,10 +90,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   the run logs hitches too, and the same plan run alone does not: `smoke.py` logged hitches in the
   directory run and none by itself. Candidates: set it only for `scroll.py`'s own launch, if the
   driver takes a per-plan environment, or turn it on for every plan. Confirmed by running.
-- **I32** SAGA's literals take no type from their context: `5` is always `i32` and `1.0` always
-  `f32`, so `let x: i64 = 5;` and `let y: f64 = 1.0;` are type errors without a suffix (`5i64`,
-  `1.0f64`). The fix: unsized integer and float literal types that unify with any integer or float,
-  defaulted to `i32` and `f32` after solving. Confirmed by running (`panoply_saga`'s tests).
 - **I33** Formulas in exemplar JSON are not highlighted: the `.saga` grammar (`tools/vscode-saga/`)
   needs an injection into JSON, which must know the keys that hold a formula (only `when` so far).
   Read, not run.
@@ -326,3 +322,30 @@ confirmed by running something or only by reading. Numbers are never reused.
   after it in the frame. Any camera's `is_active` set from a plan does the same; the game, setting
   none, is safe. Candidates: measure without rendering some other way, or report it upstream, the
   cascades lookup skipping a view it has none for. Confirmed by running (PAN4b's portal ablation).
+- **I75** A SAGA native declares its parameters twice, as a `HostParam` list at registration and in
+  the order of its `ctx.arg()` calls, and a mismatch shows only when it runs (`call_native` checks
+  the result's slot count, not the arguments). Candidate: register natives from their Rust
+  signature, `|v: Vec3, k: f32| -> f32`, through a trait over function types as Bevy's systems are,
+  deriving both the declared types and the reads. Bevy's reflected functions (`IntoFunction`) box
+  each argument, the cost value slots removed. Read, not run.
+- **I76** SAGA's promise that no script panics is tested only on hand-picked inputs
+  (`tests/no_panic.rs`). Candidate: a `cargo-fuzz` target compiling arbitrary formulas and running
+  what compiles, a new dependency for the author to approve. Read, not run.
+- **I77** SAGA's emitter rebuilds a struct's layout from its `TypeInfo` at every field access
+  (`Emitter::field`, `emit.rs`), compile time only. Candidate: cache layouts in `HostState` by
+  `TypeId`, perhaps with I75. Read, not run.
+- **I78** SAGA formulas compile as their asset loads, on the assumption that compiling is cheap
+  enough for loading to stay bound by I/O; nothing has measured it. Proposed: count the formulas the
+  game loads (exemplar catalogs' `when`s, any in precincts), time a realistic formula's compile in a
+  release-mode test, and compare the product with a precinct's load time, the numbers going to
+  [notes.md](notes.md). If compiling shows, the first remedy is compiling a formula on its first
+  evaluation; a bytecode cache comes after, keyed by the source's hash and a fingerprint of the
+  host, since bytecode holds host member indices and layouts' offsets. Not measured.
+- **I79** A reload that arrives after the editor's save barrier lifts overwrites edits made since
+  the save. The barrier waits `SAVE_WAIT_TIMEOUT` (1 s, `unsaved.rs`) for the watcher to report the
+  saved file, on the assumption that it reports within a fraction of a second; in PAN107's directory
+  run it reported after 1.27 s. So `smoke.py`'s `floor_entries` saved, timed out ("No reload after
+  saving"), undid the `raise` edit, and then the late reload put the saved `raise: 0.5` back, which
+  the next save wrote. Candidates: a longer timeout, or the real fix, a reload of an asset edited
+  since its save not replacing it. Confirmed by running (the run's `app.log`: save 07.823, timeout
+  08.829, undo 08.996, reload 09.092, save 09.153).

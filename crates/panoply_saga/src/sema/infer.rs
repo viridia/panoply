@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::platform::collections::HashMap;
 
 use super::types::{ExprType, TypeVarId};
@@ -44,6 +46,9 @@ impl TypeInference {
                 Some(substituted) => self.substitute(substituted),
                 None => ty.clone(),
             },
+            ExprType::Array(element, len) => {
+                ExprType::Array(Arc::new(self.substitute(element)), *len)
+            }
             _ => ty.clone(),
         }
     }
@@ -57,6 +62,7 @@ impl TypeInference {
                         .get(id)
                         .is_some_and(|substituted| self.occurs_check(var_id, substituted))
             }
+            ExprType::Array(element, _) => self.occurs_check(var_id, element),
             _ => false,
         }
     }
@@ -81,6 +87,9 @@ impl TypeInference {
                 }
                 self.substitutions.insert(*id, ty.clone());
                 Ok(())
+            }
+            (ExprType::Array(e1, n1), ExprType::Array(e2, n2)) if n1 == n2 => {
+                self.unify(e1, e2, location)
             }
             _ => Err(CompilationError::MismatchedTypes(location, t1, t2)),
         }

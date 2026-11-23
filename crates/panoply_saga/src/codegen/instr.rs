@@ -3,7 +3,6 @@
 use core::fmt::Write;
 
 // Constants
-pub const OP_CONST_VOID: u8 = 2; // Takes up a stack slot but represents no value.
 pub const OP_CONST_TRUE: u8 = 3;
 pub const OP_CONST_FALSE: u8 = 4;
 pub const OP_CONST_I32: u8 = 5; // (imm i32)
@@ -16,13 +15,16 @@ pub const OP_CONST_STR: u8 = 9; // (imm u16 length, [bytes])
 pub const OP_DROP: u8 = 10;
 pub const OP_DROP_N: u8 = 11; // (imm u32)
 
-// Loads and stores
-pub const OP_LOAD_PARAM: u8 = 20; // (imm u16)
-pub const OP_LOAD_LOCAL: u8 = 21; // (imm u16)
+// Loads and stores. Locals, parameters first, are counted in slots from the frame's base.
+pub const OP_LOAD_LOCAL: u8 = 21; // (imm u16 slot, u16 count)
 pub const OP_LOAD_GLOBAL: u8 = 22; // (imm u16)
-pub const OP_LOAD_NATIVE_PROP: u8 = 24; // (imm u16, consumes TOS)
-pub const OP_LOAD_FIELD: u8 = 25; // (imm u16, consumes TOS)
-pub const OP_STORE_LOCAL: u8 = 26; // (imm u16)
+/// Replaces the entity at TOS with slots of a component. (imm u16 member, u16 offset, u16 count)
+pub const OP_LOAD_COMPONENT: u8 = 23;
+pub const OP_STORE_LOCAL: u8 = 26; // (imm u16 slot, u16 count)
+/// Keeps `count` slots from `offset` of the top `total`. (imm u16 offset, u16 count, u16 total)
+pub const OP_EXTRACT: u8 = 27;
+/// Replaces an array and the `i32` index above it with the element. (imm u16 size, u16 len)
+pub const OP_INDEX: u8 = 28;
 
 // Unary operators: consume TOS and push the result.
 pub const OP_NOT: u8 = 50;
@@ -40,11 +42,12 @@ pub const OP_BRANCH: u8 = 62; // (imm i32 relative offset)
 pub const OP_BRANCH_IF_TRUE: u8 = 63; // (imm i32 relative offset, consumes TOS)
 pub const OP_BRANCH_IF_FALSE: u8 = 64; // (imm i32 relative offset, consumes TOS)
 
-// Calls
+// Calls, their arguments and results counted in slots.
 pub const OP_CALL: u8 = 70; // Call script function (imm u16 index, u16 arguments)
-pub const OP_CALL_HOST_METHOD: u8 = 71; // Call method on native type (imm u16, u16)
-pub const OP_CALL_HOST_FUNCTION: u8 = 72; // Call host function (imm u16, u16)
-pub const OP_RET: u8 = 74; // transfers value from child stack to parent
+pub const OP_CALL_HOST_METHOD: u8 = 71; // Native method (imm u16 index, u16 arguments, u16 results)
+pub const OP_CALL_HOST_FUNCTION: u8 = 72; // Native function (imm u16, u16, u16)
+/// Moves the top `count` slots to the frame's base and returns to the caller. (imm u16 count)
+pub const OP_RET: u8 = 74;
 
 // Binary operators: consume two values and push the result.
 pub const OP_ADD_I32: u8 = 100;
@@ -126,7 +129,6 @@ pub const TYPE_F64: u8 = 4;
 /// The mnemonic of an opcode that takes no immediates.
 fn simple_name(op: u8) -> Option<&'static str> {
     Some(match op {
-        OP_CONST_VOID => "void",
         OP_CONST_TRUE => "const true",
         OP_CONST_FALSE => "const false",
         OP_DROP => "drop",
@@ -137,7 +139,6 @@ fn simple_name(op: u8) -> Option<&'static str> {
         OP_NEG_F64 => "neg.f64",
         OP_BIT_NOT_I32 => "bit_not.i32",
         OP_BIT_NOT_I64 => "bit_not.i64",
-        OP_RET => "ret",
         OP_ADD_I32 => "add.i32",
         OP_ADD_I64 => "add.i64",
         OP_ADD_F32 => "add.f32",
@@ -312,6 +313,14 @@ pub fn disassemble(code: &[u8]) -> String {
     out
 }
 
+/// `count` slots from `slot`: the slot alone when there is one.
+fn slots(slot: u16, count: u16) -> String {
+    match count {
+        1 => format!("{slot}"),
+        _ => format!("{slot} x{count}"),
+    }
+}
+
 fn disassemble_one(reader: &mut InstructionReader, offset: usize, out: &mut String) -> Option<()> {
     let op = reader.u8()?;
     let line = if let Some(name) = simple_name(op) {
@@ -328,12 +337,22 @@ fn disassemble_one(reader: &mut InstructionReader, offset: usize, out: &mut Stri
                 format!("const str {:?}", String::from_utf8_lossy(bytes))
             }
             OP_DROP_N => format!("drop {}", reader.u32()?),
-            OP_LOAD_PARAM => format!("load param {}", reader.u16()?),
-            OP_LOAD_LOCAL => format!("load local {}", reader.u16()?),
+            OP_LOAD_LOCAL => format!("load local {}", slots(reader.u16()?, reader.u16()?)),
             OP_LOAD_GLOBAL => format!("load global {}", reader.u16()?),
-            OP_LOAD_NATIVE_PROP => format!("load native prop {}", reader.u16()?),
-            OP_LOAD_FIELD => format!("load field {}", reader.u16()?),
-            OP_STORE_LOCAL => format!("store local {}", reader.u16()?),
+            OP_LOAD_COMPONENT => {
+                let member = reader.u16()?;
+                format!(
+                    "load component[{member}] {}",
+                    slots(reader.u16()?, reader.u16()?)
+                )
+            }
+            OP_STORE_LOCAL => format!("store local {}", slots(reader.u16()?, reader.u16()?)),
+            OP_EXTRACT => {
+                let range = slots(reader.u16()?, reader.u16()?);
+                format!("extract {range} of {}", reader.u16()?)
+            }
+            OP_INDEX => format!("index {} x{}", reader.u16()?, reader.u16()?),
+            OP_RET => format!("ret {}", reader.u16()?),
             OP_CONVERT => format!("convert {} -> {}", reader.u8()?, reader.u8()?),
             OP_BRANCH | OP_BRANCH_IF_TRUE | OP_BRANCH_IF_FALSE => {
                 let name = match op {
@@ -345,13 +364,14 @@ fn disassemble_one(reader: &mut InstructionReader, offset: usize, out: &mut Stri
                 let target = reader.offset as i64 + relative as i64;
                 format!("{name} {target} [{relative:+}]")
             }
-            OP_CALL | OP_CALL_HOST_METHOD | OP_CALL_HOST_FUNCTION => {
+            OP_CALL => format!("call module[{}] {}", reader.u16()?, reader.u16()?),
+            OP_CALL_HOST_METHOD | OP_CALL_HOST_FUNCTION => {
                 let name = match op {
-                    OP_CALL => "call module",
                     OP_CALL_HOST_METHOD => "call host method",
                     _ => "call host function",
                 };
-                format!("{name}[{}] {}", reader.u16()?, reader.u16()?)
+                let (index, args) = (reader.u16()?, reader.u16()?);
+                format!("{name}[{index}] {args} -> {}", reader.u16()?)
             }
             _ => format!("invalid instruction {op}"),
         }

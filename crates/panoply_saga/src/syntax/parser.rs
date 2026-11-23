@@ -136,6 +136,7 @@ peg::parser! {
             / lit_string()
             / lit_bool()
             / qname()
+            / array_lit()
             / "(" _ e:expr() _ ")" { e }
             / expected!("expression")
         ) { e }
@@ -200,9 +201,13 @@ peg::parser! {
                 let location = base.location.union((start, end));
                 arena.alloc(ASTNode::new(location, NodeKind::FieldName(base, field)))
             }
-            base:(@) _ "." _ start:position!() index() end:position!() {
+            base:(@) _ "." _ start:position!() index:index() end:position!() {
                 let location = base.location.union((start, end));
-                arena.alloc(ASTNode::new(location, NodeKind::FieldIndex))
+                arena.alloc(ASTNode::new(location, NodeKind::FieldIndex(base, index)))
+            }
+            base:(@) _ start:position!() "[" _ index:expr() _ "]" end:position!() {
+                let location = base.location.union((start, end));
+                arena.alloc(ASTNode::new(location, NodeKind::Index(base, index)))
             }
             p:primary() { p }
         }
@@ -230,10 +235,19 @@ peg::parser! {
 
         rule array_type() -> &'a ASTNode<'a> =
             start:position!()
-            "[" _ type_expr() _ "]"
+            "[" _ element:type_expr() _ len:(";" _ n:index() _ { n })? "]"
             end:position!()
         {
-            arena.alloc(ASTNode::new((start, end), NodeKind::ArrayType))
+            arena.alloc(ASTNode::new((start, end), NodeKind::ArrayType(element, len)))
+        }
+
+        rule array_lit() -> &'a ASTNode<'a> =
+            start:position!()
+            "[" _ elements:(e:expr() ++ (_ "," _) { e }) _ "]"
+            end:position!()
+        {
+            let elements = arena.alloc_slice_copy(elements.as_slice());
+            arena.alloc(ASTNode::new((start, end), NodeKind::ArrayLit(elements)))
         }
 
         pub rule type_expr() -> &'a ASTNode<'a> = type_name() / array_type()

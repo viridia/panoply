@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN115.**
+**Next: PAN117.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -478,13 +478,19 @@ D111.
   within a loader. A module recompiles when one it imports reloads, and an import cycle is a compile
   error. The parser also takes a bare `import a::b;`, which becomes a namespace (`b::f`) or an
   error.
-- **PAN107 Value slots.** Step 2 of [saga.md](saga.md), Order of work, as its Values section lays
-  them out: host-declared structs and fixed-size arrays flattened into slots, and a stack with no
-  owned data, replacing what The crate lists under what value slots change. The `TODO(PAN107)`s in
-  `panoply_saga` include tuples, tuple structs and enums, which Values does not cover and whose
-  enums it wraps rather than flattens: each is built here or routed elsewhere.
-- **PAN105 Cells and reactions.** *Needs:* PAN107. Step 3 of [saga.md](saga.md), Order of work, its
-  first customer an animation's `when` (Early customers).
+- **PAN115 Equality, integer fields and literal types** in SAGA. `target == self`,
+  `name == "chest"`, and `!=`: today `==` takes only numbers and booleans (`binary_op_accepts`,
+  `check.rs`). Entities compare as values; strings by content, through the evaluation's `SlotStore`.
+  A component's unsigned and narrow integer fields, now opaque slots (`Leaf::of`, `layout.rs`),
+  widened as they are read: `u8`, `u16`, `u32`, `i8` and `i16` to `i32`, `u64` and `usize` to `i64`.
+  And literals that take their type from context, so that `let x: i64 = 5;` and `let y: f64 = 1.0;`
+  need no suffix: unsized integer and float literal types that unify with any integer or float,
+  defaulted to `i32` and `f32` after solving, an integer's range checked once its type is known.
+- **PAN116 Absent values**, as [saga.md](saga.md)'s Values has them: `Option`, `??` and `?.`, and a
+  read of another entity's component giving an `Option`, where it now fails the evaluation. Before
+  PAN105, whose memos read the entities they are given.
+- **PAN105 Cells and reactions.** Step 2 of [saga.md](saga.md), Order of work, its first customer an
+  animation's `when` (Early customers).
 - **PAN72 SAGA language reference.** *Needs:* PAN71, PAN104. For mod authors, in
   `docs/saga-language.md`: syntax, types, literals and their suffixes, operators and casts, locals,
   `if`, functions, modules and imports, how a formula embeds in an asset (PAN45b), and the host

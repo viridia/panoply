@@ -39,7 +39,6 @@ pub enum StackOpType {
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum StackOp<'e> {
-    ConstVoid,
     ConstBool(bool),
     ConstI32(i32),
     ConstI64(i64),
@@ -47,16 +46,47 @@ pub(crate) enum StackOp<'e> {
     ConstF64(f64),
     ConstStr(&'e str),
     Drop(usize),
-    LoadParam(u16),
-    LoadLocal(u16),
+    LoadLocal {
+        slot: u16,
+        count: u16,
+    },
     LoadGlobal(u16),
-    LoadNativeProp(u16),
-    LoadField(u16),
-    StoreLocal(u16),
+    LoadComponent {
+        member: u16,
+        offset: u16,
+        count: u16,
+    },
+    StoreLocal {
+        slot: u16,
+        count: u16,
+    },
+    Extract {
+        offset: u16,
+        count: u16,
+        total: u16,
+    },
+    Index {
+        size: u16,
+        len: u16,
+    },
     UnaryOp(UnaryOp, StackOpType),
     BinaryOp(BinaryOp, StackOpType),
-    Convert { from: StackOpType, to: StackOpType },
-    CallHostMethod { method: u16, num_args: u16 },
-    CallHostFunction { method: u16, num_args: u16 },
-    CallScriptFunction { method: u16, num_args: u16 },
+    Convert {
+        from: StackOpType,
+        to: StackOpType,
+    },
+    CallHostMethod {
+        method: u16,
+        num_args: u16,
+        num_results: u16,
+    },
+    CallHostFunction {
+        method: u16,
+        num_args: u16,
+        num_results: u16,
+    },
+    CallScriptFunction {
+        method: u16,
+        num_args: u16,
+    },
 }

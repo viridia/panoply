@@ -33,7 +33,6 @@ fn module(src: &str) -> Result<ScriptModule, CompilationError> {
 #[test]
 fn unsupported_features_are_errors() {
     let formulas = [
-        "let v = 1; v.0",
         "let a: [i32] = 1; 0",
         "a::b::c",
         "let a: Entity::Kind = 1; 0",
@@ -101,6 +100,15 @@ fn malformed_input_is_an_error() {
         "(1",
         "1 += 2; 0",
         "let x = true; x += 1; 0",
+        "let v = 1; v.0",
+        "[]",
+        "[1, 2.0][0]",
+        "[1, 2][1.0]",
+        "1[0]",
+        "let a: [i32; -1] = [1]; 0",
+        "let a: [i32; 2] = [1]; 0",
+        "[1, 2] + [3, 4]",
+        "[1, 2]",
     ];
     for src in formulas {
         assert!(formula(src).is_err(), "{src:?} compiled");

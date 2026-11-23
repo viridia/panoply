@@ -2,14 +2,15 @@
 //!
 //! Registration is the host's own Rust, run at startup, so a conflicting name panics there.
 
+pub(crate) mod layout;
 mod string;
 
 use std::{any::TypeId, sync::Arc};
 
 use bevy::{
-    ecs::{component::Component, entity::Entity},
+    ecs::{component::Component, entity::Entity, world::World},
     platform::collections::HashMap,
-    reflect::{Reflect, Typed},
+    reflect::{PartialReflect, Reflect, Typed},
 };
 use smol_str::SmolStr;
 
@@ -20,13 +21,28 @@ use crate::{
         types::{ExprType, FunctionType, HostParam},
     },
     syntax::location::TokenLocation,
+    tracking::TrackingScope,
     vm::{InvocationContext, StackValue, VMError},
 };
+use layout::Layout;
 
-pub type HostInstanceProperty =
-    fn(&mut InvocationContext, this: StackValue) -> Result<StackValue, VMError>;
-pub type HostFunction = fn(&mut InvocationContext) -> Result<StackValue, VMError>;
+/// A native function, method or property: it reads its arguments (a method's or property's
+/// first is the instance) with [`InvocationContext::arg`] and writes its result with
+/// [`InvocationContext::ret`].
+pub type HostFunction = fn(&mut InvocationContext) -> Result<(), VMError>;
 type GlobalPropertyAccessor = fn(&ScriptVm) -> Result<StackValue, VMError>;
+
+/// A component scripts read from an entity, a range of its slots at a time.
+#[derive(Debug)]
+pub(crate) struct ComponentRead {
+    /// The component on an entity, its read tracked; an error if the entity lacks it.
+    pub(crate) read: for<'w> fn(
+        &'w World,
+        Entity,
+        &mut TrackingScope,
+    ) -> Result<&'w dyn PartialReflect, VMError>,
+    pub(crate) layout: Layout,
+}
 
 /// Symbol table containing the methods and fields of a composite type such as a struct.
 #[derive(Default, Debug)]
@@ -90,11 +106,11 @@ impl HostTypeBuilder<'_> {
         self.decls.insert(name, host_decl(typ, kind));
     }
 
-    /// Add a property to this type.
+    /// Add a property to this type, a native called with the instance as its one argument.
     pub fn add_property(
         &mut self,
         name: impl Into<SmolStr>,
-        accessor: HostInstanceProperty,
+        accessor: HostFunction,
         typ: ExprType,
     ) -> &mut Self {
         self.add(
@@ -133,8 +149,8 @@ impl HostTypeBuilder<'_> {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum HostMember {
+#[derive(Debug)]
+pub(crate) enum HostMember {
     /// A constant value.
     Const(StackValue),
 
@@ -145,10 +161,13 @@ pub enum HostMember {
     Function(HostFunction),
 
     /// A property of a type
-    InstanceProperty(HostInstanceProperty),
+    InstanceProperty(HostFunction),
 
     /// A method of a type
     InstanceMethod(HostFunction),
+
+    /// A component of an entity, read by [`HostState::add_component`]'s accessor.
+    Component(ComponentRead),
 }
 
 /// Contains global definitions and method registrations for the compiler and VM.
@@ -193,11 +212,20 @@ impl HostState {
     /// through `self` are listed in [`ScriptModule::self_components`](crate::ScriptModule).
     pub fn add_component<C: Component + Reflect + Typed>(&mut self, name: impl Into<SmolStr>) {
         let typ = ExprType::from_type_info(C::type_info());
+        let member = HostMember::Component(ComponentRead {
+            read: read_component::<C>,
+            layout: Layout::of(C::type_info()),
+        });
         self.get_host_type_mut::<Entity>()
             .expect("HostState::new adds Entity")
-            .add_property(name, read_component::<C>, typ);
+            .add(name.into(), member, typ, false);
         self.component_members
             .insert(self.members.len() - 1, TypeId::of::<C>());
+    }
+
+    /// Whether member `index` is a component accessor.
+    pub(crate) fn is_component(&self, index: usize) -> bool {
+        matches!(self.members.get(index), Some(HostMember::Component(_)))
     }
 
     fn add_global(&mut self, name: SmolStr, decl: Decl) {
@@ -216,7 +244,7 @@ impl HostState {
     ///
     /// # Panics
     ///
-    /// If the value is not a primitive, an entity or a string.
+    /// If the value is not a primitive or an entity.
     pub fn add_global_const(&mut self, name: impl Into<SmolStr>, value: StackValue) -> usize {
         let typ = match value {
             StackValue::Bool(_) => ExprType::Boolean,
@@ -225,7 +253,6 @@ impl HostState {
             StackValue::F32(_) => ExprType::F32,
             StackValue::F64(_) => ExprType::F64,
             StackValue::Entity(_) => ExprType::Entity,
-            StackValue::String(_) => ExprType::String,
             _ => panic!("Unsupported constant type"),
         };
         let index = self.members.len();
@@ -306,16 +333,18 @@ fn read_self(vm: &ScriptVm) -> Result<StackValue, VMError> {
     Ok(StackValue::Entity(vm.owner))
 }
 
-/// The accessor [`HostState::add_component`] registers: entity `this`'s `C`, as a reference.
-fn read_component<C: Component + Reflect>(
-    ctx: &mut InvocationContext,
-    this: StackValue,
-) -> Result<StackValue, VMError> {
-    let StackValue::Entity(entity) = this else {
-        return Err(VMError::InvalidType(ExprType::Entity));
-    };
-    let component = ctx
-        .component::<C>(entity)
-        .ok_or(VMError::MissingComponent(core::any::type_name::<C>()))?;
-    Ok(ctx.create_world_ref(component))
+/// The accessor [`HostState::add_component`] registers: `entity`'s `C`.
+fn read_component<'w, C: Component + Reflect>(
+    world: &'w World,
+    entity: Entity,
+    tracking: &mut TrackingScope,
+) -> Result<&'w dyn PartialReflect, VMError> {
+    let component = world
+        .get_entity(entity)
+        .ok()
+        .and_then(|entity| entity.get::<C>());
+    tracking.track_component::<C>(entity, world, component.is_some());
+    component
+        .map(|c| c.as_partial_reflect())
+        .ok_or(VMError::MissingComponent(core::any::type_name::<C>()))
 }

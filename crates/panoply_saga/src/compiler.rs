@@ -52,6 +52,8 @@ pub enum CompilationError {
     UnknownField(TokenLocation, SmolStr, SmolStr),
     #[error("Type {1} does not have fields")]
     NoFields(TokenLocation, ExprType),
+    #[error("Type {1} cannot be indexed")]
+    NotIndexable(TokenLocation, ExprType),
     #[error("'{1}' has no members")]
     NoMembers(TokenLocation, SmolStr),
     #[error("Can't find the name '{1}' in this scope")]
@@ -96,6 +98,7 @@ impl CompilationError {
             | UnknownType(loc, _)
             | UnknownField(loc, _, _)
             | NoFields(loc, _)
+            | NotIndexable(loc, _)
             | NoMembers(loc, _)
             | UnknownSymbol(loc, _)
             | TypeAsValue(loc, _)
@@ -253,7 +256,7 @@ pub async fn compile_module(
     let ast = formula_parser::module(src, &ast_arena).map_err(transform_parse_error)?;
     let expr_arena = Bump::new();
     let exprs = build_module_exprs(host, &mut module, ast, &expr_arena)?;
-    gen_code(&mut module, &exprs)?;
+    gen_code(&mut module, &exprs, host)?;
     Ok(module)
 }
 
@@ -275,6 +278,6 @@ pub async fn compile_formula(
     let ast = formula_parser::formula(src, &ast_arena).map_err(transform_parse_error)?;
     let expr_arena = Bump::new();
     let exprs = build_formula_exprs(host, &mut module, ast, result_type, &expr_arena)?;
-    gen_code(&mut module, &exprs)?;
+    gen_code(&mut module, &exprs, host)?;
     Ok(module)
 }

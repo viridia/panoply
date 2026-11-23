@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X135.**
+**Next: X138.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -27,8 +27,7 @@ dropped, not deferred. Numbers are never reused.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA ("Scripts for Animated Graphic Adventures"), designed in
   [saga.md](saga.md) and [modding.md](modding.md), beyond the steps the roadmap holds (PAN71,
-  PAN107, PAN105, PAN104). *Gate:* PAN105, when the next step of saga.md's Order of work becomes a
-  chunk.
+  PAN105, PAN104). *Gate:* PAN105, when the next step of saga.md's Order of work becomes a chunk.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
   weight is still well below three.js's (`mix(water, sky * 0.5, opacity * 0.5)`, about
@@ -410,8 +409,8 @@ dropped, not deferred. Numbers are never reused.
   one.
 - **X92** Closures in SAGA, downward only ([saga.md](saga.md), Values): lambda syntax, function
   types as parameter types, structural unification of function types, and host functions that call
-  back into the VM. After value slots, whose single stack makes a capture an absolute index. *Gate:*
-  the first native aggregate that wants a script predicate.
+  back into the VM. The VM's single stack makes a capture an absolute index. *Gate:* the first
+  native aggregate that wants a script predicate.
 - **X93** A corpus of realistic SAGA formulas, for benchmarks and as a regression suite: a few dozen
   of faery's predicates (`design/scripting/predicates.md` in faery) and its aspects' conditions,
   translated to `.saga` under `crates/panoply_saga/tests/corpus/`, run over a world of a few hundred
@@ -628,3 +627,12 @@ dropped, not deferred. Numbers are never reused.
 - **X134** The instance list's funnel (`adornment_menu_button`) offered to feathers, which has no
   adornment that opens a popup for a text input's box. *Gate:* the author's call, once the editor
   has used it for a while.
+- **X135** Tuple types and literals written in SAGA, `(f32, i32)` and `(a, b)`, laid out in slots as
+  the host's tuples are ([saga.md](saga.md), Values). *Gate:* a helper module that needs one.
+- **X136** Assigning to a field or an element of a SAGA local, `v.x = 1.0` and `a[i] = x`: a store
+  at a slot offset, fixed for a field and computed for an element. *Gate:* loops, or a helper module
+  that needs one.
+- **X137** A reflection fallback for SAGA natives' arguments and results ([saga.md](saga.md),
+  Values), for value types without a `FromSlots` or `ToSlots` impl: slots to a dynamic struct and
+  `FromReflect`, and a reflection walk the other way. *Gate:* a native that takes or returns such a
+  type.

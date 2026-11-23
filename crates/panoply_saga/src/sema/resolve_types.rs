@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::{
     decl::{DeclKind, Scope},
     types::ExprType,
@@ -19,8 +21,15 @@ pub(crate) fn resolve_types(scope: &Scope, ast: &ASTNode) -> Result<ExprType, Co
                 _ => Err(CompilationError::UnknownType(ast.location, (*ident).into())),
             }
         }
-        // TODO(PAN107): fixed-size arrays, laid out in slots.
-        NodeKind::ArrayType => Err(CompilationError::Unsupported(ast.location, "array types")),
+        NodeKind::ArrayType(element, Some(len)) => Ok(ExprType::Array(
+            Arc::new(resolve_types(scope, element)?),
+            *len,
+        )),
+        // TODO(X86): lists whose length is not fixed.
+        NodeKind::ArrayType(_, None) => Err(CompilationError::Unsupported(
+            ast.location,
+            "arrays without a length",
+        )),
         // TODO(PAN71): types named through an imported module.
         NodeKind::QName(_) => Err(CompilationError::Unsupported(
             ast.location,

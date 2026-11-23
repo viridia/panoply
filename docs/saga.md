@@ -46,27 +46,21 @@ and a bytecode interpreter on a stack VM. It came from `bevy_reactor`'s formulas
   child lists arena slices, and a type in the typed tree is a handle into a table outside the arena.
   A `needs_drop` assertion on each node type keeps it so.
 
-What value slots change:
-
-- Every non-primitive value is reflected. A `Vec3` returned by a host function is a
-  `Box<dyn PartialReflect>` on the VM's heap, cloned back out by downcast when passed to another;
-  `load_field` finds a field's type by a chain of runtime downcasts the type solver already
-  resolved.
-- A string on the stack is an `Arc<String>`, so dropping a slot touches a reference count.
-- Each call allocates its frame's stack.
-
 ## Values
 
 - **Value types are flattened into stack slots.** A struct whose fields are all primitives or value
   types is laid out from its `TypeInfo` when registered with the host: `Vec3` is 3 slots, `Quat` 4,
   `Transform` 10. Field access is a slot offset fixed at compile time. Calls, returns and local
   indices count slots, not values. Fixed-size arrays are laid out the same way (`[f32; 4]` is 4
-  slots), for passing data to helper functions. Struct types declared in scripts are X87, and
-  dynamic lists X86.
+  slots), for passing data to helper functions. Tuple structs and tuples are laid out as structs,
+  their fields read as `v.0`. Every reflected struct has a layout: a field that is not a primitive,
+  an entity, a string or itself laid out (an enum, a list, a handle) is one opaque slot referring to
+  it. Struct types declared in scripts are X87, tuples written in scripts X135, and dynamic lists
+  X86.
 - **The stack holds no owned data**, so slots are `Copy` and dropping one costs nothing. A string is
-  an index into the evaluation's table of `&str`, each pointing into the module's constants (a
-  literal), the world (a component's string) or a `Bump` the VM owns (a computed string), freed when
-  the evaluation ends. A value leaving the VM, as a result or a memo cell's value, is owned,
+  an index into the evaluation's table of strings, each borrowed from the module's constants (a
+  literal) or the world (a component's string), or owned by the evaluation (a computed string),
+  freed when it ends. A value leaving the VM, as a result or a memo cell's value, is owned,
   converted once at the boundary.
 - **Casts are between primitives only:** `as` among `i32`, `i64`, `f32` and `f64`, and from `bool`
   to an integer. Numbers never convert implicitly, and converting other types would need traits,
@@ -87,8 +81,8 @@ What value slots change:
   Another entity's components cannot be checked at load. A host type such as `Actor` that guarantees
   them will prove them, or reading them gives an `Option` (below). Until then, a read of a component
   the entity lacks fails the evaluation, logged once per formula.
-- **Native functions take and return slots** through a trait (`from_slots`, `to_slots`),
-  implemented for the glam and Bevy types that matter, with a reflection fallback.
+- **Native functions take and return slots** through traits (`FromSlots`, `ToSlots`), implemented
+  for the glam and Bevy types that matter; a reflection fallback for other value types is X137.
 - **References name things by stable id** (a fixture in the actor's precinct, the player), resolved
   to an `Entity` when read.
 - **Absent is `Option`.** A field nobody set, or a reference with no target, is `None`; the type
@@ -284,8 +278,7 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 ## Order of work
 
 1. Imports (PAN71).
-2. Value types in slots: host-declared structs, fixed-size arrays, and a stack with no owned data.
-3. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
+2. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
    as the first native memos, for an animation's `when` (Early customers); measure with
    `plans/perf.py`. Each cell counts the reads its evaluation made and how many were repeats, the
    distribution shown in `perf.py`'s log, so whether tracking's dedup (a linear scan on insert)
