@@ -23,8 +23,8 @@ its tests read; over unchanged content it writes the same bytes.
 
 Looks at it from camera distance 20, mid-clip, so the outlines can be seen to
 follow the pose. Checked by eye in `actor.png`: tan tunic, gold sleeves, brown hair and legs,
-not the file's default materials; the hair, outlined, sits on the head. Its capsule is in
-`physics_views.py`, its hair's shine in `lighting.py`. In `walked.png`, the actor stands
+not the file's default materials; the hair, outlined, sits on the head. Its hair's shine is in
+`lighting.py`. In `walked.png`, the actor stands
 in the view's center facing away from the camera; in `slope.png`, at the foot of the hill's
 face. In `creatures.png` (kreekin, feral dogs, bears, bandits; the alpha dog and the black bear
 larger than the rest), `townsfolk.png` and `avatars.png`, each group's actors face as placed.

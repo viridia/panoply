@@ -82,8 +82,14 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
   `~/.local/bin`), given the absolute path of a plan or of `plans/`: it builds the workspace that
   holds the plan, and a relative path resolves against the working directory, which may be another
   repo's. Never two runs at once: plans compete for the window and its timing.
+- Plans run by what a failure costs (D112). The game's plans are those not tagged `editor`; each
+  editor area has its own plan (`scenery.py`, `properties.py`, `terrain.py`, `realm.py`). A plan
+  clicks a rarely used editor feature at most once, to show it is wired, its logic checked by
+  `cargo test`, and checks no overlays or layout.
 - A chunk's end, in order: `scripts/verify.sh`; then stop and hand the build to the author to try;
-  when they report back, one run of `/Users/talin/Projects/games/panoply/plans`, every plan and not
-  only the chunk's, approved once; then one of `plans/perf.py`, which the directory run skips, and
-  whose line in `docs/perf.csv` goes in the chunk's commit; the commit message last. While
-  iterating, run one plan by its path.
+  when they report back, one run, approved once: of `plans -x editor` and the plans of the editor
+  areas the chunk touched, by absolute path; or, for the day's first chunk to run every plan, of
+  `/Users/talin/Projects/games/panoply/plans`, whose commit then says "Every plan ran" in a bullet
+  (`git log --since=midnight` shows whether one has). Then one run of `plans/perf.py`, which the
+  directory run skips, and whose line in `docs/perf.csv` goes in the chunk's commit; the commit
+  message last. While iterating, run one plan by its path.

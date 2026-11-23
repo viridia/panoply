@@ -135,6 +135,31 @@ struct ModelFile {
     models: Vec<String>,
 }
 
+/// The glTF file `name`, at `path`, as `kind`'s picker lists it, given its named `scenes` and
+/// whether it holds animations: for clips, the file if it holds them; otherwise its scenes but
+/// the default one, sorted.
+fn model_file<'a>(
+    kind: ModelKind,
+    name: String,
+    path: String,
+    scenes: impl Iterator<Item = &'a str>,
+    animated: bool,
+) -> Option<ModelFile> {
+    if kind == ModelKind::Clips {
+        return animated.then_some(ModelFile {
+            name,
+            path,
+            models: Vec::new(),
+        });
+    }
+    let mut models: Vec<String> = scenes
+        .filter(|&scene| scene != DEFAULT_SCENE)
+        .map(|scene| format!("{path}#{scene}"))
+        .collect();
+    models.sort_by_key(|model| model.to_lowercase());
+    Some(ModelFile { name, path, models })
+}
+
 /// Opens a picker of `kind`'s models for the button `button`, whose field holds `current`. If
 /// the models have not all loaded yet, says so instead.
 pub(crate) fn open_model_picker(
@@ -168,25 +193,13 @@ pub(crate) fn open_model_picker(
             let path = server.get_path(id)?;
             let name = path.path().file_stem()?.to_string_lossy().into_owned();
             let gltf = gltfs.get(id)?;
-            if kind == ModelKind::Clips {
-                return (!gltf.named_animations.is_empty()).then(|| ModelFile {
-                    name,
-                    path: path.to_string(),
-                    models: Vec::new(),
-                });
-            }
-            let mut models: Vec<String> = gltf
-                .named_scenes
-                .keys()
-                .filter(|scene| scene.as_ref() != DEFAULT_SCENE)
-                .map(|scene| format!("{path}#{scene}"))
-                .collect();
-            models.sort_by_key(|model| model.to_lowercase());
-            Some(ModelFile {
+            model_file(
+                kind,
                 name,
-                path: path.to_string(),
-                models,
-            })
+                path.to_string(),
+                gltf.named_scenes.keys().map(AsRef::as_ref),
+                !gltf.named_animations.is_empty(),
+            )
         })
         .collect();
     files.sort_by_key(|file| file.name.to_lowercase());
@@ -521,5 +534,33 @@ fn enable_save(
                 _ => {}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{model_file, ModelKind};
+
+    fn listed(kind: ModelKind, scenes: &[&str], animated: bool) -> Option<Vec<String>> {
+        let path = "characters/canine.glb".to_string();
+        model_file(kind, "canine".into(), path, scenes.iter().copied(), animated)
+            .map(|file| file.models)
+    }
+
+    #[test]
+    fn a_clips_picker_lists_only_files_holding_animations() {
+        assert_eq!(listed(ModelKind::Clips, &["Dog"], true), Some(Vec::new()));
+        assert_eq!(listed(ModelKind::Clips, &["Dog"], false), None);
+    }
+
+    #[test]
+    fn a_models_file_lists_its_scenes_but_the_default_sorted() {
+        assert_eq!(
+            listed(ModelKind::Character, &["wolf", "Scene", "Dog"], false),
+            Some(vec![
+                "characters/canine.glb#Dog".to_string(),
+                "characters/canine.glb#wolf".to_string(),
+            ])
+        );
     }
 }

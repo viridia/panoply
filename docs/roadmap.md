@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN117.**
+**Next: PAN119.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -546,6 +546,18 @@ D111.
   Mac logs "GPU preprocessing is fully supported"). Measure `AT=portal plans/ablate.py` with and
   without it, on the Mac and on Aerdra, and check that flora shadows and outlines still draw. If it
   pays, the instancing above may not be needed.
+
+## Plans
+
+- **PAN117 Hands-off runs.** In `../bevy_remote_driver`, so that the author can keep working while a
+  plan runs. First, the pointer. Plans inject `CursorMoved` messages (`plans/_panoply_driver.py`,
+  `move_pointer`), and the real mouse over the window overwrites them. The candidate is for the
+  driver to turn the window's cursor hit-test off (`CursorOptions`' `hit_test`) for the run, so the
+  real mouse passes through to the window behind and only injected messages reach picking. Try it on
+  macOS first, and check what keys typed while the window has focus do. Second, the screen:
+  `caffeinate -i` stops only idle system sleep, so the driver starts `caffeinate -d -w <game pid>`
+  on macOS to keep the display awake for the game's life, and an equivalent (`systemd-inhibit`) on
+  Aerdra.
 
 ## Technical debt
 

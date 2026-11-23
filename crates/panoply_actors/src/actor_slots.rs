@@ -136,7 +136,55 @@ impl PropertyMapKeys for Colors {
 
 #[cfg(test)]
 mod tests {
-    use super::extra_flag;
+    use std::collections::BTreeSet;
+
+    use bevy::{
+        gltf::{GltfExtras, GltfMaterialExtras, GltfMaterialName},
+        prelude::*,
+    };
+
+    use super::{color_slot_materials, extra_flag, is_feature_scene};
+
+    fn extras(value: &str) -> GltfExtras {
+        GltfExtras {
+            value: value.into(),
+        }
+    }
+
+    #[test]
+    fn a_feature_scene_is_one_whose_node_of_its_name_is_marked() {
+        let mut scene = World::new();
+        scene.spawn((Name::new("HatCap"), extras(r#"{"feature": true}"#)));
+        scene.spawn((Name::new("Body"), extras(r#"{"outline": 0.01}"#)));
+        assert!(is_feature_scene(&scene, "HatCap"));
+        assert!(!is_feature_scene(&scene, "Body"));
+        // The file's own scene holds the marked node too, under another name.
+        assert!(!is_feature_scene(&scene, "Scene"));
+        assert!(!is_feature_scene(&World::new(), "HatCap"));
+    }
+
+    #[test]
+    fn color_slots_are_the_materials_marked_so() {
+        let mut scene = World::new();
+        for (name, value) in [
+            ("Hair", r#"{"color_slot": 1}"#),
+            ("Face", r#"{"color_slot": true}"#),
+            ("Eyes", "{}"),
+        ] {
+            scene.spawn((
+                GltfMaterialName(name.into()),
+                GltfMaterialExtras {
+                    value: value.into(),
+                },
+            ));
+        }
+        let mut slots = BTreeSet::new();
+        color_slot_materials(&scene, &mut slots);
+        assert_eq!(
+            slots.into_iter().collect::<Vec<_>>(),
+            ["Face".to_string(), "Hair".to_string()]
+        );
+    }
 
     #[test]
     fn a_flag_is_a_true_or_a_number_other_than_zero() {

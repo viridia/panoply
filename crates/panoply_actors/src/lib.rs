@@ -207,8 +207,7 @@ impl Plugin for ActorsPlugin {
 }
 
 /// TODO(X46): a new game places the player. Until then, the player's actor drops from 2 m over
-/// the playground's ground level, near the table that `plans/smoke.py` measures on a floor at
-/// 0, and the camera follows it.
+/// the playground's ground level, near a table on a floor at 0, and the camera follows it.
 const PLAYER_EXEMPLAR: &str = "exemplars/characters.exem.json#Farmer1";
 const PLAYER_REALM: &str = "playground";
 const PLAYER_POSITION: Vec3 = Vec3::new(37.0, 2.0, 47.0);

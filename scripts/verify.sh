@@ -53,6 +53,7 @@ run_step "scripts/xref.py" python3 scripts/xref.py --quiet
 run_step "scripts/asset_xref.py" python3 scripts/asset_xref.py --quiet
 run_step "scripts/devfmt.py --check --diff" python3 scripts/devfmt.py --check --diff
 run_step "cargo clippy --workspace --all-targets" cargo clippy --workspace --all-targets
+run_step "cargo test --workspace" cargo test --workspace
 
 echo "=================================="
 if [[ ${failed} -eq 0 ]]; then

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D112.**
+**Next: D113.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -267,7 +267,7 @@ never reused.
   collider's `user_data`: a trimesh is three lines per triangle, about 25k a parcel, so all 128
   cached parcels would be about 3M lines a frame. Even so, drawing halves the frame rate, which is
   accepted for a debug view. `GroundProbe` holds where a ray cast down at the view center hits,
-  drawn as a sphere; `plans/smoke.py` checks it.
+  drawn as a sphere.
 - **D36** As few dependencies as possible. A crate that depends on Bevy has to be forked to
   follow Bevy main (D34), so each one (character controller, particle engine, navigation mesh
   generator) is a fork to maintain. A crate with no Bevy dependency, such as `rapier3d` (D35),
@@ -955,3 +955,11 @@ never reused.
   portal within 24 m of the viewpoint, so that it is there before the aperture comes into view;
   nothing there is simulated (X119). Reversing it means culling that drops what an aperture shows,
   or a camera that can read its own image. (PAN4b)
+- **D112** Plans are run by what a failure costs. A broken game reaches players; a broken editor
+  reaches only its author, who fixes it on noticing. So a chunk's end runs the game's plans and the
+  plans of the editor areas it touched, and the first chunk to end each day runs every plan, so that
+  an editor break is found with at most a day's chunks behind it. The logic under a rarely used
+  editor feature (a floor's height raised) is checked by `cargo test`, with no window, and its plan
+  clicks it at most once, to show it is wired. Plans do not check overlays or layout: overlays are
+  debugging aids, used to find bugs themselves, and layout is visual, seen when the pane is next
+  used. Reversing it means every chunk's end paying for the whole editor again. (PAN118)

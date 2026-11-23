@@ -211,14 +211,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   read 160° where 270° is expected (`FacingReadout`). It had passed alone with the same code. Two
   candidates, neither checked: actors embedded by the floor test's raise (I56) slowing frames past
   the drag's three-frame wait, or the hitch log scroll.py leaves on for later plans (I30).
-- **I58** `plans/smoke.py` (1,690 lines, one launch) chains every editor feature, each section
-  relying on the state earlier ones leave, so reaching a new feature runs all before it, and each
-  chunk lengthens every run. Proposed: split by area (game, scenery tools, property editor, terrain,
-  realm), each plan setting up its own state, so one plan, or one section named in the environment,
-  runs alone; launches take about 3 s. And narrow a chunk's end to the game plans, `perf.py` and the
-  plans of the areas it touched, all of them only when shared editor code changes: the game's
-  integrity matters more than the editor's. The second changes AGENTS.md's Verify. Discussed with
-  the author, not yet decided.
 - **I59** Whether inventory items are exemplars or catalog entries, to be discussed. An item is
   always in a container, a pile if nothing else, which is the entity in the world; its icon, its
   wielded model and its pile's look show it, and none is the item. Picking up a coin merges it into
