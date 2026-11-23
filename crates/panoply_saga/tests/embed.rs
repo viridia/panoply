@@ -30,6 +30,7 @@ fn load(json: &str) -> Vec<Entry> {
         "test.json",
         &HostState::new(),
         json.as_bytes(),
+        &[],
     ));
     Vec::<Entry>::from_reflect(&*value).unwrap()
 }

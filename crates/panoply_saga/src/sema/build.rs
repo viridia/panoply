@@ -7,6 +7,7 @@ use bumpalo::Bump;
 use smol_str::SmolStr;
 
 use super::{
+    aspect::build_aspects,
     check::check_types,
     decl::{Decl, DeclKind, DeclTable, DeclVisibility, FunctionParam, Scope, ScopeType},
     expr::{Expr, ExprKind, FunctionBody},
@@ -18,6 +19,7 @@ use crate::{
     ScriptModule,
     compiler::CompilationError,
     host::{HostState, HostType},
+    scripted::AspectDecl,
     syntax::{
         ast::{ASTDecl, ASTNode, FloatSuffix, IntegerSuffix, NodeKind},
         location::TokenLocation,
@@ -43,16 +45,20 @@ pub(crate) fn build_module_exprs<'e>(
     };
     let mut exprs = ModuleExprs::default();
     create_decls(module, &mut exprs, ast_decls)?;
+    build_aspects(host, module, ast_decls)?;
     resolve_decl_types(host, module, ast_decls)?;
     build_function_bodies(host, module, ast_decls, &mut exprs, arena)?;
     Ok(exprs)
 }
 
+/// The typed tree of a formula, which reads the scripted aspects of `scripted` through their
+/// accessors.
 pub(crate) fn build_formula_exprs<'e>(
     host: &HostState,
     module: &mut ScriptModule,
     ast: &ASTNode,
     ret_type: ExprType,
+    scripted: &[Arc<AspectDecl>],
     arena: &'e Bump,
 ) -> Result<ModuleExprs<'e>, CompilationError> {
     // The `formula` rule produces a block.
@@ -72,9 +78,10 @@ pub(crate) fn build_formula_exprs<'e>(
         scope_type: ScopeType::Module,
     };
 
-    let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
+    let mut builder = FunctionBuilder::new(host, scripted, arena, &mut exprs.types);
     let body = builder.build_block(ast, &module_scope, stmts, result)?;
     builder.take_self_components(module);
+    module.scripted_reads = core::mem::take(&mut builder.scripted_reads);
     let function = builder.finish(body, ret_type.clone(), Vec::new())?;
     exprs.functions.push(function);
 
@@ -146,6 +153,8 @@ fn create_decls(
                     "struct declarations",
                 ));
             }
+            // Declared by `build_aspects`.
+            NodeKind::Decl(ASTDecl::Aspect { .. }) => {}
             _ => return Err(CompilationError::ExpectDeclaration(ast_decl.location)),
         }
     }
@@ -263,7 +272,8 @@ fn build_function_bodies<'e>(
             scope_type: ScopeType::Param,
         };
 
-        let mut builder = FunctionBuilder::new(host, arena, &mut exprs.types);
+        // TODO(PAN71): a module's functions read no scripted aspects until imports.
+        let mut builder = FunctionBuilder::new(host, &[], arena, &mut exprs.types);
         let body_expr = builder.build_expr(body, &param_scope)?;
         builder.take_self_components(module);
         let params = ftype.params.iter().map(|p| p.typ.clone()).collect();
@@ -287,13 +297,24 @@ struct FunctionBuilder<'h, 'e, 't> {
     /// The components the function reads from `self`, for its module's
     /// [`ScriptModule::self_components`].
     self_components: Vec<TypeId>,
+    /// The scripted aspects the function can read, by their accessors.
+    scripted: &'h [Arc<AspectDecl>],
+    /// The scripted aspects it reads, which `ExprKind::ScriptedField` names by index.
+    scripted_reads: Vec<Arc<AspectDecl>>,
+    /// The scripted aspects it reads from `self`.
+    self_aspects: Vec<Arc<AspectDecl>>,
 }
 
 /// How deep a typed tree may be. A long chain of binary operators is as deep as it is long.
 const MAX_DEPTH: usize = 256;
 
 impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
-    fn new(host: &'h HostState, arena: &'e Bump, types: &'t mut TypeTable) -> Self {
+    fn new(
+        host: &'h HostState,
+        scripted: &'h [Arc<AspectDecl>],
+        arena: &'e Bump,
+        types: &'t mut TypeTable,
+    ) -> Self {
         let first_type = types.len();
         Self {
             host,
@@ -304,16 +325,79 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             locals: Vec::new(),
             depth: 0,
             self_components: Vec::new(),
+            scripted,
+            scripted_reads: Vec::new(),
+            self_aspects: Vec::new(),
         }
     }
 
-    /// Adds the components this function reads from `self` to `module`'s.
+    /// Adds the components and scripted aspects this function reads from `self` to `module`'s.
     fn take_self_components(&mut self, module: &mut ScriptModule) {
         for id in self.self_components.drain(..) {
             if !module.self_components.contains(&id) {
                 module.self_components.push(id);
             }
         }
+        for aspect in self.self_aspects.drain(..) {
+            if !module.self_aspects.iter().any(|a| a.key == aspect.key) {
+                module.self_aspects.push(aspect);
+            }
+        }
+    }
+
+    /// The scripted aspect in scope whose accessor is `name`, unless an entity has a native
+    /// member of that name, which comes first.
+    fn scripted_aspect(&self, name: &str) -> Option<&'h Arc<AspectDecl>> {
+        let native = self
+            .host
+            .get_host_type::<Entity>()
+            .is_some_and(|entity| entity.get(name).is_some());
+        if native {
+            return None;
+        }
+        self.scripted
+            .iter()
+            .find(|aspect| aspect.accessor.as_deref() == Some(name))
+    }
+
+    /// Field `name` of the scripted aspect `aspect` on `entity`.
+    fn build_scripted_field(
+        &mut self,
+        loc: TokenLocation,
+        entity: &'e Expr<'e>,
+        aspect: &Arc<AspectDecl>,
+        name: &str,
+    ) -> Result<&'e Expr<'e>, CompilationError> {
+        let entity_type = self.type_of(entity);
+        if entity_type != ExprType::Entity {
+            return Err(CompilationError::NoFields(loc, entity_type));
+        }
+        let Some(field) = aspect.fields.iter().position(|f| f.name == name) else {
+            return Err(CompilationError::UnknownField(
+                loc,
+                aspect.name.clone(),
+                name.into(),
+            ));
+        };
+        let read = match self
+            .scripted_reads
+            .iter()
+            .position(|read| Arc::ptr_eq(read, aspect))
+        {
+            Some(read) => read,
+            None => {
+                self.scripted_reads.push(aspect.clone());
+                self.scripted_reads.len() - 1
+            }
+        };
+        if let ExprKind::GlobalRef(index) = entity.kind
+            && Some(index) == self.host.self_index
+            && !self.self_aspects.iter().any(|a| a.key == aspect.key)
+        {
+            self.self_aspects.push(aspect.clone());
+        }
+        let typ = ExprType::from_type_info(aspect.fields[field].info);
+        Ok(self.expr(loc, ExprKind::ScriptedField(entity, read, field), typ))
     }
 
     /// Solves the function's types, checks its tree, and returns it.
@@ -482,6 +566,13 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             }
 
             NodeKind::FieldName(base, name) => {
+                // `entity.accessor.field`: a field of a scripted aspect.
+                if let NodeKind::FieldName(entity, accessor) = &base.kind
+                    && let Some(aspect) = self.scripted_aspect(accessor)
+                {
+                    let entity = self.build_expr(entity, scope)?;
+                    return self.build_scripted_field(loc, entity, aspect, name);
+                }
                 let base = self.build_expr(base, scope)?;
                 self.build_member(loc, base, name)
             }
@@ -711,6 +802,22 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
                 _ => return Err(CompilationError::Internal(loc, "host type member")),
             };
             return Ok(self.expr(loc, kind, member.typ.clone()));
+        }
+
+        if base_type == ExprType::Entity {
+            if self.scripted_aspect(name).is_some() {
+                return Err(CompilationError::Unsupported(
+                    loc,
+                    "a scripted aspect as a value; read one of its fields",
+                ));
+            }
+            if let Some(aspect) = self.scripted.iter().find(|a| a.accessor.is_none()) {
+                return Err(CompilationError::NoAccessor(
+                    loc,
+                    name.into(),
+                    aspect.name.clone(),
+                ));
+            }
         }
 
         let unknown =

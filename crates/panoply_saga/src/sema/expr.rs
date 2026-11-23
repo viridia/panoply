@@ -32,6 +32,9 @@ pub(crate) enum ExprKind<'e> {
     Index(&'e Expr<'e>, &'e Expr<'e>),
     /// A property of a host type, by its index in the host's members.
     NativeProp(&'e Expr<'e>, usize),
+    /// A field of a scripted aspect on an entity: the entity, the aspect's index in the module's
+    /// scripted reads, and the field's index in the aspect's fields.
+    ScriptedField(&'e Expr<'e>, usize, usize),
     Call(&'e Expr<'e>, &'e [&'e Expr<'e>]),
     BinaryExpr {
         op: BinaryOp,

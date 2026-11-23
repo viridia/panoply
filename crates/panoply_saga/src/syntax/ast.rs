@@ -114,6 +114,32 @@ pub(crate) enum ASTDecl<'a> {
     },
     // TODO(X87): the name and fields, once script-declared structs compile.
     Struct,
+    /// `#[attr] aspect Name for Kind, Kind { field: Type = default, state field: Type }`.
+    Aspect {
+        attrs: &'a [&'a ASTAttribute<'a>],
+        name: &'a str,
+        kinds: &'a [&'a str],
+        fields: &'a [&'a ASTAspectField<'a>],
+    },
+}
+
+/// `#[name]` or `#[name(arg, ...)]`, before a declaration.
+#[derive(Debug)]
+pub(crate) struct ASTAttribute<'a> {
+    pub(crate) location: TokenLocation,
+    pub(crate) name: &'a str,
+    pub(crate) args: &'a [&'a ASTNode<'a>],
+}
+
+/// A field of an aspect declaration.
+#[derive(Debug)]
+pub(crate) struct ASTAspectField<'a> {
+    pub(crate) location: TokenLocation,
+    pub(crate) name: &'a str,
+    /// Whether it is `state`, which play changes, rather than config.
+    pub(crate) is_state: bool,
+    pub(crate) typ: &'a ASTNode<'a>,
+    pub(crate) default: Option<&'a ASTNode<'a>>,
 }
 
 /// AST for a function parameter declaration
@@ -127,3 +153,5 @@ pub(crate) struct ASTFunctionParam<'a> {
 const _: () = assert!(!needs_drop::<ASTNode<'static>>());
 const _: () = assert!(!needs_drop::<ASTDecl<'static>>());
 const _: () = assert!(!needs_drop::<ASTFunctionParam<'static>>());
+const _: () = assert!(!needs_drop::<ASTAttribute<'static>>());
+const _: () = assert!(!needs_drop::<ASTAspectField<'static>>());

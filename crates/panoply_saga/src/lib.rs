@@ -7,6 +7,7 @@ pub mod compiler;
 pub mod embed;
 pub mod host;
 mod plugin;
+pub mod scripted;
 mod sema;
 mod syntax;
 pub mod tracking;
@@ -25,8 +26,9 @@ pub use syntax::location::TokenLocation;
 pub use tracking::TrackingScope;
 pub use vm::{FromSlots, InvocationContext, ScriptVm, SlotStore, StackValue, ToSlots, VMError};
 
-use std::any::TypeId;
+use std::{any::TypeId, sync::Arc};
 
+use scripted::AspectDecl;
 use sema::decl::{DeclKind, DeclTable};
 
 /// The output of a compilation, either a module or a formula.
@@ -47,6 +49,15 @@ pub struct ScriptModule {
 
     /// The components read from `self` through accessors (`self.lock`), once each.
     pub(crate) self_components: Vec<TypeId>,
+
+    /// The aspects the module declares.
+    pub(crate) aspects: Vec<Arc<AspectDecl>>,
+
+    /// The scripted aspects the module's code reads, which `load scripted` names by index.
+    pub(crate) scripted_reads: Vec<Arc<AspectDecl>>,
+
+    /// The scripted aspects read from `self`, once each.
+    pub(crate) self_aspects: Vec<Arc<AspectDecl>>,
 }
 
 impl ScriptModule {
@@ -57,6 +68,17 @@ impl ScriptModule {
     /// on must have. A read through a local (`let s = self; s.lock`) is not listed.
     pub fn self_components(&self) -> &[TypeId] {
         &self.self_components
+    }
+
+    /// The scripted aspects the module reads from `self`, which the entity it runs on must
+    /// have, as [`Self::self_components`] lists native ones.
+    pub fn self_aspects(&self) -> &[Arc<AspectDecl>] {
+        &self.self_aspects
+    }
+
+    /// The aspects the module declares.
+    pub fn aspects(&self) -> &[Arc<AspectDecl>] {
+        &self.aspects
     }
 
     /// The index of the function `name` declares.

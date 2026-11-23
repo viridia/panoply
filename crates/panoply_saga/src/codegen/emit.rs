@@ -118,6 +118,9 @@ enum Place<'e> {
     Local(usize),
     /// A component of an entity: the entity's expression and the component's member.
     Component(&'e Expr<'e>, usize),
+    /// A field of a scripted aspect on an entity: the entity's expression, the aspect's index in
+    /// the module's scripted reads, and the field's index.
+    Scripted(&'e Expr<'e>, usize, usize),
 }
 
 /// The primitive type of a value, for typed operators.
@@ -180,6 +183,9 @@ impl<'f, 'e> Emitter<'f, 'e> {
             ExprKind::NativeProp(entity, member) if self.host.is_component(*member) => {
                 Some((Place::Component(entity, *member), 0))
             }
+            ExprKind::ScriptedField(entity, read, field) => {
+                Some((Place::Scripted(entity, *read, *field), 0))
+            }
             ExprKind::Field(base, index) => match self.place(base)? {
                 Some((place, offset)) => Some((place, offset + self.field(base, *index)?.0)),
                 None => None,
@@ -213,6 +219,15 @@ impl<'f, 'e> Emitter<'f, 'e> {
                 let member = imm16(loc, member, "more than 65535 host members")?;
                 self.out.add_op(StackOp::LoadComponent {
                     member,
+                    offset,
+                    count,
+                });
+            }
+            Place::Scripted(entity, read, field) => {
+                self.visit_expr(entity)?;
+                self.out.add_op(StackOp::LoadScripted {
+                    read: imm16(loc, read, "more than 65535 scripted aspects")?,
+                    field: imm16(loc, field, "more than 65535 fields")?,
                     offset,
                     count,
                 });
@@ -270,6 +285,12 @@ impl<'f, 'e> Emitter<'f, 'e> {
                     num_args: self.slots16(base)?,
                     num_results: self.slots16(expr)?,
                 });
+            }
+            ExprKind::ScriptedField(..) => {
+                let (place, offset) = self
+                    .place(expr)?
+                    .ok_or(CompilationError::Internal(loc, "scripted field place"))?;
+                self.load_place(expr, place, offset)?;
             }
             ExprKind::GlobalRef(index) => {
                 let index = imm16(loc, *index, "more than 65535 host members")?;
@@ -687,6 +708,18 @@ fn visit_stack_op(op: &StackOp, out: &mut InstructionBuilder) -> Result<(), Comp
         } => {
             out.push_op(instr::OP_LOAD_COMPONENT);
             out.push_immediate(*member);
+            out.push_immediate(*offset);
+            out.push_immediate(*count);
+        }
+        StackOp::LoadScripted {
+            read,
+            field,
+            offset,
+            count,
+        } => {
+            out.push_op(instr::OP_LOAD_SCRIPTED);
+            out.push_immediate(*read);
+            out.push_immediate(*field);
             out.push_immediate(*offset);
             out.push_immediate(*count);
         }

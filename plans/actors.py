@@ -14,7 +14,8 @@ Fallen into a hole or off the map, the actor is put back where it last stood. It
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
-opens and shuts it. A click on the ground sends the player there by a route. In a house, in play,
+opens and shuts it; facing the wall switch, whose prompt reads a scripted aspect's state, shows
+Use. A click on the ground sends the player there by a route. In a house, in play,
 the floor above is cut away (R15).
 The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
 its tests read; over unchanged content it writes the same bytes.
@@ -84,6 +85,8 @@ HOLE = [23.0, 0.0, 47.1]
 OFF_THE_MAP = [-5.0, 2.0, 47.0]
 # Inside the house in precinct (0, 0), under its upper floor on tier 2, whose cutaway rects cover it.
 INSIDE = [53.0, 0.5, 41.0]
+# In front of the mossy wall switch at (7.6, 26.4), on a wall facing +z.
+SWITCH_STAND = [7.6, 1.0, 27.2]
 VISIBILITY = "bevy_camera::visibility::Visibility"
 WAIT = {"seconds": 60}
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
@@ -416,6 +419,7 @@ def run(driver):
     assert flat_distance(back["position"], lip["position"]) < 0.1, f"not at the lip: {back}"
 
     check_chest(driver)
+    check_switch(driver)
     check_route(driver)
     check_cutaways(driver)
 
@@ -633,6 +637,29 @@ def check_chest(driver):
     driver.set("Actor", MOTION, motion)
     driver.frames(5)
     assert prompt(driver) == "", f"prompt not cleared: {prompt(driver)!r}"
+    driver.mode("Edit")
+
+
+def check_switch(driver):
+    """Facing the mossy wall switch in precinct (0, 0), whose interaction's `when` reads its
+    scripted aspect's state (`!self.toggle_switch.on`), the prompt offers Use, and E performs it,
+    which logs the switch's state ("DebugLog on ..."), leaving the switch as it was. Checked by eye
+    in `switch.png`: the actor faces the switch."""
+    driver.goto(SWITCH_STAND, 8.0)
+    place(driver, SWITCH_STAND)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    motion = driver.get("Actor", MOTION)
+    # Facing -z, toward the wall.
+    motion.update(facing=math.pi)
+    driver.set("Actor", MOTION, motion)
+    driver.mode("Play")
+    driver.frames(5)
+    print(f"at the switch, actor {driver.get('Actor', MOTION)}")
+    driver.screenshot("switch")
+    assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} at the switch"
+    driver.key("KeyE")
+    driver.frames(5)
+    assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} after using the switch"
     driver.mode("Edit")
 
 

@@ -5,6 +5,7 @@ mod slots;
 pub use slots::{FromSlots, SlotStore, ToSlots};
 
 use core::cell::Cell;
+use std::sync::Arc;
 
 use bevy::{
     ecs::{component::Component, entity::Entity, world::World},
@@ -17,8 +18,9 @@ use crate::{
     codegen::instr,
     host::{
         HostMember, HostState,
-        layout::{Leaf, SlotSink, flatten},
+        layout::{Layout, Leaf, SlotSink, flatten},
     },
+    scripted,
     sema::types::ExprType,
     tracking::TrackingScope,
 };
@@ -73,6 +75,9 @@ pub enum VMError {
     /// The entity lacks a component the script reads, named by its Rust type.
     #[error("No component {0}")]
     MissingComponent(&'static str),
+    /// The entity lacks a scripted aspect the script reads, named by its key.
+    #[error("No aspect {0}")]
+    MissingAspect(Arc<str>),
     #[error("Function {0} expects {1} parameters, got {2}")]
     IncorrectParamCount(String, usize, usize),
     #[error("Index {0} out of bounds for an array of {1}")]
@@ -360,6 +365,7 @@ const fn build_jump_table() -> [InstrHandler; 256] {
     table[OP_LOAD_LOCAL as usize] = load_local;
     table[OP_LOAD_GLOBAL as usize] = load_global;
     table[OP_LOAD_COMPONENT as usize] = load_component;
+    table[OP_LOAD_SCRIPTED as usize] = load_scripted;
     table[OP_STORE_LOCAL as usize] = store_local;
     table[OP_EXTRACT as usize] = extract;
     table[OP_INDEX as usize] = index;
@@ -598,6 +604,48 @@ fn load_component(vm: &mut ScriptVm) -> Result<(), VMError> {
         store: &mut vm.store,
     };
     flatten(value, &component.layout, offset, offset + n, &mut sink)
+}
+
+/// Replaces an entity with `n` slots of a field of one of its scripted aspects, from slot
+/// `offset`. The field is found by name in the component, whose aspect may have been declared
+/// by an older load of its module, and must still be of the type the formula was compiled for.
+fn load_scripted(vm: &mut ScriptVm) -> Result<(), VMError> {
+    let read = vm.read_u16();
+    let field = vm.read_u16();
+    let offset = vm.read_u16();
+    let n = vm.read_u16();
+    let StackValue::Entity(entity) = vm.pop()? else {
+        return Err(VMError::InvalidType(ExprType::Entity));
+    };
+    let invalid = || VMError::Unsupported("a scripted field the module does not read");
+    let aspect = vm
+        .module
+        .and_then(|module| module.scripted_reads.get(read))
+        .ok_or_else(invalid)?;
+    let field = aspect.fields.get(field).ok_or_else(invalid)?;
+    let (id, fields) = scripted::get(vm.world, entity, &aspect.key, field.is_state);
+    if let Some(id) = id {
+        vm.tracking
+            .track_component_id(entity, id, fields.is_some());
+    }
+    let missing = || VMError::MissingAspect(aspect.key.clone());
+    let value = fields
+        .and_then(|fields| fields.get(&field.name))
+        .ok_or_else(missing)?;
+    if value.as_any().type_id() != field.info.type_id() {
+        return Err(VMError::Unsupported("a scripted field whose type changed"));
+    }
+    let mut sink = StackSink {
+        stack: &mut vm.stack,
+        store: &mut vm.store,
+    };
+    flatten(
+        value.as_partial_reflect(),
+        &Layout::of(field.info),
+        offset,
+        offset + n,
+        &mut sink,
+    )
 }
 
 /// Keeps `n` slots from `offset` of the top `total`: a field of a value.

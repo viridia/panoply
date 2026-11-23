@@ -614,6 +614,8 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
             load_context: self.load_context,
             formulas: self.formulas,
             label_prefix: self.parent_label,
+            // TODO(X138): scripted aspects on instances.
+            scripted: &[],
         })? {
             result.aspects = InstanceAspects(aspects);
         }
@@ -844,7 +846,7 @@ impl AssetLoader for PrecinctAssetLoader {
         }
         .deserialize(&mut rmps::Deserializer::from_read_ref(&bytes))?;
         let path = load_context.path().to_string();
-        formulas.compile(&path, self.host.get(), &bytes).await;
+        formulas.compile(&path, self.host.get(), &bytes, &[]).await;
         Ok(precinct)
     }
 

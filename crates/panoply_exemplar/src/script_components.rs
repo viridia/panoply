@@ -57,11 +57,13 @@ impl ScriptComponentAppExt for App {
 #[derive(Debug, PartialEq)]
 pub(crate) struct MissingAspect<'a> {
     pub(crate) formula: &'a str,
-    pub(crate) accessor: &'static str,
-    pub(crate) aspect: &'static str,
+    pub(crate) accessor: &'a str,
+    /// The key of the aspect that gives an instance the component.
+    pub(crate) aspect: &'a str,
 }
 
-/// What `exemplar`'s formulas read from `self` that no aspect along its chain gives. A formula
+/// What `exemplar`'s formulas read from `self` that no aspect along its chain gives, native or
+/// scripted. A formula
 /// is checked only in the exemplar that writes it, since one that extends it never loses an
 /// aspect.
 pub(crate) fn missing_aspects<'a>(
@@ -83,6 +85,15 @@ pub(crate) fn missing_aspects<'a>(
                     formula: formula.source(),
                     accessor: component.accessor,
                     aspect: component.aspect,
+                });
+            }
+        }
+        for aspect in module.self_aspects() {
+            if !Exemplar::has_aspect(exemplars, exemplar, &aspect.key) {
+                missing.push(MissingAspect {
+                    formula: formula.source(),
+                    accessor: aspect.accessor.as_deref().unwrap_or_default(),
+                    aspect: &aspect.key,
                 });
             }
         }

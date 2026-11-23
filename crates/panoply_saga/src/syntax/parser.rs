@@ -1,4 +1,7 @@
-use super::ast::{ASTDecl, ASTFunctionParam, ASTNode, FloatSuffix, IntegerSuffix, NodeKind};
+use super::ast::{
+    ASTAspectField, ASTAttribute, ASTDecl, ASTFunctionParam, ASTNode, FloatSuffix, IntegerSuffix,
+    NodeKind,
+};
 use super::location::TokenLocation;
 use super::oper::{BinaryOp, UnaryOp};
 use crate::sema::decl::DeclVisibility;
@@ -377,6 +380,56 @@ peg::parser! {
             arena.alloc(ASTNode::new((start, end), NodeKind::Decl(decl)))
         }
 
+        /// The end of a keyword: no character that would continue a name.
+        rule kw_end() = !['a'..='z' | 'A'..='Z' | '0'..='9' | '_']
+
+        rule attribute() -> &'a ASTAttribute<'a> =
+            start:position!()
+            "#[" _ n:name() _
+            args:("(" _ a:(e:expr() ** (_ "," _)) _ ("," _)? ")" { a })? _
+            "]"
+            end:position!()
+        {
+            arena.alloc(ASTAttribute {
+                location: TokenLocation::new(start, end),
+                name: n,
+                args: arena.alloc_slice_copy(args.unwrap_or_default().as_slice()),
+            })
+        }
+
+        rule aspect_field() -> &'a ASTAspectField<'a> =
+            start:position!()
+            is_state:("state" kw_end() _ !":" { true })?
+            n:name() _ ":" _ ty:type_expr()
+            default:(_ "=" _ e:expr() { e })?
+            end:position!()
+        {
+            arena.alloc(ASTAspectField {
+                location: TokenLocation::new(start, end),
+                name: n,
+                is_state: is_state.is_some(),
+                typ: ty,
+                default,
+            })
+        }
+
+        rule aspect_defn() -> &'a ASTNode<'a> =
+            start:position!()
+            attrs:(a:attribute() _ { a })*
+            "aspect" kw_end() _ n:name() _
+            "for" kw_end() _ kinds:(name() ++ (_ "," _)) _
+            "{" _ fields:(aspect_field() ** (_ "," _)) _ ("," _)? "}"
+            end:position!()
+        {
+            let decl = arena.alloc(ASTDecl::Aspect {
+                attrs: arena.alloc_slice_copy(attrs.as_slice()),
+                name: n,
+                kinds: arena.alloc_slice_copy(kinds.as_slice()),
+                fields: arena.alloc_slice_copy(fields.as_slice()),
+            });
+            arena.alloc(ASTNode::new((start, end), NodeKind::Decl(decl)))
+        }
+
         rule import_items() -> Vec<&'a str> = "{" _ n:(name() ** (_ "," _)) _ ("," _)? "}" { n }
 
         rule import_decl() -> &'a ASTNode<'a> =
@@ -395,6 +448,7 @@ peg::parser! {
             = i:import_decl() { i }
             / f:func_defn() { f }
             / s:struct_defn() { s }
+            / a:aspect_defn() { a }
             / v:var_decl() { v }
             / expected!("declaration")
 
@@ -683,5 +737,40 @@ mod tests {
         };
         assert_eq!(path, &["super", "util", "near"]);
         assert!(items.is_empty());
+    }
+
+    #[test]
+    pub fn aspect_decl() {
+        let arena = Bump::new();
+        let src = r#"#[accessor(toggle_switch)]
+            aspect ToggleSwitch for Wall, Fixture {
+                caption: String = "Use",
+                state on: bool = false,
+                // A field may be named after the keyword.
+                state: i32,
+            }"#;
+        let ast = formula_parser::decl(src, &arena).unwrap();
+        let NodeKind::Decl(ASTDecl::Aspect {
+            attrs,
+            name,
+            kinds,
+            fields,
+        }) = ast.kind
+        else {
+            panic!("{ast:?}")
+        };
+        assert_eq!(*name, "ToggleSwitch");
+        assert_eq!(*kinds, ["Wall", "Fixture"]);
+        assert_eq!(attrs.len(), 1);
+        assert_eq!(attrs[0].name, "accessor");
+        assert!(matches!(attrs[0].args, [ASTNode { kind: NodeKind::Ident("toggle_switch"), .. }]));
+        let summary: Vec<_> = fields
+            .iter()
+            .map(|f| (f.name, f.is_state, f.default.is_some()))
+            .collect();
+        assert_eq!(
+            summary,
+            [("caption", false, true), ("on", true, true), ("state", false, false)]
+        );
     }
 }

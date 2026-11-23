@@ -112,15 +112,16 @@ property inspector served `portal`, which was built in, and `territorial` and `c
 were mods. Panoply's editor inspects aspects through reflection (PAN28). Bevy's new reflection,
 `bevy_reflect2` ([bevy#26356](https://github.com/bevyengine/bevy/pull/26356)), is simpler, faster
 and lighter than the old, but it reflects only Rust types, with no dynamic structs, so an aspect
-declared in SAGA would need a layer above it: synthetic types, each carrying its own schema. Bevy
-will not provide one; Panoply would be its only customer. The old reflection's `DynamicStruct` was
-no such layer: lacking a schema, it could not deserialize a JSON object of unknown type, since a `1`
-names no numeric type.
+declared in SAGA needs a layer above it. Bevy will not provide one; Panoply would be its only
+customer. The old reflection's `DynamicStruct` was no such layer: lacking a schema, it could not
+deserialize a JSON object of unknown type, since a `1` names no numeric type.
 
-Mods declare no aspect types until one needs to (X64). A per-instance variable a mod needs goes in a
-generic variables aspect, a map from names to SAGA values, as X53's named flags and stats are. SAGA
-itself needs no reflection for a struct it declares: it lays structs out in slots
-([saga.md](saga.md), Values).
+So a mod declares its aspects in SAGA ([saga.md](saga.md), Aspects), and the declaration is the
+schema: each field is of a Rust type the host knows, so each value reflects as that type, and only
+the aspect as a whole is opaque to reflection. The editor's layer above reflection walks a scripted
+aspect's fields from its declaration and edits each through reflection (X64, PAN104b). SAGA needs no
+reflection for a struct it declares either: it lays structs out in slots ([saga.md](saga.md),
+Values).
 
 What packages need once there are several (ids, precedence, a removed mod's data, versions) is X65.
 WESL's imports are the model for its ids.

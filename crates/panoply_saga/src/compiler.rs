@@ -11,6 +11,7 @@ use crate::{
     ScriptModule,
     codegen::emit::gen_code,
     host::HostState,
+    scripted::AspectDecl,
     sema::{
         build::{build_formula_exprs, build_module_exprs},
         types::ExprType,
@@ -74,6 +75,14 @@ pub enum CompilationError {
     UnresolvedImport(TokenLocation, String),
     #[error("Not supported yet: {1}")]
     Unsupported(TokenLocation, &'static str),
+    #[error("Unknown attribute: #[{1}]")]
+    UnknownAttribute(TokenLocation, SmolStr),
+    /// No accessor matches a name read from an entity, and a scripted aspect in scope has none.
+    #[error("Unknown field: Entity.{1}; {2} has no #[accessor]")]
+    NoAccessor(TokenLocation, SmolStr, SmolStr),
+    /// A field's default is not a literal of the field's type.
+    #[error("The default of {1} must be a literal of type {2}")]
+    InvalidDefault(TokenLocation, SmolStr, ExprType),
     /// A broken invariant in the compiler: a bug, reported rather than panicking so that it
     /// fails one script, not the game.
     #[error("Internal compiler error: {1}")]
@@ -109,6 +118,9 @@ impl CompilationError {
             | NameRedefinition(loc, _)
             | UnresolvedImport(loc, _)
             | Unsupported(loc, _)
+            | UnknownAttribute(loc, _)
+            | NoAccessor(loc, _, _)
+            | InvalidDefault(loc, _, _)
             | Internal(loc, _) => *loc,
         }
     }
@@ -262,12 +274,14 @@ pub async fn compile_module(
 
 /// Compile a formula: statements and a result of type `result_type`, which run as the module's
 /// [`ScriptModule::DEFAULT`] function.
+/// The formula reads the scripted aspects of `scripted` through their accessors.
 pub async fn compile_formula(
     path: &str,
     src: &str,
     host: &HostState,
     _resolver: &impl ModuleResolver,
     result_type: ExprType,
+    scripted: &[Arc<AspectDecl>],
 ) -> Result<ScriptModule, CompilationError> {
     let mut module = ScriptModule {
         path: path.to_string(),
@@ -277,7 +291,7 @@ pub async fn compile_formula(
     let ast_arena = Bump::new();
     let ast = formula_parser::formula(src, &ast_arena).map_err(transform_parse_error)?;
     let expr_arena = Bump::new();
-    let exprs = build_formula_exprs(host, &mut module, ast, result_type, &expr_arena)?;
+    let exprs = build_formula_exprs(host, &mut module, ast, result_type, scripted, &expr_arena)?;
     gen_code(&mut module, &exprs, host)?;
     Ok(module)
 }

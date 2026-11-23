@@ -119,7 +119,7 @@ fn actor_host() -> HostState {
 }
 
 fn formula(src: &str, host: &HostState, ty: ExprType) -> Result<ScriptModule, CompilationError> {
-    future::block_on(compile_formula("--str--", src, host, &NoImports, ty))
+    future::block_on(compile_formula("--str--", src, host, &NoImports, ty, &[]))
 }
 
 fn module(src: &str, host: &HostState) -> Result<ScriptModule, CompilationError> {

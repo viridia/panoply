@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D113.**
+**Next: D114.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -963,3 +963,16 @@ never reused.
   clicks it at most once, to show it is wired. Plans do not check overlays or layout: overlays are
   debugging aids, used to find bugs themselves, and layout is visual, seen when the pane is next
   used. Reversing it means every chunk's end paying for the whole editor again. (PAN118)
+- **D113** A scripted aspect's config and state are each a component with an id of its own,
+  registered at runtime (`ComponentDescriptor::new_with_layout`), all laid out as one Rust type,
+  `ScriptedFields`, which holds the aspect's declaration and its values ([saga.md](saga.md),
+  Aspects). So change ticks, queries and formula tracking tell scripted aspects apart as they do
+  native ones, and a clone handler of its own copies them when an entity is cloned. They are read by
+  id through `ScriptedComponents`, never `ReflectComponent`, which would go by `ScriptedFields`' own
+  id. A scripted aspect's key is its module's path from the asset root and its name
+  (`scripts::toggle_switch::ToggleSwitch`), absolute, so no `package::`. A formula reads it by the
+  accessor its `#[accessor(...)]` names; one without it cannot be read. Until imports, a formula
+  sees the scripted aspects its own catalog file names, the modules its loader loads anyway (X139).
+  Given up: a scripted aspect is opaque to Bevy's reflection, so the inspector, BRP and saves reach
+  its fields only through Panoply's code. Reversing it means one component holding every scripted
+  aspect of an entity, whose change ticks cannot tell them apart. (PAN104a)

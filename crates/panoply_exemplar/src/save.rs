@@ -75,10 +75,7 @@ fn exemplar_json(
     }
     let mut aspects = Map::new();
     for aspect in &exemplar.aspects {
-        aspects.insert(
-            aspect.key().to_string(),
-            reflect_json(aspect.as_partial_reflect(), registry)?,
-        );
+        aspects.insert(aspect.key().to_string(), aspect.to_json(registry)?);
     }
     entry.insert("aspects".into(), aspects.into());
     Ok(entry.into())

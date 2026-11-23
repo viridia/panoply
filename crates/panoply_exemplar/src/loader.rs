@@ -4,7 +4,7 @@ use bevy::{
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use panoply_saga::{FormulaQueue, SagaHost};
+use panoply_saga::{scripted::AspectDecl, FormulaQueue, SagaHost, ScriptModuleAsset};
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -33,6 +33,7 @@ struct ExemplarVisitor<'a, 'b> {
     load_context: &'a mut LoadContext<'b>,
     formulas: &'a mut FormulaQueue,
     exemplar_name: &'a str,
+    scripted: &'a [Arc<AspectDecl>],
 }
 
 impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
@@ -87,6 +88,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
                         load_context: self.load_context,
                         formulas: self.formulas,
                         label_prefix: self.exemplar_name,
+                        scripted: self.scripted,
                     })?;
                     result.formulas = self.formulas.read_since(mark);
                 }
@@ -126,6 +128,7 @@ struct ExemplarDeserializer<'a, 'b> {
     load_context: &'a mut LoadContext<'b>,
     formulas: &'a mut FormulaQueue,
     exemplar_name: &'a str,
+    scripted: &'a [Arc<AspectDecl>],
 }
 
 impl<'de> DeserializeSeed<'de> for ExemplarDeserializer<'_, '_> {
@@ -140,6 +143,7 @@ impl<'de> DeserializeSeed<'de> for ExemplarDeserializer<'_, '_> {
             load_context: self.load_context,
             formulas: self.formulas,
             exemplar_name: self.exemplar_name,
+            scripted: self.scripted,
         })
     }
 }
@@ -148,6 +152,7 @@ struct CatalogVisitor<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
     formulas: &'a mut FormulaQueue,
+    scripted: &'a [Arc<AspectDecl>],
 }
 
 impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
@@ -172,6 +177,7 @@ impl<'de> Visitor<'de> for CatalogVisitor<'_, '_> {
                 load_context: &mut lc,
                 formulas: self.formulas,
                 exemplar_name: &key,
+                scripted: self.scripted,
             })?;
             if let Some(label) = sdata
                 .extends
@@ -218,6 +224,7 @@ struct CatalogDeserializer<'a, 'b> {
     type_registry: &'a TypeRegistry,
     load_context: &'a mut LoadContext<'b>,
     formulas: &'a mut FormulaQueue,
+    scripted: &'a [Arc<AspectDecl>],
 }
 
 impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
@@ -231,8 +238,59 @@ impl<'de> DeserializeSeed<'de> for CatalogDeserializer<'_, '_> {
             type_registry: self.type_registry,
             load_context: self.load_context,
             formulas: self.formulas,
+            scripted: self.scripted,
         })
     }
+}
+
+/// The module path a scripted aspect's key names: `scripts::toggle_switch::ToggleSwitch` is
+/// declared in `scripts/toggle_switch.saga`.
+fn module_path(key: &str) -> Option<String> {
+    let (module, _) = key.rsplit_once("::")?;
+    Some(format!("{}.saga", module.replace("::", "/")))
+}
+
+/// The aspects declared by the modules that a catalog's scripted aspects name, which are loaded
+/// as dependencies of the catalog's loader, so that editing one reloads the catalog. A module that
+/// fails to load is logged, and its aspects are skipped as the catalog loads.
+async fn load_scripted_aspects(
+    bytes: &[u8],
+    load_context: &mut LoadContext<'_>,
+) -> Vec<Arc<AspectDecl>> {
+    // A file that does not parse fails in the deserializer, which says where.
+    let Ok(serde_json::Value::Object(catalog)) = serde_json::from_slice(bytes) else {
+        return Vec::new();
+    };
+    let mut modules: Vec<String> = catalog
+        .values()
+        .filter_map(|exemplar| exemplar.get("aspects")?.as_object())
+        .flat_map(|aspects| aspects.keys())
+        .filter_map(|key| module_path(key))
+        .collect();
+    modules.sort();
+    modules.dedup();
+    let mut decls = Vec::new();
+    for module in modules {
+        match load_context
+            .load_builder()
+            .load_value::<ScriptModuleAsset>(module.clone())
+            .await
+        {
+            Ok(loaded) => {
+                for decl in loaded.get().module.aspects() {
+                    if decl.kinds.iter().any(|kind| kind.len() != 4) {
+                        warn!(
+                            "{module}: {} names a kind that is not a four-letter type",
+                            decl.name
+                        );
+                    }
+                    decls.push(decl.clone());
+                }
+            }
+            Err(err) => warn!("{}: cannot load {module}: {err}", load_context.path()),
+        }
+    }
+    decls
 }
 
 /// AssetLoader for Exemplars.
@@ -273,6 +331,7 @@ impl AssetLoader for ExemplarLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
+        let scripted = load_scripted_aspects(&bytes, load_context).await;
         let mut formulas = FormulaQueue::default();
         let catalog = {
             let mut deserializer =
@@ -281,11 +340,14 @@ impl AssetLoader for ExemplarLoader {
                 type_registry: &self.type_registry.read(),
                 load_context: &mut *load_context,
                 formulas: &mut formulas,
+                scripted: &scripted,
             }
             .deserialize(&mut deserializer)?
         };
         let path = load_context.path().to_string();
-        formulas.compile(&path, self.host.get(), &bytes).await;
+        formulas
+            .compile(&path, self.host.get(), &bytes, &scripted)
+            .await;
         Ok(catalog)
     }
 

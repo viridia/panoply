@@ -147,6 +147,35 @@ formulas call. Imports follow WESL's: `import package::actors::util::{near, flan
 and takes a resolver, which loads an imported module's exports; Bevy's asset loader implements it
 (PAN71).
 
+## Aspects
+
+A module declares aspects ([Exemplars.md](Exemplars.md), Aspects):
+
+```rust
+#[accessor(toggle_switch)]
+aspect ToggleSwitch for Wall, Fixt {
+    caption: String = "Use",
+    state on: bool = false,
+}
+```
+
+- Its key is the module's path from the asset root and its name:
+  `scripts::toggle_switch::ToggleSwitch`, declared in `scripts/toggle_switch.saga`. A catalog names
+  it by that key, as `"scripts::toggle_switch::ToggleSwitch": {}`; the `::` tells it from a native
+  aspect's type name.
+- `for` lists the kinds of instance it attaches to, as a file writes an exemplar's `type`.
+- A field is config, or `state`, which play changes and a save keeps, starting from its authored
+  value (D74). Its type is one the host knows (`bool`, `i32`, `f32`, `String`, `Vec3`, …). Its
+  default is a literal; without one, it takes its type's default. A file that leaves out a field
+  gives it its default, and a field a file names that the aspect does not declare is skipped, so a
+  file written before the module changed still loads; a save keeps state by field name the same way.
+- `#[accessor(name)]` lets formulas read its fields from an entity, `self.toggle_switch.on`. An
+  aspect without it cannot be read. A formula sees the scripted aspects its catalog file names
+  (X139).
+- Attached, its config and its state are each a component, registered at runtime (D113): the config
+  inserted as it attaches and removed as it detaches, the state inserted only where the entity has
+  none.
+
 ## Formulas in assets
 
 - A formula is a string in the field it drives, a `Formula<T>` in Rust returning a `T`:

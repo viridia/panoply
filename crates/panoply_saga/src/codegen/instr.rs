@@ -20,6 +20,9 @@ pub const OP_LOAD_LOCAL: u8 = 21; // (imm u16 slot, u16 count)
 pub const OP_LOAD_GLOBAL: u8 = 22; // (imm u16)
 /// Replaces the entity at TOS with slots of a component. (imm u16 member, u16 offset, u16 count)
 pub const OP_LOAD_COMPONENT: u8 = 23;
+/// Replaces the entity at TOS with slots of a field of a scripted aspect: the aspect by its index
+/// in the module's scripted reads. (imm u16 read, u16 field, u16 offset, u16 count)
+pub const OP_LOAD_SCRIPTED: u8 = 24;
 pub const OP_STORE_LOCAL: u8 = 26; // (imm u16 slot, u16 count)
 /// Keeps `count` slots from `offset` of the top `total`. (imm u16 offset, u16 count, u16 total)
 pub const OP_EXTRACT: u8 = 27;
@@ -343,6 +346,13 @@ fn disassemble_one(reader: &mut InstructionReader, offset: usize, out: &mut Stri
                 let member = reader.u16()?;
                 format!(
                     "load component[{member}] {}",
+                    slots(reader.u16()?, reader.u16()?)
+                )
+            }
+            OP_LOAD_SCRIPTED => {
+                let (read, field) = (reader.u16()?, reader.u16()?);
+                format!(
+                    "load scripted[{read}].{field} {}",
                     slots(reader.u16()?, reader.u16()?)
                 )
             }

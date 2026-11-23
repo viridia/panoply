@@ -57,7 +57,10 @@ and is generally attached directly to the instance rather than to the exemplar.
 An aspect is known by its key (`Aspect::key`): a native aspect's short type name, a scripted one's
 package path and name (D107). A native aspect implements `NativeAspect`, whose `Config` bundle
 attaching inserts and detaching removes: usually the aspect itself, `()` when nothing queries it.
-Its state, if it has any, `attach_state` inserts where the entity lacks it, and detaching leaves.
+Its state, if it has any, `attach_state` inserts where the entity lacks it, and detaching leaves. A
+scripted aspect, `ScriptedAspect`, is declared in a `.saga` module ([saga.md](saga.md), Aspects) and
+behaves the same way: its config is a component that attaching inserts and detaching removes, and
+its state one that attaching inserts where the entity lacks it.
 
 ## Config and state
 

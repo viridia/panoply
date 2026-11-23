@@ -165,6 +165,32 @@ impl InteractionAppExt for App {
     }
 }
 
+/// The action `DebugLog`: logs the target and the state of each of its scripted aspects, as a
+/// save would keep it. For trying out an interaction before it has an action of its own.
+pub(crate) fn debug_log(world: &mut World, target: Entity) {
+    let registry = world.resource::<AppTypeRegistry>().read();
+    let mut states = Vec::new();
+    if let Some(aspects) = world.get::<crate::OwnedAspects>(target) {
+        for aspect in aspects.iter() {
+            if !aspect.as_any().is::<crate::ScriptedAspect>() {
+                continue;
+            }
+            let (_, state) = panoply_saga::scripted::get(world, target, aspect.key(), true);
+            let state = state.map_or(Ok(serde_json::Value::Null), |state| {
+                crate::part_to_json(state, &registry)
+            });
+            match state {
+                Ok(state) => states.push(format!("{} {state}", aspect.key())),
+                Err(err) => states.push(format!("{} ({err})", aspect.key())),
+            }
+        }
+    }
+    let name = world
+        .get::<Name>(target)
+        .map_or_else(|| target.to_string(), |name| format!("{name} ({target})"));
+    info!("DebugLog on {name}: {}", states.join(", "));
+}
+
 /// Performs the action `name` on `target`. An unknown action, or a target without the aspect the
 /// action needs, is an error.
 pub fn perform_interaction(world: &mut World, target: Entity, name: &str) {
@@ -209,6 +235,15 @@ pub(crate) mod tests {
         json: &str,
         host: &HostState,
     ) -> (Interactions, Vec<FormulaRef>) {
+        load_interactions_reading(json, host, &[])
+    }
+
+    /// As [`load_interactions`], the formulas reading the scripted aspects of `scripted`.
+    pub(crate) fn load_interactions_reading(
+        json: &str,
+        host: &HostState,
+        scripted: &[std::sync::Arc<panoply_saga::scripted::AspectDecl>],
+    ) -> (Interactions, Vec<FormulaRef>) {
         let mut registry = bevy::reflect::TypeRegistry::new();
         registry.register::<Interactions>();
         let registration = registry
@@ -223,7 +258,12 @@ pub(crate) mod tests {
                 .unwrap()
         };
         let read = formulas.read_since(0);
-        futures_lite::future::block_on(formulas.compile("test.json", host, json.as_bytes()));
+        futures_lite::future::block_on(formulas.compile(
+            "test.json",
+            host,
+            json.as_bytes(),
+            scripted,
+        ));
         (Interactions::from_reflect(&*value).unwrap(), read)
     }
 

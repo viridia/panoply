@@ -120,6 +120,8 @@ impl<'de> Visitor<'de> for ActorInstanceVisitor<'_, '_> {
                             load_context: self.load_context,
                             formulas: self.formulas,
                             label_prefix: self.parent_label,
+                            // TODO(X138): scripted aspects on instances.
+                            scripted: &[],
                         })?);
                 }
             }

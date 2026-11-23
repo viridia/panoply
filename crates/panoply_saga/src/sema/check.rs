@@ -55,7 +55,8 @@ pub(crate) fn check_types(expr: &Expr, types: &TypeTable) -> Result<(), Compilat
 
         ExprKind::HostMethodRef(base, _)
         | ExprKind::Field(base, _)
-        | ExprKind::NativeProp(base, _) => {
+        | ExprKind::NativeProp(base, _)
+        | ExprKind::ScriptedField(base, _, _) => {
             check_types(base, types)?;
         }
 

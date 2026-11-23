@@ -1,5 +1,6 @@
 //! AST to typed tree: names, types and checks.
 
+pub(crate) mod aspect;
 pub(crate) mod build;
 pub(crate) mod check;
 pub mod decl;

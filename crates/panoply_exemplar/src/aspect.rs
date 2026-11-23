@@ -49,6 +49,12 @@ where
         false
     }
 
+    /// The aspect as a file holds it, the value of its entry under its key. A native aspect is
+    /// serialized through reflection; a scripted one writes its fields by name.
+    fn to_json(&self, registry: &TypeRegistry) -> Result<serde_json::Value, BevyError> {
+        crate::save::reflect_json(self.as_partial_reflect(), registry)
+    }
+
     //   /** Formulas to be bound to the specified properties */
     //   formulas?: IFormulaGenerators<SelfType, Props, Config>;
 
@@ -253,10 +259,19 @@ impl Serialize for SerializableAspects<'_> {
     {
         let mut map = serializer.serialize_map(Some(self.aspects.len()))?;
         for aspect in self.aspects {
-            map.serialize_entry(
-                aspect.key(),
-                &TypedReflectSerializer::new(aspect.as_partial_reflect(), self.registry),
-            )?;
+            // A native aspect is written straight through reflection, in the file's own format;
+            // only a scripted one, which reflection cannot see into, goes through its JSON.
+            if aspect.as_any().is::<crate::ScriptedAspect>() {
+                let value = aspect
+                    .to_json(self.registry)
+                    .map_err(serde::ser::Error::custom)?;
+                map.serialize_entry(aspect.key(), &value)?;
+            } else {
+                map.serialize_entry(
+                    aspect.key(),
+                    &TypedReflectSerializer::new(aspect.as_partial_reflect(), self.registry),
+                )?;
+            }
         }
         map.end()
     }

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN104a** A `.saga` module declares aspects; the wall switch's Use reads one's state.
 - **PAN108** Aspects are keyed by `Aspect::key`; a native aspect implements `NativeAspect`.
 - **PAN118** The smoke plan is split by area, each runnable alone; `verify.sh` runs `cargo test`.
 - **PAN107** SAGA reads struct and tuple fields, and has fixed-size arrays: `[f32; 4]`, `a[i]`.

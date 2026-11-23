@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN119.**
+**Next: PAN120.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -163,38 +163,27 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
 `EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's `$props`, `$state` and
 `$derived`, Verilog's `parameter`, `reg` and `assign`.
 
-- **PAN104a Scripted aspect components.** A `.saga` module declares any number of named aspects,
-  keyed by package path and name, each naming the kinds of instance it attaches to
-  (`aspect Lock for Fixture, Wall`), as `Aspect::can_attach` does. A field is config, unmarked, or
-  `state`, which play changes and a save keeps, starting from its authored value (D74); a keyword
-  changes what a field means. Each field is of a reflected Rust type the property editor already
-  edits; a field of a struct declared in SAGA waits for a use. An aspect's state is a component
-  (D107). Leaning: as `bevy_mod_scripting` does, each scripted aspect's state registers its own
-  `ComponentId` (`ComponentDescriptor::new_with_layout`), all with one Rust type's layout and drop,
-  holding the aspect's key and its slots, so change ticks are per aspect and the value reflects and
-  serializes as that one type; what reads them goes by id through Panoply's registry, never
-  `ReflectComponent`, which would insert the shared type's own id. To check: entity cloning of such
-  a component, and saved state keyed by field name, so a changed schema still loads. Its config
-  registers a component of its own the same way, inserted as it attaches (D107). Proved by one
-  aspect on one entity, whose state an interaction's `when` reads, on demand, as it does now. This
-  reverses [modding.md](modding.md), Types a mod declares.
-- **PAN104b Editing scripted aspects.** *Needs:* PAN104a. The layer above reflection (X64) is a list
-  of rows, each edited through reflection, so scripted aspects show in the editor as native ones do
-  (D107). An attribute (`#[range(0.0, 4.0)]`) changes only how the editor shows a field. Fields an
-  instance sets go in one unnamed `instance { ... }` block, an aspect of its own keyed by the
-  aspect's with a fixed suffix (D103); one there without a default is one the instance must supply,
-  checked as it spawns, as QML's `required property` is. This meets X64's gate.
-- **PAN104c Hooks and effects.** *Needs:* PAN104a, PAN105. A `derived` field is a formula recomputed
-  as what it reads changes, never stored. An aspect's hooks are not methods but a fixed set of
-  reactive callbacks the engine knows, written `on <name>(...)` and checked by name, so a misspelled
-  hook is an error; `present` is one (D106). So are `attach`, an effect run once as the aspect
-  attaches, whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one that
-  fires when a deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a door's
-  auto-close or a button's release, where faery's `init` subscribed to every frame. A hook or an
-  interaction's action is an effect (D105): it writes its own aspect's state, the native components
-  declared for scripts to write, and host commands, all through SAGA's buffer, so D59's actions also
-  take an effect in place of a native event. Proved by a hook writing state that a formula reads;
-  wiring across entities is PAN79's.
+- **PAN104b Editing scripted aspects.** The layer above reflection (X64) is a list of rows, each
+  edited through reflection, so scripted aspects show in the editor as native ones do (D107). An
+  attribute (`#[range(0.0, 4.0)]`) changes only how the editor shows a field. Fields an instance
+  sets go in one unnamed `instance { ... }` block, an aspect of its own keyed by the aspect's with a
+  fixed suffix (D103); one there without a default is one the instance must supply, checked as it
+  spawns, as QML's `required property` is. The aspect chooser lists the aspects of loaded modules
+  beside native ones (D107), and the field attributes reuse the grammar of PAN104a's
+  `#[accessor(...)]`. This meets X64's gate.
+- **PAN104c Hooks and effects.** *Needs:* PAN105. A `derived` field is a formula recomputed as what
+  it reads changes, never stored. An aspect's hooks are not methods but a fixed set of reactive
+  callbacks the engine knows, written `on <name>(...)` and checked by name, so a misspelled hook is
+  an error; `present` is one (D106). So are `attach`, an effect run once as the aspect attaches,
+  whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one that fires when a
+  deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a door's auto-close
+  or a button's release, where faery's `init` subscribed to every frame. A hook or an interaction's
+  action is an effect (D105): it writes its own aspect's state, the native components declared for
+  scripts to write, and host commands, all through SAGA's buffer, so D59's actions also take an
+  effect in place of a native event. Proved by a hook writing state that a formula reads, and by the
+  mossy wall switch: Use toggles `ToggleSwitch`'s `on` in place of PAN104a's `DebugLog`, and the
+  switch plays its two-state animation, once I80 settles how a native animation follows a scripted
+  cell. Wiring across entities is PAN79's.
 
 ## Interaction
 
@@ -562,6 +551,12 @@ Code that works but stands in the way: a pattern the rest of the code has moved 
 workaround for what should be fixed at its cause. Each is taken when its area is next touched, or
 sooner when it bites.
 
+- **PAN119 Instance kinds by name.** `InstanceType` packs a four-letter code into a `u32` (`Wall`,
+  `Fixt`, `Actr`), and `from_str` reads only the first four bytes, so `Floor` is `Floo`. Kinds
+  become names, as files and SAGA's `for` write them (`Fixture`, `Actor`), held as an interned name
+  or a small registered id, to be chosen in the chunk. A script rewrites the exemplar files' `type`;
+  the four-letter check in the exemplar loader and `ScriptedAspect::can_attach` goes, and
+  `scripts/toggle_switch.saga` says `for Wall, Fixture`.
 - **PAN103 Tools on picking events.** The editor's world tools read the mouse by polling
   `PointerState`, which passes by picking's routing: what a widget or dialog in front of the view
   does with a press does not reach them. So closing a dialog by clicking outside it, which despawns

@@ -3425,7 +3425,16 @@
         "use": [
           [-0.7, 0, 0]
         ]
-      }
+      },
+      "scripts::toggle_switch::ToggleSwitch": {},
+      "Interactions": [
+        {
+          "id": "use",
+          "caption": "Use",
+          "when": "!self.toggle_switch.on",
+          "action": "DebugLog"
+        }
+      ]
     }
   },
   "MossyBrickWallSwitchLarge": {

@@ -17,6 +17,7 @@ fn formula(src: &str) -> Result<ScriptModule, CompilationError> {
             &host,
             &NoImports,
             ExprType::I32,
+            &[],
         ))
     }));
     result.unwrap_or_else(|_| panic!("compiling the formula {src:?} panicked"))

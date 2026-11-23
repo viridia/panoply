@@ -23,6 +23,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use crate::{
     ExprType, HostState, NoImports, ScriptModule, ScriptVm, TrackingScope,
     compiler::{compile_formula, format_error, format_span},
+    scripted::AspectDecl,
 };
 
 /// A compiled formula, or the message its compile error gave.
@@ -215,11 +216,24 @@ impl FormulaQueue {
 
     /// Compiles every formula read, against `host`. A formula that fails stays uncompiled, with
     /// its error, which is also logged; the rest of the asset loads. `file` is the asset's bytes,
-    /// which locate errors in a JSON file.
-    pub async fn compile(self, path: &str, host: &HostState, file: &[u8]) {
+    /// which locate errors in a JSON file. Formulas read the scripted aspects of `scripted`.
+    pub async fn compile(
+        self,
+        path: &str,
+        host: &HostState,
+        file: &[u8],
+        scripted: &[Arc<AspectDecl>],
+    ) {
         for formula in self.pending {
-            let result =
-                compile_formula(path, &formula.source, host, &NoImports, formula.result_type).await;
+            let result = compile_formula(
+                path,
+                &formula.source,
+                host,
+                &NoImports,
+                formula.result_type,
+                scripted,
+            )
+            .await;
             let compiled = match result {
                 Ok(module) => Ok(Arc::new(module)),
                 Err(err) => {

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X138.**
+**Next: X140.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -143,7 +143,7 @@ dropped, not deferred. Numbers are never reused.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
   need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
   optional module whose aspects sit on instances, or the first scripted aspect on an instance
-  (PAN104a), whose module may be missing or fail to compile (D108).
+  (X138), whose module may be missing or fail to compile (D108).
 - **X21** A show set for precincts like D20 (scenery taller than D20's 4 m allowance also needs its
   own). *Gate:* scenery restored; take it when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
@@ -296,12 +296,11 @@ dropped, not deferred. Numbers are never reused.
   Bevy's built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry:
   his hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
   takes up sound.
-- **X64** Aspect types declared in SAGA, which the editor inspects through a layer above reflection
-  ([modding.md](modding.md), Types a mod declares). Panoply builds that layer: `bevy_reflect2`
-  (bevy#26356) will support neither synthetic types nor dynamic data directly. In the editor such a
-  type needs its own walk of the rows and its own applying of edits, beside reflection's (PAN28).
-  *Gate:* a mod needs an aspect that native aspects, formulas and the generic variables aspect
-  cannot express.
+- **X64** The editor's layer above reflection for aspects declared in SAGA, which reflection sees
+  only as opaque values ([modding.md](modding.md), Types a mod declares). Panoply builds that layer:
+  `bevy_reflect2` (bevy#26356) will support neither synthetic types nor dynamic data directly. Such
+  an aspect needs its own walk of the rows and its own applying of edits, beside reflection's
+  (PAN28). *Gate:* PAN104b, which builds it.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
   `Sword` cannot collide; an order for packages that override the same exemplar or catalog entry, an
   entry's override being a redirect from its reference to the mod's, applied in `CatalogServer`
@@ -636,3 +635,12 @@ dropped, not deferred. Numbers are never reused.
   Values), for value types without a `FromSlots` or `ToSlots` impl: slots to a dynamic struct and
   `FromReflect`, and a reflection walk the other way. *Gate:* a native that takes or returns such a
   type.
+- **X138** Scripted aspects on instances, in precincts and actor instances: their loaders pass no
+  scripted aspects to `AspectListDeserializer`, so one there is skipped, with a warning. A precinct
+  would load the modules its scripted aspects name, as a catalog does. *Gate:* the first scripted
+  aspect set on an instance, as PAN104b's `instance` block is.
+- **X139** Formulas that read a scripted aspect their catalog file does not name, as a derived
+  exemplar in another catalog would. Two ways: interactions declared inside the scripted aspect, as
+  faery had them and as goals are planned ([Exemplars.md](Exemplars.md), Packages written in SAGA),
+  so the formula lives in the module beside its aspect; or a key in a catalog file holding import
+  statements its formulas compile with. *Gate:* the first such formula.

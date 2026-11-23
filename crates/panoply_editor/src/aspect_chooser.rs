@@ -183,6 +183,7 @@ fn dialog_contents(rows: Box<dyn SceneList>) -> impl SceneList {
 
 /// Observer on Save: asks for the checked aspects the exemplar lacked to be added, at their
 /// types' defaults, and the unchecked ones it had to be removed, then closes the chooser.
+// TODO(PAN104b): list scripted aspects, which the dialog leaves out.
 fn save_aspects(
     activate: On<Activate>,
     choosers: Query<&AspectChooser>,
@@ -199,9 +200,12 @@ fn save_aspects(
     else {
         return;
     };
-    let checked: HashSet<String> = children
+    let listed: Vec<(&AspectOption, bool)> = children
         .iter_descendants(dialog)
         .filter_map(|e| options.get(e).ok())
+        .collect();
+    let checked: HashSet<String> = listed
+        .iter()
         .filter(|(_, checked)| *checked)
         .map(|(option, _)| option.0.clone())
         .collect();
@@ -214,7 +218,13 @@ fn save_aspects(
         }
     }
     add.sort_by(|a, b| a.key().cmp(b.key()));
-    let mut remove: Vec<String> = chooser.had.difference(&checked).cloned().collect();
+    // Only an aspect the dialog listed can be unchecked: one it did not, such as a scripted
+    // aspect, stays.
+    let mut remove: Vec<String> = listed
+        .iter()
+        .filter(|(option, checked)| !checked && chooser.had.contains(&option.0))
+        .map(|(option, _)| option.0.clone())
+        .collect();
     remove.sort();
     edits.change_aspects(&chooser.root, add, remove);
     commands.entity(dialog).despawn();
