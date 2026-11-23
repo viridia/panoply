@@ -158,37 +158,43 @@ The engine's design, seen whole, and what follows from it.
 What an aspect is, and how an instance overrides its exemplar's, for behavior and for the scripted
 aspects that mechanisms, containers and signs are built on.
 
-- **PAN104 Scripted aspects.** *Needs:* PAN105. An aspect declared in a SAGA script, as faery's
-  scripted aspects were, with fields and hooks. A `.saga` module declares any number of named
-  aspects, keyed by package path and name, each naming the kinds of instance it attaches to
-  (`aspect Lock for Fixture, Wall`), as `Aspect::can_attach` does. A field is config, unmarked;
-  `state`, which play changes and a save keeps, starting from its authored value (D74); or
-  `derived`, a formula recomputed as what it reads changes, never stored. A keyword changes what a
-  field means; an attribute (`#[range(0.0, 4.0)]`) only how the editor shows it. Fields an instance
-  sets go in one unnamed `instance { ... }` block, an aspect of its own keyed by the aspect's with a
-  fixed suffix (D103); one there without a default is one the instance must supply, checked as it
-  spawns, as QML's `required property` is. Each field is of a reflected Rust type the property
-  editor already edits, so the layer above reflection (X64) is a list of rows, each edited through
-  reflection; a field of a struct declared in SAGA waits for a use. Its hooks are not methods but a
-  fixed set of reactive callbacks the engine knows, written `on <name>(...)` and checked by name, so
-  a misspelled hook is an error; `present` is one (D106). So are `attach`, an effect run once as the
-  aspect attaches, whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one
-  that fires when a deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a
-  door's auto-close or a button's release, where faery's `init` subscribed to every frame.
-  Precedents: Unreal's `EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's
-  `$props`, `$state` and `$derived`, Verilog's `parameter`, `reg` and `assign`. An aspect's state is
-  a component (D107). Leaning, at runtime: as `bevy_mod_scripting` does, each scripted aspect's
-  state registers its own `ComponentId` (`ComponentDescriptor::new_with_layout`), all with one Rust
-  type's layout and drop, holding the aspect's key and its slots, so change ticks are per aspect and
-  the value reflects and serializes as that one type; what reads them goes by id through Panoply's
-  registry, never `ReflectComponent`, which would insert the shared type's own id. To check: entity
-  cloning of such a component, and saved state keyed by field name, so a changed schema still loads.
-  Its config registers a component of its own the same way, inserted as it attaches (D107). A hook
-  or an interaction's action is an effect (D105): it writes its own aspect's state, the native
-  components declared for scripts to write, and host commands, all through SAGA's buffer, so D59's
-  actions also take an effect in place of a native event. Proved by one aspect on one entity, whose
-  state a formula elsewhere reads; wiring across entities is PAN79's. This reverses
-  [modding.md](modding.md), Types a mod declares, and meets X64's gate.
+PAN104, Scripted aspects, in lettered parts: an aspect declared in a SAGA script, as faery's
+scripted aspects were, with fields and hooks. Precedents for its field kinds: Unreal's
+`EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's `$props`, `$state` and
+`$derived`, Verilog's `parameter`, `reg` and `assign`.
+
+- **PAN104a Scripted aspect components.** A `.saga` module declares any number of named aspects,
+  keyed by package path and name, each naming the kinds of instance it attaches to
+  (`aspect Lock for Fixture, Wall`), as `Aspect::can_attach` does. A field is config, unmarked, or
+  `state`, which play changes and a save keeps, starting from its authored value (D74); a keyword
+  changes what a field means. Each field is of a reflected Rust type the property editor already
+  edits; a field of a struct declared in SAGA waits for a use. An aspect's state is a component
+  (D107). Leaning: as `bevy_mod_scripting` does, each scripted aspect's state registers its own
+  `ComponentId` (`ComponentDescriptor::new_with_layout`), all with one Rust type's layout and drop,
+  holding the aspect's key and its slots, so change ticks are per aspect and the value reflects and
+  serializes as that one type; what reads them goes by id through Panoply's registry, never
+  `ReflectComponent`, which would insert the shared type's own id. To check: entity cloning of such
+  a component, and saved state keyed by field name, so a changed schema still loads. Its config
+  registers a component of its own the same way, inserted as it attaches (D107). Proved by one
+  aspect on one entity, whose state an interaction's `when` reads, on demand, as it does now. This
+  reverses [modding.md](modding.md), Types a mod declares.
+- **PAN104b Editing scripted aspects.** *Needs:* PAN104a. The layer above reflection (X64) is a list
+  of rows, each edited through reflection, so scripted aspects show in the editor as native ones do
+  (D107). An attribute (`#[range(0.0, 4.0)]`) changes only how the editor shows a field. Fields an
+  instance sets go in one unnamed `instance { ... }` block, an aspect of its own keyed by the
+  aspect's with a fixed suffix (D103); one there without a default is one the instance must supply,
+  checked as it spawns, as QML's `required property` is. This meets X64's gate.
+- **PAN104c Hooks and effects.** *Needs:* PAN104a, PAN105. A `derived` field is a formula recomputed
+  as what it reads changes, never stored. An aspect's hooks are not methods but a fixed set of
+  reactive callbacks the engine knows, written `on <name>(...)` and checked by name, so a misspelled
+  hook is an error; `present` is one (D106). So are `attach`, an effect run once as the aspect
+  attaches, whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one that
+  fires when a deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a door's
+  auto-close or a button's release, where faery's `init` subscribed to every frame. A hook or an
+  interaction's action is an effect (D105): it writes its own aspect's state, the native components
+  declared for scripts to write, and host commands, all through SAGA's buffer, so D59's actions also
+  take an effect in place of a native event. Proved by a hook writing state that a formula reads;
+  wiring across entities is PAN79's.
 
 ## Interaction
 
@@ -201,47 +207,47 @@ aspects that mechanisms, containers and signs are built on.
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104. The stock elements puzzles are built
-  from, and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted
-  aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
-  automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
-  a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
-  ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
-  scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
-  What a sensor senses is native, by collision group, as faery's `canSense` sensed actors only, with
-  a formula filter only once a puzzle needs one (a heavy object on a plate). Beside them: triggers
-  (a circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
-  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
-  signals another through cells, a formula over the other's state, wherever a formula can say it,
-  and through an event only where none can: engines built on events, such as the Creation Kit,
-  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
-  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
-  the precinct, not as wiring stored on its participants, which in faery left no list of what was
-  wired and no owner when several took part. A relay holds two aspects. A native visualization
-  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
-  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target,
-  and fills it two ways, never by typing: by picking in the world, or from a popup listing instances
-  to browse, with a filter, as PAN35's chooser does. The popup lists the labelled instances in the
-  index, across the game, and the loaded precincts' unlabelled keyed instances by exemplar and
-  place. Logic on one entity is a scripted aspect on that entity. A placed relay's roles are its
-  logic aspect's `instance` block, set on the instance, while its tuning stays inherited from the
-  exemplar (D103). A bound instance gets a key (D87). The editor lists a precinct's relays, draws a
-  selected one's wires, and lists those that name a selected instance; selecting, moving and copying
-  apply to relays, and copying a trap with its relay binds the copy's roles to the copied instances.
-  One wiring gesture places a stock relay for a button opening a door, so the simplest case stays
-  one step. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`,
-  and Unreal's placed Blueprint actors with picked references. A precinct is named by its realm and
-  coordinates, and is like a module: its walls and fixtures that others can refer to are its
-  exports, by key ([instances.md](instances.md), Ids). A reference into a precinct that is not
-  loaded suspends the formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown
-  currency, and likely to differ from what Panoply builds: in `design/Scripting.md`, a reference
-  syntax, an `Instance` observable that is null while its target is not loaded, a `StructureRefNode`
-  watching structures load and unload, and global variables or lazily loaded scope objects for
-  long-range wiring; global references by realm and coordinates in `design/scripting/predicates.md`;
-  animated instances (moving parts) kept apart from static instancing in
-  `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by a button
-  ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN71, PAN104. What a container holds. An open chest shows its
+- **PAN79 Mechanisms.** *Needs:* PAN59, PAN71, PAN102, PAN104b, PAN104c. The stock elements puzzles
+  are built from, and how they are wired together, on SAGA's cells and reactions (PAN105) and
+  scripted aspects. faery had doors, push and toggle buttons, pressure plates, remotely controlled
+  openables, automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes
+  scripted: when a trap fires), wired by reactive formulas so that elaborate puzzles combine simple
+  parts ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under
+  Migration scripts). The first sensor collider is the `PressurePlate` wall tile's
+  (`wall-tiles.exem.json`). What a sensor senses is native, by collision group, as faery's
+  `canSense` sensed actors only, with a formula filter only once a puzzle needs one (a heavy object
+  on a plate). Beside them: triggers (a circle or rectangle the player enters), encounter zones,
+  waymarks for scripted NPC events, and patrol paths, fixtures that goals name
+  ([goal-format.md](goal-format.md), Open). One element signals another through cells, a formula
+  over the other's state, wherever a formula can say it, and through an event only where none can:
+  engines built on events, such as the Creation Kit, tangle when several signals must be correlated.
+  Which parts are native aspects and which are SAGA is to decide. Proposed: logic that spans several
+  entities lives on a relay, an exemplar placed in the precinct, not as wiring stored on its
+  participants, which in faery left no list of what was wired and no owner when several took part. A
+  relay holds two aspects. A native visualization aspect gives its gizmo in the editor (icon, shape,
+  color). A logic aspect is a scripted aspect (PAN104). A field of the instance-reference type is a
+  role: the editor draws a wire to its target, and fills it two ways, never by typing: by picking in
+  the world, or from a popup listing instances to browse, with a filter, as PAN35's chooser does.
+  The popup lists the labelled instances in the index, across the game, and the loaded precincts'
+  unlabelled keyed instances by exemplar and place. Logic on one entity is a scripted aspect on that
+  entity. A placed relay's roles are its logic aspect's `instance` block, set on the instance, while
+  its tuning stays inherited from the exemplar (D103). A bound instance gets a key (D87). The editor
+  lists a precinct's relays, draws a selected one's wires, and lists those that name a selected
+  instance; selecting, moving and copying apply to relays, and copying a trap with its relay binds
+  the copy's roles to the copied instances. One wiring gesture places a stock relay for a button
+  opening a door, so the simplest case stays one step. Precedents: Planet's Edge's logic tiles
+  beyond the map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with picked
+  references. A precinct is named by its realm and coordinates, and is like a module: its walls and
+  fixtures that others can refer to are its exports, by key ([instances.md](instances.md), Ids). A
+  reference into a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md),
+  Values). faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
+  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
+  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
+  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
+  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
+  instancing in `engine/src/models/InstancedModels.ts`. The first customer is PAN6's door opened by
+  a button ([goals.md](goals.md), step 4).
+- **PAN106 Containers.** *Needs:* PAN71, PAN104c. What a container holds. An open chest shows its
   contents on an inventory screen whose background its container type chooses, and items move
   between it and the player; a locked one opens for the key its instance names, and a corpse, once
   combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). The first feature that

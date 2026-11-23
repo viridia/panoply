@@ -143,7 +143,7 @@ dropped, not deferred. Numbers are never reused.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
   need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
   optional module whose aspects sit on instances, or the first scripted aspect on an instance
-  (PAN104), whose module may be missing or fail to compile (D108).
+  (PAN104a), whose module may be missing or fail to compile (D108).
 - **X21** A show set for precincts like D20 (scenery taller than D20's 4 m allowance also needs its
   own). *Gate:* scenery restored; take it when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
