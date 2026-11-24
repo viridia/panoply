@@ -19,13 +19,15 @@ use bevy::{
 };
 use bevy_immediate::{
     attach::{BevyImmediateAttachPlugin, ImmediateAttach},
-    ui::{activated::ImmUiActivated, CapsUiFeathers},
+    ui::{activated::ImmUiActivated, text::ImmUiText, CapsUiFeathers},
     Imm,
 };
+use panoply_scenery::precinct::Precinct;
 
 use crate::{
     exemplar_list::{has_list, tool_chooser, SceneryChoices},
-    instance_list::{instance_chooser, InstancePane},
+    instance_list::{instance_chooser, place_of, InstancePane},
+    instance_selection::ScenerySelection,
     mode_selector::{EditorModeSettings, SceneryTool},
     scenery_pointer::{step_tier, SceneryCut, SceneryTier},
     scenery_properties::SceneryProperties,
@@ -339,19 +341,39 @@ pub(crate) fn scenery_panel() -> impl Scene {
 }
 
 #[derive(SystemParam)]
-struct SceneryExemplarsParams<'w> {
+struct SceneryExemplarsParams<'w, 's> {
     settings: Res<'w, EditorModeSettings>,
     choices: Res<'w, SceneryChoices>,
+    selection: Res<'w, ScenerySelection>,
+    precincts: Query<'w, 's, &'static Precinct>,
+    server: Res<'w, AssetServer>,
 }
 
 impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
-    type Params = SceneryExemplarsParams<'static>;
+    type Params = SceneryExemplarsParams<'static, 'static>;
 
     /// The chosen tool's chooser, keyed by the tool, so choosing another replaces it; none for a
-    /// tool that has no list.
+    /// tool that has no list. In selection mode, the instance list, named by its precinct's place.
     fn construct(ui: &mut Imm<CapsUiFeathers>, params: &mut SceneryExemplarsParams) {
         let tool = params.settings.scenery_tool;
         if tool == SceneryTool::SelectInstance {
+            // The place of the precinct the list comes from, which its labelled rows do not name.
+            let place = params
+                .selection
+                .precinct
+                .and_then(|precinct| params.precincts.get(precinct).ok())
+                .and_then(|precinct| place_of(&params.server, &precinct.asset))
+                .map_or_else(|| "No precinct".to_string(), |place| place.to_string());
+            ui.ch_id("place")
+                .on_spawn_apply_scene(|| {
+                    bsn! {
+                        Text("")
+                        ThemedText
+                        Node { margin: UiRect::bottom(px(4)) }
+                    }
+                })
+                .on_spawn_insert(|| Name::new("InstancePrecinct"))
+                .on_hash_change_text_fn(&place, || place.clone());
             ui.ch_id(tool).on_spawn_apply_scene(instance_chooser);
             return;
         }

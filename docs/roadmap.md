@@ -108,10 +108,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   as an overlay and kept as the scenery selection with its precinct. As faery's
   `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
   rect to include it.
-- **PAN114 Selected precinct shown.** In selection mode, nothing shows which precinct the instance
-  list comes from, and labelled rows name no place. Outline the selected precinct on the ground, as
-  terrain mode draws the selected parcel's contour (`mode_overlays.rs`), and name it, as
-  `holm-overland (10, 16)`, above the list.
 - **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
   with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
   marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one

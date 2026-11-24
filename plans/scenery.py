@@ -480,6 +480,7 @@ def select_instance(driver):
         click_at(middle)
         assert selected()["instance"] is not None, "the click selected nothing"
         driver.expect("InstanceLabel", TEXT, "none")
+        driver.expect("InstancePrecinct", TEXT, "playground (1, 2)")
         driver.screenshot("instance_selected")
 
         # The actor is outlined on hover once it stands there with its collider, and a click

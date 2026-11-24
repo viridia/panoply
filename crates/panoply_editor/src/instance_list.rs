@@ -198,7 +198,7 @@ fn instance_rows(
 }
 
 /// The place of the precinct whose asset is `handle`.
-fn place_of(server: &AssetServer, handle: &Handle<PrecinctAsset>) -> Option<PrecinctPlace> {
+pub(crate) fn place_of(server: &AssetServer, handle: &Handle<PrecinctAsset>) -> Option<PrecinctPlace> {
     PrecinctPlace::of_path(server.get_path(handle)?.path())
 }
 

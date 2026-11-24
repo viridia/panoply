@@ -15,6 +15,7 @@ use bevy::{
 };
 use panoply_core::{metrics::PRECINCT_SIZE, Realm, Viewpoint};
 use panoply_overlays::{AddOverlay, DrawPlane, OverlayColor, OverlayShape, ShapeBuilder};
+use panoply_scenery::precinct::Precinct;
 use panoply_terrain::{
     RotatingSquareArray, TerrainContoursHandle, TerrainContoursTableAsset, TerrainMap,
     TerrainMapAsset, PARCEL_HEIGHT_SCALE, PARCEL_SIZE, PARCEL_SIZE_F, PARCEL_SIZE_U,
@@ -22,7 +23,8 @@ use panoply_terrain::{
 
 use crate::{
     debug_views::DebugViews,
-    mode_selector::EditorMode,
+    instance_selection::ScenerySelection,
+    mode_selector::{EditorMode, SceneryTool},
     parcel_selection::ParcelSelection,
     scenery_pointer::{SceneryPointer, SceneryPointerSystems, SceneryTier},
 };
@@ -73,8 +75,8 @@ impl OverlayShape for RealmGrid {
 
 /// Scenery mode's tile grid: a line every meter over a precinct, with a heavier border, at the
 /// current tier's height, so it shows both where walls snap and which tier the tools are on. Over
-/// the precinct under the pointer, kept while the pointer is off every precinct. Hidden while
-/// `None`, or turned off in the Show menu.
+/// the precinct under the pointer, kept while the pointer is off every precinct; in selection mode,
+/// over the selected precinct. Hidden while `None`, or turned off in the Show menu.
 #[derive(Component, Reflect, Clone, PartialEq, Default)]
 #[reflect(Component)]
 pub struct TileGrid(Option<(IVec2, f32)>);
@@ -89,7 +91,7 @@ impl OverlayShape for TileGrid {
         builder
             .with_draw_plane(DrawPlane::XZ)
             .with_offset(height + TILE_GRID_LIFT);
-        builder.with_stroke_width(0.03).grid(precinct, 1.0);
+        builder.with_stroke_width(0.01).grid(precinct, 1.0);
         builder.with_stroke_width(0.15).stroke_rect(precinct);
     }
 }
@@ -302,9 +304,13 @@ fn spawn_tile_grid(mut commands: Commands) {
     ));
 }
 
-/// Follows the precinct under the pointer, the tier, the view's realm and the Show menu.
+/// Follows the precinct under the pointer, or in selection mode the selected precinct, which the
+/// instance list holds; the tier, the view's realm and the Show menu.
 fn update_tile_grid(
     pointer: Res<SceneryPointer>,
+    tool: Option<Res<State<SceneryTool>>>,
+    selection: Res<ScenerySelection>,
+    precincts: Query<&Precinct>,
     tier: Res<SceneryTier>,
     views: Res<DebugViews>,
     viewpoint: Res<Viewpoint>,
@@ -316,10 +322,16 @@ fn update_tile_grid(
         .and_then(|e| realms.get(e).ok())
         .map_or(RenderLayers::none(), |r| r.layer.clone());
     for (mut grid, mut propagate) in &mut grids {
-        let coords = pointer
-            .precinct
-            .map(|(_, coords)| coords)
-            .or(grid.0.map(|(coords, _)| coords));
+        let coords = match tool.as_deref().map(State::get) {
+            Some(SceneryTool::SelectInstance) => selection
+                .precinct
+                .and_then(|precinct| precincts.get(precinct).ok())
+                .map(|precinct| precinct.coords),
+            _ => pointer
+                .precinct
+                .map(|(_, coords)| coords)
+                .or(grid.0.map(|(coords, _)| coords)),
+        };
         let shown = coords
             .filter(|_| views.tile_grid)
             .map(|coords| (coords, tier.height()));
