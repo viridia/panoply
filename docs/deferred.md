@@ -640,9 +640,16 @@ dropped, not deferred. Numbers are never reused.
 - **X139** The accessor index, as D117 decides it and [saga.md](saga.md)'s Aspects has it, so that a
   formula reads a scripted aspect its catalog file does not name, as a derived exemplar in another
   catalog, a quest or a dialogue would. *Gate:* the first such formula.
-- **X140** Movable weights: something the player pushes or carries onto a pressure plate. Every
-  candidate today (a barrel, a crate) is a fixture, and fixtures do not move. Either the weight is
-  an actor, which already has a body, push-out and a place in saves, or a new kind of entity, a
-  movable prop, which faery's sliding blocks and stones pushed in front of a fireball emitter, never
-  built, would also need ([faery.md](faery.md), How far faery got). A plate's sensor then senses
-  heavy objects beside actors (PAN79a). *Gate:* the first puzzle that needs a weight.
+- **X140** Movable weights: something the player pushes or carries onto a pressure plate, as
+  faery's sliding blocks and stones pushed in front of a fireball emitter would also have been
+  ([faery.md](faery.md), How far faery got). A movable is a fixture marked movable, not an actor
+  or a new instance kind: an actor's goals, aspects and weighted push (D102) would all need
+  suppressing, and its drift suits no puzzle. The fixture's placement is its home; its pose at run
+  time is not saved, and it returns home when its precinct unloads or it crosses a boundary the
+  fixture names, which keeps it in its dungeon. What persists is the plate's latch, not the
+  weight's place. It moves by mode: sliding a cell per push, held against, or carried and set
+  down; physics only for a puzzle that needs it. A plate's sensor senses movables beside actors
+  (PAN79a). Open: routing around a resting movable. Either a cost per query, as PAN16i treats a
+  far heavier actor, with box footprints; or rebuilding the precinct's mesh off the main thread
+  when it settles (16 to 28 ms, D99); or faery's capped polygons patched locally, last, since the
+  cap changes every mesh. *Gate:* the first puzzle that needs a weight.
