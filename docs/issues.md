@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I81.**
+**Next: I84.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -341,3 +341,22 @@ confirmed by running something or only by reading. Numbers are never reused.
   the next save wrote. Candidates: a longer timeout, or the real fix, a reload of an asset edited
   since its save not replacing it. Confirmed by running (the run's `app.log`: save 07.823, timeout
   08.829, undo 08.996, reload 09.092, save 09.153).
+- **I81** Combat, the first fun risk ([goals.md](goals.md)), waits on SAGA's reactive runtime:
+  PAN111 needs X53, whose gate is saga.md's Order of work (whose steps left are PAN71 and PAN105),
+  so the riskiest test of fun comes after the riskiest engine work rather than before it. Candidate:
+  PAN111 with native skills whose numbers and timings are assets that reload, as its entry already
+  asks, its formulas left to X53; D115 allows native code with a reason, and a fun test that must
+  come early is one, for a prototype. Read, not run.
+- **I82** A formula reading an instance whose precinct is not loaded suspends, and each consumer
+  falls back silently in its own way ([saga.md](saga.md), Values): a cell keeps its last value, a
+  condition is false, an effect is discarded. An author cannot see that a quest's condition is false
+  only because its target is unloaded. Candidate: a suspension is visible, logged once per formula
+  and target, and marked on the formula in the editor, with the chunk that first reads across
+  precincts. Read, not run.
+- **I83** PAN105's proof is its first customer, an animation's `when`, a handful of cells; nothing
+  measures the reaction passes at the size [goals.md](goals.md)'s Scale implies (a dense precinct's
+  dozen actors, doors and containers, each with formulas, across the simulated precincts), and X90's
+  gate trips only once the cost shows in play. Candidate: a synthetic case in `plans/perf.py`,
+  thousands of cells polling, with a spatial memo (`proximity`) under moving actors, so that both
+  the polling cost and how far a spatial read's change ripples are numbers before content depends on
+  them. Read, not run.
