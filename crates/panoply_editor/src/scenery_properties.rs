@@ -230,10 +230,10 @@ pub(crate) fn open_extends_chooser(
     let Ok((this, _)) = exemplar.ids(&server) else {
         return;
     };
-    let Some(meta_type) = exemplars.get(this).map(|data| data.0.meta_type) else {
+    let Some(kind) = exemplars.get(this).map(|data| data.0.kind) else {
         return;
     };
-    let paths: HashMap<String, String> = named_exemplars(&server, &exemplars, meta_type)
+    let paths: HashMap<String, String> = named_exemplars(&server, &exemplars, kind)
         .into_iter()
         .filter(|(_, candidate)| !Exemplar::chain_contains(&exemplars, *candidate, this))
         .filter_map(|(name, candidate)| Some((name, server.get_path(candidate)?.to_string())))

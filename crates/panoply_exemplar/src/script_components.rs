@@ -138,7 +138,7 @@ mod tests {
     use super::*;
     use crate::{
         interaction::tests::{lid_host, load_interactions, Lid},
-        AspectList, InstanceType, NativeAspect,
+        AspectList, InstanceKind, NativeAspect,
     };
 
     /// The aspect that gives an instance a [`Lid`], its state, and has no config.
@@ -154,7 +154,7 @@ mod tests {
             entity.insert_if_new(Lid::default());
         }
 
-        fn can_attach(&self, _meta_type: InstanceType) -> bool {
+        fn can_attach(&self, _kind: InstanceKind) -> bool {
             true
         }
     }
@@ -165,7 +165,7 @@ mod tests {
         formulas: Vec<panoply_saga::FormulaRef>,
     ) -> ExemplarData {
         ExemplarData {
-            meta_type: InstanceType::NONE,
+            kind: None,
             display_name: None,
             alias: Vec::new(),
             aspects,

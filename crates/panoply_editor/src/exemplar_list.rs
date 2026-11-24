@@ -12,9 +12,8 @@ use bevy::{
     prelude::*,
     settings::{ReflectSettingsGroup, SaveSettingsDeferred, SettingsGroup},
 };
-use panoply_actors::ACTOR_TYPE;
-use panoply_exemplar::{Exemplar, InstanceType};
-use panoply_scenery::{FloorSurface, TerrainEffect, FIXTURE_TYPE, WALL_TYPE};
+use panoply_exemplar::{Exemplar, InstanceKind};
+use panoply_scenery::{FloorSurface, TerrainEffect};
 
 use crate::{
     chooser::{chooser, Chooser},
@@ -78,12 +77,12 @@ pub struct ToolChooser {
     pub tool: SceneryTool,
 }
 
-/// The instance type `tool` places, if it places exemplars.
-pub fn placed_type(tool: SceneryTool) -> Option<InstanceType> {
+/// The instance kind `tool` places, if it places exemplars.
+pub fn placed_kind(tool: SceneryTool) -> Option<InstanceKind> {
     match tool {
-        SceneryTool::PlaceWall => Some(WALL_TYPE),
-        SceneryTool::PlaceFixture => Some(FIXTURE_TYPE),
-        SceneryTool::PlaceActor => Some(ACTOR_TYPE),
+        SceneryTool::PlaceWall => Some(InstanceKind::Wall),
+        SceneryTool::PlaceFixture => Some(InstanceKind::Fixture),
+        SceneryTool::PlaceActor => Some(InstanceKind::Actor),
         SceneryTool::PlaceFloor
         | SceneryTool::DrawTerrainFx
         | SceneryTool::SelectInstance
@@ -103,7 +102,7 @@ pub fn placed_entry(tool: SceneryTool) -> Option<TypeId> {
 
 /// Whether `tool` has a list of what it places.
 pub fn has_list(tool: SceneryTool) -> bool {
-    placed_type(tool).is_some() || placed_entry(tool).is_some()
+    placed_kind(tool).is_some() || placed_entry(tool).is_some()
 }
 
 pub struct ExemplarListPlugin;
@@ -158,10 +157,10 @@ fn list_exemplars(
         return;
     }
     for (mut chooser, list) in &mut choosers {
-        let Some(instance_type) = placed_type(list.tool) else {
+        let Some(kind) = placed_kind(list.tool) else {
             continue;
         };
-        let named = named_exemplars(&server, &exemplars, instance_type);
+        let named = named_exemplars(&server, &exemplars, Some(kind));
         let mut items: Vec<String> = named.iter().map(|(name, _)| name.clone()).collect();
         let italic: Vec<String> = named
             .iter()
@@ -185,7 +184,7 @@ pub fn chosen_exemplar(
     tool: SceneryTool,
     name: &str,
 ) -> Option<AssetId<Exemplar>> {
-    named_exemplars(server, exemplars, placed_type(tool)?)
+    named_exemplars(server, exemplars, Some(placed_kind(tool)?))
         .into_iter()
         .find_map(|(found, id)| (found == name).then_some(id))
 }
@@ -214,17 +213,17 @@ pub(crate) fn chosen_placeable(
     }
 }
 
-/// The exemplars of `instance_type`, each with its name in the list: its label, or, where two
+/// The exemplars of `kind`, each with its name in the list: its label, or, where two
 /// catalogs use the same label, the label and its catalog's name. The old names an exemplar keeps
 /// as aliases are left out.
 pub(crate) fn named_exemplars(
     server: &AssetServer,
     exemplars: &Assets<Exemplar>,
-    instance_type: InstanceType,
+    kind: Option<InstanceKind>,
 ) -> Vec<(String, AssetId<Exemplar>)> {
     let entries: Vec<(String, String, AssetId<Exemplar>)> = exemplars
         .iter()
-        .filter(|(_, exemplar)| exemplar.0.meta_type == instance_type)
+        .filter(|(_, exemplar)| exemplar.0.kind == kind)
         .filter_map(|(id, exemplar)| {
             let path = server.get_path(id)?;
             let label = path.label()?.to_string();

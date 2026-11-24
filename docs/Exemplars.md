@@ -530,8 +530,8 @@ impl NativeAspect for PortalTarget {
     }
 
     /// Which kinds of instance the aspect can be attached to, as the aspect chooser offers it.
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        matches!(kind, InstanceKind::Wall | InstanceKind::Fixture)
     }
 }
 ```

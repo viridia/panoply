@@ -65,7 +65,7 @@ impl<B: Bundle> EntityCommand for UpdateAspects<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{exemplar::ExemplarData, InstanceType, NativeAspect};
+    use crate::{exemplar::ExemplarData, InstanceKind, NativeAspect};
 
     /// A native aspect whose config is itself.
     #[derive(Component, Reflect, Clone, Default, Debug, PartialEq)]
@@ -78,7 +78,7 @@ mod tests {
             self.clone()
         }
 
-        fn can_attach(&self, _meta_type: InstanceType) -> bool {
+        fn can_attach(&self, _kind: InstanceKind) -> bool {
             true
         }
     }
@@ -96,7 +96,7 @@ mod tests {
             &self.key
         }
 
-        fn can_attach(&self, _meta_type: InstanceType) -> bool {
+        fn can_attach(&self, _kind: InstanceKind) -> bool {
             true
         }
 
@@ -122,7 +122,7 @@ mod tests {
 
     fn data(aspects: Vec<Arc<dyn Aspect>>) -> ExemplarData {
         ExemplarData {
-            meta_type: InstanceType::NONE,
+            kind: None,
             display_name: None,
             alias: Vec::new(),
             aspects,

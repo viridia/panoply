@@ -3,14 +3,14 @@ use bevy::prelude::*;
 use panoply_saga::FormulaRef;
 use std::sync::Arc;
 
-use crate::InstanceType;
+use crate::InstanceKind;
 
 /// Defines a prototype for instantiating a game object. A clone shares its aspects; one changed
 /// through [`aspect_mut`](crate::aspect_mut) is copied first.
 #[derive(TypePath, Clone)]
 pub struct ExemplarData {
-    /// Type of instance that this exemplar can create.
-    pub meta_type: InstanceType,
+    /// What this exemplar's instances are, if its file says.
+    pub kind: Option<InstanceKind>,
 
     /// Optional human-readable display name.
     pub display_name: Option<String>,
@@ -182,14 +182,14 @@ mod tests {
             self.clone()
         }
 
-        fn can_attach(&self, _meta_type: InstanceType) -> bool {
+        fn can_attach(&self, _kind: InstanceKind) -> bool {
             true
         }
     }
 
     fn data(height: f32, extends: Option<Handle<Exemplar>>) -> ExemplarData {
         ExemplarData {
-            meta_type: InstanceType::NONE,
+            kind: None,
             display_name: None,
             alias: Vec::new(),
             aspects: vec![Arc::new(Height(height))],

@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::{
     annotations::{AspectIcon, PropertySummary, ReflectPropertySummary},
-    InstanceType, NativeAspect, ReflectAspect,
+    InstanceKind, NativeAspect, ReflectAspect,
 };
 
 /// How close an interaction can be performed from, when its entry does not say.
@@ -119,7 +119,7 @@ impl NativeAspect for Interactions {
         self.clone()
     }
 
-    fn can_attach(&self, _meta_type: InstanceType) -> bool {
+    fn can_attach(&self, _kind: InstanceKind) -> bool {
         true
     }
 }

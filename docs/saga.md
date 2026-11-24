@@ -155,7 +155,7 @@ A module declares aspects ([Exemplars.md](Exemplars.md), Aspects):
 
 ```rust
 #[accessor(toggle_switch)]
-aspect ToggleSwitch for Wall, Fixt {
+aspect ToggleSwitch for Wall, Fixture {
     caption: String = "Use",
     state on: bool = false,
 }
@@ -165,7 +165,8 @@ aspect ToggleSwitch for Wall, Fixt {
   `scripts::toggle_switch::ToggleSwitch`, declared in `scripts/toggle_switch.saga`. A catalog names
   it by that key, as `"scripts::toggle_switch::ToggleSwitch": {}`; the `::` tells it from a native
   aspect's type name.
-- `for` lists the kinds of instance it attaches to, as a file writes an exemplar's `type`.
+- `for` lists the kinds of instance it attaches to (`Actor`, `Wall`, `Fixture`, `Item`), as a file
+  writes an exemplar's `kind`.
 - A field is config, or `state`, which play changes and a save keeps, starting from its authored
   value (D74). Its type is one the host knows (`bool`, `i32`, `f32`, `String`, `Vec3`, …). Its
   default is a literal; without one, it takes its type's default. A file that leaves out a field

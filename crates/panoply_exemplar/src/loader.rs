@@ -15,12 +15,12 @@ use thiserror::Error;
 use crate::exemplar::ExemplarData;
 
 use super::aspect_list::AspectListDeserializer;
-use super::{Exemplar, ExemplarCatalog, InstanceType};
+use super::{Exemplar, ExemplarCatalog};
 
 #[derive(Deserialize)]
 #[serde(field_identifier, rename_all = "snake_case")]
 enum Field {
-    Type,
+    Kind,
     DisplayName,
     Alias,
     Aspects,
@@ -48,7 +48,7 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
         A: serde::de::MapAccess<'de>,
     {
         let mut result = ExemplarData {
-            meta_type: InstanceType::NONE,
+            kind: None,
             display_name: None,
             alias: Vec::new(),
             aspects: Vec::new(),
@@ -58,13 +58,11 @@ impl<'de> Visitor<'de> for ExemplarVisitor<'_, '_> {
         };
         while let Some(key) = map.next_key()? {
             match key {
-                Field::Type => {
-                    if result.meta_type != InstanceType::NONE {
-                        return Err(de::Error::duplicate_field("type"));
+                Field::Kind => {
+                    if result.kind.is_some() {
+                        return Err(de::Error::duplicate_field("kind"));
                     }
-                    // TODO: Implement type deserialization.
-                    let meta_type: String = map.next_value()?;
-                    result.meta_type = InstanceType::from_str(&meta_type);
+                    result.kind = Some(map.next_value()?);
                 }
                 Field::DisplayName => {
                     if result.display_name.is_some() {

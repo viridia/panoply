@@ -23,13 +23,13 @@ use bevy::{
 };
 use bevy_action_map::prelude::*;
 use panoply_core::{Realm, Viewpoint};
-use panoply_exemplar::Exemplar;
+use panoply_exemplar::{Exemplar, InstanceKind};
 use panoply_overlays::{AddOverlay, DrawPlane, OverlayColor, OverlayShape, ShapeBuilder};
 use panoply_scenery::{
     cutaways::CutawayVolume,
     precinct::Precinct,
     scenery_element::{SceneryElement, SceneryElementRebuildAspects},
-    PRECINCT_SIZE_F, WALL_TYPE,
+    PRECINCT_SIZE_F,
 };
 
 use crate::{
@@ -197,7 +197,7 @@ impl WallTarget {
         Some(CutawayVolume {
             min: (area.min + origin).extend(height - REPLACE_REACH).xzy(),
             max: (area.max + origin).extend(height + REPLACE_REACH).xzy(),
-            only: Some(WALL_TYPE),
+            only: Some(InstanceKind::Wall),
         })
     }
 }
@@ -504,7 +504,7 @@ pub(crate) fn wall_types(
             server
                 .get_handle::<Exemplar>(path.clone())
                 .and_then(|handle| exemplars.get(&handle))
-                .is_some_and(|exemplar| exemplar.0.meta_type == WALL_TYPE)
+                .is_some_and(|exemplar| exemplar.0.kind == Some(InstanceKind::Wall))
         })
         .collect()
 }

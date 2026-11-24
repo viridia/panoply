@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D118.**
+**Next: D119.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -301,9 +301,9 @@ never reused.
   whatever the rings' winding (unit test in `floor_mesh.rs`). One shape per region leaves no seams
   on its top for the controller to catch on; faery's convex pieces did, and dropped holes. Floor
   depressions (planned, for sliding-block puzzles: a property of the floor surface) move the top, so
-  the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's `meta_type`).
-  Colliders' `user_data` is the owning entity, for picking later; the F3 view draws every scenery
-  collider, and ground only for shown parcels.
+  the collider follows them. Groups: Floor, Wall, Fixture (by the exemplar's `kind`). Colliders'
+  `user_data` is the owning entity, for picking later; the F3 view draws every scenery collider, and
+  ground only for shown parcels.
 - **D39** Generated trees get a trunk capsule each (blocks walking) and a canopy over the forest
   (catches what falls onto it, so an actor dropped there cannot land in a pocket between trunks 0.4
   m apart). Design in `panoply_terrain::flora_physics`'s module doc: the canopy is quantized to the
@@ -1008,3 +1008,8 @@ never reused.
   only declarations, which reads every regional file at startup, and finding a module from an
   accessor's name, which a renamed file breaks. Reversing it means imports in assets that embed
   formulas. (X139)
+- **D118** An instance's kind is a closed enum, `InstanceKind` (PAN119): native systems branch on it
+  (colliders, cutaways, the placing tools), so a kind a mod added would have nothing that builds or
+  places it. A floor is no instance and has no kind. The kind is on the exemplar, not on each placed
+  instance, so a precinct's file never decodes one. Reversing it means a registry of kinds, each
+  with what builds and places it.

@@ -1,8 +1,6 @@
 use bevy::{annotations::DisplayName, prelude::*};
 use panoply_exemplar::{annotations::AspectIcon, *};
 
-use super::WALL_TYPE;
-
 /// Wall Size aspect
 #[derive(Component, Debug, Reflect, Clone, Default)]
 #[reflect(Aspect, Default)]
@@ -24,7 +22,7 @@ impl NativeAspect for WallSize {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall
     }
 }

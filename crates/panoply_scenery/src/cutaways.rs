@@ -5,11 +5,10 @@
 //! regions by their outline at their height.
 
 use bevy::prelude::*;
-use panoply_exemplar::{Exemplar, InstanceType};
+use panoply_exemplar::{Exemplar, InstanceKind};
 
 use crate::{
-    floor_region::FloorRegion, precinct::Precinct, scenery_element::SceneryElement, FLOOR_TYPE,
-    TIER_OFFSET,
+    floor_region::FloorRegion, precinct::Precinct, scenery_element::SceneryElement, TIER_OFFSET,
 };
 
 /// How far a rect's volume reaches past it: a meter each way, so that the walls on its edges are
@@ -20,18 +19,20 @@ const VOLUME_MARGIN: Vec3 = Vec3::new(1.0, 0.2, 1.0);
 /// feet at `y`, as in the three.js version: the lowest whose floor is 0.7 m to 1.7 m above them.
 const HEAD_HEIGHT: f32 = 1.7;
 
-/// A box in the world that hides what is in it, all of it, or only instances of one type.
+/// A box in the world that hides what is in it, all of it, or only instances of one kind.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct CutawayVolume {
     pub min: Vec3,
     pub max: Vec3,
-    /// Hides only instances of this type, if any.
-    pub only: Option<InstanceType>,
+    /// Hides only instances of this kind, if any.
+    pub only: Option<InstanceKind>,
 }
 
 impl CutawayVolume {
-    fn hides(&self, kind: InstanceType) -> bool {
-        self.only.is_none_or(|only| only == kind)
+    /// Whether it hides what is of `kind`, `None` for what is no instance (a floor), which only a
+    /// volume hiding everything hides.
+    fn hides(&self, kind: Option<InstanceKind>) -> bool {
+        self.only.is_none_or(|only| Some(only) == kind)
     }
 
     fn contains(&self, point: Vec3) -> bool {
@@ -57,13 +58,13 @@ impl Cutaways {
     }
 
     /// Whether an instance of `kind` at `point` is hidden.
-    pub fn hides_point(&self, point: Vec3, kind: InstanceType) -> bool {
+    pub fn hides_point(&self, point: Vec3, kind: Option<InstanceKind>) -> bool {
         self.volumes()
             .any(|volume| volume.hides(kind) && volume.contains(point))
     }
 
     /// Whether an instance of `kind` filling the box from `min` to `max` is hidden.
-    pub fn hides_box(&self, min: Vec3, max: Vec3, kind: InstanceType) -> bool {
+    pub fn hides_box(&self, min: Vec3, max: Vec3, kind: Option<InstanceKind>) -> bool {
         self.volumes()
             .any(|volume| volume.hides(kind) && volume.intersects(min, max))
     }
@@ -195,7 +196,7 @@ pub fn hide_cut_away_scenery(
         }
         let kind = exemplars
             .get(&element.exemplar)
-            .map_or(InstanceType::NONE, |exemplar| exemplar.0.meta_type);
+            .and_then(|exemplar| exemplar.0.kind);
         visibility.set_if_neq(shown(cutaways.hides_point(transform.translation(), kind)));
     }
     for (floor, transform, mut visibility) in &mut floors {
@@ -213,7 +214,7 @@ pub fn hide_cut_away_scenery(
         let base = transform.translation() + Vec3::Y * (floor.level as f32 + TIER_OFFSET);
         let min = base + Vec3::new(outline.min.x, -0.1, outline.min.y);
         let max = base + Vec3::new(outline.max.x, -0.05, outline.max.y);
-        visibility.set_if_neq(shown(cutaways.hides_box(min, max, FLOOR_TYPE)));
+        visibility.set_if_neq(shown(cutaways.hides_box(min, max, None)));
     }
 }
 

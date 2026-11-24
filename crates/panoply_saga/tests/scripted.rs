@@ -146,7 +146,10 @@ fn bad_declarations_are_errors() {
             "The default of on must be a literal of type bool",
         ),
         ("aspect A for Wall { on: Lever }", "Unknown type: Lever"),
-        ("aspect A for Wall { a: f32, a: f32 }", "Name redefinition: a"),
+        (
+            "aspect A for Wall { a: f32, a: f32 }",
+            "Name redefinition: a",
+        ),
         (
             "aspect A for Wall { } aspect A for Fixture { }",
             "Name redefinition: A",
@@ -174,7 +177,10 @@ fn a_formula_reads_config_and_state() {
     assert_eq!(evaluate(&world, &host, &when, on).0, Ok(false));
 
     // The read is tracked as the state component's.
-    let ids = world.resource::<ScriptedComponents>().ids(&switch.key).unwrap();
+    let ids = world
+        .resource::<ScriptedComponents>()
+        .ids(&switch.key)
+        .unwrap();
     let (_, tracking) = evaluate(&world, &host, &when, off);
     assert_eq!(tracking.components(), [(off, ids.state, true)]);
 

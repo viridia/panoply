@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 
 use panoply_core::HexColor;
 
-use super::ACTOR_TYPE;
-
 /// The species' skeleton, which the engine animates, and the file holding its clips.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
@@ -40,8 +38,8 @@ impl NativeAspect for Armature {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -59,8 +57,8 @@ impl NativeAspect for ClipNames {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -102,8 +100,8 @@ impl NativeAspect for CollisionSize {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -127,8 +125,8 @@ impl NativeAspect for ActorScale {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -146,8 +144,8 @@ impl NativeAspect for Skin {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -165,8 +163,8 @@ impl NativeAspect for Colors {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -184,8 +182,8 @@ impl NativeAspect for Features {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }
 
@@ -203,7 +201,7 @@ impl NativeAspect for WieldedItems {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ACTOR_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Actor
     }
 }

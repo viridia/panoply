@@ -1,6 +1,5 @@
 use bevy::{annotations::DisplayName, prelude::*};
 use panoply_exemplar::*;
-use panoply_scenery::{FIXTURE_TYPE, WALL_TYPE};
 use serde::{Deserialize, Serialize};
 
 /// The side of a portal's aperture it can be seen and crossed from.
@@ -50,8 +49,8 @@ impl NativeAspect for Portal {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }
 
@@ -73,8 +72,8 @@ impl NativeAspect for PortalTarget {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }
 

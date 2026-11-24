@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
-use super::{FIXTURE_TYPE, WALL_TYPE};
-
 /// A fixture or wall tile that opens and closes, such as a chest or a sarcophagus. How it looks
 /// doing so is its `SceneryAnimations`, on the input `open`.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
@@ -18,8 +16,8 @@ impl NativeAspect for Container {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Fixture || kind == InstanceKind::Wall
     }
 
     fn attach_state(&self, entity: &mut EntityWorldMut) {

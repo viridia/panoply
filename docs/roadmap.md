@@ -606,12 +606,6 @@ Code that works but stands in the way: a pattern the rest of the code has moved 
 workaround for what should be fixed at its cause. Each is taken when its area is next touched, or
 sooner when it bites.
 
-- **PAN119 Instance kinds by name.** `InstanceType` packs a four-letter code into a `u32` (`Wall`,
-  `Fixt`, `Actr`), and `from_str` reads only the first four bytes, so `Floor` is `Floo`. Kinds
-  become names, as files and SAGA's `for` write them (`Fixture`, `Actor`), held as an interned name
-  or a small registered id, to be chosen in the chunk. A script rewrites the exemplar files' `type`;
-  the four-letter check in the exemplar loader and `ScriptedAspect::can_attach` goes, and
-  `scripts/toggle_switch.saga` says `for Wall, Fixture`.
 - **PAN103 Tools on picking events.** The editor's world tools read the mouse by polling
   `PointerState`, which passes by picking's routing: what a widget or dialog in front of the view
   does with a press does not reach them. So closing a dialog by clicking outside it, which despawns

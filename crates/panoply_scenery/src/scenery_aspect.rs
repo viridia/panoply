@@ -11,7 +11,7 @@ use panoply_exemplar::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{scenery_colliders::ColliderDesc, FIXTURE_TYPE, WALL_TYPE};
+use super::scenery_colliders::ColliderDesc;
 
 /// A scenery model: a `file#Scene` path to a named scene of a glTF file in `scenery/models` or
 /// `terrain/models`.
@@ -88,8 +88,8 @@ impl NativeAspect for SceneryModels {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }
 
@@ -106,8 +106,8 @@ impl NativeAspect for SceneryColliders {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }
 
@@ -124,8 +124,8 @@ impl NativeAspect for SceneryMarks {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }
 
@@ -162,7 +162,7 @@ impl NativeAspect for LightSource {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == WALL_TYPE || meta_type == FIXTURE_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Wall || kind == InstanceKind::Fixture
     }
 }

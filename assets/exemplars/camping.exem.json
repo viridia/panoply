@@ -1,6 +1,6 @@
 {
   "Test.Particles.3": {
-    "type": "Fixt",
+    "kind": "Fixture",
     "aspects": {
       "SceneryModels": [
         {
@@ -17,7 +17,7 @@
     }
   },
   "Campfire": {
-    "type": "Fixt",
+    "kind": "Fixture",
     "aspects": {
       "SceneryModels": [
         {
@@ -34,7 +34,7 @@
     }
   },
   "Test.Particles.1": {
-    "type": "Fixt",
+    "kind": "Fixture",
     "aspects": {
       "SceneryModels": [
         {
@@ -51,7 +51,7 @@
     }
   },
   "Test.Particles.2": {
-    "type": "Fixt",
+    "kind": "Fixture",
     "aspects": {
       "SceneryModels": [
         {
@@ -68,7 +68,7 @@
     }
   },
   "Test.Particles.4": {
-    "type": "Fixt",
+    "kind": "Fixture",
     "aspects": {
       "SceneryModels": [
         {

@@ -3,7 +3,7 @@ use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
 };
-use panoply_exemplar::{CatalogServer, Exemplar, InstanceAspects, InstanceType, UpdateAspects};
+use panoply_exemplar::{CatalogServer, Exemplar, InstanceAspects, UpdateAspects};
 use panoply_scenery::CutawaySystems;
 
 mod actor_animation;
@@ -59,9 +59,6 @@ use self::world_pick::{hide_idle_cursor, pick_world, spawn_world_backstop, World
 
 use self::actor_aspect::{Armature, ClipNames, Colors, Features, WieldedItems};
 use self::item_aspect::{EquipSlot, ItemModel};
-
-pub const ACTOR_TYPE: InstanceType = InstanceType::from_str("Actr");
-pub const ITEM_TYPE: InstanceType = InstanceType::from_str("Item");
 
 /// A character: the player, an NPC or a monster.
 #[derive(Debug, Component)]

@@ -1,7 +1,7 @@
 // A switch that stays where it was left, as a light switch does, unlike a button that springs
 // back once pressed.
 #[accessor(toggle_switch)]
-aspect ToggleSwitch for Wall, Fixt {
+aspect ToggleSwitch for Wall, Fixture {
     // What the player is shown to throw it.
     caption: String = "Use",
     // Whether it is on.

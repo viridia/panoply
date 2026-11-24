@@ -1,21 +1,21 @@
 {
   "GuardLunch": {
-    "type": "Item",
+    "kind": "Item",
     "display_name": "Guardsman's Lunch",
     "aspects": {}
   },
   "KillQuestNote": {
-    "type": "Item",
+    "kind": "Item",
     "display_name": "Reward Offered",
     "aspects": {}
   },
   "ArmoryOrders": {
-    "type": "Item",
+    "kind": "Item",
     "display_name": "Note",
     "aspects": {}
   },
   "LoremIpsum": {
-    "type": "Item",
+    "kind": "Item",
     "display_name": "Latin Writing",
     "aspects": {}
   }

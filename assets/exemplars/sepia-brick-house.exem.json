@@ -1,6 +1,6 @@
 {
   "SepiaBrickWall": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -16,7 +16,7 @@
     }
   },
   "SepiaBrickWallCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -41,7 +41,7 @@
     }
   },
   "SepiaBrickWallGable": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -51,7 +51,7 @@
     }
   },
   "SepiaBrickWallSquat": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -67,7 +67,7 @@
     }
   },
   "SepiaBrickWallSquatCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -89,7 +89,7 @@
     }
   },
   "SepiaBrickWallWide": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -99,7 +99,7 @@
     }
   },
   "SepiaBrickWallWindow": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {

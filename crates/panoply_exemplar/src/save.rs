@@ -54,7 +54,9 @@ fn exemplar_json(
     server: &AssetServer,
 ) -> Result<Value, BevyError> {
     let mut entry = Map::new();
-    entry.insert("type".into(), serde_json::to_value(exemplar.meta_type)?);
+    if let Some(kind) = exemplar.kind {
+        entry.insert("kind".into(), kind.name().into());
+    }
     if let Some(name) = &exemplar.display_name {
         entry.insert("display_name".into(), name.clone().into());
     }

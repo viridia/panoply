@@ -10,7 +10,7 @@ mod catalogs;
 mod command;
 mod entry;
 mod exemplar;
-mod instance_type;
+mod instance_kind;
 mod interaction;
 mod loader;
 mod save;
@@ -35,7 +35,7 @@ pub use entry::{
     EntryCatalogLoaderError,
 };
 pub use exemplar::{Exemplar, ExemplarCatalog, ExemplarData};
-pub use instance_type::InstanceType;
+pub use instance_kind::{InstanceKind, UnknownInstanceKind};
 pub use interaction::*;
 pub use script_components::{ScriptComponentAppExt, ScriptComponents};
 pub use scripted_aspect::{part_from_json, part_to_json, ScriptedAspect};

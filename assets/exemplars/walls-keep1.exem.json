@@ -1,6 +1,6 @@
 {
   "Keep1PillarBottom": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -17,7 +17,7 @@
     }
   },
   "Keep1PillarTop": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -34,7 +34,7 @@
     }
   },
   "Keep1WallBottom": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -50,7 +50,7 @@
     }
   },
   "Keep1WallTop": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -66,7 +66,7 @@
     }
   },
   "Keep1PillarBottomPilaster": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -86,7 +86,7 @@
     }
   },
   "Keep1PillarBottomCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -110,7 +110,7 @@
     }
   },
   "Keep1WallTopPilaster": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -129,7 +129,7 @@
     }
   },
   "Keep1WallTopCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -152,7 +152,7 @@
     }
   },
   "Keep1WallTopArch": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -168,7 +168,7 @@
     }
   },
   "Keep1WallBottomWindow": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -184,7 +184,7 @@
     }
   },
   "RailingPostLight": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -203,7 +203,7 @@
     }
   },
   "RailingSectionLight": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -231,7 +231,7 @@
     }
   },
   "Keep1BattlementPillar": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -247,7 +247,7 @@
     }
   },
   "Keep1Battlement": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -263,7 +263,7 @@
     }
   },
   "Keep1BattlementCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -279,7 +279,7 @@
     }
   },
   "Keep1WallTopTee": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -302,7 +302,7 @@
     }
   },
   "Keep1PillarBottomTee": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -326,7 +326,7 @@
     }
   },
   "Keep1WoodenStairs": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -373,7 +373,7 @@
     }
   },
   "Keep1Stairs": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -394,7 +394,7 @@
     }
   },
   "Keep1WallBottomDoor": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -436,7 +436,7 @@
     }
   },
   "Keep1WallBottomDoubleDoor": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -487,7 +487,7 @@
     }
   },
   "Keep1WallBottomPortal": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -518,7 +518,7 @@
     }
   },
   "Keep1WallBottomPortalInside": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -561,7 +561,7 @@
     }
   },
   "Keep1MetalDoor": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -603,7 +603,7 @@
     }
   },
   "Keep1WallBottomSwitch": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -629,7 +629,7 @@
     }
   },
   "Keep1WallBottomDoorway": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {

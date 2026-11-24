@@ -2,8 +2,6 @@ use bevy::{annotations::DisplayName, prelude::*};
 use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
-use super::{FIXTURE_TYPE, WALL_TYPE};
-
 /// A fixture or wall tile that can be locked, such as a chest. Whether it starts locked; an
 /// instance that does overrides its exemplar's with its own.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
@@ -23,8 +21,8 @@ impl NativeAspect for Lock {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Fixture || kind == InstanceKind::Wall
     }
 
     fn attach_state(&self, entity: &mut EntityWorldMut) {

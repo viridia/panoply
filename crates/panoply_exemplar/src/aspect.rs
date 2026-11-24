@@ -13,7 +13,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::InstanceType;
+use crate::InstanceKind;
 
 /// An Aspect is like an ECS component for a prototype. It is native, a Rust type implementing
 /// [`NativeAspect`], or scripted, declared in SAGA; both are keyed by [`Aspect::key`] (D107).
@@ -27,7 +27,7 @@ where
     fn key(&self) -> &str;
 
     /// Whether this aspect can be applied/attached to an instance of the given type.
-    fn can_attach(&self, meta_type: InstanceType) -> bool;
+    fn can_attach(&self, kind: InstanceKind) -> bool;
 
     /// Load any dependencies required by this aspect.
     #[allow(unused_variables)]
@@ -100,7 +100,7 @@ where
     fn attach_state(&self, entity: &mut EntityWorldMut) {}
 
     /// See [`Aspect::can_attach`].
-    fn can_attach(&self, meta_type: InstanceType) -> bool;
+    fn can_attach(&self, kind: InstanceKind) -> bool;
 
     /// See [`Aspect::load_dependencies`].
     #[allow(unused_variables)]
@@ -117,8 +117,8 @@ impl<T: NativeAspect> Aspect for T {
         T::short_type_path()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        NativeAspect::can_attach(self, meta_type)
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        NativeAspect::can_attach(self, kind)
     }
 
     fn load_dependencies(&mut self, label: &str, load_context: &mut LoadContext) {

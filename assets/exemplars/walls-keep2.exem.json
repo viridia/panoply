@@ -1,6 +1,6 @@
 {
   "Keep2PillarBottom": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -17,7 +17,7 @@
     }
   },
   "Keep2PillarTop": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -34,7 +34,7 @@
     }
   },
   "Keep2WallBottom": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -50,7 +50,7 @@
     }
   },
   "Keep2WallTop": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -66,7 +66,7 @@
     }
   },
   "Keep2PillarBottomPilaster": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -86,7 +86,7 @@
     }
   },
   "Keep2PillarBottomCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -110,7 +110,7 @@
     }
   },
   "Keep2WallTopPilaster": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -129,7 +129,7 @@
     }
   },
   "Keep2WallTopCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -152,7 +152,7 @@
     }
   },
   "Keep2WallTopArch": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -168,7 +168,7 @@
     }
   },
   "Keep2WallBottomWindow": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -184,7 +184,7 @@
     }
   },
   "Keep2BattlementPillar": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -200,7 +200,7 @@
     }
   },
   "Keep2Battlement": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -216,7 +216,7 @@
     }
   },
   "Keep2BattlementCorner": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -232,7 +232,7 @@
     }
   },
   "Keep2WallTopTee": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -255,7 +255,7 @@
     }
   },
   "Keep2PillarBottomTee": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -279,7 +279,7 @@
     }
   },
   "Keep2Stairs": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -300,7 +300,7 @@
     }
   },
   "Keep2WallBottomDoor": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -342,7 +342,7 @@
     }
   },
   "Keep2WallBottomDoubleDoor": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -393,7 +393,7 @@
     }
   },
   "Keep2WallBottomPortal": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -424,7 +424,7 @@
     }
   },
   "Keep2WallBottomPortalInside": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -467,7 +467,7 @@
     }
   },
   "Keep2WallBottomSwitch": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -493,7 +493,7 @@
     }
   },
   "Keep2WallBottomDoorway": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {

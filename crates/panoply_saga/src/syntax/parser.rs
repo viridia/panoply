@@ -763,14 +763,24 @@ mod tests {
         assert_eq!(*kinds, ["Wall", "Fixture"]);
         assert_eq!(attrs.len(), 1);
         assert_eq!(attrs[0].name, "accessor");
-        assert!(matches!(attrs[0].args, [ASTNode { kind: NodeKind::Ident("toggle_switch"), .. }]));
+        assert!(matches!(
+            attrs[0].args,
+            [ASTNode {
+                kind: NodeKind::Ident("toggle_switch"),
+                ..
+            }]
+        ));
         let summary: Vec<_> = fields
             .iter()
             .map(|f| (f.name, f.is_state, f.default.is_some()))
             .collect();
         assert_eq!(
             summary,
-            [("caption", false, true), ("on", true, true), ("state", false, false)]
+            [
+                ("caption", false, true),
+                ("on", true, true),
+                ("state", false, false)
+            ]
         );
     }
 }

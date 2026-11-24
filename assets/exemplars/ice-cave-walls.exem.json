@@ -1,6 +1,6 @@
 {
   "IceCaveWall1": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -17,7 +17,7 @@
     }
   },
   "IceCaveWall2": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -34,7 +34,7 @@
     }
   },
   "IceCaveWall3": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -51,7 +51,7 @@
     }
   },
   "IceCaveWallCornerConcave1": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -73,7 +73,7 @@
     }
   },
   "IceCaveCornerConcave": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {
@@ -95,7 +95,7 @@
     }
   },
   "IceCaveCornerConvex": {
-    "type": "Wall",
+    "kind": "Wall",
     "aspects": {
       "SceneryModels": [
         {

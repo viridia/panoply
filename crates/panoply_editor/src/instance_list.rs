@@ -25,9 +25,9 @@ use bevy_immediate::{
     Imm, ImmEntity,
 };
 use panoply_actors::{PlacedAs, PrecinctActors};
-use panoply_exemplar::Exemplar;
+use panoply_exemplar::{Exemplar, InstanceKind};
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
-use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement, WALL_TYPE};
+use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement};
 
 use crate::{
     adornment::adornment_menu_button,
@@ -71,14 +71,6 @@ impl Default for InstanceFilter {
     }
 }
 
-/// What an instance is, as the pane names it.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum InstanceKind {
-    Actor,
-    Wall,
-    Fixture,
-}
-
 impl InstanceFilter {
     /// Whether the list holds an instance of `kind`, labelled or not.
     fn keeps(&self, kind: InstanceKind, labelled: bool) -> bool {
@@ -86,6 +78,8 @@ impl InstanceFilter {
             InstanceKind::Actor => self.actor,
             InstanceKind::Wall => self.wall,
             InstanceKind::Fixture => self.fixture,
+            // Items are carried, never placed in a precinct, so no row is one.
+            InstanceKind::Item => false,
         };
         kind_kept && (labelled || !self.labelled)
     }
@@ -198,7 +192,10 @@ fn instance_rows(
 }
 
 /// The place of the precinct whose asset is `handle`.
-pub(crate) fn place_of(server: &AssetServer, handle: &Handle<PrecinctAsset>) -> Option<PrecinctPlace> {
+pub(crate) fn place_of(
+    server: &AssetServer,
+    handle: &Handle<PrecinctAsset>,
+) -> Option<PrecinctPlace> {
     PrecinctPlace::of_path(server.get_path(handle)?.path())
 }
 
@@ -362,16 +359,19 @@ impl InstancePaneParams<'_, '_> {
     fn described(&self) -> Option<(&'static str, String)> {
         let entity = self.selection.instance?;
         if let Ok(element) = self.elements.get(entity) {
-            let wall = self
-                .exemplars
-                .get(&element.exemplar)
-                .is_some_and(|exemplar| exemplar.0.meta_type == WALL_TYPE);
+            let kind = match self.exemplars.get(&element.exemplar) {
+                Some(exemplar) if exemplar.0.kind == Some(InstanceKind::Wall) => InstanceKind::Wall,
+                _ => InstanceKind::Fixture,
+            };
             let path = self.server.get_path(&element.exemplar)?;
             let label = path.label().unwrap_or_default().to_string();
-            return Some((if wall { "Wall" } else { "Fixture" }, label));
+            return Some((kind.name(), label));
         }
         let actor = self.actors.get(entity).ok()?;
-        Some(("Actor", label(actor.exemplar()).to_string()))
+        Some((
+            InstanceKind::Actor.name(),
+            label(actor.exemplar()).to_string(),
+        ))
     }
 
     /// The selected instance's label, if it has one.

@@ -8,7 +8,7 @@ use bevy::{
 use panoply_core::{realm_physics::collision_groups, OwnedColliders, RealmPhysics, ToRapier};
 use panoply_exemplar::{
     annotations::{PropertySummary, ReflectPropertySummary},
-    Exemplar,
+    Exemplar, InstanceKind,
 };
 use rapier3d::prelude::{
     ColliderBuilder, Group, InteractionGroups, InteractionTestMode, Pose, SharedShape,
@@ -19,7 +19,6 @@ use crate::{
     precinct::Precinct,
     scenery_aspect::SceneryColliders,
     scenery_element::{SceneryElement, SceneryElementRebuildColliders},
-    WALL_TYPE,
 };
 
 /// A collider's shape and its dimensions, which differ by shape. Every shape but the ellipsoid
@@ -326,7 +325,7 @@ pub fn build_se_colliders(
             continue;
         };
         let group = match exemplars.get(&element.exemplar) {
-            Some(exemplar) if exemplar.0.meta_type == WALL_TYPE => collision_groups::WALL,
+            Some(exemplar) if exemplar.0.kind == Some(InstanceKind::Wall) => collision_groups::WALL,
             _ => collision_groups::FIXTURE,
         };
         let placement = Pose::from_parts(

@@ -1,6 +1,6 @@
 {
   "Carlyle.Tepper": {
-    "type": "Actr",
+    "kind": "Actor",
     "display_name": "Carlyle Tepper",
     "aspects": {
       "Colors": {

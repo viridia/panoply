@@ -84,10 +84,12 @@ fn accessor(attrs: &[&ASTAttribute]) -> Result<Option<SmolStr>, CompilationError
                 attr.name.into(),
             ));
         }
-        let [ASTNode {
-            kind: NodeKind::Ident(name),
-            ..
-        }] = attr.args
+        let [
+            ASTNode {
+                kind: NodeKind::Ident(name),
+                ..
+            },
+        ] = attr.args
         else {
             return Err(CompilationError::Expected(
                 attr.location,

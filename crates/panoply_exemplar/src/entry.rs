@@ -274,7 +274,12 @@ mod tests {
     fn read(json: &str, host: &HostState) -> Result<Vec<(String, Sign)>, serde_json::Error> {
         let mut formulas = FormulaQueue::default();
         let entries = read_entries::<Sign>(json.as_bytes(), &registry(), &mut formulas)?;
-        futures_lite::future::block_on(formulas.compile("test.sign.json", host, json.as_bytes(), &[]));
+        futures_lite::future::block_on(formulas.compile(
+            "test.sign.json",
+            host,
+            json.as_bytes(),
+            &[],
+        ));
         Ok(entries)
     }
 

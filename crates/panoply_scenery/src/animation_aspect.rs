@@ -9,9 +9,7 @@ use panoply_core::Viewpoint;
 use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
-use super::{
-    container_aspect::ContainerState, scenery_element::SceneryElementMesh, FIXTURE_TYPE, WALL_TYPE,
-};
+use super::{container_aspect::ContainerState, scenery_element::SceneryElementMesh};
 
 /// The state of an instance that drives an animation.
 #[derive(Debug, Reflect, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -137,8 +135,8 @@ impl NativeAspect for SceneryAnimations {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == FIXTURE_TYPE || meta_type == WALL_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Fixture || kind == InstanceKind::Wall
     }
 }
 

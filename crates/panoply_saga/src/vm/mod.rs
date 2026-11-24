@@ -625,8 +625,7 @@ fn load_scripted(vm: &mut ScriptVm) -> Result<(), VMError> {
     let field = aspect.fields.get(field).ok_or_else(invalid)?;
     let (id, fields) = scripted::get(vm.world, entity, &aspect.key, field.is_state);
     if let Some(id) = id {
-        vm.tracking
-            .track_component_id(entity, id, fields.is_some());
+        vm.tracking.track_component_id(entity, id, fields.is_some());
     }
     let missing = || VMError::MissingAspect(aspect.key.clone());
     let value = fields

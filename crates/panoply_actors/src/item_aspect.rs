@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
-use super::ITEM_TYPE;
-
 /// The item's model: a `file#Scene` path to a named scene of a props glTF.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
@@ -17,8 +15,8 @@ impl NativeAspect for ItemModel {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ITEM_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Item
     }
 }
 
@@ -35,7 +33,7 @@ impl NativeAspect for EquipSlot {
         self.clone()
     }
 
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
-        meta_type == ITEM_TYPE
+    fn can_attach(&self, kind: InstanceKind) -> bool {
+        kind == InstanceKind::Item
     }
 }

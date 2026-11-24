@@ -63,7 +63,9 @@ impl AspectDecl {
 
     /// The fields of one part: the state fields, or the config fields.
     pub fn fields_of(&self, state: bool) -> impl Iterator<Item = &AspectField> {
-        self.fields.iter().filter(move |field| field.is_state == state)
+        self.fields
+            .iter()
+            .filter(move |field| field.is_state == state)
     }
 
     /// The field `name`.
@@ -127,7 +129,10 @@ impl ScriptedFields {
     /// The value of field `name`, to change. Its type stays the field's: a value applied to it
     /// goes through `PartialReflect::try_apply`.
     pub fn get_mut(&mut self, name: &str) -> Option<&mut dyn PartialReflect> {
-        let index = self.decl.fields_of(self.state).position(|f| f.name == name)?;
+        let index = self
+            .decl
+            .fields_of(self.state)
+            .position(|f| f.name == name)?;
         Some(self.values[index].as_partial_reflect_mut())
     }
 
@@ -375,7 +380,10 @@ mod tests {
             .unwrap() = true;
         assert_eq!(lit(&world, entity), Some(true));
 
-        let ids = world.resource::<ScriptedComponents>().ids(&decl.key).unwrap();
+        let ids = world
+            .resource::<ScriptedComponents>()
+            .ids(&decl.key)
+            .unwrap();
         assert_ne!(ids.config, ids.state);
 
         remove(&mut world.entity_mut(entity), &decl.key, false);

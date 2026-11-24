@@ -1090,7 +1090,7 @@ mod tests {
                     self.clone()
                 }
 
-                fn can_attach(&self, _meta_type: panoply_exemplar::InstanceType) -> bool {
+                fn can_attach(&self, _kind: panoply_exemplar::InstanceKind) -> bool {
                     true
                 }
             }

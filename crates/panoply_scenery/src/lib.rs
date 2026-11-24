@@ -3,9 +3,7 @@ use std::collections::BTreeMap;
 use bevy::{camera::visibility::VisibilitySystems, prelude::*, transform::TransformSystems};
 use cutaways::{hide_cut_away_scenery, Cutaways};
 use floor_surface::{build_floor_materials, FloorMaterials};
-use panoply_exemplar::{
-    CatalogEntryAppExt, InstanceType, InteractionAppExt, ScriptComponentAppExt,
-};
+use panoply_exemplar::{CatalogEntryAppExt, InteractionAppExt, ScriptComponentAppExt};
 use panoply_precinct::{KeyedInstances, PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::spawn_precincts;
@@ -65,10 +63,6 @@ pub use simulation::SimulatedPrecinct;
 pub const FLOOR_THICKNESS: f32 = 0.2; // Thickness of floors
 pub const PHYSICS_FLOOR_THICKNESS: f32 = 0.1; // Thickness of floor colliders
 pub const TIER_OFFSET: f32 = 0.02; // Tiers are slightly higher than the terrain.
-
-pub const WALL_TYPE: InstanceType = InstanceType::from_str("Wall");
-pub const FIXTURE_TYPE: InstanceType = InstanceType::from_str("Fixt");
-pub const FLOOR_TYPE: InstanceType = InstanceType::from_str("Floor");
 
 #[derive(Resource, Default)]
 pub struct FloorOutline(pub Handle<OutlineMaterial>);

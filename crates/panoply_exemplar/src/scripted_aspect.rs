@@ -14,7 +14,7 @@ use panoply_saga::scripted::{self, AspectDecl, AspectField, ScriptedFields};
 use serde::de::DeserializeSeed;
 use serde_json::{Map, Value};
 
-use crate::{Aspect, InstanceType};
+use crate::{Aspect, InstanceKind};
 
 /// A scripted aspect with its authored values: its config, and the values its state starts
 /// from (D74). Attaching inserts the config as one component and, where the entity has none
@@ -176,12 +176,12 @@ impl Aspect for ScriptedAspect {
         &self.decl().key
     }
 
-    /// Its kinds are written as files write an exemplar's `type`.
-    fn can_attach(&self, meta_type: InstanceType) -> bool {
+    /// Its kinds are written as files write an exemplar's `kind`.
+    fn can_attach(&self, kind: InstanceKind) -> bool {
         self.decl()
             .kinds
             .iter()
-            .any(|kind| kind.len() == 4 && InstanceType::from_str(kind) == meta_type)
+            .any(|name| name.parse() == Ok(kind))
     }
 
     fn attach(&self, entity: &mut EntityWorldMut) {
@@ -260,7 +260,7 @@ mod tests {
     fn switch_decls() -> Vec<Arc<AspectDecl>> {
         declare(
             r#"#[accessor(toggle_switch)]
-            aspect ToggleSwitch for Wall, Fixt {
+            aspect ToggleSwitch for Wall, Fixture {
                 caption: String = "Use",
                 state on: bool = false,
             }"#,
@@ -292,8 +292,8 @@ mod tests {
             format!("{aspect:?}"),
             r#"ToggleSwitch { caption: "Pull", on: false }"#
         );
-        assert!(aspect.can_attach(InstanceType::from_str("Wall")));
-        assert!(!aspect.can_attach(InstanceType::from_str("Actr")));
+        assert!(aspect.can_attach(InstanceKind::Fixture));
+        assert!(!aspect.can_attach(InstanceKind::Actor));
     }
 
     #[test]
@@ -356,17 +356,29 @@ mod tests {
             }"#,
         );
         let loaded = part_from_json(&new[0], true, &saved, &registry, "save").unwrap();
-        assert_eq!(loaded.get("on").unwrap().downcast_ref::<bool>(), Some(&true));
-        assert_eq!(loaded.get("presses").unwrap().downcast_ref::<i32>(), Some(&7));
+        assert_eq!(
+            loaded.get("on").unwrap().downcast_ref::<bool>(),
+            Some(&true)
+        );
+        assert_eq!(
+            loaded.get("presses").unwrap().downcast_ref::<i32>(),
+            Some(&7)
+        );
 
         let renamed = declare("aspect ToggleSwitch for Wall { state lit: bool }");
         let loaded = part_from_json(&renamed[0], true, &saved, &registry, "save").unwrap();
-        assert_eq!(loaded.get("lit").unwrap().downcast_ref::<bool>(), Some(&false));
+        assert_eq!(
+            loaded.get("lit").unwrap().downcast_ref::<bool>(),
+            Some(&false)
+        );
 
         // A value of the wrong type keeps the field's default.
         let wrong = json!({ "on": "yes" });
         let loaded = part_from_json(&old[0], true, &wrong, &registry, "save").unwrap();
-        assert_eq!(loaded.get("on").unwrap().downcast_ref::<bool>(), Some(&false));
+        assert_eq!(
+            loaded.get("on").unwrap().downcast_ref::<bool>(),
+            Some(&false)
+        );
     }
 
     #[test]
@@ -379,7 +391,7 @@ mod tests {
             &decls,
         );
         let exemplar = |aspects: crate::AspectList| ExemplarData {
-            meta_type: InstanceType::from_str("Wall"),
+            kind: Some(InstanceKind::Wall),
             display_name: None,
             alias: Vec::new(),
             aspects,

@@ -68,7 +68,7 @@ pub(crate) fn open_aspect_chooser(
         let Some(aspect) = reflect_aspect.get(value.as_ref()) else {
             continue;
         };
-        if !aspect.can_attach(data.0.meta_type) {
+        if !data.0.kind.is_some_and(|kind| aspect.can_attach(kind)) {
             continue;
         }
         let group = registration.type_info().type_path_table().crate_name();

@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN119** Exemplar files and SAGA's `for` name an instance's kind in full: `"kind": "Fixture"`.
 - **PAN114** In selection mode, the tile grid marks the selected precinct, named above the list.
 - **PAN104a** A `.saga` module declares aspects; the wall switch's Use reads one's state.
 - **PAN108** Aspects are keyed by `Aspect::key`; a native aspect implements `NativeAspect`.

@@ -3,13 +3,14 @@
 
 use bevy::prelude::*;
 use panoply_core::{GameMode, PrimaryCamera};
+use panoply_exemplar::InstanceKind;
 use panoply_scenery::{
     cutaways::{choose_cutaways, shown, Cutaways, TierRects},
     precinct::{Precinct, PrecinctKey, PrecinctTier},
     PrecinctCache, PRECINCT_SIZE_F,
 };
 
-use crate::{Actor, HomePrecinct, PlayerActor, ACTOR_TYPE};
+use crate::{Actor, HomePrecinct, PlayerActor};
 
 /// Chooses the cutaways from the rects of the precinct the player's actor is in; none outside play.
 pub(crate) fn choose_player_cutaways(
@@ -63,7 +64,7 @@ pub(crate) fn hide_cut_away_actors(
 ) {
     for (transform, mut visibility) in &mut actors {
         visibility.set_if_neq(shown(
-            cutaways.hides_point(transform.translation(), ACTOR_TYPE),
+            cutaways.hides_point(transform.translation(), Some(InstanceKind::Actor)),
         ));
     }
 }
