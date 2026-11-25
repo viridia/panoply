@@ -46,6 +46,9 @@ pub enum DeclKind {
         id: TypeId,
     },
     TypeAlias,
+    /// A field of the aspect whose interaction is being compiled, named bare: a field of that
+    /// aspect on `self`.
+    AspectField,
 }
 
 /// Declaration for a function parameter
@@ -67,6 +70,8 @@ pub enum ScopeType {
     Host,
     Module,
     Param,
+    /// The fields of the aspect an interaction belongs to.
+    Aspect,
     Local,
 }
 

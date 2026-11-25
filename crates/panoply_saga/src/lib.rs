@@ -8,8 +8,8 @@
 //!   animation's `when`. It reads the world and returns a value; it never writes. See
 //!   [`embed`].
 //! - **Host:** what Panoply offers scripts ([`HostState`]): types, functions, global properties
-//!   such as `self`, and components read through **accessors** (`self.container` reads
-//!   `ContainerState`). Plugins register them while the app builds.
+//!   such as `self`, and components read through **accessors** (`self.lock` reads `LockState`).
+//!   Plugins register them while the app builds.
 //! - **Owner:** the entity a formula runs on, `self` in its source.
 //! - **Slot:** one value on the VM's stack ([`StackValue`]): a primitive, an entity, or an index
 //!   into the evaluation's strings and reflected values. A struct such as `Vec3` is flattened
@@ -31,10 +31,17 @@
 //!   compares only its own output; what reads it trusts that.
 //! - **Reaction pass:** the system that, once a frame, brings every cell up to date
 //!   ([`reactive::run_reactions`]).
+//! - **Interaction:** what a player can do to an entity, declared in a scripted aspect as a
+//!   struct literal of the interaction type the host registers. Its fields are constants, such
+//!   as a caption, formulas, such as a `when`, and effects.
+//! - **Effect:** a function that may write as well as read: an interaction's `perform`. It
+//!   writes its own aspect's state, and its writes go to an **effect buffer**
+//!   ([`EffectBuffer`]), applied once it returns, so its reads see the world as it was.
 
 pub mod asset;
 mod codegen;
 pub mod compiler;
+pub mod effect;
 pub mod embed;
 pub mod host;
 pub mod natives;
@@ -51,8 +58,9 @@ pub use codegen::instr::disassemble;
 pub use compiler::{
     CompilationError, ModuleResolver, NoImports, compile_formula, compile_module, format_error,
 };
+pub use effect::EffectBuffer;
 pub use embed::{Formula, FormulaQueue, FormulaRef, ReflectFormula};
-pub use host::HostState;
+pub use host::{FieldKind, HostState, InteractionField};
 pub use plugin::{SagaHost, SagaHostBuilder, SagaPlugin};
 pub use reactive::{CellId, NativeMemo, ReactionPass, ReactionReads, Reactions};
 pub use sema::types::{ExprType, HostParam};
@@ -113,6 +121,17 @@ impl ScriptModule {
     /// The aspects the module declares.
     pub fn aspects(&self) -> &[Arc<AspectDecl>] {
         &self.aspects
+    }
+
+    /// The module, shared, with each aspect it declares pointing back to it, so that an aspect's
+    /// interactions can run its functions.
+    pub fn share(self) -> Arc<Self> {
+        let module = Arc::new(self);
+        for aspect in module.aspects.iter() {
+            // A declaration belongs to one module, which is shared once.
+            let _ = aspect.module.set(Arc::downgrade(&module));
+        }
+        module
     }
 
     /// The index of the function `name` declares.

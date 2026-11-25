@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN123.**
+**Next: PAN125.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -166,44 +166,43 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   fixed suffix (D103); one there without a default is one the instance must supply, checked as it
   spawns, as QML's `required property` is. The aspect chooser lists the aspects of loaded modules
   beside native ones (D107), and the field attributes reuse the grammar of PAN104a's
-  `#[accessor(...)]`. This meets X64's gate.
-- **PAN104c Hooks and effects.** A `derived` field is a formula recomputed as what it reads changes,
+  `#[accessor(...)]`. An aspect attribute names its chooser icon, which the scripted `Container`
+  lost with its native predecessor's `package-open.png`. This meets X64's gate.
+- **PAN104d Hooks and derived.** A `derived` field is a formula recomputed as what it reads changes,
   never stored. An aspect's hooks are not methods but a fixed set of reactive callbacks the engine
-  knows, written `on <name>(...)` and checked by name, so a misspelled hook is an error; `present`
-  is one (D106). So are `attach`, an effect run once as the aspect attaches, whose results a save
-  keeps (faery's `enemy` rolled its loot in `init`), and one that fires when a deadline the aspect
-  set passes ([saga.md](saga.md), When reactions run), for a door's auto-close or a button's
-  release, where faery's `init` subscribed to every frame. A hook or an interaction's action is an
-  effect (D105): it writes its own aspect's state, the native components declared for scripts to
-  write, and host commands, all through SAGA's buffer.
-  - Interactions move into their aspects (D114): each declared in the module with its caption, its
-    `when` and the effect it performs. The two JSON uses move with them, `Proto.Container`
-    (`furnishings.exem.json`), whose Open and Close write `ContainerState`, and the mossy wall
-    switch (`wall-tiles.exem.json`); then the `Interactions` aspect, `register_interaction_action`,
-    `DebugLog` and `ContainerToggle` go.
-  - Before the syntax is fixed, the parsimony check: written side by side, keywords
-    (`interaction use { ... }`, `on attach`) against one general declaration whose slots may hold
-    functions, checked against a schema the host registers for each kind (aspect, interaction, later
-    goal), so the host gains schemas rather than the parser keywords.
-  - The reaction pass gains its queue: effects are the first writes a pass makes, so later passes
-    run the cells they queue, memos before formulas, until it is empty, with `run_reactions`'s
-    divergence limit ([saga.md](saga.md), When reactions run).
-  - Proved by a hook writing state that a formula reads, and by the mossy wall switch: Use toggles
-    `ToggleSwitch`'s `on`, and the switch plays its two-state animation, its `when` reading `on`.
-    Wiring across entities is PAN79's.
+  knows, written `on <name>(...)` and checked by name against a table the host registers, as an
+  interaction's fields are (D120), so a misspelled hook is an error; `present` is one (D106). So are
+  `attach`, an effect run once as the aspect attaches, whose results a save keeps (faery's `enemy`
+  rolled its loot in `init`), and one that fires when a deadline the aspect set passes
+  ([saga.md](saga.md), When reactions run), for a door's auto-close or a button's release, where
+  faery's `init` subscribed to every frame.
+  - The reaction pass gains its queue: hooks are the first effects run inside a pass, so later
+    passes run the cells their writes queue, memos before formulas, until it is empty, with
+    `run_reactions`'s divergence limit ([saga.md](saga.md), When reactions run).
+  - Proved by a hook writing state that a formula reads, and by `MossyBrickButton` as faery's
+    `pushButton`: Use presses it, a deadline releases it after 0.7 s, and its
+    `MossyStoneToggleAction` animation plays with faery's release sound, delayed 0.5 s. The toggle
+    switch is not offered while it animates, as faery's `toggleButton` timed it. Wiring across
+    entities is PAN79's.
+- **PAN123 Required aspects.** `#[require(Inventory)]` on a scripted aspect attaches the named
+  aspect, native or scripted, with its defaults wherever the exemplar chain lacks it, as Bevy's
+  `#[require]` does for components, in the attribute grammar of `#[accessor(...)]`. Its first
+  customer is PAN106's `Container`, which makes no sense without contents.
 
 ## Interaction
 
 - **PAN59 Door.** A `Door` aspect on the cottage door (`CottageWallDoorway`), played by its
-  `OpenDoor` clip through `SceneryAnimations` and offered through `Interactions`. Its collider is
-  built and follows the animated glTF node its descriptor's `animation` names, as faery's
-  `PhysicsMovable` did (a kinematic body moved by the model's own animation, with no separate
-  animation data), so the leaf is solid and within the probe's reach through the whole swing. An
-  actor in the swing: in faery, unsticking turned the overlap into velocity and threw the actor
-  across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
-  resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
-  standing in the swing. Closes I26.
-- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN104c, PAN116. The first mechanism, from
+  `OpenDoor` clip through `SceneryAnimations`. Whether it is open stays native, since routing reads
+  it (D105), so its Open and Close are the first effects to write a native component: the host
+  registers the components scripts may write (`add_writable_component::<C>`), each written through a
+  monomorphized `reflect_path_mut`, so applying needs no registry. Its collider is built and follows
+  the animated glTF node its descriptor's `animation` names, as faery's `PhysicsMovable` did (a
+  kinematic body moved by the model's own animation, with no separate animation data), so the leaf
+  is solid and within the probe's reach through the whole swing. An actor in the swing: in faery,
+  unsticking turned the overlap into velocity and threw the actor across the map. Panoply's push-out
+  (R26) moves position only, a capped amount per tick, but skips resting actors (`ActorResting`), so
+  the leaf must wake what it sweeps; checked with an actor standing in the swing. Closes I26.
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN104d, PAN116. The first mechanism, from
   faery's `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
@@ -264,20 +263,19 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
   the switch is on, logic across three entities. Then PAN6's door opened by a button
   ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN71, PAN104c. What a container holds. An open chest shows its
+- **PAN106 Containers.** *Needs:* PAN71, PAN123. What a container holds. An open chest shows its
   contents on an inventory screen whose background its container type chooses, and items move
   between it and the player; a locked one opens for the key its instance names, and a corpse, once
   combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). It or PAN120b,
   whichever comes first, moves the first items, and so brings in X42's items. Built as D105 divides
-  it: `Container` and `Lock` become scripted aspects over native components that routing (PAN16j),
-  colliders and `SceneryAnimations` read, whether open and whether locked, which the native `Lock`
-  and `ContainerState` hold now; the item list is a native `Inventory`, which scripts reach through
-  host functions (`has_item(actor, key)`). The screen is native, opened by a host command naming its
-  style. Closing it is an event to the entity that opened it, which a hook handles
-  (`on screen_closed`), so the screen never writes a script's field, as faery's wrote the
-  container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with no lid. It opens once
-  `SceneryAnimations` reports the lid's clip done, not after faery's fixed `openDelay`, which needs
-  that event.
+  it: the scripted `Container` (`scripts/container.saga`) already holds whether it is open; its Open
+  now opens the screen rather than raising the lid, and it requires (PAN123) a native `Inventory`,
+  the item list, which scripts reach through host functions (`has_item(actor, key)`). `Lock` becomes
+  scripted too. The screen is native, opened by a host command naming its style. Closing it is an
+  event to the entity that opened it, which a hook handles (`on screen_closed`), so the screen never
+  writes a script's field, as faery's wrote the container's `open` ([faery.md](faery.md), Aspects);
+  a corpse handles it with no lid. It opens once `SceneryAnimations` reports the lid's clip done,
+  not after faery's fixed `openDelay`, which needs that event.
 - **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
   is a scenery aspect whose interaction shows its text; a document is an inventory item that links
   to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
@@ -338,11 +336,10 @@ components and every layer restartable from saved state (R104).
 - **PAN3t Reach to open.** An actor opening or shutting a container plays a reach, `StandPoint` (an
   arm raised, 1.5 s), as faery played it for an actor opening a door, a one-second gesture faded in
   over 0.1 s (`createRoutePlanner.ts`). A gesture state played once over the idle, then back to it;
-  no clip is named for it, so the state names `StandPoint` and falls back to `Stand`. Interaction
-  actions are given only the element (`register_interaction_action`), so the actor using one has to
-  reach the action, and `ContainerToggle` names it. The actor faces the container as it reaches.
-  PAN59's door uses the same gesture. Checked in `plans/actors.py`, at the chest check: E plays the
-  gesture, then the idle.
+  no clip is named for it, so the state names `StandPoint` and falls back to `Stand`. An
+  interaction's effect runs on the element alone, so what performs it, the probe, which knows the
+  actor, plays the gesture. The actor faces the container as it reaches. PAN59's door uses the same
+  gesture. Checked in `plans/actors.py`, at the chest check: E plays the gesture, then the idle.
 - **PAN17b Click to interact.** *Needs:* PAN3t. A click on a fixture that offers an interaction,
   which the cursor over it already shows (`pick_world`), walks the player into position to use it,
   then performs it with its pose, as E does at the probe (R92). The position is its nearest use mark
@@ -537,13 +534,12 @@ Arms". faery's `Guardsman.Remarks`, `Guardsman.Dialogue` and `Guardsman.Lunch`
 (`los-data/meta/regional/tambry.json`) and its `Freelunch` quest (`regional/playground.json`) are
 converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
 
-- **PAN120a Dialogue.** *Needs:* PAN104c. The `DialogueSet` catalog kind (D90) and a native
-  conversation controller on faery's rules (X17, Behavior packages), with its screen. The screen
-  always offers a way out, which a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit
-  came from whichever set held a `goodbye` (one in `village.json`), so a conversation could lose its
-  exit with no error. A Talk interaction on an actor (D114), its effect a host command that starts
-  the conversation; the guardsman stands at his post. Option conditions are on-demand formulas
-  (D116).
+- **PAN120a Dialogue.** The `DialogueSet` catalog kind (D90) and a native conversation controller on
+  faery's rules (X17, Behavior packages), with its screen. The screen always offers a way out, which
+  a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit came from whichever set held a
+  `goodbye` (one in `village.json`), so a conversation could lose its exit with no error. A Talk
+  interaction on an actor (D114), its effect a host command that starts the conversation; the
+  guardsman stands at his post. Option conditions are on-demand formulas (D116).
 - **PAN120b Quest and inventory.** *Needs:* PAN120a. The `Quest` catalog kind and quest state:
   stages whose conditions are reactive formulas (`has_item(player, GuardLunch)`), set from dialogue
   by `gostage`, and a stage's entry taking the lunch from the player. A native `Inventory` with
@@ -551,7 +547,7 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   sarcophagus near the guardsman. Settled in the chunk: whether a quest is JSON with embedded
   formulas, as faery's were and as json-schema completion serves, or a SAGA module; whether taking
   the lunch uses PAN106's container screen or a plain Take; and X123, whose gate this quest meets.
-- **PAN120c Remarks and topics.** *Needs:* PAN104c, PAN120a. A remark is a scripted event, not a
+- **PAN120c Remarks and topics.** *Needs:* PAN104d, PAN120a. A remark is a scripted event, not a
   `RemarkSet` with weights in JSON: a hook on the guardsman's aspect fires as he passes the player
   (the `proximity` memo), and its effect picks a line by SAGA logic, a seeded roll, and speaks it
   through a host command, shown in a speech bubble. The lines stay in JSON, by id, for localization
@@ -615,6 +611,13 @@ Code that works but stands in the way: a pattern the rest of the code has moved 
 workaround for what should be fixed at its cause. Each is taken when its area is next touched, or
 sooner when it bites.
 
+- **PAN124 Reflected slots.** Left from SAGA before slots, when values were reflected throughout:
+  nothing calls `InvocationContext::create_heap_ref` or `create_world_ref`, and only the first makes
+  `StackValue::HeapRef`, so heap temporaries and `SlotStore`'s `heap_refs` go. `WorldRef` is still
+  made, for a component's opaque leaves (`Leaf::Opaque`, in `StackSink`), and read by
+  `&dyn PartialReflect`'s `FromSlots`; it is the main reason `ScriptVm` and `SlotStore` borrow the
+  world for `'w`. Whether any loaded component has an opaque leaf a script reads decides whether it
+  goes too, and the lifetime with it.
 - **PAN103 Tools on picking events.** The editor's world tools read the mouse by polling
   `PointerState`, which passes by picking's routing: what a widget or dialog in front of the view
   does with a press does not reach them. So closing a dialog by clicking outside it, which despawns

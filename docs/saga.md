@@ -20,10 +20,8 @@ are listed. Quest stages, goals and presence react to change.
 The first customers each add one mechanism:
 
 1. **An interaction's `when`** (PAN45c), on demand: a chest's "Open" and "Close" are offered by
-   whether its `ContainerState` is open, and "Open" not while it is locked, formulas in
-   `Proto.Container` over two aspects. It needs no cells or reaction passes, and PAN21's native
-   action already has the effect, so SAGA only returns a boolean. Interactions move into their
-   scripted aspects with PAN104c (D114).
+   whether it is open, and "Open" not while it is locked. It needs no cells or reaction passes.
+   Interactions are declared in scripted aspects (D114), their `perform` the first effects.
 2. **An animation's `when`**, reactive: an object that changes state as the player comes near,
    through the `proximity` memo (Memos). The first cells, memos and reaction pass.
 3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
@@ -131,7 +129,11 @@ and a bytecode interpreter on a stack VM. It came from `bevy_reactor`'s formulas
 
 - A **formula** (a condition, a computed value) is read-only and returns a value.
 - An **effect** may also write, but its writes are commands buffered in the invocation context
-  (`damage(target, 5)`), applied between passes. Writes are values, never borrowed data.
+  (`damage(target, 5)`), applied between passes. Writes are values, never borrowed data. A read
+  within the effect sees the value from before it ran. An effect writes its own aspect's `state`
+  fields, by bare name (`on = !on`), and never config; a write in a formula is a compile error.
+  Writes to native components declared for scripts to write, and host commands, join the buffer with
+  their first customers (PAN59's door, PAN120a's Talk).
 - Which host functions a script may call depends on its kind, checked at compile time.
 - **Randomness** is for effects and on-demand formulas only: a roll in a reactive formula would
   change its value on every pass. Rolls draw from a seeded generator, so a fight replays.
@@ -156,8 +158,12 @@ A module declares aspects ([Exemplars.md](Exemplars.md), Aspects):
 ```rust
 #[accessor(toggle_switch)]
 aspect ToggleSwitch for Wall, Fixture {
-    caption: String = "Use",
     state on: bool = false,
+
+    interaction use {
+        caption: "Use",
+        perform: { on = !on },
+    }
 }
 ```
 
@@ -186,8 +192,17 @@ aspect ToggleSwitch for Wall, Fixture {
     it, so a large file in the index is a question for review.
   - A reloaded module recompiles the formulas that read its accessors, found through the list of
     what each formula reads.
-- An aspect declares the interactions it offers, each with a caption, a `when` and an effect
-  performed when the player chooses it (D114); its syntax is PAN104c's.
+- An aspect declares the interactions it offers (D114). An interaction is a struct literal of the
+  interaction type the host registers (D120), each field `name: value`, and a field the type lacks,
+  a repeated one, or a missing required one is a compile error. Panoply's type has:
+  - Constants, literals fixed in the declaration: `caption` (required), `cursor` and `distance` (1.5
+    m without one). An interaction whose caption changes is two interactions, each with its own
+    `when`, as a chest's Open and Close are, so the prompt and the cursor follow only `when`.
+  - `when`, a formula, without which the interaction is always offered.
+  - `perform`, an effect (required), run when the player chooses it.
+
+  Inside an aspect, its own fields are named bare (`on`), which an aspect without an accessor needs.
+  Each formula or effect field compiles as a function of the module, run on the entity.
 - Attached, its config and its state are each a component, registered at runtime (D113): the config
   inserted as it attaches and removed as it detaches, the state inserted only where the entity has
   none.
@@ -333,4 +348,4 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 1. Imports (PAN71).
 
 The hour predicate comes with the game clock (PAN121), the queue of later passes with the first
-effects (PAN104c).
+effects run inside a pass, hooks (PAN104d).

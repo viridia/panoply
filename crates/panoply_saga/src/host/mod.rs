@@ -190,6 +190,40 @@ pub struct HostState {
 
     /// The component each component accessor reads, by member index.
     pub(crate) component_members: HashMap<usize, TypeId>,
+
+    /// The fields an aspect's interactions may set: the interaction type.
+    pub(crate) interaction_fields: Vec<InteractionField>,
+}
+
+/// What a field of an interaction holds.
+#[derive(Debug, Clone, PartialEq)]
+pub enum FieldKind {
+    /// A literal of this type, fixed in the declaration: a caption. An interaction whose
+    /// caption changes is two interactions, each with its own `when`.
+    Constant(ExprType),
+    /// A read-only formula returning a value of this type: a `when`.
+    Formula(ExprType),
+    /// May write its aspect's state, through the effect buffer; it returns nothing.
+    Effect,
+}
+
+/// A field of the interaction type, registered with [`HostState::add_interaction_field`].
+#[derive(Debug, Clone)]
+pub struct InteractionField {
+    pub name: SmolStr,
+    pub kind: FieldKind,
+    /// Whether every interaction must set it.
+    pub required: bool,
+}
+
+impl InteractionField {
+    /// The type of its value.
+    pub fn typ(&self) -> ExprType {
+        match &self.kind {
+            FieldKind::Constant(typ) | FieldKind::Formula(typ) => typ.clone(),
+            FieldKind::Effect => ExprType::Void,
+        }
+    }
 }
 
 impl HostState {
@@ -223,6 +257,31 @@ impl HostState {
             .add(name.into(), member, typ, false);
         self.component_members
             .insert(self.members.len() - 1, TypeId::of::<C>());
+    }
+
+    /// Adds `name` to the fields an aspect's interactions may set. An interaction that sets a
+    /// field not added, or leaves out a required one, fails to compile.
+    pub fn add_interaction_field(
+        &mut self,
+        name: impl Into<SmolStr>,
+        kind: FieldKind,
+        required: bool,
+    ) {
+        let name = name.into();
+        assert!(
+            self.interaction_field(&name).is_none(),
+            "Interaction field {name} is already defined."
+        );
+        self.interaction_fields.push(InteractionField {
+            name,
+            kind,
+            required,
+        });
+    }
+
+    /// The interaction field `name`, if the host has added it.
+    pub fn interaction_field(&self, name: &str) -> Option<&InteractionField> {
+        self.interaction_fields.iter().find(|f| f.name == name)
     }
 
     /// Whether member `index` is a component accessor.

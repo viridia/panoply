@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I89.**
+**Next: I91.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -383,3 +383,10 @@ confirmed by running something or only by reading. Numbers are never reused.
 - **I88** `plans/ablate.py`'s `camera inactive` experiment ended the app (exit code 0, nothing in
   its log) at a spot in the playground's lair, (23, 23). Not tried again at the plan's own
   locations. Run once.
+- **I89** An exemplar may extend one of another kind, and nothing reports it: the sarcophagi, walls,
+  extended `furnishings.exem.json#Proto.Container`, a fixture, until PAN104c gave them
+  `Proto.WallContainer`. It should be an error as the catalog resolves `extends`.
+- **I90** An instance whose `SceneryAnimations` move more than one of its models binds only the last
+  to spawn: `bind_scenery_animations` runs per model and inserts the instance's one
+  `BoundAnimations`, so the second replaces the first, and the first's cells are dropped with it. No
+  instance animates two models yet; the switches animate the lever and not the wall behind it.

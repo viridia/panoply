@@ -204,7 +204,7 @@ Mods author scripted aspects, which gives them aspects without declaring Rust ty
 
 **Aspects as definitions.** An aspect stops being a component: it is a definition in an exemplar or
 instance, keyed by a Rust type's name or an asset path, and what it does when attached is its own. A
-native aspect's `attach` inserts components (its state, as D74 already has `ContainerState`, and the
+native aspect's `attach` inserts components (its state, as D74 already has `LockState`, and the
 config its systems read); a package's spawns goal trees. The aspect list, the union and the editor
 work on definitions alone, so the native and scripted split moves from what an aspect is to how one
 is implemented.
@@ -214,7 +214,7 @@ is implemented.
 - Aspect identity no longer needs a Rust type, which X64 needs.
 - X17's reason for keeping goals out of aspects, several goals of one type with different
   parameters, no longer constrains aspects.
-- For native aspects the contract changes more than the code. Each of the 21 inserts a clone of
+- For native aspects the contract changes more than the code. Each of the 19 inserts a clone of
   itself, and most would keep doing so:
   - 11 are built on later by a system: `SceneryModels`, `SceneryColliders`, `SceneryAnimations`,
     `Skin`, `Armature`, `ClipNames`, `CollisionSize`, `ActorScale`, `Colors`, `Features` and
@@ -224,21 +224,18 @@ is implemented.
     then needs the definition per entity, as the instance resolved it over its chain, and the
     component is that resolved view; `Exemplar::find_aspect` reads the chain without the instance.
     So `attach` inserts a component holding the aspect's own data, as now.
-  - `Interactions` is queried every frame, by the probe and picking; `Portal`, when it lands, by the
-    engine. Both stay components.
-  - `Container` and `Lock` supply play state (`ContainerState`, `LockState`), which D74 already
-    keeps apart from the aspect.
+  - `Portal`, when it lands, is queried by the engine, and stays a component.
+  - `Lock` supplies play state (`LockState`), which D74 already keeps apart from the aspect.
   - `ItemModel` and `EquipSlot` are read from the exemplar, since an item in an inventory is not an
     entity. They are definitions already, and the components they insert go unread.
   - `WallSize`, `SceneryMarks` and `LightSource` are not read yet.
 
   So reading a native aspect from its definition by Rust type, along the chain, has to keep working.
   The registries already tell a component from the aspect that supplies it (`ScriptComponents` maps
-  `ContainerState` to `Container`; interactions register actions by aspect). The union
-  (`UpdateAspects`, `OwnedAspects`), the editor and the files know an aspect by its key
-  (`Aspect::key`), not its type, as keyed aspects and native and scripted aspects both need. Over
-  native aspects this alternative and native and scripted aspects then do the same; they differ in
-  what a package is called and where uniqueness is checked.
+  `LockState` to `Lock`). The union (`UpdateAspects`, `OwnedAspects`), the editor and the files know
+  an aspect by its key (`Aspect::key`), not its type, as keyed aspects and native and scripted
+  aspects both need. Over native aspects this alternative and native and scripted aspects then do
+  the same; they differ in what a package is called and where uniqueness is checked.
 - D114's "an exemplar's aspects are the interface `self` has" becomes the components its aspects
   attach, which is what formulas read.
 - A BSN entity is one component per type, so definitions, several of one kind among them, do not map

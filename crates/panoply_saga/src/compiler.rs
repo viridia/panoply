@@ -83,6 +83,21 @@ pub enum CompilationError {
     /// A field's default is not a literal of the field's type.
     #[error("The default of {1} must be a literal of type {2}")]
     InvalidDefault(TokenLocation, SmolStr, ExprType),
+    /// An interaction sets a field the host's interaction type lacks.
+    #[error("Interactions have no field {1}")]
+    UnknownInteractionField(TokenLocation, SmolStr),
+    /// A constant field of an interaction is not a literal of its type.
+    #[error("{1} must be a literal of type {2}")]
+    NotALiteral(TokenLocation, SmolStr, ExprType),
+    /// An interaction leaves out a field the host requires.
+    #[error("Interaction {1} must set {2}")]
+    MissingInteractionField(TokenLocation, SmolStr, SmolStr),
+    /// An assignment to an aspect's field outside an effect.
+    #[error("Only an effect may write {1}")]
+    WriteOutsideEffect(TokenLocation, SmolStr),
+    /// An assignment to a config field, which play never changes.
+    #[error("{1} is config; only state fields can be written")]
+    WriteToConfig(TokenLocation, SmolStr),
     /// A broken invariant in the compiler: a bug, reported rather than panicking so that it
     /// fails one script, not the game.
     #[error("Internal compiler error: {1}")]
@@ -121,6 +136,11 @@ impl CompilationError {
             | UnknownAttribute(loc, _)
             | NoAccessor(loc, _, _)
             | InvalidDefault(loc, _, _)
+            | UnknownInteractionField(loc, _)
+            | NotALiteral(loc, _, _)
+            | MissingInteractionField(loc, _, _)
+            | WriteOutsideEffect(loc, _)
+            | WriteToConfig(loc, _)
             | Internal(loc, _) => *loc,
         }
     }

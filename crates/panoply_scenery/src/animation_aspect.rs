@@ -167,7 +167,11 @@ fn remove_animation_cells(mut world: DeferredWorld, context: HookContext) {
     let Some(bound) = world.get::<BoundAnimations>(context.entity) else {
         return;
     };
-    let cells: Vec<CellId> = bound.animations.iter().map(|animation| animation.cell).collect();
+    let cells: Vec<CellId> = bound
+        .animations
+        .iter()
+        .map(|animation| animation.cell)
+        .collect();
     if let Some(mut reactions) = world.get_resource_mut::<Reactions>() {
         for cell in cells {
             reactions.remove(cell);
@@ -176,7 +180,9 @@ fn remove_animation_cells(mut world: DeferredWorld, context: HookContext) {
 }
 
 /// Once a model has spawned, gives its `AnimationPlayer`, which Bevy's loader puts on the model's
-/// root, a graph of its instance's clips, and each `when` a cell. Looping clips start now.
+/// root, a graph of its instance's clips, and each `when` a cell. Looping clips start now. A model
+/// without a player is one the clips do not move, such as the wall behind a switch's lever, and is
+/// skipped.
 pub(crate) fn bind_scenery_animations(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -204,7 +210,6 @@ pub(crate) fn bind_scenery_animations(
         .iter_descendants(ready.entity)
         .find(|entity| players.contains(*entity))
     else {
-        error!("Animated scenery {:?} has no player", animations.0);
         return;
     };
     let Ok(mut player) = players.get_mut(player_entity) else {

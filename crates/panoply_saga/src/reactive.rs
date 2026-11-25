@@ -123,8 +123,8 @@ impl MemoTable {
     /// failure.
     fn refresh(&mut self, world: &World, last_run: Tick, this_run: Tick) -> bool {
         let mut changed = false;
-        self.0
-            .retain(|_, entry| match entry.memo.refresh(world, last_run, this_run) {
+        self.0.retain(
+            |_, entry| match entry.memo.refresh(world, last_run, this_run) {
                 Ok(memo_changed) => {
                     changed |= memo_changed;
                     true
@@ -133,7 +133,8 @@ impl MemoTable {
                     changed = true;
                     false
                 }
-            });
+            },
+        );
         changed
     }
 

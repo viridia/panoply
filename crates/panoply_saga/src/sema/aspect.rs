@@ -1,6 +1,6 @@
 //! Aspect declarations: from their AST to the [`AspectDecl`]s a module exports.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use bevy::{
     ecs::entity::Entity,
@@ -9,17 +9,19 @@ use bevy::{
 use smol_str::SmolStr;
 
 use super::{
+    build::ModuleExprs,
     decl::{Scope, ScopeType},
+    expr::FunctionBody,
     resolve_types::resolve_types,
     types::ExprType,
 };
 use crate::{
     ScriptModule,
     compiler::CompilationError,
-    host::HostState,
-    scripted::{AspectDecl, AspectField},
+    host::{FieldKind, HostState},
+    scripted::{AspectDecl, AspectField, InteractionDecl},
     syntax::{
-        ast::{ASTAttribute, ASTDecl, ASTNode, NodeKind},
+        ast::{ASTAttribute, ASTDecl, ASTInteraction, ASTNode, NodeKind},
         oper::UnaryOp,
     },
 };
@@ -106,23 +108,110 @@ fn accessor(attrs: &[&ASTAttribute]) -> Result<Option<SmolStr>, CompilationError
     Ok(accessor)
 }
 
-/// Declares the module's aspects, in order.
-pub(crate) fn build_aspects(
+/// A field an interaction sets, whose function [`build_aspects`] reserves and the builder then
+/// fills.
+pub(crate) struct InteractionFieldFn<'a> {
+    pub(crate) aspect: Arc<AspectDecl>,
+    /// The function's index in the module.
+    pub(crate) index: usize,
+    pub(crate) value: &'a ASTNode<'a>,
+    pub(crate) ret: ExprType,
+    pub(crate) effect: bool,
+}
+
+/// The interactions `ast` declares, each field checked against the host's interaction type and
+/// given a function of the module, which `fields` lists for the builder.
+fn build_interactions<'a>(
+    host: &HostState,
+    exprs: &mut ModuleExprs,
+    ast: &[&'a ASTInteraction<'a>],
+    fields: &mut Vec<(usize, &'a ASTNode<'a>, ExprType, bool)>,
+) -> Result<Vec<InteractionDecl>, CompilationError> {
+    let mut interactions: Vec<InteractionDecl> = Vec::with_capacity(ast.len());
+    for interaction in ast {
+        if interactions.iter().any(|i| i.name == interaction.name) {
+            return Err(CompilationError::NameRedefinition(
+                interaction.location,
+                interaction.name.to_string(),
+            ));
+        }
+        let mut decl = InteractionDecl {
+            name: interaction.name.into(),
+            constants: Vec::new(),
+            fields: Vec::with_capacity(interaction.fields.len()),
+        };
+        for field in interaction.fields {
+            let Some(host_field) = host.interaction_field(field.name) else {
+                return Err(CompilationError::UnknownInteractionField(
+                    field.location,
+                    field.name.into(),
+                ));
+            };
+            if decl.sets(field.name) {
+                return Err(CompilationError::NameRedefinition(
+                    field.location,
+                    field.name.to_string(),
+                ));
+            }
+            if let FieldKind::Constant(typ) = &host_field.kind {
+                let value = literal(field.value, typ).ok_or_else(|| {
+                    CompilationError::NotALiteral(
+                        field.value.location,
+                        field.name.into(),
+                        typ.clone(),
+                    )
+                })?;
+                decl.constants.push((field.name.into(), value));
+                continue;
+            }
+            // Its parameter and return types are the field's; the builder fills in its body.
+            let index = exprs.functions.len();
+            exprs.functions.push(FunctionBody {
+                body: None,
+                params: Vec::new(),
+                locals: Vec::new(),
+                ret: ExprType::Void,
+            });
+            decl.fields.push((field.name.into(), index));
+            let effect = host_field.kind == FieldKind::Effect;
+            fields.push((index, field.value, host_field.typ(), effect));
+        }
+        if let Some(missing) = host
+            .interaction_fields
+            .iter()
+            .find(|f| f.required && !decl.sets(&f.name))
+        {
+            return Err(CompilationError::MissingInteractionField(
+                interaction.location,
+                interaction.name.into(),
+                missing.name.clone(),
+            ));
+        }
+        interactions.push(decl);
+    }
+    Ok(interactions)
+}
+
+/// Declares the module's aspects, in order, and returns the fields their interactions set.
+pub(crate) fn build_aspects<'a>(
     host: &HostState,
     module: &mut ScriptModule,
-    ast_decls: &[&ASTNode],
-) -> Result<(), CompilationError> {
+    exprs: &mut ModuleExprs,
+    ast_decls: &[&'a ASTNode<'a>],
+) -> Result<Vec<InteractionFieldFn<'a>>, CompilationError> {
     let scope = Scope {
         parent: None,
         decls: &host.decls,
         scope_type: ScopeType::Host,
     };
+    let mut interaction_fields = Vec::new();
     for ast_decl in ast_decls {
         let NodeKind::Decl(ASTDecl::Aspect {
             attrs,
             name,
             kinds,
             fields: ast_fields,
+            interactions: ast_interactions,
         }) = &ast_decl.kind
         else {
             continue;
@@ -161,15 +250,29 @@ pub(crate) fn build_aspects(
                 default,
             });
         }
-        module.aspects.push(Arc::new(AspectDecl {
+        let mut fns = Vec::new();
+        let interactions = build_interactions(host, exprs, ast_interactions, &mut fns)?;
+        let aspect = Arc::new(AspectDecl {
             key: aspect_key(&module.path, name),
             name: (*name).into(),
             accessor: accessor(attrs)?,
             kinds: kinds.iter().map(|kind| (*kind).into()).collect(),
             fields,
+            interactions,
+            module: OnceLock::new(),
+        });
+        interaction_fields.extend(fns.into_iter().map(|(index, value, ret, effect)| {
+            InteractionFieldFn {
+                aspect: aspect.clone(),
+                index,
+                value,
+                ret,
+                effect,
+            }
         }));
+        module.aspects.push(aspect);
     }
-    Ok(())
+    Ok(interaction_fields)
 }
 
 #[cfg(test)]

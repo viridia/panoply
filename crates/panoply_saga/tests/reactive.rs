@@ -129,7 +129,10 @@ fn proximity_holds_between_enter_and_leave_without_running_its_cell() {
     let mut reactions = Reactions::default();
     let cell = reactions.add(
         subject,
-        formula("count() && proximity(self, self.target.entity, 3.0, 4.0)", &host),
+        formula(
+            "count() && proximity(self, self.target.entity, 3.0, 4.0)",
+            &host,
+        ),
     );
     let place = |world: &mut World, x: f32| {
         world

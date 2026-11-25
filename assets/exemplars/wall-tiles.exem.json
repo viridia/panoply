@@ -3427,12 +3427,28 @@
         ]
       },
       "scripts::toggle_switch::ToggleSwitch": {},
-      "Interactions": [
+      "SceneryAnimations": [
         {
-          "id": "use",
-          "caption": "Use",
-          "when": "!self.toggle_switch.on",
-          "action": "DebugLog"
+          "clips": [
+            "ToggleAction2"
+          ],
+          "when": "self.toggle_switch.on",
+          "transitions": [
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/switch-metal.ogg",
+                "volume": 0.7
+              }
+            },
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/switch-metal-2.ogg",
+                "volume": 0.5
+              }
+            }
+          ]
         }
       ]
     }
@@ -3466,7 +3482,32 @@
         "use": [
           [-0.7, 0, 0]
         ]
-      }
+      },
+      "scripts::toggle_switch::ToggleSwitch": {},
+      "SceneryAnimations": [
+        {
+          "clips": [
+            "ToggleAction"
+          ],
+          "when": "self.toggle_switch.on",
+          "transitions": [
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/switch-metal.ogg",
+                "volume": 0.9
+              }
+            },
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/switch-metal-2.ogg",
+                "volume": 0.7
+              }
+            }
+          ]
+        }
+      ]
     }
   },
   "MossyBrickDoorway": {
@@ -3633,10 +3674,18 @@
       }
     }
   },
+  "Proto.WallContainer": {
+    "kind": "Wall",
+    "abstract": true,
+    "aspects": {
+      "scripts::container::Container": {},
+      "Lock": {}
+    }
+  },
   "MossyStoneSarcophagus": {
     "kind": "Wall",
     "display_name": "Sarcophagus",
-    "extends": "furnishings.exem.json#Proto.Container",
+    "extends": "#Proto.WallContainer",
     "aspects": {
       "SceneryAnimations": [
         {
@@ -3772,7 +3821,7 @@
   "RoughStoneSarcophagus": {
     "kind": "Wall",
     "display_name": "Sarcophagus",
-    "extends": "furnishings.exem.json#Proto.Container",
+    "extends": "#Proto.WallContainer",
     "aspects": {
       "SceneryAnimations": [
         {

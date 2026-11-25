@@ -10,7 +10,10 @@ use bevy::{
         TypeRegistry,
     },
 };
-use panoply_saga::scripted::{self, AspectDecl, AspectField, ScriptedFields};
+use panoply_saga::{
+    scripted::{self, AspectDecl, AspectField, ScriptedFields},
+    ScriptModule,
+};
 use serde::de::DeserializeSeed;
 use serde_json::{Map, Value};
 
@@ -27,6 +30,9 @@ use crate::{Aspect, InstanceKind};
 pub struct ScriptedAspect {
     config: Arc<ScriptedFields>,
     state: Arc<ScriptedFields>,
+    /// The module that declares it, which runs its interactions; held here, since its
+    /// declaration holds it only weakly. `None` for a declaration no shared module holds.
+    module: Option<Arc<ScriptModule>>,
 }
 
 /// Its name and fields, as a struct prints: `ToggleSwitch { caption: "Use", on: false }`, which
@@ -68,12 +74,18 @@ impl ScriptedAspect {
         Ok(Self {
             config: Arc::new(part_from_json(decl, false, value, registry, path)?),
             state: Arc::new(part_from_json(decl, true, value, registry, path)?),
+            module: decl.module(),
         })
     }
 
     /// The aspect's declaration.
     pub fn decl(&self) -> &Arc<AspectDecl> {
         self.config.decl()
+    }
+
+    /// The module that declares it, which runs its interactions.
+    pub fn module(&self) -> Option<&Arc<ScriptModule>> {
+        self.module.as_ref()
     }
 
     /// The values of its config fields.
@@ -238,7 +250,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        exemplar::ExemplarData, interaction::tests::load_interactions_reading,
+        exemplar::ExemplarData, interaction::tests::load_formula,
         script_components::missing_aspects, Exemplar, ScriptComponents,
     };
 
@@ -302,24 +314,20 @@ mod tests {
         let registry = TypeRegistry::new();
         let aspect = ScriptedAspect::from_json(&decls[0], &json!({}), &registry, "t").unwrap();
         let host = HostState::new();
-        let (interactions, _) = load_interactions_reading(
-            r#"[{"id": "use", "caption": "Use", "when": "!self.toggle_switch.on", "action": "a"}]"#,
-            &host,
-            &decls,
-        );
-        let use_entry = &interactions.0[0];
+        let (when, _) = load_formula("!self.toggle_switch.on", &host, &decls);
+        let enabled = |world: &World, entity| when.evaluate(world, &host, entity) == Some(true);
         let mut world = World::new();
         let mut entity = world.spawn_empty();
         aspect.attach(&mut entity);
         let entity = entity.id();
-        assert!(use_entry.enabled(&world, &host, entity));
+        assert!(enabled(&world, entity));
 
         scripted::get_mut(&mut world, entity, KEY, true)
             .unwrap()
             .get_mut("on")
             .unwrap()
             .apply(&true);
-        assert!(!use_entry.enabled(&world, &host, entity));
+        assert!(!enabled(&world, entity));
 
         // Reapplying keeps the state; detaching removes the config and leaves the state.
         aspect.attach(&mut world.entity_mut(entity));
@@ -337,7 +345,7 @@ mod tests {
 
         // An entity without the aspect offers nothing.
         let bare = world.spawn_empty().id();
-        assert!(!use_entry.enabled(&world, &host, bare));
+        assert!(!enabled(&world, bare));
     }
 
     #[test]
@@ -385,11 +393,7 @@ mod tests {
     fn a_formula_needs_the_scripted_aspect_it_reads() {
         let decls = switch_decls();
         let registry = TypeRegistry::new();
-        let (_, formulas) = load_interactions_reading(
-            r#"[{"id": "use", "caption": "", "when": "self.toggle_switch.on", "action": "a"}]"#,
-            &HostState::new(),
-            &decls,
-        );
+        let (_, formulas) = load_formula("self.toggle_switch.on", &HostState::new(), &decls);
         let exemplar = |aspects: crate::AspectList| ExemplarData {
             kind: Some(InstanceKind::Wall),
             display_name: None,

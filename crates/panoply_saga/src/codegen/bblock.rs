@@ -62,6 +62,10 @@ pub(crate) enum StackOp<'e> {
         offset: u16,
         count: u16,
     },
+    StoreScripted {
+        read: u16,
+        field: u16,
+    },
     StoreLocal {
         slot: u16,
         count: u16,

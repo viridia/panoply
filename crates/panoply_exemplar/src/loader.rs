@@ -4,7 +4,7 @@ use bevy::{
     prelude::*,
     reflect::{TypeRegistry, TypeRegistryArc},
 };
-use panoply_saga::{scripted::AspectDecl, FormulaQueue, SagaHost, ScriptModuleAsset};
+use panoply_saga::{scripted::AspectDecl, FormulaQueue, SagaHost, ScriptModule, ScriptModuleAsset};
 use serde::{
     de::{self, DeserializeSeed, Visitor},
     Deserialize, Deserializer,
@@ -249,15 +249,16 @@ fn module_path(key: &str) -> Option<String> {
 }
 
 /// The aspects declared by the modules that a catalog's scripted aspects name, which are loaded
-/// as dependencies of the catalog's loader, so that editing one reloads the catalog. A module that
-/// fails to load is logged, and its aspects are skipped as the catalog loads.
+/// as dependencies of the catalog's loader, so that editing one reloads the catalog, and the
+/// modules, which the declarations hold only weakly, to keep while the catalog is read. A module
+/// that fails to load is logged, and its aspects are skipped as the catalog loads.
 async fn load_scripted_aspects(
     bytes: &[u8],
     load_context: &mut LoadContext<'_>,
-) -> Vec<Arc<AspectDecl>> {
+) -> (Vec<Arc<AspectDecl>>, Vec<Arc<ScriptModule>>) {
     // A file that does not parse fails in the deserializer, which says where.
     let Ok(serde_json::Value::Object(catalog)) = serde_json::from_slice(bytes) else {
-        return Vec::new();
+        return (Vec::new(), Vec::new());
     };
     let mut modules: Vec<String> = catalog
         .values()
@@ -268,6 +269,7 @@ async fn load_scripted_aspects(
     modules.sort();
     modules.dedup();
     let mut decls = Vec::new();
+    let mut loaded_modules = Vec::new();
     for module in modules {
         match load_context
             .load_builder()
@@ -275,6 +277,7 @@ async fn load_scripted_aspects(
             .await
         {
             Ok(loaded) => {
+                loaded_modules.push(loaded.get().module.clone());
                 for decl in loaded.get().module.aspects() {
                     for kind in &decl.kinds {
                         if kind.parse::<InstanceKind>().is_err() {
@@ -287,7 +290,7 @@ async fn load_scripted_aspects(
             Err(err) => warn!("{}: cannot load {module}: {err}", load_context.path()),
         }
     }
-    decls
+    (decls, loaded_modules)
 }
 
 /// AssetLoader for Exemplars.
@@ -328,7 +331,7 @@ impl AssetLoader for ExemplarLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let scripted = load_scripted_aspects(&bytes, load_context).await;
+        let (scripted, _modules) = load_scripted_aspects(&bytes, load_context).await;
         let mut formulas = FormulaQueue::default();
         let catalog = {
             let mut deserializer =

@@ -137,7 +137,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        interaction::tests::{lid_host, load_interactions, Lid},
+        interaction::tests::{lid_host, load_formula, Lid},
         AspectList, InstanceKind, NativeAspect,
     };
 
@@ -178,10 +178,7 @@ mod tests {
     #[test]
     fn formulas_need_the_aspects_of_what_they_read_from_self() {
         let host = lid_host();
-        let (_, formulas) = load_interactions(
-            r#"[{"id": "open", "caption": "", "when": "!self.lid.open", "action": "a"}]"#,
-            &host,
-        );
+        let (_, formulas) = load_formula("!self.lid.open", &host, &[]);
         let mut components = ScriptComponents::default();
         components.0.insert(
             TypeId::of::<Lid>(),

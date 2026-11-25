@@ -114,13 +114,32 @@ pub(crate) enum ASTDecl<'a> {
     },
     // TODO(X87): the name and fields, once script-declared structs compile.
     Struct,
-    /// `#[attr] aspect Name for Kind, Kind { field: Type = default, state field: Type }`.
+    /// `#[attr] aspect Name for Kind, Kind { field: Type = default, state field: Type }`, with
+    /// its interactions among the fields.
     Aspect {
         attrs: &'a [&'a ASTAttribute<'a>],
         name: &'a str,
         kinds: &'a [&'a str],
         fields: &'a [&'a ASTAspectField<'a>],
+        interactions: &'a [&'a ASTInteraction<'a>],
     },
+}
+
+/// `interaction name { field: value, ... }` in an aspect: a struct literal of the interaction
+/// type the host registers.
+#[derive(Debug)]
+pub(crate) struct ASTInteraction<'a> {
+    pub(crate) location: TokenLocation,
+    pub(crate) name: &'a str,
+    pub(crate) fields: &'a [&'a ASTInteractionField<'a>],
+}
+
+/// One field of an interaction: its name and the expression or block giving its value.
+#[derive(Debug)]
+pub(crate) struct ASTInteractionField<'a> {
+    pub(crate) location: TokenLocation,
+    pub(crate) name: &'a str,
+    pub(crate) value: &'a ASTNode<'a>,
 }
 
 /// `#[name]` or `#[name(arg, ...)]`, before a declaration.
@@ -155,3 +174,5 @@ const _: () = assert!(!needs_drop::<ASTDecl<'static>>());
 const _: () = assert!(!needs_drop::<ASTFunctionParam<'static>>());
 const _: () = assert!(!needs_drop::<ASTAttribute<'static>>());
 const _: () = assert!(!needs_drop::<ASTAspectField<'static>>());
+const _: () = assert!(!needs_drop::<ASTInteraction<'static>>());
+const _: () = assert!(!needs_drop::<ASTInteractionField<'static>>());

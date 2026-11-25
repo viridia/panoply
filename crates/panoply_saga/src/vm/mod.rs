@@ -14,7 +14,7 @@ use bevy::{
 use thiserror::Error;
 
 use crate::{
-    ScriptModule,
+    EffectBuffer, ScriptModule,
     codegen::instr,
     host::{
         HostMember, HostState,
@@ -201,6 +201,9 @@ pub struct ScriptVm<'w, 'p> {
 
     /// The memos of the cell evaluating, if the evaluation is a cell's.
     memos: Option<&'p mut MemoTable>,
+
+    /// Where an effect's writes go; `None` while a formula runs, which cannot write.
+    effects: Option<&'p mut EffectBuffer>,
 }
 
 type InstrHandler = fn(&mut ScriptVm) -> Result<(), VMError>;
@@ -222,12 +225,19 @@ impl<'w, 'p> ScriptVm<'w, 'p> {
             iptr: core::ptr::null(),
             tracking,
             memos: None,
+            effects: None,
         }
     }
 
     /// Run as a cell's evaluation, its memos kept in `memos` between evaluations.
     pub(crate) fn set_memos(&mut self, memos: &'p mut MemoTable) -> &mut Self {
         self.memos = Some(memos);
+        self
+    }
+
+    /// Run as an effect, its writes buffered in `effects`.
+    pub(crate) fn set_effects(&mut self, effects: &'p mut EffectBuffer) -> &mut Self {
+        self.effects = Some(effects);
         self
     }
 
@@ -309,13 +319,23 @@ impl<'w, 'p> ScriptVm<'w, 'p> {
     ) -> Result<&[StackValue], VMError> {
         let missing = || VMError::MissingFunction(function_name.to_string());
         let index = module.function_index(function_name).ok_or_else(missing)?;
+        self.run_index(module, index, args)
+    }
+
+    /// Run function `index` of `module` with arguments, returning its result's slots.
+    pub fn run_index(
+        &mut self,
+        module: &'w ScriptModule,
+        index: usize,
+        args: &[StackValue],
+    ) -> Result<&[StackValue], VMError> {
         let function = module
             .functions
             .get(index)
             .ok_or(VMError::InvalidFunction(index))?;
         if function.num_params != args.len() {
             return Err(VMError::IncorrectParamCount(
-                function_name.to_string(),
+                format!("#{index}"),
                 function.num_params,
                 args.len(),
             ));
@@ -348,6 +368,15 @@ impl<'w, 'p> ScriptVm<'w, 'p> {
         T: for<'a> FromSlots<'a>,
     {
         let n = self.run(module, function_name)?.len();
+        read_result(&self.stack[..n], &self.store)
+    }
+
+    /// Run function `index`, which takes no parameters, returning its result as `T`.
+    pub fn run_index_as<T>(&mut self, module: &'w ScriptModule, index: usize) -> Result<T, VMError>
+    where
+        T: for<'a> FromSlots<'a>,
+    {
+        let n = self.run_index(module, index, &[])?.len();
         read_result(&self.stack[..n], &self.store)
     }
 }
@@ -394,6 +423,7 @@ const fn build_jump_table() -> [InstrHandler; 256] {
     table[OP_LOAD_GLOBAL as usize] = load_global;
     table[OP_LOAD_COMPONENT as usize] = load_component;
     table[OP_LOAD_SCRIPTED as usize] = load_scripted;
+    table[OP_STORE_SCRIPTED as usize] = store_scripted;
     table[OP_STORE_LOCAL as usize] = store_local;
     table[OP_EXTRACT as usize] = extract;
     table[OP_INDEX as usize] = index;
@@ -674,6 +704,46 @@ fn load_scripted(vm: &mut ScriptVm) -> Result<(), VMError> {
         offset + n,
         &mut sink,
     )
+}
+
+/// Pops a value of one slot and the entity below it, and buffers a write of the value to a
+/// state field of one of the entity's scripted aspects. Only an effect writes.
+fn store_scripted(vm: &mut ScriptVm) -> Result<(), VMError> {
+    let read = vm.read_u16();
+    let field = vm.read_u16();
+    let value = vm.pop()?;
+    let StackValue::Entity(entity) = vm.pop()? else {
+        return Err(VMError::InvalidType(ExprType::Entity));
+    };
+    let invalid = || VMError::Unsupported("a scripted field the module does not read");
+    let aspect = vm
+        .module
+        .and_then(|module| module.scripted_reads.get(read))
+        .ok_or_else(invalid)?;
+    let field = aspect.fields.get(field).ok_or_else(invalid)?;
+    let mismatch =
+        || VMError::MismatchedTypes(ExprType::from_type_info(field.info), value_type(&value));
+    let reflected: Box<dyn PartialReflect> = match (ExprType::from_type_info(field.info), value) {
+        (ExprType::Boolean, StackValue::Bool(v)) => Box::new(v),
+        (ExprType::I32, StackValue::I32(v)) => Box::new(v),
+        (ExprType::I64, StackValue::I64(v)) => Box::new(v),
+        (ExprType::F32, StackValue::F32(v)) => Box::new(v),
+        (ExprType::F64, StackValue::F64(v)) => Box::new(v),
+        (ExprType::Entity, StackValue::Entity(v)) => Box::new(v),
+        (ExprType::String, StackValue::Str(index)) => Box::new(
+            vm.store
+                .str(index)
+                .ok_or(VMError::InvalidString(index))?
+                .to_string(),
+        ),
+        _ => return Err(mismatch()),
+    };
+    let effects = vm
+        .effects
+        .as_deref_mut()
+        .ok_or(VMError::Unsupported("a write outside an effect"))?;
+    effects.write_scripted(entity, aspect.key.clone(), field.name.clone(), reflected);
+    Ok(())
 }
 
 /// Keeps `n` slots from `offset` of the top `total`: a field of a value.

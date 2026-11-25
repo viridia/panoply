@@ -16,7 +16,7 @@ use panoply_core::{
     realm_physics::{collision_groups, owner_shown},
     GameMode, PrimaryCamera, RealmPhysics, Viewpoint,
 };
-use panoply_exemplar::{Interactions, DEFAULT_INTERACTION_CURSOR};
+use panoply_exemplar::{hover_cursor, OwnedAspects, DEFAULT_INTERACTION_CURSOR};
 use panoply_saga::SagaHost;
 
 use crate::{
@@ -179,7 +179,7 @@ pub(crate) fn pick_world(
     cameras: Query<&Camera, With<PrimaryCamera>>,
     viewpoint: Res<Viewpoint>,
     realms: Query<&RealmPhysics>,
-    interactions: Query<(&Interactions, Option<&EntityCursor>)>,
+    interactions: Query<(&OwnedAspects, Option<&EntityCursor>)>,
     cursors: Res<WorldCursors>,
     backstop: Single<Entity, With<WorldBackstop>>,
     visibility: Query<&InheritedVisibility>,
@@ -213,13 +213,13 @@ pub(crate) fn pick_world(
         let Some((target, distance, _)) = picked else {
             continue;
         };
-        let Ok((interactions, current)) = interactions.get(target) else {
+        let Ok((aspects, current)) = interactions.get(target) else {
             continue;
         };
-        let Some(name) = interactions.hover_cursor(ecs, host, target) else {
+        let Some(name) = hover_cursor(aspects, ecs, host, target) else {
             continue;
         };
-        let cursor = cursors.get(name);
+        let cursor = cursors.get(&name);
         if current != Some(cursor) {
             commands.entity(target).try_insert(cursor.clone());
         }

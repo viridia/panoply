@@ -7,7 +7,7 @@ use panoply_core::{
     realm_physics::{collision_groups, group_filter},
     OwnedColliders, RealmPhysics, ToRapier, ViewOverlay, GAME_UI_FONT, KEY_PROMPT_FONT,
 };
-use panoply_exemplar::{perform_interaction, Interactions};
+use panoply_exemplar::{first_enabled, OwnedAspects, ScriptedInteraction};
 use panoply_saga::SagaHost;
 use rapier3d::{
     parry::{query::details::ShapeCastOptions, shape::Cuboid},
@@ -34,8 +34,7 @@ const PROMPT_BOTTOM: f32 = 24.;
 #[derive(Clone, PartialEq)]
 pub(crate) struct Probed {
     target: Entity,
-    caption: String,
-    action: String,
+    interaction: ScriptedInteraction,
 }
 
 /// What the probe last found.
@@ -73,7 +72,7 @@ pub(crate) fn probe_interaction(
         With<PlayerActor>,
     >,
     realms: Query<&RealmPhysics>,
-    interactions: Query<&Interactions>,
+    aspects: Query<&OwnedAspects>,
     probed: Res<ProbedInteraction>,
     host: Res<SagaHost>,
     // Read for the interactions' `when`, so what is probed is written through commands.
@@ -109,20 +108,23 @@ pub(crate) fn probe_interaction(
             filter,
         )?;
         let target = Entity::try_from_bits(world.colliders[handle].user_data as u64)?;
-        let entry =
-            interactions
-                .get(target)
-                .ok()?
-                .first_enabled(hit.time_of_impact, ecs, host, target)?;
+        let aspects = aspects.get(target).ok()?;
+        let interaction = first_enabled(aspects, hit.time_of_impact, ecs, host, target)?;
         Some(Probed {
             target,
-            caption: entry.caption.clone(),
-            action: entry.action.clone(),
+            interaction,
         })
     });
     if input.fired::<PlayerInteract>() {
-        if let Some(Probed { target, action, .. }) = found.clone() {
-            commands.queue(move |world: &mut World| perform_interaction(world, target, &action));
+        if let Some(Probed {
+            target,
+            interaction,
+        }) = found.clone()
+        {
+            commands.queue(move |world: &mut World| {
+                let host = world.resource::<SagaHost>().clone();
+                interaction.perform(world, host.get(), target);
+            });
         }
     }
     if probed.0 != found {
@@ -197,5 +199,5 @@ pub(crate) fn update_interaction_prompt(
     caption.0 = probed
         .0
         .as_ref()
-        .map_or_else(String::new, |found| found.caption.clone());
+        .map_or_else(String::new, |found| found.interaction.caption().to_owned());
 }

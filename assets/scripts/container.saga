@@ -1,0 +1,22 @@
+// A fixture or wall tile that opens and closes, such as a chest or a sarcophagus.
+#[accessor(container)]
+aspect Container for Fixture, Wall {
+    // Whether it is open or opening.
+    state open: bool = false,
+
+    interaction open {
+        caption: "Open",
+        cursor: "open-chest",
+        distance: 1.0,
+        when: !open && !self.lock.locked,
+        perform: { open = true },
+    }
+
+    interaction close {
+        caption: "Close",
+        cursor: "open-chest",
+        distance: 1.0,
+        when: open,
+        perform: { open = false },
+    }
+}

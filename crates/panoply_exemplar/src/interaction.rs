@@ -1,220 +1,175 @@
-use std::any::TypeId;
+//! What can be done to an instance: the interactions its scripted aspects declare (D114), each a
+//! struct literal of the interaction type registered here. Its fields are constants but for
+//! `when`, a formula, and `perform`, an effect, so that only `when` changes what is offered.
 
-use std::collections::BTreeMap;
+use std::sync::Arc;
 
-use bevy::{annotations::DisplayName, prelude::*};
-use panoply_saga::{Formula, HostState};
-use serde::Serialize;
-
-use crate::{
-    annotations::{AspectIcon, PropertySummary, ReflectPropertySummary},
-    InstanceKind, NativeAspect, ReflectAspect,
+use bevy::prelude::*;
+use panoply_saga::{
+    scripted::{AspectDecl, InteractionDecl},
+    ExprType, FieldKind, HostState, ScriptModule,
 };
 
-/// How close an interaction can be performed from, when its entry does not say.
+use crate::{OwnedAspects, ScriptedAspect};
+
+/// How close an interaction can be performed from, when it does not say.
 pub const DEFAULT_INTERACTION_DISTANCE: f32 = 1.5;
 
 /// The cursor over an instance whose interaction names none, or that offers several.
 pub const DEFAULT_INTERACTION_CURSOR: &str = "interact";
 
-/// Something that can be done to an instance, as written in its exemplar. Not deserialized by
-/// serde, so that loaders reach its formula through reflection.
-#[derive(Debug, Reflect, Clone, Default, Serialize)]
-#[reflect(Default, Serialize, PropertySummary)]
-pub struct InteractionDesc {
-    /// Names the interaction. Entries may share one, each with its own `when`.
-    #[reflect(@DisplayName("Id"))]
-    pub id: String,
-
-    /// Shown to the player while the interaction is available.
-    #[reflect(@DisplayName("Caption"))]
-    pub caption: String,
-
-    /// Name of the mouse cursor to show.
-    #[reflect(@DisplayName("Cursor"))]
-    pub cursor: Option<String>,
-
-    /// Name of the icon to show.
-    #[reflect(@DisplayName("Icon"))]
-    pub icon: Option<String>,
-
-    /// How close the interaction can be performed from, in meters.
-    #[reflect(@DisplayName("Distance"))]
-    pub distance: Option<f32>,
-
-    /// Formula deciding whether the interaction is offered. `None` always offers it.
-    #[reflect(@DisplayName("When"))]
-    pub when: Option<Formula<bool>>,
-
-    /// Name of the action to perform, registered with
-    /// [`InteractionAppExt::register_interaction_action`].
-    #[reflect(@DisplayName("Action"))]
-    pub action: String,
+/// Registers the interaction type on `host`: what an interaction may set. [`ExemplarPlugin`]
+/// registers it on the game's host.
+///
+/// [`ExemplarPlugin`]: crate::ExemplarPlugin
+pub fn add_interaction_fields(host: &mut HostState) {
+    // Shown to the player while the interaction is available.
+    host.add_interaction_field("caption", FieldKind::Constant(ExprType::String), true);
+    // The name of the mouse cursor to show over the instance.
+    host.add_interaction_field("cursor", FieldKind::Constant(ExprType::String), false);
+    // How close the interaction can be performed from, in meters.
+    host.add_interaction_field("distance", FieldKind::Constant(ExprType::F32), false);
+    // Whether the interaction is offered now; without one, it always is.
+    host.add_interaction_field("when", FieldKind::Formula(ExprType::Boolean), false);
+    // What performing it does.
+    host.add_interaction_field("perform", FieldKind::Effect, true);
 }
 
-impl PropertySummary for InteractionDesc {
-    /// What the player is shown, as "Open".
-    fn property_summary(&self) -> String {
-        self.caption.clone()
+/// One interaction an instance offers, declared by one of its scripted aspects.
+#[derive(Clone)]
+pub struct ScriptedInteraction {
+    aspect: Arc<AspectDecl>,
+    module: Arc<ScriptModule>,
+    /// Its index in the aspect's interactions.
+    index: usize,
+}
+
+impl PartialEq for ScriptedInteraction {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.aspect, &other.aspect) && self.index == other.index
     }
 }
 
-impl InteractionDesc {
-    /// Whether the interaction is offered now on `entity`, by its `when`. A `when` that did not
-    /// compile, or whose evaluation fails, offers nothing.
-    pub fn enabled(&self, world: &World, host: &HostState, entity: Entity) -> bool {
-        self.when
-            .as_ref()
-            .is_none_or(|when| when.evaluate(world, host, entity).unwrap_or(false))
+impl std::fmt::Debug for ScriptedInteraction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}::{}", self.aspect.key, self.name())
+    }
+}
+
+impl ScriptedInteraction {
+    fn decl(&self) -> &InteractionDecl {
+        &self.aspect.interactions[self.index]
+    }
+
+    /// The interaction's name, as its aspect declares it.
+    pub fn name(&self) -> &str {
+        &self.decl().name
+    }
+
+    /// What the player is shown, as "Open".
+    pub fn caption(&self) -> &str {
+        self.decl()
+            .constant::<String>("caption")
+            .map_or("", String::as_str)
+    }
+
+    /// The name of the cursor to show over the instance, if the interaction names one.
+    pub fn cursor(&self) -> Option<&str> {
+        self.decl().constant::<String>("cursor").map(String::as_str)
     }
 
     /// How close the interaction can be performed from, in meters.
     pub fn reach(&self) -> f32 {
-        self.distance.unwrap_or(DEFAULT_INTERACTION_DISTANCE)
-    }
-}
-
-/// What can be done to an instance. An exemplar's list replaces any it inherits.
-#[derive(Component, Debug, Reflect, Clone, Default, Serialize)]
-#[reflect(Aspect, Default, Serialize)]
-#[reflect(@AspectIcon("editor/icons/lucide/hand.png"))]
-pub struct Interactions(pub Vec<InteractionDesc>);
-
-impl Interactions {
-    /// The first entry `entity` offers now that reaches `distance`.
-    pub fn first_enabled(
-        &self,
-        distance: f32,
-        world: &World,
-        host: &HostState,
-        entity: Entity,
-    ) -> Option<&InteractionDesc> {
-        self.0
-            .iter()
-            .find(|entry| distance <= entry.reach() && entry.enabled(world, host, entity))
+        self.decl()
+            .constant::<f32>("distance")
+            .copied()
+            .unwrap_or(DEFAULT_INTERACTION_DISTANCE)
     }
 
-    /// The name of the cursor to show over `entity`, however far away it is, if it offers
-    /// anything now.
-    pub fn hover_cursor(&self, world: &World, host: &HostState, entity: Entity) -> Option<&str> {
-        let mut enabled = self
-            .0
-            .iter()
-            .filter(|entry| entry.enabled(world, host, entity));
-        let first = enabled.next()?;
-        Some(match enabled.next() {
-            Some(_) => DEFAULT_INTERACTION_CURSOR,
-            None => first
-                .cursor
-                .as_deref()
-                .unwrap_or(DEFAULT_INTERACTION_CURSOR),
-        })
-    }
-}
-
-impl NativeAspect for Interactions {
-    type Config = Self;
-
-    fn config(&self) -> Self {
-        self.clone()
+    /// Whether `entity` offers the interaction now, by its `when`. One whose `when` fails to
+    /// evaluate, as on an entity without what it reads, offers nothing.
+    pub fn enabled(&self, world: &World, host: &HostState, entity: Entity) -> bool {
+        let Some(index) = self.decl().field("when") else {
+            return true;
+        };
+        self.module
+            .run_formula(world, host, entity, index)
+            .unwrap_or(false)
     }
 
-    fn can_attach(&self, _kind: InstanceKind) -> bool {
-        true
-    }
-}
-
-#[derive(Clone, Copy)]
-struct InteractionAction {
-    aspect: TypeId,
-    trigger: fn(&mut World, Entity),
-}
-
-/// The actions an [`InteractionDesc`] can name.
-#[derive(Resource, Default)]
-pub struct InteractionActions(BTreeMap<String, InteractionAction>);
-
-/// Registers actions for [`InteractionDesc`]s to name.
-pub trait InteractionAppExt {
-    /// Registers the action `name`, which `trigger` performs, normally by triggering an entity
-    /// event. It can only be performed on an entity with the aspect component `A`.
-    fn register_interaction_action<A: Component>(
-        &mut self,
-        name: &str,
-        trigger: fn(&mut World, Entity),
-    ) -> &mut Self;
-}
-
-impl InteractionAppExt for App {
-    fn register_interaction_action<A: Component>(
-        &mut self,
-        name: &str,
-        trigger: fn(&mut World, Entity),
-    ) -> &mut Self {
-        self.world_mut()
-            .get_resource_or_init::<InteractionActions>()
-            .0
-            .insert(
-                name.to_owned(),
-                InteractionAction {
-                    aspect: TypeId::of::<A>(),
-                    trigger,
-                },
-            );
-        self
-    }
-}
-
-/// The action `DebugLog`: logs the target and the state of each of its scripted aspects, as a
-/// save would keep it. For trying out an interaction before it has an action of its own.
-pub(crate) fn debug_log(world: &mut World, target: Entity) {
-    let registry = world.resource::<AppTypeRegistry>().read();
-    let mut states = Vec::new();
-    if let Some(aspects) = world.get::<crate::OwnedAspects>(target) {
-        for aspect in aspects.iter() {
-            if !aspect.as_any().is::<crate::ScriptedAspect>() {
-                continue;
-            }
-            let (_, state) = panoply_saga::scripted::get(world, target, aspect.key(), true);
-            let state = state.map_or(Ok(serde_json::Value::Null), |state| {
-                crate::part_to_json(state, &registry)
-            });
-            match state {
-                Ok(state) => states.push(format!("{} {state}", aspect.key())),
-                Err(err) => states.push(format!("{} ({err})", aspect.key())),
-            }
+    /// Performs the interaction on `entity`: runs its effect, then applies its writes.
+    pub fn perform(&self, world: &mut World, host: &HostState, entity: Entity) {
+        let Some(index) = self.decl().field("perform") else {
+            return;
+        };
+        match self.module.run_effect(world, host, entity, index) {
+            Ok(effects) => effects.apply(world),
+            Err(err) => error!("{self:?}.perform on {entity}: {err}"),
         }
     }
-    let name = world
-        .get::<Name>(target)
-        .map_or_else(|| target.to_string(), |name| format!("{name} ({target})"));
-    info!("DebugLog on {name}: {}", states.join(", "));
 }
 
-/// Performs the action `name` on `target`. An unknown action, or a target without the aspect the
-/// action needs, is an error.
-pub fn perform_interaction(world: &mut World, target: Entity, name: &str) {
-    let Some(action) = world.resource::<InteractionActions>().0.get(name).copied() else {
-        error!("Unknown interaction action '{name}'");
-        return;
-    };
-    let Ok(entity) = world.get_entity(target) else {
-        return;
-    };
-    if !entity.contains_type_id(action.aspect) {
-        error!("{target} lacks the aspect that interaction action '{name}' needs");
-        return;
+/// The interactions `aspects` declare, in aspect order, then in the order each declares them.
+/// An aspect whose module is gone offers none.
+pub fn interactions_of(aspects: &OwnedAspects) -> impl Iterator<Item = ScriptedInteraction> + '_ {
+    aspects
+        .iter()
+        .filter_map(|aspect| aspect.as_any().downcast_ref::<ScriptedAspect>())
+        .filter_map(|scripted| Some((scripted.decl().clone(), scripted.module()?.clone())))
+        .flat_map(|(aspect, module)| {
+            (0..aspect.interactions.len()).map(move |index| ScriptedInteraction {
+                aspect: aspect.clone(),
+                module: module.clone(),
+                index,
+            })
+        })
+}
+
+/// The first interaction `entity` offers now that reaches `distance`.
+pub fn first_enabled(
+    aspects: &OwnedAspects,
+    distance: f32,
+    world: &World,
+    host: &HostState,
+    entity: Entity,
+) -> Option<ScriptedInteraction> {
+    interactions_of(aspects).find(|interaction| {
+        distance <= interaction.reach() && interaction.enabled(world, host, entity)
+    })
+}
+
+/// The name of the cursor to show over `entity`, however far away it is, if it offers anything
+/// now: the one interaction's, or the default when it names none or there are several.
+pub fn hover_cursor(
+    aspects: &OwnedAspects,
+    world: &World,
+    host: &HostState,
+    entity: Entity,
+) -> Option<String> {
+    let mut enabled =
+        interactions_of(aspects).filter(|interaction| interaction.enabled(world, host, entity));
+    let first = enabled.next()?;
+    if enabled.next().is_some() {
+        return Some(DEFAULT_INTERACTION_CURSOR.to_owned());
     }
-    (action.trigger)(world, target);
+    Some(
+        first
+            .cursor()
+            .unwrap_or(DEFAULT_INTERACTION_CURSOR)
+            .to_owned(),
+    )
 }
 
 #[cfg(test)]
 pub(crate) mod tests {
     use bevy::reflect::{serde::TypedReflectDeserializer, FromReflect, GetTypeRegistration};
-    use panoply_saga::{FormulaQueue, FormulaRef};
+    use futures_lite::future::block_on;
+    use panoply_saga::{compile_module, Formula, FormulaQueue, FormulaRef, NoImports};
     use serde::de::DeserializeSeed;
+    use serde_json::json;
 
     use super::*;
+    use crate::Aspect;
 
     /// A lid, for formulas to read as `self.lid`.
     #[derive(Component, Reflect, Default)]
@@ -229,25 +184,24 @@ pub(crate) mod tests {
         host
     }
 
-    /// `Interactions` read from `json` as a loader reads them, compiled against `host`, with the
-    /// formulas read.
-    pub(crate) fn load_interactions(
-        json: &str,
-        host: &HostState,
-    ) -> (Interactions, Vec<FormulaRef>) {
-        load_interactions_reading(json, host, &[])
+    /// A field holding a formula, as an aspect's would.
+    #[derive(Reflect, Default)]
+    struct WithFormula {
+        when: Option<Formula<bool>>,
     }
 
-    /// As [`load_interactions`], the formulas reading the scripted aspects of `scripted`.
-    pub(crate) fn load_interactions_reading(
-        json: &str,
+    /// The formula `src`, read and compiled as a loader would, reading the scripted aspects of
+    /// `scripted`, with the formulas read.
+    pub(crate) fn load_formula(
+        src: &str,
         host: &HostState,
-        scripted: &[std::sync::Arc<panoply_saga::scripted::AspectDecl>],
-    ) -> (Interactions, Vec<FormulaRef>) {
+        scripted: &[Arc<AspectDecl>],
+    ) -> (Formula<bool>, Vec<FormulaRef>) {
+        let json = json!({ "when": src }).to_string();
         let mut registry = bevy::reflect::TypeRegistry::new();
-        registry.register::<Interactions>();
+        registry.register::<WithFormula>();
         let registration = registry
-            .get(Interactions::get_type_registration().type_id())
+            .get(WithFormula::get_type_registration().type_id())
             .unwrap();
         let mut formulas = FormulaQueue::default();
         let value = {
@@ -258,97 +212,124 @@ pub(crate) mod tests {
                 .unwrap()
         };
         let read = formulas.read_since(0);
-        futures_lite::future::block_on(formulas.compile(
-            "test.json",
-            host,
-            json.as_bytes(),
-            scripted,
-        ));
-        (Interactions::from_reflect(&*value).unwrap(), read)
+        block_on(formulas.compile("test.json", host, json.as_bytes(), scripted));
+        let value = WithFormula::from_reflect(&*value).unwrap();
+        (value.when.unwrap(), read)
     }
 
-    fn entry(id: &str, distance: f32, when: Option<&str>) -> InteractionDesc {
-        InteractionDesc {
-            id: id.to_owned(),
-            distance: Some(distance),
-            when: when.map(Formula::uncompiled),
-            ..default()
+    /// A host with the interaction type and `self.lid`.
+    fn host() -> HostState {
+        let mut host = lid_host();
+        add_interaction_fields(&mut host);
+        host
+    }
+
+    /// The aspects of `src`, as the module `scripts/test.saga`, attached to a new entity with
+    /// their declared values, the entity's `OwnedAspects` listing them.
+    fn spawn(world: &mut World, host: &HostState, src: &str) -> Entity {
+        let module = block_on(compile_module("scripts/test.saga", src, host, &NoImports))
+            .unwrap()
+            .share();
+        let registry = bevy::reflect::TypeRegistry::new();
+        let aspects: Vec<Arc<dyn Aspect>> = module
+            .aspects()
+            .iter()
+            .map(|decl| {
+                let aspect = ScriptedAspect::from_json(decl, &json!({}), &registry, "t").unwrap();
+                Arc::new(aspect) as Arc<dyn Aspect>
+            })
+            .collect();
+        let mut entity = world.spawn_empty();
+        for aspect in aspects.iter() {
+            aspect.attach(&mut entity);
         }
+        entity.insert(OwnedAspects(aspects));
+        entity.id()
+    }
+
+    const CHEST: &str = r#"
+        aspect Chest for Fixture {
+            state open: bool = false,
+            interaction open {
+                caption: "Open", cursor: "open-chest", distance: 1.0,
+                when: !open && !self.lid.open,
+                perform: { open = true },
+            }
+            interaction close { caption: "Close", when: open, perform: { open = false } }
+        }
+    "#;
+
+    fn names(world: &World, entity: Entity) -> Vec<String> {
+        interactions_of(world.get::<OwnedAspects>(entity).unwrap())
+            .map(|i| i.name().to_owned())
+            .collect()
     }
 
     #[test]
-    fn no_when_is_enabled_and_an_uncompiled_when_is_not() {
-        let (world, host) = (World::new(), HostState::new());
-        let e = Entity::PLACEHOLDER;
-        assert!(entry("a", 1., None).enabled(&world, &host, e));
-        assert!(!entry("a", 1., Some("true")).enabled(&world, &host, e));
-    }
-
-    #[test]
-    fn when_is_evaluated_on_the_entity() {
-        let host = lid_host();
-        let (list, _) = load_interactions(
-            r#"[
-  {"id": "open", "caption": "Open", "when": "!self.lid.open", "action": "a"},
-  {"id": "close", "caption": "Close", "when": "self.lid.open", "action": "a"}
-]"#,
-            &host,
-        );
+    fn the_first_enabled_in_reach_is_offered_and_performed() {
+        let host = host();
         let mut world = World::new();
-        let shut = world.spawn(Lid { open: false }).id();
-        let open = world.spawn(Lid { open: true }).id();
-        let lidless = world.spawn(()).id();
-        let first = |e| {
-            list.first_enabled(1., &world, &host, e)
-                .map(|d| d.id.as_str())
+        let chest = spawn(&mut world, &host, CHEST);
+        world.entity_mut(chest).insert(Lid::default());
+        assert_eq!(names(&world, chest), ["open", "close"]);
+        let first = |world: &World, distance| {
+            let aspects = world.get::<OwnedAspects>(chest).unwrap();
+            first_enabled(aspects, distance, world, &host, chest)
         };
-        assert_eq!(first(shut), Some("open"));
-        assert_eq!(first(open), Some("close"));
-        // Without the component, the evaluation fails and nothing is offered.
-        assert_eq!(first(lidless), None);
-    }
 
-    #[test]
-    fn first_enabled_in_reach_wins() {
-        let (world, host) = (World::new(), HostState::new());
-        let e = Entity::PLACEHOLDER;
-        let list = Interactions(vec![
-            entry("formula", 2., Some("true")),
-            entry("near", 0.5, None),
-            entry("far", 2., None),
-            entry("later", 2., None),
-        ]);
-        let first = |distance| list.first_enabled(distance, &world, &host, e);
-        assert_eq!(first(0.4).unwrap().id, "near");
-        assert_eq!(first(1.).unwrap().id, "far");
-        assert!(first(3.).is_none());
+        let open = first(&world, 0.5).unwrap();
+        assert_eq!(open.name(), "open");
+        assert_eq!(open.caption(), "Open");
+        // Beyond the open's reach, the close is not offered while the chest is shut.
+        assert!(first(&world, 1.2).is_none());
+
+        open.perform(&mut world, &host, chest);
+        let close = first(&world, 1.2).unwrap();
+        assert_eq!(close.name(), "close");
+        assert_eq!(close.reach(), DEFAULT_INTERACTION_DISTANCE);
+        close.perform(&mut world, &host, chest);
+        assert_eq!(first(&world, 0.5).unwrap().name(), "open");
+
+        // A `when` that reads what the entity lacks fails, and offers nothing.
+        world.entity_mut(chest).remove::<Lid>();
+        assert!(first(&world, 0.5).is_none());
     }
 
     #[test]
     fn hover_cursor_is_the_only_entrys_or_the_default() {
-        let chest = InteractionDesc {
-            cursor: Some("open-chest".to_owned()),
-            ..entry("open", 1., None)
+        let host = host();
+        let mut world = World::new();
+        let cursor = |world: &World, entity| {
+            let aspects = world.get::<OwnedAspects>(entity).unwrap();
+            hover_cursor(aspects, world, &host, entity)
         };
-        let disabled = entry("formula", 1., Some("true"));
-        let (world, host) = (World::new(), HostState::new());
-        let cursor = |list: Vec<InteractionDesc>| {
-            Interactions(list)
-                .hover_cursor(&world, &host, Entity::PLACEHOLDER)
-                .map(str::to_owned)
-        };
-        assert_eq!(
-            cursor(vec![chest.clone(), disabled.clone()]).as_deref(),
-            Some("open-chest")
+        let chest = spawn(&mut world, &host, CHEST);
+        world.entity_mut(chest).insert(Lid::default());
+        assert_eq!(cursor(&world, chest).as_deref(), Some("open-chest"));
+        world.entity_mut(chest).insert(Lid { open: true });
+        assert_eq!(cursor(&world, chest), None);
+
+        let plain = spawn(
+            &mut world,
+            &host,
+            "aspect A for Wall { interaction use { caption: \"Use\", perform: {} } }",
         );
         assert_eq!(
-            cursor(vec![entry("a", 1., None)]).as_deref(),
+            cursor(&world, plain).as_deref(),
             Some(DEFAULT_INTERACTION_CURSOR)
         );
+
+        let two = spawn(
+            &mut world,
+            &host,
+            r#"aspect A for Wall {
+                interaction a { caption: "A", cursor: "x", perform: {} }
+                interaction b { caption: "B", cursor: "y", perform: {} }
+            }"#,
+        );
         assert_eq!(
-            cursor(vec![chest, entry("a", 1., None)]).as_deref(),
+            cursor(&world, two).as_deref(),
             Some(DEFAULT_INTERACTION_CURSOR)
         );
-        assert_eq!(cursor(vec![disabled]), None);
     }
 }

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use bevy::{camera::visibility::VisibilitySystems, prelude::*, transform::TransformSystems};
 use cutaways::{hide_cut_away_scenery, Cutaways};
 use floor_surface::{build_floor_materials, FloorMaterials};
-use panoply_exemplar::{CatalogEntryAppExt, InteractionAppExt, ScriptComponentAppExt};
+use panoply_exemplar::{CatalogEntryAppExt, ScriptComponentAppExt};
 use panoply_precinct::{KeyedInstances, PrecinctAsset, PrecinctAssetLoader};
 use panoply_render::OutlineMaterial;
 use precinct_cache::spawn_precincts;
@@ -12,7 +12,6 @@ use self::{
     animation_aspect::{
         bind_scenery_animations, drive_scenery_animations, start_pending_sounds, SceneryAnimations,
     },
-    container_aspect::{toggle_container, Container, ContainerState, ContainerToggle},
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
@@ -30,7 +29,6 @@ use self::{
 };
 
 mod animation_aspect;
-mod container_aspect;
 pub mod cutaways;
 mod floor_mesh;
 pub mod floor_region;
@@ -88,18 +86,11 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<SceneryColliders>()
             .register_type::<SceneryMarks>()
             .register_type::<LightSource>()
-            .register_type::<Container>()
-            .register_type::<ContainerState>()
             .register_type::<Lock>()
             .register_type::<LockState>()
-            .register_script_component::<Container, ContainerState>("container")
             .register_script_component::<Lock, LockState>("lock")
-            .register_interaction_action::<Container>("ContainerToggle", |world, entity| {
-                world.trigger(ContainerToggle { entity });
-            })
             .register_type::<SceneryAnimations>()
             .add_observer(bind_scenery_animations)
-            .add_observer(toggle_container)
             .add_systems(Update, (drive_scenery_animations, start_pending_sounds))
             .register_type::<WallSize>()
             .register_type::<SceneryModel>()
@@ -165,4 +156,42 @@ fn init_outline(
         width: 0.015,
         ..default()
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use panoply_exemplar::add_interaction_fields;
+    use panoply_saga::{compile_module, format_error, HostState, NoImports};
+
+    use super::*;
+
+    /// Every module in `assets/scripts/` compiles against a host with the interaction type and
+    /// the components scripts read here.
+    #[test]
+    fn every_script_compiles() {
+        let mut host = HostState::new();
+        add_interaction_fields(&mut host);
+        host.add_component::<LockState>("lock");
+        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
+        let mut failures = Vec::new();
+        let mut count = 0;
+        for entry in std::fs::read_dir(assets.join("scripts")).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().is_none_or(|ext| ext != "saga") {
+                continue;
+            }
+            count += 1;
+            let name = format!("scripts/{}", path.file_name().unwrap().to_string_lossy());
+            let src = std::fs::read_to_string(&path).unwrap();
+            if let Err(err) =
+                futures_lite::future::block_on(compile_module(&name, &src, &host, &NoImports))
+            {
+                failures.push(format_error(&name, &src, &err));
+            }
+        }
+        assert!(count > 0, "no modules under {}", assets.display());
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+    }
 }

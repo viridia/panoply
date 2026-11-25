@@ -7,7 +7,7 @@ use bumpalo::Bump;
 use smol_str::SmolStr;
 
 use super::{
-    aspect::build_aspects,
+    aspect::{InteractionFieldFn, build_aspects},
     check::check_types,
     decl::{Decl, DeclKind, DeclTable, DeclVisibility, FunctionParam, Scope, ScopeType},
     expr::{Expr, ExprKind, FunctionBody},
@@ -45,10 +45,63 @@ pub(crate) fn build_module_exprs<'e>(
     };
     let mut exprs = ModuleExprs::default();
     create_decls(module, &mut exprs, ast_decls)?;
-    build_aspects(host, module, ast_decls)?;
+    let interaction_fields = build_aspects(host, module, &mut exprs, ast_decls)?;
     resolve_decl_types(host, module, ast_decls)?;
     build_function_bodies(host, module, ast_decls, &mut exprs, arena)?;
+    build_interaction_bodies(host, module, &interaction_fields, &mut exprs, arena)?;
     Ok(exprs)
+}
+
+/// Builds the function of each field the module's interactions set. Each names its aspect's
+/// fields bare, and reads the module's aspects through their accessors.
+fn build_interaction_bodies<'e>(
+    host: &HostState,
+    module: &mut ScriptModule,
+    fields: &[InteractionFieldFn<'_>],
+    exprs: &mut ModuleExprs<'e>,
+    arena: &'e Bump,
+) -> Result<(), CompilationError> {
+    let host_scope = Scope {
+        parent: None,
+        decls: &host.decls,
+        scope_type: ScopeType::Host,
+    };
+    let aspects = module.aspects.clone();
+    for field in fields {
+        let mut aspect_decls = DeclTable::default();
+        for aspect_field in field.aspect.fields.iter() {
+            aspect_decls.insert(
+                aspect_field.name.clone(),
+                Decl {
+                    location: TokenLocation::default(),
+                    visibility: DeclVisibility::Public,
+                    typ: ExprType::from_type_info(aspect_field.info),
+                    kind: DeclKind::AspectField,
+                },
+            );
+        }
+        let module_scope = Scope {
+            parent: Some(&host_scope),
+            decls: &module.module_decls,
+            scope_type: ScopeType::Module,
+        };
+        let aspect_scope = Scope {
+            parent: Some(&module_scope),
+            decls: &aspect_decls,
+            scope_type: ScopeType::Aspect,
+        };
+        let mut builder = FunctionBuilder::new(host, &aspects, arena, &mut exprs.types);
+        builder.own_aspect = Some(field.aspect.clone());
+        builder.effect = field.effect;
+        // One list of reads for the module, which every function's indices name.
+        builder.scripted_reads = core::mem::take(&mut module.scripted_reads);
+        let body = builder.build_expr(field.value, &aspect_scope);
+        module.scripted_reads = core::mem::take(&mut builder.scripted_reads);
+        let body = body?;
+        builder.take_self_components(module);
+        exprs.functions[field.index] = builder.finish(body, field.ret.clone(), Vec::new())?;
+    }
+    Ok(())
 }
 
 /// The typed tree of a formula, which reads the scripted aspects of `scripted` through their
@@ -303,6 +356,10 @@ struct FunctionBuilder<'h, 'e, 't> {
     scripted_reads: Vec<Arc<AspectDecl>>,
     /// The scripted aspects it reads from `self`.
     self_aspects: Vec<Arc<AspectDecl>>,
+    /// The aspect whose interaction this function is a field of, whose fields it names bare.
+    own_aspect: Option<Arc<AspectDecl>>,
+    /// Whether it is an effect, which may write its aspect's state.
+    effect: bool,
 }
 
 /// How deep a typed tree may be. A long chain of binary operators is as deep as it is long.
@@ -328,7 +385,26 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             scripted,
             scripted_reads: Vec::new(),
             self_aspects: Vec::new(),
+            own_aspect: None,
+            effect: false,
         }
+    }
+
+    /// Field `name` of the aspect this function belongs to, on `self`.
+    fn build_own_field(
+        &mut self,
+        loc: TokenLocation,
+        name: &str,
+    ) -> Result<&'e Expr<'e>, CompilationError> {
+        let (Some(aspect), Some(self_index)) = (self.own_aspect.clone(), self.host.self_index)
+        else {
+            return Err(CompilationError::Internal(
+                loc,
+                "an aspect field outside an aspect",
+            ));
+        };
+        let owner = self.expr(loc, ExprKind::GlobalRef(self_index), ExprType::Entity);
+        self.build_scripted_field(loc, owner, &aspect, name)
     }
 
     /// Adds the components and scripted aspects this function reads from `self` to `module`'s.
@@ -718,6 +794,7 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             (DeclKind::NativeType { .. } | DeclKind::TypeAlias, _) => {
                 return Err(CompilationError::TypeAsValue(loc, name.into()));
             }
+            (DeclKind::AspectField, _) => return self.build_own_field(loc, name),
         };
         Ok(self.expr(loc, kind, decl.typ.clone()))
     }
@@ -876,21 +953,56 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
         ))
     }
 
-    /// The target of an assignment: a mutable local.
+    /// The target of an assignment: a mutable local, or in an effect, a state field of its
+    /// aspect of one slot, named bare.
     fn build_lvalue(
         &mut self,
         ast: &ASTNode,
         scope: &Scope,
     ) -> Result<&'e Expr<'e>, CompilationError> {
-        if let NodeKind::Ident(name) = &ast.kind
-            && let Some((_, decl)) = scope.lookup(name)
-            && let DeclKind::Local {
+        let loc = ast.location;
+        let NodeKind::Ident(name) = &ast.kind else {
+            return Err(CompilationError::InvalidAssignmentTarget(loc));
+        };
+        match scope.lookup(name).map(|(_, decl)| &decl.kind) {
+            Some(DeclKind::Local {
                 is_const: false, ..
-            } = decl.kind
-        {
-            return self.build_ident(ast.location, name, scope);
+            }) => self.build_ident(loc, name, scope),
+            Some(DeclKind::AspectField) => {
+                let field = self
+                    .own_aspect
+                    .as_ref()
+                    .and_then(|aspect| aspect.field(name))
+                    .ok_or(CompilationError::Internal(
+                        loc,
+                        "an aspect field outside an aspect",
+                    ))?;
+                if !self.effect {
+                    return Err(CompilationError::WriteOutsideEffect(loc, (*name).into()));
+                }
+                if !field.is_state {
+                    return Err(CompilationError::WriteToConfig(loc, (*name).into()));
+                }
+                let one_slot = matches!(
+                    ExprType::from_type_info(field.info),
+                    ExprType::Boolean
+                        | ExprType::I32
+                        | ExprType::I64
+                        | ExprType::F32
+                        | ExprType::F64
+                        | ExprType::Entity
+                        | ExprType::String
+                );
+                if !one_slot {
+                    return Err(CompilationError::Unsupported(
+                        loc,
+                        "writes to fields of this type",
+                    ));
+                }
+                self.build_own_field(loc, name)
+            }
+            _ => Err(CompilationError::InvalidAssignmentTarget(loc)),
         }
-        Err(CompilationError::InvalidAssignmentTarget(ast.location))
     }
 
     fn build_block(

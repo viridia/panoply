@@ -625,6 +625,31 @@
           "half_extents": [0.15, 0.2, 0.15],
           "pickable": true
         }
+      ],
+      "scripts::toggle_switch::ToggleSwitch": {},
+      "SceneryAnimations": [
+        {
+          "clips": [
+            "Toggle"
+          ],
+          "when": "self.toggle_switch.on",
+          "transitions": [
+            {
+              "to": true,
+              "sound": {
+                "asset": "sfx/switch-metal.ogg",
+                "volume": 0.9
+              }
+            },
+            {
+              "to": false,
+              "sound": {
+                "asset": "sfx/switch-metal-2.ogg",
+                "volume": 0.7
+              }
+            }
+          ]
+        }
       ]
     }
   },

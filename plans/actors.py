@@ -14,8 +14,8 @@ Fallen into a hole or off the map, the actor is put back where it last stood. It
 reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
-opens and shuts it; facing the wall switch, whose prompt reads a scripted aspect's state, shows
-Use. The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
+opens and shuts it; facing the wall switch shows Use, and E throws it, its lever following the
+state the interaction writes. The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
 `proximity`, and raises them as it leaves. A click on the ground sends the player there by a
 route. In a house, in play,
 the floor above is cut away (R15).
@@ -55,7 +55,6 @@ STATE = "panoply_actors::actor_animation::ActorAnimationState"
 IDLE = "panoply_actors::actor_animation::ActorIdle"
 SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
-CONTAINER_STATE = "panoply_scenery::container_aspect::ContainerState"
 LOCK_STATE = "panoply_scenery::lock_aspect::LockState"
 TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
@@ -571,13 +570,14 @@ def check_cursor(driver, chest):
 def check_chest(driver):
     """Facing the chest nearest `SPOT`, the prompt offers Open, E opens it, the prompt offers Close,
     and E shuts it. Locked, it offers nothing: no prompt, E leaves it shut, and the pointer is not
-    over it. Walking away clears the prompt. Checked by eye in `chest_shut.png` and
-    `chest_open.png`: the lid raised."""
+    over it. Walking away clears the prompt. Whether it is open is scripted state, which the
+    remote protocol cannot read, so the prompts tell it, and the containers are found by their
+    `Lock`. Checked by eye in `chest_shut.png` and `chest_open.png`: the lid raised."""
     rows = driver.call(
         "world.query",
         {
-            "data": {"components": [CONTAINER_STATE, GLOBAL_TRANSFORM]},
-            "filter": {"with": [CONTAINER_STATE]},
+            "data": {"components": [LOCK_STATE, GLOBAL_TRANSFORM]},
+            "filter": {"with": [LOCK_STATE]},
         },
     )
     assert rows, "no containers near the player"
@@ -603,11 +603,6 @@ def check_chest(driver):
     driver.screenshot("chest_shut")
     over_chest = check_cursor(driver, chest)
 
-    def state():
-        return driver.call(
-            "world.get_components", {"entity": chest, "components": [CONTAINER_STATE]}
-        )["components"][CONTAINER_STATE]
-
     def lock(locked):
         driver.call(
             "world.insert_components",
@@ -617,23 +612,21 @@ def check_chest(driver):
 
     driver.key("KeyE")
     driver.frames(5)
-    assert state() == {"open": True}, f"E did not open it: {state()}"
-    assert prompt(driver) == "[E] Close", f"prompt {prompt(driver)!r} on the open chest"
+    assert prompt(driver) == "[E] Close", f"E did not open it: prompt {prompt(driver)!r}"
     # The sarcophagus's lid clip, `OpenLid2`, runs 1.25 s.
     driver.seconds(1.25)
     driver.screenshot("chest_open")
     driver.key("KeyE")
     driver.frames(5)
-    assert state() == {"open": False}, f"E did not shut it: {state()}"
-    assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r} on the shut chest"
+    assert prompt(driver) == "[E] Open", f"E did not shut it: prompt {prompt(driver)!r}"
 
     lock(True)
     assert prompt(driver) == "", f"prompt {prompt(driver)!r} on the locked chest"
     driver.key("KeyE")
     driver.frames(5)
-    assert state() == {"open": False}, f"E opened the locked chest: {state()}"
     assert over_chest() != chest, "the pointer picked the locked chest"
     lock(False)
+    # Open, not Close: E left the locked chest shut.
     assert prompt(driver) == "[E] Open", f"prompt {prompt(driver)!r} on the unlocked chest"
     assert over_chest() == chest, "the pointer did not pick the unlocked chest"
 
@@ -646,10 +639,10 @@ def check_chest(driver):
 
 
 def check_switch(driver):
-    """Facing the mossy wall switch in precinct (0, 0), whose interaction's `when` reads its
-    scripted aspect's state (`!self.toggle_switch.on`), the prompt offers Use, and E performs it,
-    which logs the switch's state ("DebugLog on ..."), leaving the switch as it was. Checked by eye
-    in `switch.png`: the actor faces the switch."""
+    """Facing the mossy wall switch in precinct (0, 0), whose `ToggleSwitch` declares Use, the
+    prompt offers Use, and E throws the switch, whose animation's `when` reads the state Use
+    writes (`self.toggle_switch.on`); E again throws it back, and Use is still offered. Checked by
+    eye in `switch_off.png` and `switch_on.png`: the actor faces the switch, and the lever moved."""
     driver.goto(SWITCH_STAND, 8.0)
     place(driver, SWITCH_STAND)
     driver.expect("Actor", MOTION, {"grounded": True})
@@ -660,11 +653,16 @@ def check_switch(driver):
     driver.mode("Play")
     driver.frames(5)
     print(f"at the switch, actor {driver.get('Actor', MOTION)}")
-    driver.screenshot("switch")
+    driver.screenshot("switch_off")
     assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} at the switch"
     driver.key("KeyE")
-    driver.frames(5)
+    # Long enough for the lever's clip, `ToggleAction2`.
+    driver.seconds(1.0)
+    driver.screenshot("switch_on")
     assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} after using the switch"
+    driver.key("KeyE")
+    driver.seconds(1.0)
+    assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} after using it again"
     driver.mode("Edit")
 
 

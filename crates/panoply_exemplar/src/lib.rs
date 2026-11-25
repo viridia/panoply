@@ -23,7 +23,7 @@ use bevy::{
     app::{App, Plugin, Update},
     asset::AssetApp,
 };
-use panoply_saga::SagaPlugin;
+use panoply_saga::{SagaHostBuilder, SagaPlugin};
 
 pub use aspect::*;
 pub use aspect_list::AspectList;
@@ -49,15 +49,11 @@ impl Plugin for ExemplarPlugin {
         if !app.is_plugin_added::<SagaPlugin>() {
             app.add_plugins(SagaPlugin);
         }
+        add_interaction_fields(&mut app.world_mut().resource_mut::<SagaHostBuilder>().0);
         app.init_resource::<CatalogRoots>()
-            .init_resource::<InteractionActions>()
-            .register_type::<Interactions>()
-            .register_type::<InteractionDesc>()
-            .register_type::<Vec<InteractionDesc>>()
             .init_asset::<ExemplarCatalog>()
             .init_asset::<Exemplar>()
             .init_asset_loader::<loader::ExemplarLoader>()
-            .register_interaction_action::<Interactions>("DebugLog", interaction::debug_log)
             .add_systems(Update, script_components::check_script_components);
     }
 }

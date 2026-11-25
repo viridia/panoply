@@ -1,6 +1,7 @@
 //! `.saga` modules as assets.
 
 use core::str;
+use std::sync::Arc;
 
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
@@ -15,7 +16,7 @@ use crate::{
 
 #[derive(TypePath, Asset)]
 pub struct ScriptModuleAsset {
-    pub module: ScriptModule,
+    pub module: Arc<ScriptModule>,
 }
 
 #[non_exhaustive]
@@ -52,7 +53,9 @@ impl AssetLoader for ScriptModuleLoader {
         let src = str::from_utf8(&bytes)?;
         // TODO(PAN71): a resolver that loads imports through the load context.
         match compile_module(&path, src, self.host.get(), &NoImports).await {
-            Ok(module) => Ok(ScriptModuleAsset { module }),
+            Ok(module) => Ok(ScriptModuleAsset {
+                module: module.share(),
+            }),
             Err(err) => {
                 let message = format_error(&path, src, &err);
                 Err(ModuleLoaderError::Compilation(err, message))

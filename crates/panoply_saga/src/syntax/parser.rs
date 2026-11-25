@@ -1,11 +1,17 @@
 use super::ast::{
-    ASTAspectField, ASTAttribute, ASTDecl, ASTFunctionParam, ASTNode, FloatSuffix, IntegerSuffix,
-    NodeKind,
+    ASTAspectField, ASTAttribute, ASTDecl, ASTFunctionParam, ASTInteraction, ASTInteractionField,
+    ASTNode, FloatSuffix, IntegerSuffix, NodeKind,
 };
 use super::location::TokenLocation;
 use super::oper::{BinaryOp, UnaryOp};
 use crate::sema::decl::DeclVisibility;
 use bumpalo::Bump;
+
+/// What an aspect's braces hold, in the order written.
+enum AspectItem<'a> {
+    Field(&'a ASTAspectField<'a>),
+    Interaction(&'a ASTInteraction<'a>),
+}
 
 fn binary<'a>(
     arena: &'a Bump,
@@ -413,19 +419,60 @@ peg::parser! {
             })
         }
 
+        /// `name: value`, the value an expression or a block.
+        rule interaction_field() -> &'a ASTInteractionField<'a> =
+            start:position!()
+            n:name() _ ":" _
+            value:(b:block() { b } / e:expr() { e })
+            end:position!()
+        {
+            arena.alloc(ASTInteractionField {
+                location: TokenLocation::new(start, end),
+                name: n,
+                value,
+            })
+        }
+
+        rule interaction_defn() -> &'a ASTInteraction<'a> =
+            start:position!()
+            "interaction" kw_end() _ n:name() _
+            "{" _ fields:(interaction_field() ** (_ "," _)) _ ("," _)? "}"
+            end:position!()
+        {
+            arena.alloc(ASTInteraction {
+                location: TokenLocation::new(start, end),
+                name: n,
+                fields: arena.alloc_slice_copy(fields.as_slice()),
+            })
+        }
+
+        /// A field, which a comma ends unless it is last, or an interaction, which may take one.
+        rule aspect_item() -> AspectItem<'a> =
+            i:interaction_defn() _ ("," _)? { AspectItem::Interaction(i) }
+            / f:aspect_field() _ ("," _ / &"}") { AspectItem::Field(f) }
+
         rule aspect_defn() -> &'a ASTNode<'a> =
             start:position!()
             attrs:(a:attribute() _ { a })*
             "aspect" kw_end() _ n:name() _
             "for" kw_end() _ kinds:(name() ++ (_ "," _)) _
-            "{" _ fields:(aspect_field() ** (_ "," _)) _ ("," _)? "}"
+            "{" _ items:(aspect_item()*) "}"
             end:position!()
         {
+            let mut fields = Vec::new();
+            let mut interactions = Vec::new();
+            for item in items {
+                match item {
+                    AspectItem::Field(f) => fields.push(f),
+                    AspectItem::Interaction(i) => interactions.push(i),
+                }
+            }
             let decl = arena.alloc(ASTDecl::Aspect {
                 attrs: arena.alloc_slice_copy(attrs.as_slice()),
                 name: n,
                 kinds: arena.alloc_slice_copy(kinds.as_slice()),
                 fields: arena.alloc_slice_copy(fields.as_slice()),
+                interactions: arena.alloc_slice_copy(interactions.as_slice()),
             });
             arena.alloc(ASTNode::new((start, end), NodeKind::Decl(decl)))
         }
@@ -755,10 +802,12 @@ mod tests {
             name,
             kinds,
             fields,
+            interactions,
         }) = ast.kind
         else {
             panic!("{ast:?}")
         };
+        assert!(interactions.is_empty());
         assert_eq!(*name, "ToggleSwitch");
         assert_eq!(*kinds, ["Wall", "Fixture"]);
         assert_eq!(attrs.len(), 1);
@@ -782,5 +831,47 @@ mod tests {
                 ("state", false, false)
             ]
         );
+    }
+
+    #[test]
+    pub fn aspect_interactions() {
+        let arena = Bump::new();
+        let src = r#"aspect ToggleSwitch for Wall {
+                caption: String = "Use",
+                state on: bool = false,
+
+                interaction use {
+                    caption: "Use",
+                    perform: { on = !on },
+                }
+                interaction reset { caption: "Reset", when: on, perform: on = false },
+                state presses: i32
+            }"#;
+        let ast = formula_parser::decl(src, &arena).unwrap();
+        let NodeKind::Decl(ASTDecl::Aspect {
+            fields,
+            interactions,
+            ..
+        }) = ast.kind
+        else {
+            panic!("{ast:?}")
+        };
+        let names: Vec<_> = fields.iter().map(|f| f.name).collect();
+        assert_eq!(names, ["caption", "on", "presses"]);
+        let summary: Vec<_> = interactions
+            .iter()
+            .map(|i| (i.name, i.fields.iter().map(|f| f.name).collect::<Vec<_>>()))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("use", vec!["caption", "perform"]),
+                ("reset", vec!["caption", "when", "perform"])
+            ]
+        );
+        assert!(matches!(
+            interactions[0].fields[1].value.kind,
+            NodeKind::Block(..)
+        ));
     }
 }

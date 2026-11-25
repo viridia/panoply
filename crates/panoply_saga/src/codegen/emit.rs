@@ -473,6 +473,25 @@ impl<'f, 'e> Emitter<'f, 'e> {
         rhs: &'e Expr<'e>,
         op: Option<BinaryOp>,
     ) -> Result<(), CompilationError> {
+        if let ExprKind::ScriptedField(entity, read, field) = lhs.kind {
+            // The entity, then the value, which a compound assignment computes from the field's
+            // value now: a write is buffered, so the field still holds it.
+            let loc = lhs.location;
+            self.visit_expr(entity)?;
+            if op.is_some() {
+                self.visit_expr(lhs)?;
+            }
+            self.visit_expr(rhs)?;
+            if let Some(op) = op {
+                let typ = op_type(loc, self.type_of(lhs))?;
+                self.out.add_op(StackOp::BinaryOp(op, typ));
+            }
+            self.out.add_op(StackOp::StoreScripted {
+                read: imm16(loc, read, "more than 65535 scripted aspects")?,
+                field: imm16(loc, field, "more than 65535 fields")?,
+            });
+            return Ok(());
+        }
         let ExprKind::LocalRef(index) = lhs.kind else {
             return Err(CompilationError::InvalidAssignmentTarget(lhs.location));
         };
@@ -722,6 +741,11 @@ fn visit_stack_op(op: &StackOp, out: &mut InstructionBuilder) -> Result<(), Comp
             out.push_immediate(*field);
             out.push_immediate(*offset);
             out.push_immediate(*count);
+        }
+        StackOp::StoreScripted { read, field } => {
+            out.push_op(instr::OP_STORE_SCRIPTED);
+            out.push_immediate(*read);
+            out.push_immediate(*field);
         }
         StackOp::StoreLocal { slot, count } => {
             out.push_op(instr::OP_STORE_LOCAL);

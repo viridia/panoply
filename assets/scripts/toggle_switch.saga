@@ -2,8 +2,11 @@
 // back once pressed.
 #[accessor(toggle_switch)]
 aspect ToggleSwitch for Wall, Fixture {
-    // What the player is shown to throw it.
-    caption: String = "Use",
     // Whether it is on.
     state on: bool = false,
+
+    interaction use {
+        caption: "Use",
+        perform: { on = !on },
+    }
 }

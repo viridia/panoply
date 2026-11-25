@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D120.**
+**Next: D121.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -580,9 +580,9 @@ never reused.
   instance; the state play changes is a separate component the aspect inserts, saved in the save
   game, and left out when it equals the authored state ([save-games.md](save-games.md), Chunk
   format). The asset stays the author's, editable while the game runs, and a save holds only what
-  play changed. `Container` and `ContainerState` already work so; it is the rule for every stateful
-  aspect. Reversing it means aspects whose fields play overwrites, so saves must hold whole aspects
-  and an edited asset cannot reach a saved game. (PAN28b)
+  play changed. `Lock` and `LockState` already work so; it is the rule for every stateful aspect.
+  Reversing it means aspects whose fields play overwrites, so saves must hold whole aspects and an
+  edited asset cannot reach a saved game. (PAN28b)
 - **D75** A text input's edit is committed on Enter or on losing focus, and Escape puts its text
   back, through one observer pair on every Bevy `TextInput` (`text_commit.rs`), which triggers
   Bevy's own `ValueChange<String>` with `is_final` set, the event whose doc already covers "input
@@ -1024,3 +1024,15 @@ never reused.
   lists will be, counts as always changed. A memo outlives its cell's evaluations, its state must,
   so a call compares its arguments with the last call's. (PAN105) Reversing it means cells as
   components, read and written by a system that cannot also hand the world to the VM.
+- **D120** What an aspect declares besides fields is a keyword form, `interaction use { ... }` and
+  later `on attach`, whose contents the host checks: an interaction is a struct literal of the
+  interaction type the host registers, its fields each a constant, a formula or an effect, and hook
+  names will be a table the same way. So the parser knows two keywords, the SAGA crate knows nothing
+  of captions, and a misspelled field is a compile error. The alternative, one general declaration
+  whose slots may hold functions, checked against a schema per kind, gives the parser no keywords
+  but makes every effect a closure and gives fields and hooks one shape. An interaction's fields are
+  constants but for `when` and `perform`, so `when` is the one thing that changes what is offered,
+  and the prompt and the cursor need not follow their own formulas; a changing caption is two
+  interactions. Its fields are written `name: value`, with no shorthand ([saga.md](saga.md),
+  Aspects). (PAN104c) Reversing it means hosts registering whole declaration kinds, or prompts that
+  react to formula captions.

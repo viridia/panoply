@@ -11,7 +11,10 @@
 //! pointer to a component of that id points to a `ScriptedFields`.
 
 use core::{alloc::Layout, mem::ManuallyDrop};
-use std::{borrow::Cow, sync::Arc};
+use std::{
+    borrow::Cow,
+    sync::{Arc, OnceLock, Weak},
+};
 
 use bevy::{
     ecs::{
@@ -25,6 +28,8 @@ use bevy::{
     reflect::{PartialReflect, Reflect, TypeInfo},
 };
 use smol_str::SmolStr;
+
+use crate::ScriptModule;
 
 /// An aspect a `.saga` module declares (`aspect ToggleSwitch for Wall { ... }`).
 #[derive(Debug)]
@@ -41,6 +46,46 @@ pub struct AspectDecl {
     pub kinds: Vec<SmolStr>,
     /// Its fields, in declaration order.
     pub fields: Vec<AspectField>,
+    /// The interactions it offers, in declaration order.
+    pub interactions: Vec<InteractionDecl>,
+    /// The module that declares it, whose functions its interactions run. Set once the module
+    /// is shared ([`ScriptModule::share`]); weak, since the module holds the declaration.
+    pub(crate) module: OnceLock<Weak<ScriptModule>>,
+}
+
+/// An interaction an aspect declares: its name, its constant fields' values, and each formula
+/// or effect it sets as a function of its module that takes no arguments and runs on the entity
+/// the aspect is on.
+#[derive(Debug)]
+pub struct InteractionDecl {
+    pub name: SmolStr,
+    /// Each constant field's name and value.
+    pub constants: Vec<(SmolStr, Box<dyn Reflect>)>,
+    /// Each formula or effect field's name and its function's index in the module.
+    pub fields: Vec<(SmolStr, usize)>,
+}
+
+impl InteractionDecl {
+    /// The index of the function that gives field `name`, if the interaction sets it.
+    pub fn field(&self, name: &str) -> Option<usize> {
+        self.fields
+            .iter()
+            .find(|(field, _)| field == name)
+            .map(|(_, index)| *index)
+    }
+
+    /// The value of constant field `name`, if the interaction sets it and it is a `T`.
+    pub fn constant<T: Reflect>(&self, name: &str) -> Option<&T> {
+        self.constants
+            .iter()
+            .find(|(field, _)| field == name)
+            .and_then(|(_, value)| value.downcast_ref())
+    }
+
+    /// Whether the interaction sets field `name`, of any kind.
+    pub fn sets(&self, name: &str) -> bool {
+        self.field(name).is_some() || self.constants.iter().any(|(field, _)| field == name)
+    }
 }
 
 /// A field of a scripted aspect.
@@ -71,6 +116,11 @@ impl AspectDecl {
     /// The field `name`.
     pub fn field(&self, name: &str) -> Option<&AspectField> {
         self.fields.iter().find(|field| field.name == name)
+    }
+
+    /// The module that declares the aspect, while something holds it.
+    pub fn module(&self) -> Option<Arc<ScriptModule>> {
+        self.module.get()?.upgrade()
     }
 }
 
@@ -337,6 +387,8 @@ mod tests {
                     default: None,
                 },
             ],
+            interactions: Vec::new(),
+            module: OnceLock::new(),
         })
     }
 
