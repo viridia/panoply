@@ -3,7 +3,7 @@ use panoply_exemplar::{annotations::AspectIcon, *};
 use serde::{Deserialize, Serialize};
 
 /// A fixture or wall tile that opens and closes, such as a chest or a sarcophagus. How it looks
-/// doing so is its `SceneryAnimations`, on the input `open`.
+/// doing so is its `SceneryAnimations`, whose `when` reads `self.container.open`.
 #[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Aspect, Default, Serialize, Deserialize)]
 #[reflect(@AspectIcon("editor/icons/lucide/package-open.png"))]

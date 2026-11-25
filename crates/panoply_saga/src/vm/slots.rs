@@ -311,6 +311,35 @@ impl<'a, T: FromSlots<'a>, const N: usize> FromSlots<'a> for [T; N] {
     }
 }
 
+/// A tuple reads its members from consecutive slots, as a native memo's arguments.
+macro_rules! tuple_from_slots {
+    ($($member:ident),+) => {
+        impl<'a, $($member: FromSlots<'a>),+> FromSlots<'a> for ($($member,)+) {
+            const SLOTS: usize = 0 $(+ $member::SLOTS)+;
+
+            // The last member's end is never read.
+            #[allow(unused_assignments)]
+            fn from_slots(slots: &[StackValue], store: &'a SlotStore<'_>) -> Result<Self, VMError> {
+                if slots.len() != Self::SLOTS {
+                    return Err(VMError::StackUnderflow);
+                }
+                let mut start = 0;
+                Ok(($({
+                    let end = start + $member::SLOTS;
+                    let member = $member::from_slots(&slots[start..end], store)?;
+                    start = end;
+                    member
+                },)+))
+            }
+        }
+    };
+}
+
+tuple_from_slots!(A);
+tuple_from_slots!(A, B);
+tuple_from_slots!(A, B, C);
+tuple_from_slots!(A, B, C, D);
+
 impl<T: ToSlots, const N: usize> ToSlots for [T; N] {
     fn to_slots(
         &self,

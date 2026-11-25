@@ -10,12 +10,27 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN121.**
+**Next: PAN123.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
 title, naming each open chunk, deferral or issue it waits for directly (what those wait for is
 theirs to name). `xref.py` checks that each is still open.
+
+## Tools
+
+- **PAN122 Precinct reader.** `scripts/precinct.py`, read-only and allowlisted, on `asset_xref.py`'s
+  msgpack reader, for what agents now do with throwaway scripts: checking that a re-saved precinct
+  lost nothing, and finding which instances override an aspect.
+  - `show <realm>/<precinct>`: each section's count; `--section scenery` prints one section, an item
+    a line. `--label <name>` (resolved through `instances.json`) or `--key <uuid>` prints one
+    instance as JSON, as a catalog entry reads: exemplar, position, facing, aspect overrides; keys
+    as UUIDs, floats at f32 precision.
+  - `find`: instances by `--exemplar` (a substring), `--label` or `--aspect` (those overriding it),
+    in one precinct or every one; a line each, or with `--json`, each instance as `show` prints it.
+  - `diff <realm>/<precinct> [REV]`: against git `HEAD` by default; per section, the counts and the
+    items added, removed or changed, matched by key where items have one, each printed as JSON
+    before and after.
 
 ## Terrain
 
@@ -167,15 +182,15 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   spawns, as QML's `required property` is. The aspect chooser lists the aspects of loaded modules
   beside native ones (D107), and the field attributes reuse the grammar of PAN104a's
   `#[accessor(...)]`. This meets X64's gate.
-- **PAN104c Hooks and effects.** *Needs:* PAN105. A `derived` field is a formula recomputed as what
-  it reads changes, never stored. An aspect's hooks are not methods but a fixed set of reactive
-  callbacks the engine knows, written `on <name>(...)` and checked by name, so a misspelled hook is
-  an error; `present` is one (D106). So are `attach`, an effect run once as the aspect attaches,
-  whose results a save keeps (faery's `enemy` rolled its loot in `init`), and one that fires when a
-  deadline the aspect set passes ([saga.md](saga.md), When reactions run), for a door's auto-close
-  or a button's release, where faery's `init` subscribed to every frame. A hook or an interaction's
-  action is an effect (D105): it writes its own aspect's state, the native components declared for
-  scripts to write, and host commands, all through SAGA's buffer.
+- **PAN104c Hooks and effects.** A `derived` field is a formula recomputed as what it reads changes,
+  never stored. An aspect's hooks are not methods but a fixed set of reactive callbacks the engine
+  knows, written `on <name>(...)` and checked by name, so a misspelled hook is an error; `present`
+  is one (D106). So are `attach`, an effect run once as the aspect attaches, whose results a save
+  keeps (faery's `enemy` rolled its loot in `init`), and one that fires when a deadline the aspect
+  set passes ([saga.md](saga.md), When reactions run), for a door's auto-close or a button's
+  release, where faery's `init` subscribed to every frame. A hook or an interaction's action is an
+  effect (D105): it writes its own aspect's state, the native components declared for scripts to
+  write, and host commands, all through SAGA's buffer.
   - Interactions move into their aspects (D114): each declared in the module with its caption, its
     `when` and the effect it performs. The two JSON uses move with them, `Proto.Container`
     (`furnishings.exem.json`), whose Open and Close write `ContainerState`, and the mossy wall
@@ -185,7 +200,9 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
     (`interaction use { ... }`, `on attach`) against one general declaration whose slots may hold
     functions, checked against a schema the host registers for each kind (aspect, interaction, later
     goal), so the host gains schemas rather than the parser keywords.
-  - A scenery animation's input becomes a `when` formula (D116), replacing `AnimationInput`.
+  - The reaction pass gains its queue: effects are the first writes a pass makes, so later passes
+    run the cells they queue, memos before formulas, until it is empty, with `run_reactions`'s
+    divergence limit ([saga.md](saga.md), When reactions run).
   - Proved by a hook writing state that a formula reads, and by the mossy wall switch: Use toggles
     `ToggleSwitch`'s `on`, and the switch plays its two-state animation, its `when` reading `on`.
     Wiring across entities is PAN79's.
@@ -201,16 +218,19 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   across the map. Panoply's push-out (R26) moves position only, a capped amount per tick, but skips
   resting actors (`ActorResting`), so the leaf must wake what it sweeps; checked with an actor
   standing in the swing. Closes I26.
-- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN104c, PAN105, PAN116. The first
-  mechanism, from faery's `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN104c, PAN116. The first mechanism, from
+  faery's `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
   - A native `SensorState`, written by physics from the `PressurePlate`'s sensor collider, sensing
     actors only, as faery's `canSense` did.
   - `SpearTrapControlled` gets a scripted aspect whose `instance` block holds `plate`, a role, and
     its `SceneryAnimations` open the spears while `self.spear_trap.plate?.sensor.active ?? false`
-    (D116); which way the `Spears` clip plays is read in the chunk. Its collider follows the
+    (D116); which way the `SpearsAction` clip plays is read in the chunk. Its collider follows the
     animated node, as PAN59's door leaf does.
+  - The first collider that rises under an actor: as the spears start up, actors whose footprint
+    overlaps the trap are woken and pushed sideways out of it (`ActorMotion::push`, as `bump_actors`
+    shoves), before the collider rises, so that none is lifted onto the wall (I85).
   - Picking the role in the world comes with it; the popup chooser stays PAN79's. It meets X138's
     gate.
   - Proved by the player standing on the plate, since there are no followers yet (X131) and nothing
@@ -437,6 +457,12 @@ D111.
   extrusion by the model's scale too, so an actor's outline keeps its width under `ActorScale`,
   which today thickens it.
 
+- **PAN121 Game clock and day/night.** A game clock and the hour scripts read, a `GameHour` resource
+  changing once per game hour, with saga.md's hour predicate (`isHourBetween(a, b)`, Memos) as a
+  native memo over it, coupled with the day/night lighting X12 describes: the sun moving with the
+  hour, its shadows fading out before evening, the night's blue filter. The first slice is the clock
+  driving the sun and the predicate; the moon's shadows and tuning by eye are X12's.
+
 ## Outlines and clips
 
 - **PAN23 Outlines from node extras.** Panoply outlines a mesh only when its material's extras set
@@ -499,8 +525,6 @@ D111.
 - **PAN116 Absent values**, as [saga.md](saga.md)'s Values has them: `Option`, `??` and `?.`, and a
   read of another entity's component giving an `Option`, where it now fails the evaluation. Before
   PAN105, whose memos read the entities they are given.
-- **PAN105 Cells and reactions.** Step 2 of [saga.md](saga.md), Order of work, its first customer an
-  animation's `when` (Early customers).
 - **PAN72 SAGA language reference.** *Needs:* PAN71, PAN104. For mod authors, in
   `docs/saga-language.md`: syntax, types, literals and their suffixes, operators and casts, locals,
   `if`, functions, modules and imports, how a formula embeds in an asset (PAN45b), and the host
@@ -535,19 +559,19 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   exit with no error. A Talk interaction on an actor (D114), its effect a host command that starts
   the conversation; the guardsman stands at his post. Option conditions are on-demand formulas
   (D116).
-- **PAN120b Quest and inventory.** *Needs:* PAN105, PAN120a. The `Quest` catalog kind and quest
-  state: stages whose conditions are reactive formulas (`has_item(player, GuardLunch)`), set from
-  dialogue by `gostage`, and a stage's entry taking the lunch from the player. A native `Inventory`
-  with `has_item` and host commands to give and remove items, X42's items. The lunch in a stone
+- **PAN120b Quest and inventory.** *Needs:* PAN120a. The `Quest` catalog kind and quest state:
+  stages whose conditions are reactive formulas (`has_item(player, GuardLunch)`), set from dialogue
+  by `gostage`, and a stage's entry taking the lunch from the player. A native `Inventory` with
+  `has_item` and host commands to give and remove items, X42's items. The lunch in a stone
   sarcophagus near the guardsman. Settled in the chunk: whether a quest is JSON with embedded
   formulas, as faery's were and as json-schema completion serves, or a SAGA module; whether taking
   the lunch uses PAN106's container screen or a plain Take; and X123, whose gate this quest meets.
-- **PAN120c Remarks and topics.** *Needs:* PAN104c, PAN105, PAN120a. A remark is a scripted event,
-  not a `RemarkSet` with weights in JSON: a hook on the guardsman's aspect fires as he passes the
-  player (the `proximity` memo), and its effect picks a line by SAGA logic, a seeded roll, and
-  speaks it through a host command, shown in a speech bubble. The lines stay in JSON, by id, for
-  localization (X77), each with the topic it teaches; the topics the player knows unlock dialogue
-  options ("You mentioned a festival?"). Revises X17's remark sets and D86's remarks aspect.
+- **PAN120c Remarks and topics.** *Needs:* PAN104c, PAN120a. A remark is a scripted event, not a
+  `RemarkSet` with weights in JSON: a hook on the guardsman's aspect fires as he passes the player
+  (the `proximity` memo), and its effect picks a line by SAGA logic, a seeded roll, and speaks it
+  through a host command, shown in a speech bubble. The lines stay in JSON, by id, for localization
+  (X77), each with the topic it teaches; the topics the player knows unlock dialogue options ("You
+  mentioned a festival?"). Revises X17's remark sets and D86's remarks aspect.
 - **PAN120d Patrol.** *Needs:* PAN16h, PAN102, PAN120a. The guardsman walks a patrol path in the
   lair, the first goal tree (X17), and stops and faces the player when talked to.
 

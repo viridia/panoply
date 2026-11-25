@@ -15,7 +15,9 @@ reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
 opens and shuts it; facing the wall switch, whose prompt reads a scripted aspect's state, shows
-Use. A click on the ground sends the player there by a route. In a house, in play,
+Use. The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
+`proximity`, and raises them as it leaves. A click on the ground sends the player there by a
+route. In a house, in play,
 the floor above is cut away (R15).
 The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
 its tests read; over unchanged content it writes the same bytes.
@@ -87,6 +89,8 @@ OFF_THE_MAP = [-5.0, 2.0, 47.0]
 INSIDE = [53.0, 0.5, 41.0]
 # In front of the mossy wall switch at (7.6, 26.4), on a wall facing +z.
 SWITCH_STAND = [7.6, 1.0, 27.2]
+# The spear trap `proximate-spears` in precinct (0, 0), open floor on its +z side.
+SPEARS = [28.5, 0.02, 21.5]
 VISIBILITY = "bevy_camera::visibility::Visibility"
 WAIT = {"seconds": 60}
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
@@ -420,6 +424,7 @@ def run(driver):
 
     check_chest(driver)
     check_switch(driver)
+    check_spears(driver)
     check_route(driver)
     check_cutaways(driver)
 
@@ -660,6 +665,33 @@ def check_switch(driver):
     driver.key("KeyE")
     driver.frames(5)
     assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} after using the switch"
+    driver.mode("Edit")
+
+
+def check_spears(driver):
+    """The spear trap in the lair whose animation's `when` is `proximity(player, self, 3.0, 4.0)`
+    (`proximate-spears`, at `SPEARS`, approached from +z): its spears stay up with the player 6 m
+    off, go down with the player 2 m in front of it, and rise again once the player is back beyond
+    4 m.
+    Checked by eye in `spears_far.png`, `spears_near.png` and `spears_left.png`."""
+
+    def stand(meters, name):
+        at = [SPEARS[0], SPEARS[1] + 0.2, SPEARS[2] + meters]
+        # Go To moves the view only while editing. Facing -z, so that the trap is the far wall,
+        # not one the cutaway hides.
+        driver.mode("Edit")
+        driver.goto(at, 8.0, azimuth=math.pi)
+        place(driver, at)
+        driver.expect("Actor", MOTION, {"grounded": True})
+        driver.mode("Play")
+        # The spears' clip, `SpearsAction`, runs under a second.
+        driver.seconds(1.5)
+        print(f"{meters} m from the spears, actor {driver.get('Actor', MOTION)}")
+        driver.screenshot(name)
+
+    stand(6.0, "spears_far")
+    stand(2.0, "spears_near")
+    stand(6.0, "spears_left")
     driver.mode("Edit")
 
 

@@ -21,8 +21,9 @@ use bevy::{
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-    ExprType, HostState, NoImports, ScriptModule, ScriptVm, TrackingScope,
+    ExprType, HostState, NoImports, ScriptModule, ScriptVm, TrackingScope, VMError,
     compiler::{compile_formula, format_error, format_span},
+    reactive::MemoTable,
     scripted::AspectDecl,
 };
 
@@ -89,7 +90,29 @@ impl Formula<bool> {
         let mut tracking = TrackingScope::default();
         let mut vm = ScriptVm::new(world, host, &mut tracking);
         vm.set_owner(owner);
-        let failure = match vm.run_as::<bool>(module, ScriptModule::DEFAULT) {
+        self.finish(vm.run_as::<bool>(module, ScriptModule::DEFAULT), owner)
+    }
+
+    /// As [`Formula::evaluate`], for a cell: its reads recorded in `tracking`, and its memos
+    /// kept in `memos`.
+    pub(crate) fn evaluate_in(
+        &self,
+        world: &World,
+        host: &HostState,
+        owner: Entity,
+        tracking: &mut TrackingScope,
+        memos: &mut MemoTable,
+    ) -> Option<bool> {
+        let module = self.module()?;
+        let mut vm = ScriptVm::new(world, host, tracking);
+        vm.set_owner(owner).set_memos(memos);
+        self.finish(vm.run_as::<bool>(module, ScriptModule::DEFAULT), owner)
+    }
+
+    /// The value of an evaluation, or `None` for a failure, logged the first time.
+    fn finish(&self, result: Result<bool, VMError>, owner: Entity) -> Option<bool> {
+        let module = self.module()?;
+        let failure = match result {
             Ok(value) => return Some(value),
             Err(err) => err.to_string(),
         };

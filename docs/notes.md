@@ -202,3 +202,19 @@ calls for work becomes an issue in [issues.md](issues.md).
   out but no `*Needs:*` of their own; the chunks with no edge either way, listed below in roadmap
   order; and the date of the snapshot. Landed chunks are left out: the changelog does not record
   what each needed, and they would crowd the graph.
+- A clip that does not repeat, reversed while past its end, can end at once (locked Bevy a35f1b5,
+  PAN105). A clip finishing forward stops with `seek_time` past its length by up to that frame's
+  delta. Seeked back there and given speed -1, its next `ActiveAnimation::update` subtracts the
+  frame's delta, and if that frame is shorter than the overshoot, `seek_time` is still at or past
+  the length; `update` then applies `seek_time %= clip_duration`, meant for repeating, which drops
+  it near zero, and the reverse completes within a frame or two. Rare at a steady frame rate. Clamp
+  the time to `[0, length]` before seeking, as `drive_scenery_animations` does.
+- Incremental builds can run measurably slower (PAN105, 2026-11-24): `perf.py` on a Panoply tree
+  rebuilt incrementally many times measured 1.3 to 2.5 ms a frame more at 80, 112 and 128 than the
+  same code after `cargo clean -p` of every workspace crate (7.25 to 7.33 ms), which Bevy's build
+  survives. Before blaming a change for a `perf.py` regression, clean the workspace crates and
+  measure again.
+- Two checkouts of Panoply under `games/` share its target directory and give their workspace crates
+  the same artifact names, so building one replaces the other's, and Cargo may then take a stale
+  library as fresh (a missing-item error from a crate that has it). To compare with another commit,
+  `git archive` it beside the repo, and `cargo clean -p` the workspace crates on each switch.

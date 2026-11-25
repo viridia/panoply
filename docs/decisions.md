@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D119.**
+**Next: D120.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1013,3 +1013,14 @@ never reused.
   places it. A floor is no instance and has no kind. The kind is on the exemplar, not on each placed
   instance, so a precinct's file never decodes one. Reversing it means a registry of kinds, each
   with what builds and places it.
+- **D119** SAGA's cells live in one `Reactions` resource, not in components on their owners: a
+  cell's formula reads the world while the reaction pass writes the cell, and the pass takes the
+  resource out of the world to do both. That makes the pass an exclusive system, so it runs in a
+  schedule of its own after `Update`, where it holds up no parallel systems, and what `Update` reads
+  of a cell is a frame old. Ownership stays by entity, as [saga.md](saga.md), Memos has it: whatever
+  adds a cell removes it when the component holding its id goes. Every cell and memo compares its
+  new value with its last, and only a difference counts as a change, so there is no memoized and
+  unmemoized computation for an author to choose between; a value type with no cheap equality, as
+  lists will be, counts as always changed. A memo outlives its cell's evaluations, its state must,
+  so a call compares its arguments with the last call's. (PAN105) Reversing it means cells as
+  components, read and written by a system that cannot also hand the world to the VM.

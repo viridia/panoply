@@ -1,34 +1,19 @@
 use bevy::{
     annotations::DisplayName,
     audio::{SpatialScale, Volume},
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
     gltf::Gltf,
     prelude::*,
     world_serialization::WorldInstanceReady,
 };
 use panoply_core::Viewpoint;
 use panoply_exemplar::{annotations::AspectIcon, *};
+use panoply_saga::{CellId, Formula, Reactions};
 use serde::{Deserialize, Serialize};
 
-use super::{container_aspect::ContainerState, scenery_element::SceneryElementMesh};
+use super::scenery_element::SceneryElementMesh;
 
-/// The state of an instance that drives an animation.
-#[derive(Debug, Reflect, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum AnimationInput {
-    /// A container's [`ContainerState::open`].
-    #[default]
-    Open,
-}
-
-impl AnimationInput {
-    fn read(self, container: Option<&ContainerState>) -> bool {
-        match self {
-            AnimationInput::Open => container.is_some_and(|state| state.open),
-        }
-    }
-}
-
-/// What happens when an animation's input changes to `to`.
+/// What happens when an animation's `when` changes to `to`.
 #[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
 #[reflect(Default, Serialize, Deserialize)]
 pub struct AnimationTransition {
@@ -80,25 +65,25 @@ fn full_volume() -> f32 {
     1.
 }
 
-/// Clips of a model that play together, as its exemplar describes them.
-#[derive(Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Default, Serialize, Deserialize)]
+/// Clips of a model that play together, as its exemplar describes them. Not deserialized by
+/// serde, so that loaders reach its formula through reflection; a field a file leaves out takes
+/// its default.
+#[derive(Debug, Reflect, Clone, Default, Serialize)]
+#[reflect(Default, Serialize)]
 pub struct SceneryAnimation {
     /// Names of the clips, in the file of the model.
     #[reflect(@DisplayName("Clips"))]
     pub clips: Vec<String>,
 
-    /// The state that plays the clips forward when true and backward when false.
-    #[serde(default)]
-    #[reflect(@DisplayName("Input"))]
-    pub input: Option<AnimationInput>,
+    /// A formula over the instance that plays the clips forward while true and backward while
+    /// false (D116).
+    #[reflect(@DisplayName("When"))]
+    pub when: Option<Formula<bool>>,
 
-    /// Plays the clips repeatedly from spawn, instead of following an input.
-    #[serde(default, rename = "loop")]
+    /// Plays the clips repeatedly from spawn, instead of following a `when`.
     #[reflect(@DisplayName("Loop"))]
     pub looping: bool,
 
-    #[serde(default)]
     #[reflect(@DisplayName("Transitions"))]
     pub transitions: Vec<AnimationTransition>,
 }
@@ -123,8 +108,8 @@ impl SceneryAnimation {
 }
 
 /// How the parts of a fixture or wall tile's model move.
-#[derive(Component, Debug, Reflect, Clone, Default, Serialize, Deserialize)]
-#[reflect(Aspect, Default, Serialize, Deserialize)]
+#[derive(Component, Debug, Reflect, Clone, Default, Serialize)]
+#[reflect(Aspect, Default, Serialize)]
 #[reflect(@AspectIcon("editor/icons/lucide/clapperboard.png"))]
 pub struct SceneryAnimations(pub Vec<SceneryAnimation>);
 
@@ -155,44 +140,61 @@ struct BoundTransition {
     sound: Option<BoundSound>,
 }
 
-/// One [`SceneryAnimation`] that follows an input, bound to its model.
-struct InputAnimation {
-    nodes: Vec<BlendNodeIndex>,
-    input: AnimationInput,
+/// One [`SceneryAnimation`] that follows its `when`, bound to its model.
+struct WhenAnimation {
+    /// Each clip's node, with the clip's length.
+    nodes: Vec<(BlendNodeIndex, f32)>,
+    /// The `when`, kept up to date by the reaction pass.
+    cell: CellId,
     on_true: BoundTransition,
     on_false: BoundTransition,
-    /// The input's value, as last seen.
-    value: bool,
-    /// Seconds left before the clips play for a change of the input.
+    /// The `when`'s value, as last seen; `None` before its first.
+    value: Option<bool>,
+    /// Seconds left before the clips play for a change of the `when`.
     wait: Option<f32>,
 }
 
-/// An instance's animations that follow inputs, and the player on its model.
+/// An instance's animations that follow a `when`, and the player on its model. Their cells go
+/// with it.
 #[derive(Component)]
+#[component(on_discard = remove_animation_cells)]
 pub(crate) struct BoundAnimations {
     player: Entity,
-    animations: Vec<InputAnimation>,
+    animations: Vec<WhenAnimation>,
+}
+
+fn remove_animation_cells(mut world: DeferredWorld, context: HookContext) {
+    let Some(bound) = world.get::<BoundAnimations>(context.entity) else {
+        return;
+    };
+    let cells: Vec<CellId> = bound.animations.iter().map(|animation| animation.cell).collect();
+    if let Some(mut reactions) = world.get_resource_mut::<Reactions>() {
+        for cell in cells {
+            reactions.remove(cell);
+        }
+    }
 }
 
 /// Once a model has spawned, gives its `AnimationPlayer`, which Bevy's loader puts on the model's
-/// root, a graph of its instance's clips. Looping clips start now; those whose input is already
-/// true start at their ends.
+/// root, a graph of its instance's clips, and each `when` a cell. Looping clips start now.
 pub(crate) fn bind_scenery_animations(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
     meshes: Query<(&SceneryElementMesh, &ChildOf)>,
-    instances: Query<(&SceneryAnimations, Option<&ContainerState>)>,
+    instances: Query<&SceneryAnimations>,
     children: Query<&Children>,
     mut players: Query<&mut AnimationPlayer>,
     gltfs: Res<Assets<Gltf>>,
     clips: Res<Assets<AnimationClip>>,
     mut graphs: ResMut<Assets<BlendGraph>>,
+    mut reactions: ResMut<Reactions>,
     asset_server: Res<AssetServer>,
 ) {
     let Ok((mesh, element)) = meshes.get(ready.entity) else {
         return;
     };
-    let Ok((animations, container)) = instances.get(element.parent()) else {
+    let instance = element.parent();
+    let Ok(animations) = instances.get(instance) else {
         return;
     };
     let Some(gltf) = gltfs.get(&mesh.handle) else {
@@ -212,7 +214,6 @@ pub(crate) fn bind_scenery_animations(
     let mut graph = BlendGraph::new();
     let mut bound = Vec::new();
     for animation in &animations.0 {
-        let value = animation.input.is_some_and(|input| input.read(container));
         let mut nodes = Vec::with_capacity(animation.clips.len());
         for name in &animation.clips {
             let Some(handle) = gltf.named_animations.get(name.as_str()) else {
@@ -220,20 +221,19 @@ pub(crate) fn bind_scenery_animations(
                 continue;
             };
             let node = graph.add_clip(handle.clone(), 1., graph.root);
-            nodes.push(node);
+            let length = clips.get(handle).map_or(0., AnimationClip::duration);
+            nodes.push((node, length));
             if animation.looping {
                 player.play(node).repeat();
-            } else if let (true, Some(clip)) = (value, clips.get(handle)) {
-                player.play(node).seek_to(clip.duration());
             }
         }
-        if let Some(input) = animation.input {
-            bound.push(InputAnimation {
+        if let Some(when) = &animation.when {
+            bound.push(WhenAnimation {
                 nodes,
-                input,
+                cell: reactions.add(instance, when.clone()),
                 on_true: animation.bind_transition(true, &asset_server),
                 on_false: animation.bind_transition(false, &asset_server),
-                value,
+                value: None,
                 wait: None,
             });
         }
@@ -241,36 +241,43 @@ pub(crate) fn bind_scenery_animations(
     commands
         .entity(player_entity)
         .insert(BlendGraphHandle(graphs.add(graph)));
-    commands.entity(element.parent()).insert(BoundAnimations {
+    commands.entity(instance).insert(BoundAnimations {
         player: player_entity,
         animations: bound,
     });
 }
 
-/// Plays clips whose input has changed, after the transition's delay, from wherever they have got
-/// to: forward for true, backward for false. A clip that has run its course holds its last pose.
-/// Queues the transition's sound as the clips start.
+/// Plays clips whose `when` has changed, after the transition's delay, from wherever they have
+/// got to: forward for true, backward for false. A clip that has run its course holds its last
+/// pose. Queues the transition's sound as the clips start. A `when` first seen true snaps its
+/// clips to their ends, so that an instance spawns, or a save loads, in the pose it gives.
 pub(crate) fn drive_scenery_animations(
     time: Res<Time>,
     mut commands: Commands,
-    mut instances: Query<(
-        &mut BoundAnimations,
-        Option<&ContainerState>,
-        &GlobalTransform,
-    )>,
+    reactions: Res<Reactions>,
+    mut instances: Query<(&mut BoundAnimations, &GlobalTransform)>,
     mut players: Query<&mut AnimationPlayer>,
 ) {
-    for (mut bound, container, transform) in &mut instances {
+    for (mut bound, transform) in &mut instances {
         let bound = &mut *bound;
         for animation in &mut bound.animations {
-            let value = animation.input.read(container);
+            let Some(value) = reactions.value(animation.cell) else {
+                continue;
+            };
+            let Some(last) = animation.value.replace(value) else {
+                if let (true, Ok(mut player)) = (value, players.get_mut(bound.player)) {
+                    for &(node, length) in &animation.nodes {
+                        player.play(node).seek_to(length);
+                    }
+                }
+                continue;
+            };
             let transition = if value {
                 &animation.on_true
             } else {
                 &animation.on_false
             };
-            if value != animation.value {
-                animation.value = value;
+            if value != last {
                 animation.wait = Some(transition.delay);
             }
             let Some(wait) = &mut animation.wait else {
@@ -294,9 +301,12 @@ pub(crate) fn drive_scenery_animations(
             let Ok(mut player) = players.get_mut(bound.player) else {
                 continue;
             };
-            for &node in &animation.nodes {
+            for &(node, length) in &animation.nodes {
                 let active = player.play(node);
-                let time = active.seek_time().max(0.);
+                // A finished clip stops a little past its end: past the start when it ran back,
+                // past the length when it ran forward. Bevy wraps a reversed clip still past its
+                // length to near zero, which would end the reverse at once.
+                let time = active.seek_time().clamp(0., length);
                 // A finished animation no longer advances; `replay` makes it run again.
                 active.replay();
                 active.seek_to(time).set_speed(if value { 1. } else { -1. });
@@ -362,5 +372,57 @@ pub(crate) fn start_pending_sounds(
                 ..PlaybackSettings::DESPAWN
             },
         ));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bevy::reflect::{serde::TypedReflectDeserializer, GetTypeRegistration, TypeRegistry};
+    use panoply_saga::{FormulaQueue, HostState};
+    use serde::de::DeserializeSeed;
+
+    use super::*;
+
+    /// Animations read as a catalog's are: through reflection, their formulas compiled.
+    fn load(json: &str) -> SceneryAnimations {
+        let mut registry = TypeRegistry::new();
+        registry.register::<SceneryAnimations>();
+        let registration = registry
+            .get(SceneryAnimations::get_type_registration().type_id())
+            .unwrap();
+        let mut formulas = FormulaQueue::default();
+        let value = {
+            let reader = formulas.track_json(json.as_bytes());
+            let mut deserializer = serde_json::Deserializer::from_reader(reader);
+            TypedReflectDeserializer::with_processor(registration, &registry, &mut formulas)
+                .deserialize(&mut deserializer)
+                .unwrap()
+        };
+        futures_lite::future::block_on(formulas.compile(
+            "test.json",
+            &HostState::new(),
+            json.as_bytes(),
+            &[],
+        ));
+        SceneryAnimations::from_reflect(&*value).unwrap()
+    }
+
+    #[test]
+    fn a_when_compiles_and_fields_left_out_take_their_defaults() {
+        let animations = load(
+            r#"[
+  {"clips": ["Open"], "when": "1 < 2", "transitions": [{"to": true, "sound": {"asset": "a.ogg"}}]},
+  {"clips": ["Blades"], "looping": true}
+]"#,
+        );
+        let [opening, turning] = &animations.0[..] else {
+            panic!("{animations:?}");
+        };
+        assert!(opening.when.as_ref().unwrap().module().is_some());
+        assert!(!opening.looping);
+        let sound = opening.transitions[0].sound.as_ref().unwrap();
+        assert_eq!((opening.transitions[0].delay, sound.volume), (0., 1.));
+        assert!(turning.when.is_none() && turning.looping);
+        assert!(turning.transitions.is_empty());
     }
 }

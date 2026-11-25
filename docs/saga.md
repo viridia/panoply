@@ -5,7 +5,7 @@ scripting language, and the only code a mod can ship ([modding.md](modding.md)).
 what the runtime gives them, not for syntax: behaviors that hot reload, and logic that ships outside
 the engine. Most scripts are like spreadsheet formulas: short, not long-running, holding no memory
 but the world's. The game's logic emerges from many of them working together. This doc records the
-design; nothing here is implemented yet (X7).
+design; what the roadmap does not yet hold is X7.
 
 ## Early customers
 
@@ -217,8 +217,13 @@ last value, so an object at the edge does not flicker; `isHourBetween(a, b)` rea
 resource that changes once per game hour, not the clock. faery organized its predicates this way
 (`design/scripting/predicates.md` in faery).
 
-- A memo is a cell: a value, the tick it last changed, and its own tracking scope. Its tick
-  advances only when its value changes, so readers compare ticks as Bevy's change detection does.
+- A memo is a cell: a value, the tick it last changed, and its own tracking scope. Its tick advances
+  only when its value changes, so readers compare ticks as Bevy's change detection does. Each cell
+  and memo compares only its own output, and what reads it trusts that; a value with no cheap
+  equality counts as changed (D119).
+- A memo outlives the evaluations of the cell that calls it, since its state (`proximity`'s last
+  value) must. A call compares its arguments with the last call's: the same, and the memo's value
+  stands; different, and it computes anew.
 - Native memos are formulas written in Rust; script formulas are cells too, compiled.
 - An actor's cells live on its goal nodes (X17), indexed by call site. They go when the node goes,
   so they need no relation or reference count of their own. Two call sites with the same arguments
@@ -326,8 +331,6 @@ which a headless balance simulator needs ([combat.md](combat.md)).
 ## Order of work
 
 1. Imports (PAN71).
-2. Cells, memos and the reaction passes, polling the world, with `proximity` and an hour predicate
-   as the first native memos, for an animation's `when` (Early customers); measure with
-   `plans/perf.py`. Each cell counts the reads its evaluation made and how many were repeats, the
-   distribution shown in `perf.py`'s log, so whether tracking's dedup (a linear scan on insert)
-   matters is settled by data before any benchmark (X93).
+
+The hour predicate comes with the game clock (PAN121), the queue of later passes with the first
+effects (PAN104c).

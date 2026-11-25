@@ -16,6 +16,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ScriptVm,
+    reactive::{NativeMemo, call_memo},
     sema::{
         decl::{Decl, DeclKind, DeclTable, DeclVisibility, FunctionParam},
         types::{ExprType, FunctionType, HostParam},
@@ -30,7 +31,8 @@ use layout::Layout;
 /// first is the instance) with [`InvocationContext::arg`] and writes its result with
 /// [`InvocationContext::ret`].
 pub type HostFunction = fn(&mut InvocationContext) -> Result<(), VMError>;
-type GlobalPropertyAccessor = fn(&ScriptVm) -> Result<StackValue, VMError>;
+/// A global property's value. It takes the VM mutably to track what it reads.
+pub type GlobalPropertyAccessor = fn(&mut ScriptVm) -> Result<StackValue, VMError>;
 
 /// A component scripts read from an entity, a range of its slots at a time.
 #[derive(Debug)]
@@ -291,6 +293,37 @@ impl HostState {
         index
     }
 
+    /// Adds a native function, called as `name(...)`.
+    pub fn add_function(
+        &mut self,
+        name: impl Into<SmolStr>,
+        function: HostFunction,
+        params: Vec<HostParam>,
+        return_type: ExprType,
+    ) -> usize {
+        let index = self.members.len();
+        self.add_global(
+            name.into(),
+            host_decl(
+                function_type(params, return_type),
+                DeclKind::Function { index },
+            ),
+        );
+        self.members.push(HostMember::Function(function));
+        index
+    }
+
+    /// Adds a native memo, called as `name(...)`: within a cell it is kept between evaluations,
+    /// one per call site (see the crate's Terms). Its parameters are primitives or entities.
+    pub fn add_memo<M: NativeMemo>(
+        &mut self,
+        name: impl Into<SmolStr>,
+        params: Vec<HostParam>,
+        return_type: ExprType,
+    ) -> usize {
+        self.add_function(name, call_memo::<M>, params, return_type)
+    }
+
     pub fn add_host_type<T: Typed>(&mut self, name: impl Into<SmolStr>) -> HostTypeBuilder<'_> {
         let id = TypeId::of::<T>();
         self.add_global(
@@ -329,7 +362,7 @@ impl HostState {
 }
 
 /// `self`: the entity the script runs on.
-fn read_self(vm: &ScriptVm) -> Result<StackValue, VMError> {
+fn read_self(vm: &mut ScriptVm) -> Result<StackValue, VMError> {
     Ok(StackValue::Entity(vm.owner))
 }
 

@@ -20,6 +20,7 @@ use crate::{
         HostMember, HostState,
         layout::{Layout, Leaf, SlotSink, flatten},
     },
+    reactive::MemoTable,
     scripted,
     sema::types::ExprType,
     tracking::TrackingScope,
@@ -85,6 +86,9 @@ pub enum VMError {
     /// A native wrote a result unlike the type it was registered with.
     #[error("A native returned {1} slots where its type takes {0}")]
     NativeResultSlots(usize, usize),
+    /// A memo was called with an argument other than a primitive or an entity.
+    #[error("A memo's arguments must be primitives or entities")]
+    MemoArguments,
     /// An evaluation's result is not the type it was read as.
     #[error("The result takes {1} slots where {0} were expected")]
     ResultSlots(usize, usize),
@@ -110,9 +114,23 @@ pub struct InvocationContext<'vm, 'w> {
     next_arg: Cell<usize>,
     out: &'vm mut Vec<StackValue>,
     tracking: &'vm mut TrackingScope,
+    /// The memos of the cell evaluating, if the evaluation is a cell's.
+    pub(crate) memos: Option<&'vm mut MemoTable>,
+    /// Identifies the call: the address just past its instruction, the same on every evaluation
+    /// of a module.
+    pub(crate) site: usize,
 }
 
 impl<'w> InvocationContext<'_, 'w> {
+    pub(crate) fn world(&self) -> &'w World {
+        self.world
+    }
+
+    /// The arguments' slots, all of them.
+    pub(crate) fn arg_slots(&self) -> &[StackValue] {
+        self.args
+    }
+
     /// The next argument, in the order the function's parameters are declared.
     pub fn arg<'a, T: FromSlots<'a>>(&'a self) -> Result<T, VMError> {
         let start = self.next_arg.get();
@@ -180,6 +198,9 @@ pub struct ScriptVm<'w, 'p> {
 
     /// What the evaluation reads, for reactions.
     pub tracking: &'p mut TrackingScope,
+
+    /// The memos of the cell evaluating, if the evaluation is a cell's.
+    memos: Option<&'p mut MemoTable>,
 }
 
 type InstrHandler = fn(&mut ScriptVm) -> Result<(), VMError>;
@@ -200,7 +221,14 @@ impl<'w, 'p> ScriptVm<'w, 'p> {
             stack: Vec::new(),
             iptr: core::ptr::null(),
             tracking,
+            memos: None,
         }
+    }
+
+    /// Run as a cell's evaluation, its memos kept in `memos` between evaluations.
+    pub(crate) fn set_memos(&mut self, memos: &'p mut MemoTable) -> &mut Self {
+        self.memos = Some(memos);
+        self
     }
 
     /// Set the entity the script runs on.
@@ -550,7 +578,8 @@ fn store_local(vm: &mut ScriptVm) -> Result<(), VMError> {
 
 fn load_global(vm: &mut ScriptVm) -> Result<(), VMError> {
     let n = vm.read_u16();
-    let val = match vm.host.members.get(n) {
+    let host = vm.host;
+    let val = match host.members.get(n) {
         Some(HostMember::Const(val)) => *val,
         Some(HostMember::GlobalProperty(accessor)) => accessor(vm)?,
         Some(_) => return Err(VMError::InvalidNativeProp(n)),
@@ -889,6 +918,8 @@ fn call_native(vm: &mut ScriptVm, f: crate::host::HostFunction) -> Result<(), VM
         next_arg: Cell::new(0),
         out: &mut vm.out,
         tracking: vm.tracking,
+        memos: vm.memos.as_deref_mut(),
+        site: vm.iptr as usize,
     };
     f(&mut ctx)?;
     if vm.out.len() != results {
@@ -1129,7 +1160,7 @@ mod tests {
         assert_eq!(vm.stack[0], StackValue::Entity(actor_id));
     }
 
-    fn get_self(vm: &ScriptVm) -> Result<StackValue, VMError> {
+    fn get_self(vm: &mut ScriptVm) -> Result<StackValue, VMError> {
         Ok(StackValue::Entity(vm.owner))
     }
 

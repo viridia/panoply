@@ -22,6 +22,7 @@ mod actor_travel;
 mod actor_wield;
 mod item_aspect;
 mod precinct_actors;
+mod script_player;
 mod world_pick;
 
 pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
@@ -37,6 +38,7 @@ pub use actor_route::RouteTo;
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
 pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
+pub use script_player::ScriptPlayer;
 
 use self::actor_animation::{animate_actor_state, bind_actor_skeleton, build_actor_graph};
 use self::actor_bump::bump_actors;
@@ -200,6 +202,7 @@ impl Plugin for ActorsPlugin {
             .add_observer(bind_actor_feature)
             .add_observer(spawn_wielded_items)
             .add_observer(color_actor_part);
+        script_player::add_script_player(app);
     }
 }
 

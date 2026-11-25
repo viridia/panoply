@@ -1342,7 +1342,7 @@
           "clips": [
             "WindmillBladesAction"
           ],
-          "loop": true
+          "looping": true
         }
       ],
       "SceneryModels": [
@@ -1709,7 +1709,7 @@
           "clips": [
             "ChestLarge.Open"
           ],
-          "input": "open",
+          "when": "self.container.open",
           "transitions": [
             {
               "to": false,
@@ -1751,7 +1751,7 @@
           "clips": [
             "ChestSmall.Open"
           ],
-          "input": "open",
+          "when": "self.container.open",
           "transitions": [
             {
               "to": false,
@@ -1791,7 +1791,7 @@
           "clips": [
             "ChestSmaller.Open"
           ],
-          "input": "open",
+          "when": "self.container.open",
           "transitions": [
             {
               "to": false,
@@ -1833,7 +1833,7 @@
             "DresserDoorLeft.Open",
             "DresserDoorRight.Open"
           ],
-          "input": "open",
+          "when": "self.container.open",
           "transitions": [
             {
               "to": false,

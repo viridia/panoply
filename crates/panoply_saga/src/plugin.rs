@@ -2,9 +2,12 @@
 
 use std::sync::{Arc, OnceLock};
 
-use bevy::prelude::*;
+use bevy::{app::MainScheduleOrder, prelude::*};
 
-use crate::{HostState, ScriptModuleAsset, ScriptModuleLoader};
+use crate::{
+    HostState, ReactionPass, ReactionReads, Reactions, ScriptModuleAsset, ScriptModuleLoader,
+    natives::add_natives, reactive::run_reactions,
+};
 
 /// Builds the host as plugins build, then freezes it, and loads `.saga` modules.
 pub struct SagaPlugin;
@@ -35,10 +38,20 @@ impl SagaHost {
 impl Plugin for SagaPlugin {
     fn build(&self, app: &mut App) {
         let host = SagaHost::default();
-        app.insert_resource(SagaHostBuilder(HostState::new()))
+        let mut builder = HostState::new();
+        add_natives(&mut builder);
+        app.insert_resource(SagaHostBuilder(builder))
             .insert_resource(host.clone())
+            .init_resource::<Reactions>()
+            .init_resource::<ReactionReads>()
+            .register_type::<ReactionReads>()
             .init_asset::<ScriptModuleAsset>()
-            .register_asset_loader(ScriptModuleLoader { host });
+            .register_asset_loader(ScriptModuleLoader { host })
+            .init_schedule(ReactionPass)
+            .add_systems(ReactionPass, run_reactions);
+        app.world_mut()
+            .resource_mut::<MainScheduleOrder>()
+            .insert_after(Update, ReactionPass);
     }
 
     fn finish(&self, app: &mut App) {

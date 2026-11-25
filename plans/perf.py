@@ -3,7 +3,8 @@
     bevy-remote-driver plans/perf.py
 
 Prints the average frame time at each stop and appends them as a line to `docs/perf.csv`, whose
-header says how to read it. The playground's terrain covers parcels 0..16 on both axes (256 m
+header says how to read it. At each stop it also prints how much SAGA's reactive cells read in
+their last evaluations, and how many of those reads repeated one already made. The playground's terrain covers parcels 0..16 on both axes (256 m
 square). Vsync is turned off for the run: with it on, a frame slightly over the refresh interval
 waits a whole extra interval, so the rate jumps between 120 and 60 and hides the real cost. A
 covered window runs at about half rate, so the plan takes a screenshot first, which brings the
@@ -44,6 +45,7 @@ PREPASSES = [
     "bevy_core_pipeline::prepass::NormalPrepass",
 ]
 SMAA = "bevy_anti_alias::smaa::Smaa"
+REACTION_READS = "panoply_saga::reactive::ReactionReads"
 # Each variable's values, and the camera components each value removes.
 SETTINGS = {
     "SSAO": {"off": [SSAO, *PREPASSES], "prepass": [SSAO]},
@@ -134,7 +136,11 @@ def run(driver):
         f1, t1 = driver.frame(), time.monotonic()
         ms = (t1 - t0) * 1000 / max(1, f1 - f0)
         times.append(ms)
-        print(f"{name}: {ms:.2f} ms/frame ({1000 / ms:.0f} fps)")
+        reads = driver.get_resource(REACTION_READS)
+        print(
+            f"{name}: {ms:.2f} ms/frame ({1000 / ms:.0f} fps); {reads['cells']} cells read "
+            f"{reads['reads']} times, {reads['repeats']} repeats"
+        )
         driver.screenshot(name)
     window = driver.call(
         "world.get_components", {"entity": driver.window, "components": [WINDOW]}

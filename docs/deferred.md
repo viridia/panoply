@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X141.**
+**Next: X142.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -26,7 +26,7 @@ dropped, not deferred. Numbers are never reused.
   catalogs are never split. Under Bevy, per-model files and labeled sub-assets may suit better.
   *Gate:* restoring terrain/flora/scenery, or a change to the asset pipeline (see D7).
 - **X7** Scripting and modding in SAGA, designed in [saga.md](saga.md) and [modding.md](modding.md),
-  beyond the steps the roadmap holds (PAN71, PAN105, PAN104). *Gate:* PAN105, when the next step of
+  beyond the steps the roadmap holds (PAN71, PAN104). *Gate:* PAN104c, when the next step of
   saga.md's Order of work becomes a chunk.
 - **X11** Water, continued in small steps, each checked by eye in motion (`plans/lighting.py`,
   `bluff` and `shore`). D31 landed colors, alpha, the seabed and a little more sky. The sky
@@ -653,3 +653,10 @@ dropped, not deferred. Numbers are never reused.
   far heavier actor, with box footprints; or rebuilding the precinct's mesh off the main thread
   when it settles (16 to 28 ms, D99); or faery's capped polygons patched locally, last, since the
   cap changes every mesh. *Gate:* the first puzzle that needs a weight.
+- **X141** The loaders that compile formulas (exemplars, catalog entries, precincts) on
+  `bevy_reflect2`, which has no deserializer yet (bevy#26356). They need two things of it: a
+  processor that sees each field of a given type as nested values deserialize, as `FormulaQueue`
+  finds every `Formula` (a type that serde deserializes is never walked, so `InteractionDesc` and
+  `SceneryAnimation` are reflected field by field); and a field the file leaves out taking its
+  container's `Default`. Report both upstream while the deserializer is still being shaped; X98 is
+  the editor's side. *Gate:* `bevy_reflect2` gains a deserializer.

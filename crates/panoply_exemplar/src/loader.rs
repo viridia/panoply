@@ -12,7 +12,7 @@ use serde::{
 use std::{fmt, sync::Arc};
 use thiserror::Error;
 
-use crate::exemplar::ExemplarData;
+use crate::{exemplar::ExemplarData, InstanceKind};
 
 use super::aspect_list::AspectListDeserializer;
 use super::{Exemplar, ExemplarCatalog};
@@ -276,11 +276,10 @@ async fn load_scripted_aspects(
         {
             Ok(loaded) => {
                 for decl in loaded.get().module.aspects() {
-                    if decl.kinds.iter().any(|kind| kind.len() != 4) {
-                        warn!(
-                            "{module}: {} names a kind that is not a four-letter type",
-                            decl.name
-                        );
+                    for kind in &decl.kinds {
+                        if kind.parse::<InstanceKind>().is_err() {
+                            warn!("{module}: {} names an unknown kind, {kind}", decl.name);
+                        }
                     }
                     decls.push(decl.clone());
                 }

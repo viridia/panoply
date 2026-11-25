@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I84.**
+**Next: I87.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -360,3 +360,25 @@ confirmed by running something or only by reading. Numbers are never reused.
   thousands of cells polling, with a spatial memo (`proximity`) under moving actors, so that both
   the polling cost and how far a spatial read's change ripples are numbers before content depends on
   them. Read, not run.
+- **I84** An instance whose only collider is animated cannot be picked in the world: an animated
+  collider is not built until PAN59 makes colliders follow their nodes, and picking and the
+  footprint take only `Solid` and `Marker` colliders (`scenery_colliders.rs`, `footprint`). Placing
+  `SpearTrapProximity` (PAN105) needed the Go To filter's unlabeled instances to select it.
+  Candidate: an instance with no pickable collider is picked by its model's bounds. Seen by the
+  author.
+- **I85** Underground realms have no ceiling, so an actor that physics lifts (a collider rising
+  under it, as faery's spear trap tossed the player) can end up on top of the walls, in the
+  cutaway's black rock. A flat ceiling does not fit tiers joined by ramps. Candidates: ceilings
+  drawn with the floor tool (PAN95), with no mesh, an editor overlay toggled from Show, and a
+  collision group that the actor controller meets and the world pick and cutaways leave out, a
+  ramp's as a `Ramp` collider; or ceilings derived from each floor region's tier level plus a fixed
+  headroom, if dungeon tiers are always further apart than that headroom. That spacing decides
+  between them. Read, not run.
+- **I86** `plans/scroll.py`'s cold scroll is janky for its first second or so: on a clean build
+  after PAN105 (9.9 ms a frame overall), all 60 frames after startup ran 15 to 19 ms with nothing
+  spawned, 14 of the next 60, then almost none. Three pipelines were counted at frames 238 to 240,
+  on the hitch log's `SKIP_FRAMES` boundary, so they were never named. The shape argues against
+  them: on macOS a pipeline is created on the render thread, a single long frame. Not known whether
+  it predates PAN105. Next: `scroll.py` on the commit before PAN105, built clean (notes.md, the two
+  build traps), against the same on PAN105's; and the hitch log naming pipelines from the boundary
+  on. Seen by the author; run.
