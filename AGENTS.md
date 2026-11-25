@@ -30,6 +30,9 @@ reads or diagnoses gets one, and so does a vetted mechanical rewrite (a formatte
 - `xref.py`: every cited id resolves, counters are current, changelog entries keep to one line.
 - `asset_xref.py`: every path a precinct or exemplar names resolves, known breaks listed against
   their ledger entries.
+- `precinct.py`: reads precinct files, in place of a throwaway script: a precinct's sections or one
+  instance (`show`), the instances using an exemplar, label or aspect (`find`), and, after anything
+  re-saves a precinct, what changed against git (`diff`).
 - `show.py`: prints ledger entries by id.
 - `outlines.py`: lists the meshes in `assets/` drawn without an outline, and whether faery outlined
   them (`--none` for those nothing outlines).

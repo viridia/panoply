@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN122** `scripts/precinct.py` shows a precinct, finds instances, and diffs one against git.
 - **PAN105** An animation's `when` is a formula that follows the world; a test trap's spears drop.
 - **PAN119** Exemplar files and SAGA's `for` name an instance's kind in full: `"kind": "Fixture"`.
 - **PAN114** In selection mode, the tile grid marks the selected precinct, named above the list.

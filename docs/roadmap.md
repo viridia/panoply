@@ -17,21 +17,6 @@ first, but the order is preference: what a chunk cannot start without is its `*N
 title, naming each open chunk, deferral or issue it waits for directly (what those wait for is
 theirs to name). `xref.py` checks that each is still open.
 
-## Tools
-
-- **PAN122 Precinct reader.** `scripts/precinct.py`, read-only and allowlisted, on `asset_xref.py`'s
-  msgpack reader, for what agents now do with throwaway scripts: checking that a re-saved precinct
-  lost nothing, and finding which instances override an aspect.
-  - `show <realm>/<precinct>`: each section's count; `--section scenery` prints one section, an item
-    a line. `--label <name>` (resolved through `instances.json`) or `--key <uuid>` prints one
-    instance as JSON, as a catalog entry reads: exemplar, position, facing, aspect overrides; keys
-    as UUIDs, floats at f32 precision.
-  - `find`: instances by `--exemplar` (a substring), `--label` or `--aspect` (those overriding it),
-    in one precinct or every one; a line each, or with `--json`, each instance as `show` prints it.
-  - `diff <realm>/<precinct> [REV]`: against git `HEAD` by default; per section, the counts and the
-    items added, removed or changed, matched by key where items have one, each printed as JSON
-    before and after.
-
 ## Terrain
 
 PAN38, Terrain mode's panel, in lettered parts: its layout, then its tools. PAN39 and PAN40 fill the

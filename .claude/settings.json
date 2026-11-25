@@ -24,6 +24,7 @@
       "Bash(/Users/talin/Projects/games/panoply/scripts/show.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/asset_xref.py)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/asset_xref.py *)",
+      "Bash(/Users/talin/Projects/games/panoply/scripts/precinct.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/devfmt.py *)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py)",
       "Bash(/Users/talin/Projects/games/panoply/scripts/outlines.py *)",
