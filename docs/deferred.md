@@ -599,13 +599,13 @@ dropped, not deferred. Numbers are never reused.
   narrowed by a margin, rather than be smoothed after. *Gate:* PAN16i, or corners that look stiff in
   play.
 - **X130** Cheaper portal views: about 1.6 ms a frame each on an M1 Pro ([notes.md](notes.md), a
-  portal's cost), beyond what fewer entities (PAN112) saves, and 8.1 ms for one into a realm as
-  dense as the playground ([notes.md](notes.md), a portal into a dense realm), the gate's frame
-  budget. Shadows stay: a portal sits in a frame (a cave mouth, an arch) whose mesh is repeated at
-  the far end, and the illusion holds only if both ends' shadows match. Candidates: no redraw while
-  neither the camera nor the far end moves, which freezes water and animation seen through it; fewer
-  per-view buffer uploads and less staging-buffer churn, most of the view's cost. *Gate:* PAN112
-  lands, then two portals on screen at once, or one that costs a frame budget.
+  portal's cost), beyond what fewer entities (PAN112) saves; four on screen in the playground's lair
+  cost 7.8 ms, a frame budget ([notes.md](notes.md), four portals on screen). Shadows stay: a portal
+  sits in a frame (a cave mouth, an arch) whose mesh is repeated at the far end, and the illusion
+  holds only if both ends' shadows match. Candidates: no redraw while neither the camera nor the far
+  end moves, which freezes water and animation seen through it; fewer per-view buffer uploads and
+  less staging-buffer churn, most of the view's cost. *Gate:* PAN112 lands, then two portals on
+  screen at once, or one that costs a frame budget.
 - **X131** Global actors, as [instances.md](instances.md)'s Global actors section has them:
   `ActorRoster`, an actor becoming global as a travelling goal starts and released by `Release`, a
   kernel while far from the player, and going home with its state, which the home takes as it next
