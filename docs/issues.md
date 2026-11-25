@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I87.**
+**Next: I89.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -374,11 +374,12 @@ confirmed by running something or only by reading. Numbers are never reused.
   ramp's as a `Ramp` collider; or ceilings derived from each floor region's tier level plus a fixed
   headroom, if dungeon tiers are always further apart than that headroom. That spacing decides
   between them. Read, not run.
-- **I86** `plans/scroll.py`'s cold scroll is janky for its first second or so: on a clean build
-  after PAN105 (9.9 ms a frame overall), all 60 frames after startup ran 15 to 19 ms with nothing
-  spawned, 14 of the next 60, then almost none. Three pipelines were counted at frames 238 to 240,
-  on the hitch log's `SKIP_FRAMES` boundary, so they were never named. The shape argues against
-  them: on macOS a pipeline is created on the render thread, a single long frame. Not known whether
-  it predates PAN105. Next: `scroll.py` on the commit before PAN105, built clean (notes.md, the two
-  build traps), against the same on PAN105's; and the hitch log naming pipelines from the boundary
-  on. Seen by the author; run.
+- **I87** `plans/scroll.py`'s check that the walk creates no pipelines misses most of the walk: the
+  walk starts near frame 70, and the hitch log names pipelines only after `SKIP_FRAMES` (240). With
+  the log naming them from frame 30, the walk created 10 or 11, among them `SKINNED` variants of
+  `opaque_mesh_pipeline` and `pbr_opaque_mesh_pipeline`, at frames 70, 133 and 229 to 240, each a
+  single frame of 50 to 130 ms. So startup's warm-up does not cover skinned meshes. Candidates:
+  count pipelines from the walk's start, not from a frame number; warm up the skinned variants. Run.
+- **I88** `plans/ablate.py`'s `camera inactive` experiment ended the app (exit code 0, nothing in
+  its log) at a spot in the playground's lair, (23, 23). Not tried again at the plan's own
+  locations. Run once.

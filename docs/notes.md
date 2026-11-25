@@ -190,6 +190,20 @@ calls for work becomes an issue in [issues.md](issues.md).
   in the dev profile (`Cargo.toml`): 8.4 ms a frame without the portal, 10.0 with it. Of the 1.6 ms
   left, command recording is about 0.7 ms and visibility 0.3; the rest is spread over Bevy's
   per-view systems and executor, none large. The spot has about 37,500 entities.
+- A portal into a dense realm (2026-11-24): in the playground's lair at (23, 23), facing +x and +z,
+  camera distance 20, vsync off, M1 Pro, dev build: 16.5 ms a frame; 8.6 ms with the portal views
+  ended, 12.2 ms with the portal camera running but drawing nothing. The playground's test portals
+  lead back into the playground, about 28,000 entities, so the view draws as much as the main one.
+  All of it is in the render world's schedule: preparing about 9 ms and the `Render` set about 8,
+  against 5 and 2.5 elsewhere. A quarter of the pixels, fewer cascades, the environment map off or
+  the actors hidden each saved 0.3 ms or less. `plans/scroll.py`'s walk passes this view at about
+  frames 240 to 300, and a second walk over the same path repeats it frame for frame. A samply
+  profile there (recipe above; 18.0 ms a frame with the view, 9.3 without) puts the view's extra CPU
+  at 3.4 ms on the render thread and 5.8 ms on the compute pool. Per-entity visibility is about 0.7
+  ms of it (camera 0.36, the sun's shadow casters 0.31). Most is per-view GPU data: submitting
+  command buffers 3.2 ms, 2.0 of it wgpu's cleanup after submission, mostly Metal buffers freed;
+  `queue.write_buffer` 2.0 ms, each write a new staging buffer; the portal's shadow cascade's
+  instance buffers 1.4 ms; command encoding about 2 ms more.
 - `Camera` cannot be read over BRP (locked Bevy a35f1b5): `Viewport`'s `depth`, a `Range<f32>`, has
   no `ReflectSerialize`, so `world.get_components` fails for the whole component. Writing one field
   (`world.mutate_components`, as `set` with `at="is_active"`) works. Plans find cameras by `Name`.
