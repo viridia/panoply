@@ -91,11 +91,12 @@ in the property editor as an aspect, beside the inherited ones.
   is offered not while locked, reading `LockState`. The container's entries read a missing
   `LockState` as unlocked through SAGA's `Option` (`?.`, `??`; [saga.md](saga.md), Values), and D71
   checks such a read as optional, rather than composing entries from the aspects an instance has.
-- A scripted aspect whose fields span both stages, as a sign's frame and text or a relay's tuning
-  and roles, declares its instance's fields in an `instance` block, which is an aspect of its own
-  (PAN104). A native aspect names its instance part the same way, as `Portal` names `PortalTarget`,
-  and the editor shows both kinds of pair as one group with two override states (D107); a part with
-  a field that has no default is one the instance must supply, checked as it spawns.
+- A scripted aspect whose fields span both stages, as a sign's frame and text or a trap's tuning and
+  input, is two aspects, the first requiring the second (`#[require(SignalInput)]`, D121), as
+  `Portal`'s instance part is `PortalTarget`. The requirement is checked as an instance spawns,
+  against its resolved aspects, so an instance and a derived exemplar set the second alike, and a
+  field without a default is one they must supply. The editor shows an aspect with those it requires
+  (D107).
 
 ## Loading Exemplars
 
@@ -121,7 +122,7 @@ runtime instance data back into a form which is serializable.
 
 ## Composing behavior
 
-Open for goal trees; dialogue and remarks are settled (D86), and so is presence (D106). It decides
+Open for goal trees; dialogue and remarks are settled (D86), and so is presence (D123). It decides
 how X17's behavior reaches an actor. An instance may add aspects its exemplar lacks (D104), so
 whatever a piece of behavior becomes, an instance can take one.
 
@@ -384,9 +385,9 @@ Either way:
   runtime runs its trees, so scripts still hold no memory but the world's.
 - Behavior then needs no BSN (X1), and no formulas embedded in assets.
 - A field declared in SAGA is a type declared in data, so setting one per actor goes through the
-  layer X64 needs and an `instance` block (PAN104b). Values that vary by placement are mostly
-  references: a patrol path is a fixture, edited in the world, which a guard package's field names
-  (naming across precincts is PAN79's).
+  layer X64 needs and an aspect of the instance's own (PAN104b, D121). Values that vary by placement
+  are mostly references: a patrol path is a fixture, edited in the world, which a guard package's
+  field names (naming across precincts is PAN79's).
 - Each declaration fails alone, as a formula in an asset does: a `tree` that fails to compile
   disables the aspects that use it, not its module.
 - Against: SAGA grows from formulas to declarations, with tooling to match, though scripted aspects
@@ -419,7 +420,7 @@ The first quest, *Up in Arms*:
    reactive:* the stage advances when the player holds the ledger.
 6. **Paid, and gone.** *Formula, on demand:* the sergeant's option is offered while the player holds
    the letter. *Formula, effect:* it takes the letter, pays, and advances the stage. *Asset:* his
-   presence, ending once the next stage is accepted (D106); he stays where he is until then, and the
+   presence, ending once the next stage is accepted (D123); he stays where he is until then, and the
    latch keeps him until he is off the screen, so he never leaves in view and needs no goal to walk
    out. Actor-side, his instance holds it, and each later appearance is another instance with its
    own (R85); quest-side, each chapter's quest binds its own sergeant.

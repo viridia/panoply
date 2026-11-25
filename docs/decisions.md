@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D121.**
+**Next: D124.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -856,10 +856,10 @@ never reused.
   `Lock` ([Exemplars.md](Exemplars.md), Config and state). No field inherits alone; X99 keeps its
   gate. In faery no field was set at both stages, and instances changed an aspect's config only
   twice, by mistake ([faery.md](faery.md), Aspects), so the split follows lines its aspects already
-  drew. A scripted aspect splits the same way: its `instance` block is an aspect of its own,
-  overridden apart (PAN104). Given up: an instance that wants a field of its exemplar's stage
-  restates that whole aspect. Reversing it means `Inherit<T>` fields and a property editor that
-  shows each as inherited or set. (PAN99)
+  drew. A scripted aspect splits the same way, into aspects of its own that `#[require]` joins
+  (D121). Given up: an instance that wants a field of its exemplar's stage restates that whole
+  aspect. Reversing it means `Inherit<T>` fields and a property editor that shows each as inherited
+  or set. (PAN99)
 - **D104** An instance may add aspects its exemplar chain lacks, but never remove an inherited one,
   as in faery, which added them 23 times, for per-character behavior and for logic doors
   ([faery.md](faery.md), Aspects). So `Lock` is a mixin any chest takes, rather than a chest and a
@@ -878,13 +878,13 @@ never reused.
   Aspects). A door's open and locked state stays native, since routing reads it (PAN16j), while a
   key check or a trap's timing can be a script (PAN106). Reversing it means native systems reading
   scripted fields by name. (PAN99)
-- **D106** Whether an actor is present (R10) is a native component, since the actor controller, the
-  editor and paused goals read it (D105), and the conditions it combines come from aspects: a
-  behavior package's `present` hook, a reactive formula in PAN104's set, and a native
-  `Presence { when }` aspect, which an instance placed for one quest stage adds (R85, D104). The
-  actor is present when it has no condition or any condition holds, as in faery, whose three uses
-  phase *Up in Arms*' Sergeant Stone and Crimson Watch (`heroncreek.tsx`); the latch that keeps an
-  actor on screen until it leaves, and the editor showing every actor, stay native. faery's other
+- **D106** Superseded by D123. Whether an actor is present (R10) is a native component, since the
+  actor controller, the editor and paused goals read it (D105), and the conditions it combines come
+  from aspects: a behavior package's `present` hook, a reactive formula in PAN104's set, and a
+  native `Presence { when }` aspect, which an instance placed for one quest stage adds (R85, D104).
+  The actor is present when it has no condition or any condition holds, as in faery, whose three
+  uses phase *Up in Arms*' Sergeant Stone and Crimson Watch (`heroncreek.tsx`); the latch that keeps
+  an actor on screen until it leaves, and the editor showing every actor, stay native. faery's other
   actor hook, `idle`, has no successor: its one use, `combatant`'s stance while in combat, is an
   animation state (D48) that comes with combat, falling back to `Stand`; a character's own idle clip
   is `ClipNames`', and idle activities are `Pose` goals. Reversing it means presence decided by one
@@ -910,10 +910,9 @@ never reused.
   across kinds for every entity every frame stays dear, and nothing needs it. Native and scripted
   aspects look and behave the same in the editor, as far as that can be made true: one aspect list,
   one add menu, the same inherited and overridden display, rows edited through reflection, and an
-  instance part grouped with its aspect, whether it is a scripted `instance` block or a native pair
-  such as `Portal` and `PortalTarget`. So an author never needs to know which kind an aspect is.
-  Given up: a package as an asset type of its own. Reversing it means behavior kept out of the
-  aspect list. (PAN99)
+  instance part grouped with its aspect, the aspects it requires (D121), scripted or native. So an
+  author never needs to know which kind an aspect is. Given up: a package as an asset type of its
+  own. Reversing it means behavior kept out of the aspect list. (PAN99)
 - **D108** A missing piece costs only itself. A quest role whose actor is missing stays unbound and
   is logged, as a missing fixture is, and the quest goes on (D47). A scripted aspect whose module is
   missing or fails to compile is not attached, and its instance's data for it is kept as written, so
@@ -1036,3 +1035,49 @@ never reused.
   interactions. Its fields are written `name: value`, with no shorthand ([saga.md](saga.md),
   Aspects). (PAN104c) Reversing it means hosts registering whole declaration kinds, or prompts that
   react to formula captions.
+- **D121** A scripted aspect has no `instance` block: fields set at different stages are different
+  aspects, scripted as native ones are (D103), and an aspect that needs another names it,
+  `#[require(SignalInput)]`. The requirement is checked as an instance spawns, against the aspects
+  it resolves to, its own and then its chain's, and never against an exemplar, so a base exemplar
+  holds no empty default for it, and an instance and a derived exemplar override the required aspect
+  alike, whole. A required aspect the resolved aspects lack attaches at its defaults; if a field of
+  it has no default, it cannot, and the aspect requiring it is not attached, logged with the
+  instance and the field (D108). So a field without a default is required, as QML's
+  `required property` is, rather than taking its type's default. The editor shows an aspect with the
+  aspects it requires (D107). Given up: an instance's fields named bare in its aspect's interactions
+  and read through that aspect's accessor; they are read through the required aspect's. Reversing it
+  means instance overrides that differ from a derived exemplar's. (PAN104b)
+- **D122** Mechanisms are wired by signal bindings, pulled by the sink: a binding names an instance,
+  one of its aspects and a field of it, is held in an aspect of the sink, and is never known to the
+  source. Only a field marked as an output can be bound, `#[signal]` on a scripted field and
+  `@Signal` on a native one, so the picker offers outputs alone, usually leaving one aspect and one
+  field and so choosing them for the author, and renaming an output visibly breaks what binds it.
+  Each source's output is its own field (a lever's `on`, a plate's `SensorState.active`), so there
+  is still no shared `active` such as faery's `controlledOpenable` read. Loaded, a binding becomes
+  the read a formula would make, so the reaction pass tracks it and D71 checks it: data for the
+  author, a formula's read for the engine. One whose instance, aspect or field is gone reads `false`
+  and is logged (D108). A mechanism taking an input requires a general input aspect, one source
+  (`SignalInput`) or several combined, any or all (`SignalInputs`). The editor draws a sink's wires
+  from its bindings and a source's from a reverse index it builds, of the loaded precincts as they
+  load and are edited, and across the game in the instance index, which gains a line per binding
+  that `asset_xref.py` checks. Relays are only gates, logic over several signals giving a new one
+  (not, and, or, a latch, a timer): placed instances whose inputs are bindings and whose output is a
+  signal. PAN79 proposed relays holding all wiring because faery's wiring, stored on the parts it
+  joined, left no list of what was wired; the reverse index is that list. Signals are booleans until
+  a counter or a level needs more, when the picker filters outputs by the input's type. Reversing it
+  means wiring held on relays, or formulas typed as wiring. (PAN79)
+- **D123** Whether an actor is present (R10) and what it plays while standing each come from one
+  native aspect embedding a formula, as `SceneryAnimations` does: `Presence { when }`, a `bool`, and
+  `Idle { clip }`, a clip name from the actor's `ClipNames`. Keyed by type, an entity holds at most
+  one of each, so nothing combines conditions or picks between clips, which faery's `present` and
+  `idle` hooks on scripted aspects never specified; an instance placed for one quest stage replaces
+  its exemplar's `Presence` whole (D103). Behavior packages have no `present` hook: a package that
+  has a say exposes a field, and the formula reads it. A formula embedded in an asset imports no
+  module (D117), so logic longer than a line goes in a scripted aspect's `derived` field, read
+  through its accessor (`self.wounds.staggering`). The actor is present without a `Presence`; the
+  latch that keeps it on screen until it leaves, and the editor showing every actor, stay native.
+  Without an `Idle`, or with a clip the model lacks (warned of once), standing falls back to D48's
+  chain, and a `Pose` goal plays over either; faery's combatant stance is an `Idle` reading combat.
+  How a quest reaches an actor's presence is X123's; if quest-side, the quest supplies the bound
+  actor's `Presence`, overriding its own. Reversing it means conditions combined from several
+  aspects, or an idle hook choosing clips. (PAN125)

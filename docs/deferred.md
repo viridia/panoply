@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X142.**
+**Next: X143.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -101,15 +101,15 @@ dropped, not deferred. Numbers are never reused.
   ECS, their trees declared in SAGA. Goals are not aspects, since an actor can hold several goals of
   one type with different parameters. Behavior packages own them, and packages are most of what a
   mod holds ([modding.md](modding.md)).
-  - **Behavior packages.** A package is a scripted aspect (D107) declaring goal trees, with a
-    presence condition (D106). Whether a quest's behavior reaches an actor through a package on it
-    or a role in the quest is X123. Dialogue and remark sets are listed apart, by the `Dialogues`
-    aspect and its remarks counterpart (D86). Each actor has one conversation and one remark goal,
-    drawing on the union of those sets in order, farthest ancestor first. faery's rules carry over
-    (`engine/src/dialogue/DialogueController.ts`): the greeting is the first intro whose conditions
-    hold; each state's options are pooled by state name across sets, sorted stably by `order`, and
-    the first option with a given `id` hides the rest. Remarks choose among the sets whose
-    conditions hold (R53).
+  - **Behavior packages.** A package is a scripted aspect (D107) declaring goal trees, with a say in
+    presence through a field `Presence` reads (D123). Whether a quest's behavior reaches an actor
+    through a package on it or a role in the quest is X123. Dialogue and remark sets are listed
+    apart, by the `Dialogues` aspect and its remarks counterpart (D86). Each actor has one
+    conversation and one remark goal, drawing on the union of those sets in order, farthest ancestor
+    first. faery's rules carry over (`engine/src/dialogue/DialogueController.ts`): the greeting is
+    the first intro whose conditions hold; each state's options are pooled by state name across
+    sets, sorted stably by `order`, and the first option with a given `id` hides the rest. Remarks
+    choose among the sets whose conditions hold (R53).
   - **Instanced trees.** Each actor spawns its own copy of each goal tree its packages hold: an
     entity per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside
     transform propagation) and rooted at the actor by `GoalOf`.
@@ -561,11 +561,17 @@ dropped, not deferred. Numbers are never reused.
   binding for each thing, by key, which the thing takes as it spawns ([instances.md](instances.md),
   Instances take their bindings from quests): a quest stays in one place, and two mods can each give
   one character lines or a quest, both surviving, which D86 gave up, but inspecting a thing does not
-  show what quests do to it. With keys, neither side needs global actors or names a precinct. Or
-  split by kind ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests,
-  Leaning). Settled by reading one quest written each way, as example code side by side. *Gate:* the
-  first quest that gives an actor goals or lines, or changes scenery: PAN120b, whose quest gives the
-  guardsman lines.
+  show what quests do to it. Exported, the quest's `derived` booleans are D122's signals
+  (`#[signal]`, `sergeant_present`), and each thing binds to one, picked rather than typed: the
+  quest's stages stay private to it, the world reads a few named facts with the machinery mechanisms
+  use, and the reverse index shows what binds to each, so inspecting a thing shows what quests do to
+  it. A binding's source is then an instance or a global, a quest or later the game clock. With
+  keys, no way needs global actors or names a precinct. Or split by kind
+  ([Exemplars.md](Exemplars.md), Quest-side composition, Worked example: three quests, Leaning).
+  Settled by reading one quest written each of the three ways, as example code side by side. *Gate:*
+  the first quest that gives an actor goals or lines, or changes scenery: PAN120b, whose quest gives
+  the guardsman lines. For presence the author leans quest-side: the quest supplies the bound
+  actor's `Presence` (D123).
 - **X124** Area costs by haste, faery's `hurry`: an actor rushing an enemy cuts across a lawn rather
   than keeping to the footpaths, but not through a bog. Whether some enemies are stupid enough to be
   lured across one is a tactic to weigh. Costs are per query (`NavCosts`), so it is a table the
@@ -637,7 +643,7 @@ dropped, not deferred. Numbers are never reused.
 - **X138** Scripted aspects on instances, in precincts and actor instances: their loaders pass no
   scripted aspects to `AspectListDeserializer`, so one there is skipped, with a warning. A precinct
   would load the modules its scripted aspects name, as a catalog does. *Gate:* the first scripted
-  aspect set on an instance, as PAN104b's `instance` block is.
+  aspect set on an instance, as PAN79a's `SignalInput` is.
 - **X139** The accessor index, as D117 decides it and [saga.md](saga.md)'s Aspects has it, so that a
   formula reads a scripted aspect its catalog file does not name, as a derived exemplar in another
   catalog, a quest or a dialogue would. *Gate:* the first such formula.
@@ -661,3 +667,6 @@ dropped, not deferred. Numbers are never reused.
   `SceneryAnimation` are reflected field by field); and a field the file leaves out taking its
   container's `Default`. Report both upstream while the deserializer is still being shaped; X98 is
   the editor's side. *Gate:* `bevy_reflect2` gains a deserializer.
+- **X142** A wounded character's walk: `Idle` (D123) covers standing only, and a limp or stagger
+  while moving is a gait, chosen by D48's motion states, that a formula would have to select.
+  *Gate:* PAN111, once actors have health.
