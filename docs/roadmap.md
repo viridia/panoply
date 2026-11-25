@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN125.**
+**Next: PAN128.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -189,6 +189,42 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   `#[require]` does for components, in the attribute grammar of `#[accessor(...)]`. Its first
   customer is PAN106's `Container`, which makes no sense without contents.
 
+## Game UI
+
+The game's dialogs, on the art in `assets/modals/` and `assets/widgets/` (SVG sources, where there
+are any, in `artwork/`). A dialog's look is data, not engine code: each style is a `bsn!` scene
+named by a string that content gives (a container type's `chest`, a book's frame `codex`), holding
+its background, its slicing and where its parts sit, so another style is another scene and the
+engine never names an image. faery hard-coded its styles in the UI (`frameStyles` in
+`BookReader.tsx`). The scenes become BSN asset files with X142. Only the system menu's frame
+(`column-dialog.png`, which the load and save dialogs share) and the button border are sliced; the
+other dialogs are a fixed size. faery's coordinates for placing parts were measured on its art: the
+containers' were SVGs (now `artwork/modals/`), so they are measured again on the PNGs; the books'
+were PNGs of the same size as these, so theirs likely carry over.
+
+- **PAN125 System menu and confirmation.** The first dialog styles and the scenes that name them:
+  the system menu (`column-dialog.png`, nine-sliced), opened from play, and the generic confirmation
+  (`confirm-modal.png`), which Quit asks first. faery's menu (`SystemMenu.tsx`) held QuickSave,
+  Save, Load, Options and Quit; Save and Load wait for PAN82 and Options for the first setting a
+  player changes, so here it holds Resume and Quit. Its buttons are plain until PAN126.
+- **PAN126 Dialog button.** *Needs:* PAN125. faery's dialog button (`DialogControls.css.ts` in
+  `../faery/packages/game-ui`): `button-border.png` nine-sliced over a fill, two inset borders with
+  radial gradients (`BorderGradient`), and a focus ring, in five colour variants. faery blurred the
+  inset borders (3 px and 0.3 px, a CSS `filter`), which Bevy's UI lacks; a `BoxShadow` may stand
+  in. Its hover, focus and disabled looks are a style sheet, so it meets X103's gate and builds
+  [widget-styles.md](widget-styles.md)'s first slice. Proved on PAN125's menu.
+- **PAN127 Dialog transitions.** *Needs:* PAN125. A dialog fades and scales as it opens and closes.
+  Fading each node looks wrong where parts overlap, so the dialog is drawn to an offscreen image and
+  the image fades and scales. Bevy does this for a whole UI root without changes: the root's
+  `UiTargetCamera` names a camera whose target is an image, shown in the main UI by an `ImageNode`
+  whose `UiTransform` and colour animate. Picking then lands on the `ImageNode`, and
+  `examples/ui/render_ui_to_texture.rs` maps the pointer into the image by hand. Proposed before
+  code, settling: whether the dialog is offscreen only while it animates, with no input then, and
+  drawn directly at rest, which needs the two to match pixel for pixel, or always, with the pointer
+  forwarded; and the image's size and scale factor. A generic component that sends any node's
+  children offscreen would need Bevy to redirect a subtree below a root; what that takes is noted
+  for the author, as a proof of concept at most.
+
 ## Interaction
 
 - **PAN59 Door.** A `Door` aspect on the cottage door (`CottageWallDoorway`), played by its
@@ -273,24 +309,30 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   down, so the follower on the plate can rejoin the party; the trap is then open while the plate is
   pressed or the switch is on, logic across three entities. Then PAN6's door opened by a button
   ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN71, PAN123. What a container holds. An open chest shows its
-  contents on an inventory screen whose background its container type chooses, and items move
-  between it and the player; a locked one opens for the key its instance names, and a corpse, once
-  combat kills (PAN6), is looted the same way ([goals.md](goals.md), step 7). It or PAN120b,
-  whichever comes first, moves the first items, and so brings in X42's items. Built as D105 divides
-  it: the scripted `Container` (`scripts/container.saga`) already holds whether it is open; its Open
-  now opens the screen rather than raising the lid, and it requires (PAN123) a native `Inventory`,
-  the item list, which scripts reach through host functions (`has_item(actor, key)`). `Lock` becomes
-  scripted too. The screen is native, opened by a host command naming its style. Closing it is an
-  event to the entity that opened it, which a hook handles (`on screen_closed`), so the screen never
-  writes a script's field, as faery's wrote the container's `open` ([faery.md](faery.md), Aspects);
-  a corpse handles it with no lid. It opens once `SceneryAnimations` reports the lid's clip done,
-  not after faery's fixed `openDelay`, which needs that event.
-- **PAN78 Signs and books.** *Needs:* PAN104. Among the last chunks of all: things to read. A sign
-  is a scenery aspect whose interaction shows its text; a document is an inventory item that links
-  to text content and a page style (faery's book aspect opened its content in a frame, `codex` by
-  default). The text is a book: a catalog entry (D90), not an exemplar ([faery.md](faery.md),
-  Catalog entries).
+- **PAN106 Containers.** *Needs:* PAN71, PAN123, PAN125. What a container holds. An open chest shows
+  its contents on an inventory screen whose style its container type names (`chest`, `stone` and
+  `corpse` in `assets/modals/containers/`), with the container's name and its item list placed where
+  the art leaves room for them, and items move between it and the player; a locked one opens for the
+  key its instance names, and a corpse, once combat kills (PAN6), is looted the same way
+  ([goals.md](goals.md), step 7). It or PAN120b, whichever comes first, moves the first items, and
+  so brings in X42's items. Built as D105 divides it: the scripted `Container`
+  (`scripts/container.saga`) already holds whether it is open; its Open now opens the screen rather
+  than raising the lid, and it requires (PAN123) a native `Inventory`, the item list, which scripts
+  reach through host functions (`has_item(actor, key)`). `Lock` becomes scripted too. The screen is
+  native, opened by a host command naming its style. Closing it is an event to the entity that
+  opened it, which a hook handles (`on screen_closed`), so the screen never writes a script's field,
+  as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with
+  no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after faery's fixed
+  `openDelay`, which needs that event.
+- **PAN78 Signs and books.** *Needs:* PAN104, PAN125. Among the last chunks of all: things to read.
+  A sign is a scenery aspect whose interaction shows its text; a document is an inventory item that
+  links to text content and a page style (faery's book aspect opened its content in a frame, `codex`
+  by default). The text is a book: a catalog entry (D90), not an exemplar ([faery.md](faery.md),
+  Catalog entries). The styles are faery's five frames (`assets/modals/books/`; `frameStyles` in
+  `BookReader.tsx`): each sets where the text sits, its column width and count (the codex shows two
+  pages), whether pages turn sideways or scroll, the arrows' colour, and its open, page and close
+  sounds (faery's `book-page-turn.ogg` and `scroll-page-turn.ogg`, in `los-assets/src/sfx/`). Pages
+  turn by arrow widgets and by keyboard shortcuts.
 
 ## Editor
 
@@ -534,7 +576,8 @@ D111.
   changes per precinct, written on eviction; a save is only a root index of chunk versions. Design
   and what it asks of the engine in [save-games.md](save-games.md). X14's picked cells would live in
   the precinct chunk. The camera angle is saved too; a load follows the player with
-  `Viewpoint::follow_snapped`, which keeps it. The first state to save: a chest left open.
+  `Viewpoint::follow_snapped`, which keeps it. The first state to save: a chest left open. Its save
+  and load dialogs are styles on PAN125's sliced column frame, opened from the system menu.
 
 ## A Free Lunch
 

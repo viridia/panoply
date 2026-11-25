@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X142.**
+**Next: X143.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -661,3 +661,6 @@ dropped, not deferred. Numbers are never reused.
   `SceneryAnimation` are reflected field by field); and a field the file leaves out taking its
   container's `Default`. Report both upstream while the deserializer is still being shaped; X98 is
   the editor's side. *Gate:* `bevy_reflect2` gains a deserializer.
+- **X142** The game UI's dialog styles and widget style sheets as BSN asset files, out of the `bsn!`
+  scenes in Rust that name them by string (roadmap, Game UI), so a mod adds a dialog style without
+  code. X58's font goes with them. *Gate:* BSN assets (X1).
