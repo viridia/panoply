@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN129.**
+**Next: PAN130.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -218,6 +218,22 @@ were PNGs of the same size as these, so theirs likely carry over.
   forwarded; and the image's size and scale factor. A generic component that sends any node's
   children offscreen would need Bevy to redirect a subtree below a root; what that takes is noted
   for the author, as a proof of concept at most.
+
+## Controls
+
+- **PAN129 Controller support.** Play from a gamepad, beside the keyboard, tested on the author's
+  Bluetooth-paired pad on Aerdra (Linux, through Bevy's gilrs backend). Pad bindings join the
+  keyboard's in `PlayerControl` (`panoply_actors/src/lib.rs`): the left stick walks and turns,
+  `Stick` with a radial dead zone in place of `AxisButtons`, a shoulder or stick press is Fast, and
+  `South` interacts, or bevy_action_map's accept role if its chunk 191 has landed, so a Nintendo pad
+  interacts on its A. The free camera (`ViewpointControl`) and the editor stay keyboard-only. The
+  interaction prompt (`update_interaction_key` in `actor_probe.rs`) asks with `PromptScope::ANY` and
+  shows the first binding, so it always says E: here it shows the control of the device family used
+  last, in the pad's own words ("A", "Cross"), switching as the player does. Whether the paired pad
+  reports a brand the crate recognizes over Bluetooth is checked and, if not, noted. The prompt's
+  look stays X75's. Proved in `plans/actors.py` with the driver's virtual gamepad: the stick walks
+  the player, the prompt changes to the pad's label once the pad is used, and the pad's button opens
+  the chest.
 
 ## Interaction
 
