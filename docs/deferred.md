@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X145.**
+**Next: X146.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -678,3 +678,6 @@ dropped, not deferred. Numbers are never reused.
   and converted back at the boundary, which keeps the stack free of references; a variant with
   fields is the harder half, laid out as its largest variant or left unreadable. *Gate:* a component
   or aspect a formula reads that needs a state with more than two values.
+- **X145** The game UI's dialog styles and widget style sheets as BSN asset files, out of the `bsn!`
+  scenes in Rust that name them by string (roadmap, Game UI), so a mod adds a dialog style without
+  code. X58's font goes with them. *Gate:* BSN assets (X1).
