@@ -206,12 +206,16 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   faery's `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
-  - A native `SensorState`, written by physics from the `PressurePlate`'s sensor collider, sensing
-    actors only, as faery's `canSense` did.
+  - A native sensor on the `PressurePlate`'s sensor collider, whose config names the collision
+    layers it senses (actors only, as faery's `canSense` sensed), and from whose contacts physics
+    writes `SensorState { active }`. Physics reports and scripts read: nothing calls a script from
+    the physics step, so faery's per-pair `canSense` has no counterpart.
   - `SpearTrapControlled` gets a scripted aspect whose `instance` block holds `plate`, a role, and
     its `SceneryAnimations` open the spears while `self.spear_trap.plate?.sensor.active ?? false`
-    (D116); which way the `SpearsAction` clip plays is read in the chunk. Its collider follows the
-    animated node, as PAN59's door leaf does.
+    (D116). The formula is the wiring: a trap a button drives names the button's state, with no
+    shared `active` such as faery's `controlledOpenable` read from any source. Which way the
+    `SpearsAction` clip plays is read in the chunk. Its collider follows the animated node, as
+    PAN59's door leaf does.
   - The first collider that rises under an actor: as the spears start up, actors whose footprint
     overlaps the trap are woken and pushed sideways out of it (`ActorMotion::push`, as `bump_actors`
     shoves), before the collider rises, so that none is lifted onto the wall (I85).
@@ -227,41 +231,47 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
   ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
   scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
-  What a sensor senses is native, by collision group, as faery's `canSense` sensed actors only, with
-  a formula filter only once a puzzle needs one (a heavy object on a plate). Beside them: triggers
-  (a circle or rectangle the player enters), encounter zones, waymarks for scripted NPC events, and
-  patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open). One element
-  signals another through cells, a formula over the other's state, wherever a formula can say it,
-  and through an event only where none can: engines built on events, such as the Creation Kit,
-  tangle when several signals must be correlated. Which parts are native aspects and which are SAGA
-  is to decide. Proposed: logic that spans several entities lives on a relay, an exemplar placed in
-  the precinct, not as wiring stored on its participants, which in faery left no list of what was
-  wired and no owner when several took part. A relay holds two aspects. A native visualization
-  aspect gives its gizmo in the editor (icon, shape, color). A logic aspect is a scripted aspect
-  (PAN104). A field of the instance-reference type is a role: the editor draws a wire to its target,
-  and fills it two ways, never by typing: by picking in the world, or from a popup listing instances
-  to browse, with a filter, as PAN35's chooser does. The popup lists the labelled instances in the
-  index, across the game, and the loaded precincts' unlabelled keyed instances by exemplar and
-  place. Logic on one entity is a scripted aspect on that entity. A placed relay's roles are its
-  logic aspect's `instance` block, set on the instance, while its tuning stays inherited from the
-  exemplar (D103). A bound instance gets a key (D87). The editor lists a precinct's relays, draws a
-  selected one's wires, and lists those that name a selected instance; selecting, moving and copying
-  apply to relays, and copying a trap with its relay binds the copy's roles to the copied instances.
-  One wiring gesture places a stock relay for a button opening a door, so the simplest case stays
-  one step. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`,
-  and Unreal's placed Blueprint actors with picked references. A precinct is named by its realm and
-  coordinates, and is like a module: its walls and fixtures that others can refer to are its
-  exports, by key ([instances.md](instances.md), Ids). A reference into a precinct that is not
-  loaded suspends the formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown
-  currency, and likely to differ from what Panoply builds: in `design/Scripting.md`, a reference
-  syntax, an `Instance` observable that is null while its target is not loaded, a `StructureRefNode`
-  watching structures load and unload, and global variables or lazily loaded scope objects for
-  long-range wiring; global references by realm and coordinates in `design/scripting/predicates.md`;
-  animated instances (moving parts) kept apart from static instancing in
-  `engine/src/models/InstancedModels.ts`. The first relay is PAN79a's trap's second part, which
-  faery never built: once past the spears, the player throws a switch that locks them down, so the
-  follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
-  the switch is on, logic across three entities. Then PAN6's door opened by a button
+  Which collision layers a sensor senses is native config, since physics reads it; a finer filter is
+  a formula over the sensor's occupants (a heavy enough object on a plate), once a puzzle needs one
+  (X140). Beside them: triggers (a circle or rectangle the player enters), encounter zones, waymarks
+  for scripted NPC events, and patrol paths, fixtures that goals name
+  ([goal-format.md](goal-format.md), Open). One element signals another through cells, a formula
+  over the other's state, wherever a formula can say it, and through an event only where none can:
+  engines built on events, such as the Creation Kit, tangle when several signals must be correlated.
+  Which parts are native aspects and which are SAGA is to decide. Proposed: logic that spans several
+  entities lives on a relay, an exemplar placed in the precinct, not as wiring stored on its
+  participants, which in faery left no list of what was wired and no owner when several took part. A
+  relay holds two aspects. A native visualization aspect gives its gizmo in the editor (icon, shape,
+  color). A logic aspect is a scripted aspect (PAN104). A field of the instance-reference type is a
+  role: the editor draws a wire to its target, and fills it two ways, never by typing: by picking in
+  the world, or from a popup listing instances to browse, with a filter, as PAN35's chooser does.
+  The popup lists the labelled instances in the index, across the game, and the loaded precincts'
+  unlabelled keyed instances by exemplar and place. Logic on one entity is a scripted aspect on that
+  entity. A placed relay's roles are its logic aspect's `instance` block, set on the instance, while
+  its tuning stays inherited from the exemplar (D103). A bound instance gets a key (D87). The editor
+  lists a precinct's relays, draws a selected one's wires, and lists those that name a selected
+  instance; selecting, moving and copying apply to relays, and copying a trap with its relay binds
+  the copy's roles to the copied instances. One wiring gesture places a stock relay for a button
+  opening a door, so the simplest case stays one step. A relay also joins a group, as faery's
+  `triggerGroup` let plates carpeting an area act as one plate, by naming an instance group: a role
+  holding a list of instances, a row and a picker per item as the property editor's list rows give,
+  and a formula true while any member's sensor is active. Hovering or focusing a role's row
+  highlights its wire: the row, an instance reference's own kind as `ExemplarRef`'s is, names its
+  target, and its picking observers and `InputFocus` set the wire that is drawn highlighted. Each
+  plate still depresses under whatever is on it. Precedents: Planet's Edge's logic tiles beyond the
+  map's edge, Source's `logic_relay`, and Unreal's placed Blueprint actors with picked references. A
+  precinct is named by its realm and coordinates, and is like a module: its walls and fixtures that
+  others can refer to are its exports, by key ([instances.md](instances.md), Ids). A reference into
+  a precinct that is not loaded suspends the formula reading it ([saga.md](saga.md), Values).
+  faery's notes, of unknown currency, and likely to differ from what Panoply builds: in
+  `design/Scripting.md`, a reference syntax, an `Instance` observable that is null while its target
+  is not loaded, a `StructureRefNode` watching structures load and unload, and global variables or
+  lazily loaded scope objects for long-range wiring; global references by realm and coordinates in
+  `design/scripting/predicates.md`; animated instances (moving parts) kept apart from static
+  instancing in `engine/src/models/InstancedModels.ts`. The first relay is PAN79a's trap's second
+  part, which faery never built: once past the spears, the player throws a switch that locks them
+  down, so the follower on the plate can rejoin the party; the trap is then open while the plate is
+  pressed or the switch is on, logic across three entities. Then PAN6's door opened by a button
   ([goals.md](goals.md), step 4).
 - **PAN106 Containers.** *Needs:* PAN71, PAN123. What a container holds. An open chest shows its
   contents on an inventory screen whose background its container type chooses, and items move
