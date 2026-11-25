@@ -119,7 +119,7 @@ deserialize a JSON object of unknown type, since a `1` names no numeric type.
 So a mod declares its aspects in SAGA ([saga.md](saga.md), Aspects), and the declaration is the
 schema: each field is of a Rust type the host knows, so each value reflects as that type, and only
 the aspect as a whole is opaque to reflection. The editor's layer above reflection walks a scripted
-aspect's fields from its declaration and edits each through reflection (X64, PAN104b). SAGA needs no
+aspect's fields from its declaration and edits each through reflection (PAN104b). SAGA needs no
 reflection for a struct it declares either: it lays structs out in slots ([saga.md](saga.md),
 Values).
 

@@ -162,17 +162,18 @@ fn init_outline(
 mod tests {
     use std::path::Path;
 
-    use panoply_exemplar::add_interaction_fields;
+    use panoply_exemplar::{add_interaction_fields, annotations::add_editor_attributes};
     use panoply_saga::{compile_module, format_error, HostState, NoImports};
 
     use super::*;
 
-    /// Every module in `assets/scripts/` compiles against a host with the interaction type and
-    /// the components scripts read here.
+    /// Every module in `assets/scripts/` compiles against a host with the interaction type, the
+    /// editor's attributes, and the components scripts read here.
     #[test]
     fn every_script_compiles() {
         let mut host = HostState::new();
         add_interaction_fields(&mut host);
+        add_editor_attributes(&mut host);
         host.add_component::<LockState>("lock");
         let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
         let mut failures = Vec::new();

@@ -16,7 +16,9 @@ use bevy::{
     prelude::*,
     reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath, TypeRegistry},
 };
-use panoply_exemplar::{annotations::ReflectPropertyMapKeys, aspect_mut, Aspect, Exemplar};
+use panoply_exemplar::{
+    annotations::ReflectPropertyMapKeys, aspect_mut, Aspect, Exemplar, ScriptedAspect,
+};
 
 use crate::{
     mode_selector::EditorModeSettings,
@@ -188,9 +190,7 @@ enum EditOp {
 impl EditOp {
     /// Does the edit to the value at `path` within `root`, and returns the edit that undoes it.
     fn apply(&self, root: &mut dyn PartialReflect, path: &ParsedPath) -> Result<EditOp, BevyError> {
-        let target = path
-            .reflect_element_mut(root)
-            .map_err(|error| error.to_string())?;
+        let target = element_mut(root, path)?;
         match self {
             EditOp::Write(value) => {
                 let replaced = target.reflect_clone()?.into_partial_reflect();
@@ -314,6 +314,33 @@ impl EditOp {
         }
         undo.ok_or_else(|| "the edit was not made".into())
     }
+}
+
+/// The value at `path` within `root`. Reflection sees a scripted aspect as one opaque value, so
+/// within one the path's first step, a field's name, is found through its declaration, and the
+/// rest within that field's value.
+fn element_mut<'a>(
+    root: &'a mut dyn PartialReflect,
+    path: &ParsedPath,
+) -> Result<&'a mut dyn PartialReflect, BevyError> {
+    if root.try_downcast_ref::<ScriptedAspect>().is_none() {
+        return Ok(path
+            .reflect_element_mut(root)
+            .map_err(|error| error.to_string())?);
+    }
+    let aspect = root
+        .try_downcast_mut::<ScriptedAspect>()
+        .expect("checked above");
+    let key = aspect.key().to_string();
+    let Some(Access::Field(name)) = path.0.first().map(|step| &step.access) else {
+        return Err(format!("{path} does not start with a field of {key}").into());
+    };
+    let field = aspect
+        .field_mut(name)
+        .ok_or_else(|| format!("{key} has no field {name}"))?;
+    Ok(ParsedPath(path.0[1..].to_vec())
+        .reflect_element_mut(field)
+        .map_err(|error| error.to_string())?)
 }
 
 /// `target`, the value at `path`, as a map with string keys.
@@ -494,8 +521,8 @@ fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &E
     let mut field = root.caption();
     if let EditOp::Aspects { add, remove } = op {
         match (add.as_slice(), remove.as_slice()) {
-            ([(_, aspect)], []) => return format!("Add {field}.{}", aspect.key()),
-            ([], [name]) => return format!("Remove {field}.{name}"),
+            ([(_, aspect)], []) => return format!("Add {field}.{}", aspect_name(aspect.key())),
+            ([], [key]) => return format!("Remove {field}.{}", aspect_name(key)),
             _ => {}
         }
     }
@@ -642,7 +669,13 @@ fn map_keys(
     keys.property_map_keys(world, exemplar, held)
 }
 
-/// An aspect of an exemplar, named by the exemplar's asset path and the aspect's short type path.
+/// The name of the aspect `key` names: a native aspect's key itself, a scripted one's without its
+/// module's path, as `Container` for `scripts::container::Container`.
+pub fn aspect_name(key: &str) -> &str {
+    key.rsplit_once("::").map_or(key, |(_, name)| name)
+}
+
+/// An aspect of an exemplar, named by the exemplar's asset path and the aspect's key.
 #[derive(Debug, Clone, PartialEq, Reflect)]
 #[reflect(ExemplarPart)]
 pub struct ExemplarAspect {
@@ -651,8 +684,10 @@ pub struct ExemplarAspect {
 }
 
 impl PropertyRoot for ExemplarAspect {
+    /// The aspect's name: a scripted aspect's key without its module's path, so that an author
+    /// need not know which kind an aspect is (D107).
     fn caption(&self) -> String {
-        self.aspect.clone()
+        aspect_name(&self.aspect).to_string()
     }
 
     fn key(&self) -> String {
@@ -1219,6 +1254,108 @@ mod tests {
         change_aspects(&mut world, AspectsRoot, vec![Arc::new(Tail)], &[]);
         assert_eq!(held_aspects(&world), ["Wings", "Horns", "Tail"]);
         assert!(world.resource::<UndoStack>().latest_label().is_none());
+    }
+
+    #[derive(Resource)]
+    struct HeldScripted(ScriptedAspect);
+
+    /// The scripted aspect in [`HeldScripted`].
+    #[derive(Reflect)]
+    struct ScriptedRoot;
+
+    impl PropertyRoot for ScriptedRoot {
+        fn caption(&self) -> String {
+            "Lever".into()
+        }
+
+        fn key(&self) -> String {
+            "scripted".into()
+        }
+
+        fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>> {
+            Some(Box::new(world.resource::<HeldScripted>().0.clone()))
+        }
+
+        fn modify(
+            &self,
+            world: &mut World,
+            change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+        ) -> Result<(), BevyError> {
+            change(&mut world.resource_mut::<HeldScripted>().0)
+        }
+    }
+
+    /// A world holding `Lever`, a scripted aspect with a config field and a state field.
+    fn scripted_world() -> World {
+        let module = futures_lite::future::block_on(panoply_saga::compile_module(
+            "scripts/lever.saga",
+            "aspect Lever for Wall { reach: f32 = 1, state pulled: bool }",
+            &panoply_saga::HostState::new(),
+            &panoply_saga::NoImports,
+        ))
+        .unwrap();
+        let aspect = ScriptedAspect::new(&module.aspects()[0], &TypeRegistry::new()).unwrap();
+        let mut world = world();
+        world.insert_resource(HeldScripted(aspect));
+        world
+    }
+
+    fn lever(world: &World) -> serde_json::Value {
+        let aspect = &world.resource::<HeldScripted>().0;
+        aspect.to_json(&TypeRegistry::new()).unwrap()
+    }
+
+    #[test]
+    fn a_scripted_field_is_edited_through_its_declaration() {
+        let mut world = scripted_world();
+        let root: Arc<dyn PropertyRoot> = Arc::new(ScriptedRoot);
+        world
+            .resource_mut::<PropertyEdits>()
+            .set(&root, path(".reach"), 2.5f32);
+        world
+            .resource_mut::<PropertyEdits>()
+            .set(&root, path(".pulled"), true);
+        apply_property_edits(&mut world);
+        assert_eq!(
+            lever(&world),
+            serde_json::json!({ "reach": 2.5, "pulled": true })
+        );
+        assert_eq!(last_label(&world), "Set Lever.pulled");
+        undo(&mut world);
+        undo(&mut world);
+        assert_eq!(
+            lever(&world),
+            serde_json::json!({ "reach": 1.0, "pulled": false })
+        );
+        redo(&mut world);
+        assert_eq!(
+            lever(&world),
+            serde_json::json!({ "reach": 2.5, "pulled": false })
+        );
+
+        // A field the declaration lacks, or one of the wrong type, is refused.
+        world
+            .resource_mut::<PropertyEdits>()
+            .set(&root, path(".lever"), 1.0f32);
+        world
+            .resource_mut::<PropertyEdits>()
+            .set(&root, path(".reach"), true);
+        apply_property_edits(&mut world);
+        assert_eq!(last_label(&world), "Set Lever.reach");
+        assert_eq!(
+            lever(&world),
+            serde_json::json!({ "reach": 2.5, "pulled": false })
+        );
+    }
+
+    #[test]
+    fn a_scripted_aspect_is_named_without_its_module() {
+        let root = ExemplarAspect {
+            exemplar: "exemplars/walls.exem.json#Switch".into(),
+            aspect: "scripts::toggle_switch::ToggleSwitch".into(),
+        };
+        assert_eq!(root.caption(), "ToggleSwitch");
+        assert_eq!(aspect_name("Wings"), "Wings");
     }
 
     #[test]

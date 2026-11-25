@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X143.**
+**Next: X144.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -296,11 +296,6 @@ dropped, not deferred. Numbers are never reused.
   Bevy's built-in audio. The falloff (D63) is tuned then, against Poul Ryba at his forge in Tambry:
   his hammer faint from just off-screen and louder on walking up to him. *Gate:* PAN6, or the author
   takes up sound.
-- **X64** The editor's layer above reflection for aspects declared in SAGA, which reflection sees
-  only as opaque values ([modding.md](modding.md), Types a mod declares). Panoply builds that layer:
-  `bevy_reflect2` (bevy#26356) will support neither synthetic types nor dynamic data directly. Such
-  an aspect needs its own walk of the rows and its own applying of edits, beside reflection's
-  (PAN28). *Gate:* PAN104b, which builds it.
 - **X65** Package identity, for more than one package: ids namespaced by package, so two mods'
   `Sword` cannot collide; an order for packages that override the same exemplar or catalog entry, an
   entry's override being a redirect from its reference to the mod's, applied in `CatalogServer`
@@ -388,7 +383,7 @@ dropped, not deferred. Numbers are never reused.
   entities are native aggregates. *Gate:* a helper module that needs a list whose length is not
   fixed.
 - **X87** Struct types declared in SAGA, laid out in slots as host-declared ones are
-  ([saga.md](saga.md), Values). Not X64's aspect types, which the editor and saves see: these live
+  ([saga.md](saga.md), Values). Not scripted aspects, which the editor and saves see: these live
   only within scripts. *Gate:* a helper module that needs one.
 - **X88** A SAGA language server, for semantic tokens and diagnostics ([saga.md](saga.md), Editor
   support). The compiler stops at the first error; the server needs recovery, to report more than
@@ -670,3 +665,9 @@ dropped, not deferred. Numbers are never reused.
 - **X142** A wounded character's walk: `Idle` (D123) covers standing only, and a limp or stagger
   while moving is a gait, chosen by D48's motion states, that a formula would have to select.
   *Gate:* PAN111, once actors have health.
+- **X143** Showing a state field on an exemplar as the value an instance starts with, not a switch:
+  a container's `open` on `Proto.Container` reads as if it would open every container. The panel
+  knows a scripted aspect's state fields from its declaration, so they could sit under a heading
+  such as "Starts" after its config rows; a native aspect needs an annotation to match (D107), as
+  `Lock.locked` does. Little reason to look at a prototype once it is set up. *Gate:* PAN28e, once
+  instances show their own values beside their exemplars'.

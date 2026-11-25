@@ -161,6 +161,97 @@ fn bad_declarations_are_errors() {
     }
 }
 
+#[derive(Reflect, Debug, PartialEq)]
+struct Range(f64, f64);
+
+#[derive(Reflect, Debug, PartialEq)]
+struct Fixed;
+
+#[derive(Reflect, Debug, PartialEq)]
+struct Icon(String);
+
+/// The host, with `range(min, max)` and `fixed` for fields and `icon(path)` for aspects.
+fn attributed_host() -> HostState {
+    let mut host = host();
+    host.add_field_attribute(
+        "range",
+        vec![ExprType::F64, ExprType::F64],
+        |builder, args| {
+            let bound = |index: usize| *args[index].downcast_ref::<f64>().unwrap();
+            builder.attribute(Range(bound(0), bound(1)))
+        },
+    );
+    host.add_field_attribute("fixed", Vec::new(), |builder, _| builder.attribute(Fixed));
+    host.add_aspect_attribute("icon", vec![ExprType::String], |builder, args| {
+        builder.attribute(Icon(args[0].downcast_ref::<String>().unwrap().clone()))
+    });
+    host
+}
+
+#[test]
+fn attributes_come_from_the_hosts_table() {
+    let host = attributed_host();
+    let src = r#"
+        #[icon("lock.png")] #[accessor(lever)]
+        aspect Lever for Wall {
+            #[range(0, -2.5)] #[fixed]
+            reach: f32,
+            plain: bool,
+        }
+    "#;
+    let lever_module = module(src, &host).unwrap();
+    let lever = &lever_module.aspects()[0];
+    assert_eq!(lever.accessor.as_deref(), Some("lever"));
+    assert_eq!(
+        lever.attributes.get::<Icon>(),
+        Some(&Icon("lock.png".into()))
+    );
+    let reach = &lever.field("reach").unwrap().attributes;
+    assert_eq!(reach.get::<Range>(), Some(&Range(0.0, -2.5)));
+    assert!(reach.contains::<Fixed>());
+    assert!(lever.field("plain").unwrap().attributes.is_empty());
+
+    let cases = [
+        (
+            "aspect A for Wall { #[rnage(0, 1)] a: f32 }",
+            "Unknown attribute: #[rnage]",
+        ),
+        // An aspect's attributes are not a field's.
+        (
+            "#[fixed] aspect A for Wall { }",
+            "Unknown attribute: #[fixed]",
+        ),
+        (
+            "aspect A for Wall { #[icon(\"a.png\")] a: f32 }",
+            "Unknown attribute: #[icon]",
+        ),
+        (
+            "aspect A for Wall { #[range(0)] a: f32 }",
+            "Expected #[range(f64, f64)]",
+        ),
+        (
+            "aspect A for Wall { #[range(0, x)] a: f32 }",
+            "Expected #[range(f64, f64)]",
+        ),
+        (
+            "aspect A for Wall { #[fixed(true)] a: f32 }",
+            "Expected #[fixed]",
+        ),
+        (
+            "aspect A for Wall { #[fixed] #[fixed] a: f32 }",
+            "Name redefinition: fixed",
+        ),
+        (
+            "#[accessor(a)] #[accessor(b)] aspect A for Wall { }",
+            "Name redefinition: accessor",
+        ),
+    ];
+    for (src, message) in cases {
+        let err = module(src, &host).unwrap_err();
+        assert_eq!(err.to_string(), message, "{src}");
+    }
+}
+
 #[test]
 fn a_formula_reads_config_and_state() {
     let host = host();

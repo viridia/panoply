@@ -154,20 +154,19 @@ The engine's design, seen whole, and what follows from it.
 What an aspect is, and how an instance overrides its exemplar's, for behavior and for the scripted
 aspects that mechanisms, containers and signs are built on.
 
+- **PAN43 Inherited aspects.** The aspects an exemplar inherits through `extends` show apart from
+  its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`). Editing one
+  overrides it, copying the whole aspect into the exemplar, and × on an override reverts to the
+  inherited one. Inheritance in Panoply is by whole aspect, resolved when the chain is read
+  (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
+  its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
+  scene inheritance.
+
 PAN104, Scripted aspects, in lettered parts: an aspect declared in a SAGA script, as faery's
 scripted aspects were, with fields and hooks. Precedents for its field kinds: Unreal's
 `EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's `$props`, `$state` and
 `$derived`, Verilog's `parameter`, `reg` and `assign`.
 
-- **PAN104b Editing scripted aspects.** The layer above reflection (X64) is a list of rows, each
-  edited through reflection, so scripted aspects show in the editor as native ones do (D107).
-  - Field attributes change only how the editor shows a field: `#[range(0.0, 4.0)]`, `#[step(...)]`,
-    `#[precision(...)]` and `#[read_only]`, in the grammar of PAN104a's `#[accessor(...)]`, checked
-    against a table the host registers, as an interaction's fields are (D120), so a misspelled one
-    is a compile error. An aspect attribute names its pane's icon, which the scripted `Container`
-    lost with its native predecessor's `package-open.png`.
-  - The aspect chooser lists the aspects of every module in `scripts/` beside native ones (D107).
-  - This meets X64's gate.
 - **PAN104d Hooks.** An aspect's hooks are not methods but a fixed set of reactive callbacks the
   engine knows, written `on <name>(...)` and checked by name against a table the host registers, as
   an interaction's fields are (D120), so a misspelled hook is an error. The first are `attach`, an
@@ -208,7 +207,7 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
   unsticking turned the overlap into velocity and threw the actor across the map. Panoply's push-out
   (R26) moves position only, a capped amount per tick, but skips resting actors (`ActorResting`), so
   the leaf must wake what it sweeps; checked with an actor standing in the swing. Closes I26.
-- **PAN79a Plate and spears.** *Needs:* PAN59, PAN104b, PAN116. The first mechanism, from faery's
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN116. The first mechanism, from faery's
   `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
@@ -318,13 +317,6 @@ set an edit is one of (`EditKind`).
   edits into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar,
   whose old name joins its `alias` list, so that precincts naming it keep working until they are
   saved again.
-- **PAN43 Inherited aspects.** Provisional. The aspects an exemplar inherits through `extends` show
-  apart from its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`).
-  Editing one overrides it, copying the whole aspect into the exemplar, and × on an override reverts
-  to the inherited one. Inheritance in Panoply is by whole aspect, resolved when the chain is read
-  (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
-  its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
-  scene inheritance.
 
 ## Actors
 

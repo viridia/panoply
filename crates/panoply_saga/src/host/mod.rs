@@ -10,7 +10,7 @@ use std::{any::TypeId, sync::Arc};
 use bevy::{
     ecs::{component::Component, entity::Entity, world::World},
     platform::collections::HashMap,
-    reflect::{PartialReflect, Reflect, Typed},
+    reflect::{PartialReflect, Reflect, Typed, attributes::CustomAttributesBuilder},
 };
 use smol_str::SmolStr;
 
@@ -193,6 +193,29 @@ pub struct HostState {
 
     /// The fields an aspect's interactions may set: the interaction type.
     pub(crate) interaction_fields: Vec<InteractionField>,
+
+    /// The attributes an aspect may take, besides `accessor`.
+    pub(crate) aspect_attributes: Vec<HostAttribute>,
+
+    /// The attributes an aspect's field may take.
+    pub(crate) field_attributes: Vec<HostAttribute>,
+}
+
+/// Adds an attribute, from its arguments, to the attributes being built. Each argument is a value
+/// of its parameter's type.
+pub type AttributeBuild =
+    fn(CustomAttributesBuilder, &[Box<dyn Reflect>]) -> CustomAttributesBuilder;
+
+/// An attribute an aspect or its fields may take (`#[range(0.0, 4.0)]`), registered with
+/// [`HostState::add_aspect_attribute`] or [`HostState::add_field_attribute`]. It becomes one of
+/// the declaration's custom attributes, which only the host reads: what the editor reads of a
+/// scripted aspect, as `#[reflect(@...)]` gives it of a native one.
+#[derive(Debug, Clone)]
+pub struct HostAttribute {
+    pub name: SmolStr,
+    /// The types of its arguments, each a literal; none for an attribute written bare.
+    pub params: Vec<ExprType>,
+    pub build: AttributeBuild,
 }
 
 /// What a field of an interaction holds.
@@ -277,6 +300,56 @@ impl HostState {
             kind,
             required,
         });
+    }
+
+    /// Adds `name` to the attributes an aspect may take. An aspect with an attribute not added,
+    /// or whose arguments are not literals of `params`, fails to compile.
+    pub fn add_aspect_attribute(
+        &mut self,
+        name: impl Into<SmolStr>,
+        params: Vec<ExprType>,
+        build: AttributeBuild,
+    ) {
+        let name = name.into();
+        assert!(
+            name != "accessor" && self.aspect_attribute(&name).is_none(),
+            "Aspect attribute {name} is already defined."
+        );
+        self.aspect_attributes.push(HostAttribute {
+            name,
+            params,
+            build,
+        });
+    }
+
+    /// Adds `name` to the attributes an aspect's field may take, as
+    /// [`add_aspect_attribute`](Self::add_aspect_attribute) does for an aspect.
+    pub fn add_field_attribute(
+        &mut self,
+        name: impl Into<SmolStr>,
+        params: Vec<ExprType>,
+        build: AttributeBuild,
+    ) {
+        let name = name.into();
+        assert!(
+            self.field_attribute(&name).is_none(),
+            "Field attribute {name} is already defined."
+        );
+        self.field_attributes.push(HostAttribute {
+            name,
+            params,
+            build,
+        });
+    }
+
+    /// The aspect attribute `name`, if the host has added it.
+    pub fn aspect_attribute(&self, name: &str) -> Option<&HostAttribute> {
+        self.aspect_attributes.iter().find(|a| a.name == name)
+    }
+
+    /// The field attribute `name`, if the host has added it.
+    pub fn field_attribute(&self, name: &str) -> Option<&HostAttribute> {
+        self.field_attributes.iter().find(|a| a.name == name)
     }
 
     /// The interaction field `name`, if the host has added it.

@@ -192,6 +192,13 @@ aspect ToggleSwitch for Wall, Fixture {
     it, so a large file in the index is a question for review.
   - A reloaded module recompiles the formulas that read its accessors, found through the list of
     what each formula reads.
+- Its other attributes, and those on its fields, are a table the host registers, as it does the
+  interaction type (D120), so a misspelled one is a compile error. Each takes literals of the types
+  the host gives, and becomes an annotation only the host reads, as `#[reflect(@...)]` does on a
+  native aspect. Panoply's change only how the editor shows it:
+  `#[icon("editor/icons/lucide/lock.png")]` names its pane's icon, and on a field
+  `#[range(0.0, 4.0)]`, `#[step(0.5)]` and `#[precision(2)]` limit a number, step it and round it
+  while dragged, and `#[read_only]` shows a field the editor does not edit.
 - An aspect declares the interactions it offers (D114). An interaction is a struct literal of the
   interaction type the host registers (D120), each field `name: value`, and a field the type lacks,
   a repeated one, or a missing required one is a compile error. Panoply's type has:

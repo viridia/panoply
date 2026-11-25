@@ -35,20 +35,12 @@ pub struct ScriptedAspect {
     module: Option<Arc<ScriptModule>>,
 }
 
-/// Its name and fields, as a struct prints: `ToggleSwitch { caption: "Use", on: false }`, which
-/// is what the property editor shows of it until it edits scripted aspects (PAN104b).
+/// Its name and fields, as a struct prints: `ToggleSwitch { caption: "Use", on: false }`.
 impl std::fmt::Debug for ScriptedAspect {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = f.debug_struct(&self.decl().name);
-        for field in self.decl().fields.iter() {
-            let part = if field.is_state {
-                &self.state
-            } else {
-                &self.config
-            };
-            if let Some(value) = part.get(&field.name) {
-                out.field(&field.name, &value);
-            }
+        for (field, value) in self.fields() {
+            out.field(&field.name, &value);
         }
         out.finish()
     }
@@ -78,6 +70,11 @@ impl ScriptedAspect {
         })
     }
 
+    /// The aspect `decl` with every field at its default.
+    pub fn new(decl: &Arc<AspectDecl>, registry: &TypeRegistry) -> Result<Self, String> {
+        Self::from_json(decl, &Value::Null, registry, &decl.key)
+    }
+
     /// The aspect's declaration.
     pub fn decl(&self) -> &Arc<AspectDecl> {
         self.config.decl()
@@ -96,6 +93,38 @@ impl ScriptedAspect {
     /// The values its state starts from.
     pub fn initial_state(&self) -> &ScriptedFields {
         &self.state
+    }
+
+    /// Each field with its value, config and state alike, in declaration order.
+    pub fn fields(&self) -> impl Iterator<Item = (&AspectField, &dyn Reflect)> {
+        self.decl().fields.iter().filter_map(|field| {
+            let value = self.part(field.is_state).get(&field.name)?;
+            Some((field, value))
+        })
+    }
+
+    /// The value of field `name`, config or state, to change, as
+    /// [`ScriptedFields::get_mut`] lends it. The part it is in is copied first if it is shared,
+    /// with the other aspects this one was cloned from or into; `None` also if it cannot be.
+    pub fn field_mut(&mut self, name: &str) -> Option<&mut dyn PartialReflect> {
+        let state = self.decl().field(name)?.is_state;
+        let part = if state {
+            &mut self.state
+        } else {
+            &mut self.config
+        };
+        if Arc::get_mut(part).is_none() {
+            *part = Arc::new(part.try_clone()?);
+        }
+        Arc::get_mut(part)?.get_mut(name)
+    }
+
+    fn part(&self, state: bool) -> &ScriptedFields {
+        if state {
+            &self.state
+        } else {
+            &self.config
+        }
     }
 }
 
@@ -227,15 +256,8 @@ impl Aspect for ScriptedAspect {
     /// Its fields by name, in declaration order, the state ones at their authored values.
     fn to_json(&self, registry: &TypeRegistry) -> Result<Value, BevyError> {
         let mut object = Map::new();
-        for field in self.decl().fields.iter() {
-            let part = if field.is_state {
-                &self.state
-            } else {
-                &self.config
-            };
-            if let Some(value) = part.get(&field.name) {
-                object.insert(field.name.to_string(), field_json(value, registry)?);
-            }
+        for (field, value) in self.fields() {
+            object.insert(field.name.to_string(), field_json(value, registry)?);
         }
         Ok(object.into())
     }
@@ -256,12 +278,15 @@ mod tests {
 
     const KEY: &str = "scripts::toggle_switch::ToggleSwitch";
 
-    /// The aspects `src` declares, as the module `scripts/toggle_switch.saga`.
+    /// The aspects `src` declares, as the module `scripts/toggle_switch.saga`, with the editor's
+    /// attributes.
     fn declare(src: &str) -> Vec<Arc<AspectDecl>> {
+        let mut host = HostState::new();
+        crate::annotations::add_editor_attributes(&mut host);
         block_on(compile_module(
             "scripts/toggle_switch.saga",
             src,
-            &HostState::new(),
+            &host,
             &NoImports,
         ))
         .unwrap()
@@ -306,6 +331,49 @@ mod tests {
         );
         assert!(aspect.can_attach(InstanceKind::Fixture));
         assert!(!aspect.can_attach(InstanceKind::Actor));
+    }
+
+    #[test]
+    fn a_field_changed_in_a_copy_leaves_the_original() {
+        let decls = switch_decls();
+        let registry = TypeRegistry::new();
+        let aspect = ScriptedAspect::new(&decls[0], &registry).unwrap();
+        let mut copy = aspect.clone();
+        copy.field_mut("caption").unwrap().apply(&"Pull".to_string());
+        copy.field_mut("on").unwrap().apply(&true);
+        assert!(copy.field_mut("missing").is_none());
+        assert_eq!(
+            aspect.to_json(&registry).unwrap(),
+            json!({ "caption": "Use", "on": false })
+        );
+        assert_eq!(
+            copy.to_json(&registry).unwrap(),
+            json!({ "caption": "Pull", "on": true })
+        );
+    }
+
+    #[test]
+    fn attributes_are_the_editors_annotations() {
+        use bevy::annotations::{ReadOnly, Step, ValueRange};
+
+        use crate::annotations::{AspectIcon, Precision};
+
+        let decls = declare(
+            r#"#[icon("editor/icons/lucide/lock.png")]
+            aspect Lever for Wall {
+                #[range(0, 2.5)] #[step(0.5)] #[precision(1)]
+                reach: f32 = 1,
+                #[read_only]
+                state pulls: i32,
+            }"#,
+        );
+        let icon = decls[0].attributes.get::<AspectIcon>().unwrap();
+        assert_eq!(icon.0, "editor/icons/lucide/lock.png");
+        let reach = &decls[0].field("reach").unwrap().attributes;
+        assert_eq!(reach.get::<ValueRange>(), Some(&ValueRange(0.0..=2.5)));
+        assert_eq!(reach.get::<Step>(), Some(&Step(0.5)));
+        assert_eq!(reach.get::<Precision>().map(|places| places.0), Some(1));
+        assert!(decls[0].field("pulls").unwrap().attributes.contains::<ReadOnly>());
     }
 
     #[test]

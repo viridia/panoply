@@ -15,11 +15,15 @@ panoply_overlays = { workspace = true }
 panoply_portals = { workspace = true }
 panoply_precinct = { workspace = true }
 panoply_render = { workspace = true }
+panoply_saga = { workspace = true }
 panoply_scenery = { workspace = true }
 panoply_terrain = { workspace = true }
 rapier3d = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+futures-lite = { workspace = true }
 
 [lints.clippy]
 type_complexity = "allow"

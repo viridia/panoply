@@ -24,11 +24,15 @@ use crate::{
 /// The wall list's first row, which places no wall: the wall tool erases with it.
 pub const ERASE: &str = "(erase)";
 
-/// The folders of exemplar catalogs and of catalog entries, loaded and held while editing.
+/// The folders of exemplar catalogs, of catalog entries and of scripts, loaded and held while
+/// editing.
 #[derive(Resource, Default)]
 pub(crate) struct CatalogFolders {
     exemplars: Option<Handle<LoadedFolder>>,
     entries: Option<Handle<LoadedFolder>>,
+    /// The modules in `scripts/`, whose aspects the aspect chooser lists. A catalog loads the
+    /// modules it names as values of its own, which leaves them out of the assets.
+    scripts: Option<Handle<LoadedFolder>>,
 }
 
 impl CatalogFolders {
@@ -130,6 +134,9 @@ fn load_catalogs(mut folders: ResMut<CatalogFolders>, server: Res<AssetServer>) 
     }
     if folders.entries.is_none() {
         folders.entries = Some(server.load_folder("catalog"));
+    }
+    if folders.scripts.is_none() {
+        folders.scripts = Some(server.load_folder("scripts"));
     }
 }
 

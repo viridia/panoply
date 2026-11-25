@@ -194,8 +194,8 @@ most of what an author touches is shared. faery's aspects split the same way
 ([modding.md](modding.md), What mods need): its 15 per-character scripts had no fields. It is two
 mechanisms presented as one, and the presentation shows at the seams:
 
-- A scripted aspect's fields are types declared in data, which the property grid edits only through
-  the layer X64 needs (PAN104b).
+- A scripted aspect's fields are types declared in data, which the property grid walks from the
+  declaration and edits each through reflection (PAN104b).
 - A formula reads a scripted aspect through its accessor (D117); one without an accessor is not part
   of `self`'s interface.
 - Detaching one despawns its goal trees and drops its saved state, and its formulas need their own
@@ -212,7 +212,7 @@ is implemented.
 
 - Uniqueness moves to the components: no two aspects may attach the same component, checked as an
   exemplar loads and reported in the editor. Two packages never collide.
-- Aspect identity no longer needs a Rust type, which X64 needs.
+- Aspect identity no longer needs a Rust type, which scripted aspects need.
 - X17's reason for keeping goals out of aspects, several goals of one type with different
   parameters, no longer constrains aspects.
 - For native aspects the contract changes more than the code. Each of the 19 inserts a clone of
@@ -385,9 +385,9 @@ Either way:
   runtime runs its trees, so scripts still hold no memory but the world's.
 - Behavior then needs no BSN (X1), and no formulas embedded in assets.
 - A field declared in SAGA is a type declared in data, so setting one per actor goes through the
-  layer X64 needs and an aspect of the instance's own (PAN104b, D121). Values that vary by placement
-  are mostly references: a patrol path is a fixture, edited in the world, which a guard package's
-  field names (naming across precincts is PAN79's).
+  editor's walk of its declaration (PAN104b) and an aspect of the instance's own (D121). Values that
+  vary by placement are mostly references: a patrol path is a fixture, edited in the world, which a
+  guard package's field names (naming across precincts is PAN79's).
 - Each declaration fails alone, as a formula in an asset does: a `tree` that fails to compile
   disables the aspects that use it, not its module.
 - Against: SAGA grows from formulas to declarations, with tooling to match, though scripted aspects

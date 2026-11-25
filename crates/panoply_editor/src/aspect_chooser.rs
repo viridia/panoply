@@ -1,7 +1,9 @@
-//! The dialog the exemplar pane's Aspects… opens: a checkbox per aspect type that can attach to
-//! the exemplar's type, under a heading per crate (until mods have packages, X65), checked where
-//! the exemplar has the aspect as its own. Save adds the newly checked aspects, each at its type's
-//! default, and removes the unchecked ones, as one edit. Cancel, Esc or a click outside closes it.
+//! The dialog the exemplar pane's Aspects… opens: a checkbox per aspect that can attach to the
+//! exemplar's type, native or declared by a module in `scripts/` (D107), checked where the
+//! exemplar has the aspect as its own. Native aspects are under a heading per crate (until mods
+//! have packages, X65), scripted ones under their module's path. Save adds the newly checked
+//! aspects, each at its default, and removes the unchecked ones, as one edit. Cancel, Esc or a
+//! click outside closes it.
 
 use std::{collections::BTreeMap, sync::Arc};
 
@@ -20,10 +22,11 @@ use bevy::{
     ui::Checked,
     ui_widgets::{checkbox_self_update, Activate, RequestClose},
 };
-use panoply_exemplar::{Aspect, Exemplar, ReflectAspect};
+use panoply_exemplar::{Aspect, Exemplar, InstanceKind, ReflectAspect, ScriptedAspect};
+use panoply_saga::{scripted::AspectDecl, ScriptModuleAsset};
 
 use crate::{
-    properties::edit::{PropertyEdits, PropertyRoot},
+    properties::edit::{aspect_name, PropertyEdits, PropertyRoot},
     scenery_properties::exemplar_of,
 };
 
@@ -34,7 +37,7 @@ struct AspectChooser {
     had: HashSet<String>,
 }
 
-/// An aspect type's checkbox, holding its short type path.
+/// An aspect's checkbox, holding its key.
 #[derive(Component, Default, Clone)]
 struct AspectOption(String);
 
@@ -44,6 +47,7 @@ pub(crate) fn open_aspect_chooser(
     registry: Res<AppTypeRegistry>,
     server: Res<AssetServer>,
     exemplars: Res<Assets<Exemplar>>,
+    modules: Res<Assets<ScriptModuleAsset>>,
     mut commands: Commands,
 ) {
     let Some(data) = exemplar_of(root.as_ref(), &server).and_then(|id| exemplars.get(id)) else {
@@ -56,7 +60,14 @@ pub(crate) fn open_aspect_chooser(
         .map(|aspect| aspect.key().to_string())
         .collect();
     let registry = registry.read();
-    let mut groups: BTreeMap<&str, Vec<String>> = BTreeMap::new();
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for decl in scripted_aspects(&modules) {
+        if data.0.kind.is_some_and(|kind| can_attach(decl, kind)) {
+            let (module, _) = decl.key.rsplit_once("::").unwrap_or_default();
+            let group = groups.entry(module.to_string()).or_default();
+            group.push(decl.key.to_string());
+        }
+    }
     for registration in registry.iter() {
         let (Some(reflect_aspect), Some(default)) = (
             registration.data::<ReflectAspect>(),
@@ -73,15 +84,16 @@ pub(crate) fn open_aspect_chooser(
         }
         let group = registration.type_info().type_path_table().crate_name();
         groups
-            .entry(group.unwrap_or("other"))
+            .entry(group.unwrap_or("other").to_string())
             .or_default()
             .push(aspect.key().to_string());
     }
     let rows: Vec<Box<dyn SceneList>> = groups
         .into_iter()
-        .map(|(group, mut names)| {
-            names.sort_unstable();
-            group_rows(group, &names, &had)
+        .map(|(group, mut keys)| {
+            keys.sort_unstable_by(|a, b| aspect_name(a).cmp(aspect_name(b)));
+            keys.dedup();
+            group_rows(&group, &keys, &had)
         })
         .collect();
     let rows: Box<dyn SceneList> = Box::new(rows);
@@ -90,12 +102,25 @@ pub(crate) fn open_aspect_chooser(
         .insert((Name::new("AspectChooser"), AspectChooser { root, had }));
 }
 
-/// A group's heading, then a checkbox per aspect in it, checked where `had` holds it.
-fn group_rows(group: &str, names: &[String], had: &HashSet<String>) -> Box<dyn SceneList> {
-    let group = group.to_string();
-    let checkboxes: Vec<Box<dyn SceneList>> = names
+/// The aspects the modules declare.
+fn scripted_aspects(modules: &Assets<ScriptModuleAsset>) -> impl Iterator<Item = &Arc<AspectDecl>> {
+    modules
         .iter()
-        .map(|name| checkbox(name, had.contains(name)))
+        .flat_map(|(_, asset)| asset.module.aspects())
+}
+
+/// Whether the aspect `decl` declares attaches to `kind`, as [`ScriptedAspect`]'s `can_attach`
+/// has it.
+fn can_attach(decl: &AspectDecl, kind: InstanceKind) -> bool {
+    decl.kinds.iter().any(|name| name.parse() == Ok(kind))
+}
+
+/// A group's heading, then a checkbox per aspect in it by key, checked where `had` holds it.
+fn group_rows(group: &str, keys: &[String], had: &HashSet<String>) -> Box<dyn SceneList> {
+    let group = group.to_string();
+    let checkboxes: Vec<Box<dyn SceneList>> = keys
+        .iter()
+        .map(|key| checkbox(key, had.contains(key)))
         .collect();
     let checkboxes: Box<dyn SceneList> = Box::new(checkboxes);
     Box::new(bsn_list! {
@@ -111,14 +136,15 @@ fn group_rows(group: &str, names: &[String], had: &HashSet<String>) -> Box<dyn S
     })
 }
 
-/// The checkbox for the aspect type `name`, named after it.
-fn checkbox(name: &str, checked: bool) -> Box<dyn SceneList> {
-    let name = name.to_string();
+/// The checkbox for the aspect `key`, captioned and named with the aspect's name.
+fn checkbox(key: &str, checked: bool) -> Box<dyn SceneList> {
+    let name = aspect_name(key).to_string();
+    let key = key.to_string();
     if checked {
         bsn! {
             @FeathersCheckbox { @caption: bsn! { @caption(name.clone()) } }
             Checked
-            AspectOption({name.clone()})
+            AspectOption({key.clone()})
             Name({name.clone()})
             on(checkbox_self_update)
         }
@@ -126,7 +152,7 @@ fn checkbox(name: &str, checked: bool) -> Box<dyn SceneList> {
     } else {
         bsn! {
             @FeathersCheckbox { @caption: bsn! { @caption(name.clone()) } }
-            AspectOption({name.clone()})
+            AspectOption({key.clone()})
             Name({name.clone()})
             on(checkbox_self_update)
         }
@@ -182,8 +208,7 @@ fn dialog_contents(rows: Box<dyn SceneList>) -> impl SceneList {
 }
 
 /// Observer on Save: asks for the checked aspects the exemplar lacked to be added, at their
-/// types' defaults, and the unchecked ones it had to be removed, then closes the chooser.
-// TODO(PAN104b): list scripted aspects, which the dialog leaves out.
+/// defaults, and the unchecked ones it had to be removed, then closes the chooser.
 fn save_aspects(
     activate: On<Activate>,
     choosers: Query<&AspectChooser>,
@@ -191,6 +216,7 @@ fn save_aspects(
     children: Query<&Children>,
     options: Query<(&AspectOption, Has<Checked>)>,
     registry: Res<AppTypeRegistry>,
+    modules: Res<Assets<ScriptModuleAsset>>,
     mut edits: ResMut<PropertyEdits>,
     mut commands: Commands,
 ) {
@@ -211,15 +237,15 @@ fn save_aspects(
         .collect();
     let registry = registry.read();
     let mut add: Vec<Arc<dyn Aspect>> = Vec::new();
-    for name in checked.difference(&chooser.had) {
-        match new_aspect(&registry, name) {
-            Some(aspect) => add.push(aspect),
-            None => error!("Cannot make a {name}"),
+    for key in checked.difference(&chooser.had) {
+        match new_aspect(&registry, &modules, key) {
+            Ok(aspect) => add.push(aspect),
+            Err(err) => error!("Cannot make a {key}: {err}"),
         }
     }
     add.sort_by(|a, b| a.key().cmp(b.key()));
-    // Only an aspect the dialog listed can be unchecked: one it did not, such as a scripted
-    // aspect, stays.
+    // Only an aspect the dialog listed can be unchecked: one it did not, such as one from a
+    // module that failed to load, stays.
     let mut remove: Vec<String> = listed
         .iter()
         .filter(|(option, checked)| !checked && chooser.had.contains(&option.0))
@@ -230,13 +256,27 @@ fn save_aspects(
     commands.entity(dialog).despawn();
 }
 
-/// A new aspect of the type whose short type path is `name`, at its default.
-fn new_aspect(registry: &bevy::reflect::TypeRegistry, name: &str) -> Option<Arc<dyn Aspect>> {
-    let registration = registry.get_with_short_type_path(name)?;
-    let default = registration.data::<ReflectDefault>()?.default();
+/// A new aspect, at its default, of key `key`: a native aspect's short type path, or a scripted
+/// one's module path and name, declared by one of `modules`.
+fn new_aspect(
+    registry: &bevy::reflect::TypeRegistry,
+    modules: &Assets<ScriptModuleAsset>,
+    key: &str,
+) -> Result<Arc<dyn Aspect>, String> {
+    if let Some(decl) = scripted_aspects(modules).find(|decl| &*decl.key == key) {
+        return Ok(Arc::new(ScriptedAspect::new(decl, registry)?));
+    }
+    let registration = registry
+        .get_with_short_type_path(key)
+        .ok_or("it is not registered")?;
+    let default = registration
+        .data::<ReflectDefault>()
+        .ok_or("it has no default")?
+        .default();
     let aspect = registration
-        .data::<ReflectAspect>()?
+        .data::<ReflectAspect>()
+        .ok_or("it is not an aspect")?
         .get_boxed(default)
-        .ok()?;
-    Some(Arc::from(aspect))
+        .map_err(|_| "it is not an aspect")?;
+    Ok(Arc::from(aspect))
 }

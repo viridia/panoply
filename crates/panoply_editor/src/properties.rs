@@ -22,6 +22,10 @@
 //! a number rounds to while dragged; on an `Option`, they apply to its value. Those on a newtype's
 //! inner field, if it has any, replace those of the field holding the newtype.
 //!
+//! A scripted aspect, which reflection sees as one opaque value, is a row per field of its
+//! declaration, config and state alike, its attributes annotating them as `bevy::annotations` do a
+//! native field's, and its `#[icon]` naming its pane's icon (D107).
+//!
 //! A row is named after its field, never its caption, and a list item "#1", "#2", so plans' paths
 //! keep working when captions change.
 //!
@@ -85,8 +89,9 @@ use bevy_immediate::{
     CapSet, Imm, ImmCapAccessRequests, ImmCapability, ImmEntity,
 };
 use panoply_core::HexColor;
-use panoply_exemplar::annotations::{
-    AspectIcon, Precision, ReflectPropertyMapKeys, ReflectPropertySummary,
+use panoply_exemplar::{
+    annotations::{intern, AspectIcon, Precision, ReflectPropertyMapKeys, ReflectPropertySummary},
+    ScriptedAspect,
 };
 
 use crate::{
@@ -329,8 +334,16 @@ fn header_caption(caption: String) -> impl Scene {
     }
 }
 
-/// The icon `value`'s type names in its `AspectIcon`, or the default.
+/// The icon `value`'s type names in its `AspectIcon`, or a scripted aspect in its `#[icon]`, or
+/// the default.
 fn aspect_icon(value: &dyn PartialReflect) -> &'static str {
+    if let Some(aspect) = value.try_downcast_ref::<ScriptedAspect>() {
+        return aspect
+            .decl()
+            .attributes
+            .get::<AspectIcon>()
+            .map_or(DEFAULT_ASPECT_ICON, |icon| icon.0);
+    }
     let attributes = match value.get_represented_type_info() {
         Some(TypeInfo::Struct(info)) => info.custom_attributes(),
         Some(TypeInfo::TupleStruct(info)) => info.custom_attributes(),
@@ -364,6 +377,9 @@ fn disclosure(ui: &mut Imm<CapsPanel>, collapsed: &mut CollapsedRows, key: Strin
 /// one whose fields are all absent, which is in effect at their defaults (an `Armature` whose
 /// skeleton and clips are those of the actor's own file).
 fn no_rows_note(value: &dyn PartialReflect) -> Option<&'static str> {
+    if let Some(aspect) = value.try_downcast_ref::<ScriptedAspect>() {
+        return aspect.decl().fields.is_empty().then_some("No fields");
+    }
     let ReflectRef::Struct(fields) = value.reflect_ref() else {
         return None;
     };
@@ -604,6 +620,10 @@ impl Rows<'_> {
     /// The rows of the root's value: a struct's fields, a list's items, a row per key of a map
     /// whose type gives its keys, a map's entries (through newtypes), or another value's one row.
     fn root(&mut self, ui: &mut Imm<CapsPanel>, value: &dyn PartialReflect) {
+        if let Some(aspect) = value.try_downcast_ref::<ScriptedAspect>() {
+            self.scripted_fields(ui, aspect);
+            return;
+        }
         let (inner, path) = through_newtypes(value, ParsedPath::empty());
         if has_map_keys(self.registry, value) {
             self.keyed(ui, inner, &path);
@@ -697,6 +717,18 @@ impl Rows<'_> {
         if let Some((name, option)) = picked {
             self.add_or_remove(&path.with_field(name), option, true);
             self.added = true;
+        }
+    }
+
+    /// The rows of `aspect`'s fields, config and state alike, in declaration order, each at the
+    /// path of its name as a struct's field is. Reflection sees the aspect as one opaque value,
+    /// so its declaration lists the fields, and their attributes annotate them.
+    fn scripted_fields(&mut self, ui: &mut Imm<CapsPanel>, aspect: &ScriptedAspect) {
+        for (field, value) in aspect.fields() {
+            let name = intern(&field.name);
+            let path = ParsedPath::empty().with_field(name);
+            let value = value.as_partial_reflect();
+            self.row(ui, name, &field.attributes, value, path, None);
         }
     }
 

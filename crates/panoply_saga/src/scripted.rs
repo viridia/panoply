@@ -25,7 +25,7 @@ use bevy::{
     },
     platform::collections::HashMap,
     ptr::{OwningPtr, Ptr},
-    reflect::{PartialReflect, Reflect, TypeInfo},
+    reflect::{PartialReflect, Reflect, TypeInfo, attributes::CustomAttributes},
 };
 use smol_str::SmolStr;
 
@@ -44,6 +44,10 @@ pub struct AspectDecl {
     pub accessor: Option<SmolStr>,
     /// The kinds of instance it attaches to, as written (`Wall`).
     pub kinds: Vec<SmolStr>,
+    /// What its attributes but `accessor` give it, from the host's table
+    /// ([`HostState::add_aspect_attribute`](crate::HostState::add_aspect_attribute)): its pane's
+    /// icon.
+    pub attributes: CustomAttributes,
     /// Its fields, in declaration order.
     pub fields: Vec<AspectField>,
     /// The interactions it offers, in declaration order.
@@ -98,6 +102,10 @@ pub struct AspectField {
     pub info: &'static TypeInfo,
     /// The value its declaration gives it, if any; without one, its type's default.
     pub default: Option<Box<dyn Reflect>>,
+    /// What its attributes give it, from the host's table
+    /// ([`HostState::add_field_attribute`](crate::HostState::add_field_attribute)): how the
+    /// editor shows it, as a native field's `#[reflect(@...)]` does.
+    pub attributes: CustomAttributes,
 }
 
 impl AspectDecl {
@@ -373,18 +381,21 @@ mod tests {
             name: "Lamp".into(),
             accessor: Some("lamp".into()),
             kinds: vec!["Fixture".into()],
+            attributes: CustomAttributes::default(),
             fields: vec![
                 AspectField {
                     name: "color".into(),
                     is_state: false,
                     info: String::type_info(),
                     default: None,
+                    attributes: CustomAttributes::default(),
                 },
                 AspectField {
                     name: "lit".into(),
                     is_state: true,
                     info: bool::type_info(),
                     default: None,
+                    attributes: CustomAttributes::default(),
                 },
             ],
             interactions: Vec::new(),

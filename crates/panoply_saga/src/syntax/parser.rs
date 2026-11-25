@@ -405,6 +405,7 @@ peg::parser! {
 
         rule aspect_field() -> &'a ASTAspectField<'a> =
             start:position!()
+            attrs:(a:attribute() _ { a })*
             is_state:("state" kw_end() _ !":" { true })?
             n:name() _ ":" _ ty:type_expr()
             default:(_ "=" _ e:expr() { e })?
@@ -412,6 +413,7 @@ peg::parser! {
         {
             arena.alloc(ASTAspectField {
                 location: TokenLocation::new(start, end),
+                attrs: arena.alloc_slice_copy(attrs.as_slice()),
                 name: n,
                 is_state: is_state.is_some(),
                 typ: ty,
@@ -792,6 +794,7 @@ mod tests {
         let src = r#"#[accessor(toggle_switch)]
             aspect ToggleSwitch for Wall, Fixture {
                 caption: String = "Use",
+                #[range(0, 4)] #[read_only]
                 state on: bool = false,
                 // A field may be named after the keyword.
                 state: i32,
@@ -821,14 +824,17 @@ mod tests {
         ));
         let summary: Vec<_> = fields
             .iter()
-            .map(|f| (f.name, f.is_state, f.default.is_some()))
+            .map(|f| {
+                let attrs: Vec<_> = f.attrs.iter().map(|a| (a.name, a.args.len())).collect();
+                (f.name, f.is_state, f.default.is_some(), attrs)
+            })
             .collect();
         assert_eq!(
             summary,
             [
-                ("caption", false, true),
-                ("on", true, true),
-                ("state", false, false)
+                ("caption", false, true, vec![]),
+                ("on", true, true, vec![("range", 2), ("read_only", 0)]),
+                ("state", false, false, vec![])
             ]
         );
     }

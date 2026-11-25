@@ -154,6 +154,7 @@ pub(crate) struct ASTAttribute<'a> {
 #[derive(Debug)]
 pub(crate) struct ASTAspectField<'a> {
     pub(crate) location: TokenLocation,
+    pub(crate) attrs: &'a [&'a ASTAttribute<'a>],
     pub(crate) name: &'a str,
     /// Whether it is `state`, which play changes, rather than config.
     pub(crate) is_state: bool,

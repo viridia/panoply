@@ -564,10 +564,10 @@ never reused.
   new value of the field's real type; one system makes the frame's edits after the panel has run,
   records each in the undo history, then copies the shown values for the next frame. Only the walk
   that draws the rows and the roots touch reflection, so a new place to edit (an instance, a nav
-  point) is a new root, a type a mod declares (X64) is another walk and root beside reflection's,
-  and moving to `bevy_reflect2` (X98) touches those alone. arbor_day's panel, which it forked, wrote
-  through `&mut dyn PartialReflect` as it drew, which undo could not record. Reversing it means
-  widgets bound to the data again, with undo snapshotting whole values. (PAN28a)
+  point) is a new root, a type a mod declares (PAN104b) is another walk and root beside
+  reflection's, and moving to `bevy_reflect2` (X98) touches those alone. arbor_day's panel, which it
+  forked, wrote through `&mut dyn PartialReflect` as it drew, which undo could not record. Reversing
+  it means widgets bound to the data again, with undo snapshotting whole values. (PAN28a)
 - **D73** Saving a catalog writes its edits into the file's own JSON, read again at save time,
   rather than writing the exemplars out. Each edited exemplar is serialized as loaded and as it is
   now, and only where the two differ does the file change. The exemplars are not the whole file: the

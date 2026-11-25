@@ -49,7 +49,9 @@ impl Plugin for ExemplarPlugin {
         if !app.is_plugin_added::<SagaPlugin>() {
             app.add_plugins(SagaPlugin);
         }
-        add_interaction_fields(&mut app.world_mut().resource_mut::<SagaHostBuilder>().0);
+        let host = &mut app.world_mut().resource_mut::<SagaHostBuilder>().0;
+        add_interaction_fields(host);
+        annotations::add_editor_attributes(host);
         app.init_resource::<CatalogRoots>()
             .init_asset::<ExemplarCatalog>()
             .init_asset::<Exemplar>()

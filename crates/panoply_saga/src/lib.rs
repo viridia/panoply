@@ -60,7 +60,7 @@ pub use compiler::{
 };
 pub use effect::EffectBuffer;
 pub use embed::{Formula, FormulaQueue, FormulaRef, ReflectFormula};
-pub use host::{FieldKind, HostState, InteractionField};
+pub use host::{AttributeBuild, FieldKind, HostAttribute, HostState, InteractionField};
 pub use plugin::{SagaHost, SagaHostBuilder, SagaPlugin};
 pub use reactive::{CellId, NativeMemo, ReactionPass, ReactionReads, Reactions};
 pub use sema::types::{ExprType, HostParam};

@@ -4,7 +4,10 @@ use std::sync::{Arc, OnceLock};
 
 use bevy::{
     ecs::entity::Entity,
-    reflect::{Reflect, TypeInfo, Typed},
+    reflect::{
+        Reflect, TypeInfo, Typed,
+        attributes::{CustomAttributes, CustomAttributesBuilder},
+    },
 };
 use smol_str::SmolStr;
 
@@ -18,7 +21,7 @@ use super::{
 use crate::{
     ScriptModule,
     compiler::CompilationError,
-    host::{FieldKind, HostState},
+    host::{FieldKind, HostAttribute, HostState},
     scripted::{AspectDecl, AspectField, InteractionDecl},
     syntax::{
         ast::{ASTAttribute, ASTDecl, ASTInteraction, ASTNode, NodeKind},
@@ -76,36 +79,74 @@ fn literal(ast: &ASTNode, typ: &ExprType) -> Option<Box<dyn Reflect>> {
     })
 }
 
-/// The accessor `attrs` give an aspect. `accessor` is the only attribute an aspect takes.
-fn accessor(attrs: &[&ASTAttribute]) -> Result<Option<SmolStr>, CompilationError> {
-    let mut accessor = None;
+/// The custom attributes `attrs` give, each found in `table`, the host's, its arguments literals
+/// of its parameters' types. `skip` names an attribute read elsewhere, which is left out.
+fn attributes(
+    table: &[HostAttribute],
+    attrs: &[&ASTAttribute],
+    skip: Option<&str>,
+) -> Result<CustomAttributes, CompilationError> {
+    let mut builder = CustomAttributesBuilder::new();
+    let mut seen: Vec<&str> = Vec::with_capacity(attrs.len());
     for attr in attrs {
-        if attr.name != "accessor" {
-            return Err(CompilationError::UnknownAttribute(
+        if seen.contains(&attr.name) {
+            return Err(CompilationError::NameRedefinition(
                 attr.location,
                 attr.name.into(),
             ));
         }
-        let [
-            ASTNode {
-                kind: NodeKind::Ident(name),
-                ..
-            },
-        ] = attr.args
-        else {
-            return Err(CompilationError::Expected(
+        seen.push(attr.name);
+        if Some(attr.name) == skip {
+            continue;
+        }
+        let Some(host) = table.iter().find(|host| host.name == attr.name) else {
+            return Err(CompilationError::UnknownAttribute(
                 attr.location,
-                "#[accessor(name)]".into(),
+                attr.name.into(),
             ));
         };
-        if accessor.replace(SmolStr::from(*name)).is_some() {
-            return Err(CompilationError::NameRedefinition(
-                attr.location,
-                "accessor".into(),
-            ));
-        }
+        let args = (attr.args.len() == host.params.len())
+            .then(|| {
+                attr.args
+                    .iter()
+                    .zip(&host.params)
+                    .map(|(arg, typ)| literal(arg, typ))
+                    .collect::<Option<Vec<_>>>()
+            })
+            .flatten()
+            .ok_or_else(|| CompilationError::Expected(attr.location, attribute_form(host)))?;
+        builder = (host.build)(builder, &args);
     }
-    Ok(accessor)
+    Ok(builder.build())
+}
+
+/// How `attr` is written, for an error: `#[range(f64, f64)]`, or `#[read_only]`.
+fn attribute_form(attr: &HostAttribute) -> SmolStr {
+    if attr.params.is_empty() {
+        return format!("#[{}]", attr.name).into();
+    }
+    let params: Vec<_> = attr.params.iter().map(ToString::to_string).collect();
+    format!("#[{}({})]", attr.name, params.join(", ")).into()
+}
+
+/// The accessor `attrs` give an aspect, from `#[accessor(name)]`.
+fn accessor(attrs: &[&ASTAttribute]) -> Result<Option<SmolStr>, CompilationError> {
+    let Some(attr) = attrs.iter().find(|attr| attr.name == "accessor") else {
+        return Ok(None);
+    };
+    let [
+        ASTNode {
+            kind: NodeKind::Ident(name),
+            ..
+        },
+    ] = attr.args
+    else {
+        return Err(CompilationError::Expected(
+            attr.location,
+            "#[accessor(name)]".into(),
+        ));
+    };
+    Ok(Some(SmolStr::from(*name)))
 }
 
 /// A field an interaction sets, whose function [`build_aspects`] reserves and the builder then
@@ -248,6 +289,7 @@ pub(crate) fn build_aspects<'a>(
                 is_state: field.is_state,
                 info,
                 default,
+                attributes: attributes(&host.field_attributes, field.attrs, None)?,
             });
         }
         let mut fns = Vec::new();
@@ -256,6 +298,7 @@ pub(crate) fn build_aspects<'a>(
             key: aspect_key(&module.path, name),
             name: (*name).into(),
             accessor: accessor(attrs)?,
+            attributes: attributes(&host.aspect_attributes, attrs, Some("accessor"))?,
             kinds: kinds.iter().map(|kind| (*kind).into()).collect(),
             fields,
             interactions,
