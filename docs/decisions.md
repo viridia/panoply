@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D124.**
+**Next: D125.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1081,3 +1081,11 @@ never reused.
   How a quest reaches an actor's presence is X123's; if quest-side, the quest supplies the bound
   actor's `Presence`, overriding its own. Reversing it means conditions combined from several
   aspects, or an idle hook choosing clips. (PAN125)
+- **D124** A SAGA slot holds only a primitive, an entity or a string. A value scripts cannot see
+  into (an enum, a list, a handle) keeps its slot in its struct's layout, so the fields after it
+  keep their offsets, but a formula that reads it, or a value holding it, does not compile; enums
+  are X144. Such slots once referred to the reflected value, but nothing read them, and a native
+  taking one would have taken `&dyn PartialReflect` with no type checked. The VM still borrows the
+  world for `'w`, for a component's strings, which are borrowed rather than copied. Reversing it
+  means a slot kind for reflected values again, with the type of what it refers to checked where it
+  is read. (PAN124)

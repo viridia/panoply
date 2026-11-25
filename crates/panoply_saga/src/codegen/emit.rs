@@ -9,7 +9,7 @@ use crate::{
     compiler::CompilationError,
     host::{
         HostState,
-        layout::{Layout, slot_count},
+        layout::{Layout, has_opaque, slot_count},
     },
     sema::{
         build::ModuleExprs,
@@ -202,6 +202,12 @@ impl<'f, 'e> Emitter<'f, 'e> {
         offset: usize,
     ) -> Result<(), CompilationError> {
         let loc = expr.location;
+        if has_opaque(self.type_of(expr)) {
+            return Err(CompilationError::Unsupported(
+                loc,
+                "reading a value scripts cannot see into, such as an enum or a list",
+            ));
+        }
         let count = self.slots16(expr)?;
         let offset = imm16(loc, offset, "more than 65535 slots")?;
         match place {

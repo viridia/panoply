@@ -54,9 +54,10 @@ and a bytecode interpreter on a stack VM. It came from `bevy_reactor`'s formulas
   indices count slots, not values. Fixed-size arrays are laid out the same way (`[f32; 4]` is 4
   slots), for passing data to helper functions. Tuple structs and tuples are laid out as structs,
   their fields read as `v.0`. Every reflected struct has a layout: a field that is not a primitive,
-  an entity, a string or itself laid out (an enum, a list, a handle) is one opaque slot referring to
-  it. Struct types declared in scripts are X87, tuples written in scripts X135, and dynamic lists
-  X86.
+  an entity, a string or itself laid out (an enum, a list, a handle) is one opaque slot, which keeps
+  the offsets of the fields after it, and a formula that reads it, or a value holding it, does not
+  compile (D124). Struct types declared in scripts are X87, tuples written in scripts X135, and
+  dynamic lists X86.
 - **The stack holds no owned data**, so slots are `Copy` and dropping one costs nothing. A string is
   an index into the evaluation's table of strings, each borrowed from the module's constants (a
   literal) or the world (a component's string), or owned by the evaluation (a computed string),

@@ -3,7 +3,6 @@
 use bevy::{
     ecs::entity::Entity,
     math::{Quat, Vec2, Vec3, Vec4},
-    reflect::PartialReflect,
     transform::components::Transform,
 };
 
@@ -15,22 +14,18 @@ enum StrEntry<'w> {
     Owned(usize),
 }
 
-/// What the evaluation's slots refer to: its strings and reflected values. A slot holds an index
-/// into one of these, so slots own nothing; all of it is freed when the evaluation ends.
+/// What the evaluation's string slots refer to. A slot holds an index into it, so slots own
+/// nothing; all of it is freed when the evaluation ends.
 #[derive(Default)]
 pub struct SlotStore<'w> {
     strings: Vec<StrEntry<'w>>,
     owned: Vec<String>,
-    world_refs: Vec<&'w dyn PartialReflect>,
-    heap_refs: Vec<Box<dyn PartialReflect>>,
 }
 
 impl<'w> SlotStore<'w> {
     pub(crate) fn clear(&mut self) {
         self.strings.clear();
         self.owned.clear();
-        self.world_refs.clear();
-        self.heap_refs.clear();
     }
 
     fn add_string(&mut self, entry: StrEntry<'w>) -> Result<StackValue, VMError> {
@@ -60,51 +55,10 @@ impl<'w> SlotStore<'w> {
         }
     }
 
-    /// A slot referring to a reflected value in the world.
-    pub fn world_ref(&mut self, value: &'w dyn PartialReflect) -> StackValue {
-        let index = self.world_refs.len();
-        self.world_refs.push(value);
-        StackValue::WorldRef(index)
-    }
-
-    /// A slot holding a reflected temporary, freed when the evaluation ends.
-    pub fn heap_ref<T: PartialReflect>(&mut self, value: T) -> Result<StackValue, VMError> {
-        let index = u16::try_from(self.heap_refs.len())
-            .map_err(|_| VMError::Unsupported("more than 65535 temporaries"))?;
-        self.heap_refs.push(Box::new(value).into_partial_reflect());
-        Ok(StackValue::HeapRef(index))
-    }
-
-    /// The reflected value an opaque slot refers to.
-    pub fn reflected(&self, value: &StackValue) -> Option<&dyn PartialReflect> {
-        match value {
-            StackValue::WorldRef(index) => self.world_refs.get(*index).copied(),
-            StackValue::HeapRef(index) => self.heap_refs.get(*index as usize).map(|r| r.as_ref()),
-            _ => None,
-        }
-    }
-
-    /// The type of what a slot holds, for error messages.
-    pub(crate) fn type_path(&self, value: &StackValue) -> &'static str {
-        match value {
-            StackValue::Void => "void",
-            StackValue::Bool(_) => "bool",
-            StackValue::I32(_) => "i32",
-            StackValue::I64(_) => "i64",
-            StackValue::F32(_) => "f32",
-            StackValue::F64(_) => "f64",
-            StackValue::Entity(_) => "Entity",
-            StackValue::Str(_) => "String",
-            StackValue::WorldRef(_) | StackValue::HeapRef(_) => self
-                .reflected(value)
-                .and_then(|r| r.get_represented_type_info())
-                .map_or("none", |info| info.type_path()),
-        }
-    }
 }
 
 /// A Rust value read from slots: a native's argument, or an evaluation's result. A value read
-/// from an opaque or string slot borrows from the evaluation, for `'a`.
+/// from a string slot borrows from the evaluation, for `'a`.
 pub trait FromSlots<'a>: Sized {
     /// How many slots the value takes.
     const SLOTS: usize;
@@ -119,8 +73,18 @@ pub trait ToSlots {
     -> Result<(), VMError>;
 }
 
-fn mismatch(store: &SlotStore, found: &StackValue, expected: &'static str) -> VMError {
-    VMError::MismatchedTypes2(store.type_path(found), expected)
+fn mismatch(found: &StackValue, expected: &'static str) -> VMError {
+    let found = match found {
+        StackValue::Void => "void",
+        StackValue::Bool(_) => "bool",
+        StackValue::I32(_) => "i32",
+        StackValue::I64(_) => "i64",
+        StackValue::F32(_) => "f32",
+        StackValue::F64(_) => "f64",
+        StackValue::Entity(_) => "Entity",
+        StackValue::Str(_) => "String",
+    };
+    VMError::MismatchedTypes2(found, expected)
 }
 
 /// The one slot of a one-slot value.
@@ -136,10 +100,10 @@ macro_rules! primitive_slots {
         impl FromSlots<'_> for $ty {
             const SLOTS: usize = 1;
 
-            fn from_slots(slots: &[StackValue], store: &SlotStore<'_>) -> Result<Self, VMError> {
+            fn from_slots(slots: &[StackValue], _store: &SlotStore<'_>) -> Result<Self, VMError> {
                 match single(slots)? {
                     StackValue::$variant(value) => Ok(*value),
-                    other => Err(mismatch(store, other, stringify!($ty))),
+                    other => Err(mismatch(other, stringify!($ty))),
                 }
             }
         }
@@ -176,7 +140,7 @@ impl<'a> FromSlots<'a> for &'a str {
     fn from_slots(slots: &[StackValue], store: &'a SlotStore<'_>) -> Result<Self, VMError> {
         match single(slots)? {
             StackValue::Str(index) => store.str(*index).ok_or(VMError::InvalidString(*index)),
-            other => Err(mismatch(store, other, "String")),
+            other => Err(mismatch(other, "String")),
         }
     }
 }
@@ -207,18 +171,6 @@ impl ToSlots for String {
         store: &mut SlotStore<'_>,
     ) -> Result<(), VMError> {
         self.as_str().to_slots(out, store)
-    }
-}
-
-/// An opaque value, borrowed from the evaluation.
-impl<'a> FromSlots<'a> for &'a dyn PartialReflect {
-    const SLOTS: usize = 1;
-
-    fn from_slots(slots: &[StackValue], store: &'a SlotStore<'_>) -> Result<Self, VMError> {
-        let slot = single(slots)?;
-        store
-            .reflected(slot)
-            .ok_or_else(|| mismatch(store, slot, "a reflected value"))
     }
 }
 

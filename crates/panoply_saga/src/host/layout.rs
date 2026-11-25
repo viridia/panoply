@@ -1,5 +1,6 @@
 //! How values are laid out in stack slots: a struct's fields one after another, each primitive,
-//! entity and string one slot, and anything else one opaque slot referring to it.
+//! entity and string one slot, and anything else one opaque slot, which keeps the offsets of the
+//! fields after it but cannot be read.
 
 use bevy::{
     ecs::entity::Entity,
@@ -18,7 +19,8 @@ pub(crate) enum Leaf {
     F64,
     Entity,
     Str,
-    /// A value scripts cannot see into, such as an enum or a list: a reference to it.
+    /// A value scripts cannot see into, such as an enum or a list. A formula that reads one does
+    /// not compile.
     Opaque,
 }
 
@@ -102,6 +104,14 @@ impl Layout {
         }
     }
 
+    fn has_opaque(&self) -> bool {
+        match self {
+            Layout::Leaf(leaf) => *leaf == Leaf::Opaque,
+            Layout::Fields { fields, .. } => fields.iter().any(|(_, field)| field.has_opaque()),
+            Layout::Array { element, .. } => element.has_opaque(),
+        }
+    }
+
     /// The offset and slot count of field `index`.
     pub(crate) fn field(&self, index: usize) -> Option<(usize, usize)> {
         let Layout::Fields { fields, .. } = self else {
@@ -128,6 +138,15 @@ pub(crate) fn slot_count(typ: &ExprType) -> Option<usize> {
         ExprType::Array(element, len) => Some(slot_count(element)? * len),
         ExprType::Reflected(info) => Some(Layout::of(info).slots()),
         ExprType::None | ExprType::Infer(_) | ExprType::Function(_) => None,
+    }
+}
+
+/// Whether a value of type `typ` holds a slot scripts cannot read.
+pub(crate) fn has_opaque(typ: &ExprType) -> bool {
+    match typ {
+        ExprType::Array(element, _) => has_opaque(element),
+        ExprType::Reflected(info) => Layout::of(info).has_opaque(),
+        _ => false,
     }
 }
 

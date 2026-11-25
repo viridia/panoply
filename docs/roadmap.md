@@ -506,11 +506,12 @@ D111.
 - **PAN115 Equality, integer fields and literal types** in SAGA. `target == self`,
   `name == "chest"`, and `!=`: today `==` takes only numbers and booleans (`binary_op_accepts`,
   `check.rs`). Entities compare as values; strings by content, through the evaluation's `SlotStore`.
-  A component's unsigned and narrow integer fields, now opaque slots (`Leaf::of`, `layout.rs`),
-  widened as they are read: `u8`, `u16`, `u32`, `i8` and `i16` to `i32`, `u64` and `usize` to `i64`.
-  And literals that take their type from context, so that `let x: i64 = 5;` and `let y: f64 = 1.0;`
-  need no suffix: unsized integer and float literal types that unify with any integer or float,
-  defaulted to `i32` and `f32` after solving, an integer's range checked once its type is known.
+  A component's unsigned and narrow integer fields, now opaque and unreadable (`Leaf::of`,
+  `layout.rs`), widened as they are read: `u8`, `u16`, `u32`, `i8` and `i16` to `i32`, `u64` and
+  `usize` to `i64`. And literals that take their type from context, so that `let x: i64 = 5;` and
+  `let y: f64 = 1.0;` need no suffix: unsized integer and float literal types that unify with any
+  integer or float, defaulted to `i32` and `f32` after solving, an integer's range checked once its
+  type is known.
 - **PAN116 Absent values**, as [saga.md](saga.md)'s Values has them: `Option`, `??` and `?.`, and a
   read of another entity's component giving an `Option`, where it now fails the evaluation. Before
   PAN105, whose memos read the entities they are given.
@@ -618,13 +619,6 @@ Code that works but stands in the way: a pattern the rest of the code has moved 
 workaround for what should be fixed at its cause. Each is taken when its area is next touched, or
 sooner when it bites.
 
-- **PAN124 Reflected slots.** Left from SAGA before slots, when values were reflected throughout:
-  nothing calls `InvocationContext::create_heap_ref` or `create_world_ref`, and only the first makes
-  `StackValue::HeapRef`, so heap temporaries and `SlotStore`'s `heap_refs` go. `WorldRef` is still
-  made, for a component's opaque leaves (`Leaf::Opaque`, in `StackSink`), and read by
-  `&dyn PartialReflect`'s `FromSlots`; it is the main reason `ScriptVm` and `SlotStore` borrow the
-  world for `'w`. Whether any loaded component has an opaque leaf a script reads decides whether it
-  goes too, and the lifetime with it.
 - **PAN103 Tools on picking events.** The editor's world tools read the mouse by polling
   `PointerState`, which passes by picking's routing: what a widget or dialog in front of the view
   does with a press does not reach them. So closing a dialog by clicking outside it, which despawns

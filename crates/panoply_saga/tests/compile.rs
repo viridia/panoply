@@ -42,6 +42,7 @@ enum Mood {
 #[derive(Component, Reflect)]
 struct Temper {
     mood: Mood,
+    patience: f32,
 }
 
 fn entity_health(ctx: &mut InvocationContext) -> Result<(), VMError> {
@@ -421,21 +422,16 @@ fn tuple_struct_and_string_fields() {
             Label {
                 text: "chest".into(),
             },
-            Temper { mood: Mood::Calm },
+            Temper {
+                mood: Mood::Calm,
+                patience: 0.25,
+            },
         ))
         .id();
     let mut host = HostState::new();
     host.add_component::<Charge>("charge");
     host.add_component::<Label>("label");
     host.add_component::<Temper>("temper");
-    let read = |src: &str, ty| {
-        let module = formula(src, &host, ty).unwrap_or_else(|e| panic!("{src}: {e}"));
-        let mut tracking = TrackingScope::default();
-        let mut vm = ScriptVm::new(&world, &host, &mut tracking);
-        vm.owner = actor;
-        vm.run(&module, ScriptModule::DEFAULT)
-            .map(|slots| slots.to_vec())
-    };
     let module = formula("self.charge.0", &host, ExprType::F32).unwrap();
     assert_eq!(
         run(&module, ScriptModule::DEFAULT, &world, &host, actor),
@@ -451,11 +447,20 @@ fn tuple_struct_and_string_fields() {
         run(&module, ScriptModule::DEFAULT, &world, &host, actor),
         Ok("chest".to_string())
     );
-    // An enum field is one opaque slot: readable, with nothing to see inside.
+    // An enum field cannot be read, but the fields beside it can.
+    let module = formula("self.temper.patience", &host, ExprType::F32).unwrap();
     assert_eq!(
-        read("self.temper", ExprType::Reflected(Temper::type_info())).map(|slots| slots.len()),
-        Ok(1)
+        run(&module, ScriptModule::DEFAULT, &world, &host, actor),
+        Ok(0.25f32)
     );
+    let temper = ExprType::Reflected(Temper::type_info());
+    for (src, typ) in [("self.temper", temper), ("self.temper.mood", ExprType::Reflected(Mood::type_info()))] {
+        let error = formula(src, &host, typ).unwrap_err();
+        assert!(
+            format!("{error:?}").starts_with("Unsupported"),
+            "{src}: {error:?}"
+        );
+    }
 
     for (src, expected) in [
         ("self.charge.1", "UnknownField"),

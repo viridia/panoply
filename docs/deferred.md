@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X144.**
+**Next: X145.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -671,3 +671,10 @@ dropped, not deferred. Numbers are never reused.
   such as "Starts" after its config rows; a native aspect needs an annotation to match (D107), as
   `Lock.locked` does. Little reason to look at a prototype once it is set up. *Gate:* PAN28e, once
   instances show their own values beside their exemplars'.
+- **X144** Enums in SAGA: a formula reading a component's or scripted aspect's enum field, comparing
+  it against a variant (`self.door.state == DoorState::Open`) and matching on it, and a scripted
+  aspect declaring a field of a host enum. Today an enum field is unreadable (D124). A fieldless
+  enum fits one slot as its variant index, checked against the type's `TypeInfo` where it is read
+  and converted back at the boundary, which keeps the stack free of references; a variant with
+  fields is the harder half, laid out as its largest variant or left unreadable. *Gate:* a component
+  or aspect a formula reads that needs a state with more than two values.

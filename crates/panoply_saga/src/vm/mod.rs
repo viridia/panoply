@@ -26,8 +26,8 @@ use crate::{
     tracking::TrackingScope,
 };
 
-/// One stack slot. A slot owns nothing: a string or a reflected value is an index into the
-/// evaluation's [`SlotStore`].
+/// One stack slot. A slot owns nothing: a string is an index into the evaluation's
+/// [`SlotStore`].
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum StackValue {
     /// An uninitialized local.
@@ -40,10 +40,6 @@ pub enum StackValue {
     Entity(Entity),
     /// An index into the evaluation's strings.
     Str(u32),
-    /// An index into the evaluation's references to reflected values in the world.
-    WorldRef(usize),
-    /// An index into the evaluation's reflected temporaries.
-    HeapRef(u16),
 }
 
 #[non_exhaustive]
@@ -145,16 +141,6 @@ impl<'w> InvocationContext<'_, 'w> {
     /// Writes the function's result.
     pub fn ret(&mut self, value: impl ToSlots) -> Result<(), VMError> {
         value.to_slots(self.out, self.store)
-    }
-
-    /// A slot holding a reflected temporary, freed when the evaluation ends.
-    pub fn create_heap_ref<T: PartialReflect>(&mut self, value: T) -> Result<StackValue, VMError> {
-        self.store.heap_ref(value)
-    }
-
-    /// A slot referring to a reflected value in the world.
-    pub fn create_world_ref(&mut self, reflected: &'w dyn PartialReflect) -> StackValue {
-        self.store.world_ref(reflected)
     }
 
     /// Component `C` on `entity`, recorded as a read of the evaluation.
@@ -402,7 +388,6 @@ fn value_type(value: &StackValue) -> ExprType {
         StackValue::F64(_) => ExprType::F64,
         StackValue::Entity(_) => ExprType::Entity,
         StackValue::Str(_) => ExprType::String,
-        StackValue::WorldRef(_) | StackValue::HeapRef(_) => ExprType::None,
     }
 }
 
@@ -639,7 +624,8 @@ impl<'w> SlotSink<'w> for StackSink<'_, 'w> {
                 let s: &'w String = value.try_downcast_ref().ok_or_else(mismatch)?;
                 self.store.borrowed_str(s)?
             }
-            Leaf::Opaque => self.store.world_ref(value),
+            // Refused when the formula compiles.
+            Leaf::Opaque => return Err(VMError::Unsupported("a value scripts cannot see into")),
         };
         self.stack.push(slot);
         Ok(())
