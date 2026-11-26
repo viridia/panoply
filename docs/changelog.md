@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN102b** Scenery mode draws marker fixtures: a pin, an area's outline, a path's dashed line.
 - **PAN102a** Marker fixtures carry their pins, areas and paths, with Tambry's radii and sizes.
 - **PAN111a** Actors have health; the Crimson Watch skirmisher can be attacked with E, and dies.
 - **PAN104e** A scripted aspect's `#[require(Name)]` attaches the aspect it names, at its defaults.

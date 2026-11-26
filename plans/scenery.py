@@ -19,6 +19,8 @@
   of the gizmo on the selection moves or turns it, undoably, and Delete removes it. The list's
   filter menu shows unlabelled instances and narrows them by kind; Rename… labels the selection
   and clears the label, undoably, and a click outside its dialog closes it, keeping the selection.
+- Markers: a marker fixture shows its pin and its area, faint, outlined on hover, and bright when
+  selected.
 
 Settings start empty, so the panel starts hidden.
 """
@@ -79,6 +81,9 @@ PLAYGROUND_INDEX = "scenery/precincts/playground/index.json"
 EMPTY_PRECINCT_ENTITY = "Precinct:playground:2:2"
 # Inside the house in the playground's precinct (0, 0), under its upper floor on tier 2.
 HOUSE = [53.0, 0.0, 41.0]
+# The playground's water current, a marker with a circular area, in its precinct (0, 0).
+WATER_CURRENT = [45.5, 0.0, 53.7]
+MARKER_OVERLAY = "panoply_editor::marker_overlays::MarkerOverlay"
 
 
 def run(driver):
@@ -98,6 +103,8 @@ def run(driver):
     actor_tool(driver)
     driver.caption("selection")
     select_instance(driver)
+    driver.caption("markers")
+    markers(driver)
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
     driver.click("PlaceWall")
@@ -618,3 +625,27 @@ def select_instance(driver):
     finally:
         restore(precinct, original)
     expect_elements(driver, base)
+
+
+def markers(driver):
+    """Selection mode, at the playground's water current: its pin and its area are drawn, faint;
+    hovering it outlines its collider around the pin, and a click selects it, drawing it bright.
+    Checked by eye in `markers.png`: the ring reads against the pin."""
+    driver.goto(WATER_CURRENT, 8.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    driver.present("MarkerAreaOutline", timeout=WAIT)
+    driver.present("MarkerPin")
+
+    def bright():
+        rows = by_name(driver, "MarkerOverlay", [MARKER_OVERLAY])
+        return [row for row in rows if row["components"][MARKER_OVERLAY]["bright"]]
+
+    assert not bright(), "a marker is bright with nothing selected"
+    move_pointer(driver, window, scale, middle)
+    driver.frames(3)
+    assert driver.get("InstanceOutline:Hovered", OUTLINE)["polygons"], "no outline on hover"
+    driver.screenshot("markers")
+    button(driver, window, "Pressed")
+    button(driver, window, "Released")
+    driver.frames(2)
+    assert len(bright()) == 1, "the selected marker is not bright"

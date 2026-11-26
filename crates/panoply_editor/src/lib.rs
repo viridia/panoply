@@ -32,6 +32,7 @@ pub mod instance_list;
 pub mod instance_selection;
 pub mod json;
 pub mod map_size;
+pub mod marker_overlays;
 pub mod mode_overlays;
 pub mod mode_selector;
 pub mod model_picker;
@@ -105,6 +106,7 @@ impl PluginGroup for EditorPlugins {
             .add(actor_tool::ActorToolPlugin)
             .add(instance_selection::InstanceSelectionPlugin)
             .add(instance_gizmo::InstanceGizmoPlugin)
+            .add(marker_overlays::MarkerOverlaysPlugin)
             .add(instance_index::InstanceIndexPlugin)
             .add(instance_list::InstanceListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)

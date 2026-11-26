@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN133.**
+**Next: PAN134.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -111,15 +111,13 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   colliders (D93). Their aspects are `MarkerPin`, `MarkerArea` and `MarkerPath`
   (`marker_aspect.rs`); an area and a path ignore the fixture's facing.
 
-- **PAN102b Marker overlays.** In scenery mode, for every shown precinct: faery's map pin
-  (`editor/src/icons/map-pin.png`) as a camera-facing quad at each marker fixture, tinted by its
-  `MarkerPin` color; an area's fill and outline; a path's points as pins, joined by a dashed line.
-  Faint, and bright when selected, as faery's were. The hover outline is the marker collider's ring
-  (`show_outlines`); the pin brightens on hover too if the ring does not read.
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
   drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
   `SelectSceneryRectTool` made a rect into a cutaway is read in the chunk.
+- **PAN133 Instance labels.** A Show menu item drawing each labelled wall and fixture's label above
+  it in the selected precinct, as faery's Show Instance IDs did (`SceneryInstanceIdsOverlay.tsx`): a
+  UI text node a label, placed each frame by `Camera::world_to_viewport`, hidden behind the camera.
 
 ## Review
 
