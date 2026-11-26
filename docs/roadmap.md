@@ -160,6 +160,7 @@ scripted aspects were, with fields and hooks. Precedents for its field kinds: Un
 `EditDefaultsOnly` and `EditInstanceOnly`, Verse's `@editable`, Svelte's `$props`, `$state` and
 `$derived`, Verilog's `parameter`, `reg` and `assign`.
 
+
 - **PAN104d Hooks.** An aspect's hooks are not methods but a fixed set of reactive callbacks the
   engine knows, written `on <name>(...)` and checked by name against a table the host registers, as
   an interaction's fields are (D120), so a misspelled hook is an error. The first are `attach`, an
@@ -266,7 +267,7 @@ were PNGs of the same size as these, so theirs likely carry over.
     `#[signal]` for scripted outputs. Which way the `SpearsAction` clip plays is read in the chunk.
     Its collider follows the animated node, as PAN59's door leaf does.
   - `SignalInput`'s source is the first field without a default that an instance must supply, the
-    error case of PAN111a's `#[require]` (D121) met in a game.
+    error case of `#[require]` (D121) met in a game.
   - The first collider that rises under an actor: as the spears start up, actors whose footprint
     overlaps the trap are woken and pushed sideways out of it (`ActorMotion::push`, as `bump_actors`
     shoves), before the collider rises, so that none is lifted onto the wall (I85).
@@ -545,11 +546,11 @@ D111.
 ## SAGA
 
 - **PAN71 Imports**, modeled on WESL's ([saga.md](saga.md), Modules), of a `.saga` module's `pub`
-  functions. Its constants wait on X91, its structs on X87, and imported exemplars on X118.
-  `ModuleResolver`, implemented on Bevy's `LoadContext`: check how Bevy main loads a dependency from
-  within a loader. A module recompiles when one it imports reloads, and an import cycle is a compile
-  error. The parser also takes a bare `import a::b;`, which becomes a namespace (`b::f`) or an
-  error.
+  functions, and `#[require]` of another module's aspect, by its path. Its constants wait on X91,
+  its structs on X87, and imported exemplars on X118. `ModuleResolver`, implemented on Bevy's
+  `LoadContext`: check how Bevy main loads a dependency from within a loader. A module recompiles
+  when one it imports reloads, and an import cycle is a compile error. The parser also takes a bare
+  `import a::b;`, which becomes a namespace (`b::f`) or an error.
 - **PAN115 Equality, integer fields and literal types** in SAGA. `target == self`,
   `name == "chest"`, and `!=`: today `==` takes only numbers and booleans (`binary_op_accepts`,
   `check.rs`). Entities compare as values; strings by content, through the evaluation's `SlotStore`.
@@ -623,11 +624,7 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   requires it, whose Attack interaction is offered while the actor is alive and deals a fixed
   amount. At zero the actor is dead and offers no Attack. On `CrimsonWatchSkirmisher`, or an
   exemplar the chunk chooses, placed in the playground.
-  - It builds `#[require(Name)]`: the named aspect, native or scripted, attaches at its defaults
-    where an instance's resolved aspects lack it, as Bevy's `#[require]` does for components, and a
-    field without a default makes the lack an error as the instance spawns, checked by `cargo test`
-    until PAN79a's `SignalInput` meets it. The exemplar pane shows an aspect's required aspects
-    after it.
+  - The exemplar pane shows an aspect's required aspects after it.
   - The interaction probe finds actors, the first to offer an interaction (PAN17b).
   - Left to others: `Inventory` as a second requirement (PAN106), the threat table once an NPC
     fights back (PAN111), stats and their buffs as cells (X53), and disposition (X146). Whether

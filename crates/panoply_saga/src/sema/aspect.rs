@@ -80,11 +80,11 @@ fn literal(ast: &ASTNode, typ: &ExprType) -> Option<Box<dyn Reflect>> {
 }
 
 /// The custom attributes `attrs` give, each found in `table`, the host's, its arguments literals
-/// of its parameters' types. `skip` names an attribute read elsewhere, which is left out.
+/// of its parameters' types. `skip` names the attributes read elsewhere, which are left out.
 fn attributes(
     table: &[HostAttribute],
     attrs: &[&ASTAttribute],
-    skip: Option<&str>,
+    skip: &[&str],
 ) -> Result<CustomAttributes, CompilationError> {
     let mut builder = CustomAttributesBuilder::new();
     let mut seen: Vec<&str> = Vec::with_capacity(attrs.len());
@@ -96,7 +96,7 @@ fn attributes(
             ));
         }
         seen.push(attr.name);
-        if Some(attr.name) == skip {
+        if skip.contains(&attr.name) {
             continue;
         }
         let Some(host) = table.iter().find(|host| host.name == attr.name) else {
@@ -147,6 +147,31 @@ fn accessor(attrs: &[&ASTAttribute]) -> Result<Option<SmolStr>, CompilationError
         ));
     };
     Ok(Some(SmolStr::from(*name)))
+}
+
+/// The keys of the aspects `attrs` require, from `#[require(A, B)]`, in the module at `path`,
+/// which declares the aspects `declared`. A name it declares is that aspect's key; any other is
+/// a native aspect's, which only an instance spawning checks.
+fn requires(
+    attrs: &[&ASTAttribute],
+    path: &str,
+    declared: &[&str],
+) -> Result<Vec<Arc<str>>, CompilationError> {
+    let Some(attr) = attrs.iter().find(|attr| attr.name == "require") else {
+        return Ok(Vec::new());
+    };
+    let expected = || CompilationError::Expected(attr.location, "#[require(Name, ...)]".into());
+    if attr.args.is_empty() {
+        return Err(expected());
+    }
+    attr.args
+        .iter()
+        .map(|arg| match arg.kind {
+            NodeKind::Ident(name) if declared.contains(&name) => Ok(aspect_key(path, name)),
+            NodeKind::Ident(name) => Ok(name.into()),
+            _ => Err(expected()),
+        })
+        .collect()
 }
 
 /// A field an interaction sets, whose function [`build_aspects`] reserves and the builder then
@@ -246,6 +271,14 @@ pub(crate) fn build_aspects<'a>(
         scope_type: ScopeType::Host,
     };
     let mut interaction_fields = Vec::new();
+    // Every aspect the module declares, so that one can require another declared after it.
+    let declared: Vec<&str> = ast_decls
+        .iter()
+        .filter_map(|ast_decl| match &ast_decl.kind {
+            NodeKind::Decl(ASTDecl::Aspect { name, .. }) => Some(*name),
+            _ => None,
+        })
+        .collect();
     for ast_decl in ast_decls {
         let NodeKind::Decl(ASTDecl::Aspect {
             attrs,
@@ -289,7 +322,7 @@ pub(crate) fn build_aspects<'a>(
                 is_state: field.is_state,
                 info,
                 default,
-                attributes: attributes(&host.field_attributes, field.attrs, None)?,
+                attributes: attributes(&host.field_attributes, field.attrs, &[])?,
             });
         }
         let mut fns = Vec::new();
@@ -298,7 +331,8 @@ pub(crate) fn build_aspects<'a>(
             key: aspect_key(&module.path, name),
             name: (*name).into(),
             accessor: accessor(attrs)?,
-            attributes: attributes(&host.aspect_attributes, attrs, Some("accessor"))?,
+            attributes: attributes(&host.aspect_attributes, attrs, &["accessor", "require"])?,
+            requires: requires(attrs, &module.path, &declared)?,
             kinds: kinds.iter().map(|kind| (*kind).into()).collect(),
             fields,
             interactions,

@@ -454,7 +454,10 @@ fn tuple_struct_and_string_fields() {
         Ok(0.25f32)
     );
     let temper = ExprType::Reflected(Temper::type_info());
-    for (src, typ) in [("self.temper", temper), ("self.temper.mood", ExprType::Reflected(Mood::type_info()))] {
+    for (src, typ) in [
+        ("self.temper", temper),
+        ("self.temper.mood", ExprType::Reflected(Mood::type_info())),
+    ] {
         let error = formula(src, &host, typ).unwrap_err();
         assert!(
             format!("{error:?}").starts_with("Unsupported"),

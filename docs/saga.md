@@ -193,6 +193,11 @@ aspect ToggleSwitch for Wall, Fixture {
     it, so a large file in the index is a question for review.
   - A reloaded module recompiles the formulas that read its accessors, found through the list of
     what each formula reads.
+- `#[require(Plate, Health)]` names the aspects it needs (D121): a name the module declares an
+  aspect by is that aspect, any other a native aspect. Where an instance's aspects, its own and its
+  chain's, lack one, it attaches at its defaults, and so do those it requires in turn. One with a
+  field without a default cannot, and the aspect requiring it is not attached, which is logged with
+  the instance.
 - Its other attributes, and those on its fields, are a table the host registers, as it does the
   interaction type (D120), so a misspelled one is a compile error. Each takes literals of the types
   the host gives, and becomes an annotation only the host reads, as `#[reflect(@...)]` does on a

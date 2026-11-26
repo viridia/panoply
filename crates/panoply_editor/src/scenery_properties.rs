@@ -464,7 +464,9 @@ fn scrolled_rows(
                 let mut remove = false;
                 root_pane(ui, aspect, registry, edits, collapsed, Some(&mut remove));
                 let root: &dyn Reflect = aspect.root.as_ref();
-                let key = root.downcast_ref::<ExemplarAspect>().map(|root| &root.aspect);
+                let key = root
+                    .downcast_ref::<ExemplarAspect>()
+                    .map(|root| &root.aspect);
                 if let (true, Some(key)) = (remove, key) {
                     edits.change_aspects(exemplar, Vec::new(), vec![key.clone()]);
                 }

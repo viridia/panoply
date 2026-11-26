@@ -245,7 +245,10 @@ impl OverlayShape for GizmoHandle {
             builder
                 .with_stroke_width(ARROW_STROKE)
                 .with_draw_plane(DrawPlane::XY)
-                .stroke_polygon(&[Vec2::new(0., ARROW_START), Vec2::new(0., ARROW_END)], arrow);
+                .stroke_polygon(
+                    &[Vec2::new(0., ARROW_START), Vec2::new(0., ARROW_END)],
+                    arrow,
+                );
             return;
         }
         builder
@@ -544,10 +547,7 @@ fn turned(facing: f32, from: f32, to: f32, free: bool) -> f32 {
 fn hold(part: GizmoPart, ray: Ray3d, start: Vec3) -> Option<Hold> {
     match part.axis() {
         Some(axis) => Some(Hold::Along(along_axis(ray, start, axis)?)),
-        None => Some(Hold::Around(angle_about(
-            start,
-            level_point(ray, start.y)?,
-        ))),
+        None => Some(Hold::Around(angle_about(start, level_point(ray, start.y)?))),
     }
 }
 
@@ -690,8 +690,12 @@ struct EditWorld<'w, 's> {
     realms: Query<'w, 's, &'static RealmPhysics>,
     cache: Res<'w, PrecinctCache>,
     visibility: Query<'w, 's, &'static InheritedVisibility>,
-    actor_sizes:
-        Query<'w, 's, (Option<&'static CollisionSize>, Option<&'static ActorScale>), With<PlacedAs>>,
+    actor_sizes: Query<
+        'w,
+        's,
+        (Option<&'static CollisionSize>, Option<&'static ActorScale>),
+        With<PlacedAs>,
+    >,
 }
 
 impl EditWorld<'_, '_> {
@@ -705,7 +709,10 @@ impl EditWorld<'_, '_> {
         from: Vec3,
         entity: Entity,
     ) -> Option<Vec3> {
-        let physics = self.viewpoint.realm.and_then(|realm| self.realms.get(realm).ok())?;
+        let physics = self
+            .viewpoint
+            .realm
+            .and_then(|realm| self.realms.get(realm).ok())?;
         let visible = owner_shown(&self.visibility);
         let shown = |owner: Entity| owner != entity && visible(owner);
         landing(physics.world(), shapes, rotation, from, DROP_FALL, &shown)
@@ -888,8 +895,8 @@ fn drag_gizmo(
                     }
                 }
             }
-            let moved = grounded
-                && (done.position != done.of.position || done.facing != done.of.facing);
+            let moved =
+                grounded && (done.position != done.of.position || done.facing != done.of.facing);
             let verb = if done.part == GizmoPart::Ring {
                 "Turn"
             } else {
@@ -1109,7 +1116,10 @@ mod tests {
         // The pointer goes 1.3 m along the axis.
         let along = start + Vec3::new(1.3, 0., 0.);
         let (position, _) = dragged(&drag, ray(eye, along), true).unwrap();
-        assert!((position - Vec3::new(11.3, 0., 10.)).length() < 1e-3, "{position}");
+        assert!(
+            (position - Vec3::new(11.3, 0., 10.)).length() < 1e-3,
+            "{position}"
+        );
         // Snapped, to the quarter meter.
         let (position, _) = dragged(&drag, ray(eye, along), false).unwrap();
         assert_eq!(position, Vec3::new(11.25, 0., 10.));
@@ -1200,8 +1210,14 @@ mod tests {
             set_placement(&mut asset, &iid, Vec3::new(2., 0., 1.), 90., "Move").as_deref(),
             Some("Move Barrel")
         );
-        assert_eq!(placement_of(&asset, &iid), Some((Vec3::new(2., 0., 1.), 90., false)));
+        assert_eq!(
+            placement_of(&asset, &iid),
+            Some((Vec3::new(2., 0., 1.), 90., false))
+        );
         // Where it is already, nothing changes.
-        assert_eq!(set_placement(&mut asset, &iid, Vec3::new(2., 0., 1.), 90., "Move"), None);
+        assert_eq!(
+            set_placement(&mut asset, &iid, Vec3::new(2., 0., 1.), 90., "Move"),
+            None
+        );
     }
 }

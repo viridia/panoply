@@ -274,21 +274,24 @@ fn reselect(
     let Some(wait) = pending.0.as_mut() else {
         return;
     };
-    let found = precincts.get(wait.precinct).ok().and_then(|(children, placed)| {
-        children
-            .into_iter()
-            .flatten()
-            .copied()
-            .chain(placed.into_iter().flat_map(|actors| actors.iter()))
-            .filter(|&entity| entity != wait.replaced)
-            .find(|&entity| {
-                let iid = elements
-                    .get(entity)
-                    .map(|element| &element.iid)
-                    .or_else(|_| actors.get(entity).map(PlacedAs::iid));
-                iid.is_ok_and(|iid| *iid == wait.iid)
-            })
-    });
+    let found = precincts
+        .get(wait.precinct)
+        .ok()
+        .and_then(|(children, placed)| {
+            children
+                .into_iter()
+                .flatten()
+                .copied()
+                .chain(placed.into_iter().flat_map(|actors| actors.iter()))
+                .filter(|&entity| entity != wait.replaced)
+                .find(|&entity| {
+                    let iid = elements
+                        .get(entity)
+                        .map(|element| &element.iid)
+                        .or_else(|_| actors.get(entity).map(PlacedAs::iid));
+                    iid.is_ok_and(|iid| *iid == wait.iid)
+                })
+        });
     if let Some(entity) = found {
         selection.set_if_neq(ScenerySelection::instance(
             wait.precinct,

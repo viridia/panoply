@@ -6,7 +6,7 @@ use bevy::{
         TypeRegistration, TypeRegistry,
     },
 };
-use panoply_saga::FormulaQueue;
+use panoply_saga::{scripted::AspectDecl, FormulaQueue};
 use serde::{de::DeserializeSeed, ser::SerializeMap, Deserializer, Serialize};
 use std::{
     fmt::{self, Debug},
@@ -41,6 +41,18 @@ where
 
     /// Clone this aspect as a boxed trait object.
     fn clone_boxed(&self) -> Box<dyn Aspect>;
+
+    /// The keys of the aspects it requires, which attach at their defaults where an instance's
+    /// resolved aspects lack them (D121).
+    fn requires(&self) -> &[Arc<str>] {
+        &[]
+    }
+
+    /// Where it finds an aspect it requires by key, before the native aspects: a scripted
+    /// aspect's module declares those it names.
+    fn required_decls(&self) -> &[Arc<AspectDecl>] {
+        &[]
+    }
 
     /// Whether an instance with this aspect has state: what play changes and a saved game keeps,
     /// such as a container's contents, as against the aspect's config, which is authored (D88).
@@ -159,6 +171,31 @@ impl OwnedAspects {
     pub fn get(&self, key: &str) -> Option<&dyn Aspect> {
         self.iter().find(|aspect| aspect.key() == key)
     }
+}
+
+/// A new aspect, at its defaults, of key `key`: a scripted one's module path and name, declared
+/// by one of `decls`, or a native aspect's short type path.
+pub fn new_aspect<'a>(
+    registry: &TypeRegistry,
+    mut decls: impl Iterator<Item = &'a Arc<AspectDecl>>,
+    key: &str,
+) -> Result<Arc<dyn Aspect>, String> {
+    if let Some(decl) = decls.find(|decl| &*decl.key == key) {
+        return Ok(Arc::new(crate::ScriptedAspect::new(decl, registry)?));
+    }
+    let registration = registry
+        .get_with_short_type_path(key)
+        .ok_or("it is not registered")?;
+    let default = registration
+        .data::<ReflectDefault>()
+        .ok_or("it has no default")?
+        .default();
+    let aspect = registration
+        .data::<ReflectAspect>()
+        .ok_or("it is not an aspect")?
+        .get_boxed(default)
+        .map_err(|_| "it is not an aspect")?;
+    Ok(Arc::from(aspect))
 }
 
 /// `aspect`, to change: shared, it is copied first, since an aspect's definition is never

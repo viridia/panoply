@@ -253,6 +253,14 @@ impl Aspect for ScriptedAspect {
         self.decl().has_state()
     }
 
+    fn requires(&self) -> &[Arc<str>] {
+        &self.decl().requires
+    }
+
+    fn required_decls(&self) -> &[Arc<AspectDecl>] {
+        self.module.as_ref().map_or(&[], |module| module.aspects())
+    }
+
     /// Its fields by name, in declaration order, the state ones at their authored values.
     fn to_json(&self, registry: &TypeRegistry) -> Result<Value, BevyError> {
         let mut object = Map::new();
@@ -339,7 +347,9 @@ mod tests {
         let registry = TypeRegistry::new();
         let aspect = ScriptedAspect::new(&decls[0], &registry).unwrap();
         let mut copy = aspect.clone();
-        copy.field_mut("caption").unwrap().apply(&"Pull".to_string());
+        copy.field_mut("caption")
+            .unwrap()
+            .apply(&"Pull".to_string());
         copy.field_mut("on").unwrap().apply(&true);
         assert!(copy.field_mut("missing").is_none());
         assert_eq!(
@@ -373,7 +383,11 @@ mod tests {
         assert_eq!(reach.get::<ValueRange>(), Some(&ValueRange(0.0..=2.5)));
         assert_eq!(reach.get::<Step>(), Some(&Step(0.5)));
         assert_eq!(reach.get::<Precision>().map(|places| places.0), Some(1));
-        assert!(decls[0].field("pulls").unwrap().attributes.contains::<ReadOnly>());
+        assert!(decls[0]
+            .field("pulls")
+            .unwrap()
+            .attributes
+            .contains::<ReadOnly>());
     }
 
     #[test]

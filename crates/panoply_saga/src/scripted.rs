@@ -48,6 +48,10 @@ pub struct AspectDecl {
     /// ([`HostState::add_aspect_attribute`](crate::HostState::add_aspect_attribute)): its pane's
     /// icon.
     pub attributes: CustomAttributes,
+    /// The keys of the aspects it requires, from `#[require(...)]`: where an instance's
+    /// resolved aspects lack one, it attaches at its defaults (D121). A name the module declares
+    /// an aspect by is that aspect's key; any other is a native aspect's.
+    pub requires: Vec<Arc<str>>,
     /// Its fields, in declaration order.
     pub fields: Vec<AspectField>,
     /// The interactions it offers, in declaration order.
@@ -382,6 +386,7 @@ mod tests {
             accessor: Some("lamp".into()),
             kinds: vec!["Fixture".into()],
             attributes: CustomAttributes::default(),
+            requires: Vec::new(),
             fields: vec![
                 AspectField {
                     name: "color".into(),

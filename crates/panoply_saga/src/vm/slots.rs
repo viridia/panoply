@@ -54,7 +54,6 @@ impl<'w> SlotStore<'w> {
             StrEntry::Owned(index) => self.owned.get(*index).map(String::as_str),
         }
     }
-
 }
 
 /// A Rust value read from slots: a native's argument, or an evaluation's result. A value read

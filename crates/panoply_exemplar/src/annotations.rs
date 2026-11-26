@@ -21,10 +21,15 @@ use crate::Exemplar;
 /// on a field. [`ExemplarPlugin`](crate::ExemplarPlugin) registers them on the game's host.
 pub fn add_editor_attributes(host: &mut HostState) {
     fn number(args: &[Box<dyn Reflect>], index: usize) -> f64 {
-        args[index].downcast_ref::<f64>().copied().unwrap_or_default()
+        args[index]
+            .downcast_ref::<f64>()
+            .copied()
+            .unwrap_or_default()
     }
     host.add_aspect_attribute("icon", vec![ExprType::String], |builder, args| {
-        let path = args[0].downcast_ref::<String>().map_or("", |path| intern(path));
+        let path = args[0]
+            .downcast_ref::<String>()
+            .map_or("", |path| intern(path));
         builder.attribute(AspectIcon(path))
     });
     host.add_field_attribute(
@@ -49,7 +54,9 @@ pub fn add_editor_attributes(host: &mut HostState) {
 /// module reloaded again and again keeps nothing more.
 pub fn intern(text: &str) -> &'static str {
     static INTERNED: Mutex<Option<HashSet<&'static str>>> = Mutex::new(None);
-    let mut interned = INTERNED.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut interned = INTERNED
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let interned = interned.get_or_insert_with(HashSet::default);
     if let Some(&kept) = interned.get(text) {
         return kept;

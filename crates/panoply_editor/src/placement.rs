@@ -707,7 +707,10 @@ mod tests {
         )];
         let drop = |from: Vec3| drop_onto(world, &mug, Quat::IDENTITY, from, 50., &|_| true);
         let on_table = drop(Vec3::new(2.5, 3., 0.));
-        assert!((on_table.y - 0.8).abs() < 0.01, "on the table at {on_table}");
+        assert!(
+            (on_table.y - 0.8).abs() < 0.01,
+            "on the table at {on_table}"
+        );
         let on_floor = drop(Vec3::new(0., 3., 0.));
         assert!(on_floor.y.abs() < 0.01, "on the floor at {on_floor}");
         // Resting already, it stays.

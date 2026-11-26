@@ -22,7 +22,7 @@ use bevy::{
     ui::Checked,
     ui_widgets::{checkbox_self_update, Activate, RequestClose},
 };
-use panoply_exemplar::{Aspect, Exemplar, InstanceKind, ReflectAspect, ScriptedAspect};
+use panoply_exemplar::{new_aspect, Aspect, Exemplar, InstanceKind, ReflectAspect};
 use panoply_saga::{scripted::AspectDecl, ScriptModuleAsset};
 
 use crate::{
@@ -104,12 +104,10 @@ pub(crate) fn open_aspect_chooser(
 
 /// The aspects the modules declare.
 fn scripted_aspects(modules: &Assets<ScriptModuleAsset>) -> impl Iterator<Item = &Arc<AspectDecl>> {
-    modules
-        .iter()
-        .flat_map(|(_, asset)| asset.module.aspects())
+    modules.iter().flat_map(|(_, asset)| asset.module.aspects())
 }
 
-/// Whether the aspect `decl` declares attaches to `kind`, as [`ScriptedAspect`]'s `can_attach`
+/// Whether the aspect `decl` declares attaches to `kind`, as [`panoply_exemplar::ScriptedAspect`]'s `can_attach`
 /// has it.
 fn can_attach(decl: &AspectDecl, kind: InstanceKind) -> bool {
     decl.kinds.iter().any(|name| name.parse() == Ok(kind))
@@ -238,7 +236,7 @@ fn save_aspects(
     let registry = registry.read();
     let mut add: Vec<Arc<dyn Aspect>> = Vec::new();
     for key in checked.difference(&chooser.had) {
-        match new_aspect(&registry, &modules, key) {
+        match new_aspect(&registry, scripted_aspects(&modules), key) {
             Ok(aspect) => add.push(aspect),
             Err(err) => error!("Cannot make a {key}: {err}"),
         }
@@ -254,29 +252,4 @@ fn save_aspects(
     remove.sort();
     edits.change_aspects(&chooser.root, add, remove);
     commands.entity(dialog).despawn();
-}
-
-/// A new aspect, at its default, of key `key`: a native aspect's short type path, or a scripted
-/// one's module path and name, declared by one of `modules`.
-fn new_aspect(
-    registry: &bevy::reflect::TypeRegistry,
-    modules: &Assets<ScriptModuleAsset>,
-    key: &str,
-) -> Result<Arc<dyn Aspect>, String> {
-    if let Some(decl) = scripted_aspects(modules).find(|decl| &*decl.key == key) {
-        return Ok(Arc::new(ScriptedAspect::new(decl, registry)?));
-    }
-    let registration = registry
-        .get_with_short_type_path(key)
-        .ok_or("it is not registered")?;
-    let default = registration
-        .data::<ReflectDefault>()
-        .ok_or("it has no default")?
-        .default();
-    let aspect = registration
-        .data::<ReflectAspect>()
-        .ok_or("it is not an aspect")?
-        .get_boxed(default)
-        .map_err(|_| "it is not an aspect")?;
-    Ok(Arc::from(aspect))
 }

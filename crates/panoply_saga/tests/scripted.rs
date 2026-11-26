@@ -253,6 +253,29 @@ fn attributes_come_from_the_hosts_table() {
 }
 
 #[test]
+fn a_required_aspect_is_named_by_key() {
+    let host = host();
+    // A name the module declares, even after, is its aspect; any other is a native aspect.
+    let src = "#[require(Plate, Health)] aspect Spears for Wall { } aspect Plate for Wall { }";
+    let spears = module(src, &host).unwrap();
+    let requires: Vec<&str> = spears.aspects()[0]
+        .requires
+        .iter()
+        .map(|key| &**key)
+        .collect();
+    assert_eq!(requires, ["scripts::toggle_switch::Plate", "Health"]);
+    assert!(spears.aspects()[1].requires.is_empty());
+
+    for src in [
+        "#[require] aspect A for Wall { }",
+        "#[require(\"Health\")] aspect A for Wall { }",
+    ] {
+        let err = module(src, &host).unwrap_err();
+        assert_eq!(err.to_string(), "Expected #[require(Name, ...)]", "{src}");
+    }
+}
+
+#[test]
 fn a_formula_reads_config_and_state() {
     let host = host();
     let decls = module(SWITCH, &host).unwrap().aspects().to_vec();
