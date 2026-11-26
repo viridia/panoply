@@ -26,6 +26,10 @@ one resolves, so that it is removed from the list.
 Instances' identities are checked too: no two instances share a key or a label, and the instance
 index (`assets/scenery/precincts/instances.json`) lists exactly the labelled instances. A copied
 precinct file or a git merge can duplicate a key, which only this check finds.
+
+Each realm's precinct index (`assets/scenery/precincts/<realm>/index.json`) lists exactly the
+precinct files in its folder, sorted, one to a line, as the editor writes it. The game loads only
+the precincts it lists, so a file added by hand and not listed never shows.
 """
 
 import argparse
@@ -347,6 +351,46 @@ def check_instances():
     return failures
 
 
+REALMS = ASSETS / "realms"
+
+
+def index_text(coords):
+    """A precinct index as the editor writes it (`PrecinctIndex::to_json`)."""
+    if not coords:
+        return "[]\n"
+    return "[\n  " + ",\n  ".join(f"[{x}, {y}]" for x, y in coords) + "\n]\n"
+
+
+def check_precinct_indices():
+    """Failures of the realms' precinct indices: a realm with none, an index of no realm, and an
+    index that does not list exactly its folder's precinct files, in the editor's format."""
+    failures = []
+    realms = {file.name.split(".")[0] for file in REALMS.glob("*.realm.json")}
+    folders = {folder.name for folder in PRECINCTS.iterdir() if folder.is_dir()}
+    for realm in sorted(realms | folders):
+        index = PRECINCTS / realm / "index.json"
+        name = asset_name(index)
+        if realm not in realms:
+            failures.append(f"{asset_name(PRECINCTS / realm)} is the folder of no realm")
+            continue
+        try:
+            text = index.read_text()
+            listed = json.loads(text)
+        except (OSError, ValueError) as e:
+            failures.append(f"{name}: {e}")
+            continue
+        files = sorted(place_of(file)[1] for file in (PRECINCTS / realm).glob("*.msgpack"))
+        listed_set = {tuple(coords) for coords in listed}
+        for coords in files:
+            if tuple(coords) not in listed_set:
+                failures.append(f"{name} lacks {json.dumps(coords)}")
+        for coords in sorted(listed_set - {tuple(coords) for coords in files}):
+            failures.append(f"{name} lists {json.dumps(list(coords))}, which has no file")
+        if listed_set == {tuple(coords) for coords in files} and text != index_text(files):
+            failures.append(f"{name} is not sorted one to a line, as the editor writes it")
+    return failures
+
+
 def check_precincts(assets, report):
     for file in sorted(PRECINCTS.glob("*/*.msgpack")):
         source = asset_name(file)
@@ -455,7 +499,7 @@ def main():
     check_exemplars(assets, report)
     check_entries(assets, report)
 
-    failures = check_instances()
+    failures = check_instances() + check_precinct_indices()
     for (reference, problem), sources in sorted(broken.items()):
         if reference in KNOWN:
             continue

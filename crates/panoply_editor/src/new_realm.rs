@@ -1,4 +1,4 @@
-//! Making a new, empty realm: its two files are written at once (D65), then loaded directly, since
+//! Making a new, empty realm: its files are written at once (D65), then loaded directly, since
 //! the folders of realms and terrain maps are read only at startup. The view cuts to the new realm
 //! when it exists.
 
@@ -6,6 +6,7 @@ use std::{io::Write, path::Path};
 
 use bevy::prelude::*;
 use panoply_core::{realm::RealmData, GotoLocation, Realm};
+use panoply_precinct::{precinct_index_path, PrecinctIndex};
 use panoply_terrain::TerrainMapAsset;
 
 use crate::{json::to_asset_json, toast::ShowToast, unsaved::asset_file};
@@ -46,24 +47,41 @@ fn terrain_path(name: &str) -> String {
     format!("terrain/maps/{name}.terrain")
 }
 
-/// Writes a file that must not exist yet.
+/// Writes a file that must not exist yet, and its folder if need be.
 fn write_new(path: &str, bytes: &[u8]) -> Result<(), BevyError> {
+    let path = asset_file(Path::new(path));
+    if let Some(folder) = path.parent() {
+        std::fs::create_dir_all(folder)?;
+    }
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(asset_file(Path::new(path)))?;
+        .open(path)?;
     file.write_all(bytes)?;
     Ok(())
 }
 
-/// Writes both of a new realm's files, or neither. The terrain has no parcels.
+/// Writes all of a new realm's files, or none. The terrain has no parcels, and the precinct index
+/// lists no precincts.
 fn write_realm_files(name: &str) -> Result<(), BevyError> {
-    let realm = to_asset_json(&RealmData::default())?;
-    let terrain = TerrainMapAsset::default().to_bytes()?;
-    write_new(&realm_path(name), realm.as_bytes())?;
-    if let Err(error) = write_new(&terrain_path(name), &terrain) {
-        std::fs::remove_file(asset_file(Path::new(&realm_path(name))))?;
-        return Err(error);
+    let files = [
+        (
+            realm_path(name),
+            to_asset_json(&RealmData::default())?.into_bytes(),
+        ),
+        (terrain_path(name), TerrainMapAsset::default().to_bytes()?),
+        (
+            precinct_index_path(name),
+            PrecinctIndex::default().to_json().into_bytes(),
+        ),
+    ];
+    for (count, (path, bytes)) in files.iter().enumerate() {
+        if let Err(error) = write_new(path, bytes) {
+            for (path, _) in &files[..count] {
+                std::fs::remove_file(asset_file(Path::new(path)))?;
+            }
+            return Err(error);
+        }
     }
     Ok(())
 }

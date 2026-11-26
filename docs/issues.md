@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I91.**
+**Next: I93.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -390,3 +390,10 @@ confirmed by running something or only by reading. Numbers are never reused.
   to spawn: `bind_scenery_animations` runs per model and inserts the instance's one
   `BoundAnimations`, so the second replaces the first, and the first's cells are dropped with it. No
   instance animates two models yet; the switches animate the lever and not the wall behind it.
+- **I91** The editor cannot delete a precinct: one emptied of everything is saved as an empty file,
+  and stays in its realm's precinct index (PAN100), so the game loads it for nothing. Candidate:
+  saving an empty precinct removes its file and its index line. Read, not run.
+- **I92** `plans/scenery.py`'s selection step once found the instance filter's Fixture still checked
+  after clicking Wall and then Fixture (step 300), in PAN100's run; the plan passed when run again,
+  and the log held no error. Perhaps the second click lands before the menu settles from the first.
+  Seen once by running; the cause unconfirmed.

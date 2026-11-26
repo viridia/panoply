@@ -41,7 +41,9 @@ pub struct Precinct {
     pub render_layer: RenderLayers,
     pub coords: IVec2,
     pub visible: bool,
-    pub asset: Handle<PrecinctAsset>,
+    /// None for a precinct with no file, which its realm's `PrecinctIndex` does not list, until the
+    /// editor makes one at its first edit there.
+    pub asset: Option<Handle<PrecinctAsset>>,
     /// Fixed body at the precinct's origin, holding the colliders of its elements and floors.
     pub physics: RigidBodyHandle,
 }
@@ -66,6 +68,16 @@ pub struct PrecinctTier {
 }
 
 impl Precinct {
+    /// The precinct's asset in `assets`, if it has one and it has loaded.
+    pub fn asset_in<'a>(&self, assets: &'a Assets<PrecinctAsset>) -> Option<&'a PrecinctAsset> {
+        assets.get(self.asset.as_ref()?)
+    }
+
+    /// Whether the precinct's asset is `id`.
+    pub fn has_asset(&self, id: AssetId<PrecinctAsset>) -> bool {
+        self.asset.as_ref().is_some_and(|asset| asset.id() == id)
+    }
+
     pub fn contains_pt(&self, v: Vec3) -> bool {
         v.x >= self.coords.x as f32 * PRECINCT_SIZE_F
             && v.x < (self.coords.x + 1) as f32 * PRECINCT_SIZE_F
@@ -347,7 +359,10 @@ pub fn mark_precinct_data(
         else {
             continue;
         };
-        if let Some((precinct_entity, _)) = q_precincts.iter().find(|r| r.1.asset.id() == *id) {
+        if let Some((precinct_entity, _)) = q_precincts
+            .iter()
+            .find(|(_, precinct)| precinct.has_asset(*id))
+        {
             commands.entity(precinct_entity).insert(ReadPrecinctData);
         }
     }
@@ -364,7 +379,7 @@ pub fn read_precinct_data(
     mut catalogs: CatalogServer,
 ) {
     for (precinct_entity, precinct, precinct_children) in q_precincts.iter() {
-        let Some(precinct_asset) = assets.get(&precinct.asset) else {
+        let Some(precinct_asset) = precinct.asset_in(&assets) else {
             continue;
         };
 

@@ -35,7 +35,7 @@ pub(crate) fn mark_precinct_actors(
         else {
             continue;
         };
-        if let Some((entity, _)) = precincts.iter().find(|(_, p)| p.asset.id() == *id) {
+        if let Some((entity, _)) = precincts.iter().find(|(_, p)| p.has_asset(*id)) {
             commands.entity(entity).insert(ReadPrecinctActors);
         }
     }
@@ -86,7 +86,7 @@ pub(crate) fn spawn_precinct_actors(
     mut exemplars: CatalogServer,
 ) {
     for (entity, precinct, actors) in &precincts {
-        let Some(asset) = assets.get(&precinct.asset) else {
+        let Some(asset) = precinct.asset_in(&assets) else {
             continue;
         };
         let Some(handles) =

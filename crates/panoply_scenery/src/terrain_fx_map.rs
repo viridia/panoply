@@ -160,7 +160,12 @@ pub fn rebuild_parcel_terrain_fx(
             .and_then(|precinct_entity| q_precincts.get(precinct_entity).ok());
         let terrain_fx_map = match precinct {
             Some((precinct, Some(terrain_fx_map), false)) => Some((precinct, terrain_fx_map)),
-            Some((precinct, ..)) if !server.load_state(&precinct.asset).is_failed() => {
+            Some((precinct, ..))
+                if precinct
+                    .asset
+                    .as_ref()
+                    .is_some_and(|asset| !server.load_state(asset).is_failed()) =>
+            {
                 // Still loading, or its effects are being rebuilt.
                 continue;
             }

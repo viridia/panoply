@@ -181,7 +181,7 @@ fn update_actor_tool(
                 let path = server.get_path(*id).map(|path| path.to_string());
                 if let (Ok(precinct), Some(path)) = (precincts.get(done.precinct), path) {
                     let name = choices.choice(SceneryTool::PlaceActor).unwrap_or_default();
-                    edits.edit(&precinct.asset, |asset: &mut PrecinctAsset| {
+                    edits.edit_precinct(done.precinct, precinct, |asset: &mut PrecinctAsset| {
                         asset.add_actor(path, done.facing, done.dial.center);
                         Some(format!("Place {name}").into())
                     });

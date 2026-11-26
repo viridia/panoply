@@ -42,6 +42,7 @@ pub mod parcel_selection;
 pub mod placement;
 pub mod portal_gizmos;
 pub mod precinct_edit;
+pub mod precinct_index;
 pub mod properties;
 pub mod quit_dialog;
 pub mod realm_panel;

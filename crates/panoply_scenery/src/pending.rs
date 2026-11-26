@@ -9,7 +9,7 @@ use crate::{
     floor_mesh::ComputeFloorMeshTask,
     floor_region::{RebuildFloorAspects, RebuildFloorMaterials, RebuildFloorMesh},
     precinct::{Precinct, PrecinctKey, ReadPrecinctData},
-    precinct_cache::PrecinctCache,
+    precinct_cache::{PrecinctCache, PrecinctIndices},
     scenery_element::{
         SceneryElementMesh, SceneryElementRebuildAspects, SceneryElementRebuildColliders,
         SceneryElementRebuildModels,
@@ -18,10 +18,10 @@ use crate::{
     PRECINCT_SIZE_F,
 };
 
-/// Scenery work still to do: precinct assets loading, precincts, elements and floors not yet
-/// built, and element scenes waiting for their frame budget. For readiness checks, such as the
-/// editor's `ViewReady` and actors' footprints, and the readiness survey. A precinct with no file
-/// fails to load, and counts as done (PAN100).
+/// Scenery work still to do: realms' precinct indices and precinct assets loading, precincts,
+/// elements and floors not yet built, and element scenes waiting for their frame budget. For
+/// readiness checks, such as the editor's `ViewReady` and actors' footprints, and the readiness
+/// survey. A precinct with no file has no asset, and counts as done.
 #[derive(SystemParam)]
 pub struct SceneryPending<'w, 's> {
     server: Res<'w, AssetServer>,
@@ -54,13 +54,14 @@ pub struct SceneryPending<'w, 's> {
     parents: Query<'w, 's, &'static ChildOf>,
     realms: Query<'w, 's, &'static Realm>,
     cache: Res<'w, PrecinctCache>,
+    indices: Res<'w, PrecinctIndices>,
 }
 
 /// One precinct's state, for the readiness survey.
 pub struct PrecinctStatus {
     pub realm: Entity,
     pub coords: IVec2,
-    /// The asset's load state, as `Debug` prints it (`Loaded`, `Failed(..)`, ...).
+    /// The asset's load state, as `Debug` prints it (`Loaded`, `Failed(..)`, ...), or `NoFile`.
     pub asset: String,
     /// What is still to do: `read` and `fx` on the precinct itself, then counts of what under it
     /// waits: `aspects:<n>` and `models:<n>` (elements' models or colliders), `floors:<n>`,
@@ -72,9 +73,16 @@ impl SceneryPending<'_, '_> {
     /// Names the first kind of work still pending, or `None` when there is none.
     pub fn waiting_on(&self) -> Option<&'static str> {
         if self
+            .indices
+            .0
+            .values()
+            .any(|index| self.server.load_state(index).is_loading())
+        {
+            Some("precinct indices")
+        } else if self
             .precincts
             .iter()
-            .any(|(_, precinct)| self.server.load_state(&precinct.asset).is_loading())
+            .any(|(_, precinct)| self.loading(precinct))
         {
             Some("precinct assets")
         } else if !self.read.is_empty() || !self.fx.is_empty() {
@@ -111,7 +119,7 @@ impl SceneryPending<'_, '_> {
                 let Ok((_, precinct)) = self.precincts.get(entity) else {
                     return Some("precincts not loaded");
                 };
-                if self.server.load_state(&precinct.asset).is_loading() {
+                if self.loading(precinct) {
                     return Some("precinct assets");
                 }
                 if self.read.contains(entity) || self.fx.contains(entity) {
@@ -169,11 +177,22 @@ impl SceneryPending<'_, '_> {
                 PrecinctStatus {
                     realm: precinct.realm,
                     coords: precinct.coords,
-                    asset: format!("{:?}", self.server.load_state(&precinct.asset)),
+                    asset: precinct.asset.as_ref().map_or_else(
+                        || "NoFile".to_string(),
+                        |asset| format!("{:?}", self.server.load_state(asset)),
+                    ),
                     pending,
                 }
             })
             .collect()
+    }
+
+    /// Whether the precinct's asset is still loading.
+    fn loading(&self, precinct: &Precinct) -> bool {
+        precinct
+            .asset
+            .as_ref()
+            .is_some_and(|asset| self.server.load_state(asset).is_loading())
     }
 
     /// The precinct an entity belongs to, up to three levels up.

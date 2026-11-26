@@ -9,7 +9,7 @@
 - Walls: a click places a wall and a drag a row, undoably, rebuilding the navigation mesh; the
   wall a release would replace is hidden; `(erase)` erases one; Escape cancels a drag. Save writes
   the precinct (restored afterwards) and a new one (deleted afterwards), whose ground is navigated
-  though it had no file. ] and the rotate button turn the walls, . and , step the tier. Cut hides
+  though it had no file, and which saving lists in the realm's index (restored afterwards). ] and the rotate button turn the walls, . and , step the tier. Cut hides
   what is above the tier, and shows it again.
 - Fixtures: a click places one, undoably, and a drag turns it on a dial shown on every drag;
   Escape cancels a drag, ] turns the fixtures, Save writes the precinct (restored afterwards).
@@ -21,6 +21,8 @@
 
 Settings start empty, so the panel starts hidden.
 """
+
+import json
 
 from _editor import (
     ASSETS,
@@ -70,6 +72,8 @@ SPOT_PRECINCT = "scenery/precincts/playground/p001-p002.msgpack"
 SPOT_PRECINCT_ENTITY = "Precinct:playground:1:2"
 EMPTY_SPOT = [160.0, 0.0, 160.0]
 EMPTY_PRECINCT = "scenery/precincts/playground/p002-p002.msgpack"
+# The realm's precinct index, which saving the precinct with no file lists it in.
+PLAYGROUND_INDEX = "scenery/precincts/playground/index.json"
 EMPTY_PRECINCT_ENTITY = "Precinct:playground:2:2"
 # Inside the house in the playground's precinct (0, 0), under its upper floor on tier 2.
 HOUSE = [53.0, 0.0, 41.0]
@@ -158,7 +162,7 @@ def wall_tool(driver):
     them, which undo and redo take back and put again; `(erase)` erases one. Save writes the
     precinct (restored afterwards). ] turns the walls to place, . and , step the tier, and Escape
     during a drag cancels it without quitting. Placed into a precinct with no file, a wall is saved
-    into a new one (deleted afterwards).
+    into a new one (deleted afterwards), listed in the realm's precinct index (restored after).
 
     The precinct is simulated, so the game builds its navigation mesh with the navigation view
     off; the wall placed rebuilds it, and the precinct put back builds it as it was. The precinct
@@ -251,11 +255,14 @@ def wall_tool(driver):
     assert tier(driver) == 0, f"tier {tier(driver)}"
     cut(driver)
 
-    # A precinct with no file gets one when saved.
+    # A precinct with no file gets one when saved, and a line in its realm's index.
     driver.goto(EMPTY_SPOT, 20.0, azimuth=0.0)
     window, scale, middle, _ = view_points(driver)
     created = ASSETS / EMPTY_PRECINCT
     assert not created.exists(), f"{created} exists already"
+    index = ASSETS / PLAYGROUND_INDEX
+    listed = index.read_text()
+    assert [2, 2] not in json.loads(listed), f"{index} lists the precinct with no file"
     # Its ground is navigated though it has no file.
     wait_nav(
         driver,
@@ -269,8 +276,10 @@ def wall_tool(driver):
         expect_count(base + 1)
         save(driver)
         assert created.exists(), "Save did not create the precinct"
+        assert [2, 2] in json.loads(index.read_text()), f"Save did not list it in {index}"
     finally:
         created.unlink(missing_ok=True)
+        index.write_text(listed)
     driver.goto(SPOT, 20.0)
 
 

@@ -1,6 +1,7 @@
-use bevy::{math::IRect, prelude::*};
+use bevy::{math::IRect, platform::collections::HashMap, prelude::*};
 
 use panoply_core::{PortalViewRegions, Realm, RealmPhysics, ToRapier, Viewpoint};
+use panoply_precinct::{precinct_index_path, precinct_path, PrecinctAsset, PrecinctIndex};
 use rapier3d::prelude::RigidBodyBuilder;
 
 use super::{
@@ -44,9 +45,16 @@ impl PrecinctCache {
     }
 }
 
+/// Each realm's [`PrecinctIndex`], by the realm's entity, loaded when the realm is first viewed.
+#[derive(Resource, Default)]
+pub(crate) struct PrecinctIndices(pub(crate) HashMap<Entity, Handle<PrecinctIndex>>);
+
 /// System that manages the spawning and despawning of Precincts (scenery units) based on proximity
 /// to the camera viewpoint (either the primary camera or a portal camera), and keeps the simulated
-/// precincts loaded.
+/// precincts loaded. A realm's precincts wait for its index, which names those with files; the
+/// others are spawned with no asset, unless the editor holds one for them, made at its first edit.
+/// A realm whose index cannot be read has none with files.
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_precincts(
     mut commands: Commands,
     viewpoint: Res<Viewpoint>,
@@ -55,6 +63,8 @@ pub fn spawn_precincts(
     mut query: Query<&mut Precinct>,
     mut realm_query: Query<(&Realm, &mut RealmPhysics)>,
     server: Res<AssetServer>,
+    mut indices: ResMut<PrecinctIndices>,
+    index_assets: Res<Assets<PrecinctIndex>>,
 ) {
     if viewpoint.realm.is_none() {
         return;
@@ -87,6 +97,16 @@ pub fn spawn_precincts(
         let Ok((realm, mut realm_physics)) = realm_query.get_mut(rect.realm) else {
             return;
         };
+        let index = indices
+            .0
+            .entry(rect.realm)
+            .or_insert_with(|| server.load(precinct_index_path(&realm.name)));
+        let no_index = PrecinctIndex::default();
+        let index = match index_assets.get(&*index) {
+            Some(index) => index,
+            None if server.load_state(&*index).is_failed() => &no_index,
+            None => return,
+        };
         // Only query scenery within the precinct bounds of the realm.
         let intersect = realm.precinct_bounds.intersect(rect.bounds);
         // Set precincts within the query rect as visible; also load missing precincts.
@@ -107,13 +127,11 @@ pub fn spawn_precincts(
 
                     None => {
                         debug!("Creating precinct {} {} {}.", realm.name, x, z);
-                        let asset_path = format!(
-                            "scenery/precincts/{}/{}-{}.msgpack",
-                            realm.name,
-                            precinct_coord(x),
-                            precinct_coord(z)
-                        );
-                        let asset = server.load(asset_path);
+                        let coords = IVec2::new(x, z);
+                        let path = precinct_path(&realm.name, coords);
+                        let asset = server
+                            .get_handle::<PrecinctAsset>(&path)
+                            .or_else(|| index.contains(coords).then(|| server.load(&path)));
                         let origin =
                             Vec3::new(x as f32 * PRECINCT_SIZE_F, 0., z as f32 * PRECINCT_SIZE_F);
                         let physics = realm_physics.insert_body(
@@ -125,7 +143,7 @@ pub fn spawn_precincts(
                             Name::new(format!("Precinct:{}:{}:{}", realm.name, x, z)),
                             Precinct {
                                 realm: rect.realm,
-                                coords: IVec2::new(x, z),
+                                coords,
                                 visible: true,
                                 asset,
                                 render_layer: realm.layer.clone(),
@@ -180,12 +198,4 @@ fn evict_precinct(commands: &mut Commands, entity: Entity, precinct: &Precinct) 
         precinct.realm, precinct.coords.x, precinct.coords.y
     );
     commands.entity(entity).despawn();
-}
-
-fn precinct_coord(n: i32) -> String {
-    if n >= 0 {
-        format!("p{:03}", n)
-    } else {
-        format!("n{:03}", -n)
-    }
 }

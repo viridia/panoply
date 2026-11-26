@@ -136,7 +136,7 @@ fn update_fixture_tool(
                         .unwrap_or_default();
                     let origin = (done.coords.as_vec2() * PRECINCT_SIZE_F).extend(0.).xzy();
                     let position = done.dial.center - origin;
-                    edits.edit(&precinct.asset, |asset| {
+                    edits.edit_precinct(done.precinct, precinct, |asset| {
                         place_fixture(asset, path, &name, done.facing, position)
                     });
                 }

@@ -1,7 +1,7 @@
 //! Edits to precincts, from scenery mode's placing tools. Each changes the precinct's asset in
 //! memory, where the precinct's rebuild shows it at once, marks it unsaved for the save button, and
-//! can be undone. A precinct with no file gets an empty asset at its first edit, and saving writes
-//! the file.
+//! can be undone. A precinct with no file has no asset until its first edit, which makes one with
+//! the precinct's path, and saving writes the file and lists it in the realm's precinct index.
 //!
 //! The editor holds every precinct it has edited: the precinct cache drops a precinct out of view,
 //! and with it the last handle to its asset, which would take unsaved edits with it.
@@ -9,7 +9,9 @@
 use std::borrow::Cow;
 
 use bevy::{ecs::system::SystemParam, platform::collections::HashSet, prelude::*};
-use panoply_precinct::{PrecinctAsset, SceneryInstanceId, TakenInstance};
+use panoply_core::Realm;
+use panoply_precinct::{precinct_path, PrecinctAsset, SceneryInstanceId, TakenInstance};
+use panoply_scenery::precinct::Precinct;
 
 use crate::{
     mode_selector::EditorMode,
@@ -31,19 +33,23 @@ impl Plugin for PrecinctEditPlugin {
 
 /// Edits precinct assets.
 #[derive(SystemParam)]
-pub(crate) struct PrecinctEdits<'w> {
+pub(crate) struct PrecinctEdits<'w, 's> {
     assets: ResMut<'w, Assets<PrecinctAsset>>,
     unsaved: ResMut<'w, UnsavedAssets>,
     history: ResMut<'w, UndoStack>,
     held: ResMut<'w, EditedPrecincts>,
     /// Absent during play, which makes no edits.
     mode: Option<Res<'w, State<EditorMode>>>,
+    /// Absent in tests, which edit only precincts that have assets.
+    server: Option<Res<'w, AssetServer>>,
+    realms: Query<'w, 's, &'static Realm>,
+    commands: Commands<'w, 's>,
 }
 
-impl PrecinctEdits<'_> {
-    /// The precinct `handle`'s asset, if it has one yet.
-    pub(crate) fn get(&self, handle: &Handle<PrecinctAsset>) -> Option<&PrecinctAsset> {
-        self.assets.get(handle)
+impl PrecinctEdits<'_, '_> {
+    /// The precinct's asset, if it has one yet.
+    pub(crate) fn get(&self, precinct: &Precinct) -> Option<&PrecinctAsset> {
+        precinct.asset_in(&self.assets)
     }
 
     /// Changes the precinct `handle` with `edit`, which returns the edit's name for the history,
@@ -56,6 +62,43 @@ impl PrecinctEdits<'_> {
         self.edit_all(std::array::from_ref(handle), |assets| {
             let [asset] = assets;
             edit(asset)
+        });
+    }
+
+    /// Changes the precinct `entity`, whose component is `precinct`, with `edit`, as
+    /// [`edit`](Self::edit) does. A precinct with no file is given an asset, at the path of the
+    /// file saving will write, if `edit` is not refused.
+    pub(crate) fn edit_precinct(
+        &mut self,
+        entity: Entity,
+        precinct: &Precinct,
+        edit: impl FnOnce(&mut PrecinctAsset) -> Option<Cow<'static, str>>,
+    ) {
+        if let Some(handle) = &precinct.asset {
+            self.edit(handle, edit);
+            return;
+        }
+        let mut asset = PrecinctAsset::default();
+        let Some(label) = edit(&mut asset) else {
+            return;
+        };
+        let (Some(server), Ok(realm)) = (&self.server, self.realms.get(precinct.realm)) else {
+            return;
+        };
+        // The file is not there yet, so this load fails, and logs it, once.
+        let handle: Handle<PrecinctAsset> =
+            server.load(precinct_path(&realm.name, precinct.coords));
+        let given = handle.clone();
+        self.commands
+            .entity(entity)
+            .queue(move |mut entity: EntityWorldMut| {
+                if let Some(mut precinct) = entity.get_mut::<Precinct>() {
+                    precinct.asset = Some(given);
+                }
+            });
+        self.edit(&handle, move |new| {
+            *new = asset;
+            Some(label)
         });
     }
 

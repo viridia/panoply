@@ -85,17 +85,6 @@ scoped down. Scenery mode's overlays (faery's grid, floor cutaway, colliders, ma
 `panoply_overlays` shapes in `mode_overlays.rs`. `src/editor`, written for the Quill editor, is
 reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes that part.
 
-- **PAN100 Precinct index.** The game asks for every precinct near the view, and only some have
-  files, so each missing one logs "Path not found" (`p002-p002.msgpack` and others), burying the
-  errors that matter. It needs to know which exist. A list works in packaged and web builds, where
-  folder loading may not: per realm, beside the precincts it lists
-  (`scenery/precincts/<realm>/index.json`), a sorted JSON array of `[x, y]` coordinates, one per
-  line so a diff shows each precinct added or removed (serde_json's pretty printer would split each
-  pair over four lines, so the writer formats it). A finished realm may hold about 500 precincts; at
-  that size JSON costs nothing over msgpack and reads in a diff and a text editor. The editor
-  rewrites it whenever it creates or deletes a precinct (since PAN94, its first edit of a precinct
-  with no file), and `asset_xref.py` checks it against the folder, so a file added or removed by
-  hand fails `verify.sh`.
 - **PAN95 Place floors**, on PAN94's saving and PAN74a's floor entries: floors drawn on the current
   tier, with the floor tool's shapes (`TODO(PAN95)` in `scenery_panel.rs`). With the floor tool's
   options, each tool's panel becomes its own: its `construct` emits its options row and its list, as
@@ -699,23 +688,34 @@ sooner when it bites.
   a save fires a file reload and a folder reload. Read in Bevy's source how a folder reload treats a
   file already loaded; then make a save cause one reload, or have the barrier wait for every reload
   it causes.
-- **PAN101 Editor-owned assets unwatched.** The file watcher is for changes another app makes:
-  models exported from Blender, shaders, textures, which stay watched. The assets only the editor
-  changes (precincts, catalogs, terrain maps, nav points) it already propagates itself, so watching
-  them only echoes its own saves: the save barrier and its timeout exist to wait out that echo. A
-  checkout or converter run is followed by a restart, or later a reload command. Bevy watches per
-  asset source, not per type (`reload_path` in `bevy_asset`'s server), so the likely shape is a
-  second source over `assets/` with no watcher, for those assets. Propose before code, settling:
-  paths that cross sources (precincts name exemplars as plain paths, catalogs extend relative to
-  themselves), external ids written into memory at save rather than arriving with the reload (D88),
-  plans restoring files in memory rather than by writing them, and removing the barrier. Two
-  symptoms go with the echo. In `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s
-  after the next save, the barrier took it for that save's reload, and the real one then overwrote
-  the undo that followed, so the second save kept the edit (`saved_diff`, PAN94's runs). And each
-  catalog save respawns the models of every element of that catalog (`rebuild_changed_se_aspects`,
-  `spawn_se_models`), so the walls in view vanish for a few frames. An upstream alternative: the
-  asset server skipping the reload of a file it wrote through its own `AssetWriter`
-  ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572)); check it first.
+- **PAN101 Changes on disk, by notice.** The watcher reloads every change in a source as it arrives
+  (`reload_path` in `bevy_asset`'s server), with no veto per asset. So the editor waits out the echo
+  of its own saves with a barrier and a timeout, a reload replaces unsaved edits without a word, and
+  a change made outside (a checkout, a converter run) is applied file by file in whatever order the
+  watcher reports, though a save or a checkout is several files with no transaction. The shape, as
+  VS Code does it: a watcher of Panoply's own on the default source (`AssetSourceBuilder` takes one;
+  unconfirmed that it can wrap Bevy's file watcher), passing on only the events the editor lets
+  through. A save keeps the hash of the bytes it wrote; an event whose file hashes the same is the
+  save's echo, and is dropped, so a save is done when its files hold its bytes, a check rather than
+  a timeout. Only the file an event names is hashed, and a reload reads it anyway. The other events
+  for the editor's assets (precincts and their indices, catalogs, terrain maps, nav points, the
+  instance index) are gathered into a notice, "4 files changed on disk", whose Reload reloads them
+  together once the person, who knows when the checkout is done, says so; one with unsaved edits
+  says so, and keeping the edits lets the next save overwrite the file. Assets another app makes
+  (models from Blender, shaders, textures) stay reloaded as they change. It would end the save
+  barrier, I79's late reload and likely PAN91's second one, and two symptoms of the echo: in
+  `plans/smoke.py` a catalog written back by the plan reloaded 0.11 s after the next save, the
+  barrier took it for that save's reload, and the real one then overwrote the undo that followed
+  (`saved_diff`, PAN94's runs); and each catalog save respawns the models of every element of that
+  catalog (`rebuild_changed_se_aspects`, `spawn_se_models`), so the walls in view vanish for a few
+  frames. Propose before code, settling: whether a source's watcher can be wrapped; plans restoring
+  files, which then arrive as outside changes; and external ids written into memory at save rather
+  than arriving with the reload (D88). The alternative: a second source over `assets/` with no
+  watcher for the editor's assets, an outside change then needing a restart or a reload command,
+  whose cost is paths that cross sources (precincts name exemplars as plain paths, catalogs extend
+  relative to themselves). An upstream one: the asset server skipping the reload of a file it wrote
+  through its own `AssetWriter` ([bevy#26572](https://github.com/bevyengine/bevy/issues/26572));
+  check it first.
 
 ## Sweeps
 

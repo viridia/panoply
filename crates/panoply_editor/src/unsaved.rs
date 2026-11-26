@@ -30,6 +30,7 @@ use panoply_terrain::TerrainMapAsset;
 use crate::{
     instance_index::{update_index, InstanceIndex, PrecinctPlace},
     json::to_asset_json,
+    precinct_index::list_precinct,
     toast::ShowToast,
 };
 
@@ -184,7 +185,8 @@ impl SaveableAsset for PrecinctAsset {
         }
     }
 
-    /// Rewrites the precinct's lines in the instance index.
+    /// Lists the precinct in its realm's precinct index, and rewrites its lines in the instance
+    /// index.
     fn saved(id: AssetId<Self>, world: &mut World) -> Result<(), BevyError> {
         let path = world
             .resource::<AssetServer>()
@@ -192,6 +194,7 @@ impl SaveableAsset for PrecinctAsset {
             .ok_or("the precinct has no path")?;
         let place = PrecinctPlace::of_path(path.path())
             .ok_or_else(|| format!("{path} is not named for a precinct"))?;
+        list_precinct(&place)?;
         world.resource_scope(|world, mut index: Mut<InstanceIndex>| {
             let precinct = world
                 .resource::<Assets<PrecinctAsset>>()

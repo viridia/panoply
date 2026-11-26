@@ -25,6 +25,7 @@ use bevy_immediate::{
     Imm, ImmEntity,
 };
 use panoply_actors::{PlacedAs, PrecinctActors};
+use panoply_core::Realm;
 use panoply_exemplar::{Exemplar, InstanceKind};
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement};
@@ -191,12 +192,12 @@ fn instance_rows(
     rows
 }
 
-/// The place of the precinct whose asset is `handle`.
-pub(crate) fn place_of(
-    server: &AssetServer,
-    handle: &Handle<PrecinctAsset>,
-) -> Option<PrecinctPlace> {
-    PrecinctPlace::of_path(server.get_path(handle)?.path())
+/// Where `precinct` is.
+pub(crate) fn place_of(realms: &Query<&Realm>, precinct: &Precinct) -> Option<PrecinctPlace> {
+    Some(PrecinctPlace {
+        realm: realms.get(precinct.realm).ok()?.name.clone(),
+        coords: precinct.coords,
+    })
 }
 
 /// The scenery elements and actors of a precinct.
@@ -213,6 +214,7 @@ pub(crate) struct PrecinctInstances<'w, 's> {
     >,
     elements: Query<'w, 's, &'static SceneryElement>,
     actors: Query<'w, 's, &'static PlacedAs>,
+    realms: Query<'w, 's, &'static Realm>,
 }
 
 impl PrecinctInstances<'_, '_> {
@@ -256,8 +258,8 @@ fn sync_instance_list(
     let rows = precinct
         .and_then(|precinct| instances.precincts.get(precinct).ok())
         .and_then(|(record, ..)| {
-            let place = place_of(&server, &record.asset);
-            let asset = assets.get(&record.asset)?;
+            let place = place_of(&instances.realms, record);
+            let asset = record.asset_in(&assets)?;
             let walls = wall_types(&server, &exemplars, asset);
             Some(instance_rows(asset, place.as_ref(), &walls, &filter))
         })
@@ -377,7 +379,7 @@ impl InstancePaneParams<'_, '_> {
     /// The selected instance's label, if it has one.
     fn current_label(&self) -> Option<String> {
         let record = self.precincts.get(self.selection.precinct?).ok()?;
-        let asset = self.assets.get(&record.asset)?;
+        let asset = record.asset_in(&self.assets)?;
         asset.label(&self.selection.iid).map(str::to_string)
     }
 }
@@ -531,7 +533,7 @@ fn label_instance(
         return;
     };
     let label = Some(entered.text.as_str()).filter(|text| !text.is_empty());
-    edits.edit(&record.asset, |asset| {
+    edits.edit_precinct(target.precinct, record, |asset| {
         let old = asset.label(&target.iid).map(str::to_string);
         if old.as_deref() == label {
             return None;

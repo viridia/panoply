@@ -4,9 +4,11 @@ use bevy::{camera::visibility::VisibilitySystems, prelude::*, transform::Transfo
 use cutaways::{hide_cut_away_scenery, Cutaways};
 use floor_surface::{build_floor_materials, FloorMaterials};
 use panoply_exemplar::{CatalogEntryAppExt, ScriptComponentAppExt};
-use panoply_precinct::{KeyedInstances, PrecinctAsset, PrecinctAssetLoader};
+use panoply_precinct::{
+    KeyedInstances, PrecinctAsset, PrecinctAssetLoader, PrecinctIndex, PrecinctIndexLoader,
+};
 use panoply_render::OutlineMaterial;
-use precinct_cache::spawn_precincts;
+use precinct_cache::{spawn_precincts, PrecinctIndices};
 
 use self::{
     animation_aspect::{
@@ -77,6 +79,9 @@ impl Plugin for PanoplySceneryPlugin {
         app.insert_resource(PrecinctCache::new())
             .init_asset_loader::<PrecinctAssetLoader>()
             .init_asset::<PrecinctAsset>()
+            .init_asset_loader::<PrecinctIndexLoader>()
+            .init_asset::<PrecinctIndex>()
+            .init_resource::<PrecinctIndices>()
             .init_resource::<KeyedInstances>()
             .register_catalog_entry::<FloorSurface>()
             .register_catalog_entry::<TerrainEffect>()

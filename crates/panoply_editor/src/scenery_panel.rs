@@ -22,6 +22,7 @@ use bevy_immediate::{
     ui::{activated::ImmUiActivated, text::ImmUiText, CapsUiFeathers},
     Imm,
 };
+use panoply_core::Realm;
 use panoply_scenery::precinct::Precinct;
 
 use crate::{
@@ -346,7 +347,7 @@ struct SceneryExemplarsParams<'w, 's> {
     choices: Res<'w, SceneryChoices>,
     selection: Res<'w, ScenerySelection>,
     precincts: Query<'w, 's, &'static Precinct>,
-    server: Res<'w, AssetServer>,
+    realms: Query<'w, 's, &'static Realm>,
 }
 
 impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
@@ -362,7 +363,7 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
                 .selection
                 .precinct
                 .and_then(|precinct| params.precincts.get(precinct).ok())
-                .and_then(|precinct| place_of(&params.server, &precinct.asset))
+                .and_then(|precinct| place_of(&params.realms, precinct))
                 .map_or_else(|| "No precinct".to_string(), |place| place.to_string());
             ui.ch_id("place")
                 .on_spawn_apply_scene(|| {

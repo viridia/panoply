@@ -363,7 +363,7 @@ fn update_wall_tool(
                     if let Ok(precinct) = precincts.get(done.precinct) {
                         let tiles = tiles(done.anchor, done.corner, height);
                         let walls = edits
-                            .get(&precinct.asset)
+                            .get(precinct)
                             .map(|asset| wall_types(&server, &exemplars, asset))
                             .unwrap_or_default();
                         let path = exemplar
@@ -371,7 +371,7 @@ fn update_wall_tool(
                             .map(|path| path.to_string());
                         let facing = settings.facing_degrees();
                         let replace = settings.replace || exemplar.is_none();
-                        edits.edit(&precinct.asset, |asset| {
+                        edits.edit_precinct(done.precinct, precinct, |asset| {
                             place_walls(asset, &tiles, path, facing, replace, &walls)
                         });
                     }

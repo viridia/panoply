@@ -142,7 +142,12 @@ def create_and_change_realm(driver):
     # The playground's selection, which the new realm's terrain mode does not count.
     driver.set_resource(SELECTION, {"realm": "playground", "parcel": SPOT_PARCEL})
     # A realm's files are written at once, so they go however the checks end.
-    files = [ASSETS / "realms" / f"{REALM}.realm.json", ASSETS / f"terrain/maps/{REALM}.terrain"]
+    precincts = ASSETS / f"scenery/precincts/{REALM}"
+    files = [
+        ASSETS / "realms" / f"{REALM}.realm.json",
+        ASSETS / f"terrain/maps/{REALM}.terrain",
+        precincts / "index.json",
+    ]
     try:
         # Create Realm refuses a name in use.
         driver.click("CreateRealm")
@@ -161,7 +166,7 @@ def create_and_change_realm(driver):
         driver.absent("TextEntryDialog")
         driver.expect("RealmPanel/Realm", TEXT, REALM)
         driver.expect("RealmPanel/Size", TEXT, "0 × 0 parcels")
-        assert all(file.exists() for file in files), "Create Realm did not write both files"
+        assert all(file.exists() for file in files), "Create Realm did not write its three files"
         driver.goto([0.0, 0.0, 0.0], realm=REALM)
         driver.screenshot("new_realm")
 
@@ -194,6 +199,8 @@ def create_and_change_realm(driver):
     finally:
         for file in files:
             file.unlink(missing_ok=True)
+        if precincts.exists():
+            precincts.rmdir()
 
 
 def rotate_contour(driver):

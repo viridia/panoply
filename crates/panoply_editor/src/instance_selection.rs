@@ -207,8 +207,8 @@ fn follow_selection(
     };
     let iid = selection.iid.clone();
     let keyed = iid.key().is_some()
-        && assets
-            .get(&record.asset)
+        && record
+            .asset_in(&assets)
             .is_some_and(|asset| asset.has_instance(&iid));
     let next = if keyed {
         children

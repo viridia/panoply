@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D125.**
+**Next: D126.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1089,3 +1089,15 @@ never reused.
   world for `'w`, for a component's strings, which are borrowed rather than copied. Reversing it
   means a slot kind for reflected values again, with the type of what it refers to checked where it
   is read. (PAN124)
+- **D125** The game loads only the precincts a realm's index lists
+  (`scenery/precincts/<realm>/index.json`, `PrecinctIndex`), rather than reading the folder, which
+  packaged and web builds may not allow, or asking for every precinct in view. A precinct with no
+  file is spawned with no asset (`Precinct::asset` is `None`), and counts as built. The index is
+  loaded by its type and its loader claims no extension, since `.json` is the exemplar catalogs'.
+  The editor gives such a precinct a handle at its first edit by loading its path, which fails and
+  logs once, as Bevy has no public way to make a path's handle without loading it; saving writes the
+  file and lists it in the index. A new realm starts with an empty index. The game reads an index
+  only when it spawns a precinct, and nothing reacts to one changing: a save writes several files
+  with no transaction, so nothing should hang on the order the watcher reports them in. A precinct
+  whose file appears while the game runs shows once the cache spawns it again. Reversing it means
+  folder loads, or a request per precinct in view again. (PAN100)
