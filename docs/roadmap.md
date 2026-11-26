@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN131.**
+**Next: PAN132.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -252,7 +252,7 @@ were PNGs of the same size as these, so theirs likely carry over.
   unsticking turned the overlap into velocity and threw the actor across the map. Panoply's push-out
   (R26) moves position only, a capped amount per tick, but skips resting actors (`ActorResting`), so
   the leaf must wake what it sweeps; checked with an actor standing in the swing. Closes I26.
-- **PAN79a Plate and spears.** *Needs:* PAN59, PAN116. The first mechanism, from faery's
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN111a, PAN116. The first mechanism, from faery's
   `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
@@ -265,11 +265,8 @@ were PNGs of the same size as these, so theirs likely carry over.
     the spears while the input reads true; how a formula reads a binding is decided here, as is
     `#[signal]` for scripted outputs. Which way the `SpearsAction` clip plays is read in the chunk.
     Its collider follows the animated node, as PAN59's door leaf does.
-  - It or PAN106, whichever comes first, builds `#[require(Name)]` (D121): the named aspect, native
-    or scripted, attaches at its defaults where an instance's resolved aspects lack it, as Bevy's
-    `#[require]` does for components, and a field without a default makes the lack an error as the
-    instance spawns, which `SignalInput`'s source does. The exemplar pane shows an aspect's required
-    aspects after it.
+  - `SignalInput`'s source is the first field without a default that an instance must supply, the
+    error case of PAN111a's `#[require]` (D121) met in a game.
   - The first collider that rises under an actor: as the spears start up, actors whose footprint
     overlaps the trap are woken and pushed sideways out of it (`ActorMotion::push`, as `bump_actors`
     shoves), before the collider rises, so that none is lifted onto the wall (I85).
@@ -321,22 +318,22 @@ were PNGs of the same size as these, so theirs likely carry over.
   follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
   the switch is on, logic across three entities. Then PAN6's door opened by a button
   ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN71, PAN126. What a container holds. An open chest shows its
-  contents on an inventory screen whose style its container type names (`chest`, `stone` and
-  `corpse` in `assets/modals/containers/`), with the container's name and its item list placed where
-  the art leaves room for them, and items move between it and the player; a locked one opens for the
-  key its instance names, and a corpse, once combat kills (PAN6), is looted the same way
+- **PAN106 Containers.** *Needs:* PAN71, PAN111a, PAN126. What a container holds. An open chest
+  shows its contents on an inventory screen whose style its container type names (`chest`, `stone`
+  and `corpse` in `assets/modals/containers/`), with the container's name and its item list placed
+  where the art leaves room for them, and items move between it and the player; a locked one opens
+  for the key its instance names, and a corpse, once combat kills (PAN111a), is looted the same way
   ([goals.md](goals.md), step 7). It or PAN120b, whichever comes first, moves the first items, and
   so brings in X42's items. Built as D105 divides it: the scripted `Container`
   (`scripts/container.saga`) already holds whether it is open; its Open now opens the screen rather
   than raising the lid, and it requires a native `Inventory`, the item list, which scripts reach
   through host functions (`has_item(actor, key)`), since a container makes no sense without
-  contents; it builds `#[require]` if PAN79a has not (D121). `Lock` becomes scripted too. The screen
-  is native, opened by a host command naming its style. Closing it is an event to the entity that
-  opened it, which a hook handles (`on screen_closed`), so the screen never writes a script's field,
-  as faery's wrote the container's `open` ([faery.md](faery.md), Aspects); a corpse handles it with
-  no lid. It opens once `SceneryAnimations` reports the lid's clip done, not after faery's fixed
-  `openDelay`, which needs that event.
+  contents; `Combatant` requires it too, so every corpse has contents to loot (D121). `Lock` becomes
+  scripted too. The screen is native, opened by a host command naming its style. Closing it is an
+  event to the entity that opened it, which a hook handles (`on screen_closed`), so the screen never
+  writes a script's field, as faery's wrote the container's `open` ([faery.md](faery.md), Aspects);
+  a corpse handles it with no lid. It opens once `SceneryAnimations` reports the lid's clip done,
+  not after faery's fixed `openDelay`, which needs that event.
 - **PAN78 Signs and books.** *Needs:* PAN104, PAN126. Among the last chunks of all: things to read.
   A sign is a scenery aspect whose interaction shows its text; a document is an inventory item that
   links to text content and a page style (faery's book aspect opened its content in a frame, `codex`
@@ -617,13 +614,31 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
 
 ## First playable
 
-- **PAN111 Combat arena.** *Needs:* PAN16h, X53. The first test of combat's fun, the biggest fun
-  risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few henchmen in
-  the playground (`p002-p001`), with health, the action bar's plain actions, and Justice's signature
-  skills as opportunity actions ([combat.md](combat.md), The action bar; [virtues.md](virtues.md),
-  Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
-  are enough to judge the decisions; whether players accept enemies waiting as a convention depends
-  on presentation, and is judged here only roughly.
+- **PAN111a Health and Attack.** The first customer of `#[require]` (D121), and a start on combat
+  before PAN111's wait on X53 (I81). A native `Health`, whose config is the base max from the
+  exemplar, which play never changes, beside two components of its own, so that a change to one is
+  not a change to the other: the effective max, a copy of the base until X53's modifiers and buffs
+  make it a cell over it, and the current health, which a host command lowers
+  (`damage(target, amount)`, D105). Then a scripted `Combatant` (`scripts/combatant.saga`) that
+  requires it, whose Attack interaction is offered while the actor is alive and deals a fixed
+  amount. At zero the actor is dead and offers no Attack. On `CrimsonWatchSkirmisher`, or an
+  exemplar the chunk chooses, placed in the playground.
+  - It builds `#[require(Name)]`: the named aspect, native or scripted, attaches at its defaults
+    where an instance's resolved aspects lack it, as Bevy's `#[require]` does for components, and a
+    field without a default makes the lack an error as the instance spawns, checked by `cargo test`
+    until PAN79a's `SignalInput` meets it. The exemplar pane shows an aspect's required aspects
+    after it.
+  - The interaction probe finds actors, the first to offer an interaction (PAN17b).
+  - Left to others: `Inventory` as a second requirement (PAN106), the threat table once an NPC
+    fights back (PAN111), stats and their buffs as cells (X53), and disposition (X146). Whether
+    X108's dying and dead states come with it, whose gate it meets, is decided in the chunk.
+- **PAN111 Combat arena.** *Needs:* PAN16h, PAN111a, X53. The first test of combat's fun, the
+  biggest fun risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few
+  henchmen in the playground (`p002-p001`), with health, the action bar's plain actions, and
+  Justice's signature skills as opportunity actions ([combat.md](combat.md), The action bar;
+  [virtues.md](virtues.md), Combat skills). Skills and timings are assets that reload while the game
+  runs. Placeholder clips are enough to judge the decisions; whether players accept enemies waiting
+  as a convention depends on presentation, and is judged here only roughly.
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111, PAN120, PAN125. The first playable:
   the "Up in Arms" quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its
   quest phases Sergeant Stone and the Crimson Watch, so it builds on presence (D123), with both
@@ -729,3 +744,14 @@ Passes over a whole document or module, a unit at a time, each unit small enough
   numbered sections (`TD<n>`), leaving each decision its choice, its reason and what reversing it
   would break. One area per unit (physics, rendering, loading, plans, ...), taken when a chunk
   touches that area.
+- **PAN131 faery destinations.** Every faery module gets a destination in a Destinations section of
+  [faery.md](faery.md): the chunk or deferral that carries it, a new one-line deferral with a gate,
+  or dropped with a reason. Gaps get gates, not designs; each is designed when its gate comes, as
+  combat was for PAN111a. Units, a session or less each: `game`, `game-ui`, the engine's game side
+  (`quests`, `dialogue`, `items`, `skills`, `stats`, `player`, `behaviors`, `audio`), then `design/`
+  and the root `TODO.md`. `local_sweep.py` reads each file, its claims checked at the source. faery
+  is frozen, so one pass is final, and nothing checks it but `xref.py`. Seen from file names alone:
+  `sim/`, `ParticleDamage`, `PlayerDeath`, the HUD's `HealthGauge`, `PlanPreview` and `BuffGrid`;
+  `stairs`, `encounter.ts`, `FollowerTeleport`, `OceanSounds`; `work.ts`, the `Sleep`, `Sit` and
+  `Converse` goals, `parking.ts`, nameplates, portraits; `CutSceneSystem`, `pronouns.ts`; the shop,
+  and the character menu's inventory and quest panels. It closes X13.

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X146.**
+**Next: X149.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -251,10 +251,21 @@ dropped, not deferred. Numbers are never reused.
   (targeting, cost, cooldown, animation, an effect formula), as spells are; and named stats or flags
   that engine systems read at extension points (barter reads a price stat). Stat names are content
   too, referred to by id. A character sheet is cells (saga.md): derived stats are reactive formulas
-  over other stats, and combat resolution is formulas evaluated per attack, from a ruleset asset.
-  faery's `design/talents.md` sketches branches and their talents. The proving slice: one stat, one
-  modifier with a condition, one granted ability. *Gate:* the first three steps of saga.md's order
-  of work.
+  over other stats, and combat resolution is formulas evaluated per attack, from a ruleset asset. An
+  effective stat, such as `Health`'s effective max (PAN111a), is its base with the modifiers of the
+  actor's statuses summed natively, so no formula iterates statuses. A status's definition is a
+  catalog entry (D90): its modifiers, duration, stacking, and its tint or particles. An applied
+  status is an entity related to its actor (Bevy's relationships, `StatusOf` and `Statuses`, with
+  `linked_spawn`), so two casters' poisons stack apart, each with its source, expiry deadline and
+  stack count, and components of its own carry what only some statuses need (damage over time on
+  X147's tick, a tint), which systems query. It is not an aspect attached for a while: aspects are
+  authored makeup, one of each kind, and attaching one changes the archetype. A status that changes
+  behavior does it through the stats and flags goals read (fear raises the flee threshold, a stun
+  suspends goals), as adjectives do (X148). Given up: a list component on the actor, which saves as
+  one value but changes whole with any status; PAN82 saves an actor's statuses with it, adjectives
+  included. faery's `design/talents.md` sketches branches and their talents. The proving slice: one
+  stat, one modifier with a condition, one granted ability. *Gate:* the first three steps of
+  saga.md's order of work.
 - **X54** Graphics settings for weaker GPUs, such as `Aerdra`'s integrated one (notes.md). A
   `GraphicsSettings` resource deriving `SettingsGroup`, as `WindowSettings` does, is all that saving
   them takes. The controls go in the editor pane for now, and move to a dialog once the game has
@@ -681,3 +692,27 @@ dropped, not deferred. Numbers are never reused.
 - **X145** The game UI's dialog styles and widget style sheets as BSN asset files, out of the `bsn!`
   scenes in Rust that name them by string (roadmap, Game UI), so a mod adds a dialog style without
   code. X58's font goes with them. *Gate:* BSN assets (X1).
+- **X146** Disposition: whether one combatant is hostile to another, as state that formulas read, so
+  that `Combatant`'s Attack is offered only against the hostile, and a friendly NPC turns hostile
+  when struck. faery's `enemy` and `combatant` aspects mixed up whether an actor can fight with
+  whether it is hostile. Hostility changes during play, so the player, followers, friendly NPCs and
+  monsters share the combat aspects and differ by disposition and strategy package, not by which
+  aspects they have. *Gate:* a combatant that is not hostile: PAN6's Sergeant Stone or a follower
+  (X131).
+- **X147** Regeneration in ticks: current health (PAN111a) rises in steps, about once a second, not
+  every frame, so the formulas reading it (`badly_hurt`, X104's utility scores) wake once a tick per
+  healing actor rather than every frame. Storing a value, its time and a rate, so that only a hit or
+  a heal changes the component, wakes nothing between events, but every reader would need to
+  evaluate it at the current time. *Gate:* the first thing that heals: rest between PAN111's fights,
+  or a potion.
+- **X148** Adjectives, so that monsters of one kind are not clones whose fixed aggro radius players
+  camp just outside: most orcs are Orcs, and now and then one is a Watchful, Cowardly, Angry or
+  Robust Orc. An adjective is a list of modifiers, a status that never expires (X53), and the goal
+  trees read their thresholds (sense radius, flee and disengage) from stats so that an adjective
+  changes behavior with no goal of its own. Appearance is a second axis, rolled from ranges on the
+  exemplar (D28's colors and features, gear), which an adjective may narrow (a Robust orc larger, an
+  Angry one in war paint) as a tell. Both are rolled at spawn with a seed the save keeps, so the
+  combinations are never enumerated; an exemplar stays one per kit (an Orc Shaman), not one per
+  adjective. The name joins adjective and exemplar through a localized pattern (X77). Camping's
+  other half, pulling one at a time, is answered by allies that join a neighbor's fight (X104), not
+  by adjectives. *Gate:* the first enemies spawned from a spawn table rather than placed.

@@ -346,7 +346,8 @@ confirmed by running something or only by reading. Numbers are never reused.
   so the riskiest test of fun comes after the riskiest engine work rather than before it. Candidate:
   PAN111 with native skills whose numbers and timings are assets that reload, as its entry already
   asks, its formulas left to X53; D115 allows native code with a reason, and a fun test that must
-  come early is one, for a prototype. Read, not run.
+  come early is one, for a prototype. PAN111a starts sooner, with health and a plain attack, and no
+  formulas. Read, not run.
 - **I82** A formula reading an instance whose precinct is not loaded suspends, and each consumer
   falls back silently in its own way ([saga.md](saga.md), Values): a cell keeps its last value, a
   condition is false, an effect is discarded. An author cannot see that a quest's condition is false
