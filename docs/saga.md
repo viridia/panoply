@@ -133,13 +133,15 @@ and a bytecode interpreter on a stack VM. It came from `bevy_reactor`'s formulas
   (`damage(target, 5)`), applied between passes. Writes are values, never borrowed data. A read
   within the effect sees the value from before it ran. An effect writes its own aspect's `state`
   fields, by bare name (`on = !on`), and never config; a write in a formula is a compile error.
-  Writes to native components declared for scripts to write, and host commands, join the buffer with
-  their first customers (PAN59's door, PAN120a's Talk).
+  Anything else it changes, it changes through a **host command** (D127), a native function such as
+  `damage(target, amount)` that queues a value, a Bevy `Command`, in the same buffer, applied in
+  order with the state writes; a command named in a formula is a compile error. Writes to native
+  components declared for scripts to write join the buffer with their first customer (PAN59's door).
 - Which host functions a script may call depends on its kind, checked at compile time.
 - **Randomness** is for effects and on-demand formulas only: a roll in a reactive formula would
   change its value on every pass. Rolls draw from a seeded generator, so a fight replays.
-- **Interceptors** rewrite the buffer before it applies: damage absorption, resistance and reaction
-  abilities are filters over pending commands, not skills reaching into each other.
+- **Interceptors** rewrite commands before they apply: damage absorption, resistance and reaction
+  abilities are a pipeline over pending commands, not skills reaching into each other (X149).
 - Entry points take parameters: an ability's `on_hit(caster, target)` runs once per target.
 - Inside a script, locals and loops are ordinary and mutable.
 

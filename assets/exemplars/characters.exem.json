@@ -680,7 +680,8 @@
       },
       "Features": {
         "HairShortLocks": true
-      }
+      },
+      "scripts::combatant::Combatant": {}
     },
     "extends": "#Proto.HumanFemaleLightArmor"
   },

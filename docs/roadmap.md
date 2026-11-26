@@ -253,7 +253,7 @@ were PNGs of the same size as these, so theirs likely carry over.
   unsticking turned the overlap into velocity and threw the actor across the map. Panoply's push-out
   (R26) moves position only, a capped amount per tick, but skips resting actors (`ActorResting`), so
   the leaf must wake what it sweeps; checked with an actor standing in the swing. Closes I26.
-- **PAN79a Plate and spears.** *Needs:* PAN59, PAN111a, PAN116. The first mechanism, from faery's
+- **PAN79a Plate and spears.** *Needs:* PAN59, PAN116. The first mechanism, from faery's
   `spearTrap2` and `pressurePlate` (`game/src/behaviors/playground.ts`,
   `game/src/aspects/mechanisms.ts`). The puzzle: the spears are down only while something stands on
   the plate, so the player must get a follower or a weight onto it to pass.
@@ -319,11 +319,11 @@ were PNGs of the same size as these, so theirs likely carry over.
   follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
   the switch is on, logic across three entities. Then PAN6's door opened by a button
   ([goals.md](goals.md), step 4).
-- **PAN106 Containers.** *Needs:* PAN71, PAN111a, PAN126. What a container holds. An open chest
-  shows its contents on an inventory screen whose style its container type names (`chest`, `stone`
-  and `corpse` in `assets/modals/containers/`), with the container's name and its item list placed
-  where the art leaves room for them, and items move between it and the player; a locked one opens
-  for the key its instance names, and a corpse, once combat kills (PAN111a), is looted the same way
+- **PAN106 Containers.** *Needs:* PAN71, PAN126. What a container holds. An open chest shows its
+  contents on an inventory screen whose style its container type names (`chest`, `stone` and
+  `corpse` in `assets/modals/containers/`), with the container's name and its item list placed where
+  the art leaves room for them, and items move between it and the player; a locked one opens for the
+  key its instance names, and a corpse, now that combat kills (PAN111a), is looted the same way
   ([goals.md](goals.md), step 7). It or PAN120b, whichever comes first, moves the first items, and
   so brings in X42's items. Built as D105 divides it: the scripted `Container`
   (`scripts/container.saga`) already holds whether it is open; its Open now opens the screen rather
@@ -400,8 +400,8 @@ components and every layer restartable from saved state (R104).
   then performs it with its pose, as E does at the probe (R92). The position is its nearest use mark
   where it has them (R79), which this chunk introduces, or else within the interaction distance (1.5
   m, the probe's reach), facing it. A door is clicked the same way once PAN59 lands. W or S on the
-  way cancels it, as for a ground click. Actors, which offer no interaction yet, join with the first
-  that does.
+  way cancels it, as for a ground click. An actor is clicked the same way: the skirmisher's Attack
+  (PAN111a), within its reach, facing it.
 - **PAN16h Routes in behaviors.** Its first customer is PAN111's henchmen, the first NPCs whose
   behavior walks somewhere, asking for a route as PAN17a's click does. A route is searched on the
   main thread, under a millisecond across the lair and village fixtures (`tests/route.rs`), an
@@ -615,27 +615,13 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
 
 ## First playable
 
-- **PAN111a Health and Attack.** The first customer of `#[require]` (D121), and a start on combat
-  before PAN111's wait on X53 (I81). A native `Health`, whose config is the base max from the
-  exemplar, which play never changes, beside two components of its own, so that a change to one is
-  not a change to the other: the effective max, a copy of the base until X53's modifiers and buffs
-  make it a cell over it, and the current health, which a host command lowers
-  (`damage(target, amount)`, D105). Then a scripted `Combatant` (`scripts/combatant.saga`) that
-  requires it, whose Attack interaction is offered while the actor is alive and deals a fixed
-  amount. At zero the actor is dead and offers no Attack. On `CrimsonWatchSkirmisher`, or an
-  exemplar the chunk chooses, placed in the playground.
-  - The exemplar pane shows an aspect's required aspects after it.
-  - The interaction probe finds actors, the first to offer an interaction (PAN17b).
-  - Left to others: `Inventory` as a second requirement (PAN106), the threat table once an NPC
-    fights back (PAN111), stats and their buffs as cells (X53), and disposition (X146). Whether
-    X108's dying and dead states come with it, whose gate it meets, is decided in the chunk.
-- **PAN111 Combat arena.** *Needs:* PAN16h, PAN111a, X53. The first test of combat's fun, the
-  biggest fun risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few
-  henchmen in the playground (`p002-p001`), with health, the action bar's plain actions, and
-  Justice's signature skills as opportunity actions ([combat.md](combat.md), The action bar;
-  [virtues.md](virtues.md), Combat skills). Skills and timings are assets that reload while the game
-  runs. Placeholder clips are enough to judge the decisions; whether players accept enemies waiting
-  as a convention depends on presentation, and is judged here only roughly.
+- **PAN111 Combat arena.** *Needs:* PAN16h, X53. The first test of combat's fun, the biggest fun
+  risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few henchmen in
+  the playground (`p002-p001`), with health, the action bar's plain actions, and Justice's signature
+  skills as opportunity actions ([combat.md](combat.md), The action bar; [virtues.md](virtues.md),
+  Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
+  are enough to judge the decisions; whether players accept enemies waiting as a convention depends
+  on presentation, and is judged here only roughly.
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111, PAN120, PAN125. The first playable:
   the "Up in Arms" quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its
   quest phases Sergeant Stone and the Crimson Watch, so it builds on presence (D123), with both

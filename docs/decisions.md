@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D127.**
+**Next: D128.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1117,3 +1117,12 @@ never reused.
   where it was let go, and the precinct holds where it stands. Reversing it means Bevy's gizmo, with
   mode buttons, and systems after its drag that hide the extra rings and snap the facing again.
   (PAN92)
+- **D127** A host command is a native function only an effect may call (`damage(target, amount)`), a
+  compile error in a formula or a helper function; it queues a Bevy `Command` into the effect's
+  buffer, which applies it in order with the effect's state writes, once the effect has returned.
+  The buffer is Panoply's own rather than Bevy's `CommandQueue`, and a command is a value
+  (`Damage`), not a closure, so that the combat pipeline can read and rewrite what is queued before
+  it applies (X149); applying it now is all it does. Given up: an observer event as the command,
+  since observers on one entity run in no set order, and interception needs order. Reversing it
+  means scripts writing native components directly, with nowhere for an interceptor to stand.
+  (PAN111a)

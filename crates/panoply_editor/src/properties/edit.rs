@@ -17,7 +17,7 @@ use bevy::{
     reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath, TypeRegistry},
 };
 use panoply_exemplar::{
-    annotations::ReflectPropertyMapKeys, aspect_mut, Aspect, Exemplar, ScriptedAspect,
+    annotations::ReflectPropertyMapKeys, aspect_mut, new_aspect, Aspect, Exemplar, ScriptedAspect,
 };
 
 use crate::{
@@ -80,6 +80,11 @@ pub trait PropertyRoot: Reflect {
 
     /// A copy of the value, or `None` if it is gone.
     fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>>;
+
+    /// A line its pane shows before its rows, saying where the value comes from.
+    fn note(&self) -> Option<String> {
+        None
+    }
 
     /// Lends the value to `change`, keeping what it does unless it fails, and marks where the
     /// value is kept as unsaved.
@@ -294,6 +299,13 @@ impl EditOp {
         path: &ParsedPath,
     ) -> Result<EditOp, BevyError> {
         let mut undo = None;
+        // A required aspect the exemplar lacks is added by its first edit.
+        let required = root.as_any().downcast_ref::<RequiredAspect>();
+        if let Some(required) = required.filter(|required| {
+            !matches!(self, EditOp::Aspects { .. }) && required.held(world).is_none()
+        }) {
+            return required.add_with(world, self, path);
+        }
         if let EditOp::Aspects { add, remove } = self {
             let registry = world.resource::<AppTypeRegistry>().clone();
             let registry = registry.read();
@@ -735,11 +747,166 @@ impl PropertyRoot for ExemplarAspect {
 
 impl ExemplarPart for ExemplarAspect {
     fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
-        world
+        exemplar_id(world, &self.exemplar)
+    }
+}
+
+fn exemplar_id(world: &World, exemplar: &AssetPath) -> Option<AssetId<Exemplar>> {
+    world
+        .resource::<AssetServer>()
+        .get_path_id(exemplar)?
+        .try_typed::<Exemplar>()
+        .ok()
+}
+
+/// An aspect that one of an exemplar's own aspects requires and its chain lacks, which an
+/// instance gets at its defaults (D121), shown at those defaults after the aspect requiring it.
+/// The first edit of it adds it to the exemplar, whole, with the edit made: one step, which an
+/// undo takes back out.
+#[derive(Debug, Clone, PartialEq, Reflect)]
+#[reflect(ExemplarPart, AspectHolder)]
+pub struct RequiredAspect {
+    pub exemplar: AssetPath<'static>,
+    pub aspect: String,
+    /// The key of the exemplar's aspect that requires it.
+    pub required_by: String,
+}
+
+impl RequiredAspect {
+    /// The exemplar's own aspect of this key, once an edit has added it.
+    fn held(&self, world: &World) -> Option<Arc<dyn Aspect>> {
+        let exemplar = world
+            .resource::<Assets<Exemplar>>()
+            .get(self.exemplar_id(world)?)?;
+        let aspect = exemplar.0.aspects.iter().find(|a| a.key() == self.aspect)?;
+        Some(aspect.clone())
+    }
+
+    /// The aspect at its defaults, as an instance gets it.
+    fn at_defaults(&self, world: &World) -> Result<Arc<dyn Aspect>, BevyError> {
+        let exemplar = world
+            .resource::<Assets<Exemplar>>()
+            .get(
+                self.exemplar_id(world)
+                    .ok_or_else(|| format!("{} is not loaded", self.exemplar))?,
+            )
+            .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
+        let requirer = exemplar
+            .0
+            .aspects
+            .iter()
+            .find(|aspect| aspect.key() == self.required_by)
+            .ok_or_else(|| format!("{} has no {}", self.exemplar, self.required_by))?;
+        let registry = world.resource::<AppTypeRegistry>().read();
+        Ok(new_aspect(
+            &registry,
+            requirer.required_decls().iter(),
+            &self.aspect,
+        )?)
+    }
+
+    /// Adds the aspect, at its defaults with `op` made at `path`, after the aspect requiring it;
+    /// and returns the edit that takes it out.
+    fn add_with(
+        &self,
+        world: &mut World,
+        op: &EditOp,
+        path: &ParsedPath,
+    ) -> Result<EditOp, BevyError> {
+        let aspect = self.at_defaults(world)?;
+        add_edited(world, self, aspect.as_ref(), &self.required_by, op, path)
+    }
+}
+
+/// Adds `aspect` to `holder`'s aspects, with `op` made at `path`, after the aspect `after` (or
+/// last, without it); and returns the edit that takes it out.
+fn add_edited(
+    world: &mut World,
+    holder: &dyn AspectHolder,
+    aspect: &dyn Aspect,
+    after: &str,
+    op: &EditOp,
+    path: &ParsedPath,
+) -> Result<EditOp, BevyError> {
+    let mut aspect = aspect.clone_boxed();
+    op.apply(aspect.as_partial_reflect_mut(), path)?;
+    let aspect: Arc<dyn Aspect> = Arc::from(aspect);
+    let mut undo = None;
+    holder.modify_aspects(world, &mut |aspects| {
+        let index = aspects
+            .iter()
+            .position(|had| had.key() == after)
+            .map_or(aspects.len(), |index| index + 1);
+        undo = Some(EditOp::apply_aspects(
+            aspects,
+            &[(index, aspect.clone())],
+            &[],
+        )?);
+        Ok(())
+    })?;
+    undo.ok_or_else(|| "the edit was not made".into())
+}
+
+impl PropertyRoot for RequiredAspect {
+    fn caption(&self) -> String {
+        aspect_name(&self.aspect).to_string()
+    }
+
+    /// Apart from the key of the aspect once added, so the panel shows that in its place.
+    fn key(&self) -> String {
+        format!("{} {} required", self.exemplar, self.aspect)
+    }
+
+    fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>> {
+        let aspect = match self.held(world) {
+            Some(aspect) => aspect,
+            None => self.at_defaults(world).ok()?,
+        };
+        Some(aspect.clone_boxed().into_partial_reflect())
+    }
+
+    fn note(&self) -> Option<String> {
+        Some(format!("Required by {}", aspect_name(&self.required_by)))
+    }
+
+    /// Edits the aspect once added; until then, [`EditOp::apply_to`] adds it with the edit.
+    fn modify(
+        &self,
+        world: &mut World,
+        change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError> {
+        ExemplarAspect {
+            exemplar: self.exemplar.clone(),
+            aspect: self.aspect.clone(),
+        }
+        .modify(world, change)
+    }
+}
+
+impl AspectHolder for RequiredAspect {
+    fn modify_aspects(
+        &self,
+        world: &mut World,
+        change: &mut dyn FnMut(&mut Vec<Arc<dyn Aspect>>) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError> {
+        let id = self
+            .exemplar_id(world)
+            .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
+        let catalog = world
             .resource::<AssetServer>()
-            .get_path_id(&self.exemplar)?
-            .try_typed::<Exemplar>()
-            .ok()
+            .get_path_id(self.exemplar.without_label())
+            .ok_or_else(|| format!("{} has no catalog", self.exemplar))?;
+        world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
+            Exemplar::edit(&mut exemplars, id, |data| change(&mut data.aspects))
+        })?;
+        world.resource_mut::<UnsavedAssets>().mark(catalog);
+        Ok(())
+    }
+}
+
+impl ExemplarPart for RequiredAspect {
+    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
+        exemplar_id(world, &self.exemplar)
     }
 }
 
@@ -1356,6 +1523,54 @@ mod tests {
         };
         assert_eq!(root.caption(), "ToggleSwitch");
         assert_eq!(aspect_name("Wings"), "Wings");
+    }
+
+    /// A required aspect's first edit adds it after its requirer, edited, and one undo takes it
+    /// back out; redo puts it back as edited.
+    #[test]
+    fn an_edited_required_aspect_is_added_after_its_requirer() {
+        let mut world = aspects_world();
+        let op = EditOp::Write(Box::new(3.0f32));
+        let undo = add_edited(
+            &mut world,
+            &AspectsRoot,
+            &Wings(1.),
+            "Horns",
+            &op,
+            &path(".0"),
+        );
+        // Wings is held already, so the add is refused, and nothing changes.
+        assert!(undo.is_err());
+
+        world.resource_mut::<HeldAspects>().0.remove(0);
+        let undo = add_edited(
+            &mut world,
+            &AspectsRoot,
+            &Wings(1.),
+            "Horns",
+            &op,
+            &path(".0"),
+        );
+        assert_eq!(held_aspects(&world), ["Horns", "Wings", "Tail"]);
+        let wings = |world: &World| {
+            let aspect = &world.resource::<HeldAspects>().0[1];
+            aspect
+                .as_partial_reflect()
+                .try_downcast_ref::<Wings>()
+                .unwrap()
+                .0
+        };
+        assert_eq!(wings(&world), 3.);
+
+        let redo = undo
+            .unwrap()
+            .apply_to(&AspectsRoot, &mut world, &ParsedPath::empty())
+            .unwrap();
+        assert_eq!(held_aspects(&world), ["Horns", "Tail"]);
+        redo.apply_to(&AspectsRoot, &mut world, &ParsedPath::empty())
+            .unwrap();
+        assert_eq!(held_aspects(&world), ["Horns", "Wings", "Tail"]);
+        assert_eq!(wings(&world), 3.);
     }
 
     #[test]

@@ -8,7 +8,7 @@ use core::cell::Cell;
 use std::sync::Arc;
 
 use bevy::{
-    ecs::{component::Component, entity::Entity, world::World},
+    ecs::{component::Component, entity::Entity, system::Command, world::World},
     reflect::PartialReflect,
 };
 use thiserror::Error;
@@ -112,6 +112,8 @@ pub struct InvocationContext<'vm, 'w> {
     tracking: &'vm mut TrackingScope,
     /// The memos of the cell evaluating, if the evaluation is a cell's.
     pub(crate) memos: Option<&'vm mut MemoTable>,
+    /// Where an effect's writes go; `None` outside an effect.
+    effects: Option<&'vm mut EffectBuffer>,
     /// Identifies the call: the address just past its instruction, the same on every evaluation
     /// of a module.
     pub(crate) site: usize,
@@ -141,6 +143,17 @@ impl<'w> InvocationContext<'_, 'w> {
     /// Writes the function's result.
     pub fn ret(&mut self, value: impl ToSlots) -> Result<(), VMError> {
         value.to_slots(self.out, self.store)
+    }
+
+    /// Queues `command` in the effect's buffer, for a host command to apply once the effect has
+    /// returned, in order with its other writes. A command is a value, as `Damage { target,
+    /// amount }`, so that what intercepts it can later read and rewrite it before it applies.
+    pub fn queue(&mut self, command: impl Command<Out = ()>) -> Result<(), VMError> {
+        self.effects
+            .as_deref_mut()
+            .ok_or(VMError::Unsupported("a host command outside an effect"))?
+            .queue(Box::new(move |world: &mut World| command.apply(world)));
+        Ok(())
     }
 
     /// Component `C` on `entity`, recorded as a read of the evaluation.
@@ -954,7 +967,9 @@ fn call_host_method(vm: &mut ScriptVm) -> Result<(), VMError> {
 
 fn call_host_function(vm: &mut ScriptVm) -> Result<(), VMError> {
     let function_index = vm.read_u16();
-    let Some(HostMember::Function(f)) = vm.host.members.get(function_index) else {
+    let Some(HostMember::Function(f) | HostMember::Command(f)) =
+        vm.host.members.get(function_index)
+    else {
         return Err(VMError::InvalidGlobalIndex(function_index));
     };
     call_native(vm, *f)
@@ -975,6 +990,7 @@ fn call_native(vm: &mut ScriptVm, f: crate::host::HostFunction) -> Result<(), VM
         out: &mut vm.out,
         tracking: vm.tracking,
         memos: vm.memos.as_deref_mut(),
+        effects: vm.effects.as_deref_mut(),
         site: vm.iptr as usize,
     };
     f(&mut ctx)?;

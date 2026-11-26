@@ -11,7 +11,7 @@ catalog entries a floor or terrain effect edits, each saved and restored.
 - Exemplars: the chosen actor's properties show below the list, its own pane, then one per aspect.
   A number typed there changes it, undoably, its drag rounded, and a color shows in its swatch.
   Save writes that one line into its catalog, the reload brings the edit back, and the undone edit
-  saved leaves the file as it was.
+  saved leaves the file as it was. An aspect's required aspects that the exemplar lacks follow it.
 
 The other fields' edits, and the lines each saves, are checked by `cargo test`
 (`properties/edit.rs`, `panoply_exemplar`'s `save.rs`). Settings start empty, so the panel starts
@@ -193,4 +193,15 @@ def exemplar_properties(driver):
         assert CHARACTERS.read_bytes() == original, "saving the undone edit changed the catalog"
     finally:
         restore(CHARACTERS, original)
+    driver.click("Exemplars/ClearFilter")
+
+    # After an aspect, the aspects it requires that the exemplar lacks, at their defaults: the
+    # skirmisher's `Combatant` requires `Health`. Checked by eye in `required_aspect.png`: Health,
+    # with no ×, after Combatant.
+    driver.click("Exemplars/Filter")
+    driver.type("CrimsonWatchSkirmisher")
+    driver.click("Exemplars/CrimsonWatchSkirmisher")
+    expect_choice(driver, "actor", "CrimsonWatchSkirmisher")
+    driver.expect("Properties/Health/placeholder", TEXT, "Required by Combatant")
+    driver.screenshot("required_aspect")
     driver.click("Exemplars/ClearFilter")

@@ -3,7 +3,10 @@ use bevy_action_map::prelude::*;
 use panoply_core::{
     realm_physics::realm_physics_system, viewpoint::goto_location, GameMode, Realm, Viewpoint,
 };
-use panoply_exemplar::{CatalogServer, Exemplar, InstanceAspects, UpdateAspects};
+use panoply_exemplar::{
+    CatalogServer, Exemplar, InstanceAspects, ScriptComponentAppExt, UpdateAspects,
+};
+use panoply_saga::SagaHostBuilder;
 use panoply_scenery::CutawaySystems;
 
 mod actor_animation;
@@ -20,6 +23,7 @@ mod actor_route;
 mod actor_slots;
 mod actor_travel;
 mod actor_wield;
+mod health;
 mod item_aspect;
 mod precinct_actors;
 mod script_player;
@@ -37,6 +41,7 @@ pub use actor_physics::{capsule, ActorHeld, ActorMotion, ActorResting};
 pub use actor_route::RouteTo;
 pub use actor_travel::{ActionFinished, TravelTo};
 pub use actor_wield::WieldedItem;
+pub use health::{Health, HealthMax, HealthState};
 pub use precinct_actors::{HomePrecinct, PlacedAs, PrecinctActors};
 pub use script_player::ScriptPlayer;
 
@@ -106,6 +111,11 @@ impl Plugin for ActorsPlugin {
             .register_type::<WieldedItems>()
             .register_type::<ItemModel>()
             .register_type::<EquipSlot>()
+            .register_type::<Health>()
+            .register_type::<HealthMax>()
+            .register_type::<HealthState>()
+            .register_script_component::<Health, HealthState>("health")
+            .register_script_component::<Health, HealthMax>("health_max")
             .add_context::<PlayerControl>(|context| {
                 // In editing the same keys drive the free camera (`ViewpointControl`).
                 context.active_in_state(GameMode::Play);
@@ -203,6 +213,13 @@ impl Plugin for ActorsPlugin {
             .add_observer(spawn_wielded_items)
             .add_observer(color_actor_part);
         script_player::add_script_player(app);
+        health::add_damage_command(
+            &mut app
+                .world_mut()
+                .get_resource_mut::<SagaHostBuilder>()
+                .expect("ActorsPlugin builds after SagaPlugin")
+                .0,
+        );
     }
 }
 

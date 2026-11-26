@@ -17,7 +17,6 @@ use self::{
     floor_mesh::{
         gen_floor_meshes, insert_floor_meshes, rebuild_floor_materials, update_floor_aspects,
     },
-    lock_aspect::{Lock, LockState},
     precinct::{mark_precinct_data, read_precinct_data},
     scenery_aspect::{LightSource, ModelComponent, SceneryMarks, SceneryModels},
     scenery_colliders::build_se_colliders,
@@ -38,6 +37,7 @@ mod floor_surface;
 mod lock_aspect;
 
 pub use floor_surface::{FloorMaterial, FloorSurface};
+pub use lock_aspect::{Lock, LockState};
 mod pending;
 pub mod precinct;
 mod precinct_cache;
@@ -161,43 +161,4 @@ fn init_outline(
         width: 0.015,
         ..default()
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::Path;
-
-    use panoply_exemplar::{add_interaction_fields, annotations::add_editor_attributes};
-    use panoply_saga::{compile_module, format_error, HostState, NoImports};
-
-    use super::*;
-
-    /// Every module in `assets/scripts/` compiles against a host with the interaction type, the
-    /// editor's attributes, and the components scripts read here.
-    #[test]
-    fn every_script_compiles() {
-        let mut host = HostState::new();
-        add_interaction_fields(&mut host);
-        add_editor_attributes(&mut host);
-        host.add_component::<LockState>("lock");
-        let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets");
-        let mut failures = Vec::new();
-        let mut count = 0;
-        for entry in std::fs::read_dir(assets.join("scripts")).unwrap() {
-            let path = entry.unwrap().path();
-            if path.extension().is_none_or(|ext| ext != "saga") {
-                continue;
-            }
-            count += 1;
-            let name = format!("scripts/{}", path.file_name().unwrap().to_string_lossy());
-            let src = std::fs::read_to_string(&path).unwrap();
-            if let Err(err) =
-                futures_lite::future::block_on(compile_module(&name, &src, &host, &NoImports))
-            {
-                failures.push(format_error(&name, &src, &err));
-            }
-        }
-        assert!(count > 0, "no modules under {}", assets.display());
-        assert!(failures.is_empty(), "{}", failures.join("\n"));
-    }
 }

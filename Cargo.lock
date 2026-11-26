@@ -4833,6 +4833,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_action_map",
+ "futures-lite",
  "panoply_core",
  "panoply_exemplar",
  "panoply_nav",

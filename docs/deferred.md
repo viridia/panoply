@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X149.**
+**Next: X150.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -258,14 +258,14 @@ dropped, not deferred. Numbers are never reused.
   status is an entity related to its actor (Bevy's relationships, `StatusOf` and `Statuses`, with
   `linked_spawn`), so two casters' poisons stack apart, each with its source, expiry deadline and
   stack count, and components of its own carry what only some statuses need (damage over time on
-  X147's tick, a tint), which systems query. It is not an aspect attached for a while: aspects are
-  authored makeup, one of each kind, and attaching one changes the archetype. A status that changes
-  behavior does it through the stats and flags goals read (fear raises the flee threshold, a stun
-  suspends goals), as adjectives do (X148). Given up: a list component on the actor, which saves as
-  one value but changes whole with any status; PAN82 saves an actor's statuses with it, adjectives
-  included. faery's `design/talents.md` sketches branches and their talents. The proving slice: one
-  stat, one modifier with a condition, one granted ability. *Gate:* the first three steps of
-  saga.md's order of work.
+  X147's tick, a tint), which systems query; a status that guards or weakens is an interceptor
+  (X149). It is not an aspect attached for a while: aspects are authored makeup, one of each kind,
+  and attaching one changes the archetype. A status that changes behavior does it through the stats
+  and flags goals read (fear raises the flee threshold, a stun suspends goals), as adjectives do
+  (X148). Given up: a list component on the actor, which saves as one value but changes whole with
+  any status; PAN82 saves an actor's statuses with it, adjectives included. faery's
+  `design/talents.md` sketches branches and their talents. The proving slice: one stat, one modifier
+  with a condition, one granted ability. *Gate:* the first three steps of saga.md's order of work.
 - **X54** Graphics settings for weaker GPUs, such as `Aerdra`'s integrated one (notes.md). A
   `GraphicsSettings` resource deriving `SettingsGroup`, as `WindowSettings` does, is all that saving
   them takes. The controls go in the editor pane for now, and move to a dialog once the game has
@@ -472,10 +472,10 @@ dropped, not deferred. Numbers are never reused.
   the data. The editor (`panoply_editor`) is exempt, as its performance matters little. Read only: a
   list for the author, ranked by how often each runs. *Gate:* game-side performance work begins, or
   a frame-time regression in `docs/perf.csv` that a profile does not explain.
-- **X108** Combat's animation states: R33's take damage, dying and dead, the last two held on their
-  last frame (R35), and taking damage re-evaluating goals (R37). PAN3j plays only the states
-  something in the game can cause (D48). *Gate:* actors have health: PAN87's fireballs or PAN6's
-  fights, whichever deals damage first.
+- **X108** R33's take damage, a one-shot clip on each hit that lands, and taking damage
+  re-evaluating goals (R37). Dying and dead came with health (PAN111a). Played from an event the
+  damage fires once applied, which threat (PAN111) also listens for (X149). *Gate:* goals that
+  taking damage re-evaluates: PAN111's henchmen.
 - **X109** Scenery phasing, by layers: scenery that appears with a quest stage, such as the harvest
   festival's booths. A realm has named layers, each with a reactive `when` formula (SAGA's cells,
   X7). A layer's content is a patch of walls, fixtures and floors, kept with the precinct or apart
@@ -716,3 +716,16 @@ dropped, not deferred. Numbers are never reused.
   adjective. The name joins adjective and exemplar through a localized pattern (X77). Camping's
   other half, pulling one at a time, is answered by allies that join a neighbor's fight (X104), not
   by adjectives. *Gate:* the first enemies spawned from a spawn table rather than placed.
+- **X149** The combat pipeline: interceptors that read and rewrite a host command before it applies.
+  Combat's skills, offensive and defensive, are mostly interceptors: armor and a protective aura
+  absorb damage, poison resistance weakens each poison tick, an area spell's buff slows every skill
+  used under it, so skill use goes through the pipeline as damage does. A command is a value
+  (`Damage`, PAN111a), later with its source, typed entries and resist tags, as faery's damage event
+  had ([faery.md](faery.md), Combat), so there is something to rewrite. Two mechanisms, unchosen: a
+  pass over the effect buffer, where order is easy but each interceptor must be found from the
+  target's aspects and statuses; or a custom observer propagator, which is ordered from entity to
+  entity, though not among one entity's observers, walking X53's statuses (`StatusOf`) and
+  equipment, where mapping the pipeline's stages onto entities, and the relation and propagator it
+  takes, are the cost. Events for what follows damage (the take-damage clip, X108; threat, PAN111)
+  are separate, and observers suit them. *Gate:* the first interceptor: armor, parry or a
+  resistance, in PAN111.

@@ -3,6 +3,8 @@
 //! fields and then a subpane for each of its own aspects, each with a × that removes it. The
 //! caption's menu adds the exemplar's absent fields, and a button beside it opens the aspects
 //! chooser (`aspect_chooser`), as Blender's Add Modifier does. Inherited aspects are not shown.
+//! After an aspect come those it requires that the exemplar's chain lacks, at their defaults and
+//! with no ×; editing one adds it to the exemplar (D121).
 
 use std::{any::Any, sync::Arc};
 
@@ -40,7 +42,7 @@ use crate::{
         edit::{
             apply_property_edits, count_edit_gestures, read_inspected_values, AspectHolder,
             EditGesture, ExemplarAspect, InspectedRoots, InspectedValue, InspectedValues,
-            PathSteps, PropertyEdits, PropertyRoot, ReflectAspectHolder,
+            PathSteps, PropertyEdits, PropertyRoot, ReflectAspectHolder, RequiredAspect,
         },
         icon_button, root_add_menu, root_pane, root_rows, CapsPanel, CollapsedRows, HEADER_TEXT,
     },
@@ -67,6 +69,7 @@ impl Plugin for SceneryPropertiesPlugin {
             // So an edit can find what each root can do (`AspectHolder`).
             .register_type::<ExemplarRoot>()
             .register_type::<ExemplarAspect>()
+            .register_type::<RequiredAspect>()
             // So plans can read a number input's value.
             .register_type::<NumericValue>()
             .register_type_data::<NumericValue, ReflectComponent>()
@@ -294,12 +297,40 @@ fn inspect_chosen_exemplar(
         kind: kind(tool),
         name,
     })];
-    roots.extend(exemplar.0.aspects.iter().map(|aspect| {
-        Arc::new(ExemplarAspect {
+    // Each own aspect, then those it requires that nothing along the chain has.
+    let mut chain = vec![&exemplar.0];
+    // A chain longer than there are exemplars has a cycle.
+    while let Some(next) = chain
+        .last()
+        .and_then(|data| data.extends.as_ref())
+        .and_then(|handle| exemplars.get(handle))
+        .filter(|_| chain.len() <= exemplars.len())
+    {
+        chain.push(&next.0);
+    }
+    let has = |key: &str| {
+        chain
+            .iter()
+            .any(|data| data.aspects.iter().any(|aspect| aspect.key() == key))
+    };
+    let mut required: Vec<&str> = Vec::new();
+    for aspect in exemplar.0.aspects.iter() {
+        roots.push(Arc::new(ExemplarAspect {
             exemplar: path.clone_owned(),
             aspect: aspect.key().to_string(),
-        }) as Arc<dyn PropertyRoot>
-    }));
+        }));
+        for key in aspect.requires() {
+            if has(key) || required.contains(&&**key) {
+                continue;
+            }
+            required.push(key);
+            roots.push(Arc::new(RequiredAspect {
+                exemplar: path.clone_owned(),
+                aspect: key.to_string(),
+                required_by: aspect.key().to_string(),
+            }));
+        }
+    }
     let same = inspected.roots.len() == roots.len()
         && inspected
             .roots

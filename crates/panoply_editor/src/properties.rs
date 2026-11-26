@@ -310,6 +310,10 @@ pub fn root_pane(
                 return;
             }
             ui.ch().on_spawn_apply_scene(subpane_body).add(|ui| {
+                if let Some(note) = root.note() {
+                    ui.ch_id("root_note")
+                        .on_spawn_apply_scene(move || placeholder(note.clone()));
+                }
                 if let Some(note) = no_rows_note(value) {
                     ui.ch_id(note).on_spawn_apply_scene(move || placeholder(note));
                 }
@@ -397,7 +401,8 @@ fn no_rows_note(value: &dyn PartialReflect) -> Option<&'static str> {
 }
 
 /// `text`, dim and italic, named `placeholder`, standing in for rows.
-fn placeholder(text: &'static str) -> impl Scene {
+fn placeholder(text: impl Into<String>) -> impl Scene {
+    let text: String = text.into();
     bsn! {
         Text(text)
         TextFont {

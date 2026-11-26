@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I97.**
+**Next: I98.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -416,3 +416,6 @@ confirmed by running something or only by reading. Numbers are never reused.
   (`PlacementGesture::update`). The actor never starts its physics, since `start_actor_physics`
   waits for a ray down to meet something, so it gets no collider and cannot be picked; the instance
   list still selects it. The instance gizmo refuses such a move (PAN92). Read, not run.
+- **I97** Some female actors' hair ignores their exemplar's `Hair` color. Older than PAN111a; which
+  exemplars, and whether it follows the hair feature or the body, not yet looked into. Seen by the
+  author in play.

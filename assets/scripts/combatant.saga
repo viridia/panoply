@@ -1,0 +1,10 @@
+// An actor that can be fought.
+#[require(Health)]
+#[icon("editor/icons/lucide/swords.png")]
+aspect Combatant for Actor {
+    interaction attack {
+        caption: "Attack",
+        when: self.health.current > 0.0,
+        perform: { damage(self, 5.0) },
+    }
+}

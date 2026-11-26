@@ -4,12 +4,13 @@
 use std::sync::Arc;
 
 use bevy::{
-    ecs::{entity::Entity, world::World},
+    ecs::{component::Component, entity::Entity, world::World},
     reflect::Reflect,
 };
 use futures_lite::future;
 use panoply_saga::{
-    CompilationError, ExprType, FieldKind, HostState, NoImports, ScriptModule, compile_module,
+    CompilationError, ExprType, FieldKind, HostParam, HostState, InvocationContext, NoImports,
+    ScriptModule, VMError, compile_module,
     scripted::{self, AspectDecl, InteractionDecl, ScriptedFields},
 };
 
@@ -156,6 +157,74 @@ fn a_write_to_an_entity_that_lost_its_aspect_is_skipped() {
     scripted::remove(&mut world.entity_mut(switch), &decl.key, true);
     effects.apply(&mut world);
     assert!(scripted::get(&world, switch, &decl.key, true).1.is_none());
+}
+
+/// What `ring` has done to an entity: the sum of its counts.
+#[derive(Component, Default)]
+struct Rung(i32);
+
+/// `ring(target, times)`, a host command adding `times` to the target's [`Rung`].
+fn ring(ctx: &mut InvocationContext) -> Result<(), VMError> {
+    let target: Entity = ctx.arg()?;
+    let times: i32 = ctx.arg()?;
+    ctx.queue(move |world: &mut World| {
+        world.entity_mut(target).get_mut::<Rung>().unwrap().0 += times;
+    })
+}
+
+fn host_with_ring() -> HostState {
+    let mut host = host();
+    let param = |name: &str, ty| HostParam {
+        name: name.into(),
+        ty,
+    };
+    host.add_command(
+        "ring",
+        ring,
+        vec![
+            param("target", ExprType::Entity),
+            param("times", ExprType::I32),
+        ],
+    );
+    host
+}
+
+#[test]
+fn a_host_command_applies_with_the_effects_writes() {
+    let host = host_with_ring();
+    let src = r#"aspect Bell for Fixture {
+        state on: bool = false,
+        interaction ring { caption: "Ring", perform: { ring(self, 2); on = true; ring(self, 3) } }
+    }"#;
+    let module = module(src, &host).unwrap();
+    let decl = module.aspects()[0].clone();
+    let mut world = World::new();
+    let bell = world.spawn(Rung::default()).id();
+    let state: Vec<Box<dyn Reflect>> = vec![Box::new(false)];
+    scripted::insert(
+        &mut world.entity_mut(bell),
+        ScriptedFields::new(decl.clone(), true, state).unwrap(),
+    );
+    let perform = interaction(&decl, "ring").field("perform").unwrap();
+    let effects = module.run_effect(&world, &host, bell, perform).unwrap();
+    // Queued, not yet applied.
+    assert_eq!(effects.len(), 3);
+    assert_eq!(world.get::<Rung>(bell).unwrap().0, 0);
+    effects.apply(&mut world);
+    assert_eq!(world.get::<Rung>(bell).unwrap().0, 5);
+}
+
+#[test]
+fn a_host_command_outside_an_effect_is_an_error() {
+    let host = host_with_ring();
+    let cases = [
+        "aspect A for Wall { interaction use { caption: \"Use\", when: { ring(self, 1); true }, perform: {} } }",
+        "fn helper() { ring(self, 1) }",
+    ];
+    for src in cases {
+        let err = module(src, &host).unwrap_err();
+        assert_eq!(err.to_string(), "Only an effect may call ring", "{src}");
+    }
 }
 
 #[test]

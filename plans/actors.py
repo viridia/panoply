@@ -15,7 +15,8 @@ reloaded, it is rebuilt with its hair and sword.
 The movement keys drive the actor only in play (`GameMode`); in editing W moves the camera. In
 play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its prompt, and E
 opens and shuts it; facing the wall switch shows Use, and E throws it, its lever following the
-state the interaction writes. The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
+state the interaction writes. Facing the skirmisher shows Attack, and four blows of E kill it.
+The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
 `proximity`, and raises them as it leaves. A click on the ground sends the player there by a
 route. In a house, in play,
 the floor above is cut away (R15).
@@ -56,6 +57,7 @@ IDLE = "panoply_actors::actor_animation::ActorIdle"
 SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
 LOCK_STATE = "panoply_scenery::lock_aspect::LockState"
+HEALTH_STATE = "panoply_actors::health::HealthState"
 TEXT = "bevy_ui::widget::text::Text"
 SPAN = "bevy_text::text::TextSpan"
 WINDOW = "bevy_window::window::Window"
@@ -90,6 +92,8 @@ INSIDE = [53.0, 0.5, 41.0]
 SWITCH_STAND = [7.6, 1.0, 27.2]
 # The spear trap `proximate-spears` in precinct (0, 0), open floor on its +z side.
 SPEARS = [28.5, 0.02, 21.5]
+# The Crimson Watch skirmisher in precinct (1, 0), facing +x, the Combatant.
+SKIRMISHER = [123.45, 0.0, 16.55]
 VISIBILITY = "bevy_camera::visibility::Visibility"
 WAIT = {"seconds": 60}
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
@@ -423,6 +427,7 @@ def run(driver):
 
     check_chest(driver)
     check_switch(driver)
+    check_combatant(driver)
     check_spears(driver)
     check_route(driver)
     check_cutaways(driver)
@@ -663,6 +668,71 @@ def check_switch(driver):
     driver.key("KeyE")
     driver.seconds(1.0)
     assert prompt(driver) == "[E] Use", f"prompt {prompt(driver)!r} after using it again"
+    driver.mode("Edit")
+
+
+def check_combatant(driver):
+    """Facing the Crimson Watch skirmisher, whose `Combatant` requires `Health`, attached at its
+    defaults (20), the prompt offers Attack, and each E deals 5. At zero it is dead: no prompt,
+    and it plays dying, then dead, held. Checked by eye in `dead.png`: the skirmisher lies where
+    it stood."""
+    # East of it, in front, facing west (-x) toward it.
+    stand = [SKIRMISHER[0] + 1.3, SKIRMISHER[1] + 0.5, SKIRMISHER[2]]
+    driver.goto(stand, 8.0)
+
+    def at_spot():
+        rows = driver.call(
+            "world.query",
+            {"data": {"components": [HEALTH_STATE, MOTION]}, "filter": {"with": [HEALTH_STATE]}},
+        )
+        return [
+            row
+            for row in rows
+            if flat_distance(row["components"][MOTION]["position"], SKIRMISHER) < 1.0
+        ]
+
+    driver.wait(
+        lambda: (len(at_spot()) == 1, lambda: f"{len(at_spot())} with health at the spot"),
+        "the skirmisher, with health",
+        WAIT,
+    )
+    skirmisher = at_spot()[0]["entity"]
+
+    def health():
+        return driver.call(
+            "world.get_components", {"entity": skirmisher, "components": [HEALTH_STATE]}
+        )["components"][HEALTH_STATE]["current"]
+
+    assert health() == 20.0, f"health {health()}, not the default max"
+    place(driver, stand)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    motion = driver.get("Actor", MOTION)
+    motion.update(facing=-math.pi / 2)
+    driver.set("Actor", MOTION, motion)
+    driver.mode("Play")
+    driver.frames(5)
+    for left in [15.0, 10.0, 5.0]:
+        assert prompt(driver) == "[E] Attack", f"prompt {prompt(driver)!r} at {health()} health"
+        driver.key("KeyE")
+        driver.frames(5)
+        assert health() == left, f"health {health()}, not {left}"
+    driver.key("KeyE")
+    driver.frames(5)
+    assert health() == 0.0, f"health {health()} after the last blow"
+    assert prompt(driver) == "", f"prompt {prompt(driver)!r} on the dead"
+
+    def dead():
+        states = driver.call("world.query", {"data": {"components": [STATE]}})
+        found = [row["components"][STATE] for row in states]
+        return "Dead" in found, lambda: f"no actor dead: {found}"
+
+    driver.wait(dead, "the skirmisher to die", {"seconds": 10})
+    driver.screenshot("dead")
+    # Healed, for the later steps' views of its group.
+    driver.call(
+        "world.insert_components",
+        {"entity": skirmisher, "components": {HEALTH_STATE: {"current": 20.0}}},
+    )
     driver.mode("Edit")
 
 

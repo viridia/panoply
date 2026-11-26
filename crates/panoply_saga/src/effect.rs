@@ -14,7 +14,6 @@ use smol_str::SmolStr;
 use crate::{FromSlots, HostState, ScriptModule, ScriptVm, TrackingScope, VMError, scripted};
 
 /// One write an effect made.
-#[derive(Debug)]
 enum EffectWrite {
     /// A state field of a scripted aspect.
     Scripted {
@@ -23,6 +22,22 @@ enum EffectWrite {
         field: SmolStr,
         value: Box<dyn PartialReflect>,
     },
+    /// What a host command queued.
+    Command(HostCommand),
+}
+
+/// A change a host command queued, as `damage` lowering health.
+pub(crate) type HostCommand = Box<dyn FnOnce(&mut World) + Send>;
+
+impl std::fmt::Debug for EffectWrite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Scripted {
+                entity, key, field, ..
+            } => write!(f, "{entity} {key}.{field}"),
+            Self::Command(_) => write!(f, "a host command"),
+        }
+    }
 }
 
 /// The writes an effect made, in order, applied together once it has returned.
@@ -57,11 +72,16 @@ impl EffectBuffer {
         });
     }
 
+    pub(crate) fn queue(&mut self, command: HostCommand) {
+        self.writes.push(EffectWrite::Command(command));
+    }
+
     /// Applies the writes in order. One that fails, as on an entity that lost its aspect, is
     /// logged, and the rest still apply.
     pub fn apply(self, world: &mut World) {
         for write in self.writes {
             match write {
+                EffectWrite::Command(command) => command(world),
                 EffectWrite::Scripted {
                     entity,
                     key,

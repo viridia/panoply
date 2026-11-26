@@ -781,7 +781,12 @@ impl<'h, 'e, 't> FunctionBuilder<'h, 'e, 't> {
             return Err(CompilationError::UnknownSymbol(loc, name.to_string()));
         };
         let kind = match (&decl.kind, scope_type) {
-            (DeclKind::Function { index }, ScopeType::Host) => ExprKind::HostFunctionRef(*index),
+            (DeclKind::Function { index }, ScopeType::Host) => {
+                if !self.effect && self.host.is_command(*index) {
+                    return Err(CompilationError::CommandOutsideEffect(loc, name.into()));
+                }
+                ExprKind::HostFunctionRef(*index)
+            }
             (DeclKind::Function { index }, ScopeType::Module) => {
                 ExprKind::ScriptFunctionRef(*index)
             }

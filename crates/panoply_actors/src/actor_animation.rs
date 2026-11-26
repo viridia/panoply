@@ -8,7 +8,7 @@ use bevy::{
 use std::time::Duration;
 
 use super::ActorBody;
-use crate::{actor_control::angle_between, ActorIntent, ActorMotion};
+use crate::{actor_control::angle_between, ActorIntent, ActorMotion, HealthState};
 
 /// Gaits by ground speed, in m/s (R18): walk up to `MAX_WALK_SPEED`, fast walk up to
 /// `MAX_WALK_FAST_SPEED`, run above it. At exactly 3.5, the player's jog, a humanoid fast walks.
@@ -50,6 +50,10 @@ pub enum ActorAnimationState {
     Run,
     Falling,
     Landing,
+    /// Its health reached zero: it falls, once, and holds its last frame (R35).
+    Dying,
+    /// Dead, once dying has played, held.
+    Dead,
 }
 
 /// The state an actor plays when it has nothing else to do, chosen by its aspects (R38): combat
@@ -90,7 +94,7 @@ const fn looping(clips: &'static [&'static str], fade_ms: u64) -> StateClips {
 }
 
 impl ActorAnimationState {
-    const ALL: [Self; 11] = [
+    const ALL: [Self; 13] = [
         Self::Stand,
         Self::CombatStance,
         Self::CombatStanceUnarmed,
@@ -102,6 +106,8 @@ impl ActorAnimationState {
         Self::Run,
         Self::Falling,
         Self::Landing,
+        Self::Dying,
+        Self::Dead,
     ];
 
     fn clips(self) -> StateClips {
@@ -124,6 +130,17 @@ impl ActorAnimationState {
             Self::Landing => StateClips {
                 clips: &["Land"],
                 fade: Duration::from_millis(100),
+                once: true,
+            },
+            // Once, held on the last frame: a clip played once stops there.
+            Self::Dying => StateClips {
+                clips: &["Dying", "Dead", "Fall"],
+                fade: Duration::from_millis(200),
+                once: true,
+            },
+            Self::Dead => StateClips {
+                clips: &["Dead", "Fall"],
+                fade: Duration::from_millis(300),
                 once: true,
             },
         }
@@ -340,11 +357,16 @@ pub(crate) fn animate_actor_state(
         &mut AnimationPlayer,
         &mut AnimationTransitions,
     )>,
-    actors: Query<(&ActorMotion, Option<&ActorIntent>, Option<&ActorIdle>)>,
+    actors: Query<(
+        &ActorMotion,
+        Option<&ActorIntent>,
+        Option<&ActorIdle>,
+        Option<&HealthState>,
+    )>,
     clip_assets: Res<Assets<AnimationClip>>,
     time: Res<Time<Fixed>>,
 ) {
-    use ActorAnimationState::{Blocked, Falling, Landing, Stumble, Turn};
+    use ActorAnimationState::{Blocked, Dead, Dying, Falling, Landing, Stumble, Turn};
     let dt = time.timestep().as_secs_f32();
     let duration = |clip: &StateClip| {
         clip_assets
@@ -353,7 +375,7 @@ pub(crate) fn animate_actor_state(
             .filter(|duration| *duration > 0.0)
     };
     for (armature, clips, mut state, mut player, mut transitions) in &mut armatures {
-        let Ok((motion, intent, idle)) = actors.get(armature.actor) else {
+        let Ok((motion, intent, idle, health)) = actors.get(armature.actor) else {
             continue;
         };
         let forward = Vec2::new(motion.facing.sin(), motion.facing.cos());
@@ -364,7 +386,7 @@ pub(crate) fn animate_actor_state(
         let idle_pushed =
             motion.push != Vec2::ZERO && intent.is_none_or(|intent| intent.speed == 0.0);
         let gait = clips.gait(speed).filter(|_| !idle_pushed);
-        // How long the landing has played, and whether it has finished.
+        // How long the main clip (a landing, or dying) has played, and whether it has finished.
         let landing = transitions
             .get_main_animation()
             .and_then(|node| player.animation(node))
@@ -375,7 +397,15 @@ pub(crate) fn animate_actor_state(
             && landing.is_some_and(|(elapsed, finished)| {
                 elapsed < LANDING_HOLD || (gait.is_none() && !finished)
             });
-        let next = if motion.falling {
+        // The dead fall, then lie where they fell: dying plays once, then dead.
+        let dying_done = *state == Dying && landing.is_some_and(|(_, finished)| finished);
+        let next = if health.is_some_and(HealthState::dead) {
+            if *state == Dead || dying_done {
+                Dead
+            } else {
+                Dying
+            }
+        } else if motion.falling {
             Falling
         } else if touched_down || still_landing {
             Landing
@@ -390,7 +420,8 @@ pub(crate) fn animate_actor_state(
         } else {
             idle.copied().unwrap_or_default().into()
         };
-        // Every chain but the gaits' and landing's ends in `Stand`, which every species has.
+        // Every chain but the gaits', landing's and death's ends in `Stand`, which every species
+        // has.
         let Some(next_clip) = clips.get(next).or(clips.get(ActorAnimationState::Stand)) else {
             continue;
         };

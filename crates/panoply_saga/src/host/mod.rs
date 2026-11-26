@@ -162,6 +162,10 @@ pub(crate) enum HostMember {
     /// A callable function which does not require a `self` argument.
     Function(HostFunction),
 
+    /// A function only an effect may call, which queues a change to the world in its buffer:
+    /// `damage(target, 5.0)`.
+    Command(HostFunction),
+
     /// A property of a type
     InstanceProperty(HostFunction),
 
@@ -443,6 +447,33 @@ impl HostState {
         );
         self.members.push(HostMember::Function(function));
         index
+    }
+
+    /// Adds a host command, called as `name(...)` from an effect, and a compile error anywhere
+    /// else. It returns nothing; `command` reads its arguments and queues what it does with
+    /// [`InvocationContext::queue`](crate::InvocationContext::queue), which applies in order with
+    /// the effect's other writes.
+    pub fn add_command(
+        &mut self,
+        name: impl Into<SmolStr>,
+        command: HostFunction,
+        params: Vec<HostParam>,
+    ) -> usize {
+        let index = self.members.len();
+        self.add_global(
+            name.into(),
+            host_decl(
+                function_type(params, ExprType::Void),
+                DeclKind::Function { index },
+            ),
+        );
+        self.members.push(HostMember::Command(command));
+        index
+    }
+
+    /// Whether member `index` is a host command.
+    pub(crate) fn is_command(&self, index: usize) -> bool {
+        matches!(self.members.get(index), Some(HostMember::Command(_)))
     }
 
     /// Adds a native memo, called as `name(...)`: within a cell it is kept between evaluations,

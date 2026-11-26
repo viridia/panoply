@@ -95,6 +95,9 @@ pub enum CompilationError {
     /// An assignment to an aspect's field outside an effect.
     #[error("Only an effect may write {1}")]
     WriteOutsideEffect(TokenLocation, SmolStr),
+    /// A host command named outside an effect.
+    #[error("Only an effect may call {1}")]
+    CommandOutsideEffect(TokenLocation, SmolStr),
     /// An assignment to a config field, which play never changes.
     #[error("{1} is config; only state fields can be written")]
     WriteToConfig(TokenLocation, SmolStr),
@@ -140,6 +143,7 @@ impl CompilationError {
             | NotALiteral(loc, _, _)
             | MissingInteractionField(loc, _, _)
             | WriteOutsideEffect(loc, _)
+            | CommandOutsideEffect(loc, _)
             | WriteToConfig(loc, _)
             | Internal(loc, _) => *loc,
         }

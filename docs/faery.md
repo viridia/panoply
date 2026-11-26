@@ -169,13 +169,42 @@ Migration scripts below, and X1), `artwork/`.
 
 - `game/src/aspects/`: book, combat, container, conversant, door, follower, mechanisms, music, shop,
   sign, stairs (Aspects, below).
-- `game/src/sim/`: damage, damage types, effectors, predicates, side effects, skills.
+- `game/src/sim/`: combat (Combat, below), and two registries scripts called: `predicates.ts`
+  (`isFollowing`) and `sideEffects.ts` (`shop`, `rewardCoin`, `rewardItem`, `startFollowing`), as
+  host functions and host commands are in SAGA.
 - `game/src/systems/`: `GameClock`, `RealmLighting` (see X12), `MusicSystem`, `OceanSounds`,
   `ParticleDamage`, `PlayerDeath`.
 - `design/`: `combat.md`, `dialog.md`, `items.md`, `talents.md`, `game-save.md`, `Scripting.md`,
   `scripting/predicates.md`, `Particles.md`, `UI.md`, `Bootstrapping.md`, `missing.md`;
   `archive/SAGA.md` (see X7).
 - `TODO.md` at the root (21 KB): the old engine's own open items.
+
+## Combat (*read* 2026-11-25)
+
+`game/src/sim/`, to be redesigned rather than ported. Its wounds (`IWound`, `damageTypes.ts`) are an
+abandoned idea: each hit added a wound effect ("Minor Cut") that healed by ticks, and health was the
+adjusted max less every wound's strength (`updateActorHealth`).
+
+- A skill (`skills.ts`) is data: caption, icon, group (attack, defend, utility), an `enabled` test
+  (the weapon class equipped), targeting and range, duration, clips, a delay before its effect, a
+  method, and a list of effects, each a vector with a strength, damage type and duration.
+- A method (`skillMethods.ts`: `meleeAttack`, `rangeAttack`, `parry`, `block`, `wait`) builds a
+  damage event, `{ source, target, damage: [], resist: ['parry', 'block'] }`, and has each of the
+  skill's vectors (`skillVectors.ts`: `weaponDamage`, `naturalDamage`, `poison`, `venom`) push a
+  damage entry onto it: type, base, adjusted, and how it applies. Weapon damage is the weapon's
+  times the vector's strength times the combatant's `attackPower`.
+- The pipeline (`applyDamage`, `damage.ts`): each of the attacker's active effects runs `onAttack`,
+  then each of the defender's runs `onDefend`; either may scale entries' `adjusted` or cancel the
+  event by returning false. Order is attacker's effects, then defender's, each in list order.
+  `parry` (`effectors.ts`) is such an effect: a defend skill adds it for 2 s, and on a parryable
+  event a roll cancels the blow, scales it down, or fails, and the parry ends.
+- After the pipeline, damage above zero adds threat toward the source, plays the take-damage clip,
+  and puts the player into combat mode, targeting the source if nothing is targeted. At zero health
+  the actor plays `dying`, and the player's focus on it clears.
+- Poison is two effects, so that each can be dispelled apart: a damage-over-time effect that each
+  tick adds to a damage effect, which heals on its own. Curing the poison leaves the damage; healing
+  the damage leaves the poison running.
+- Damage types: impact, cutting, piercing, fire, frost, poison, acid, vitality, spirit.
 
 ## Aspects (*read*, *counted* 2026-11-20)
 
