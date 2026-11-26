@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN134.**
+**Next: PAN135.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -416,13 +416,13 @@ components and every layer restartable from saved state (R104).
   m, the probe's reach), facing it. A door is clicked the same way once PAN59 lands. W or S on the
   way cancels it, as for a ground click. An actor is clicked the same way: the skirmisher's Attack
   (PAN111a), within its reach, facing it.
-- **PAN16h Routes in behaviors.** Its first customer is PAN111's henchmen, the first NPCs whose
-  behavior walks somewhere, asking for a route as PAN17a's click does. A route is searched on the
-  main thread, under a millisecond across the lair and village fixtures (`tests/route.rs`), an
-  unreachable goal included. NPCs' requests wait in a queue, run each frame until a budget is spent,
-  the player's click ahead of them; a search paused across frames, which restarts when a precinct it
-  touched gets a new mesh, only if one search alone exceeds the budget; tasks off the main thread
-  only if both fall short.
+- **PAN16h Routes in behaviors.** Its first customer is PAN111's henchmen, the first NPCs walking
+  somewhere at once, each asking for a route as PAN17a's click does; PAN134a's lone guardsman asks
+  as the click does, unqueued. A route is searched on the main thread, under a millisecond across
+  the lair and village fixtures (`tests/route.rs`), an unreachable goal included. NPCs' requests
+  wait in a queue, run each frame until a budget is spent, the player's click ahead of them; a
+  search paused across frames, which restarts when a precinct it touched gets a new mesh, only if
+  one search alone exceeds the budget; tasks off the main thread only if both fall short.
 - **PAN16j Doors in routes.** *Needs:* PAN59. faery read each door's `open` signal inside its
   search, but a door does not change during one query, so its cost is set before the query from
   PAN16f's table (passable at a cost, or blocked if automatic, or locked) and the door-use waypoints
@@ -449,6 +449,51 @@ components and every layer restartable from saved state (R104).
   replans. Before bending is built, an artifact for the author: its test cases, illustrated, to find
   the edge cases. Crowd and follower behavior (R86, R87) needs test scenarios: driver plans that
   stage, for example, eight skeletons rushing the player, or two followers through a doorway.
+
+## Goals
+
+PAN134, Goals, in lettered parts: X17's goal trees, a slice at a time, from faery's first demo, a
+guardsman walking a patrol path, which was a looping sequence of travel goals (`Patrol.tsx` in
+`game/src/goals`). The goals that come after these (wander, fixture use, park, remarks, the goal
+inspector of R55) wait in X17 with gates.
+
+- **PAN134a Patrol.** *Needs:* PAN102c. X17's runtime, with two goal types: `Sequence { looping }` and `Travel`. Nodes
+  are entities joined by `Subgoal` and rooted by `GoalOf`; each type is a definition component that
+  requires its state component and a `GoalEval`, and evaluating gives satisfied, failed, waiting, or
+  the body action to take. A tree is evaluated when its actor's action finishes or fails, or on a
+  wake it asked for (R49), never every tick. One tree per actor, with no priorities, conditions or
+  format: a native `Patrol { path, pace }` aspect builds it in Rust, as faery's `Patrol.tsx` did,
+  its `path` the label of a `MarkerPath` fixture in the actor's precinct, typed for now.
+  - `Travel` is a fresh design, not a port of faery's `createRoutePlanner.ts`, which held six jobs
+    in one closure: an arrival test made in four places, the lifecycle of a request to a search
+    worker, the check that a route improves on standing still, recovery when blocked, doors and
+    ladders, and waking its goal after each. Here arrival is one pure function of position and a
+    `Destination` (point, distance, minimum distance, tolerance), with faery's floor test
+    (`distanceWithElevation`), checked first at every evaluation. The search is synchronous, so the
+    request is `RouteTo`, and removing it cancels. A route whose end is short of reach (`Route` says
+    so) fails the goal; getting as near as possible is for a goal that asks it (PAN134e).
+    `RouteTo`'s blocked replanning stays, and where it gives up it triggers an `ActionFailed` beside
+    `ActionFinished`, in place of its warning. faery's `maintain` is a Travel under a Contingent
+    (PAN134c), doors are the route's (PAN16j), and ladders, `hurry` and secondary targets wait for a
+    need.
+  - X17's design moves into a new `docs/behavior.md`, which takes in actor-requirements.md's
+    Behavior section (R47 to R55, R99), what of it the goals here settle, and X17 goes.
+  - Proved in `plans/actors.py`: the guardsman in the lair completes two laps of his path, which
+    the author draws with PAN102c beforehand.
+- **PAN134b Priorities and conditions.** *Needs:* PAN134a. Several trees on an actor, run in R47's
+  priority bands, a goal's `when` a reactive formula, skipped while false and restarted when it
+  turns true (R50), and a higher goal pre-empting a lower one's body action. Proved by the guardsman
+  turning to face the player within 2 m, a `FaceToward` leaf, and walking on once they leave:
+  saga.md's first character goal.
+- **PAN134c Composites and simple leaves.** *Needs:* PAN134a. The rest of R51's composites (random,
+  ranked, contingent, repeat, timeout, cooldown) and the leaves Wait, Pose and LookAt, checked by
+  `cargo test` on trees built in Rust, with one in play.
+- **PAN134d Trees in SAGA.** *Needs:* PAN134b. Trees declared as Exemplars.md's Packages written in
+  SAGA has them, declarations with typed `tree` parameters and `as` bindings, in place of the trees
+  built in Rust; `Patrol` becomes a tree.
+- **PAN134e Pursue.** *Needs:* PAN134b. A moving target (R52): replanning as it moves 1 m, pace by
+  distance, and getting as near as possible where it cannot be reached. PAN111's henchmen close on
+  the hero with it.
 
 ## Portals
 
@@ -605,12 +650,14 @@ Arms". faery's `Guardsman.Remarks`, `Guardsman.Dialogue` and `Guardsman.Lunch`
 (`los-data/meta/regional/tambry.json`) and its `Freelunch` quest (`regional/playground.json`) are
 converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
 
-- **PAN120a Dialogue.** The `DialogueSet` catalog kind (D90) and a native conversation controller on
-  faery's rules (X17, Behavior packages), with its screen. The screen always offers a way out, which
-  a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit came from whichever set held a
-  `goodbye` (one in `village.json`), so a conversation could lose its exit with no error. A Talk
-  interaction on an actor (D114), its effect a host command that starts the conversation; the
-  guardsman stands at his post. Option conditions are on-demand formulas (D116).
+- **PAN120a Dialogue.** *Needs:* PAN134b. The `DialogueSet` catalog kind (D90) and a native
+  conversation controller on faery's rules (X17, Behavior packages), with its screen. The screen
+  always offers a way out, which a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit
+  came from whichever set held a `goodbye` (one in `village.json`), so a conversation could lose its
+  exit with no error. A Talk interaction on an actor (D114), its effect a host command that starts
+  the conversation. The guardsman, on PAN134a's patrol, stops and faces the player while they talk,
+  a goal of higher priority whose `when` is the conversation, and walks on after it. Option
+  conditions are on-demand formulas (D116).
 - **PAN120b Quest and inventory.** *Needs:* PAN120a. The `Quest` catalog kind and quest state:
   stages whose conditions are reactive formulas (`has_item(player, GuardLunch)`), set from dialogue
   by `gostage`, and a stage's entry taking the lunch from the player. A native `Inventory` with
@@ -624,21 +671,19 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   through a host command, shown in a speech bubble. The lines stay in JSON, by id, for localization
   (X77), each with the topic it teaches; the topics the player knows unlock dialogue options ("You
   mentioned a festival?"). Revises X17's remark sets and D86's remarks aspect.
-- **PAN120d Patrol.** *Needs:* PAN16h, PAN102, PAN120a. The guardsman walks a patrol path in the
-  lair, the first goal tree (X17), and stops and faces the player when talked to.
 
 ## First playable
 
-- **PAN111 Combat arena.** *Needs:* PAN16h, X53. The first test of combat's fun, the biggest fun
-  risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few henchmen in
-  the playground (`p002-p001`), with health, the action bar's plain actions, and Justice's signature
-  skills as opportunity actions ([combat.md](combat.md), The action bar; [virtues.md](virtues.md),
-  Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
-  are enough to judge the decisions; whether players accept enemies waiting as a convention depends
-  on presentation, and is judged here only roughly. The bar's look is plain until the author
-  redesigns it: faery's (`docs/faery-screenshots/combat.png`) falls short of its other UI, and
-  resized with its background pattern unstretched, which its SVG did; Bevy's nine-slice can tile its
-  edges and center (`SliceScaleMode::Tile`) rather than stretch them.
+- **PAN111 Combat arena.** *Needs:* PAN16h, PAN134e, X53. The first test of combat's fun, the
+  biggest fun risk ([goals.md](goals.md)), before PAN6 wraps it in a quest: the hero against a few
+  henchmen in the playground (`p002-p001`), with health, the action bar's plain actions, and
+  Justice's signature skills as opportunity actions ([combat.md](combat.md), The action bar;
+  [virtues.md](virtues.md), Combat skills). Skills and timings are assets that reload while the game
+  runs. Placeholder clips are enough to judge the decisions; whether players accept enemies waiting
+  as a convention depends on presentation, and is judged here only roughly. The bar's look is plain
+  until the author redesigns it: faery's (`docs/faery-screenshots/combat.png`) falls short of its
+  other UI, and resized with its background pattern unstretched, which its SVG did; Bevy's
+  nine-slice can tile its edges and center (`SliceScaleMode::Tile`) rather than stretch them.
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111, PAN120, PAN125. The first playable:
   the "Up in Arms" quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its
   quest phases Sergeant Stone and the Crimson Watch, so it builds on presence (D123), with both
