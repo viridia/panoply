@@ -122,6 +122,11 @@ where
     fn has_state(&self) -> bool {
         false
     }
+
+    /// See [`Aspect::requires`]: native aspects' short type paths.
+    fn requires(&self) -> &[Arc<str>] {
+        &[]
+    }
 }
 
 impl<T: NativeAspect> Aspect for T {
@@ -152,6 +157,10 @@ impl<T: NativeAspect> Aspect for T {
 
     fn has_state(&self) -> bool {
         NativeAspect::has_state(self)
+    }
+
+    fn requires(&self) -> &[Arc<str>] {
+        NativeAspect::requires(self)
     }
 }
 

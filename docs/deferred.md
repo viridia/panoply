@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X150.**
+**Next: X152.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -729,3 +729,11 @@ dropped, not deferred. Numbers are never reused.
   takes, are the cost. Events for what follows damage (the take-damage clip, X108; threat, PAN111)
   are separate, and observers suit them. *Gate:* the first interceptor: armor, parry or a
   resistance, in PAN111.
+- **X150** Additive blending for overlays, as faery drew many of its own: `AlphaMode::Add` beside
+  the overlay materials' `Blend` (`panoply_overlays`' `material.rs`), chosen per overlay. It reads
+  better over a dark or busy scene, and overlapping shapes brighten rather than hide each other.
+  *Gate:* an overlay that alpha blending makes hard to read.
+- **X151** A direction marker: a marker aspect whose overlay draws the fixture's facing, for a
+  marker whose facing is data, as `ivy.counter`'s is (which way Ivy faces behind her counter). faery
+  drew an arrow on any marker with `showOrientation`; PAN102 drops it, since an area and a path
+  ignore their facing. *Gate:* something reads a marker's facing.

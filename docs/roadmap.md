@@ -105,17 +105,17 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   nothing else is tested and play is untouched. Its hits fall on the model's meshes, which a click
   bubbles up from to the element; the hover outline walks up to its instance too. Picking sorts both
   backends' hits by depth, so nothing is picked through a wall. A decision beside D93: markers stay
-  the handle of what is invisible, meshes pick what is visible and has no collider.
-- **PAN102 Marker fixtures**, on PAN88's picking. Fixtures with no model, standing for abstract
-  things (a waymark, a region, a patrol path, a music cue), drawn by the editor alone. faery's
-  marker aspects (`engine/src/world/scenery/markers.ts`: `waymark`, `circle`, `rect`, `waypoints`),
-  dropped by the converter ([faery.md](faery.md), Migration scripts), become aspects whose overlays
-  the editor draws while their precinct is selected, with faery's map pin as a billboard at each,
-  picked through their `marker` colliders. Regions are read by wander's tether (R52) and music on
-  entry (X61), and the converter keeps the instances Tambry and Heron Creek place. A patrol path is
-  one fixture with an ordered list of points, not a fixture per point: a guard's field names one id,
-  and the order is the list's. Its points are stored relative to the fixture, so PAN92's gizmo moves
-  and turns the whole route; faery's were in world space.
+  the handle of what is invisible, meshes pick what is visible and has no collider. PAN102, Marker
+  fixtures, in lettered parts: fixtures with no model, standing for abstract things (a waymark, an
+  area, a patrol path, a music cue), drawn by the editor alone and picked through their `marker`
+  colliders (D93). Their aspects are `MarkerPin`, `MarkerArea` and `MarkerPath`
+  (`marker_aspect.rs`); an area and a path ignore the fixture's facing.
+
+- **PAN102b Marker overlays.** In scenery mode, for every shown precinct: faery's map pin
+  (`editor/src/icons/map-pin.png`) as a camera-facing quad at each marker fixture, tinted by its
+  `MarkerPin` color; an area's fill and outline; a path's points as pins, joined by a dashed line.
+  Faint, and bright when selected, as faery's were. The hover outline is the marker collider's ring
+  (`show_outlines`); the pin brightens on hover too if the ring does not read.
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
   drawing them, as faery's Cutaway Rects did ([faery.md](faery.md), Editor). How faery's
@@ -376,6 +376,11 @@ set an edit is one of (`EditKind`).
   and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
   (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
   `alias` list, so that precincts naming it keep working until they are saved again.
+- **PAN102c Editing marker paths**, on PAN28e's instance edits and PAN102b's overlays. In selection
+  mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point inserted after the
+  one chosen and deleted, each an undoable edit of the instance's override, marking its precinct
+  unsaved. PAN28e makes an area's size editable in the property panel; a resize handle in the view
+  is not part of it.
 
 ## Actors
 

@@ -1569,6 +1569,13 @@
   "CircularRegion": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#ffdd88"
+      },
+      "MarkerArea": {
+        "shape": "circle",
+        "radius": 2
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1582,6 +1589,7 @@
   "Waymark": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {},
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1595,6 +1603,13 @@
   "WaterCurrent": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#8a9cff"
+      },
+      "MarkerArea": {
+        "shape": "circle",
+        "radius": 2
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1608,6 +1623,14 @@
   "RectangularRegion": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#ffdd88"
+      },
+      "MarkerArea": {
+        "shape": "rect",
+        "half_x": 1,
+        "half_z": 1
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1621,6 +1644,8 @@
   "WaypointsList": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {},
+      "MarkerPath": {},
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1915,6 +1940,14 @@
   "MusicRectangularRegion": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#84b620"
+      },
+      "MarkerArea": {
+        "shape": "rect",
+        "half_x": 1,
+        "half_z": 1
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1928,6 +1961,13 @@
   "MusicCircularRegion": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#91b620"
+      },
+      "MarkerArea": {
+        "shape": "circle",
+        "radius": 2
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -1941,6 +1981,13 @@
   "RiverCurrent": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#8a9cff"
+      },
+      "MarkerArea": {
+        "shape": "circle",
+        "radius": 2
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",
@@ -2124,6 +2171,9 @@
   "TriggerGroup": {
     "kind": "Fixture",
     "aspects": {
+      "MarkerPin": {
+        "color": "#6e66ff"
+      },
       "SceneryColliders": [
         {
           "shape": "cylinder",

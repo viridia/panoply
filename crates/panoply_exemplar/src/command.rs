@@ -376,6 +376,37 @@ mod tests {
         assert_eq!(keys(&world, entity), [MARK, "Height", GUARD]);
     }
 
+    /// A native aspect requiring `Height`.
+    #[derive(Component, Reflect, Clone, Default)]
+    #[reflect(Aspect, Default)]
+    struct Ledge;
+
+    impl NativeAspect for Ledge {
+        type Config = Self;
+
+        fn config(&self) -> Self {
+            self.clone()
+        }
+
+        fn can_attach(&self, _kind: InstanceKind) -> bool {
+            true
+        }
+
+        fn requires(&self) -> &[Arc<str>] {
+            static HEIGHT: std::sync::LazyLock<[Arc<str>; 1]> =
+                std::sync::LazyLock::new(|| ["Height".into()]);
+            &*HEIGHT
+        }
+    }
+
+    #[test]
+    fn a_native_aspect_requires_another() {
+        let (mut world, exemplar, entity) = registered(vec![Arc::new(Ledge)], Vec::new());
+        update(&mut world, &exemplar, entity);
+        assert_eq!(keys(&world, entity), ["Ledge", "Height"]);
+        assert_eq!(world.get::<Height>(entity), Some(&Height(0.)));
+    }
+
     #[test]
     fn a_required_aspect_must_be_registered() {
         let module = scripted("#[require(Weight)] aspect Guard for Fixture { }");

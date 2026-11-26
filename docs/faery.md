@@ -333,15 +333,14 @@ precincts, which resolve names against the exemplars.
 
 The frozen three warn and exit: they convert everything they read, and the editor edits their
 outputs (PAN37-PAN40, PAN94). The precinct converter runs again once it merges (X69). The archetype
-converter merges (D56): it adds the catalogs, exemplars, top-level fields and aspects Panoply lacks,
-and keeps those it has, so hand edits survive (`CollisionSize`, PAN3f; humanoids'
-`"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). `--dry-run` reports without writing;
-`--replace <Aspect>` rewrites that aspect wherever it differs. An exemplar deleted in Panoply
-returns on the next run, so a deletion is made in the converter. From `meta/regional/` it takes
-actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs. It
-writes each catalog back whole as `JSON.stringify` lays it out, so a run reformats every catalog
-that keeps short arrays on one line (eight, the wall and fixture catalogs among them), even when it
-adds nothing; `--dry-run` writes nothing.
+converter merges only the aspects a run names (D56), on exemplars Panoply already has, and never
+adds a catalog, an exemplar or a top-level field: `--aspect <Aspect>` adds that aspect where an
+exemplar lacks it, `--replace <Aspect>` rewrites it wherever it differs, and `--dry-run` reports
+without writing. A run naming nothing refuses. Hand edits survive (`CollisionSize`, PAN3f;
+humanoids' `"Run": "RunMale"`, PAN3i; the cottage roof ramps, PAN3j). From `meta/regional/` it takes
+actors only; the rest is dialogue, quests and books. What it does not yet convert, it logs. A
+catalog the run changes is written back whole as `JSON.stringify` lays it out, which reformats one
+that keeps short arrays on one line (eight, the wall and fixture catalogs among them).
 
 The precinct converter overwrites, which is safe while nothing in Panoply edits a precinct (X69). It
 resolves each exemplar name against Panoply's catalogs: a name its catalog lacks moves to the one
@@ -383,15 +382,16 @@ Panoply will not carry over because it has a better way; which is which is undec
 - Wall and fixture aspects: `door`, `stairs`, `ladder`, `toggleButton`, `pushButton`,
   `pressurePlate`, `controlledOpenable`, `wall:autoDoor`, `container` (`openDelay`,
   `containerType`), `sign` (`frame`), `book`, `soundSource` (`sound`, distances), `particles`
-  (effects, damage), `music`, `encounter:encounter`, `waymark`, `waypoints`, editor markers
-  (`circle`, `rect`), `fixture:waterFx`. Kept: `Portal`, `LightSource`, models, colliders,
-  marks, wall size.
+  (effects, damage), `music`, `encounter:encounter`, `fixture:waterFx`. Kept: `Portal`,
+  `LightSource`, models, colliders, marks, wall size, and the markers (`waymark`, `circle`, `rect`,
+  `waypoints`, as `MarkerPin`, `MarkerArea` and `MarkerPath`, PAN102a; `showOrientation` dropped).
 - Scenery instance props: `Group` and `PortalTarget` are kept (Panoply registers neither yet);
   per-instance aspects (`triggerGroup`, `wall:directDoor`, `wall:flipFlopDoor`,
   `playground:spearTrap2`, `playground:proximityDoor`), `inventory` (4 containers) and per-instance
   `facing` are dropped, as are the `properties` other than `portalTarget`: `source` (logic wiring,
   10), `open: true` (3), `content` (11 signs, naming regional text), the spawners' `spawnTable`,
-  `spawnCount`, `spawnCountMax`, `cooldown`, `radius` and `spawn`, the regions' `halfSizeX`,
-  `halfSizeZ`, `radius`, `track` and `waypoints`, and `takeable` (1). `aIndex` and `pos`, on 135
-  `demorun` instances, look like stale editor fields.
+  `spawnCount`, `spawnCountMax`, `cooldown`, `radius` and `spawn`, the music regions' `track`, and
+  `takeable` (1). The regions' `halfSizeX`, `halfSizeZ` and `radius` and the `waypoints` were
+  restored afterwards as instance overrides (PAN102a's `migrate_marker_values.py`). `aIndex` and
+  `pos`, on 135 `demorun` instances, look like stale editor fields.
 - Terrain effects: `TerrainBlocked` (`blocked`). Precincts: `layers`.

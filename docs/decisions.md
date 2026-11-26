@@ -445,7 +445,10 @@ never reused.
   aspect's case to the converter and rerunning brings it to every exemplar at once, while hand edits
   in Panoply stay. It relies on Panoply's catalogs and exemplar names matching faery's one for one,
   as they did when it was written. How it merges is in [faery.md](faery.md), Migration scripts.
-  Reversing it means freezing the converter and porting each aspect by hand. (PAN51)
+  Reversing it means freezing the converter and porting each aspect by hand. (PAN51) Since PAN102a a
+  run merges only the aspects it is told to: Panoply's catalogs had moved on (a renamed `kind`,
+  slots and terrain effects moved elsewhere), so a full run would undo them, and no full migration
+  is to come. The converter stays as the reference for how each faery aspect maps to Panoply's.
 - **D57** The primary camera uses SSAO at Low quality with SMAA, in place of 4x MSAA. Faces in shade
   get only ambient light, which alone leaves their relief flat. SSAO requires MSAA off, and dropping
   MSAA pays for most of it: at `perf.py`'s one stop at play distance the pair costs about 0.7 ms

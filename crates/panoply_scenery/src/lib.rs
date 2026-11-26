@@ -35,9 +35,11 @@ mod floor_mesh;
 pub mod floor_region;
 mod floor_surface;
 mod lock_aspect;
+mod marker_aspect;
 
 pub use floor_surface::{FloorMaterial, FloorSurface};
 pub use lock_aspect::{Lock, LockState};
+pub use marker_aspect::{MarkerArea, MarkerAreaShape, MarkerPath, MarkerPin};
 mod pending;
 pub mod precinct;
 mod precinct_cache;
@@ -94,6 +96,11 @@ impl Plugin for PanoplySceneryPlugin {
             .register_type::<Lock>()
             .register_type::<LockState>()
             .register_script_component::<Lock, LockState>("lock")
+            .register_type::<MarkerPin>()
+            .register_type::<MarkerArea>()
+            .register_type::<MarkerAreaShape>()
+            .register_type::<MarkerPath>()
+            .register_type::<Vec<Vec3>>()
             .register_type::<SceneryAnimations>()
             .add_observer(bind_scenery_animations)
             .add_systems(Update, (drive_scenery_animations, start_pending_sounds))
