@@ -4,9 +4,10 @@
 //! chooses its [`SceneryTool`].
 
 use bevy::{
+    app::PropagateOver,
     ecs::system::SystemParam,
     feathers::{
-        constants::icons,
+        constants::{fonts, icons, size},
         controls::{ButtonVariant, FeathersButton},
         display::icon,
         rounded_corners::RoundedCorners,
@@ -14,6 +15,7 @@ use bevy::{
     },
     prelude::*,
     settings::SaveSettingsDeferred,
+    text::FontSourceTemplate,
     ui::InteractionDisabled,
     ui_widgets::Activate,
 };
@@ -369,6 +371,11 @@ impl ImmediateAttach<CapsUiFeathers> for SceneryExemplars {
                 .on_spawn_apply_scene(|| {
                     bsn! {
                         Text("")
+                        TextFont {
+                            font: FontSourceTemplate::Families(fonts::SANS),
+                            font_size: size::MEDIUM_FONT,
+                        }
+                        PropagateOver<TextFont>
                         ThemedText
                         Node { margin: UiRect::bottom(px(4)) }
                     }
