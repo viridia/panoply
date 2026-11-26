@@ -15,9 +15,10 @@
   Escape cancels a drag, ] turns the fixtures, Save writes the precinct (restored afterwards).
 - Actors: hovering shows the chosen actor and its footprint; a drag turns and places it, standing
   on the ground, undoably; Save writes the precinct (restored afterwards).
-- Selection: hovering outlines a fixture or an actor and a click selects it. The list's filter
-  menu shows unlabelled instances and narrows them by kind; Rename… labels the selection and
-  clears the label, undoably, and a click outside its dialog closes it, keeping the selection.
+- Selection: hovering outlines a fixture or an actor and a click selects it. A drag of a handle
+  of the gizmo on the selection moves or turns it, undoably, and Delete removes it. The list's
+  filter menu shows unlabelled instances and narrows them by kind; Rename… labels the selection
+  and clears the label, undoably, and a click outside its dialog closes it, keeping the selection.
 
 Settings start empty, so the panel starts hidden.
 """
@@ -59,6 +60,7 @@ FIXTURE_SETTINGS = "panoply_editor::fixture_tool::FixtureToolSettings"
 TIER = "panoply_editor::scenery_pointer::SceneryTier"
 SCENERY_SELECTION = "panoply_editor::instance_selection::ScenerySelection"
 OUTLINE = "panoply_editor::instance_selection::InstanceOutline"
+GIZMO = "panoply_editor::instance_gizmo::GizmoActive"
 NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
 SCENERY_BUTTONS = [
     "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "SelectInstance",
@@ -447,6 +449,19 @@ def actor_tool(driver):
     driver.click("Exemplars/ClearFilter")
 
 
+def gizmo_handle(driver, window, scale, start, step):
+    """Moves the pointer from `start` by `step`, in logical pixels, until it is over a handle of
+    the selection's gizmo; returns the point and the handle."""
+    x, y = start
+    for _ in range(40):
+        x, y = x + step[0], y + step[1]
+        move_pointer(driver, window, scale, (x, y))
+        hovered = driver.get_resource(GIZMO)["hovered"]
+        if hovered is not None:
+            return (x, y), hovered
+    raise AssertionError(f"no gizmo handle from {start} by {step}")
+
+
 def select_instance(driver):
     """Selection mode, over the playground at `SPOT`: hovering a fixture outlines it and a click
     selects it, its pane showing it has no name. An actor is selected by a click too. The list's
@@ -491,6 +506,26 @@ def select_instance(driver):
         driver.expect("InstanceLabel", TEXT, "none")
         driver.expect("InstancePrecinct", TEXT, "playground (1, 2)")
         driver.screenshot("instance_selected")
+
+        # The gizmo: right of the pot, the pointer meets one of its handles, and a drag of it
+        # moves or turns the pot, as one edit. Delete removes the pot, leaving nothing selected,
+        # and undo puts it back.
+        point, handle = gizmo_handle(driver, window, scale, middle, (8, 0))
+        verb = "Turn" if handle == "Ring" else "Move"
+        button(driver, window, "Pressed")
+        assert driver.get_resource(GIZMO)["held"] == handle, f"the press did not take {handle}"
+        move_pointer(driver, window, scale, (point[0] + 60, point[1] - 60))
+        driver.screenshot("gizmo_drag")
+        button(driver, window, "Released")
+        assert selected()["instance"] is not None, "the drag changed the selection"
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, f"Undo: {verb} FlowerPot")
+        driver.key("Delete")
+        expect_elements(driver, base)
+        assert selected()["instance"] is None, "the deleted pot is still selected"
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Delete FlowerPot")
+        expect_elements(driver, base + 1)
 
         # The actor is outlined on hover once it stands there with its collider, and a click
         # selects it.

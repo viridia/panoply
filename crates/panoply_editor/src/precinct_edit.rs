@@ -82,8 +82,34 @@ impl PrecinctEdits<'_, '_> {
         let Some(label) = edit(&mut asset) else {
             return;
         };
-        let (Some(server), Ok(realm)) = (&self.server, self.realms.get(precinct.realm)) else {
+        let Some(handle) = self.give_asset(entity, precinct) else {
             return;
+        };
+        self.edit(&handle, move |new| {
+            *new = asset;
+            Some(label)
+        });
+    }
+
+    /// The handle of the precinct `entity`'s asset, whose component is `precinct`: given one, at
+    /// the path of the file saving will write, if it has no file. The asset is made by the first
+    /// edit through the handle.
+    pub(crate) fn asset_handle(
+        &mut self,
+        entity: Entity,
+        precinct: &Precinct,
+    ) -> Option<Handle<PrecinctAsset>> {
+        match &precinct.asset {
+            Some(handle) => Some(handle.clone()),
+            None => self.give_asset(entity, precinct),
+        }
+    }
+
+    /// Gives the precinct `entity`, which has no file, the handle of the asset its first edit
+    /// makes.
+    fn give_asset(&mut self, entity: Entity, precinct: &Precinct) -> Option<Handle<PrecinctAsset>> {
+        let (Some(server), Ok(realm)) = (&self.server, self.realms.get(precinct.realm)) else {
+            return None;
         };
         // The file is not there yet, so this load fails, and logs it, once.
         let handle: Handle<PrecinctAsset> =
@@ -96,15 +122,11 @@ impl PrecinctEdits<'_, '_> {
                     precinct.asset = Some(given);
                 }
             });
-        self.edit(&handle, move |new| {
-            *new = asset;
-            Some(label)
-        });
+        Some(handle)
     }
 
     /// Changes the two precincts `a` and `b` together with `edit`, as one entry in the history,
     /// as [`edit`](Self::edit) changes one. Refused if they are the same precinct.
-    #[allow(dead_code)] // The instance gizmo moves instances across precinct edges (PAN92).
     pub(crate) fn edit_two(
         &mut self,
         a: &Handle<PrecinctAsset>,
@@ -121,24 +143,34 @@ impl PrecinctEdits<'_, '_> {
     }
 
     /// Moves the instance whose id is `iid` from the precinct `from` to `to`, keeping its key and
-    /// label, to `position`: for scenery, relative to `to`, and for an actor, in the world.
-    #[allow(dead_code)] // The instance gizmo moves instances across precinct edges (PAN92).
+    /// label, to `position`, facing `facing` degrees: for scenery, relative to `to`, and for an
+    /// actor, in the world. Returns its id in `to`, which numbers an instance with no key anew;
+    /// `None` if the move was refused.
     pub(crate) fn move_instance(
         &mut self,
         from: &Handle<PrecinctAsset>,
         to: &Handle<PrecinctAsset>,
         iid: &SceneryInstanceId,
         position: Vec3,
-    ) {
+        facing: f32,
+    ) -> Option<SceneryInstanceId> {
+        let mut moved = None;
         self.edit_two(from, to, |from, to| {
             let mut taken = from.take_instance(iid)?;
             match &mut taken {
-                TakenInstance::Scenery { instance, .. } => instance.position = position,
-                TakenInstance::Actor(actor) => actor.position = position,
+                TakenInstance::Scenery { instance, .. } => {
+                    instance.position = position;
+                    instance.facing = facing;
+                }
+                TakenInstance::Actor(actor) => {
+                    actor.position = position;
+                    actor.facing = facing;
+                }
             }
-            to.insert_instance(taken);
+            moved = Some(to.insert_instance(taken));
             Some("Move instance to another precinct".into())
         });
+        moved
     }
 
     /// Changes the precincts `handles` with `edit`, given their assets in the same order.

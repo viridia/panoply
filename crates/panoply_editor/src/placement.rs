@@ -89,6 +89,7 @@ pub struct PlacementPlugin;
 impl Plugin for PlacementPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlacementDragState>()
+            .init_resource::<TurnReadout>()
             .add_overlay::<FacingDial>()
             .add_overlay::<FacingHand>()
             .add_context::<PlacementDragKeys>(|context| {
@@ -158,6 +159,11 @@ pub struct CancelPlacementDrag;
 /// The facing, as text beside the pointer, while a drag turns the instance.
 #[derive(Component)]
 struct FacingReadout;
+
+/// A facing, in degrees, for the readout to show while no placement drag does: the instance
+/// gizmo's turn.
+#[derive(Resource, Default)]
+pub(crate) struct TurnReadout(pub Option<f32>);
 
 fn clear_drag(mut drag: ResMut<PlacementDragState>) {
     drag.0 = None;
@@ -352,15 +358,18 @@ fn show_dial(
     }
 }
 
-/// Shows the facing beside the pointer while a drag turns an instance.
+/// Shows the facing beside the pointer while a drag turns an instance, a placement's or the
+/// gizmo's.
 fn show_readout(
     drag: Res<PlacementDragState>,
+    turn: Res<TurnReadout>,
     windows: Query<&Window, With<PrimaryWindow>>,
     mut readouts: Query<(&mut Text, &mut Node), With<FacingReadout>>,
 ) {
     let cursor = windows.single().ok().and_then(Window::cursor_position);
+    let facing = drag.shown().map(|drag| drag.facing).or(turn.0);
     for (mut text, mut node) in &mut readouts {
-        let Some((cursor, drag)) = cursor.zip(drag.shown()) else {
+        let Some((cursor, facing)) = cursor.zip(facing) else {
             if node.display != Display::None {
                 node.display = Display::None;
             }
@@ -372,7 +381,12 @@ fn show_readout(
             node.left = px(place.x);
             node.top = px(place.y);
         }
-        let shown = format!("{}°", drag.facing.round());
+        // A free turn shows its tenth of a degree; a snapped one is whole.
+        let shown = if facing.fract() == 0. {
+            format!("{facing}°")
+        } else {
+            format!("{facing:.1}°")
+        };
         if text.0 != shown {
             text.0 = shown;
         }
@@ -450,17 +464,36 @@ pub(crate) fn cast_placement(
         shown,
     )?;
     let touch = ray.get_point((along - CAST_GAP).max(0.)) + normal * SURFACE_GAP;
-    let drop = first_hit(
-        world,
-        shapes,
-        rotation,
-        touch,
-        Vec3::NEG_Y,
-        DROP_RANGE,
-        shown,
-    )
-    .map_or(0., |(drop, _)| (drop - CAST_GAP).max(0.));
-    Some(touch - Vec3::Y * drop)
+    Some(drop_onto(world, shapes, rotation, touch, DROP_RANGE, shown))
+}
+
+/// Where an instance of `shapes` at `from`, turned by `rotation`, comes to rest dropped straight
+/// down onto what is under it, within `range`: `from` itself if nothing is, or if it already
+/// touches something below.
+fn drop_onto(
+    world: &PhysicsWorld,
+    shapes: &[(SharedShape, Pose)],
+    rotation: Quat,
+    from: Vec3,
+    range: f32,
+    shown: &dyn Fn(Entity) -> bool,
+) -> Vec3 {
+    landing(world, shapes, rotation, from, range, shown).unwrap_or(from)
+}
+
+/// Where an instance of `shapes` at `from`, turned by `rotation`, comes to rest dropped straight
+/// down onto what is under it, within `range`, or `from` if it already touches something below;
+/// `None` if nothing is under it.
+pub(crate) fn landing(
+    world: &PhysicsWorld,
+    shapes: &[(SharedShape, Pose)],
+    rotation: Quat,
+    from: Vec3,
+    range: f32,
+    shown: &dyn Fn(Entity) -> bool,
+) -> Option<Vec3> {
+    let (drop, _) = first_hit(world, shapes, rotation, from, Vec3::NEG_Y, range, shown)?;
+    Some(from - Vec3::Y * (drop - CAST_GAP).max(0.))
 }
 
 /// The radius of the dial around an instance of `shapes`: clear of its footprint, turned any way.
@@ -489,7 +522,7 @@ pub(crate) fn facing_toward(center: Vec2, point: Vec2, radius: f32) -> Option<f3
 }
 
 /// `degrees` in steps, snapped to a quarter turn near one, from 0 to 360.
-fn quantize_facing(degrees: f32) -> f32 {
+pub(crate) fn quantize_facing(degrees: f32) -> f32 {
     let quarter = (degrees / 90.).round() * 90.;
     let facing = if (degrees - quarter).abs() <= FACING_SNAP {
         quarter
@@ -661,6 +694,29 @@ mod tests {
         assert!(
             (hung.x - -0.95).abs() < 0.01,
             "flush with the wall at {hung}"
+        );
+    }
+
+    #[test]
+    fn a_dropped_instance_lands_on_what_is_under_it() {
+        let physics = room();
+        let world = physics.world();
+        let mug = [(
+            SharedShape::cuboid(0.05, 0.05, 0.05),
+            Pose::from_translation(Vec3::new(0., 0.05, 0.).to_rapier()),
+        )];
+        let drop = |from: Vec3| drop_onto(world, &mug, Quat::IDENTITY, from, 50., &|_| true);
+        let on_table = drop(Vec3::new(2.5, 3., 0.));
+        assert!((on_table.y - 0.8).abs() < 0.01, "on the table at {on_table}");
+        let on_floor = drop(Vec3::new(0., 3., 0.));
+        assert!(on_floor.y.abs() < 0.01, "on the floor at {on_floor}");
+        // Resting already, it stays.
+        assert_eq!(drop(on_floor), on_floor);
+        // With nothing under it, it has nowhere to land.
+        let beyond = Vec3::new(20., 3., 0.);
+        assert_eq!(
+            landing(world, &mug, Quat::IDENTITY, beyond, 50., &|_| true),
+            None
         );
     }
 

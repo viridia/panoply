@@ -51,7 +51,7 @@ pub enum WallSnap {
     Normal,
     /// The grid's lines, a meter apart.
     Offset,
-    /// The middle of each quarter meter's cell.
+    /// The quarter meter grid's lines, which a tile's edges then lie on too.
     Quarter,
 }
 
@@ -61,7 +61,7 @@ impl WallSnap {
         match self {
             WallSnap::Normal => (1.0, 0.5),
             WallSnap::Offset => (1.0, 0.0),
-            WallSnap::Quarter => (0.25, 0.125),
+            WallSnap::Quarter => (0.25, 0.0),
         }
     }
 
@@ -565,7 +565,7 @@ mod tests {
         let point = Vec2::new(3.2, 7.9);
         assert_eq!(WallSnap::Normal.snap(point), Vec2::new(3.5, 7.5));
         assert_eq!(WallSnap::Offset.snap(point), Vec2::new(3.0, 8.0));
-        assert_eq!(WallSnap::Quarter.snap(point), Vec2::new(3.125, 7.875));
+        assert_eq!(WallSnap::Quarter.snap(point), Vec2::new(3.25, 8.0));
         // Kept within the precinct.
         assert_eq!(
             WallSnap::Normal.snap(Vec2::new(-1.0, 70.0)),

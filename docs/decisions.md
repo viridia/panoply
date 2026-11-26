@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D126.**
+**Next: D127.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1101,3 +1101,19 @@ never reused.
   with no transaction, so nothing should hang on the order the watcher reports them in. A precinct
   whose file appears while the game runs shows once the cache spawns it again. Reversing it means
   folder loads, or a request per precinct in view again. (PAN100)
+- **D126** The selected instance's gizmo is the editor's own (`instance_gizmo.rs`), drawn as
+  overlays, not Bevy's `TransformGizmoPlugin`. Instances turn only about y, as a precinct holds
+  their facing: a tilt, such as a wagon wheel leaning on a wall, is built into the exemplar. So the
+  gizmo needs one ring, and shows its three arrows and its ring at once, with no modes. Moves were
+  all along one axis in the author's first use, so it has no handle for moving on the level, and
+  dropping is a key (End, or F where there is no End), since a handle under the instance hid behind
+  it. Bevy's is modal (one global `TransformGizmoSettings::mode`), always offers rings about x, z
+  and the view, snaps the change of a turn rather than the facing, reads the mouse button directly
+  rather than through picking, so a press on a handle also selects, has no cancel and no events, and
+  draws through an overlay camera of its own whose order, MSAA, tonemapping and render layer clash
+  with Panoply's cameras (`docs/notes.md`). A drag shows the instance where it would go and edits
+  the precinct once, at the release; a fixture shows by its transform, an actor by its motion while
+  `ActorHeld`. Actors fall in the editor too, so a moved actor is saved where its capsule lands, not
+  where it was let go, and the precinct holds where it stands. Reversing it means Bevy's gizmo, with
+  mode buttons, and systems after its drag that hide the extra rings and snap the facing again.
+  (PAN92)

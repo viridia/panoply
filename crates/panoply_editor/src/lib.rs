@@ -26,6 +26,7 @@ pub mod diagnostics;
 pub mod exemplar_list;
 pub mod fixture_tool;
 pub mod goto;
+pub mod instance_gizmo;
 pub mod instance_index;
 pub mod instance_list;
 pub mod instance_selection;
@@ -103,6 +104,7 @@ impl PluginGroup for EditorPlugins {
             .add(fixture_tool::FixtureToolPlugin)
             .add(actor_tool::ActorToolPlugin)
             .add(instance_selection::InstanceSelectionPlugin)
+            .add(instance_gizmo::InstanceGizmoPlugin)
             .add(instance_index::InstanceIndexPlugin)
             .add(instance_list::InstanceListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)

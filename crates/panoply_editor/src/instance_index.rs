@@ -313,9 +313,10 @@ mod tests {
         let handles = world.resource::<Handles>().0.clone();
         world
             .run_system_once(move |mut edits: crate::precinct_edit::PrecinctEdits| {
-                edits.move_instance(&handles[0], &handles[1], &chest, Vec3::X);
+                edits.move_instance(&handles[0], &handles[1], &chest, Vec3::X, 90.)
             })
-            .unwrap();
+            .unwrap()
+            .expect("moved");
         let handles = &world.resource::<Handles>().0;
         let assets = world.resource::<Assets<PrecinctAsset>>();
         (a, b) = (
@@ -324,6 +325,7 @@ mod tests {
         );
         assert!(!a.has_instance(&SceneryInstanceId::Keyed(key)));
         assert_eq!(b.scenery[0].position, Vec3::X);
+        assert_eq!(b.scenery[0].facing, 90.);
         index.replace_precinct(&place(1, 1), &a);
         index.replace_precinct(&place(1, 2), &b);
         let entry = index.get(key).unwrap();

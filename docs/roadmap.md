@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN130.**
+**Next: PAN131.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -97,11 +97,15 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   as an overlay and kept as the scenery selection with its precinct. As faery's
   `editor/src/tools/SelectSceneryRectTool.ts`, where a drag that began on the same precinct grew the
   rect to include it.
-- **PAN92 Instance gizmos and delete**, on PAN88's selection. Move and rotate the selected instance
-  with gizmos on it, replacing faery's move and rotate modes, and delete it; each edit undoable and
-  marking the precinct unsaved. Nothing draws a gizmo on a selection yet: what Bevy offers for one
-  is read in the chunk. A drag across a precinct's edge calls `PrecinctEdits::move_instance`, which
-  moves the instance into the other precinct with its key, as one undo entry.
+- **PAN130 Picking colliderless scenery**, on PAN88's picking. Selection mode cannot pick an element
+  whose exemplar has no solid or marker collider: about three dozen walls, mostly roofs, skirts and
+  gables (`CottageWallSkirt`, `TiledRoof`, `SepiaBrickWallGable`). Bevy's mesh picking backend,
+  `MeshPickingPlugin` with `require_markers`, picks them by their triangles: such an element gets
+  `Propagate(Pickable)`, and the primary camera `MeshPickingCamera` only in `SelectInstance`, so
+  nothing else is tested and play is untouched. Its hits fall on the model's meshes, which a click
+  bubbles up from to the element; the hover outline walks up to its instance too. Picking sorts both
+  backends' hits by depth, so nothing is picked through a wall. A decision beside D93: markers stay
+  the handle of what is invisible, meshes pick what is visible and has no collider.
 - **PAN102 Marker fixtures**, on PAN88's picking. Fixtures with no model, standing for abstract
   things (a waymark, a region, a patrol path, a music cue), drawn by the editor alone. faery's
   marker aspects (`engine/src/world/scenery/markers.ts`: `waymark`, `circle`, `rect`, `waypoints`),
@@ -357,13 +361,12 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** *Needs:* PAN92. Roots for an instance picked in
-  selection mode and for the realm panel's selected nav point (faery's `NavPointEditor`). An
-  instance's aspects show as overrides of its exemplar's, and those it adds (D104) as added. The
-  scenery panel's New… and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges
-  edits into the file (D73), so a new exemplar needs an insert beside it. Renaming an exemplar,
-  whose old name joins its `alias` list, so that precincts naming it keep working until they are
-  saved again.
+- **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
+  and for the realm panel's selected nav point (faery's `NavPointEditor`). An instance's aspects
+  show as overrides of its exemplar's, and those it adds (D104) as added. The scenery panel's New…
+  and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
+  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
+  `alias` list, so that precincts naming it keep working until they are saved again.
 
 ## Actors
 

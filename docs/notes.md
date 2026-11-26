@@ -229,6 +229,18 @@ calls for work becomes an issue in [issues.md](issues.md).
   same code after `cargo clean -p` of every workspace crate (7.25 to 7.33 ms), which Bevy's build
   survives. Before blaming a change for a `perf.py` regression, clean the workspace crates and
   measure again.
+- Bevy's transform gizmo, at Bevy a35f1b5 (PAN92, 2026-11-25; `bevy_gizmos/src/transform_gizmo.rs`,
+  `bevy_gizmos_render/src/transform_gizmo_render.rs`): opt-in (`TransformGizmoPlugin`); its render
+  plugin comes with `GizmoRenderPlugin` when PBR is there. One entity at a time carries
+  `TransformGizmoFocus`, and one global `TransformGizmoSettings::mode` (translate, rotate or scale)
+  shows one set of handles. Rotate always has rings about x, y, z and the view. It writes the
+  focus's `Transform` each frame of a drag and sends no events: a drag's start and end show only as
+  `TransformGizmoState::active` changing. `snap_rotate` snaps the angle turned since the press, not
+  the result. It reads `ButtonInput<MouseButton>` directly, not picking. Its render plugin spawns an
+  overlay camera at Startup, at order 1 with default MSAA and tonemapping, drawing render layer 15.
+  With more than one camera, the main one needs `TransformGizmoCamera`, since that overlay camera
+  counts among them. Its `pub` helpers `intersect_plane` and `translation_plane_normal` are usable
+  without the plugin.
 - Two checkouts of Panoply under `games/` share its target directory and give their workspace crates
   the same artifact names, so building one replaces the other's, and Cargo may then take a stale
   library as fresh (a missing-item error from a crate that has it). To compare with another commit,

@@ -80,6 +80,34 @@ impl ScenerySelection {
     }
 }
 
+/// How many frames [`Reselect`] waits for its instance to be spawned.
+const RESELECT_FRAMES: u32 = 120;
+
+/// An instance an edit spawns again, to select once it is there: an actor whose entry a move
+/// changed, or an instance moved to another precinct, whose id there may be new.
+#[derive(Resource, Default)]
+pub(crate) struct Reselect(Option<PendingReselect>);
+
+struct PendingReselect {
+    precinct: Entity,
+    iid: SceneryInstanceId,
+    /// The entity it replaces, which may stand in a while with the same id.
+    replaced: Entity,
+    frames: u32,
+}
+
+impl Reselect {
+    /// Selects the instance `iid` of `precinct` once it is spawned in place of `replaced`.
+    pub(crate) fn wait_for(&mut self, precinct: Entity, iid: SceneryInstanceId, replaced: Entity) {
+        self.0 = Some(PendingReselect {
+            precinct,
+            iid,
+            replaced,
+            frames: RESELECT_FRAMES,
+        });
+    }
+}
+
 /// Which instance an [`InstanceOutline`] follows.
 #[derive(Reflect, Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum OutlineOf {
@@ -124,6 +152,7 @@ pub struct InstanceSelectionPlugin;
 impl Plugin for InstanceSelectionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ScenerySelection>()
+            .init_resource::<Reselect>()
             .register_type::<ScenerySelection>()
             .register_type::<InstanceOutline>()
             .add_overlay::<InstanceOutline>()
@@ -138,6 +167,7 @@ impl Plugin for InstanceSelectionPlugin {
                 Update,
                 (
                     follow_selection.run_if(in_state(EditorMode::Scenery)),
+                    reselect.run_if(in_state(EditorMode::Scenery)),
                     show_outlines.run_if(in_state(SceneryTool::SelectInstance)),
                 )
                     .chain()
@@ -230,6 +260,48 @@ fn follow_selection(
         },
     };
     selection.set_if_neq(followed);
+}
+
+/// Selects the instance [`Reselect`] waits for, once its precinct has spawned it; gives up after a
+/// while, as when the edit was undone first.
+fn reselect(
+    mut pending: ResMut<Reselect>,
+    precincts: Query<(Option<&Children>, Option<&PrecinctActors>)>,
+    elements: Query<&SceneryElement>,
+    actors: Query<&PlacedAs>,
+    mut selection: ResMut<ScenerySelection>,
+) {
+    let Some(wait) = pending.0.as_mut() else {
+        return;
+    };
+    let found = precincts.get(wait.precinct).ok().and_then(|(children, placed)| {
+        children
+            .into_iter()
+            .flatten()
+            .copied()
+            .chain(placed.into_iter().flat_map(|actors| actors.iter()))
+            .filter(|&entity| entity != wait.replaced)
+            .find(|&entity| {
+                let iid = elements
+                    .get(entity)
+                    .map(|element| &element.iid)
+                    .or_else(|_| actors.get(entity).map(PlacedAs::iid));
+                iid.is_ok_and(|iid| *iid == wait.iid)
+            })
+    });
+    if let Some(entity) = found {
+        selection.set_if_neq(ScenerySelection::instance(
+            wait.precinct,
+            entity,
+            wait.iid.clone(),
+        ));
+        pending.0 = None;
+        return;
+    }
+    wait.frames = wait.frames.saturating_sub(1);
+    if wait.frames == 0 {
+        pending.0 = None;
+    }
 }
 
 /// What selection mode picks: scenery elements, and the actors precincts place.

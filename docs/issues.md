@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I93.**
+**Next: I97.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -397,3 +397,21 @@ confirmed by running something or only by reading. Numbers are never reused.
   after clicking Wall and then Fixture (step 300), in PAN100's run; the plan passed when run again,
   and the log held no error. Perhaps the second click lands before the menu settles from the first.
   Seen once by running; the cause unconfirmed.
+- **I93** The selection outline of a scenery element may be drawn off the element in any precinct
+  but (0, 0): `element_outline` (`instance_selection.rs`) places the footprint at
+  `SceneryElement::position`, which is relative to the precinct, on an overlay with no parent, so in
+  the world's coordinates. The instance gizmo is placed by the element's `GlobalTransform`, so the
+  two would part. Read, not run.
+- **I94** Erasing a row of walls takes choosing `(erase)` in the wall tool's list, then the wall
+  again, or deleting each in selection mode. Candidates: Alt (Option) held during a drag erases the
+  rectangle whatever is chosen, though some Linux window managers take Alt-drag; or Delete removing
+  what a rectangle selection holds. Found by the author repairing two precincts (PAN92).
+- **I95** On a laptop with tap-to-click, a tap while scrolling with two fingers places walls,
+  unnoticed until later, when undoing them would undo the work since. Candidate: the wall tool
+  ignores a press within about 300 ms of a scroll. Deleting them in selection mode loses nothing.
+  Found by the author (PAN92).
+- **I96** The actor tool places an actor over ground with no colliders, such as a parcel with no
+  terrain: with nothing under the pointer, the placement falls back to the tier's plane
+  (`PlacementGesture::update`). The actor never starts its physics, since `start_actor_physics`
+  waits for a ray down to meet something, so it gets no collider and cannot be picked; the instance
+  list still selects it. The instance gizmo refuses such a move (PAN92). Read, not run.
