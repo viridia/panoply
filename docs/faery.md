@@ -205,6 +205,13 @@ adjusted max less every wound's strength (`updateActorHealth`).
   tick adds to a damage effect, which heals on its own. Curing the poison leaves the damage; healing
   the damage leaves the poison running.
 - Damage types: impact, cutting, piercing, fire, frost, poison, acid, vitality, spirit.
+- In play (`faery-screenshots/combat.png`, from the author): a first click on an opponent, under a
+  sword cursor, does not attack; it focuses the target, marked by a pulsing ring on the ground, and
+  enters combat mode, which shows the combat bar of the skills available. A second click or
+  interaction on the focused target performs the default attack: a fixed slot, or the last plain
+  attack used, the author does not recall which. A nameplate, its health bar, floats over a targeted
+  actor below full health, and gives the name on hover; not every actor has one, which would
+  clutter. The player's portrait carries a health bar and the statuses on it.
 
 ## Aspects (*read*, *counted* 2026-11-20)
 

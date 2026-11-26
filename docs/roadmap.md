@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN132.**
+**Next: PAN133.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -194,7 +194,9 @@ were PNGs of the same size as these, so theirs likely carry over.
   the system menu (`column-dialog.png`, nine-sliced), opened from play, and the generic confirmation
   (`confirm-modal.png`), which Quit asks first. faery's menu (`SystemMenu.tsx`) held QuickSave,
   Save, Load, Options and Quit; Save and Load wait for PAN82 and Options for the first setting a
-  player changes, so here it holds Resume and Quit. Its buttons are plain until PAN127.
+  player changes, so here it holds Resume and Quit. Its buttons are plain until PAN127. faery's, in
+  `docs/faery-screenshots/system-menu.png`: buttons the column's width, evenly spaced, and the
+  frame's flourishes above and below the column.
 - **PAN127 Dialog button.** *Needs:* PAN126. faery's dialog button (`DialogControls.css.ts` in
   `../faery/packages/game-ui`): `button-border.png` nine-sliced over a fill, two inset borders with
   radial gradients (`BorderGradient`), and a focus ring, in five colour variants. faery blurred the
@@ -212,6 +214,15 @@ were PNGs of the same size as these, so theirs likely carry over.
   forwarded; and the image's size and scale factor. A generic component that sends any node's
   children offscreen would need Bevy to redirect a subtree below a root; what that takes is noted
   for the author, as a proof of concept at most.
+- **PAN132 Application icon.** The game's icon in the Dock and the taskbar, from faery's
+  `artwork/icons/menus/magic.svg` (copied to `artwork/icons/`; 48 px, its glow a Gaussian blur, so
+  rendered by `rsvg-convert`, which `lucide_icons.sh` already needs), with nothing installed. Bevy
+  has no setting for it, so each platform's way goes through `WinitWindows`: on macOS, AppKit's
+  `setApplicationIconImage` at startup (winit's `set_window_icon` does nothing there); on Linux
+  under X11, `set_window_icon`, and under Wayland, where an app cannot set its icon, a `.desktop`
+  file and icon under `~/.local/share/` matching the window's app id, written by a script; on
+  Windows, the icon compiled into the `.exe` and winit's `set_taskbar_icon`. Checked by eye on the
+  Mac and on Aerdra.
 
 ## Controls
 
@@ -621,7 +632,10 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   skills as opportunity actions ([combat.md](combat.md), The action bar; [virtues.md](virtues.md),
   Combat skills). Skills and timings are assets that reload while the game runs. Placeholder clips
   are enough to judge the decisions; whether players accept enemies waiting as a convention depends
-  on presentation, and is judged here only roughly.
+  on presentation, and is judged here only roughly. The bar's look is plain until the author
+  redesigns it: faery's (`docs/faery-screenshots/combat.png`) falls short of its other UI, and
+  resized with its background pattern unstretched, which its SVG did; Bevy's nine-slice can tile its
+  edges and center (`SliceScaleMode::Tile`) rather than stretch them.
 - **PAN6 Up in Arms.** *Needs:* PAN16h, PAN79, PAN106, PAN111, PAN120, PAN125. The first playable:
   the "Up in Arms" quest, end to end. Its steps and what each needs are in [goals.md](goals.md). Its
   quest phases Sergeant Stone and the Crimson Watch, so it builds on presence (D123), with both

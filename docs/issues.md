@@ -374,7 +374,14 @@ confirmed by running something or only by reading. Numbers are never reused.
   collision group that the actor controller meets and the world pick and cutaways leave out, a
   ramp's as a `Ramp` collider; or ceilings derived from each floor region's tier level plus a fixed
   headroom, if dungeon tiers are always further apart than that headroom. That spacing decides
-  between them. Read, not run.
+  between them. Read, not run. faery's necropolis (`docs/faery-screenshots/necropolis.png`, at
+  holm-underground 1094, 880) answers the spacing: tiers a metre or two apart, side by side rather
+  than stacked, a raised floor meeting the tops of the walls of the room below, joined by short
+  stairs; outside the walls is solid, drawn black. Neither ceiling covers a wall top, which has no
+  floor region. A third candidate: the outside is solid, so in an underground realm (a flag on the
+  realm) wall colliders reach well above any toss, or the cells with no floor get a tall blocking
+  volume, leaving no wall top to land on. Unchecked: the invisible lip that puts where a raised
+  floor meets a wall's top flush.
 - **I87** `plans/scroll.py`'s check that the walk creates no pipelines misses most of the walk: the
   walk starts near frame 70, and the hitch log names pipelines only after `SKIP_FRAMES` (240). With
   the log naming them from frame 30, the walk created 10 or 11, among them `SKINNED` variants of
