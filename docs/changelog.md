@@ -15,6 +15,7 @@ A `##` heading marks a real milestone only, such as PAN6, the first playable. Do
 month or a batch.
 -->
 
+- **PAN134f** Actors have goal trees, run in play; the lair's test guardsman dances and gestures.
 - **PAN102c** A selected path's points are moved with the gizmo, added by Ctrl+click, and deleted.
 - **PAN137** The instance gizmo is thinner, and shows only while the pointer is over the view.
 - **PAN28e** The property editor shows a selected instance's aspects, inherited ones overridable.

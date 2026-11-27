@@ -29,6 +29,7 @@ use bevy::{
     },
     prelude::*,
 };
+use bevy_action_map::prelude::*;
 use panoply_actors::{capsule, ActorScale, CollisionSize, HomePrecinct, PlacedAs, PrecinctActors};
 use panoply_core::{
     realm_physics::{collision_groups, owner_shown},
@@ -38,7 +39,6 @@ use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder,
 };
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
-use bevy_action_map::prelude::*;
 use panoply_scenery::{
     precinct::Precinct, scenery_element::SceneryElement, MarkerPath, SceneryColliders,
 };
@@ -285,12 +285,15 @@ fn follow_selection(
     };
     let followed = match next {
         Some((entity, iid)) => {
-            let part = selection.part.filter(|_| entity == selected).filter(|part| {
-                let InstancePart::PathPoint(index) = *part;
-                paths
-                    .get(entity)
-                    .is_ok_and(|path| !path.is_changed() || index < path.points.len())
-            });
+            let part = selection
+                .part
+                .filter(|_| entity == selected)
+                .filter(|part| {
+                    let InstancePart::PathPoint(index) = *part;
+                    paths
+                        .get(entity)
+                        .is_ok_and(|path| !path.is_changed() || index < path.points.len())
+                });
             ScenerySelection {
                 part,
                 ..ScenerySelection::instance(precinct, entity, iid)

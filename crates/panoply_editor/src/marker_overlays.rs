@@ -9,6 +9,7 @@
 //! models and are despawned with them. The root follows the fixture's place but not its facing,
 //! which an area and a path ignore, and is despawned with it.
 
+use bevy::picking::{hover::HoverMap, pointer::PointerId};
 use bevy::{
     app::Propagate,
     camera::visibility::RenderLayers,
@@ -16,7 +17,6 @@ use bevy::{
     prelude::*,
     transform::TransformSystems,
 };
-use bevy::picking::{hover::HoverMap, pointer::PointerId};
 use panoply_core::PrimaryCamera;
 use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder,

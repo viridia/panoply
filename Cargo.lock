@@ -4817,6 +4817,7 @@ dependencies = [
  "panoply_core",
  "panoply_editor",
  "panoply_exemplar",
+ "panoply_goals",
  "panoply_nav",
  "panoply_portals",
  "panoply_render",
@@ -4892,6 +4893,17 @@ dependencies = [
  "serde_json",
  "smallvec",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "panoply_goals"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "panoply_actors",
+ "panoply_core",
+ "panoply_precinct",
+ "panoply_scenery",
 ]
 
 [[package]]

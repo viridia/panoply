@@ -8,7 +8,7 @@ use bevy::{
 use std::time::Duration;
 
 use super::ActorBody;
-use crate::{actor_control::angle_between, ActorIntent, ActorMotion, HealthState};
+use crate::{actor_control::angle_between, ActionFinished, ActorIntent, ActorMotion, HealthState};
 
 /// Gaits by ground speed, in m/s (R18): walk up to `MAX_WALK_SPEED`, fast walk up to
 /// `MAX_WALK_FAST_SPEED`, run above it. At exactly 3.5, the player's jog, a humanoid fast walks.
@@ -45,6 +45,8 @@ pub enum ActorAnimationState {
     Stumble,
     /// Unable to advance (R22).
     Blocked,
+    /// Playing the clip its `PlayClip` names.
+    Pose,
     Walk,
     WalkFast,
     Run,
@@ -121,6 +123,8 @@ impl ActorAnimationState {
             Self::Stumble => looping(&["Stumble", "Turn", "Stand"], 100),
             // As faery's: no clip of its own.
             Self::Blocked => looping(&["Stand"], 300),
+            // Its clip is its `PlayClip`'s, once or held, so it is not in `ALL`.
+            Self::Pose => looping(&[], 300),
             // Gaits fall back to each other, by speed, in `ActorClips::gait`.
             Self::Walk => looping(&["Walk"], 300),
             Self::WalkFast => looping(&["WalkFast"], 300),
@@ -180,12 +184,25 @@ pub struct ActorArmature {
     clip_names: HashMap<String, String>,
 }
 
-/// The nodes of a skeleton's animation graph, one per clip the actor can play, and the clip each
-/// state the species can play resolves to. Every clip hangs from the graph's root, and
-/// `AnimationTransitions` crossfades by their weights.
+/// The nodes of a skeleton's animation graph, one per clip the actor has played or can play, by
+/// the clips file's name for it, and the clip each state the species can play resolves to. Every
+/// clip hangs from the graph's root, and `AnimationTransitions` crossfades by their weights.
 #[derive(Debug, Component)]
 pub(crate) struct ActorClips {
     states: HashMap<ActorAnimationState, StateClip>,
+    clips: HashMap<String, StateClip>,
+}
+
+/// Play the clip named `clip` (the engine's name, which `ClipNames` maps to the species'), once,
+/// or looped for `hold` seconds. Removed when it ends, which triggers `ActionFinished`, or when
+/// something pre-empts it, which does not (R45). A species without the clip stands instead, for
+/// as long.
+#[derive(Component, Reflect, Debug, Clone, Default, PartialEq)]
+#[reflect(Component)]
+pub struct PlayClip {
+    pub clip: String,
+    #[reflect(default)]
+    pub hold: Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -197,6 +214,35 @@ struct StateClip {
 impl ActorClips {
     fn get(&self, state: ActorAnimationState) -> Option<&StateClip> {
         self.states.get(&state)
+    }
+
+    /// The clip the engine calls `name`, through the species' `clip_names`, added to the graph
+    /// the first time it is asked for; `None` if the clips file lacks it.
+    fn pose(
+        &mut self,
+        armature: &ActorArmature,
+        name: &str,
+        gltfs: &Assets<Gltf>,
+        graphs: &mut Assets<BlendGraph>,
+        graph: &BlendGraphHandle,
+    ) -> Option<StateClip> {
+        let name = armature.clip_names.get(name).map_or(name, String::as_str);
+        if let Some(found) = self.clips.get(name) {
+            return Some(found.clone());
+        }
+        let clip = gltfs
+            .get(&armature.clips)?
+            .named_animations
+            .get(name)?
+            .clone();
+        let mut graph = graphs.get_mut(&graph.0)?;
+        let root = graph.root;
+        let added = StateClip {
+            node: graph.add_clip(clip.clone(), 1.0, root),
+            clip,
+        };
+        self.clips.insert(name.to_owned(), added.clone());
+        Some(added)
     }
 
     /// The gait for a ground speed, falling back to whichever gait clips the species has, as
@@ -307,15 +353,17 @@ pub(crate) fn build_actor_graph(
             let name = armature.clip_names.get(name).map_or(name, String::as_str);
             Some((name.to_owned(), gltf.named_animations.get(name)?.clone()))
         };
+        // Only the states' clips: Bevy visits every node of the graph for each bone it animates,
+        // so a pose's clip joins when a `PlayClip` first names it (`ActorClips::pose`).
         let mut graph = BlendGraph::new();
         let root = graph.root;
-        let mut nodes = HashMap::<String, StateClip>::new();
+        let mut clips = HashMap::<String, StateClip>::new();
         let mut states = HashMap::new();
         for state in ActorAnimationState::ALL {
             let Some((name, clip)) = state.clips().clips.iter().find_map(|name| clip(name)) else {
                 continue;
             };
-            let state_clip = nodes.entry(name).or_insert_with(|| StateClip {
+            let state_clip = clips.entry(name).or_insert_with(|| StateClip {
                 node: graph.add_clip(clip.clone(), 1.0, root),
                 clip,
             });
@@ -334,7 +382,7 @@ pub(crate) fn build_actor_graph(
             .play(&mut player, stand, Duration::ZERO)
             .repeat();
         commands.entity(entity).insert((
-            ActorClips { states },
+            ActorClips { states, clips },
             ActorAnimationState::Stand,
             transitions,
             BlendGraphHandle(graphs.add(graph)),
@@ -345,14 +393,17 @@ pub(crate) fn build_actor_graph(
 /// Plays each actor's state: falling while it falls (R25), then landing once on touchdown when
 /// the species has a landing clip, then its stumble while another actor pushes it and it is asked
 /// for no speed of its own, its blocked state while it cannot advance (R22), then its gait, its
-/// turn or its idle. The gait follows its speed
-/// along its facing over the last fixed tick, so backing up plays the clip backward; a new gait
-/// crossfades in at the old one's phase of the stride (R19), and any other state starts its clip
-/// from the beginning.
+/// pose while it has a `PlayClip`, its turn or its idle. The gait follows its speed along its
+/// facing over the last fixed tick, so backing up plays the clip backward; a new gait crossfades
+/// in at the old one's phase of the stride (R19), and any other state starts its clip from the
+/// beginning, as does a new `PlayClip`, even of the clip already playing. A pose ends when its
+/// clip has played once, or for its `hold`; one interrupted starts again when it resumes.
 pub(crate) fn animate_actor_state(
+    mut commands: Commands,
     mut armatures: Query<(
         &ActorArmature,
-        &ActorClips,
+        &mut ActorClips,
+        &BlendGraphHandle,
         &mut ActorAnimationState,
         &mut AnimationPlayer,
         &mut AnimationTransitions,
@@ -362,11 +413,14 @@ pub(crate) fn animate_actor_state(
         Option<&ActorIntent>,
         Option<&ActorIdle>,
         Option<&HealthState>,
+        Option<Ref<PlayClip>>,
     )>,
     clip_assets: Res<Assets<AnimationClip>>,
+    gltfs: Res<Assets<Gltf>>,
+    mut graphs: ResMut<Assets<BlendGraph>>,
     time: Res<Time<Fixed>>,
 ) {
-    use ActorAnimationState::{Blocked, Dead, Dying, Falling, Landing, Stumble, Turn};
+    use ActorAnimationState::{Blocked, Dead, Dying, Falling, Landing, Pose, Stand, Stumble, Turn};
     let dt = time.timestep().as_secs_f32();
     let duration = |clip: &StateClip| {
         clip_assets
@@ -374,10 +428,20 @@ pub(crate) fn animate_actor_state(
             .map(AnimationClip::duration)
             .filter(|duration| *duration > 0.0)
     };
-    for (armature, clips, mut state, mut player, mut transitions) in &mut armatures {
-        let Ok((motion, intent, idle, health)) = actors.get(armature.actor) else {
+    for (armature, mut clips, graph, mut state, mut player, mut transitions) in &mut armatures {
+        let Ok((motion, intent, idle, health, play)) = actors.get(armature.actor) else {
             continue;
         };
+        let pose = play.as_ref().map(|play| {
+            clips
+                .pose(armature, &play.clip, &gltfs, &mut graphs, graph)
+                .or_else(|| {
+                    if play.is_changed() {
+                        error!("Actor clip [{}] not found; standing instead", play.clip);
+                    }
+                    clips.get(Stand).cloned()
+                })
+        });
         let forward = Vec2::new(motion.facing.sin(), motion.facing.cos());
         let speed = (motion.position - motion.previous).xz().dot(forward) / dt;
         let turn = angle_between(motion.previous_facing, motion.facing) / dt;
@@ -415,6 +479,8 @@ pub(crate) fn animate_actor_state(
             Blocked
         } else if let Some(gait) = gait {
             gait
+        } else if pose.is_some() {
+            Pose
         } else if turn.abs() > TURN_SPEED {
             Turn
         } else {
@@ -422,10 +488,17 @@ pub(crate) fn animate_actor_state(
         };
         // Every chain but the gaits', landing's and death's ends in `Stand`, which every species
         // has.
-        let Some(next_clip) = clips.get(next).or(clips.get(ActorAnimationState::Stand)) else {
+        let next_clip = if next == Pose {
+            pose.flatten()
+        } else {
+            clips.get(next).or(clips.get(Stand)).cloned()
+        };
+        let Some(next_clip) = next_clip else {
             continue;
         };
-        if next != *state {
+        let held = play.as_ref().and_then(|play| play.hold);
+        let new_pose = next == Pose && play.as_ref().is_some_and(Ref::is_changed);
+        if next != *state || new_pose {
             let old = clips
                 .get(*state)
                 .filter(|_| state.nominal_speed().is_some());
@@ -433,17 +506,26 @@ pub(crate) fn animate_actor_state(
             // The fraction of the stride the old gait had reached.
             let phase =
                 old.and_then(|old| Some(player.animation(old.node)?.seek_time() / duration(old)?));
-            if transitions.get_main_animation() != Some(next_clip.node) {
+            if transitions.get_main_animation() != Some(next_clip.node) || next == Pose {
                 let active = transitions.play(&mut player, next_clip.node, next.clips().fade);
                 active.set_speed(1.0);
-                if next.clips().once {
+                if next == Pose {
+                    // `play` leaves a clip already playing where it was.
+                    active.replay();
+                }
+                let once = if next == Pose {
+                    held.is_none()
+                } else {
+                    next.clips().once
+                };
+                if once {
                     active.set_repeat(RepeatAnimation::Never);
                 } else {
                     active.repeat();
                 }
                 if let Some((phase, new_duration)) = phase
                     .filter(|_| next.nominal_speed().is_some())
-                    .zip(duration(next_clip))
+                    .zip(duration(&next_clip))
                 {
                     active.seek_to(phase * new_duration);
                 }
@@ -461,6 +543,17 @@ pub(crate) fn animate_actor_state(
             } else {
                 LANDING_RISE_SPEED
             });
+        } else if next == Pose && !new_pose {
+            let ended = match held {
+                Some(hold) => active.elapsed() >= hold,
+                None => active.is_finished(),
+            };
+            if ended {
+                commands.entity(armature.actor).remove::<PlayClip>();
+                commands.trigger(ActionFinished {
+                    entity: armature.actor,
+                });
+            }
         }
     }
 }

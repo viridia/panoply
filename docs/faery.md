@@ -84,9 +84,9 @@ Migration scripts below, and X1), `artwork/`.
 
 - `engine/src/world/actors/`: `Actor`, `ActorArchetype`, `ActorController`, `ActorEffects`,
   `Action`, `SkinnedModel`, `animation`, `ThreatMap`, `parking`, `actorPredicates`.
-- `engine/src/world/actors/goals/`: goal-tree AI (`GoalNode`, `GoalPriority`,
-  `PrioritizedGoalList`, `factory`, `components/`). Not a direct port: it moves to ECS and BSN
-  assets (X17).
+- `engine/src/world/actors/goals/`: goal-tree AI (`GoalNode`, `GoalPriority`, `PrioritizedGoalList`,
+  `factory`, `components/`). Not a direct port: it moves to ECS and BSN assets
+  ([behavior.md](behavior.md)).
 - `engine/src/nav/`: navigation mesh (`NavigationMesh`, `NavigationMeshBuilder`, `NavRegion`,
   `NavTract*`), route tasks (`NavRouteTask`, `findReachableSpot`), `NavigationController`, and a
   worker. Obstacles come from scenery (the `Computed*Obstacles` files) and terrain

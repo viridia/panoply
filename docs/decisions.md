@@ -904,18 +904,18 @@ never reused.
   A native aspect's config is a `Bundle`: several components where systems want them apart, `()`
   where nothing queries it, so skipping is a type, and detaching is a generic `remove` of the bundle
   rather than a hand-written detach per aspect. `Aspect` itself stays dyn-compatible, the bundle
-  typed behind a per-type erased layer, as `GoalEval::of::<Self>()` is for goals (X17). A scripted
-  aspect's config is one registered component, or none when it declares no config. The entity's
-  union also keeps each aspect's resolved definition, beside its detach, so that gathering like data
-  from aspects of different kinds (an actor's goals from several packages), which Bevy's queries
-  cannot, iterates one entity's aspect list and calls trait methods; where there is no entity, as
-  for an item in an inventory, the definition is read from the asset (`find_aspect`). Gathering
-  across kinds for every entity every frame stays dear, and nothing needs it. Native and scripted
-  aspects look and behave the same in the editor, as far as that can be made true: one aspect list,
-  one add menu, the same inherited and overridden display, rows edited through reflection, and an
-  instance part grouped with its aspect, the aspects it requires (D121), scripted or native. So an
-  author never needs to know which kind an aspect is. Given up: a package as an asset type of its
-  own. Reversing it means behavior kept out of the aspect list. (PAN99)
+  typed behind a per-type erased layer, as `GoalEval::of::<Self>()` is for goals
+  ([behavior.md](behavior.md)). A scripted aspect's config is one registered component, or none when
+  it declares no config. The entity's union also keeps each aspect's resolved definition, beside its
+  detach, so that gathering like data from aspects of different kinds (an actor's goals from several
+  packages), which Bevy's queries cannot, iterates one entity's aspect list and calls trait methods;
+  where there is no entity, as for an item in an inventory, the definition is read from the asset
+  (`find_aspect`). Gathering across kinds for every entity every frame stays dear, and nothing needs
+  it. Native and scripted aspects look and behave the same in the editor, as far as that can be made
+  true: one aspect list, one add menu, the same inherited and overridden display, rows edited
+  through reflection, and an instance part grouped with its aspect, the aspects it requires (D121),
+  scripted or native. So an author never needs to know which kind an aspect is. Given up: a package
+  as an asset type of its own. Reversing it means behavior kept out of the aspect list. (PAN99)
 - **D108** A missing piece costs only itself. A quest role whose actor is missing stays unbound and
   is logged, as a missing fixture is, and the quest goes on (D47). A scripted aspect whose module is
   missing or fails to compile is not attached, and its instance's data for it is kept as written, so

@@ -14,6 +14,7 @@ members = [
   "crates/panoply_core",
   "crates/panoply_editor",
   "crates/panoply_exemplar",
+  "crates/panoply_goals",
   "crates/panoply_nav",
   "crates/panoply_overlays",
   "crates/panoply_portals",
@@ -53,6 +54,7 @@ panoply_actors = { path = "crates/panoply_actors" }
 panoply_core = { path = "crates/panoply_core" }
 panoply_editor = { path = "crates/panoply_editor" }
 panoply_exemplar = { path = "crates/panoply_exemplar" }
+panoply_goals = { path = "crates/panoply_goals" }
 panoply_nav = { path = "crates/panoply_nav" }
 panoply_overlays = { path = "crates/panoply_overlays" }
 panoply_portals = { path = "crates/panoply_portals" }
@@ -79,6 +81,7 @@ panoply_actors = { workspace = true }
 panoply_core = { workspace = true }
 panoply_editor = { workspace = true, optional = true }
 panoply_exemplar = { workspace = true }
+panoply_goals = { workspace = true }
 panoply_nav = { workspace = true }
 panoply_portals = { workspace = true }
 panoply_render = { workspace = true }

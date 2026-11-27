@@ -47,8 +47,8 @@ use panoply_overlays::{
 };
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::{
-    precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, MarkerPath,
-    PrecinctCache, SceneryColliders, PRECINCT_SIZE_F,
+    precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, MarkerPath, PrecinctCache,
+    SceneryColliders, PRECINCT_SIZE_F,
 };
 use rapier3d::prelude::{Pose, SharedShape};
 
@@ -1076,8 +1076,7 @@ fn drop_selected(
     if !keys.fired::<DropInstance>() || drag.0.is_some() {
         return;
     }
-    let Some(of) =
-        selected(&selection, &precincts, &edits.edits, &paths).filter(|of| !of.actor)
+    let Some(of) = selected(&selection, &precincts, &edits.edits, &paths).filter(|of| !of.actor)
     else {
         return;
     };

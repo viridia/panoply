@@ -24,8 +24,8 @@ The first customers each add one mechanism:
    Interactions are declared in scripted aspects (D114), their `perform` the first effects.
 2. **An animation's `when`**, reactive: an object that changes state as the player comes near,
    through the `proximity` memo (Memos). The first cells, memos and reaction pass.
-3. **The first character goal** (X17): an NPC that waves when the player comes in range, the same
-   memo driving a goal.
+3. **The first character goal** (PAN134b): an NPC that waves when the player comes in range, the
+   same memo driving a goal.
 
 PAN79's mechanisms, such as a door opened by a button, follow.
 
@@ -255,9 +255,9 @@ resource that changes once per game hour, not the clock. faery organized its pre
   value) must. A call compares its arguments with the last call's: the same, and the memo's value
   stands; different, and it computes anew.
 - Native memos are formulas written in Rust; script formulas are cells too, compiled.
-- An actor's cells live on its goal nodes (X17), indexed by call site. They go when the node goes,
-  so they need no relation or reference count of their own. Two call sites with the same arguments
-  compute twice.
+- An actor's cells live on its goal nodes ([behavior.md](behavior.md), Formulas), indexed by call
+  site. They go when the node goes, so they need no relation or reference count of their own. Two
+  call sites with the same arguments compute twice.
 - A tracking scope depends on components, resources and memo cells.
 
 ## When reactions run

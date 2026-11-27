@@ -29,7 +29,7 @@ mod precinct_actors;
 mod script_player;
 mod world_pick;
 
-pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle};
+pub use actor_animation::{ActorAnimationState, ActorArmature, ActorIdle, PlayClip};
 pub use actor_aspect::{ActorScale, ClipsFile, CollisionSize, Skin};
 pub use actor_bump::{actor_weight, ActorFooting};
 pub use actor_control::{
@@ -104,6 +104,7 @@ impl Plugin for ActorsPlugin {
             .register_type::<ActorFooting>()
             .register_type::<TravelTo>()
             .register_type::<RouteTo>()
+            .register_type::<PlayClip>()
             .register_type::<ActorAnimationState>()
             .register_type::<ActorIdle>()
             .register_type::<Colors>()

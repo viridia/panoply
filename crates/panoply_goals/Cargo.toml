@@ -1,0 +1,15 @@
+[package]
+name = "panoply_goals"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+panoply_actors = { workspace = true }
+panoply_core = { workspace = true }
+panoply_precinct = { workspace = true }
+panoply_scenery = { workspace = true }
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"

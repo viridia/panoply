@@ -4,9 +4,10 @@ What actors must do, taken from faery's actor module (`packages/engine/src/world
 `goals/`, and `physics/PhysicsActor.ts`). These are behaviors, not designs: animation, the character
 controller and goals are being re-engineered, and state moves onto entities. Numbers are faery's
 values, starting points to tune. Decisions already made elsewhere are linked, not restated:
-ownership (D24), models and colors (D28), hair (D29), goals as entities (X17), saves (PAN82),
-cutaways (PAN76a), footprint readiness (D67). Ids are never reused; a new requirement takes the next
-unused number, so ids within a section are not always in order.
+ownership (D24), models and colors (D28), hair (D29), goals as entities
+([behavior.md](behavior.md)), saves (PAN82), cutaways (PAN76a), footprint readiness (D67). Ids are
+never reused; a new requirement takes the next unused number, so ids within a section are not always
+in order.
 
 ## Definition
 
@@ -198,10 +199,10 @@ The body's vocabulary, which behavior (goals or the player's input) chooses from
 
 ## Behavior
 
-Goals are reworked (X17); these are the capabilities faery's goals provided.
+Goals are designed in [behavior.md](behavior.md); these are the capabilities faery's goals provided.
 
-- **R47** Behavior packages contribute goals (X17); an actor's goals run in priority order. Bands:
-  ultimate 25, safety 20, mission 15, social 10, health 5, idle 0.
+- **R47** Behavior packages contribute goals ([behavior.md](behavior.md)); an actor's goals run in
+  priority order. Bands: ultimate 25, safety 20, mission 15, social 10, health 5, idle 0.
 - **R48** A goal reports satisfied, failed, or the action to take. An action can be
   concurrent, letting lower goals act too (speech while walking).
 - **R49** Goals are re-evaluated when what they depend on changes, when an action finishes,

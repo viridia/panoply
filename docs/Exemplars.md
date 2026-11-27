@@ -142,20 +142,20 @@ Whatever the mechanism, these hold:
   inherited one, and a `when` switches one off.
 - Formulas cannot ask which pieces an actor has, since that would tie content to how its files are
   split. Role, faction and alliance are native aspects.
-- Dialogue and remarks draw on the union of the actor's sets, by the rules in X17, so the order of
-  the pieces matters: farthest ancestor first, the instance last. `UpdateAspects` walks the other
-  way, instance first.
+- Dialogue and remarks draw on the union of the actor's sets, by the rules in
+  [behavior.md](behavior.md), so the order of the pieces matters: farthest ancestor first, the
+  instance last. `UpdateAspects` walks the other way, instance first.
 
 ### Dialogue and remarks
 
 Dialogue composes apart from goals: a goal puts an actor into conversation, and what it can say
 comes from one native aspect, `Dialogues { inherit, sets }`, a list of dialogue set assets.
 Resolving it walks from the instance up the chain to the first `Dialogues` whose `inherit` is false,
-and takes the sets farthest first, the order X17's union needs. `inherit` is true by default, so a
-guard given a quest's lines lists only the quest's set; `inherit: false` starts over, which is how
-an inherited set is dropped. `Proto.NPC` carries an empty `Dialogues`, so a guard's quest lines
-override an aspect it has rather than add one. Remarks compose the same way. The panel shows the
-list and the flag, and while the flag is on, the inherited sets above them, read-only.
+and takes the sets farthest first, the order behavior.md's union needs. `inherit` is true by
+default, so a guard given a quest's lines lists only the quest's set; `inherit: false` starts over,
+which is how an inherited set is dropped. `Proto.NPC` carries an empty `Dialogues`, so a guard's
+quest lines override an aspect it has rather than add one. Remarks compose the same way. The panel
+shows the list and the flag, and while the flag is on, the inherited sets above them, read-only.
 
 Two mods each adding lines to one guard override the same `Dialogues`, and the later wins; quest
 roles would let both survive (X123).
@@ -213,8 +213,8 @@ is implemented.
 - Uniqueness moves to the components: no two aspects may attach the same component, checked as an
   exemplar loads and reported in the editor. Two packages never collide.
 - Aspect identity no longer needs a Rust type, which scripted aspects need.
-- X17's reason for keeping goals out of aspects, several goals of one type with different
-  parameters, no longer constrains aspects.
+- [behavior.md](behavior.md)'s reason for keeping goals out of aspects, several goals of one type
+  with different parameters, no longer constrains aspects.
 - For native aspects the contract changes more than the code. Each of the 19 inserts a clone of
   itself, and most would keep doing so:
   - 11 are built on later by a system: `SceneryModels`, `SceneryColliders`, `SceneryAnimations`,
@@ -241,8 +241,9 @@ is implemented.
   attach, which is what formulas read.
 - A BSN entity is one component per type, so definitions, several of one kind among them, do not map
   onto it directly. They compile to it: an exemplar to a patch, `extends` to an `@` mixin, and
-  aspects that can repeat to related entities, as X17's goal trees already are. Since native aspects
-  stay components in practice, they map onto BSN as they do now; only packages need more.
+  aspects that can repeat to related entities, as goal trees already are
+  ([behavior.md](behavior.md)). Since native aspects stay components in practice, they map onto BSN
+  as they do now; only packages need more.
 
 **Mixins.** An exemplar extends several others (`extends: [guard, lunch-quest]`), and a package is
 an exemplar without a model. This is BSN's own composition: what it calls inheritance is a mixin, an
@@ -408,10 +409,10 @@ The first quest, *Up in Arms*:
    the squad attack on sight through a generic hostile package on their exemplars, the same either
    way.
 2. **The sergeant offers it.** *Native:* the player targets him; his conversation goal draws on his
-   dialogue sets (X17). *Asset:* the quest's lines. Actor-side, his instance lists them in
-   `Dialogues` (D86); quest-side, his role does. *Formula, effect:* the accepting option starts the
-   quest. *Formula, on demand:* until the player returns with the letter, an option asks him about
-   the task, offered across every step between.
+   dialogue sets ([behavior.md](behavior.md)). *Asset:* the quest's lines. Actor-side, his instance
+   lists them in `Dialogues` (D86); quest-side, his role does. *Formula, effect:* the accepting
+   option starts the quest. *Formula, on demand:* until the player returns with the letter, an
+   option asks him about the task, offered across every step between.
 3. **The keep.** *Native:* combat, routing through the switched door (PAN16j), the relay (PAN79). No
    quest behavior; nothing differs.
 4. **The leader.** *Asset:* her goal, on sight, to bark and attack. Actor-side, a package on her
@@ -475,8 +476,8 @@ What the walk shows:
   Quest state).
 - **What a quest gives an actor spans its states** (step 2's question about the task). It is listed
   once, for the quest's whole life, and each entry conditions itself by a formula over the quest's
-  state, as a dialogue set's entries already do (X17); by default a quest gives it while it is
-  offered or in progress, so few entries repeat that.
+  state, as a dialogue set's entries already do ([behavior.md](behavior.md)); by default a quest
+  gives it while it is offered or in progress, so few entries repeat that.
 - **Clues are possessions** (steps 6, 13), so quests read inventory through host functions and need
   no record of what the player has read.
 - **A quest's roles apply from the start of play,** before it is offered: the sergeant offers it.

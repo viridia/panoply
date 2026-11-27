@@ -352,7 +352,10 @@ mod tests {
         set_path_points(&mut asset, &iid, vec![Vec3::X, Vec3::Z], |_| String::new());
         let aspects = &asset.scenery[0].aspects.0;
         assert_eq!(aspects.len(), 1);
-        let path = aspects[0].as_reflect().downcast_ref::<MarkerPath>().unwrap();
+        let path = aspects[0]
+            .as_reflect()
+            .downcast_ref::<MarkerPath>()
+            .unwrap();
         assert_eq!(path.points, vec![Vec3::X, Vec3::Z]);
     }
 

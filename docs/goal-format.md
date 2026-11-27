@@ -97,7 +97,7 @@ Her exemplar would hold `"Goals": { "trees": ["behaviors/tambry.goals.json#Ivy"]
 - **Scoped values.** faery's `children: params => ...` hands the fixture mark's position to the
   subgoals. A formula in a subtree must read what its ancestors publish: which values a node
   publishes, how they are named, and how they relate to parameters. A node's memo cells live on its
-  entity (X17).
+  entity ([behavior.md](behavior.md)).
 - **Fixture references** by local id (`ivy.bed`, `inn.cookpot`), resolved in the actor's container,
   as faery's `withLocalFixture` did: PAN79's naming.
 - **Collapsing.** `UseCookPot`, `UseCuttingBoard`, `UseForge` and `UseAnvil` differ only in the

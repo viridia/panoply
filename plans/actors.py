@@ -17,8 +17,8 @@ play the arrows do as WASD, and Go To moves the actor. Facing a chest shows its 
 opens and shuts it; facing the wall switch shows Use, and E throws it, its lever following the
 state the interaction writes. Facing the skirmisher shows Attack, and four blows of E kill it.
 The lair's test spear trap lowers its spears as the actor comes near, a reactive formula's
-`proximity`, and raises them as it leaves. A click on the ground sends the player there by a
-route. In a house, in play,
+`proximity`, and raises them as it leaves. The lair's test guardsman poses in play, as his goals
+say, and holds still while editing. A click on the ground sends the player there by a route. In a house, in play,
 the floor above is cut away (R15).
 The navigation input of precincts (0, 0) and (1, 0) is written to `panoply_nav`'s fixtures, which
 its tests read; over unchanged content it writes the same bytes.
@@ -32,6 +32,7 @@ not the file's default materials; the hair, outlined, sits on the head. Its hair
 in the view's center facing away from the camera; in `slope.png`, at the foot of the hill's
 face. In `creatures.png` (kreekin, feral dogs, bears, bandits; the alpha dog and the black bear
 larger than the rest), `townsfolk.png` and `avatars.png`, each group's actors face as placed.
+In `guard.png`, the guardsman poses.
 """
 
 import math
@@ -53,6 +54,7 @@ TRAVEL = "panoply_actors::actor_travel::TravelTo"
 FOOTING = "panoply_actors::actor_bump::ActorFooting"
 PLAYER = "bevy_animation::AnimationPlayer"
 STATE = "panoply_actors::actor_animation::ActorAnimationState"
+PLAY_CLIP = "panoply_actors::actor_animation::PlayClip"
 IDLE = "panoply_actors::actor_animation::ActorIdle"
 SKELETON = "Actor/HumanoidArmature"
 VIEW_READY = "panoply_editor::diagnostics::view_ready::ViewReady"
@@ -92,6 +94,8 @@ INSIDE = [53.0, 0.5, 41.0]
 SWITCH_STAND = [7.6, 1.0, 27.2]
 # The spear trap `proximate-spears` in precinct (0, 0), open floor on its +z side.
 SPEARS = [28.5, 0.02, 21.5]
+# `playground.guard.test`, in the lair.
+GUARD = [7.86, 0.02, 4.6]
 # The Crimson Watch skirmisher in precinct (1, 0), facing +x, the Combatant.
 SKIRMISHER = [123.45, 0.0, 16.55]
 VISIBILITY = "bevy_camera::visibility::Visibility"
@@ -429,6 +433,7 @@ def run(driver):
     check_switch(driver)
     check_combatant(driver)
     check_spears(driver)
+    check_guard_poses(driver)
     check_route(driver)
     check_cutaways(driver)
 
@@ -761,6 +766,41 @@ def check_spears(driver):
     stand(2.0, "spears_near")
     stand(6.0, "spears_left")
     driver.mode("Edit")
+
+
+def check_guard_poses(driver):
+    """The test guardsman's goals, his tree in `panoply_goals`: while editing he holds still,
+    with no pose; in play he poses, then moves on to another pose; back in editing he holds still
+    again. Which poses, in what order and for how long, is his tree's, checked by `cargo test`.
+    Checked by eye in `guard.png`: he poses."""
+
+    def clip():
+        play = component(driver, "Actor:TestChar2", PLAY_CLIP)
+        return play and play["clip"]
+
+    # 3 m south of him, facing him (-z).
+    at = [GUARD[0], GUARD[1] + 0.2, GUARD[2] + 3.0]
+    driver.mode("Edit")
+    driver.goto(at, 8.0, azimuth=math.pi)
+    place(driver, at)
+    driver.expect("Actor", MOTION, {"grounded": True})
+    driver.present("Actor:TestChar2/HumanoidArmature", timeout=WAIT)
+    assert clip() is None, f"the guardsman poses ({clip()}) while editing"
+    driver.mode("Play")
+    driver.wait(lambda: (clip() is not None, "no pose"), "the guardsman to pose", {"seconds": 5})
+    first = clip()
+    driver.seconds(1)
+    state = driver.get("Actor:TestChar2/HumanoidArmature", STATE)
+    assert state == "Pose", f"the guardsman's skeleton is in {state}, not Pose"
+    driver.screenshot("guard")
+    driver.wait(
+        lambda: (clip() not in (None, first), lambda: f"still {clip()}"),
+        f"the guardsman's pose after {first}",
+        {"seconds": 15},
+    )
+    driver.mode("Edit")
+    driver.frames(5)
+    assert clip() is None, f"the guardsman still poses ({clip()}) after play"
 
 
 def check_route(driver):

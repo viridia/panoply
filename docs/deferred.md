@@ -97,47 +97,9 @@ dropped, not deferred. Numbers are never reused.
 - **X16** Revisit `avian3d` (D22). *Gate:* avian merges multiple physics worlds (issue #935)
   with game entities kept in one ECS world, per-world spatial queries, and moving a body
   between worlds (an actor crossing a portal); and a release supports the Bevy in use.
-- **X17** Actor goals (the three.js version's goal-tree AI, `engine/src/world/actors/goals`) move to
-  ECS, their trees declared in SAGA. Goals are not aspects, since an actor can hold several goals of
-  one type with different parameters. Behavior packages own them, and packages are most of what a
-  mod holds ([modding.md](modding.md)).
-  - **Behavior packages.** A package is a scripted aspect (D107) declaring goal trees, with a say in
-    presence through a field `Presence` reads (D123). Whether a quest's behavior reaches an actor
-    through a package on it or a role in the quest is X123. Dialogue and remark sets are listed
-    apart, by the `Dialogues` aspect and its remarks counterpart (D86). Each actor has one
-    conversation and one remark goal, drawing on the union of those sets in order, farthest ancestor
-    first. faery's rules carry over (`engine/src/dialogue/DialogueController.ts`): the greeting is
-    the first intro whose conditions hold; each state's options are pooled by state name across
-    sets, sorted stably by `order`, and the first option with a given `id` hides the rest. Remarks
-    choose among the sets whose conditions hold (R53).
-  - **Instanced trees.** Each actor spawns its own copy of each goal tree its packages hold: an
-    entity per node, joined by a `Subgoal` relation (ordered, despawned with its parent, outside
-    transform propagation) and rooted at the actor by `GoalOf`.
-  - **Definition apart from state.** Each goal type is its own component of immutable parameters
-    (`Wander { radius }`), so BSN writes a tree as components and `Subgoals [ ... ]`. It requires
-    its state, a separate reflected component whose default is the reset state, and a
-    `GoalEval::of::<Self>()`: a function pointer, monomorphized for the type, that fetches both and
-    evaluates them. One system walks each tree from the top through those pointers, because a
-    combinator calls its active child and acts on the result in the same pass. The Rust goal types
-    are a closed set per build; mods compose them.
-  - **Format.** Trees are SAGA declarations, sketched in [Exemplars.md](Exemplars.md), Packages
-    written in SAGA; a JSON prototype, the comparison, is in [goal-format.md](goal-format.md).
-  - **Formulas.** A goal's condition is a reactive formula; an effect is usually a Rust type with
-    parameters, but can be a formula. Both are written inline in the tree's declaration, so goals
-    need no formulas embedded in assets. A node's memo cells live on its entity. Landing
-    re-evaluates an actor's goals (R37).
-  - **Saves** (PAN82) hold only state that differs from the reset state: per package, a hash of its
-    goal definition and each changed node's state, keyed by its path of child indices. When the hash
-    no longer matches (a mod or content edit changed the tree), that package's state is dropped and
-    its goals restart, which goals tolerate (R50). The same read-out, respawn and write-back is hot
-    reload, so an edit reaches every actor, and it is what an actor recovers from (R104).
-  - **Testing** is the slow part of authoring behavior: a sequence takes time to play out, and much
-    can go wrong on the way (the innkeeper going to bed from the kitchen). The runtime needs to
-    start a character in a given state at a given hour, run time fast, show the active goal and why
-    its siblings lost (their `when` and priority), and replay a run deterministically.
-
-  The first goal: an NPC that waves when the player comes in range ([saga.md](saga.md), Early
-  customers). *Gate:* BSN assets, and SAGA formulas in assets.
+- **X17** The goals after PAN134's, as [behavior.md](behavior.md) designs them: wander, fixture use,
+  park, remarks, the goal inspector (R55), behavior packages, saves of goal state, and the testing
+  tools. *Gate:* PAN134d, trees in SAGA.
 - **X20** Keep unknown aspects lossless (D25) in precincts: hold each as an opaque value that saves
   back unchanged, so the editor cannot drop data owned by a mod or module that is not loaded.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not

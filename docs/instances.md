@@ -184,10 +184,10 @@ its goal trees and its model, and holds handles to its exemplar and scripted asp
 
 Far from the player, it is a **kernel**: an entity holding only its key, realm, place, facing, home,
 aspect state and goal state. It drops its goal trees, its model and its handles. Goal trees are
-saved and rebuilt through X17's read-out and write-back, the path hot reload uses, so coming back
-into range is the same spawn a precinct load does. Formulas can still read a kernel's state. They
-cannot read its aspects' config, which only attaching an aspect inserts (D107), and a formula that
-tries suspends.
+saved and rebuilt through the read-out and write-back, the path hot reload uses
+([behavior.md](behavior.md), Saves), so coming back into range is the same spawn a precinct load
+does. Formulas can still read a kernel's state. They cannot read its aspects' config, which only
+attaching an aspect inserts (D107), and a formula that tries suspends.
 
 Two alternatives were rejected:
 
