@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN136.**
+**Next: PAN138.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -118,6 +118,13 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
 - **PAN133 Instance labels.** A Show menu item drawing each labelled wall and fixture's label above
   it in the selected precinct, as faery's Show Instance IDs did (`SceneryInstanceIdsOverlay.tsx`): a
   UI text node a label, placed each frame by `Camera::world_to_viewport`, hidden behind the camera.
+- **PAN137 Quieter gizmo.** The instance gizmo shows only while the pointer is over the view, so it
+  is out of the way while the property panel edits the selection (an actor's colors): picking's
+  hover map tells whether the top hit is UI, and a drag keeps the gizmo while the pointer leaves the
+  view. The selection outline stays either way. Its strokes thinner, about half (`ARROW_STROKE`,
+  `RING_STROKE`), judged by eye with the ring's ticks still reading; the reach, `HIT_PIXELS` from a
+  handle's middle line, stays. Checked in `plans/scenery.py`: the gizmo hidden with the pointer over
+  the panel and shown over the view.
 
 ## Review
 
@@ -378,7 +385,11 @@ set an edit is one of (`EditKind`).
 - **PAN28g New, Clone and Rename.** The scenery panel's New… and Clone… (`TODO(PAN28g)`), which add
   exemplars to a catalog: saving merges edits into the file (D73), so a new exemplar needs an insert
   beside it. Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming
-  it keep working until they are saved again.
+  it keep working until they are saved again. And Make Exemplar on a selected instance: a New whose
+  `extends` is the instance's exemplar and whose aspects are its overrides, after which the instance
+  names the new exemplar and its overrides are cleared, as one undoable edit (Unreal's Blueprint
+  from selection, Unity's prefab variant). Until then, `precinct.py show --label` prints an
+  instance's overrides as catalog JSON.
 - **PAN102c Editing marker paths**, on the property editor's instance roots and PAN102b's overlays.
   In selection mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point
   inserted after the one chosen and deleted, each an undoable edit of the instance's override,
@@ -407,6 +418,14 @@ components and every layer restartable from saved state (R104).
 - **PAN30 Aspect hot reload.** An edited exemplar's aspects reach the actors already spawned from
   it; today only a changed precinct respawns its actors (`precinct_actors.rs`). Checked in
   `plans/actors.py`: edit an exemplar file, wait for the change on its actor, and restore the file.
+- **PAN136 Appearance edits in place.** Editing an actor's appearance no longer flickers. An
+  instance's aspect edit changes its `PlacedAs`, which compares aspects, so `spawn_precinct_actors`
+  despawns the actor and spawns another (`precinct_actors.rs`); an exemplar's edit keeps the entity
+  but rebuilds every model (`ActorRebuildModels`). Here an entry whose aspects alone changed keeps
+  its entity and takes the new aspects, and a change of `Colors` alone recolors the meshes in place,
+  as `color_actor_part` does on spawn, for an instance's edit and an exemplar's alike; any other
+  change rebuilds as now. Checked in `plans/properties.py`: a color edit leaves the actor's entity,
+  its body's and its wielded items' entities as they were, and the mesh takes the color.
 - **PAN3t Reach to open.** An actor opening or shutting a container plays a reach, `StandPoint` (an
   arm raised, 1.5 s), as faery played it for an actor opening a door, a one-second gesture faded in
   over 0.1 s (`createRoutePlanner.ts`). A gesture state played once over the idle, then back to it;

@@ -14,6 +14,7 @@
   ["3b99a443-4837-4050-a9af-ff3f9e7e2b09","proximate-spears","playground",[0,0],"scenery"],
   ["407928ba-7876-436f-8355-f9c36d3dc588","spooksy.explore","holm-overland",[10,16],"scenery"],
   ["46b54bf0-f6ba-4e88-beee-8372ac58497d","inn.bed.4","holm-overland",[10,16],"scenery"],
+  ["55a67054-2d11-4cf1-aa91-3e1b5cd6497a","playground.guard.test","playground",[0,0],"actor"],
   ["5641863f-9647-4577-a98c-961a9c35d010","spooksy","holm-overland",[10,16],"actor"],
   ["565c755c-8217-49cd-ada7-6a28f3dff510","adokka.bed.4","holm-overland",[10,16],"scenery"],
   ["59b5eb49-b17c-468f-bd41-355323e60799","philo.chair","holm-overland",[10,16],"scenery"],

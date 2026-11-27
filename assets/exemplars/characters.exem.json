@@ -122,6 +122,14 @@
     },
     "extends": "#Proto.HumanoidMale"
   },
+  "Proto.TownGuardMale": {
+    "kind": "Actor",
+    "abstract": true,
+    "aspects": {
+      "Skin": "characters/humanoid-male.glb#WithTunic"
+    },
+    "extends": "#Proto.HumanoidMale"
+  },
   "Proto.HumanMaleTunicHeavy": {
     "kind": "Actor",
     "abstract": true,
