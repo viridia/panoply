@@ -852,7 +852,7 @@ def hidden(driver):
 
 
 def check_precinct_actors(driver):
-    """The playground's first precinct places its 13 actors, each where and as it says."""
+    """The playground's first precinct places its 14 actors, each where and as it says."""
     precinct = driver.select(FIRST_PRECINCT)[0]
 
     def homed():
@@ -860,9 +860,9 @@ def check_precinct_actors(driver):
             "world.query", {"data": {"components": [HOME]}, "filter": {"with": [HOME]}}
         )
         here = [row for row in rows if row["components"][HOME] == precinct]
-        return len(here) == 13, lambda: f"{len(here)} of {len(rows)} actors homed there"
+        return len(here) == 14, lambda: f"{len(here)} of {len(rows)} actors homed there"
 
-    driver.wait(homed, "the first precinct's 13 actors", WAIT)
+    driver.wait(homed, "the first precinct's 14 actors", WAIT)
     # Shekku's exemplar extends another, which gives it its skin.
     driver.present("Actor:Shekku/ActorBody", timeout=WAIT)
     # Standing, the shopkeeper keeps the facing the precinct gives it (125.9°).

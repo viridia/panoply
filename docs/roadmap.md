@@ -118,13 +118,6 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
 - **PAN133 Instance labels.** A Show menu item drawing each labelled wall and fixture's label above
   it in the selected precinct, as faery's Show Instance IDs did (`SceneryInstanceIdsOverlay.tsx`): a
   UI text node a label, placed each frame by `Camera::world_to_viewport`, hidden behind the camera.
-- **PAN137 Quieter gizmo.** The instance gizmo shows only while the pointer is over the view, so it
-  is out of the way while the property panel edits the selection (an actor's colors): picking's
-  hover map tells whether the top hit is UI, and a drag keeps the gizmo while the pointer leaves the
-  view. The selection outline stays either way. Its strokes thinner, about half (`ARROW_STROKE`,
-  `RING_STROKE`), judged by eye with the ring's ticks still reading; the reach, `HIT_PIXELS` from a
-  handle's middle line, stays. Checked in `plans/scenery.py`: the gizmo hidden with the pointer over
-  the panel and shown over the view.
 
 ## Review
 
@@ -151,14 +144,6 @@ The engine's design, seen whole, and what follows from it.
 
 What an aspect is, and how an instance overrides its exemplar's, for behavior and for the scripted
 aspects that mechanisms, containers and signs are built on.
-
-- **PAN43 Inherited aspects.** The aspects an exemplar inherits through `extends` show apart from
-  its own, dimmed, as faery showed inherited fields (`scenery-actor-inherited.png`). Editing one
-  overrides it, copying the whole aspect into the exemplar, and × on an override reverts to the
-  inherited one. Inheritance in Panoply is by whole aspect, resolved when the chain is read
-  (`UpdateAspects`, `find_aspect`), as faery's aspects were; faery's per-field inheritance was for
-  its archetypes' own fields, which became aspects here (X99). X1's move to BSN would make `extends`
-  scene inheritance.
 
 PAN104, Scripted aspects, in lettered parts: an aspect declared in a SAGA script, as faery's
 scripted aspects were, with fields and hooks. Precedents for its field kinds: Unreal's
@@ -502,8 +487,9 @@ inspector of R55) wait in X17 with gates.
     need.
   - X17's design moves into a new `docs/behavior.md`, which takes in actor-requirements.md's
     Behavior section (R47 to R55, R99), what of it the goals here settle, and X17 goes.
-  - Proved in `plans/actors.py`: the guardsman in the lair completes two laps of his path, which
-    the author draws with PAN102c beforehand.
+  - Proved in `plans/actors.py`: the guardsman `playground.guard.test` (`TestChar2`) in the lair
+    (the playground's `p000-p000`) completes two laps of his path, which the author draws with
+    PAN102c beforehand.
 - **PAN134b Priorities and conditions.** *Needs:* PAN134a. Several trees on an actor, run in R47's
   priority bands, a goal's `when` a reactive formula, skipped while false and restarted when it
   turns true (R50), and a higher goal pre-empting a lower one's body action. Proved by the guardsman

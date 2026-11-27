@@ -101,7 +101,7 @@ So faery's mods needed:
   are code, not data.
 
 None declared a type of its own. Panoply needs no `config` and `properties` split either: an aspect
-attached in an exemplar and overridden per instance (PAN43) covers where a value is set, and runtime
+attached in an exemplar and overridden per instance (D128) covers where a value is set, and runtime
 state (`health`, timers, `open`) is components outside the asset, saved as
 [save-games.md](save-games.md) plans.
 

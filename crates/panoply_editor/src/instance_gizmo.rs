@@ -76,10 +76,11 @@ const QUARTER_TICK_LENGTH: f32 = 0.18;
 const RING_SEGMENTS: u32 = 64;
 
 /// The strokes' width: the arrows', and the ring's, which is thinner, so its ticks read.
-const ARROW_STROKE: f32 = 0.07;
-const RING_STROKE: f32 = 0.045;
+const ARROW_STROKE: f32 = 0.035;
+const RING_STROKE: f32 = 0.025;
 
-/// How near a handle's middle line the pointer must be to take it, in logical pixels.
+/// How near a handle's middle line the pointer must be to take it, in logical pixels: well beyond
+/// the strokes, so a thin handle is easy to take.
 const HIT_PIXELS: f32 = 14.;
 
 /// Above the camera's own hits, which scenery's and the ground's backends report at its order,
@@ -106,6 +107,7 @@ impl Plugin for InstanceGizmoPlugin {
             .init_resource::<GizmoDragState>()
             .init_resource::<GizmoActive>()
             .register_type::<GizmoActive>()
+            .register_type::<GizmoHandle>()
             .add_overlay::<GizmoHandle>()
             .add_context::<InstanceGizmoKeys>(|context| {
                 context.active_in_state(SceneryTool::SelectInstance);
@@ -224,7 +226,8 @@ impl GizmoPart {
 /// A handle's shape, in the gizmo's units, at its entity's origin. An arrow is drawn up its
 /// entity's y, in its xy plane, which its entity turns to the arrow's axis, facing the camera.
 /// Hidden while not `shown`.
-#[derive(Component, Clone, PartialEq, Default)]
+#[derive(Component, Reflect, Clone, PartialEq, Default)]
+#[reflect(Component)]
 pub struct GizmoHandle {
     pub part: GizmoPart,
     pub shown: bool,
@@ -990,10 +993,15 @@ fn delete_selected(
 
 /// Puts the gizmo on the selected instance, or where a drag shows it, at its size for the camera's
 /// distance, in the viewed realm; lights the handle under the pointer, or the one a drag holds.
+/// Shown only while the pointer is over the view, not over UI such as the property panel, so it
+/// is out of the way while the panel edits the selection; a drag keeps it wherever the pointer
+/// goes.
 fn show_gizmo(
     selection: Res<ScenerySelection>,
     drag: Res<GizmoDragState>,
     hover: Res<HoverMap>,
+    pointer: Res<SceneryPointer>,
+    nodes: Query<(), With<ComputedNode>>,
     cameras: Query<&GlobalTransform, With<PrimaryCamera>>,
     instances: Query<&GlobalTransform, Or<(With<SceneryElement>, With<PlacedAs>)>>,
     viewpoint: Res<Viewpoint>,
@@ -1018,8 +1026,15 @@ fn show_gizmo(
                 (transform.translation(), yaw.to_degrees())
             }),
     };
+    // The pointer has a ray only inside the view's viewport, and a hit on UI there (a popup, a
+    // dialog) is in front of the view.
+    let over_ui = hover
+        .get(&PointerId::Mouse)
+        .is_some_and(|hits| hits.keys().any(|&entity| nodes.contains(entity)));
+    let over_view = pointer.ray.is_some() && !over_ui;
     let camera = cameras.single().ok().map(GlobalTransform::translation);
     let frame = pose
+        .filter(|_| over_view || drag.0.is_some())
         .zip(camera)
         .map(|((origin, _), camera)| GizmoFrame::new(origin, camera));
     if place.0 != frame {

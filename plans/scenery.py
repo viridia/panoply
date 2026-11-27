@@ -15,8 +15,9 @@
   Escape cancels a drag, ] turns the fixtures, Save writes the precinct (restored afterwards).
 - Actors: hovering shows the chosen actor and its footprint; a drag turns and places it, standing
   on the ground, undoably; Save writes the precinct (restored afterwards).
-- Selection: hovering outlines a fixture or an actor and a click selects it. A drag of a handle
-  of the gizmo on the selection moves or turns it, undoably, and Delete removes it. The list's
+- Selection: hovering outlines a fixture or an actor and a click selects it. The gizmo on the
+  selection shows only while the pointer is over the view. A drag of one of its handles moves or
+  turns it, undoably, and Delete removes it. The list's
   filter menu shows unlabelled instances and narrows them by kind; Rename… labels the selection
   and clears the label, undoably, and a click outside its dialog closes it, keeping the selection.
   The selected actor's inherited aspect is overridden, undoably, keeping the selection.
@@ -52,7 +53,7 @@ from _editor import (
     undo,
     wait_mode,
 )
-from _panoply_driver import PanoplyDriver, button, move_pointer, view_points
+from _panoply_driver import INSET, PanoplyDriver, button, move_pointer, view_points
 
 BIN = "panoply"
 DRIVER = PanoplyDriver
@@ -64,6 +65,7 @@ TIER = "panoply_editor::scenery_pointer::SceneryTier"
 SCENERY_SELECTION = "panoply_editor::instance_selection::ScenerySelection"
 OUTLINE = "panoply_editor::instance_selection::InstanceOutline"
 GIZMO = "panoply_editor::instance_gizmo::GizmoActive"
+GIZMO_HANDLE = "panoply_editor::instance_gizmo::GizmoHandle"
 NAV_MESH = "panoply_nav::mesh::PrecinctNavMesh"
 SCENERY_BUTTONS = [
     "PlaceFloor", "PlaceWall", "PlaceFixture", "PlaceActor", "DrawTerrainFx", "SelectInstance",
@@ -514,6 +516,16 @@ def select_instance(driver):
         driver.expect("InstanceLabel", TEXT, "none")
         driver.expect("InstancePrecinct", TEXT, "playground (1, 2)")
         driver.screenshot("instance_selected")
+
+        # The gizmo shows only while the pointer is over the view: over the panel, left of the
+        # view, it hides, and it comes back with the pointer.
+        def gizmo_shown():
+            return driver.get("GizmoHandle:Ring", GIZMO_HANDLE)["shown"]
+
+        move_pointer(driver, window, scale, (driver.get_resource(INSET)["left"] / 2, middle[1]))
+        assert not gizmo_shown(), "the gizmo shows with the pointer over the panel"
+        move_pointer(driver, window, scale, middle)
+        assert gizmo_shown(), "the gizmo is hidden with the pointer over the view"
 
         # The gizmo: right of the pot, the pointer meets one of its handles, and a drag of it
         # moves or turns the pot, as one edit. Delete removes the pot, leaving nothing selected,
