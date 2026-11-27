@@ -1,8 +1,9 @@
 //! The property editor's rows (D83): a subpane per inspected value, headed by its aspect's icon
 //! (`AspectIcon`) and caption, and in it a row per field. A row is a caption in a column of fixed
 //! width, then its widget, then a column for its ×, empty if it has none, so widgets and ×s line
-//! up down the panel. Booleans get a checkbox, numbers a number input, a `Vec3` three of them on
-//! one line, colors a swatch that opens a picker, strings a text input committed on Enter or on
+//! up down the panel. Booleans get a checkbox, numbers a number input (an unsigned one limited to
+//! 0 through its type's largest, as feathers' input has no unsigned values), a `Vec3` three of
+//! them on one line, colors a swatch that opens a picker, strings a text input committed on Enter or on
 //! leaving it, a model (`Skin`, `SceneryModel`, `ClipsFile`) a button that opens a picker of models
 //! of its kind, an exemplar's `extends` a button that opens a chooser of the exemplars it may
 //! extend, an enum a select of its variants with the variant's fields below it. Nested structs and
@@ -25,6 +26,13 @@
 //! A scripted aspect, which reflection sees as one opaque value, is a row per field of its
 //! declaration, config and state alike, its attributes annotating them as `bevy::annotations` do a
 //! native field's, and its `#[icon]` naming its pane's icon (D107).
+//!
+//! An aspect's pane is the root's own, inherited, or missing ([`PaneRole`]), and its header says
+//! which (D128). An own aspect's ends in a ×. An inherited one's caption is dim and italic, it
+//! starts collapsed, its rows are disabled, and a pencil overrides it. A missing one, required by
+//! another and not resolved, is a header alone, bordered and unfilled, with a + that adds it, and
+//! a warning where it cannot attach at its defaults. An instance's label is a row of its own: the
+//! label, and Rename…, which opens the dialog that sets it.
 //!
 //! A row is named after its field, never its caption, and a list item "#1", "#2", so plans' paths
 //! keep working when captions change.
@@ -64,8 +72,8 @@ use bevy::{
         tuple::DynamicTuple,
         ParsedPath, ReflectFromReflect, ReflectRef, TypeInfo, TypeRegistry,
     },
-    text::{FontSourceTemplate, LineBreak, TextLayout},
-    ui::Selected,
+    text::{FontSourceTemplate, FontStyle, LineBreak, TextLayout},
+    ui::{InteractionDisabled, Selected},
     ui_widgets::{
         popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
         NumericRange, SetSelected, ValueChange,
@@ -95,10 +103,11 @@ use panoply_exemplar::{
 };
 
 use crate::{
+    instance_list::open_label_dialog,
     model_picker::{model_field, open_model_picker, ChosenModel, ModelKind},
-    scenery_properties::{open_extends_chooser, ExemplarRef},
+    scenery_properties::{open_extends_chooser, ExemplarRef, InstanceLabel},
 };
-use edit::{EditKind, InspectedValue, PathSteps, PropertyEdits, PropertyRoot};
+use edit::{EditKind, InspectedValue, PaneRole, PathSteps, PropertyEdits, PropertyRoot};
 
 /// The panel's capabilities: `bevy_immediate`'s for feathers, and binding a color input and a
 /// text input's commits.
@@ -240,29 +249,99 @@ const REMOVE_WIDTH: f32 = 16.0;
 /// The pane icon of an aspect type with no `AspectIcon`.
 const DEFAULT_ASPECT_ICON: &str = "editor/icons/lucide/puzzle.png";
 
-/// The panes, headings and items whose rows are collapsed, by key: a pane by its caption, so an
-/// aspect stays collapsed from exemplar to exemplar, as Blender's panels do; a heading by its
-/// root's key and path. Everything starts expanded.
+/// The panes, headings and items shown otherwise than they start, by key: a pane by its caption,
+/// so an aspect stays collapsed from exemplar to exemplar, as Blender's panels do; a heading by
+/// its root's key and path. An inherited aspect's pane starts collapsed, under a key of its own;
+/// everything else starts expanded.
 #[derive(Resource, Default)]
 pub struct CollapsedRows(HashSet<String>);
 
-/// A subpane captioned with `inspected`'s root's caption beside its type's icon, holding the rows
-/// of its value; a struct's absent fields are in a menu at the caption's right. Its chevron
-/// collapses the rows, which `collapsed` remembers; collapsed, the header shows a summary. With
-/// `remove`, a × ends the header, which sets it. The edits its widgets ask for go to `edits`; new
-/// values are built from the types in `registry`.
+impl CollapsedRows {
+    /// Expands the pane of an aspect, its own, captioned `caption`.
+    pub fn expand_pane(&mut self, caption: &str) {
+        self.0.remove(&format!("pane {caption}"));
+    }
+}
+
+/// The icon of an inherited aspect's button that overrides it.
+const OVERRIDE_ICON: &str = "editor/icons/lucide/pencil.png";
+
+/// The icon of a missing aspect that cannot attach at its defaults.
+const WARNING_ICON: &str = "editor/icons/lucide/triangle-alert.png";
+
+/// What a click in an aspect pane's header asks for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PaneAction {
+    /// Take the aspect out of the root's own: ×.
+    Remove,
+    /// Copy the inherited aspect into the root's own: the pencil.
+    Override,
+    /// Add the missing aspect at its defaults: +.
+    Add,
+}
+
+/// Marks an inherited aspect's body, whose widgets [`disable_inherited_rows`] disables.
+#[derive(Component, Default, Clone)]
+pub struct InheritedRows;
+
+/// Disables each widget in an inherited aspect's body, the chevrons of nested headings aside, so
+/// they still open. `Propagate` cannot carry `InteractionDisabled`, which has no `PartialEq`.
+pub fn disable_inherited_rows(
+    bodies: Query<Entity, With<InheritedRows>>,
+    children: Query<&Children>,
+    enabled: Query<
+        (),
+        (
+            Without<InteractionDisabled>,
+            Without<FeathersDisclosureToggle>,
+        ),
+    >,
+    mut commands: Commands,
+) {
+    for body in &bodies {
+        for entity in children.iter_descendants(body) {
+            if enabled.contains(entity) {
+                commands.entity(entity).insert(InteractionDisabled);
+            }
+        }
+    }
+}
+
+/// A subpane for `inspected`'s root, an aspect's pane or another root's, as `role` says it is
+/// (`None` for a root that is no aspect's). One the root has, its own, is captioned with the root's
+/// caption beside its type's icon, holding the rows of its value; a struct's absent fields are in a
+/// menu at the caption's right, and with `removable`, a × ends the header. Its chevron collapses
+/// the rows, which `collapsed` remembers; collapsed, the header shows a summary. An inherited one
+/// is captioned dim and italic, starts collapsed, and shows its rows disabled, with a pencil that
+/// overrides it where it may be. A missing one is a header alone ([`missing_pane`]). Returns the
+/// header's button clicked. The edits its widgets ask for go to `edits`; new values are built from
+/// the types in `registry`.
 pub fn root_pane(
     ui: &mut Imm<CapsPanel>,
     inspected: &InspectedValue,
     registry: &TypeRegistry,
     edits: &mut PropertyEdits,
     collapsed: &mut CollapsedRows,
-    remove: Option<&mut bool>,
-) {
+    role: Option<&PaneRole>,
+) -> Option<PaneAction> {
+    let overridable = match role {
+        Some(PaneRole::Missing {
+            blocked, addable, ..
+        }) => {
+            return missing_pane(ui, inspected, blocked.is_some(), *addable);
+        }
+        Some(PaneRole::Inherited { overridable }) => Some(*overridable),
+        _ => None,
+    };
+    let inherited = overridable.is_some();
     let (root, value) = (&inspected.root, inspected.value.as_ref());
     let caption = root.caption();
     let image = aspect_icon(value);
-    let key = format!("pane {caption}");
+    let key = match inherited {
+        true => format!("inherited pane {caption}"),
+        false => format!("pane {caption}"),
+    };
+    let mut action = None;
     let mut rows = Rows {
         root,
         registry,
@@ -288,53 +367,151 @@ pub fn root_pane(
             };
             ui.ch().on_spawn_apply_scene(header).add(|ui| {
                 ui.ch().on_spawn_insert(heading_start).add(|ui| {
-                    expanded = disclosure(ui, rows.collapsed, key.clone());
+                    expanded = disclosure(ui, rows.collapsed, key.clone(), !inherited);
                     ui.ch()
                         .on_spawn_apply_scene(move || bsn! { @icon(image) Node { height: px(14) } });
                     ui.ch()
-                        .on_spawn_apply_scene(move || header_caption(caption.clone()));
+                        .on_spawn_apply_scene(move || header_caption(caption.clone(), inherited));
                     rows.summary(ui, value, expanded);
                 });
                 ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                    if let Some(overridable) = overridable {
+                        if overridable
+                            && icon_button(ui, "override", OVERRIDE_ICON, px(12), tokens::TEXT_DIM)
+                        {
+                            action = Some(PaneAction::Override);
+                        }
+                        return;
+                    }
                     rows.add_menu(ui, value, &ParsedPath::empty());
                     // A map of given keys adds an entry from its key's row instead.
                     if !has_map_keys(registry, value) {
                         let (inner, path) = through_newtypes(value, ParsedPath::empty());
                         rows.add_button(ui, inner, &path);
                     }
-                    remove_button(ui, remove);
+                    let mut remove = false;
+                    let removable = matches!(role, Some(PaneRole::Own { .. }));
+                    remove_button(ui, removable.then_some(&mut remove));
+                    if remove {
+                        action = Some(PaneAction::Remove);
+                    }
                 });
             });
             rows.expand_if_added(&key);
             if !expanded {
                 return;
             }
-            ui.ch().on_spawn_apply_scene(subpane_body).add(|ui| {
-                if let Some(note) = root.note() {
-                    ui.ch_id("root_note")
-                        .on_spawn_apply_scene(move || placeholder(note.clone()));
-                }
+            let body = ui.ch().on_spawn_apply_scene(subpane_body);
+            let body = match inherited {
+                true => body.on_spawn_insert(|| InheritedRows),
+                false => body,
+            };
+            body.add(|ui| {
                 if let Some(note) = no_rows_note(value) {
                     ui.ch_id(note).on_spawn_apply_scene(move || placeholder(note));
                 }
                 rows.root(ui, value);
             });
         });
+    action
+}
+
+/// The pane of an aspect that one of the root's aspects requires and the root's resolved aspects
+/// lack: a header alone, bordered and unfilled, its icon and caption dim, then, where `blocked`,
+/// a warning that it cannot attach at its defaults. With `addable`, a + ends it, which adds it.
+fn missing_pane(
+    ui: &mut Imm<CapsPanel>,
+    inspected: &InspectedValue,
+    blocked: bool,
+    addable: bool,
+) -> Option<PaneAction> {
+    let root = &inspected.root;
+    let caption = root.caption();
+    let image = aspect_icon(inspected.value.as_ref());
+    let name = caption.clone();
+    let mut add = false;
+    ui.ch_id(root.key())
+        .on_spawn_apply_scene(subpane)
+        .on_spawn_insert(move || Name::new(name.clone()))
+        .add(|ui| {
+            ui.ch().on_spawn_apply_scene(missing_header).add(|ui| {
+                ui.ch().on_spawn_insert(heading_start).add(|ui| {
+                    // In place of a chevron, so the icon lines up with the other panes'.
+                    ui.ch().on_spawn_insert(|| Node {
+                        width: px(12),
+                        flex_shrink: 0.0,
+                        ..default()
+                    });
+                    ui.ch().on_spawn_apply_scene(move || {
+                        bsn! {
+                            @icon(image) Node { height: px(14) } TextColor ThemeTextColor(tokens::TEXT_DIM)
+                        }
+                    });
+                    ui.ch()
+                        .on_spawn_apply_scene(move || header_caption(caption.clone(), true));
+                    if blocked {
+                        ui.ch_id("blocked").on_spawn_apply_scene(|| {
+                            bsn! {
+                                @icon(WARNING_ICON)
+                                Node { height: px(12) }
+                                TextColor
+                                ThemeTextColor(tokens::TEXT_DIM)
+                                Name("blocked")
+                            }
+                        });
+                    }
+                });
+                ui.ch().on_spawn_insert(widget_line).add(|ui| {
+                    if addable {
+                        add = icon_button(ui, "add", ADD_ICON, px(14), tokens::TEXT_DIM);
+                    } else {
+                        remove_button(ui, None);
+                    }
+                });
+            });
+        });
+    add.then_some(PaneAction::Add)
+}
+
+/// A missing aspect's header: a subpane header's layout, bordered all round and unfilled, as a
+/// place for an aspect rather than one.
+fn missing_header() -> impl Scene {
+    bsn! {
+        Node {
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::SpaceBetween,
+            border: {UiRect::all(px(1))},
+            padding: UiRect { left: px(4), right: px(6), top: px(0), bottom: px(0) },
+            min_height: size::HEADER_HEIGHT,
+            column_gap: px(4),
+            border_radius: {BorderRadius::all(px(4))},
+        }
+        ThemeBorderColor(tokens::SUBPANE_HEADER_BORDER)
+        Name("header")
+    }
 }
 
 /// A pane's caption, in the header's font: the header's own font reaches only its direct
-/// children, and the caption sits in a nested node beside its chevron and icon.
-fn header_caption(caption: String) -> impl Scene {
+/// children, and the caption sits in a nested node beside its chevron and icon. A `dim` one, an
+/// aspect the root does not have as its own, is dim and italic.
+fn header_caption(caption: String, dim: bool) -> impl Scene {
+    let (style, color) = match dim {
+        true => (FontStyle::Italic, tokens::TEXT_DIM),
+        false => (FontStyle::Normal, HEADER_TEXT),
+    };
     bsn! {
         Text(caption)
         TextFont {
             font: FontSourceTemplate::Families(fonts::SANS),
             font_size: size::MEDIUM_FONT,
             weight: FontWeight::NORMAL,
+            style: style,
         }
         PropagateOver<TextFont>
         TextLayout { linebreak: LineBreak::NoWrap }
-        ThemeTextColor(HEADER_TEXT)
+        ThemeTextColor(color)
     }
 }
 
@@ -360,19 +537,21 @@ fn aspect_icon(value: &dyn PartialReflect) -> &'static str {
 }
 
 /// A chevron, named `toggle`, that collapses the rows under the header or heading it starts,
-/// remembered in `collapsed` by `key`. Returns whether the rows show.
-fn disclosure(ui: &mut Imm<CapsPanel>, collapsed: &mut CollapsedRows, key: String) -> bool {
-    let shown = !collapsed.0.contains(&key);
+/// which show at first where `open`; `collapsed` remembers by `key` the rows toggled from that.
+/// Returns whether the rows show.
+fn disclosure(
+    ui: &mut Imm<CapsPanel>,
+    collapsed: &mut CollapsedRows,
+    key: String,
+    open: bool,
+) -> bool {
+    let shown = collapsed.0.contains(&key) != open;
     let mut expanded = shown;
     ui.ch_id("toggle")
         .on_spawn_apply_scene(|| bsn! { @FeathersDisclosureToggle #toggle })
         .checked(&mut expanded);
-    if expanded != shown {
-        if expanded {
-            collapsed.0.remove(&key);
-        } else {
-            collapsed.0.insert(key);
-        }
+    if expanded != shown && !collapsed.0.remove(&key) {
+        collapsed.0.insert(key);
     }
     expanded
 }
@@ -586,7 +765,7 @@ impl Rows<'_> {
                 let line = || (Name::new("heading"), caption_line());
                 ui.ch().on_spawn_insert(line).add(|ui| {
                     ui.ch().on_spawn_insert(heading_start).add(|ui| {
-                        expanded = disclosure(ui, self.collapsed, key.clone());
+                        expanded = disclosure(ui, self.collapsed, key.clone(), true);
                         start(self, ui);
                         self.summary(ui, value, expanded);
                     });
@@ -836,6 +1015,11 @@ impl Rows<'_> {
                 return;
             }
         }
+        // An instance's label, set through Rename…'s dialog.
+        if let Some(label) = value.try_downcast_ref::<InstanceLabel>() {
+            instance_label_row(ui.ch_id(path.clone()), head, label);
+            return;
+        }
         // A newtype is its field's row, annotated as its field is, if it is.
         if let Some(inner) = newtype_field(value) {
             if value.try_downcast_ref::<HexColor>().is_none() {
@@ -886,6 +1070,10 @@ impl Rows<'_> {
         } else if let Some(&number) = value.try_downcast_ref::<i64>() {
             if let Some(edited) = self.number_row(row, head, attrs, number, remove) {
                 self.set(&path, edited);
+            }
+        } else if let Some((number, max)) = unsigned(value) {
+            if let Some(edited) = self.unsigned_row(row, head, attrs, number, max, remove) {
+                self.set_unsigned(&path, value, edited);
             }
         } else if let Some(&vector) = value.try_downcast_ref::<Vec3>() {
             self.vec3_row(row, head, attrs, vector, &path, remove);
@@ -952,13 +1140,46 @@ impl Rows<'_> {
         remove: Option<&mut bool>,
     ) -> Option<T> {
         let look = NumberLook::from_attributes::<T>(attrs);
-        let mut edited = value;
-        row.on_spawn_insert(move || head.node()).add(|ui| {
-            head.caption_cell(ui);
-            number_input(ui.ch(), "input", None, look, &mut edited);
-            remove_button(ui, remove);
-        });
-        (edited != value).then_some(edited)
+        number_look_row(row, head, look, value, remove)
+    }
+
+    /// A number input for an unsigned number, `value`, of a type whose largest is `max`: an `i64`
+    /// input limited to 0 through `max`, within any range the field's annotations give. Returns
+    /// the number edited in it, if it changed.
+    fn unsigned_row(
+        &mut self,
+        row: ImmEntity<CapsPanel>,
+        head: RowHead,
+        attrs: &CustomAttributes,
+        value: u64,
+        max: u64,
+        remove: Option<&mut bool>,
+    ) -> Option<u64> {
+        let mut look = NumberLook::from_attributes::<i64>(attrs);
+        let max = max.min(i64::MAX as u64) as i64;
+        let (low, high) = match look.range {
+            Some(NumericRange::I64(range)) => (*range.start(), *range.end()),
+            _ => (0, max),
+        };
+        look.range = Some(NumericRange::I64(low.max(0)..=high.min(max)));
+        let shown = value.min(max as u64) as i64;
+        let edited = number_look_row(row, head, look, shown, remove)?;
+        Some(edited.max(0) as u64)
+    }
+
+    /// Writes `number` at `path`, as the unsigned type of `value`, the value there now.
+    fn set_unsigned(&mut self, path: &ParsedPath, value: &dyn PartialReflect, number: u64) {
+        if value.represents::<u8>() {
+            self.set(path, number as u8);
+        } else if value.represents::<u16>() {
+            self.set(path, number as u16);
+        } else if value.represents::<u32>() {
+            self.set(path, number as u32);
+        } else if value.represents::<u64>() {
+            self.set(path, number);
+        } else if value.represents::<usize>() {
+            self.set(path, number as usize);
+        }
     }
 
     /// Three number inputs after the row's caption, labeled X, Y and Z beside their axes' colored
@@ -1768,6 +1989,7 @@ fn entry_layout(value: &dyn PartialReflect) -> EntryLayout {
         || value.try_downcast_ref::<f64>().is_some()
         || value.try_downcast_ref::<i32>().is_some()
         || value.try_downcast_ref::<i64>().is_some()
+        || unsigned(value).is_some()
         || value.try_downcast_ref::<HexColor>().is_some();
     if narrow {
         return EntryLayout::Narrow;
@@ -1880,6 +2102,52 @@ fn exemplar_ref_row(
                 .on_hash_change_text_fn(&shown, || shown.clone());
         });
         remove_button(ui, remove);
+    });
+}
+
+/// A caption with the selected instance's label, named `InstanceLabel`, or "none", dim and
+/// italic, as a value that is not there; and Rename…, named `RenameInstance`, which opens the
+/// dialog that sets it (`open_label_dialog`).
+fn instance_label_row(row: ImmEntity<CapsPanel>, head: RowHead, value: &InstanceLabel) {
+    let (shown, key, style, color) = match &value.0 {
+        Some(label) => (label.clone(), "label", FontStyle::Normal, tokens::TEXT_MAIN),
+        None => (
+            "none".to_string(),
+            "none",
+            FontStyle::Italic,
+            tokens::TEXT_DIM,
+        ),
+    };
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        head.caption_cell(ui);
+        ui.ch_id(key)
+            .on_spawn_apply_scene(move || {
+                bsn! {
+                    Text("")
+                    TextFont {
+                        font: FontSourceTemplate::Families(fonts::SANS),
+                        font_size: size::MEDIUM_FONT,
+                        style: style,
+                    }
+                    PropagateOver<TextFont>
+                    TextLayout { linebreak: LineBreak::NoWrap }
+                    ThemeTextColor(color)
+                    Node { min_width: px(0), overflow: Overflow::clip_x() }
+                    Name("InstanceLabel")
+                }
+            })
+            .on_hash_change_text_fn(&shown, || shown.clone());
+        ui.ch().on_spawn_insert(spacer);
+        let mut rename = ui.ch_id("rename").on_spawn_apply_scene(|| {
+            bsn! {
+                @FeathersButton { @caption: bsn! { Text("Rename…") ThemedText } }
+                Name("RenameInstance")
+            }
+        });
+        if rename.activated() {
+            rename.commands().run_system_cached(open_label_dialog);
+        }
+        remove_button(ui, None);
     });
 }
 
@@ -2032,6 +2300,42 @@ fn summary(value: &dyn PartialReflect) -> String {
         }
         _ => short_type_name(value).to_string(),
     }
+}
+
+/// `value` and the largest of its type, if it is an unsigned integer, which the panel edits as an
+/// `i64`: feathers' number input has no unsigned values.
+fn unsigned(value: &dyn PartialReflect) -> Option<(u64, u64)> {
+    if let Some(&number) = value.try_downcast_ref::<u8>() {
+        Some((number.into(), u8::MAX.into()))
+    } else if let Some(&number) = value.try_downcast_ref::<u16>() {
+        Some((number.into(), u16::MAX.into()))
+    } else if let Some(&number) = value.try_downcast_ref::<u32>() {
+        Some((number.into(), u32::MAX.into()))
+    } else if let Some(&number) = value.try_downcast_ref::<u64>() {
+        Some((number, u64::MAX))
+    } else if let Some(&number) = value.try_downcast_ref::<usize>() {
+        Some((number as u64, usize::MAX as u64))
+    } else {
+        None
+    }
+}
+
+/// A number input showing `value`, limited and stepped as `look` says, named `input` so plans can
+/// read its value, after the row's caption. Returns the number edited in it, if it changed.
+fn number_look_row<T: NumberField>(
+    row: ImmEntity<CapsPanel>,
+    head: RowHead,
+    look: NumberLook,
+    value: T,
+    remove: Option<&mut bool>,
+) -> Option<T> {
+    let mut edited = value;
+    row.on_spawn_insert(move || head.node()).add(|ui| {
+        head.caption_cell(ui);
+        number_input(ui.ch(), "input", None, look, &mut edited);
+        remove_button(ui, remove);
+    });
+    (edited != value).then_some(edited)
 }
 
 /// How a number input limits and steps its number, read from a field's annotations.

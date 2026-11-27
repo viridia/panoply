@@ -10,7 +10,7 @@ deferral. Uncompiled code kept as reference until a chunk replaces it is marked
 `REFERENCE(PAN<n>)`. When a chunk lands, its entry here is deleted and a line added to the
 changelog.
 
-**Next: PAN135.**
+**Next: PAN136.**
 
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
@@ -281,8 +281,8 @@ were PNGs of the same size as these, so theirs likely carry over.
     overlaps the trap are woken and pushed sideways out of it (`ActorMotion::push`, as `bump_actors`
     shoves), before the collider rises, so that none is lifted onto the wall (I85).
   - Picking the binding comes with it: the plate in the world, then its aspect and output, each
-    chosen for the author where only one is offered; the popup chooser stays PAN79's. It meets
-    X138's gate.
+    chosen for the author where only one is offered; the popup chooser stays PAN79's. It needs
+    PAN135.
   - Proved by the player standing on the plate, since there are no followers yet (X131) and nothing
     to use as a weight (X140). No relay, and no damage until actors have health (PAN111). Where it
     is placed is decided in the chunk.
@@ -368,17 +368,22 @@ in [faery.md](faery.md), Editor, its screenshots included; bevy_reactor_3's `Ins
 Widgets ask for edits rather than writing values (D72); each part adds its operations to the closed
 set an edit is one of (`EditKind`).
 
-- **PAN28e Instances, nav points, New and Clone.** Roots for an instance picked in selection mode
-  and for the realm panel's selected nav point (faery's `NavPointEditor`). An instance's aspects
-  show as overrides of its exemplar's, and those it adds (D104) as added. The scenery panel's New…
-  and Clone… (`TODO(PAN28e)`), which add exemplars to a catalog: saving merges edits into the file
-  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
-  `alias` list, so that precincts naming it keep working until they are saved again.
-- **PAN102c Editing marker paths**, on PAN28e's instance edits and PAN102b's overlays. In selection
-  mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point inserted after the
-  one chosen and deleted, each an undoable edit of the instance's override, marking its precinct
-  unsaved. PAN28e makes an area's size editable in the property panel; a resize handle in the view
-  is not part of it.
+- **PAN28f Nav points.** A root for the realm panel's selected nav point (faery's `NavPointEditor`),
+  saved as the realm's `NavPointsAsset` is now.
+- **PAN135 Scripted aspects on instances**, in precincts and actor instances: their loaders pass no
+  scripted aspects to `AspectListDeserializer`, so one there is skipped, with a warning. A precinct
+  loads the modules its scripted aspects name, as a catalog does. Then the property editor lets an
+  instance override an inherited scripted aspect, add one from the aspects chooser, and add a
+  missing one, which PAN28e withholds from instances; PAN79a's `SignalInput` is the first wanted.
+- **PAN28g New, Clone and Rename.** The scenery panel's New… and Clone… (`TODO(PAN28g)`), which add
+  exemplars to a catalog: saving merges edits into the file (D73), so a new exemplar needs an insert
+  beside it. Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming
+  it keep working until they are saved again.
+- **PAN102c Editing marker paths**, on the property editor's instance roots and PAN102b's overlays.
+  In selection mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point
+  inserted after the one chosen and deleted, each an undoable edit of the instance's override,
+  marking its precinct unsaved. An area's size is edited in the property panel, by overriding its
+  `MarkerArea`; a resize handle in the view is not part of it.
 
 ## Actors
 

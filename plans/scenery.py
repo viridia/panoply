@@ -19,6 +19,7 @@
   of the gizmo on the selection moves or turns it, undoably, and Delete removes it. The list's
   filter menu shows unlabelled instances and narrows them by kind; Rename… labels the selection
   and clears the label, undoably, and a click outside its dialog closes it, keeping the selection.
+  The selected actor's inherited aspect is overridden, undoably, keeping the selection.
 - Markers: a marker fixture shows its pin and its area, faint, outlined on hover, and bright when
   selected.
 
@@ -620,6 +621,24 @@ def select_instance(driver):
         driver.expect("InstanceLabel", TEXT, "plan-guard")
         undo(driver)
         driver.expect("Toast/ToastText", TEXT, "Undo: Label plan-guard")
+        save(driver)
+
+        # The actor's pane shows the aspects it inherits; the pencil overrides CollisionSize,
+        # copying it into the actor's entry, which marks the precinct unsaved and spawns the
+        # actor again, still selected. Undo puts the inherited one back.
+        expect_disabled(driver, "Save", True)
+        driver.click("Properties/CollisionSize/header/override")
+        driver.present("Properties/CollisionSize/header/remove", timeout=WAIT)
+        expect_disabled(driver, "Save", False)
+        driver.screenshot("instance_override")
+        driver.wait(
+            lambda: (selected()["instance"] is not None, lambda: str(selected())),
+            "the overridden actor selected again",
+            {"seconds": 5},
+        )
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Override Marcus.CollisionSize")
+        driver.present("Properties/CollisionSize/header/override", timeout=WAIT)
 
         save(driver)
     finally:

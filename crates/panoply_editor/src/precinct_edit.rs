@@ -23,6 +23,13 @@ use crate::{
 #[derive(Resource, Default)]
 pub(crate) struct EditedPrecincts(HashSet<Handle<PrecinctAsset>>);
 
+impl EditedPrecincts {
+    /// Keeps the precinct `handle` loaded, as one edited.
+    pub(crate) fn hold(&mut self, handle: Handle<PrecinctAsset>) {
+        self.0.insert(handle);
+    }
+}
+
 pub struct PrecinctEditPlugin;
 
 impl Plugin for PrecinctEditPlugin {

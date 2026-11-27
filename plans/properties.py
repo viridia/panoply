@@ -11,7 +11,9 @@ catalog entries a floor or terrain effect edits, each saved and restored.
 - Exemplars: the chosen actor's properties show below the list, its own pane, then one per aspect.
   A number typed there changes it, undoably, its drag rounded, and a color shows in its swatch.
   Save writes that one line into its catalog, the reload brings the edit back, and the undone edit
-  saved leaves the file as it was. An aspect's required aspects that the exemplar lacks follow it.
+  saved leaves the file as it was. Inherited aspects show dim, and an aspect's required aspects
+  that the exemplar lacks follow it; + adds one, the pencil overrides an inherited one, and ×
+  reverts it.
 
 The other fields' edits, and the lines each saves, are checked by `cargo test`
 (`properties/edit.rs`, `panoply_exemplar`'s `save.rs`). Settings start empty, so the panel starts
@@ -44,6 +46,7 @@ DRIVER = PanoplyDriver
 TAGS = ["editor"]
 PRECISION = "bevy_feathers::controls::number_input::NumberInputPrecision"
 SWATCH = "bevy_feathers::controls::color_swatch::ColorSwatchValue"
+SCROLL = "bevy_ui::ui_node::ScrollPosition"
 CHARACTERS = ASSETS / "exemplars" / "characters.exem.json"
 FLOORS = ASSETS / "catalog" / "floors.floor.json"
 TERRAIN_EFFECTS = ASSETS / "catalog" / "terrain-effects.terrainfx.json"
@@ -195,13 +198,36 @@ def exemplar_properties(driver):
         restore(CHARACTERS, original)
     driver.click("Exemplars/ClearFilter")
 
-    # After an aspect, the aspects it requires that the exemplar lacks, at their defaults: the
-    # skirmisher's `Combatant` requires `Health`. Checked by eye in `required_aspect.png`: Health,
-    # with no ×, after Combatant.
+    # The skirmisher's panes: those it inherits, Skin among them, dim and collapsed; after an
+    # aspect, those it requires that the exemplar lacks, each a header with a +: `Combatant`
+    # requires `Health`. Checked by eye in `aspect_panes.png`. + adds Health, and undo takes it
+    # out; the pencil overrides Skin, and × reverts it. Saved, the catalog is as it was.
     driver.click("Exemplars/Filter")
     driver.type("CrimsonWatchSkirmisher")
-    driver.click("Exemplars/CrimsonWatchSkirmisher")
+    row = "Exemplars/CrimsonWatchSkirmisher"
+    driver.click(row)
     expect_choice(driver, "actor", "CrimsonWatchSkirmisher")
-    driver.expect("Properties/Health/placeholder", TEXT, "Required by Combatant")
-    driver.screenshot("required_aspect")
+    driver.present("Properties/Health/header/add")
+    driver.present("Properties/Skin/header/override")
+    # Scrolled to the end, which layout clamps to, where the missing Health follows Combatant.
+    driver.set("Properties/Rows", SCROLL, [0.0, 10000.0])
+    driver.frames(2)
+    driver.screenshot("aspect_panes")
+    original = CHARACTERS.read_bytes()
+    try:
+        driver.click("Properties/Health/header/add")
+        driver.present("Properties/Health/header/remove", timeout=WAIT)
+        driver.click(row)
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, "Undo: Add CrimsonWatchSkirmisher.Health")
+        driver.present("Properties/Health/header/add", timeout=WAIT)
+        driver.click("Properties/Skin/header/override")
+        driver.present("Properties/Skin/header/remove", timeout=WAIT)
+        driver.screenshot("aspect_overridden")
+        driver.click("Properties/Skin/header/remove")
+        driver.present("Properties/Skin/header/override", timeout=WAIT)
+        save(driver)
+        assert CHARACTERS.read_bytes() == original, "an undone add and a revert changed the catalog"
+    finally:
+        restore(CHARACTERS, original)
     driver.click("Exemplars/ClearFilter")

@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D128.**
+**Next: D129.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -578,7 +578,7 @@ never reused.
   omits defaults and writes `extends` relative to itself. What they never held is in neither
   serialization, so it survives, and a save's diff shows only the edit. Reversing it means saving
   the model and losing all of that, or a model that keeps every unknown. Creating an exemplar
-  (PAN28e) needs an insert path beside the merge. (PAN28b)
+  (PAN28g) needs an insert path beside the merge. (PAN28b)
 - **D74** A stateful aspect is its authored state, serialized in the exemplar or the authored
   instance; the state play changes is a separate component the aspect inserts, saved in the save
   game, and left out when it equals the authored state ([save-games.md](save-games.md), Chunk
@@ -1129,3 +1129,14 @@ never reused.
   since observers on one entity run in no set order, and interception needs order. Reversing it
   means scripts writing native components directly, with nowhere for an interceptor to stand.
   (PAN111a)
+- **D128** Overriding an inherited aspect is explicit: its pane shows its fields disabled until its
+  pencil copies it into the root's own aspects, since an override replaces the whole aspect
+  ([Exemplars.md](Exemplars.md)), and an edit that overrode it implicitly would freeze every other
+  field against the exemplar unseen. An exemplar's panes and an instance's are the same, each
+  against its chain, in the chain's order from its farthest exemplar, an override keeping its
+  inherited place, so the pencil and × never move a pane. An instance's root is named by its
+  precinct and its place in the precinct's list, not by its id, since a save renumbers internal ids
+  as the precinct reloads (D87), while file order holds and an undo meets the lists as its edit left
+  them. Given up: field-by-field inheritance's implicit override, as Blender's library overrides
+  have, which waits on X99. Reversing it means every field of an inherited aspect live, and an
+  aspect copied on its first edit. (PAN28e)

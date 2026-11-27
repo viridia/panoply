@@ -33,7 +33,10 @@ const PIN_ANCHOR: Vec2 = Vec2::new(0.5, -0.1);
 const PIN_SHADE: f32 = 0.2;
 
 /// A path's points, faint and bright.
-const POINT_COLORS: [Srgba; 2] = [Srgba::rgb(0.133, 0.667, 0.133), Srgba::rgb(0.533, 1., 0.267)];
+const POINT_COLORS: [Srgba; 2] = [
+    Srgba::rgb(0.133, 0.667, 0.133),
+    Srgba::rgb(0.533, 1., 0.267),
+];
 
 /// An area's outline's opacity, faint and bright.
 const OUTLINE_ALPHA: [f32; 2] = [0.2, 1.];
@@ -198,9 +201,7 @@ fn sync_marker_overlays(
     mut commands: Commands,
 ) {
     for entity in &unmarked {
-        commands
-            .entity(entity)
-            .despawn_related::<MarkerOverlays>();
+        commands.entity(entity).despawn_related::<MarkerOverlays>();
     }
     let detached: Vec<Entity> = removed_areas.read().chain(removed_paths.read()).collect();
     for (entity, pin, area, path, transform, layers, drawn) in &markers {
@@ -212,9 +213,7 @@ fn sync_marker_overlays(
             continue;
         }
         if drawn {
-            commands
-                .entity(entity)
-                .despawn_related::<MarkerOverlays>();
+            commands.entity(entity).despawn_related::<MarkerOverlays>();
         }
         let bright = selection.instance == Some(entity);
         let color: Color = pin.color.0.into();

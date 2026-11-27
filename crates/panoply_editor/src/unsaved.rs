@@ -153,7 +153,7 @@ impl SaveableAsset for PrecinctAsset {
     }
 
     /// Gives a key to each instance with a reason for one, and takes it from each with none left
-    /// (D87). While the watcher runs, the asset changes without an event, so that the reload, not
+    /// (D87): for scenery, state, from its exemplar or an aspect of its own (D88). While the watcher runs, the asset changes without an event, so that the reload, not
     /// this, ends the save's wait, and brings the keys to the precinct's entities.
     fn prepare(id: AssetId<Self>, world: &mut World) {
         let Some(precinct) = world.resource::<Assets<PrecinctAsset>>().get(id) else {
@@ -179,7 +179,9 @@ impl SaveableAsset for PrecinctAsset {
         let Some(precinct) = precinct else {
             return;
         };
-        let (given, taken) = precinct.update_keys(|index| has_state[index]);
+        let (given, taken) = precinct.update_keys(|index, aspects| {
+            has_state[index] || aspects.0.iter().any(|aspect| aspect.has_state())
+        });
         if given + taken > 0 {
             info!("Gave {given} instances keys, and took {taken} keys");
         }

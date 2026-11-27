@@ -270,6 +270,19 @@ impl InstanceAspects {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Whether `other` holds the same aspects, in the same order, with the same values: the same
+    /// definition, or an equal one, as a reload reads anew.
+    pub fn same_as(&self, other: &InstanceAspects) -> bool {
+        self.0.len() == other.0.len()
+            && self.0.iter().zip(&other.0).all(|(a, b)| {
+                Arc::ptr_eq(a, b)
+                    || (a.key() == b.key()
+                        && a.as_partial_reflect()
+                            .reflect_partial_eq(b.as_partial_reflect())
+                            == Some(true))
+            })
+    }
 }
 
 impl Debug for InstanceAspects {

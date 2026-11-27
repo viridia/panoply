@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X152.**
+**Next: X153.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -143,7 +143,7 @@ dropped, not deferred. Numbers are never reused.
   Catalogs already keep them, since a save merges edits into the file (D73). faery's data does not
   need it: the precinct converter's merge restores what a save drops (X69). *Gate:* the first mod or
   optional module whose aspects sit on instances, or the first scripted aspect on an instance
-  (X138), whose module may be missing or fail to compile (D108).
+  (PAN135), whose module may be missing or fail to compile (D108).
 - **X21** A show set for precincts like D20 (scenery taller than D20's 4 m allowance also needs its
   own). *Gate:* scenery restored; take it when it is needed.
 - **X22** A loading state: a game state (Bevy `States`) that holds until the scenery around the
@@ -646,10 +646,6 @@ dropped, not deferred. Numbers are never reused.
   Values), for value types without a `FromSlots` or `ToSlots` impl: slots to a dynamic struct and
   `FromReflect`, and a reflection walk the other way. *Gate:* a native that takes or returns such a
   type.
-- **X138** Scripted aspects on instances, in precincts and actor instances: their loaders pass no
-  scripted aspects to `AspectListDeserializer`, so one there is skipped, with a warning. A precinct
-  would load the modules its scripted aspects name, as a catalog does. *Gate:* the first scripted
-  aspect set on an instance, as PAN79a's `SignalInput` is.
 - **X139** The accessor index, as D117 decides it and [saga.md](saga.md)'s Aspects has it, so that a
   formula reads a scripted aspect its catalog file does not name, as a derived exemplar in another
   catalog, a quest or a dialogue would. *Gate:* the first such formula.
@@ -737,3 +733,8 @@ dropped, not deferred. Numbers are never reused.
   marker whose facing is data, as `ivy.counter`'s is (which way Ivy faces behind her counter). faery
   drew an arrow on any marker with `showOrientation`; PAN102 drops it, since an area and a path
   ignore their facing. *Gate:* something reads a marker's facing.
+- **X152** Tooltips on the property editor's aspect panes: an inherited aspect's naming the exemplar
+  it comes from, the × saying whether it reverts an override or removes an aspect, and a missing
+  aspect's warning naming why it cannot attach at its defaults (D121), as the field with no default.
+  The panes show the styles alone until then. *Gate:* tooltips in Bevy's editor widgets (the
+  author's ticket upstream; jackdaw has them).

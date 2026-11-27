@@ -68,6 +68,27 @@ impl Exemplar {
         Ok(result)
     }
 
+    /// `exemplar` and those it extends, nearest first, each with its id, as far as they are
+    /// loaded. A cycle ends the chain where it would repeat.
+    pub fn chain(
+        exemplars: &Assets<Exemplar>,
+        exemplar: AssetId<Exemplar>,
+    ) -> Vec<(AssetId<Exemplar>, &ExemplarData)> {
+        let mut chain: Vec<(AssetId<Exemplar>, &ExemplarData)> = Vec::new();
+        let mut next = Some(exemplar);
+        while let Some(id) = next {
+            if chain.iter().any(|(seen, _)| *seen == id) {
+                break;
+            }
+            let Some(data) = exemplars.get(id) else {
+                break;
+            };
+            chain.push((id, &data.0));
+            next = data.0.extends.as_ref().map(Handle::id);
+        }
+        chain
+    }
+
     /// Whether `id` is `exemplar` or along its inheritance chain.
     pub fn chain_contains(
         exemplars: &Assets<Exemplar>,
@@ -253,5 +274,38 @@ mod tests {
             child.id(),
             other.id()
         ));
+    }
+
+    /// A chain runs from the exemplar to its farthest ancestor, and stops where a cycle repeats.
+    #[test]
+    fn a_chain_is_nearest_first_and_ends_at_a_cycle() {
+        let mut exemplars = Assets::<Exemplar>::default();
+        let base = exemplars.add(Exemplar(Arc::new(data(1., None))));
+        let child = exemplars.add(Exemplar(Arc::new(data(2., Some(base.clone())))));
+        let heights = |exemplars: &Assets<Exemplar>, id| -> Vec<f32> {
+            Exemplar::chain(exemplars, id)
+                .iter()
+                .map(|(id, _)| height(exemplars, *id))
+                .collect()
+        };
+        assert_eq!(heights(&exemplars, child.id()), [2., 1.]);
+        Exemplar::edit(&mut exemplars, base.id(), |data| {
+            data.extends = Some(child.clone());
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(heights(&exemplars, child.id()), [2., 1.]);
+    }
+
+    /// Instance aspects are the same when they hold the same definitions, or equal ones, in the
+    /// same order.
+    #[test]
+    fn instance_aspects_compare_by_value() {
+        let shared: Arc<dyn crate::Aspect> = Arc::new(Height(1.));
+        let a = crate::InstanceAspects(vec![shared.clone()]);
+        assert!(a.same_as(&crate::InstanceAspects(vec![shared])));
+        assert!(a.same_as(&crate::InstanceAspects(vec![Arc::new(Height(1.))])));
+        assert!(!a.same_as(&crate::InstanceAspects(vec![Arc::new(Height(2.))])));
+        assert!(!a.same_as(&crate::InstanceAspects::default()));
     }
 }

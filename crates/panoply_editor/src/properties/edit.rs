@@ -17,8 +17,10 @@ use bevy::{
     reflect::{map::Map, Access, ParsedPath, ReflectMut, ReflectPath, TypeRegistry},
 };
 use panoply_exemplar::{
-    annotations::ReflectPropertyMapKeys, aspect_mut, new_aspect, Aspect, Exemplar, ScriptedAspect,
+    annotations::ReflectPropertyMapKeys, aspect_mut, new_aspect, Aspect, Exemplar, ReflectAspect,
+    ScriptedAspect,
 };
+use panoply_saga::scripted::AspectDecl;
 
 use crate::{
     mode_selector::EditorModeSettings,
@@ -62,9 +64,9 @@ fn then(path: &ParsedPath, access: Access<'static>) -> ParsedPath {
     path
 }
 
-/// Where an inspected value lives: an aspect of an exemplar, the exemplar itself, and later an
-/// instance or a nav point. Each type is registered, so that what else it can do is found by a
-/// cast (see the module's documentation).
+/// Where an inspected value lives: an exemplar, an instance, or an aspect of either, and later a
+/// nav point. Each type is registered, so that what else it can do is found by a cast (see the
+/// module's documentation).
 pub trait PropertyRoot: Reflect {
     /// The value's name in the panel and in the undo history, as "SceneryColliders".
     fn caption(&self) -> String;
@@ -81,11 +83,6 @@ pub trait PropertyRoot: Reflect {
     /// A copy of the value, or `None` if it is gone.
     fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>>;
 
-    /// A line its pane shows before its rows, saying where the value comes from.
-    fn note(&self) -> Option<String> {
-        None
-    }
-
     /// Lends the value to `change`, keeping what it does unless it fails, and marks where the
     /// value is kept as unsaved.
     fn modify(
@@ -95,7 +92,7 @@ pub trait PropertyRoot: Reflect {
     ) -> Result<(), BevyError>;
 }
 
-/// A root that holds aspects, which can be added and removed: an exemplar.
+/// A root that holds aspects, which can be added and removed: an exemplar or an instance.
 #[reflect_trait]
 pub trait AspectHolder {
     /// Lends the aspects to `change`, keeping what it does unless it fails, and marks where they
@@ -136,6 +133,10 @@ pub enum EditKind {
     RenameKey,
     /// Aspects added to and taken from an [`AspectHolder`] root.
     Aspects,
+    /// An inherited aspect copied into an [`AspectHolder`] root's own, to be edited there.
+    Override,
+    /// An [`AspectHolder`] root's own aspect taken out, so the inherited one shows through.
+    Revert,
 }
 
 impl EditKind {
@@ -152,6 +153,8 @@ impl EditKind {
             EditKind::RemoveEntry => format!("Remove {field} entry"),
             EditKind::RenameKey => format!("Rename {field} entry"),
             EditKind::Aspects => format!("Change {field}.aspects"),
+            EditKind::Override => format!("Override {field}"),
+            EditKind::Revert => format!("Revert {field}"),
         }
     }
 
@@ -163,7 +166,7 @@ impl EditKind {
             EditKind::AddItem(index) => EditOp::Insert(index, value?),
             EditKind::RemoveItem(index) => EditOp::Delete(index),
             EditKind::AddEntry | EditKind::RemoveEntry | EditKind::RenameKey => return None,
-            EditKind::Aspects => return None,
+            EditKind::Aspects | EditKind::Override | EditKind::Revert => return None,
         })
     }
 }
@@ -299,13 +302,6 @@ impl EditOp {
         path: &ParsedPath,
     ) -> Result<EditOp, BevyError> {
         let mut undo = None;
-        // A required aspect the exemplar lacks is added by its first edit.
-        let required = root.as_any().downcast_ref::<RequiredAspect>();
-        if let Some(required) = required.filter(|required| {
-            !matches!(self, EditOp::Aspects { .. }) && required.held(world).is_none()
-        }) {
-            return required.add_with(world, self, path);
-        }
         if let EditOp::Aspects { add, remove } = self {
             let registry = world.resource::<AppTypeRegistry>().clone();
             let registry = registry.read();
@@ -467,18 +463,29 @@ impl PropertyEdits {
         add: Vec<Arc<dyn Aspect>>,
         remove: Vec<String>,
     ) {
+        // Appended: an index past the end inserts at the end.
+        let add = add.into_iter().map(|aspect| (usize::MAX, aspect)).collect();
+        self.push_aspects(root, EditKind::Aspects, add, remove);
+    }
+
+    /// Asks for an aspects edit of `kind` (`Aspects`, `Override` or `Revert`) of `root`: the
+    /// aspects `add` put in at their indices, an index past the end appending, and those named
+    /// `remove` taken out, as one edit.
+    pub fn push_aspects(
+        &mut self,
+        root: &Arc<dyn PropertyRoot>,
+        kind: EditKind,
+        add: Vec<(usize, Arc<dyn Aspect>)>,
+        remove: Vec<String>,
+    ) {
         if add.is_empty() && remove.is_empty() {
             return;
         }
         self.0.push(PropertyEdit {
             root: root.clone(),
             path: ParsedPath::empty(),
-            kind: EditKind::Aspects,
-            // Appended: an index past the end inserts at the end.
-            op: EditOp::Aspects {
-                add: add.into_iter().map(|aspect| (usize::MAX, aspect)).collect(),
-                remove,
-            },
+            kind,
+            op: EditOp::Aspects { add, remove },
         });
     }
 }
@@ -527,15 +534,24 @@ struct PropertyAction {
 /// "Add SceneryColliders item 2", the path's field names, leaving out the steps into an `Option`,
 /// a newtype or a list, which the panel does not show either, and naming a map's entries by key:
 /// "Set Colors.Hair". An aspects edit that adds or removes one aspect names it: "Remove
-/// Marcus.Skin". A map edit names its key, or "entry" while the key is empty: "Remove
-/// Colors.Hair", "Rename Colors entry to Hair".
+/// Marcus.Skin", "Override Marcus.Skin", "Revert Marcus.Skin". A map edit names its key, or
+/// "entry" while the key is empty: "Remove Colors.Hair", "Rename Colors entry to Hair".
 fn edit_label(root: &dyn PropertyRoot, path: &ParsedPath, kind: EditKind, op: &EditOp) -> String {
     let mut field = root.caption();
     if let EditOp::Aspects { add, remove } = op {
-        match (add.as_slice(), remove.as_slice()) {
-            ([(_, aspect)], []) => return format!("Add {field}.{}", aspect_name(aspect.key())),
-            ([], [key]) => return format!("Remove {field}.{}", aspect_name(key)),
-            _ => {}
+        let key = match (add.as_slice(), remove.as_slice()) {
+            ([(_, aspect)], []) => Some(aspect.key()),
+            ([], [key]) => Some(key.as_str()),
+            _ => None,
+        };
+        if let Some(key) = key {
+            let verb = match (kind, add.is_empty()) {
+                (EditKind::Override, _) => "Override",
+                (EditKind::Revert, _) => "Revert",
+                (_, false) => "Add",
+                (_, true) => "Remove",
+            };
+            return format!("{verb} {field}.{}", aspect_name(key));
         }
     }
     for step in &path.0 {
@@ -687,12 +703,82 @@ pub fn aspect_name(key: &str) -> &str {
     key.rsplit_once("::").map_or(key, |(_, name)| name)
 }
 
-/// An aspect of an exemplar, named by the exemplar's asset path and the aspect's key.
+/// What an aspect's pane is, as the panel draws it.
+#[derive(Clone, Debug, PartialEq)]
+pub enum PaneRole {
+    /// One of the root's own aspects, which × takes out: where it `overrides` an inherited
+    /// aspect, that one shows again.
+    Own { overrides: bool },
+    /// Inherited along the root's exemplar chain, shown but not edited, until overridden, where
+    /// `overridable`.
+    Inherited { overridable: bool },
+    /// Required by one of the root's aspects, and missing from its resolved aspects: + adds it at
+    /// its defaults, at `index` in the root's own aspects, where `addable`. On an instance,
+    /// `blocked` says why it cannot attach at its defaults, which keeps the aspect requiring it
+    /// from attaching (D121).
+    Missing {
+        index: usize,
+        blocked: Option<String>,
+        addable: bool,
+    },
+}
+
+/// A root that is the pane of one aspect, of a root that holds aspects.
+#[reflect_trait]
+pub trait AspectPane {
+    /// The aspect's key.
+    fn aspect_key(&self) -> &str;
+
+    /// What the pane is.
+    fn role(&self) -> PaneRole;
+}
+
+/// The key of the aspect whose pane `root` is, and what the pane is; `None` for another root.
+pub fn pane_role(registry: &TypeRegistry, root: &dyn PropertyRoot) -> Option<(String, PaneRole)> {
+    let root: &dyn Reflect = root;
+    let pane = registry
+        .get_type_data::<ReflectAspectPane>(Any::type_id(root))?
+        .get(root)?;
+    Some((pane.aspect_key().to_string(), pane.role()))
+}
+
+/// A copy of the aspect `key` of the exemplar at `exemplar`, its own.
+fn read_exemplar_aspect(
+    world: &World,
+    exemplar: &AssetPath,
+    key: &str,
+) -> Option<Box<dyn PartialReflect>> {
+    let exemplar = world
+        .resource::<Assets<Exemplar>>()
+        .get(exemplar_id(world, exemplar)?)?;
+    let aspect = exemplar
+        .0
+        .aspects
+        .iter()
+        .find(|aspect| aspect.key() == key)?;
+    Some(aspect.clone_boxed().into_partial_reflect())
+}
+
+/// An aspect of an exemplar, its own, named by the exemplar's asset path and the aspect's key.
 #[derive(Debug, Clone, PartialEq, Reflect)]
-#[reflect(ExemplarPart)]
+#[reflect(ExemplarPart, AspectPane)]
 pub struct ExemplarAspect {
     pub exemplar: AssetPath<'static>,
     pub aspect: String,
+    /// Whether an exemplar it extends has the aspect too.
+    pub overrides: bool,
+}
+
+impl AspectPane for ExemplarAspect {
+    fn aspect_key(&self) -> &str {
+        &self.aspect
+    }
+
+    fn role(&self) -> PaneRole {
+        PaneRole::Own {
+            overrides: self.overrides,
+        }
+    }
 }
 
 impl PropertyRoot for ExemplarAspect {
@@ -707,15 +793,7 @@ impl PropertyRoot for ExemplarAspect {
     }
 
     fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>> {
-        let exemplar = world
-            .resource::<Assets<Exemplar>>()
-            .get(self.exemplar_id(world)?)?;
-        let aspect = exemplar
-            .0
-            .aspects
-            .iter()
-            .find(|aspect| aspect.key() == self.aspect)?;
-        Some(aspect.clone_boxed().into_partial_reflect())
+        read_exemplar_aspect(world, &self.exemplar, &self.aspect)
     }
 
     fn modify(
@@ -759,155 +837,131 @@ fn exemplar_id(world: &World, exemplar: &AssetPath) -> Option<AssetId<Exemplar>>
         .ok()
 }
 
-/// An aspect that one of an exemplar's own aspects requires and its chain lacks, which an
-/// instance gets at its defaults (D121), shown at those defaults after the aspect requiring it.
-/// The first edit of it adds it to the exemplar, whole, with the edit made: one step, which an
-/// undo takes back out.
+/// An aspect a root inherits, from `from`, the nearest exemplar along its chain that has it. It is
+/// shown and never edited: overriding copies it into the root's own aspects.
 #[derive(Debug, Clone, PartialEq, Reflect)]
-#[reflect(ExemplarPart, AspectHolder)]
-pub struct RequiredAspect {
-    pub exemplar: AssetPath<'static>,
+#[reflect(ExemplarPart, AspectPane)]
+pub struct InheritedAspect {
+    pub from: AssetPath<'static>,
     pub aspect: String,
-    /// The key of the exemplar's aspect that requires it.
-    pub required_by: String,
+    /// Whether the root may override it.
+    pub overridable: bool,
 }
 
-impl RequiredAspect {
-    /// The exemplar's own aspect of this key, once an edit has added it.
-    fn held(&self, world: &World) -> Option<Arc<dyn Aspect>> {
-        let exemplar = world
-            .resource::<Assets<Exemplar>>()
-            .get(self.exemplar_id(world)?)?;
-        let aspect = exemplar.0.aspects.iter().find(|a| a.key() == self.aspect)?;
-        Some(aspect.clone())
-    }
-
-    /// The aspect at its defaults, as an instance gets it.
-    fn at_defaults(&self, world: &World) -> Result<Arc<dyn Aspect>, BevyError> {
-        let exemplar = world
-            .resource::<Assets<Exemplar>>()
-            .get(
-                self.exemplar_id(world)
-                    .ok_or_else(|| format!("{} is not loaded", self.exemplar))?,
-            )
-            .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
-        let requirer = exemplar
-            .0
-            .aspects
-            .iter()
-            .find(|aspect| aspect.key() == self.required_by)
-            .ok_or_else(|| format!("{} has no {}", self.exemplar, self.required_by))?;
-        let registry = world.resource::<AppTypeRegistry>().read();
-        Ok(new_aspect(
-            &registry,
-            requirer.required_decls().iter(),
-            &self.aspect,
-        )?)
-    }
-
-    /// Adds the aspect, at its defaults with `op` made at `path`, after the aspect requiring it;
-    /// and returns the edit that takes it out.
-    fn add_with(
-        &self,
-        world: &mut World,
-        op: &EditOp,
-        path: &ParsedPath,
-    ) -> Result<EditOp, BevyError> {
-        let aspect = self.at_defaults(world)?;
-        add_edited(world, self, aspect.as_ref(), &self.required_by, op, path)
-    }
-}
-
-/// Adds `aspect` to `holder`'s aspects, with `op` made at `path`, after the aspect `after` (or
-/// last, without it); and returns the edit that takes it out.
-fn add_edited(
-    world: &mut World,
-    holder: &dyn AspectHolder,
-    aspect: &dyn Aspect,
-    after: &str,
-    op: &EditOp,
-    path: &ParsedPath,
-) -> Result<EditOp, BevyError> {
-    let mut aspect = aspect.clone_boxed();
-    op.apply(aspect.as_partial_reflect_mut(), path)?;
-    let aspect: Arc<dyn Aspect> = Arc::from(aspect);
-    let mut undo = None;
-    holder.modify_aspects(world, &mut |aspects| {
-        let index = aspects
-            .iter()
-            .position(|had| had.key() == after)
-            .map_or(aspects.len(), |index| index + 1);
-        undo = Some(EditOp::apply_aspects(
-            aspects,
-            &[(index, aspect.clone())],
-            &[],
-        )?);
-        Ok(())
-    })?;
-    undo.ok_or_else(|| "the edit was not made".into())
-}
-
-impl PropertyRoot for RequiredAspect {
+impl PropertyRoot for InheritedAspect {
     fn caption(&self) -> String {
         aspect_name(&self.aspect).to_string()
     }
 
-    /// Apart from the key of the aspect once added, so the panel shows that in its place.
+    /// Apart from the key of the exemplar's own aspect, so overriding or reverting it gives the
+    /// pane anew.
     fn key(&self) -> String {
-        format!("{} {} required", self.exemplar, self.aspect)
+        format!("{} {} inherited", self.from, self.aspect)
     }
 
     fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>> {
-        let aspect = match self.held(world) {
-            Some(aspect) => aspect,
-            None => self.at_defaults(world).ok()?,
-        };
+        read_exemplar_aspect(world, &self.from, &self.aspect)
+    }
+
+    fn modify(
+        &self,
+        _world: &mut World,
+        _change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+    ) -> Result<(), BevyError> {
+        Err(format!("{} is inherited from {}", self.aspect, self.from).into())
+    }
+}
+
+impl ExemplarPart for InheritedAspect {
+    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
+        exemplar_id(world, &self.from)
+    }
+}
+
+impl AspectPane for InheritedAspect {
+    fn aspect_key(&self) -> &str {
+        &self.aspect
+    }
+
+    fn role(&self) -> PaneRole {
+        PaneRole::Inherited {
+            overridable: self.overridable,
+        }
+    }
+}
+
+/// The modules' declarations an aspect requiring another finds it in, by key
+/// ([`Aspect::required_decls`]).
+#[derive(Clone, Default)]
+pub struct RequiredDecls(pub Vec<Arc<AspectDecl>>);
+
+/// An aspect one of a root's aspects requires and its resolved aspects lack (D121). Its pane is a
+/// header alone; its value, the aspect at its defaults, gives the pane's icon, and is what + adds.
+#[derive(Clone, Reflect)]
+#[reflect(AspectPane)]
+pub struct MissingAspect {
+    /// The key of the root that lacks it.
+    pub holder: String,
+    pub aspect: String,
+    /// Where + puts it in the root's own aspects.
+    pub index: usize,
+    /// On an instance, why it cannot attach at its defaults.
+    pub blocked: Option<String>,
+    /// Whether the root may have it as its own.
+    pub addable: bool,
+    #[reflect(ignore)]
+    pub decls: RequiredDecls,
+}
+
+impl PropertyRoot for MissingAspect {
+    fn caption(&self) -> String {
+        aspect_name(&self.aspect).to_string()
+    }
+
+    fn key(&self) -> String {
+        format!("{} {} missing", self.holder, self.aspect)
+    }
+
+    fn read(&self, world: &World) -> Option<Box<dyn PartialReflect>> {
+        let registry = world.resource::<AppTypeRegistry>().read();
+        let aspect = new_aspect(&registry, self.decls.0.iter(), &self.aspect).ok()?;
         Some(aspect.clone_boxed().into_partial_reflect())
     }
 
-    fn note(&self) -> Option<String> {
-        Some(format!("Required by {}", aspect_name(&self.required_by)))
-    }
-
-    /// Edits the aspect once added; until then, [`EditOp::apply_to`] adds it with the edit.
     fn modify(
         &self,
-        world: &mut World,
-        change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
+        _world: &mut World,
+        _change: &mut dyn FnMut(&mut dyn PartialReflect) -> Result<(), BevyError>,
     ) -> Result<(), BevyError> {
-        ExemplarAspect {
-            exemplar: self.exemplar.clone(),
-            aspect: self.aspect.clone(),
+        Err(format!("{} is missing", self.aspect).into())
+    }
+}
+
+impl AspectPane for MissingAspect {
+    fn aspect_key(&self) -> &str {
+        &self.aspect
+    }
+
+    fn role(&self) -> PaneRole {
+        PaneRole::Missing {
+            index: self.index,
+            blocked: self.blocked.clone(),
+            addable: self.addable,
         }
-        .modify(world, change)
     }
 }
 
-impl AspectHolder for RequiredAspect {
-    fn modify_aspects(
-        &self,
-        world: &mut World,
-        change: &mut dyn FnMut(&mut Vec<Arc<dyn Aspect>>) -> Result<(), BevyError>,
-    ) -> Result<(), BevyError> {
-        let id = self
-            .exemplar_id(world)
-            .ok_or_else(|| format!("{} is not loaded", self.exemplar))?;
-        let catalog = world
-            .resource::<AssetServer>()
-            .get_path_id(self.exemplar.without_label())
-            .ok_or_else(|| format!("{} has no catalog", self.exemplar))?;
-        world.resource_scope(|_, mut exemplars: Mut<Assets<Exemplar>>| {
-            Exemplar::edit(&mut exemplars, id, |data| change(&mut data.aspects))
-        })?;
-        world.resource_mut::<UnsavedAssets>().mark(catalog);
-        Ok(())
+/// `value`, an aspect's copy as the panel shows it, as an aspect to add to a root.
+pub fn as_aspect(registry: &TypeRegistry, value: &dyn PartialReflect) -> Option<Arc<dyn Aspect>> {
+    // A scripted aspect is one type, never registered as an aspect.
+    if let Some(aspect) = value.try_downcast_ref::<ScriptedAspect>() {
+        return Some(Arc::from(aspect.clone_boxed()));
     }
-}
-
-impl ExemplarPart for RequiredAspect {
-    fn exemplar_id(&self, world: &World) -> Option<AssetId<Exemplar>> {
-        exemplar_id(world, &self.exemplar)
-    }
+    let value = value.try_as_reflect()?;
+    let aspect = registry
+        .get_type_data::<ReflectAspect>(value.reflect_type_info().type_id())?
+        .get(value)?;
+    Some(Arc::from(aspect.clone_boxed()))
 }
 
 #[cfg(test)]
@@ -1520,57 +1574,64 @@ mod tests {
         let root = ExemplarAspect {
             exemplar: "exemplars/walls.exem.json#Switch".into(),
             aspect: "scripts::toggle_switch::ToggleSwitch".into(),
+            overrides: false,
         };
         assert_eq!(root.caption(), "ToggleSwitch");
         assert_eq!(aspect_name("Wings"), "Wings");
     }
 
-    /// A required aspect's first edit adds it after its requirer, edited, and one undo takes it
-    /// back out; redo puts it back as edited.
+    /// An override and a revert are aspects edits named for what they do, and undo as any other;
+    /// an aspect added at an index goes there.
     #[test]
-    fn an_edited_required_aspect_is_added_after_its_requirer() {
+    fn overrides_reverts_and_adds_at_an_index() {
         let mut world = aspects_world();
-        let op = EditOp::Write(Box::new(3.0f32));
-        let undo = add_edited(
-            &mut world,
-            &AspectsRoot,
-            &Wings(1.),
-            "Horns",
-            &op,
-            &path(".0"),
-        );
-        // Wings is held already, so the add is refused, and nothing changes.
-        assert!(undo.is_err());
-
         world.resource_mut::<HeldAspects>().0.remove(0);
-        let undo = add_edited(
+        let root: Arc<dyn PropertyRoot> = Arc::new(AspectsRoot);
+        let push =
+            |world: &mut World, kind, add: Vec<(usize, Arc<dyn Aspect>)>, remove: &[&str]| {
+                let remove = remove.iter().map(|name| name.to_string()).collect();
+                world
+                    .resource_mut::<PropertyEdits>()
+                    .push_aspects(&root, kind, add, remove);
+                apply_property_edits(world);
+            };
+        push(
             &mut world,
-            &AspectsRoot,
-            &Wings(1.),
-            "Horns",
-            &op,
-            &path(".0"),
+            EditKind::Override,
+            vec![(usize::MAX, Arc::new(Wings(1.)))],
+            &[],
+        );
+        assert_eq!(held_aspects(&world), ["Horns", "Tail", "Wings"]);
+        assert_eq!(last_label(&world), "Override Marcus.Wings");
+        push(&mut world, EditKind::Revert, Vec::new(), &["Wings"]);
+        assert_eq!(held_aspects(&world), ["Horns", "Tail"]);
+        assert_eq!(last_label(&world), "Revert Marcus.Wings");
+        undo(&mut world);
+        assert_eq!(held_aspects(&world), ["Horns", "Tail", "Wings"]);
+
+        push(
+            &mut world,
+            EditKind::Aspects,
+            vec![(1, Arc::new(Wings(1.)))],
+            &["Wings"],
         );
         assert_eq!(held_aspects(&world), ["Horns", "Wings", "Tail"]);
-        let wings = |world: &World| {
-            let aspect = &world.resource::<HeldAspects>().0[1];
-            aspect
-                .as_partial_reflect()
-                .try_downcast_ref::<Wings>()
-                .unwrap()
-                .0
-        };
-        assert_eq!(wings(&world), 3.);
+    }
 
-        let redo = undo
-            .unwrap()
-            .apply_to(&AspectsRoot, &mut world, &ParsedPath::empty())
-            .unwrap();
-        assert_eq!(held_aspects(&world), ["Horns", "Tail"]);
-        redo.apply_to(&AspectsRoot, &mut world, &ParsedPath::empty())
-            .unwrap();
-        assert_eq!(held_aspects(&world), ["Horns", "Wings", "Tail"]);
-        assert_eq!(wings(&world), 3.);
+    /// An inherited aspect's pane is not edited: an edit of it is refused, and not in the history.
+    #[test]
+    fn an_inherited_aspect_refuses_an_edit() {
+        let mut world = aspects_world();
+        let root: Arc<dyn PropertyRoot> = Arc::new(InheritedAspect {
+            from: AssetPath::from("exemplars/characters.exem.json#Marcus"),
+            aspect: "Wings".into(),
+            overridable: true,
+        });
+        world
+            .resource_mut::<PropertyEdits>()
+            .set(&root, path(".0"), 3.0f32);
+        apply_property_edits(&mut world);
+        assert!(world.resource::<UndoStack>().latest_label().is_none());
     }
 
     #[test]

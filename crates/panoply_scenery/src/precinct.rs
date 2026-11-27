@@ -197,26 +197,31 @@ impl Precinct {
         children: Option<&Children>,
         asset: &PrecinctAsset,
         scenery_exemplars: &[Handle<Exemplar>],
-        q_scenery_elements: &mut Query<&mut SceneryElement>,
+        q_scenery_elements: &mut Query<(&mut SceneryElement, Option<&InstanceAspects>)>,
     ) {
         // Build a map of existing scenery elements that are children of this precinct.
         let mut existing = HashMap::<SceneryInstanceId, Entity>::with_capacity(128);
         for child in children.into_iter().flatten() {
-            if let Ok(scenery_element) = q_scenery_elements.get(*child) {
+            if let Ok((scenery_element, _)) = q_scenery_elements.get(*child) {
                 existing.insert(scenery_element.iid.clone(), *child);
             }
         }
 
         // Update each scenery instance whose id is still there in place, if its exemplar has not
-        // changed.
+        // changed: an edit of its own aspects attaches them again.
         let mut unmatched = Vec::new();
         for sid in asset.scenery.iter() {
             let facing = sid.facing * std::f32::consts::PI / 180.;
             let transform = Transform::from_translation(sid.position)
                 .with_rotation(Quat::from_rotation_y(facing));
             if let Some(se_ent) = existing.remove(&sid.iid) {
-                let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
+                let (mut scenery_element, aspects) = q_scenery_elements.get_mut(se_ent).unwrap();
                 if scenery_element.exemplar == scenery_exemplars[sid.id] {
+                    if !aspects.is_some_and(|aspects| aspects.same_as(&sid.aspects)) {
+                        commands
+                            .entity(se_ent)
+                            .insert((sid.aspects.clone(), SceneryElementRebuildAspects));
+                    }
                     if scenery_element.label != sid.label {
                         scenery_element.label.clone_from(&sid.label);
                     }
@@ -243,7 +248,7 @@ impl Precinct {
         // rather than being spawned again, which would empty the place while its models load.
         let mut alike = HashMap::<(AssetId<Exemplar>, [u32; 4]), Vec<Entity>>::new();
         for se_ent in existing.values() {
-            let element = q_scenery_elements.get(*se_ent).unwrap();
+            let (element, _) = q_scenery_elements.get(*se_ent).unwrap();
             alike
                 .entry(element_key(
                     element.exemplar.id(),
@@ -257,8 +262,13 @@ impl Precinct {
             let exemplar = &scenery_exemplars[sid.id];
             let key = element_key(exemplar.id(), sid.position, facing);
             if let Some(se_ent) = alike.get_mut(&key).and_then(Vec::pop) {
-                let mut scenery_element = q_scenery_elements.get_mut(se_ent).unwrap();
+                let (mut scenery_element, aspects) = q_scenery_elements.get_mut(se_ent).unwrap();
                 existing.remove(&scenery_element.iid);
+                if !aspects.is_some_and(|aspects| aspects.same_as(&sid.aspects)) {
+                    commands
+                        .entity(se_ent)
+                        .insert((sid.aspects.clone(), SceneryElementRebuildAspects));
+                }
                 // A save gives keys and takes them away (D87).
                 if scenery_element.iid.key() != sid.iid.key() {
                     match sid.iid.key() {
@@ -374,7 +384,7 @@ pub fn read_precinct_data(
     q_precincts: Query<(Entity, &Precinct, Option<&Children>), With<ReadPrecinctData>>,
     q_tiers: Query<(&PrecinctTier, Option<&Children>)>,
     mut q_floor_regions: Query<&mut FloorRegion>,
-    mut q_scenery_elements: Query<&mut SceneryElement>,
+    mut q_scenery_elements: Query<(&mut SceneryElement, Option<&InstanceAspects>)>,
     assets: Res<Assets<PrecinctAsset>>,
     mut catalogs: CatalogServer,
 ) {

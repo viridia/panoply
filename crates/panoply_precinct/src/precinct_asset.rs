@@ -61,13 +61,17 @@ impl PrecinctAsset {
 
     /// Gives a key to each instance with a reason for one that lacks it, and takes the key from
     /// each with no reason left (`docs/instances.md`, Ids). The reasons: being an actor, having a
-    /// label, or, for scenery, an exemplar with state, which `needs_key`, given the exemplar's
-    /// index in `scenery_types`, says. Returns how many keys were given and how many taken.
-    pub fn update_keys(&mut self, needs_key: impl Fn(usize) -> bool) -> (usize, usize) {
+    /// label, or, for scenery, state, from its exemplar or an aspect of its own (D88), which
+    /// `needs_key`, given the exemplar's index in `scenery_types` and the instance's own aspects,
+    /// says. Returns how many keys were given and how many taken.
+    pub fn update_keys(
+        &mut self,
+        needs_key: impl Fn(usize, &InstanceAspects) -> bool,
+    ) -> (usize, usize) {
         let mut next = self.next_scenery_id();
         let (mut given, mut taken) = (0, 0);
         for instance in &mut self.scenery {
-            let reason = instance.label.is_some() || needs_key(instance.id);
+            let reason = instance.label.is_some() || needs_key(instance.id, &instance.aspects);
             match (instance.iid.key(), reason) {
                 (None, true) => {
                     instance.iid = SceneryInstanceId::Keyed(InstanceKey::generate());
@@ -614,7 +618,7 @@ impl<'de> Visitor<'de> for CompressedInstanceVisitor<'_, '_> {
             load_context: self.load_context,
             formulas: self.formulas,
             label_prefix: self.parent_label,
-            // TODO(X138): scripted aspects on instances.
+            // TODO(PAN135): scripted aspects on instances.
             scripted: &[],
         })? {
             result.aspects = InstanceAspects(aspects);
@@ -863,9 +867,33 @@ mod tests {
     const WALL: &str = "exemplars/walls.exem.json#Wall";
     const GUARD: &str = "exemplars/characters.exem.json#Guard";
 
+    /// An aspect with state, which an instance may have as its own.
+    #[derive(Reflect, Clone, Default)]
+    struct Stash;
+
+    impl panoply_exemplar::NativeAspect for Stash {
+        type Config = ();
+
+        fn config(&self) {}
+
+        fn can_attach(&self, _kind: panoply_exemplar::InstanceKind) -> bool {
+            true
+        }
+
+        fn has_state(&self) -> bool {
+            true
+        }
+    }
+
+    /// Whether an instance needs a key, as the editor says: the chest's exemplar has state, and so
+    /// does a `Stash` of an instance's own.
+    fn needs_key(index: usize, aspects: &InstanceAspects) -> bool {
+        index == 0 || aspects.0.iter().any(|aspect| aspect.has_state())
+    }
+
     /// Keys go to the instances with a reason for one, and are taken from those with none left:
-    /// a chest, a labelled wall and an actor keep or gain keys, while a wall whose label was
-    /// cleared loses its own.
+    /// a chest, a labelled wall, a wall with a `Stash` of its own and an actor keep or gain keys,
+    /// while a wall whose label was cleared loses its own.
     #[test]
     fn keys_follow_their_reasons() {
         let mut precinct = PrecinctAsset {
@@ -879,19 +907,22 @@ mod tests {
         let labelled = precinct.set_label(&labelled, Some("gate")).unwrap();
         let cleared = precinct.set_label(&cleared, Some("door")).unwrap();
         precinct.set_label(&cleared, None).unwrap();
+        precinct.add_scenery_element(1, 0., Vec3::NEG_X, None);
+        precinct.scenery[4].aspects = InstanceAspects(vec![Arc::new(Stash)]);
         precinct.actors.push(ActorInstanceData {
             exemplar: GUARD.into(),
             ..default()
         });
 
-        assert_eq!(precinct.update_keys(|index| index == 0), (2, 1));
+        assert_eq!(precinct.update_keys(needs_key), (3, 1));
         let ids: Vec<_> = precinct.scenery.iter().map(|s| s.iid.clone()).collect();
         assert!(ids[0].key().is_some() && ids[0] != chest);
         assert_eq!(ids[1], plain);
         assert_eq!(ids[2], labelled);
         assert!(matches!(ids[3], SceneryInstanceId::Internal(_)));
+        assert!(ids[4].key().is_some());
         assert!(precinct.actors[0].iid.key().is_some());
-        assert_eq!(precinct.update_keys(|index| index == 0), (0, 0));
+        assert_eq!(precinct.update_keys(needs_key), (0, 0));
     }
 
     /// A label keeps the key it was given with, through a change and a clear; a label another

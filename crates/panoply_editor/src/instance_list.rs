@@ -2,26 +2,21 @@
 //! each by its label or else its exemplar and place, as faery's `SceneryInstanceChooser` listed its
 //! named ones; choosing one selects it, and a click in the view moves the list's selection to the
 //! instance clicked. A menu in the filter box narrows the list by kind and to the labelled. Below,
-//! a pane names the selected instance's kind and exemplar, and shows its label, which Rename… sets
-//! or clears.
+//! the property editor shows the selected instance (`scenery_properties`), its label set or cleared
+//! by the dialog Rename… opens here.
 
 use bevy::{
-    app::PropagateOver,
     ecs::system::SystemParam,
     feathers::{
-        constants::{fonts, size},
-        containers::{pane, pane_body, pane_header},
-        controls::{FeathersButton, FeathersCheckbox, FeathersMenu, FeathersMenuDivider},
-        theme::{ThemeTextColor, ThemedText},
-        tokens,
+        controls::{FeathersCheckbox, FeathersMenu, FeathersMenuDivider},
+        theme::ThemedText,
     },
     platform::collections::{HashMap, HashSet},
     prelude::*,
-    text::{FontSourceTemplate, FontStyle},
 };
 use bevy_immediate::{
     attach::{BevyImmediateAttachPlugin, ImmediateAttach},
-    ui::{activated::ImmUiActivated, checked::ImmUiChecked, text::ImmUiText, CapsUiFeathers},
+    ui::{checked::ImmUiChecked, CapsUiFeathers},
     Imm, ImmEntity,
 };
 use panoply_actors::{PlacedAs, PrecinctActors};
@@ -37,8 +32,7 @@ use crate::{
     instance_selection::ScenerySelection,
     mode_selector::SceneryTool,
     precinct_edit::PrecinctEdits,
-    properties::{caption_cell, right_aligned_popup, CapsPanel, CAPTION_WIDTH},
-    scenery_properties::header_text,
+    properties::right_aligned_popup,
     text_entry::{clearable_text_entry_dialog, TextEntered},
     wall_tool::wall_types,
 };
@@ -86,10 +80,6 @@ impl InstanceFilter {
     }
 }
 
-/// The immediate-mode root of the selected instance's pane.
-#[derive(Component, Default, Clone)]
-pub(crate) struct InstancePane;
-
 /// The label dialog, holding the instance it labels.
 #[derive(Component, Clone)]
 struct LabelInstance {
@@ -102,10 +92,10 @@ pub struct InstanceListPlugin;
 impl Plugin for InstanceListPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<InstanceFilter>()
-            .add_plugins((
-                BevyImmediateAttachPlugin::<CapsPanel, InstancePane>::new(),
-                BevyImmediateAttachPlugin::<CapsUiFeathers, InstanceFilterMenu>::new(),
-            ))
+            .add_plugins(BevyImmediateAttachPlugin::<
+                CapsUiFeathers,
+                InstanceFilterMenu,
+            >::new())
             .add_systems(
                 Update,
                 sync_instance_list.run_if(in_state(SceneryTool::SelectInstance)),
@@ -344,38 +334,15 @@ fn checkbox<'r, 'w, 's>(
 }
 
 #[derive(SystemParam)]
-pub(crate) struct InstancePaneParams<'w, 's> {
+pub(crate) struct LabelParams<'w, 's> {
     selection: Res<'w, ScenerySelection>,
-    tool: Option<Res<'w, State<SceneryTool>>>,
-    elements: Query<'w, 's, &'static SceneryElement>,
-    actors: Query<'w, 's, &'static PlacedAs>,
     precincts: Query<'w, 's, &'static Precinct>,
-    exemplars: Res<'w, Assets<Exemplar>>,
     assets: Res<'w, Assets<PrecinctAsset>>,
     server: Res<'w, AssetServer>,
     index: Res<'w, InstanceIndex>,
 }
 
-impl InstancePaneParams<'_, '_> {
-    /// The selected instance's kind and exemplar's label.
-    fn described(&self) -> Option<(&'static str, String)> {
-        let entity = self.selection.instance?;
-        if let Ok(element) = self.elements.get(entity) {
-            let kind = match self.exemplars.get(&element.exemplar) {
-                Some(exemplar) if exemplar.0.kind == Some(InstanceKind::Wall) => InstanceKind::Wall,
-                _ => InstanceKind::Fixture,
-            };
-            let path = self.server.get_path(&element.exemplar)?;
-            let label = path.label().unwrap_or_default().to_string();
-            return Some((kind.name(), label));
-        }
-        let actor = self.actors.get(entity).ok()?;
-        Some((
-            InstanceKind::Actor.name(),
-            label(actor.exemplar()).to_string(),
-        ))
-    }
-
+impl LabelParams<'_, '_> {
     /// The selected instance's label, if it has one.
     fn current_label(&self) -> Option<String> {
         let record = self.precincts.get(self.selection.precinct?).ok()?;
@@ -384,117 +351,25 @@ impl InstancePaneParams<'_, '_> {
     }
 }
 
-impl ImmediateAttach<CapsPanel> for InstancePane {
-    type Params = InstancePaneParams<'static, 'static>;
-
-    /// In selection mode, a pane for the selected instance: "Fixture: WoodenChest" in its header,
-    /// then its label, or "none" for an instance with no label, and Rename….
-    fn construct(ui: &mut Imm<CapsPanel>, params: &mut InstancePaneParams) {
-        let selecting = params
-            .tool
-            .as_ref()
-            .is_some_and(|tool| *tool.get() == SceneryTool::SelectInstance);
-        let Some((kind, name)) = selecting.then(|| params.described()).flatten() else {
-            return;
-        };
-        let kind = format!("{kind}:");
-        let current = params.current_label();
-        let labelled = current.is_some();
-        let shown = current.unwrap_or_else(|| "none".to_string());
-        ui.ch_id("pane")
-            .on_spawn_apply_scene(|| bsn! { @pane() Node { flex_grow: 1.0, min_height: px(0) } })
-            .add(|ui| {
-                ui.ch()
-                    .on_spawn_apply_scene(pane_header)
-                    .on_spawn_insert(|| Name::new("InstancePaneHeader"))
-                    .add(|ui| {
-                        ui.ch()
-                            .on_spawn_insert(|| Node {
-                                column_gap: px(4),
-                                align_items: AlignItems::Baseline,
-                                ..default()
-                            })
-                            .add(|ui| {
-                                ui.ch()
-                                    .on_spawn_apply_scene(|| {
-                                        header_text(fonts::REGULAR, FontWeight::NORMAL)
-                                    })
-                                    .on_hash_change_text_fn(&kind, || kind.clone());
-                                ui.ch()
-                                    .on_spawn_apply_scene(|| {
-                                        header_text(fonts::BOLD, FontWeight::BOLD)
-                                    })
-                                    .on_hash_change_text_fn(&name, || name.clone());
-                            });
-                    });
-                ui.ch().on_spawn_apply_scene(pane_body).add(|ui| {
-                    // As a property row: the caption in its column, then the value.
-                    ui.ch()
-                        .on_spawn_insert(|| Node {
-                            align_items: AlignItems::Center,
-                            ..default()
-                        })
-                        .add(|ui| {
-                            caption_cell(ui, "Label".to_string(), CAPTION_WIDTH);
-                            // An instance with no label shows "none", dim and italic, as a value
-                            // that is not there.
-                            let (key, style, color) = match labelled {
-                                true => ("label", FontStyle::Normal, tokens::TEXT_MAIN),
-                                false => ("none", FontStyle::Italic, tokens::TEXT_DIM),
-                            };
-                            ui.ch_id(key)
-                                .on_spawn_apply_scene(move || {
-                                    bsn! {
-                                        Text("")
-                                        TextFont {
-                                            font: FontSourceTemplate::Families(fonts::SANS),
-                                            font_size: size::MEDIUM_FONT,
-                                            style: style,
-                                        }
-                                        PropagateOver<TextFont>
-                                        TextLayout { linebreak: LineBreak::NoWrap }
-                                        ThemeTextColor(color)
-                                        Node { min_width: px(0), overflow: Overflow::clip_x() }
-                                    }
-                                })
-                                .on_spawn_insert(|| Name::new("InstanceLabel"))
-                                .on_hash_change_text_fn(&shown, || shown.clone());
-                            ui.ch().on_spawn_insert(|| Node {
-                                flex_grow: 1.0,
-                                ..default()
-                            });
-                            let rename = ui
-                                .ch_id("rename")
-                                .on_spawn_apply_scene(|| {
-                                    bsn! {
-                                        @FeathersButton {
-                                            @caption: bsn! { Text("Rename…") ThemedText },
-                                        }
-                                    }
-                                })
-                                .on_spawn_insert(|| Name::new("RenameInstance"))
-                                .activated();
-                            if let Some((taken, target)) =
-                                rename.then(|| label_target(params)).flatten()
-                            {
-                                let current = params.current_label().unwrap_or_default();
-                                ui.commands_mut()
-                                    .spawn_scene(clearable_text_entry_dialog(
-                                        "Rename", "Label", taken, current,
-                                    ))
-                                    .insert(target)
-                                    .observe(label_instance);
-                            }
-                        });
-                });
-            });
-    }
+/// Opens the dialog that labels the selected instance, or with an empty label clears its label:
+/// the instance pane's Rename….
+pub(crate) fn open_label_dialog(params: LabelParams, mut commands: Commands) {
+    let Some((taken, target)) = label_target(&params) else {
+        return;
+    };
+    let current = params.current_label().unwrap_or_default();
+    commands
+        .spawn_scene(clearable_text_entry_dialog(
+            "Rename", "Label", taken, current,
+        ))
+        .insert(target)
+        .observe(label_instance);
 }
 
 /// The labels a label for the selected instance may not take, those of every other instance in the
 /// game, and the instance. The precincts loaded give their labels as they are now, unsaved edits
 /// and all, and the index gives the rest.
-fn label_target(params: &InstancePaneParams) -> Option<(HashSet<String>, LabelInstance)> {
+fn label_target(params: &LabelParams) -> Option<(HashSet<String>, LabelInstance)> {
     let precinct = params.selection.precinct?;
     params.precincts.get(precinct).ok()?;
     let mut loaded = HashSet::new();

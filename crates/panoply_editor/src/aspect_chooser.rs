@@ -1,7 +1,8 @@
-//! The dialog the exemplar pane's Aspects… opens: a checkbox per aspect that can attach to the
-//! exemplar's type, native or declared by a module in `scripts/` (D107), checked where the
-//! exemplar has the aspect as its own. Native aspects are under a heading per crate (until mods
-//! have packages, X65), scripted ones under their module's path. Save adds the newly checked
+//! The dialog the root pane's Aspects… opens, for an exemplar or an instance: a checkbox per aspect
+//! that can attach to the root's type and that it does not inherit, native or declared by a module
+//! in `scripts/` (D107), though an instance is offered native ones only, checked where the root has
+//! the aspect as its own. Native aspects are under a heading per crate (until mods have packages,
+//! X65), scripted ones under their module's path. Save adds the newly checked
 //! aspects, each at its default, and removes the unchecked ones, as one edit. Cancel, Esc or a
 //! click outside closes it.
 
@@ -22,15 +23,15 @@ use bevy::{
     ui::Checked,
     ui_widgets::{checkbox_self_update, Activate, RequestClose},
 };
-use panoply_exemplar::{new_aspect, Aspect, Exemplar, InstanceKind, ReflectAspect};
+use panoply_exemplar::{new_aspect, Aspect, InstanceKind, ReflectAspect};
 use panoply_saga::{scripted::AspectDecl, ScriptModuleAsset};
 
 use crate::{
     properties::edit::{aspect_name, PropertyEdits, PropertyRoot},
-    scenery_properties::exemplar_of,
+    scenery_properties::held_aspects,
 };
 
-/// A chooser's root: the exemplar root it edits, and the aspects the exemplar had as it opened.
+/// A chooser's root: the root it edits, and the aspects the root had as its own as it opened.
 #[derive(Component)]
 struct AspectChooser {
     root: Arc<dyn PropertyRoot>,
@@ -41,28 +42,28 @@ struct AspectChooser {
 #[derive(Component, Default, Clone)]
 struct AspectOption(String);
 
-/// Opens a chooser of the aspects `root`, an exemplar's root, may have.
+/// Opens a chooser of the aspects `root`, an exemplar's or an instance's root, may have as its
+/// own. Those it inherits are left out, since their pencils override them; an instance is offered
+/// native aspects only, since a precinct does not load scripted ones.
+// TODO(PAN135): scripted aspects on instances.
 pub(crate) fn open_aspect_chooser(
     In(root): In<Arc<dyn PropertyRoot>>,
-    registry: Res<AppTypeRegistry>,
-    server: Res<AssetServer>,
-    exemplars: Res<Assets<Exemplar>>,
-    modules: Res<Assets<ScriptModuleAsset>>,
+    world: &World,
     mut commands: Commands,
 ) {
-    let Some(data) = exemplar_of(root.as_ref(), &server).and_then(|id| exemplars.get(id)) else {
+    let Some(held) = held_aspects(root.as_ref(), world) else {
         return;
     };
-    let had: HashSet<String> = data
-        .0
-        .aspects
-        .iter()
-        .map(|aspect| aspect.key().to_string())
-        .collect();
-    let registry = registry.read();
+    let modules = world.resource::<Assets<ScriptModuleAsset>>();
+    let had: HashSet<String> = held.own.iter().cloned().collect();
+    let registry = world.resource::<AppTypeRegistry>().read();
     let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for decl in scripted_aspects(&modules) {
-        if data.0.kind.is_some_and(|kind| can_attach(decl, kind)) {
+    let offered = |key: &str| !held.inherited.iter().any(|inherited| inherited == key);
+    for decl in scripted_aspects(modules) {
+        if !held.instance
+            && offered(&decl.key)
+            && held.kind.is_some_and(|kind| can_attach(decl, kind))
+        {
             let (module, _) = decl.key.rsplit_once("::").unwrap_or_default();
             let group = groups.entry(module.to_string()).or_default();
             group.push(decl.key.to_string());
@@ -79,7 +80,7 @@ pub(crate) fn open_aspect_chooser(
         let Some(aspect) = reflect_aspect.get(value.as_ref()) else {
             continue;
         };
-        if !data.0.kind.is_some_and(|kind| aspect.can_attach(kind)) {
+        if !offered(aspect.key()) || !held.kind.is_some_and(|kind| aspect.can_attach(kind)) {
             continue;
         }
         let group = registration.type_info().type_path_table().crate_name();

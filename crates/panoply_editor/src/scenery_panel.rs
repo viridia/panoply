@@ -29,7 +29,7 @@ use panoply_scenery::precinct::Precinct;
 
 use crate::{
     exemplar_list::{has_list, tool_chooser, SceneryChoices},
-    instance_list::{instance_chooser, place_of, InstancePane},
+    instance_list::{instance_chooser, place_of},
     instance_selection::ScenerySelection,
     mode_selector::{EditorModeSettings, SceneryTool},
     scenery_pointer::{step_tier, SceneryCut, SceneryTier},
@@ -141,10 +141,7 @@ impl Plugin for SceneryPanelPlugin {
             BevyImmediateAttachPlugin::<CapsUiFeathers, SceneryExemplars>::new(),
             BevyImmediateAttachPlugin::<CapsUiFeathers, WallToolbar>::new(),
         ))
-        .add_systems(
-            Update,
-            (show_tool_options, show_properties_or_instance, show_cut),
-        );
+        .add_systems(Update, (show_tool_options, show_cut));
     }
 }
 
@@ -181,27 +178,6 @@ fn show_tool_options(
         let rows = GridPlacement::start_end(if shown { 2 } else { 1 }, 6);
         if node.grid_row != rows {
             node.grid_row = rows;
-        }
-    }
-}
-
-/// Shows, in the panel's last row, the property editor, or in selection mode the selected
-/// instance's pane: they share the row, and a hidden one leaves the other to take the pointer.
-fn show_properties_or_instance(
-    settings: Res<EditorModeSettings>,
-    mut properties: Query<&mut Node, (With<SceneryProperties>, Without<InstancePane>)>,
-    mut instance: Query<&mut Node, (With<InstancePane>, Without<SceneryProperties>)>,
-) {
-    let selecting = settings.scenery_tool == SceneryTool::SelectInstance;
-    let display = |shown: bool| if shown { Display::Flex } else { Display::None };
-    for mut node in &mut properties {
-        if node.display != display(!selecting) {
-            node.display = display(!selecting);
-        }
-    }
-    for mut node in &mut instance {
-        if node.display != display(selecting) {
-            node.display = display(selecting);
         }
     }
 }
@@ -307,7 +283,7 @@ pub(crate) fn scenery_panel() -> impl Scene {
                 on(|_: On<Activate>, mut tier: ResMut<SceneryTier>| step_tier(&mut tier, -1))
             ]
             --
-            // TODO(PAN28e): New and Clone act on the chosen exemplar.
+            // TODO(PAN28g): New and Clone act on the chosen exemplar.
             @FeathersButton { @caption: bsn! { Text("New…") ThemedText } }
             #New
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(4)} }
@@ -318,21 +294,11 @@ pub(crate) fn scenery_panel() -> impl Scene {
             Node { grid_column: {GridPlacement::start(1)}, grid_row: {GridPlacement::start(5)} }
             InteractionDisabled
             --
-            // The chosen exemplar's properties, across both columns in the last row, which takes
-            // the rest of the panel's height.
+            // The properties of the chosen exemplar, or in selection mode of the selected
+            // instance, across both columns in the last row, which takes the rest of the panel's
+            // height.
             #Properties
             SceneryProperties
-            Node {
-                grid_column: {GridPlacement::start_end(1, -1)},
-                grid_row: {GridPlacement::start(6)},
-                flex_direction: FlexDirection::Column,
-                min_height: px(0),
-            }
-            --
-            // In selection mode, the selected instance's pane, in the same place, the property
-            // editor hidden (`show_properties_or_instance`).
-            #InstancePane
-            InstancePane
             Node {
                 grid_column: {GridPlacement::start_end(1, -1)},
                 grid_row: {GridPlacement::start(6)},

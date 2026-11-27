@@ -29,7 +29,7 @@ pub use aspect::*;
 pub use aspect_list::AspectList;
 pub use aspect_list::AspectListDeserializer;
 pub use catalogs::{CatalogMember, CatalogRoots, CatalogServer};
-pub use command::UpdateAspects;
+pub use command::{required_aspect, UpdateAspects};
 pub use entry::{
     read_entries, CatalogEntry, CatalogEntryAppExt, EntryCatalog, EntryCatalogLoader,
     EntryCatalogLoaderError,

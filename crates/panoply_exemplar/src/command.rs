@@ -132,7 +132,7 @@ fn with_requirements(
 
 /// The aspect of key `key` that `requirer` requires, at its defaults, for an instance of
 /// `kind`; or why there is none.
-fn required_aspect(
+pub fn required_aspect(
     requirer: &dyn Aspect,
     key: &str,
     kind: Option<InstanceKind>,
