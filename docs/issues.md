@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I104.**
+**Next: I105.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -449,3 +449,9 @@ confirmed by running something or only by reading. Numbers are never reused.
   record the asset as loaded. Filed as
   [bevy#26692](https://github.com/bevyengine/bevy/issues/26692). Also: PAN28f and PAN28g are reused
   ids in the roadmap, both landed (changelog); letters from n on are free.
+- **I104** A marker's pins hide behind walls and floors, though its other overlays show through,
+  fainter, as the overlay crate draws them where hidden. The pins are `StandardMaterial` quads,
+  depth-tested, while a path's points are handles picked in screen space since PAN102c, so a hidden
+  point can still be clicked. Candidates: a material for the pins that draws a faint pass over what
+  hides them, as an overlay's underlay does; or the pin as an overlay shape, if the crate takes a
+  texture. Seen by the author in the editor.

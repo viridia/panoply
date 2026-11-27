@@ -528,12 +528,10 @@ dropped, not deferred. Numbers are never reused.
   it (D27; Bevy drops its own once the load is processed), so a package's loader must do the same.
   First measure the memory a catalog holds and the hitch of loading one. *Gate:* the first regional
   behavior packages (Marheim's).
-- **X116** Editing a patrol path's points in the world (PAN102), as Blender edits a curve's: while
-  the path is selected, a handle at each point, dragged across the ground with PAN96's cast; points
-  added and removed in the property editor's list until then. Beside it, faery's button by a
-  world-location field (`WaypointFieldEditor.tsx`, `PlaceWaypointTool.ts`), which sets the field by
-  a click on the map, converted into the fixture's frame; handles may leave it only fields no
-  fixture owns, such as an actor's home. *Gate:* a goal that follows a path (R21, R43).
+- **X116** faery's button by a world-location field (`WaypointFieldEditor.tsx`,
+  `PlaceWaypointTool.ts`), which set the field by a click on the map, converted into the fixture's
+  frame. A path's points are edited in the world since PAN102c, so it is wanted only for a field no
+  fixture owns. *Gate:* an aspect field holding a place in the world, such as an actor's home.
 - **X117** Regional bundles: one file per region holding catalog entries of several kinds, as faery
   grouped its catalogs ([faery.md](faery.md), Catalog entries), holding the same typed entries, so
   `file#Label` references and entry types stay as D91 has them. Open: whether a bundle marks each

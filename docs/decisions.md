@@ -4,7 +4,7 @@ Why Panoply is the way it is, for choices expensive to reverse. A decision names
 made it, where there is one. A superseded decision stays, pointing at its successor; numbers are
 never reused.
 
-**Next: D129.**
+**Next: D130.**
 
 - **D1** Superseded by D34. Build against crates.io Bevy releases, not git main.
 - **D2** Settings use `bevy_settings` (`SettingsGroup` resources, `settings.toml`).
@@ -1140,3 +1140,16 @@ never reused.
   them. Given up: field-by-field inheritance's implicit override, as Blender's library overrides
   have, which waits on X99. Reversing it means every field of an inherited aspect live, and an
   aspect copied on its first edit. (PAN28e)
+- **D129** A part of an instance is chosen within the selection (`ScenerySelection::part`), not in
+  an edit mode such as Blender's Tab enters: while a path is selected its point pins are handles, a
+  click on one chooses it, and the instance's gizmo moves to it with its arrows alone, since a point
+  has no facing. Delete and End act on the chosen part, and Escape goes back to the whole instance.
+  Alt+Left and Alt+Right step between points: Tab belongs to a focused widget, and is kept for
+  stepping between instances later, the bare arrows drive the camera, and Ctrl+arrows are macOS's. A
+  point is moved by the gizmo, not dragged across the ground, since a cast suits a first placement
+  (Ctrl+click puts a point where the pointer meets the world) and arrows suit adjusting one. A
+  path's points are offsets from its fixture, which is no point of the route: moving the fixture
+  moves the route, and every point can be deleted or have one inserted before it. A point's edit
+  overrides the instance's `MarkerPath` without its pencil, against D128, since the path has no
+  field but its points for the override to freeze. Reversing it means an edit mode, whose toggle
+  decides what the gizmo and Delete act on. (PAN102c)

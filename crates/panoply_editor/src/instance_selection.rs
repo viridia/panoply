@@ -12,7 +12,9 @@
 //!
 //! The selection is the instance's entity, which a precinct keeps when its edits leave the
 //! instance in place, and its id, which finds it again when the entity goes: an actor is spawned
-//! again when its entry changes, as a rename changes it. It is not saved, as faery's was not.
+//! again when its entry changes, as a rename changes it. It is not saved, as faery's was not. A
+//! part of the instance may be chosen within it, a path's point (`path_edit`), which the gizmo then
+//! moves (D129).
 
 use bevy::{
     app::Propagate,
@@ -36,10 +38,14 @@ use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder,
 };
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
-use panoply_scenery::{precinct::Precinct, scenery_element::SceneryElement, SceneryColliders};
+use bevy_action_map::prelude::*;
+use panoply_scenery::{
+    precinct::Precinct, scenery_element::SceneryElement, MarkerPath, SceneryColliders,
+};
 use panoply_terrain::Parcel;
 
 use crate::{
+    instance_gizmo::{ExtendPath, InstanceGizmoKeys},
     mode_selector::{EditorMode, SceneryTool},
     scenery_pointer::{SceneryPointer, SceneryPointerSystems},
 };
@@ -56,7 +62,13 @@ const DEFAULT_HALF: f32 = 0.5;
 /// The points around an actor's outline.
 const ACTOR_SEGMENTS: usize = 32;
 
-/// The instance selected in scenery mode, and its precinct.
+/// The hovered instance's outline, and a hovered part's tint.
+pub(crate) const HOVERED_TINT: Srgba = css::YELLOW;
+
+/// The selected instance's outline, and a chosen part's tint.
+pub(crate) const SELECTED_TINT: Srgba = Srgba::rgb(1., 1., 0.8);
+
+/// The instance selected in scenery mode, its precinct, and the part of it chosen.
 #[derive(Resource, Reflect, Clone, PartialEq, Debug, Default)]
 #[reflect(Resource)]
 pub struct ScenerySelection {
@@ -67,15 +79,32 @@ pub struct ScenerySelection {
     /// The instance's id, which finds it again if its entity goes.
     #[reflect(ignore)]
     pub iid: SceneryInstanceId,
+    /// The part of the instance chosen, which the gizmo moves in its place.
+    pub part: Option<InstancePart>,
+}
+
+/// A part of an instance, chosen within it.
+#[derive(Reflect, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum InstancePart {
+    /// A point of its [`MarkerPath`], by index.
+    PathPoint(usize),
 }
 
 impl ScenerySelection {
-    /// The instance `entity`, of id `iid`, in `precinct`.
+    /// The instance `entity`, of id `iid`, in `precinct`, no part of it chosen.
     pub fn instance(precinct: Entity, entity: Entity, iid: SceneryInstanceId) -> Self {
         Self {
             precinct: Some(precinct),
             instance: Some(entity),
             iid,
+            part: None,
+        }
+    }
+
+    /// The index of the path point chosen, if one is.
+    pub fn path_point(&self) -> Option<usize> {
+        match self.part? {
+            InstancePart::PathPoint(index) => Some(index),
         }
     }
 }
@@ -184,11 +213,8 @@ fn spawn_tool(mut commands: Commands) {
         DespawnOnExit(SceneryTool::SelectInstance),
     ));
     let outlines = [
-        (OutlineOf::Hovered, css::YELLOW.with_alpha(0.7)),
-        (
-            OutlineOf::Selected,
-            Srgba::rgb_u8(0xff, 0xff, 0xcc).with_alpha(0.9),
-        ),
+        (OutlineOf::Hovered, HOVERED_TINT.with_alpha(0.7)),
+        (OutlineOf::Selected, SELECTED_TINT.with_alpha(0.9)),
     ];
     for (of, color) in outlines {
         commands.spawn((
@@ -211,11 +237,16 @@ fn spawn_tool(mut commands: Commands) {
 /// again keeps it; the old entity stands in until the new one is there. Otherwise, as after an
 /// undone edit that gave a key, or for an internal id, which a reload numbers anew (D87), the
 /// entity is followed and its id taken.
+///
+/// The part chosen stays while its instance does, until the instance's path changes and no longer
+/// has the point, as after an undo. A path an edit lengthens changes a frame or so after the edit
+/// chooses its new point, which waits for it.
 fn follow_selection(
     mut selection: ResMut<ScenerySelection>,
     precincts: Query<(&Precinct, Option<&Children>, Option<&PrecinctActors>)>,
     elements: Query<&SceneryElement>,
     actors: Query<&PlacedAs>,
+    paths: Query<Ref<MarkerPath>>,
     assets: Res<Assets<PrecinctAsset>>,
 ) {
     let Some(precinct) = selection.precinct else {
@@ -253,7 +284,18 @@ fn follow_selection(
         iid_of(selected).map(|iid| (selected, iid))
     };
     let followed = match next {
-        Some((entity, iid)) => ScenerySelection::instance(precinct, entity, iid),
+        Some((entity, iid)) => {
+            let part = selection.part.filter(|_| entity == selected).filter(|part| {
+                let InstancePart::PathPoint(index) = *part;
+                paths
+                    .get(entity)
+                    .is_ok_and(|path| !path.is_changed() || index < path.points.len())
+            });
+            ScenerySelection {
+                part,
+                ..ScenerySelection::instance(precinct, entity, iid)
+            }
+        }
         None => ScenerySelection {
             precinct: Some(precinct),
             ..default()
@@ -348,17 +390,26 @@ fn pick_scenery(
 /// its precinct; a click on the ground, a parcel, selects the precinct where the pointer meets the
 /// tier's plane, and no instance. Every other target is left alone, whatever it is: a click on a
 /// widget that does not consume it bubbles up to the window, which is no UI node either. A click it
-/// handles goes no further.
+/// handles goes no further. A Ctrl+click while a path is selected is `path_edit`'s.
 fn select_clicked(
     mut click: On<PointerClick>,
     elements: Query<(&SceneryElement, &ChildOf)>,
     actors: Query<(&PlacedAs, &HomePrecinct)>,
     parcels: Query<(), With<Parcel>>,
+    paths: Query<(), With<MarkerPath>>,
+    keys: ContextActions<InstanceGizmoKeys>,
     pointer: Res<SceneryPointer>,
     mut selection: ResMut<ScenerySelection>,
 ) {
     let target = click.event_target();
     if click.button != PointerButton::Primary {
+        return;
+    }
+    let extending = keys.value::<ExtendPath>()
+        && selection
+            .instance
+            .is_some_and(|entity| paths.contains(entity));
+    if extending {
         return;
     }
     let chosen = if let Ok((element, parent)) = elements.get(target) {

@@ -11,6 +11,10 @@
 //! too, is moved to where it lands, so a lift onto an upper floor leaves it standing there; a move
 //! with nothing under it to stand on is refused.
 //!
+//! With a path's point chosen (`path_edit`), the gizmo is on the point, its arrows alone, since a
+//! point has no facing, and moves it within its path; Delete takes the point out and End drops it,
+//! and Escape goes back to the whole path.
+//!
 //! The gizmo keeps its size on screen, and is drawn as overlays, which show through the scene,
 //! fainter, where it hides them. A picking backend of its own reports its handles ahead of the
 //! scenery under them, so a press on one selects nothing.
@@ -43,14 +47,16 @@ use panoply_overlays::{
 };
 use panoply_precinct::{PrecinctAsset, SceneryInstanceId};
 use panoply_scenery::{
-    precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, PrecinctCache,
-    SceneryColliders, PRECINCT_SIZE_F,
+    precinct::Precinct, scenery_element::SceneryElement, ColliderDesc, MarkerPath,
+    PrecinctCache, SceneryColliders, PRECINCT_SIZE_F,
 };
 use rapier3d::prelude::{Pose, SharedShape};
 
 use crate::{
-    instance_selection::{Reselect, ScenerySelection},
+    instance_selection::{InstancePart, Reselect, ScenerySelection},
+    marker_overlays::PathPreview,
     mode_selector::SceneryTool,
+    path_edit::{set_path_points, surface_point, without_point},
     placement::{landing, quantize_facing, TurnReadout},
     precinct_edit::PrecinctEdits,
     scenery_pointer::{precinct_at, SceneryPointer, SceneryPointerSystems},
@@ -81,11 +87,11 @@ const RING_STROKE: f32 = 0.025;
 
 /// How near a handle's middle line the pointer must be to take it, in logical pixels: well beyond
 /// the strokes, so a thin handle is easy to take.
-const HIT_PIXELS: f32 = 14.;
+pub(crate) const HIT_PIXELS: f32 = 14.;
 
 /// Above the camera's own hits, which scenery's and the ground's backends report at its order,
 /// and below its UI's, which Bevy reports half an order above.
-const GIZMO_ORDER: f32 = 0.25;
+pub(crate) const GIZMO_ORDER: f32 = 0.25;
 
 /// The step a move snaps each coordinate to, in meters.
 const MOVE_STEP: f32 = 0.25;
@@ -95,6 +101,10 @@ const FREE_TURN_DIVISIONS: f32 = 10.;
 
 /// How far End lets an instance fall, and a moved actor, in meters.
 const DROP_FALL: f32 = 50.;
+
+/// How far above a path's point End starts looking down for what is under it, so a point just
+/// under the ground, as an import leaves some, comes up onto it.
+const POINT_DROP_LIFT: f32 = 0.1;
 
 /// The opacity of the handles a drag is not using.
 const IDLE_ALPHA: f32 = 0.3;
@@ -118,14 +128,29 @@ impl Plugin for InstanceGizmoPlugin {
                 context.bind::<DropInstance>(KeyCode::KeyF);
                 context.bind::<FreeMove>(KeyCode::ShiftLeft);
                 context.bind::<FreeMove>(KeyCode::ShiftRight);
+                context.bind::<ExtendPath>(KeyCode::ControlLeft);
+                context.bind::<ExtendPath>(KeyCode::ControlRight);
             })
             .add_context::<GizmoDragKeys>(|context| {
                 context.active_if(|drag: Res<GizmoDragState>| drag.0.is_some());
                 context.bind::<CancelGizmoDrag>(KeyCode::Escape).consume();
             })
+            .add_context::<ChosenPartKeys>(|context| {
+                context.active_if(
+                    |drag: Res<GizmoDragState>,
+                     selection: Res<ScenerySelection>,
+                     tool: Option<Res<State<SceneryTool>>>| {
+                        drag.0.is_none()
+                            && selection.part.is_some()
+                            && tool.is_some_and(|tool| *tool.get() == SceneryTool::SelectInstance)
+                    },
+                );
+                context.bind::<ClearPart>(KeyCode::Escape).consume();
+            })
             .add_systems(Startup, |mut commands: Commands| {
                 commands.spawn((Name::new("InstanceGizmoKeys"), InstanceGizmoKeys));
                 commands.spawn((Name::new("GizmoDragKeys"), GizmoDragKeys));
+                commands.spawn((Name::new("ChosenPartKeys"), ChosenPartKeys));
             })
             .add_systems(OnEnter(SceneryTool::SelectInstance), spawn_gizmo)
             .add_systems(OnExit(SceneryTool::SelectInstance), end_drag)
@@ -137,7 +162,13 @@ impl Plugin for InstanceGizmoPlugin {
             )
             .add_systems(
                 Update,
-                (drag_gizmo, drop_selected, delete_selected, show_gizmo)
+                (
+                    drag_gizmo,
+                    drop_selected,
+                    delete_selected,
+                    clear_part,
+                    show_gizmo,
+                )
                     .chain()
                     .after(SceneryPointerSystems)
                     .run_if(in_state(SceneryTool::SelectInstance)),
@@ -171,10 +202,26 @@ pub struct FreeMove;
 #[context(path = "editor.instance_gizmo_drag", tick = Render, priority = 500)]
 pub struct GizmoDragKeys;
 
+/// Held, a click adds a point to the selected path (`path_edit`).
+#[derive(InputAction)]
+#[action(path = "editor.instance_gizmo.extend_path", output = bool, intent = Button)]
+pub struct ExtendPath;
+
 /// Cancel the drag: the instance goes back, and nothing is edited.
 #[derive(InputAction)]
 #[action(path = "editor.instance_gizmo_drag.cancel", output = bool, intent = Button)]
 pub struct CancelGizmoDrag;
+
+/// Escape, while a part of the selected instance is chosen and nothing is dragged: above
+/// `AppControl`, whose Escape quits, and consumed, as the drag's is.
+#[derive(InputContext)]
+#[context(path = "editor.chosen_part", tick = Render, priority = 500)]
+pub struct ChosenPartKeys;
+
+/// Choose no part: the gizmo goes back to the whole instance.
+#[derive(InputAction)]
+#[action(path = "editor.chosen_part.clear", output = bool, intent = Button)]
+pub struct ClearPart;
 
 /// The handle under the pointer, and the one a drag holds.
 #[derive(Resource, Reflect, Clone, Copy, PartialEq, Debug, Default)]
@@ -300,13 +347,16 @@ struct GizmoFrame {
     origin: Vec3,
     /// Meters per gizmo unit.
     scale: f32,
+    /// Whether it has its ring: a path's point does not turn.
+    turns: bool,
 }
 
 impl GizmoFrame {
-    fn new(origin: Vec3, camera: Vec3) -> Self {
+    fn new(origin: Vec3, camera: Vec3, turns: bool) -> Self {
         Self {
             origin,
             scale: (camera - origin).length() * GIZMO_SCALE,
+            turns,
         }
     }
 
@@ -346,6 +396,9 @@ fn part_at(
             consider(segment_distance(cursor, a, b), part);
         }
     }
+    if !frame.turns {
+        return nearest.map(|(_, part)| part);
+    }
     let ring: Option<Vec<Vec2>> = (0..=RING_SEGMENTS)
         .map(|i| {
             let degrees = i as f32 * 360. / RING_SEGMENTS as f32;
@@ -363,7 +416,7 @@ fn part_at(
 }
 
 /// The distance from `point` to the segment from `a` to `b`.
-fn segment_distance(point: Vec2, a: Vec2, b: Vec2) -> f32 {
+pub(crate) fn segment_distance(point: Vec2, a: Vec2, b: Vec2) -> f32 {
     let along = b - a;
     let t = if along.length_squared() > 0. {
         ((point - a).dot(along) / along.length_squared()).clamp(0., 1.)
@@ -439,24 +492,46 @@ fn spawn_gizmo(mut commands: Commands) {
     }
 }
 
-/// The selected instance, as its precinct's asset holds it.
+/// The selected instance, as its precinct's asset holds it, or the point chosen in its path.
 #[derive(Clone, Debug)]
 struct Selected {
     instance: Entity,
     precinct: Entity,
     iid: SceneryInstanceId,
     actor: bool,
-    /// In the world.
+    /// In the world: the instance's, or the point's.
     position: Vec3,
-    /// In degrees.
+    /// In degrees; a point's is 0.
     facing: f32,
+    point: Option<ChosenPoint>,
 }
 
-/// The selected instance, if its precinct's asset has it.
+/// A path's point, chosen to move in place of its fixture.
+#[derive(Clone, Debug, PartialEq)]
+struct ChosenPoint {
+    index: usize,
+    /// The fixture's place, in the world, which the points are offsets from.
+    fixture: Vec3,
+    /// The path's points, as the fixture has them.
+    points: Vec<Vec3>,
+}
+
+impl ChosenPoint {
+    /// The path's points with the chosen one at `position`, in the world.
+    fn moved_to(&self, position: Vec3) -> Vec<Vec3> {
+        let mut points = self.points.clone();
+        points[self.index] = position - self.fixture;
+        points
+    }
+}
+
+/// The selected instance, if its precinct's asset has it, or its chosen point, if its path has
+/// it.
 fn selected(
     selection: &ScenerySelection,
     precincts: &Query<&Precinct>,
     edits: &PrecinctEdits,
+    paths: &Query<&MarkerPath>,
 ) -> Option<Selected> {
     let (precinct, instance) = selection.precinct.zip(selection.instance)?;
     let record = precincts.get(precinct).ok()?;
@@ -466,14 +541,26 @@ fn selected(
     } else {
         held + precinct_origin(record.coords)
     };
-    Some(Selected {
+    let mut selected = Selected {
         instance,
         precinct,
         iid: selection.iid.clone(),
         actor,
         position,
         facing,
-    })
+        point: None,
+    };
+    if let Some(index) = selection.path_point() {
+        let points = paths.get(instance).ok()?.points.clone();
+        selected.position = position + *points.get(index)?;
+        selected.facing = 0.;
+        selected.point = Some(ChosenPoint {
+            index,
+            fixture: position,
+            points,
+        });
+    }
+    Some(selected)
 }
 
 /// A drag of one of the gizmo's handles, from the press to the release.
@@ -527,7 +614,7 @@ fn angle_about(center: Vec3, point: Vec3) -> f32 {
 }
 
 /// `value` on the move's lattice, unless `free`.
-fn snap_coordinate(value: f32, free: bool) -> f32 {
+pub(crate) fn snap_coordinate(value: f32, free: bool) -> f32 {
     if free {
         value
     } else {
@@ -599,7 +686,7 @@ fn placement_of(asset: &PrecinctAsset, iid: &SceneryInstanceId) -> Option<(Vec3,
 }
 
 /// The name of the instance `iid` in `asset`, for an edit's.
-fn name_of(asset: &PrecinctAsset, iid: &SceneryInstanceId) -> Option<String> {
+pub(crate) fn name_of(asset: &PrecinctAsset, iid: &SceneryInstanceId) -> Option<String> {
     if let Some(label) = asset.label(iid) {
         return Some(label.to_string());
     }
@@ -646,12 +733,18 @@ struct DraggedInstances<'w, 's> {
     element_transforms: Query<'w, 's, &'static mut Transform, With<SceneryElement>>,
     actors: Query<'w, 's, (&'static mut ActorMotion, &'static mut ActorIntent), With<PlacedAs>>,
     precincts: Query<'w, 's, &'static Precinct>,
+    paths: Query<'w, 's, &'static MarkerPath>,
+    preview: ResMut<'w, PathPreview>,
     commands: Commands<'w, 's>,
 }
 
 impl DraggedInstances<'_, '_> {
     /// Shows `of` at `position`, in the world, facing `facing` degrees.
     fn show(&mut self, of: &Selected, position: Vec3, facing: f32) {
+        if let Some(point) = &of.point {
+            self.preview.show(of.instance, point.moved_to(position));
+            return;
+        }
         let turn = facing.to_radians();
         if of.actor {
             if let Ok((mut motion, mut intent)) = self.actors.get_mut(of.instance) {
@@ -675,6 +768,13 @@ impl DraggedInstances<'_, '_> {
 
     /// Ends `drag`, showing its instance where it was if `restore`.
     fn end(&mut self, drag: &GizmoDrag, restore: bool) {
+        if drag.of.point.is_some() {
+            match restore {
+                true => self.preview.clear(),
+                false => self.preview.settle(),
+            }
+            return;
+        }
         if restore {
             self.show(&drag.of, drag.of.position, drag.of.facing);
         }
@@ -721,6 +821,17 @@ impl EditWorld<'_, '_> {
         landing(physics.world(), shapes, rotation, from, DROP_FALL, &shown)
     }
 
+    /// Where a path's point at `from` meets what it stands on (`POINT_SURFACES`), straight down
+    /// from just above it; `None` if nothing is under it.
+    fn point_landing(&self, from: Vec3) -> Option<Vec3> {
+        let physics = self
+            .viewpoint
+            .realm
+            .and_then(|realm| self.realms.get(realm).ok())?;
+        let ray = Ray3d::new(from + Vec3::Y * POINT_DROP_LIFT, Dir3::NEG_Y);
+        surface_point(physics, ray, DROP_FALL, &self.visibility)
+    }
+
     /// Where the actor `entity` comes to rest from `from`, its feet, as its capsule falls.
     fn actor_landing(&self, entity: Entity, from: Vec3) -> Option<Vec3> {
         let (size, scale) = self.actor_sizes.get(entity).ok()?;
@@ -755,8 +866,9 @@ struct GizmoEdits<'w, 's> {
 
 impl GizmoEdits<'_, '_> {
     /// Puts `of` at `position`, in the world, facing `facing` degrees, as an edit named `verb` and
-    /// the instance's name: in the precinct there, which a move past the edge changes. `false` if
-    /// refused: nothing changed, or no precinct is loaded there.
+    /// the instance's name: in the precinct there, which a move past the edge changes. A chosen
+    /// point stays in its fixture's path, whatever precinct it is over. `false` if refused:
+    /// nothing changed, or no precinct is loaded there.
     fn commit(
         &mut self,
         of: &Selected,
@@ -769,6 +881,21 @@ impl GizmoEdits<'_, '_> {
         let Ok(from) = precincts.get(of.precinct) else {
             return false;
         };
+        if let Some(point) = &of.point {
+            let points = point.moved_to(position);
+            if points == point.points {
+                return false;
+            }
+            let mut changed = false;
+            self.edits.edit_precinct(of.precinct, from, |asset| {
+                let label = set_path_points(asset, &of.iid, points, |name| {
+                    format!("{verb} point {} of {name}", point.index + 1)
+                });
+                changed = label.is_some();
+                label
+            });
+            return changed;
+        }
         let Some((to, coords)) = world
             .viewpoint
             .realm
@@ -837,16 +964,22 @@ fn drag_gizmo(
     let free = input.keys.value::<FreeMove>();
     let ray = input.pointer.ray;
 
-    // A drag whose instance went, as when an undo took it out, ends where it is.
-    if let Some(current) = drag
-        .0
-        .take_if(|drag| selection.instance != Some(drag.of.instance))
-    {
-        instances.end(&current, false);
+    // A drag whose instance or point went, as when an undo took it out, ends where it is.
+    if let Some(current) = drag.0.take_if(|drag| {
+        selection.instance != Some(drag.of.instance)
+            || selection.path_point() != drag.of.point.as_ref().map(|point| point.index)
+    }) {
+        instances.end(&current, current.of.point.is_some());
     }
 
     if let Some(part) = pressed.filter(|_| just_pressed && drag.0.is_none()) {
-        let started = selected(&selection, &instances.precincts, &edits.edits).and_then(|of| {
+        let of = selected(
+            &selection,
+            &instances.precincts,
+            &edits.edits,
+            &instances.paths,
+        );
+        let started = of.and_then(|of| {
             let hold = hold(part, ray?, of.position)?;
             Some(GizmoDrag {
                 part,
@@ -928,23 +1061,32 @@ fn drag_gizmo(
     }
 }
 
-/// Drops the selected fixture straight down onto what is under it on End, as one edit. Actors
-/// fall by themselves.
+/// Drops the selected fixture straight down onto what is under it on End, as one edit, or its
+/// chosen point. Actors fall by themselves.
 fn drop_selected(
     keys: ContextActions<InstanceGizmoKeys>,
     drag: Res<GizmoDragState>,
     selection: Res<ScenerySelection>,
     colliders: Query<Option<&SceneryColliders>, With<SceneryElement>>,
     precincts: Query<&Precinct>,
+    paths: Query<&MarkerPath>,
     mut edits: GizmoEdits,
     world: EditWorld,
 ) {
     if !keys.fired::<DropInstance>() || drag.0.is_some() {
         return;
     }
-    let Some(of) = selected(&selection, &precincts, &edits.edits).filter(|of| !of.actor) else {
+    let Some(of) =
+        selected(&selection, &precincts, &edits.edits, &paths).filter(|of| !of.actor)
+    else {
         return;
     };
+    if of.point.is_some() {
+        if let Some(landed) = world.point_landing(of.position) {
+            edits.commit(&of, landed, 0., "Drop", &world, &precincts);
+        }
+        return;
+    }
     let shapes: Vec<_> = colliders
         .get(of.instance)
         .ok()
@@ -962,12 +1104,14 @@ fn drop_selected(
     }
 }
 
-/// Deletes the selected instance on its key, as one edit, leaving its precinct selected.
+/// Deletes the selected instance on its key, as one edit, leaving its precinct selected; or the
+/// chosen point of its path, choosing the one before.
 fn delete_selected(
     keys: ContextActions<InstanceGizmoKeys>,
     drag: Res<GizmoDragState>,
     mut selection: ResMut<ScenerySelection>,
     precincts: Query<&Precinct>,
+    paths: Query<&MarkerPath>,
     mut edits: PrecinctEdits,
 ) {
     if !keys.fired::<DeleteInstance>() || drag.0.is_some() {
@@ -980,6 +1124,27 @@ fn delete_selected(
         return;
     };
     let iid = selection.iid.clone();
+    if let Some(index) = selection.path_point() {
+        let Some(path) = selection.instance.and_then(|e| paths.get(e).ok()) else {
+            return;
+        };
+        if index >= path.points.len() {
+            return;
+        }
+        let (points, chosen) = without_point(&path.points, index);
+        let mut deleted = false;
+        edits.edit_precinct(entity, precinct, |asset| {
+            let label = set_path_points(asset, &iid, points, |name| {
+                format!("Delete point {} of {name}", index + 1)
+            });
+            deleted = label.is_some();
+            label
+        });
+        if deleted {
+            selection.part = chosen.map(InstancePart::PathPoint);
+        }
+        return;
+    }
     edits.edit_precinct(entity, precinct, |asset| {
         let name = name_of(asset, &iid)?;
         asset.take_instance(&iid)?;
@@ -991,8 +1156,16 @@ fn delete_selected(
     });
 }
 
-/// Puts the gizmo on the selected instance, or where a drag shows it, at its size for the camera's
-/// distance, in the viewed realm; lights the handle under the pointer, or the one a drag holds.
+/// Escape chooses no part, which puts the gizmo back on the whole instance.
+fn clear_part(keys: ContextActions<ChosenPartKeys>, mut selection: ResMut<ScenerySelection>) {
+    if keys.fired::<ClearPart>() && selection.part.is_some() {
+        selection.part = None;
+    }
+}
+
+/// Puts the gizmo on the selected instance, or its chosen point, or where a drag shows it, at its
+/// size for the camera's distance, in the viewed realm; lights the handle under the pointer, or
+/// the one a drag holds. A point's gizmo has no ring.
 /// Shown only while the pointer is over the view, not over UI such as the property panel, so it
 /// is out of the way while the panel edits the selection; a drag keeps it wherever the pointer
 /// goes.
@@ -1004,6 +1177,7 @@ fn show_gizmo(
     nodes: Query<(), With<ComputedNode>>,
     cameras: Query<&GlobalTransform, With<PrimaryCamera>>,
     instances: Query<&GlobalTransform, Or<(With<SceneryElement>, With<PlacedAs>)>>,
+    paths: Query<&MarkerPath>,
     viewpoint: Res<Viewpoint>,
     realms: Query<&Realm>,
     mut place: ResMut<GizmoPlace>,
@@ -1016,15 +1190,22 @@ fn show_gizmo(
         &mut Propagate<RenderLayers>,
     )>,
 ) {
+    let chosen = selection.path_point();
     let pose = match &drag.0 {
         Some(drag) => Some((drag.position, drag.facing)),
-        None => selection
-            .instance
-            .and_then(|entity| instances.get(entity).ok())
-            .map(|transform| {
-                let (yaw, _, _) = transform.rotation().to_euler(EulerRot::YXZ);
-                (transform.translation(), yaw.to_degrees())
-            }),
+        None => selection.instance.and_then(|entity| {
+            let transform = instances.get(entity).ok()?;
+            if let Some(index) = chosen {
+                let offset = *paths.get(entity).ok()?.points.get(index)?;
+                return Some((transform.translation() + offset, 0.));
+            }
+            let (yaw, _, _) = transform.rotation().to_euler(EulerRot::YXZ);
+            Some((transform.translation(), yaw.to_degrees()))
+        }),
+    };
+    let turns = match &drag.0 {
+        Some(drag) => drag.of.point.is_none(),
+        None => chosen.is_none(),
     };
     // The pointer has a ray only inside the view's viewport, and a hit on UI there (a popup, a
     // dialog) is in front of the view.
@@ -1036,7 +1217,7 @@ fn show_gizmo(
     let frame = pose
         .filter(|_| over_view || drag.0.is_some())
         .zip(camera)
-        .map(|((origin, _), camera)| GizmoFrame::new(origin, camera));
+        .map(|((origin, _), camera)| GizmoFrame::new(origin, camera, turns));
     if place.0 != frame {
         place.0 = frame;
     }
@@ -1058,7 +1239,7 @@ fn show_gizmo(
         let part = handle.part;
         let next = GizmoHandle {
             part,
-            shown: frame.is_some(),
+            shown: frame.is_some_and(|frame| frame.turns || part != GizmoPart::Ring),
             facing: pose.map_or(0., |(_, facing)| facing),
         };
         handle.set_if_neq(next);
@@ -1114,6 +1295,7 @@ mod tests {
                 actor: false,
                 position: start,
                 facing: 0.,
+                point: None,
             },
             hold,
             position: start,
@@ -1191,6 +1373,7 @@ mod tests {
         let frame = GizmoFrame {
             origin: Vec3::ZERO,
             scale: 1.,
+            turns: true,
         };
         let at = |x: f32, y: f32| part_at(frame, Vec2::new(x, y), from_above);
         assert_eq!(at(580., 503.), Some(GizmoPart::AxisX));
@@ -1201,6 +1384,12 @@ mod tests {
         assert_eq!(at(503., 580.), Some(GizmoPart::AxisZ));
         assert_eq!(at(625., 500.), Some(GizmoPart::Ring));
         assert_eq!(at(560., 460.), None);
+        // A point's gizmo has no ring to take.
+        let point = GizmoFrame {
+            turns: false,
+            ..frame
+        };
+        assert_eq!(part_at(point, Vec2::new(625., 500.), from_above), None);
     }
 
     #[test]

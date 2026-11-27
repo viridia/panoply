@@ -1,7 +1,9 @@
 //! Scenery mode's marker overlays, for every marker fixture of the shown precincts, as faery's: the
 //! fixture's map pin, tinted by its [`MarkerPin`]; a [`MarkerArea`]'s fill and outline; and a
-//! [`MarkerPath`]'s points as pins, joined by a dashed line. Faint, and bright while the fixture is
-//! selected.
+//! [`MarkerPath`]'s points as pins, each in a small square on the ground, joined by a dashed line.
+//! Faint, and bright while the fixture is
+//! selected; a selected path's chosen point and the point under the pointer are tinted as the
+//! selected and the hovered instance's outlines are, and a drag of a point shows it where it goes.
 //!
 //! A marker's overlays hang from a root of their own, not from the fixture, whose children are its
 //! models and are despawned with them. The root follows the fixture's place but not its facing,
@@ -14,13 +16,17 @@ use bevy::{
     prelude::*,
     transform::TransformSystems,
 };
+use bevy::picking::{hover::HoverMap, pointer::PointerId};
 use panoply_core::PrimaryCamera;
 use panoply_overlays::{
     AddOverlay, DrawPlane, OverlayColor, OverlayShape, PolygonOptions, ShapeBuilder,
 };
 use panoply_scenery::{MarkerArea, MarkerAreaShape, MarkerPath, MarkerPin};
 
-use crate::{instance_selection::ScenerySelection, mode_selector::EditorMode};
+use crate::{
+    instance_selection::{ScenerySelection, HOVERED_TINT, SELECTED_TINT},
+    mode_selector::EditorMode,
+};
 
 /// The pin's size, in meters, as faery drew it.
 const PIN_SIZE: Vec2 = Vec2::new(0.25, 0.4);
@@ -55,6 +61,10 @@ const ROUTE_WIDTH: f32 = 0.09;
 const DASH: f32 = 0.2;
 const GAP: f32 = 0.15;
 
+/// Half the side of the square around a path's point, and its stroke's width.
+const POINT_MARK_HALF: f32 = 0.15;
+const POINT_MARK_WIDTH: f32 = 0.04;
+
 /// The overlays of a marker fixture: a root, under which they are drawn.
 #[derive(Component)]
 #[relationship(relationship_target = MarkerOverlays)]
@@ -81,6 +91,57 @@ struct MarkerTint([Color; 2]);
 #[derive(Component)]
 struct MarkerPinQuad;
 
+/// A path's point's pin: the fixture whose path it is, and the point's index.
+#[derive(Component, Clone, Copy, PartialEq, Debug)]
+pub(crate) struct PathPointPin {
+    pub fixture: Entity,
+    pub index: usize,
+}
+
+/// The top of a pin whose tip is at `tip`, standing up the view as the pin faces a camera turned
+/// by `rotation`: a pin is picked along the line from its tip to its top.
+pub(crate) fn pin_top(tip: Vec3, rotation: Quat) -> Vec3 {
+    tip + rotation * Vec3::Y * (1. - PIN_ANCHOR.y) * PIN_SIZE.y
+}
+
+/// A path shown where a drag of one of its points puts them, in place of its [`MarkerPath`]'s,
+/// until the drag ends; after an edit of them, until the path holds them, as a frame or so after.
+#[derive(Resource, Default)]
+pub(crate) struct PathPreview(Option<PreviewedPath>);
+
+struct PreviewedPath {
+    fixture: Entity,
+    points: Vec<Vec3>,
+    /// Frames left to wait for the path to hold the points, once they are edited.
+    settling: Option<u32>,
+}
+
+/// How many frames [`PathPreview`] waits for an edit to reach the path.
+const SETTLE_FRAMES: u32 = 30;
+
+impl PathPreview {
+    /// Shows `fixture`'s path with `points`.
+    pub(crate) fn show(&mut self, fixture: Entity, points: Vec<Vec3>) {
+        self.0 = Some(PreviewedPath {
+            fixture,
+            points,
+            settling: None,
+        });
+    }
+
+    /// Shows the path as it is again.
+    pub(crate) fn clear(&mut self) {
+        self.0 = None;
+    }
+
+    /// Keeps the points shown until the path holds them, after an edit of them.
+    pub(crate) fn settle(&mut self) {
+        if let Some(preview) = &mut self.0 {
+            preview.settling = Some(SETTLE_FRAMES);
+        }
+    }
+}
+
 /// A marker's shapes, around its fixture, in the world's axes.
 #[derive(Component, Clone, PartialEq)]
 enum MarkerFigure {
@@ -88,6 +149,9 @@ enum MarkerFigure {
     AreaOutline(MarkerAreaShape),
     /// A path's points, joined by a dashed line.
     Route(Vec<Vec3>),
+    /// A small square on the ground around each of a path's points, which shows where a point is
+    /// when there is no line to it.
+    PointMarks(Vec<Vec3>),
 }
 
 impl OverlayShape for MarkerFigure {
@@ -124,6 +188,20 @@ impl OverlayShape for MarkerFigure {
                         ..default()
                     },
                 );
+            }
+            MarkerFigure::PointMarks(points) => {
+                builder.with_stroke_width(POINT_MARK_WIDTH);
+                for &point in points {
+                    let corners = [(-1., -1.), (1., -1.), (1., 1.), (-1., 1.)]
+                        .map(|(x, z)| point + Vec3::new(x, 0., z) * POINT_MARK_HALF);
+                    builder.stroke_polyline_3d(
+                        &corners,
+                        PolygonOptions {
+                            closed: true,
+                            ..default()
+                        },
+                    );
+                }
             }
         }
     }
@@ -162,10 +240,16 @@ impl Plugin for MarkerOverlaysPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<MarkerOverlay>()
             .init_resource::<PinAssets>()
+            .init_resource::<PathPreview>()
             .add_overlay::<MarkerFigure>()
             .add_systems(
                 Update,
-                (sync_marker_overlays, follow_markers)
+                (
+                    sync_marker_overlays,
+                    follow_markers,
+                    show_path_preview,
+                    light_path_points,
+                )
                     .chain()
                     .run_if(in_state(EditorMode::Scenery)),
             )
@@ -275,8 +359,21 @@ fn sync_marker_overlays(
         }
         if let Some(path) = &path {
             let points = MarkerTint(POINT_COLORS.map(Color::from));
-            for &point in &path.points {
-                root.with_child(pin_quad(point, points));
+            for (index, &point) in path.points.iter().enumerate() {
+                root.with_child((
+                    pin_quad(point, points),
+                    PathPointPin {
+                        fixture: entity,
+                        index,
+                    },
+                ));
+            }
+            if !path.points.is_empty() {
+                root.with_child(figure(
+                    "MarkerPointMarks",
+                    MarkerFigure::PointMarks(path.points.clone()),
+                    ROUTE_ALPHA,
+                ));
             }
             if path.points.len() > 1 {
                 root.with_child(figure(
@@ -336,6 +433,101 @@ fn follow_markers(
             }
             if let Some(mut material) = material.and_then(|m| materials.get_mut(m)) {
                 material.base_color = tint;
+            }
+        }
+    }
+}
+
+/// Shows each path's points where [`PathPreview`] puts them, or where its [`MarkerPath`] has them,
+/// moving their pins and redrawing the line; lets the preview go once an edit reaches the path.
+fn show_path_preview(
+    mut preview: ResMut<PathPreview>,
+    paths: Query<&MarkerPath>,
+    roots: Query<(&MarkerOverlayOf, &Children)>,
+    mut pins: Query<(&PathPointPin, &mut Transform)>,
+    mut figures: Query<&mut MarkerFigure>,
+) {
+    let settled = preview.0.as_mut().is_some_and(|shown| {
+        let Some(frames) = &mut shown.settling else {
+            return false;
+        };
+        *frames = frames.saturating_sub(1);
+        let held = paths
+            .get(shown.fixture)
+            .is_ok_and(|path| path.points == shown.points);
+        held || *frames == 0
+    });
+    if settled {
+        preview.clear();
+    }
+    for (of, children) in &roots {
+        let Ok(path) = paths.get(of.0) else {
+            continue;
+        };
+        let points = match &preview.0 {
+            Some(shown) if shown.fixture == of.0 && shown.points.len() == path.points.len() => {
+                &shown.points
+            }
+            _ => &path.points,
+        };
+        for &child in children {
+            if let Ok((pin, mut transform)) = pins.get_mut(child) {
+                if let Some(&point) = points.get(pin.index) {
+                    if transform.translation != point {
+                        transform.translation = point;
+                    }
+                }
+                continue;
+            }
+            let Ok(mut figure) = figures.get_mut(child) else {
+                continue;
+            };
+            // Read first, since writing through `figure` would redraw it every frame.
+            let stale = matches!(
+                &*figure,
+                MarkerFigure::Route(shown) | MarkerFigure::PointMarks(shown) if shown != points
+            );
+            if stale {
+                if let MarkerFigure::Route(shown) | MarkerFigure::PointMarks(shown) = &mut *figure {
+                    *shown = points.clone();
+                }
+            }
+        }
+    }
+}
+
+/// Tints the selected path's chosen point as the selection, and the point under the pointer as
+/// the hovered instance; every other point as its path is drawn, faint or bright.
+fn light_path_points(
+    selection: Res<ScenerySelection>,
+    hover: Res<HoverMap>,
+    roots: Query<&MarkerOverlay>,
+    pins: Query<(
+        Entity,
+        &PathPointPin,
+        &MarkerTint,
+        &MeshMaterial3d<StandardMaterial>,
+        &ChildOf,
+    )>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let hovered = hover.get(&PointerId::Mouse);
+    for (entity, pin, tint, material, parent) in &pins {
+        let selected = selection.instance == Some(pin.fixture);
+        let color: Color = if selected && selection.path_point() == Some(pin.index) {
+            SELECTED_TINT.into()
+        } else if selected && hovered.is_some_and(|hits| hits.contains_key(&entity)) {
+            HOVERED_TINT.into()
+        } else {
+            let bright = roots.get(parent.parent()).is_ok_and(|root| root.bright);
+            tint.0[bright as usize]
+        };
+        let stale = materials
+            .get(material)
+            .is_some_and(|shown| shown.base_color != color);
+        if stale {
+            if let Some(mut shown) = materials.get_mut(material) {
+                shown.base_color = color;
             }
         }
     }

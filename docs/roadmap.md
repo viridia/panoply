@@ -105,11 +105,7 @@ reference (`REFERENCE(PAN95)`): each chunk that replaces a part of it deletes th
   nothing else is tested and play is untouched. Its hits fall on the model's meshes, which a click
   bubbles up from to the element; the hover outline walks up to its instance too. Picking sorts both
   backends' hits by depth, so nothing is picked through a wall. A decision beside D93: markers stay
-  the handle of what is invisible, meshes pick what is visible and has no collider. PAN102, Marker
-  fixtures, in lettered parts: fixtures with no model, standing for abstract things (a waymark, an
-  area, a patrol path, a music cue), drawn by the editor alone and picked through their `marker`
-  colliders (D93). Their aspects are `MarkerPin`, `MarkerArea` and `MarkerPath`
-  (`marker_aspect.rs`); an area and a path ignore the fixture's facing.
+  the handle of what is invisible, meshes pick what is visible and has no collider.
 
 - **PAN76b Cutaway editing.** *Needs:* PAN77. On its selection, adding, removing and resizing a
   tier's cutaway rects, each edit undoable and marking the precinct unsaved, and a Show menu item
@@ -278,48 +274,47 @@ were PNGs of the same size as these, so theirs likely carry over.
   - Proved by the player standing on the plate, since there are no followers yet (X131) and nothing
     to use as a weight (X140). No relay, and no damage until actors have health (PAN111). Where it
     is placed is decided in the chunk.
-- **PAN79 Mechanisms.** *Needs:* PAN71, PAN79a, PAN102. The stock elements puzzles are built from,
-  and how they are wired together, on SAGA's cells and reactions (PAN105) and scripted aspects.
-  faery had doors, push and toggle buttons, pressure plates, remotely controlled openables,
-  automatic doors, spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when
-  a trap fires), wired by reactive formulas so that elaborate puzzles combine simple parts
-  ([faery.md](faery.md), How far faery got; the aspects the converter dropped are under Migration
-  scripts). The first sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`).
-  Which collision layers a sensor senses is native config, since physics reads it; a finer filter is
-  a formula over the sensor's occupants (a heavy enough object on a plate), once a puzzle needs one
-  (X140). Beside them: triggers (a circle or rectangle the player enters), encounter zones, waymarks
-  for scripted NPC events, and patrol paths, fixtures that goals name
-  ([goal-format.md](goal-format.md), Open). One element signals another through cells, a formula
-  over the other's state, wherever a formula can say it, and through an event only where none can:
-  engines built on events, such as the Creation Kit, tangle when several signals must be correlated.
-  Which parts are native aspects and which are SAGA is to decide. Elements are wired by D122's
-  signal bindings, each held by the sink and filled two ways, never by typing: by picking in the
-  world, or from a popup listing instances to browse, with a filter, as PAN35's chooser does. The
-  popup lists the labelled instances in the index, across the game, and the loaded precincts'
-  unlabelled keyed instances by exemplar and place. A bound instance gets a key (D87). The editor
-  draws a selected sink's wires, and a selected source's from the reverse index (D122), and lists
-  the bindings that name a selected instance; copying a trap with its source binds the copy to the
-  copied source. Hovering or focusing a binding's row highlights its wire: the row, a binding's own
-  kind as `ExemplarRef`'s is, names its source, and its picking observers and `InputFocus` set the
-  wire that is drawn highlighted. Logic over several signals is a gate, a placed instance with a
-  native visualization aspect giving its gizmo in the editor (icon, shape, color) and a scripted
-  logic aspect whose inputs are bindings and whose output is a signal. faery's `triggerGroup`,
-  plates carpeting an area acting as one, is `SignalInputs` set to any; each plate still depresses
-  under whatever is on it. Precedents: Planet's Edge's logic tiles beyond the map's edge, Source's
-  `logic_relay`, and Unreal's placed Blueprint actors with picked references. A precinct is named by
-  its realm and coordinates, and is like a module: its walls and fixtures that others can refer to
-  are its exports, by key ([instances.md](instances.md), Ids). A reference into a precinct that is
-  not loaded suspends the formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown
-  currency, and likely to differ from what Panoply builds: in `design/Scripting.md`, a reference
-  syntax, an `Instance` observable that is null while its target is not loaded, a `StructureRefNode`
-  watching structures load and unload, and global variables or lazily loaded scope objects for
-  long-range wiring; global references by realm and coordinates in `design/scripting/predicates.md`;
-  animated instances (moving parts) kept apart from static instancing in
-  `engine/src/models/InstancedModels.ts`. The first gate is PAN79a's trap's second part, which faery
-  never built: once past the spears, the player throws a switch that locks them down, so the
-  follower on the plate can rejoin the party; the trap is then open while the plate is pressed or
-  the switch is on, logic across three entities. Then PAN6's door opened by a button
-  ([goals.md](goals.md), step 4).
+- **PAN79 Mechanisms.** *Needs:* PAN71, PAN79a. The stock elements puzzles are built from, and how
+  they are wired together, on SAGA's cells and reactions (PAN105) and scripted aspects. faery had
+  doors, push and toggle buttons, pressure plates, remotely controlled openables, automatic doors,
+  spear traps and fireball traps (whose fixed period, PAN87, becomes scripted: when a trap fires),
+  wired by reactive formulas so that elaborate puzzles combine simple parts ([faery.md](faery.md),
+  How far faery got; the aspects the converter dropped are under Migration scripts). The first
+  sensor collider is the `PressurePlate` wall tile's (`wall-tiles.exem.json`). Which collision
+  layers a sensor senses is native config, since physics reads it; a finer filter is a formula over
+  the sensor's occupants (a heavy enough object on a plate), once a puzzle needs one (X140). Beside
+  them: triggers (a circle or rectangle the player enters), encounter zones, waymarks for scripted
+  NPC events, and patrol paths, fixtures that goals name ([goal-format.md](goal-format.md), Open).
+  One element signals another through cells, a formula over the other's state, wherever a formula
+  can say it, and through an event only where none can: engines built on events, such as the
+  Creation Kit, tangle when several signals must be correlated. Which parts are native aspects and
+  which are SAGA is to decide. Elements are wired by D122's signal bindings, each held by the sink
+  and filled two ways, never by typing: by picking in the world, or from a popup listing instances
+  to browse, with a filter, as PAN35's chooser does. The popup lists the labelled instances in the
+  index, across the game, and the loaded precincts' unlabelled keyed instances by exemplar and
+  place. A bound instance gets a key (D87). The editor draws a selected sink's wires, and a selected
+  source's from the reverse index (D122), and lists the bindings that name a selected instance;
+  copying a trap with its source binds the copy to the copied source. Hovering or focusing a
+  binding's row highlights its wire: the row, a binding's own kind as `ExemplarRef`'s is, names its
+  source, and its picking observers and `InputFocus` set the wire that is drawn highlighted. Logic
+  over several signals is a gate, a placed instance with a native visualization aspect giving its
+  gizmo in the editor (icon, shape, color) and a scripted logic aspect whose inputs are bindings and
+  whose output is a signal. faery's `triggerGroup`, plates carpeting an area acting as one, is
+  `SignalInputs` set to any; each plate still depresses under whatever is on it. Precedents:
+  Planet's Edge's logic tiles beyond the map's edge, Source's `logic_relay`, and Unreal's placed
+  Blueprint actors with picked references. A precinct is named by its realm and coordinates, and is
+  like a module: its walls and fixtures that others can refer to are its exports, by key
+  ([instances.md](instances.md), Ids). A reference into a precinct that is not loaded suspends the
+  formula reading it ([saga.md](saga.md), Values). faery's notes, of unknown currency, and likely to
+  differ from what Panoply builds: in `design/Scripting.md`, a reference syntax, an `Instance`
+  observable that is null while its target is not loaded, a `StructureRefNode` watching structures
+  load and unload, and global variables or lazily loaded scope objects for long-range wiring; global
+  references by realm and coordinates in `design/scripting/predicates.md`; animated instances
+  (moving parts) kept apart from static instancing in `engine/src/models/InstancedModels.ts`. The
+  first gate is PAN79a's trap's second part, which faery never built: once past the spears, the
+  player throws a switch that locks them down, so the follower on the plate can rejoin the party;
+  the trap is then open while the plate is pressed or the switch is on, logic across three entities.
+  Then PAN6's door opened by a button ([goals.md](goals.md), step 4).
 - **PAN106 Containers.** *Needs:* PAN71, PAN126. What a container holds. An open chest shows its
   contents on an inventory screen whose style its container type names (`chest`, `stone` and
   `corpse` in `assets/modals/containers/`), with the container's name and its item list placed where
@@ -376,11 +371,6 @@ set an edit is one of (`EditKind`).
   aspects are its overrides, after which the instance names the new exemplar and its overrides are
   cleared, as one undoable edit (Unreal's Blueprint from selection, Unity's prefab variant). Until
   then, `precinct.py show --label` prints an instance's overrides as catalog JSON.
-- **PAN102c Editing marker paths**, on the property editor's instance roots and PAN102b's overlays.
-  In selection mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point
-  inserted after the one chosen and deleted, each an undoable edit of the instance's override,
-  marking its precinct unsaved. An area's size is edited in the property panel, by overriding its
-  `MarkerArea`; a resize handle in the view is not part of it.
 
 ## Actors
 
@@ -467,7 +457,7 @@ guardsman walking a patrol path, which was a looping sequence of travel goals (`
 `game/src/goals`). The goals that come after these (wander, fixture use, park, remarks, the goal
 inspector of R55) wait in X17 with gates.
 
-- **PAN134a Patrol.** *Needs:* PAN102c. X17's runtime, with two goal types: `Sequence { looping }` and `Travel`. Nodes
+- **PAN134a Patrol.** X17's runtime, with two goal types: `Sequence { looping }` and `Travel`. Nodes
   are entities joined by `Subgoal` and rooted by `GoalOf`; each type is a definition component that
   requires its state component and a `GoalEval`, and evaluating gives satisfied, failed, waiting, or
   the body action to take. A tree is evaluated when its actor's action finishes or fails, or on a

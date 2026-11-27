@@ -41,6 +41,7 @@ pub mod nav_point_list;
 pub mod nav_view;
 pub mod new_realm;
 pub mod parcel_selection;
+pub mod path_edit;
 pub mod placement;
 pub mod portal_gizmos;
 pub mod precinct_edit;
@@ -107,6 +108,7 @@ impl PluginGroup for EditorPlugins {
             .add(instance_selection::InstanceSelectionPlugin)
             .add(instance_gizmo::InstanceGizmoPlugin)
             .add(marker_overlays::MarkerOverlaysPlugin)
+            .add(path_edit::PathEditPlugin)
             .add(instance_index::InstanceIndexPlugin)
             .add(instance_list::InstanceListPlugin)
             .add(terrain_cursor::TerrainCursorPlugin)

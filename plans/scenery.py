@@ -23,6 +23,9 @@
   The selected actor's inherited aspect is overridden, undoably, keeping the selection.
 - Markers: a marker fixture shows its pin and its area, faint, outlined on hover, and bright when
   selected.
+- Paths: with a path selected, Alt+Right chooses its first point, whose gizmo has no ring; Ctrl+click
+  adds a point after it and Delete takes that out, each undoably; Escape chooses no point, without
+  quitting. The precinct is restored afterwards.
 
 Settings start empty, so the panel starts hidden.
 """
@@ -87,6 +90,9 @@ HOUSE = [53.0, 0.0, 41.0]
 # The playground's water current, a marker with a circular area, in its precinct (0, 0).
 WATER_CURRENT = [45.5, 0.0, 53.7]
 MARKER_OVERLAY = "panoply_editor::marker_overlays::MarkerOverlay"
+# The playground's test path, `playground.path.test`, a marker in its precinct (0, 0).
+PATH_TEST = [6.25, 0.0, 4.3]
+PATH_PRECINCT = "scenery/precincts/playground/p000-p000.msgpack"
 
 
 def run(driver):
@@ -108,6 +114,8 @@ def run(driver):
     select_instance(driver)
     driver.caption("markers")
     markers(driver)
+    driver.caption("paths")
+    paths(driver)
     # Returning to a tool keeps its choice, highlighted (seen in the screenshot: `Selected` is not
     # reflected, so the plan cannot read it).
     driver.click("PlaceWall")
@@ -680,3 +688,61 @@ def markers(driver):
     button(driver, window, "Released")
     driver.frames(2)
     assert len(bright()) == 1, "the selected marker is not bright"
+
+
+def paths(driver):
+    """Selection mode, at the playground's test path: chosen in the list by its label, since
+    pillars stand around it in the view, and Alt+Right chooses its first point, the gizmo moving to
+    it without its ring. Ctrl+click on the ground beside it adds a
+    point after it, chosen; Delete takes that out, choosing the first again; undo takes back each.
+    Escape then chooses no point, and does not quit. Saved, and the precinct restored afterwards."""
+    driver.goto(PATH_TEST, 10.0, azimuth=0.0)
+    window, scale, middle, _ = view_points(driver)
+    precinct = ASSETS / PATH_PRECINCT
+    original = precinct.read_bytes()
+    name = "playground.path.test"
+
+    def click_at(point):
+        move_pointer(driver, window, scale, point)
+        button(driver, window, "Pressed")
+        button(driver, window, "Released")
+
+    def part():
+        return driver.get_resource(SCENERY_SELECTION)["part"]
+
+    def shown(handle):
+        return driver.get(f"GizmoHandle:{handle}", GIZMO_HANDLE)["shown"]
+
+    try:
+        driver.click(f"Exemplars/{name}")
+        driver.expect("InstanceLabel", TEXT, name)
+        assert part() is None, f"a part chosen on selecting: {part()}"
+        move_pointer(driver, window, scale, middle)
+        driver.press("AltLeft")
+        driver.key("ArrowRight")
+        driver.release("AltLeft")
+        driver.frames(2)
+        assert part() == {"PathPoint": 0}, f"Alt+Right chose {part()}"
+        assert shown("AxisX") and not shown("Ring"), "the point's gizmo is not arrows alone"
+        driver.screenshot("path_point")
+
+        # Ctrl+click on the ground right of the fixture: a point after the first, chosen.
+        driver.press("ControlLeft")
+        click_at((middle[0] + 80, middle[1]))
+        driver.release("ControlLeft")
+        driver.frames(2)
+        assert part() == {"PathPoint": 1}, f"Ctrl+click chose {part()}"
+        driver.key("Delete")
+        driver.frames(2)
+        assert part() == {"PathPoint": 0}, f"Delete left {part()} chosen"
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, f"Undo: Delete point 2 of {name}")
+        undo(driver)
+        driver.expect("Toast/ToastText", TEXT, f"Undo: Add point 2 to {name}")
+
+        driver.key("Escape")
+        driver.frames(2)
+        assert part() is None, f"Escape left {part()} chosen"
+        save(driver)
+    finally:
+        restore(precinct, original)
