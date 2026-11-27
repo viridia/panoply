@@ -362,15 +362,14 @@ set an edit is one of (`EditKind`).
   loads the modules its scripted aspects name, as a catalog does. Then the property editor lets an
   instance override an inherited scripted aspect, add one from the aspects chooser, and add a
   missing one, which PAN28e withholds from instances; PAN79a's `SignalInput` is the first wanted.
-- **PAN28g New, Clone and Rename.** Waits on
-  [bevy#26692](https://github.com/bevyengine/bevy/issues/26692) (I103). The scenery panel's New… and
-  Clone… (`TODO(PAN28g)`), which add exemplars to a catalog: saving merges edits into the file
-  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
-  `alias` list, so that precincts naming it keep working until they are saved again. And Make
-  Exemplar on a selected instance: a New whose `extends` is the instance's exemplar and whose
-  aspects are its overrides, after which the instance names the new exemplar and its overrides are
-  cleared, as one undoable edit (Unreal's Blueprint from selection, Unity's prefab variant). Until
-  then, `precinct.py show --label` prints an instance's overrides as catalog JSON.
+- **PAN28g New, Clone and Rename.** *Needs:* X153. The scenery panel's New… and Clone…
+  (`TODO(PAN28g)`), which add exemplars to a catalog: saving merges edits into the file (D73), so a
+  new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its `alias`
+  list, so that precincts naming it keep working until they are saved again. And Make Exemplar on a
+  selected instance: a New whose `extends` is the instance's exemplar and whose aspects are its
+  overrides, after which the instance names the new exemplar and its overrides are cleared, as one
+  undoable edit (Unreal's Blueprint from selection, Unity's prefab variant). Until then,
+  `precinct.py show --label` prints an instance's overrides as catalog JSON.
 
 ## Actors
 
@@ -458,6 +457,16 @@ from poses to faery's first demo, a guardsman walking a patrol path (`Patrol.tsx
 simplest. The goals that come after these (wander, fixture use, park, remarks, the goal inspector of
 R55) wait in X17.
 
+- **PAN134k Goal syntax.** Docs only. Exemplars.md's sketch of goal trees as SAGA declarations
+  (Packages written in SAGA) becomes behavior.md's Format, tested by writing in it every tree the
+  PAN134 chunks plan: the guardsman's poses, Random, Travel loop and patrol, Sigrid's UseBroom,
+  Ivy's day, with one `tree UseFixture` for faery's four work trees, and PAN134b's turn to face the
+  player, with `when` and `priority`; then listing what does not fit. It settles: how a package
+  reaches an instance (a scripted aspect, D107, on the instance or its exemplar, in place of
+  `instance_trees.rs`); `Priority` and `GoalWeight`, components in Rust, written as fields of a
+  node; typed references (a fixture by label, an item, a clip) and units; parameter defaults and
+  `as` bindings; how SAGA reads the Rust goal types' fields, through reflection as scripted aspects
+  read native ones; and whether goal-format.md's JSON prototype goes.
 - **PAN134g Random.** `Random { no_repeat }` (R51) picks one child, by the relative `GoalWeight`
   component each child may carry (1 without one), as faery's `weight` did, re-chosen on restart. A
   weight on a node whose parent is not a `Random` is reported when the tree spawns. The guardsman's
@@ -486,19 +495,53 @@ R55) wait in X17.
   the goal is evaluated when the action ends or fails, not at each point. Proved in
   `plans/actors.py`: the guardsman completes two laps of his path, which the author draws with
   PAN102c beforehand.
-- **PAN134b Priorities and conditions.** *Needs:* PAN134h. Several trees on an actor, run in R47's
+- **PAN134c Composites and simple leaves.** *Needs:* PAN134a. The rest of R51's composites (ranked,
+  contingent, repeat, timeout, cooldown) and the leaves Wait and LookAt, checked by `cargo test` on
+  trees built in Rust, with one in play. Wait brings the wake a goal asks for (R49): evaluated again
+  in N seconds, with no action finishing.
+- **PAN134d Trees in SAGA.** *Needs:* PAN134c, PAN134k, PAN135. Trees declared in PAN134k's syntax, in
+  packages that are scripted aspects, in place of `instance_trees.rs`: the guardsman's tree moves
+  into a package on his instance. `when` and `priority` parse, and PAN134b runs them.
+- **PAN134i Sigrid's day.** *Needs:* PAN134d, PAN134h. `ryba.sigrid` sweeps her house in
+  holm-overland, as faery's `sigrid` did by day (`behaviors/tambry.tsx`): a looping Sequence of a
+  `UseBroom` subtree (`work.ts`) for her area, `sigrid.sweep` (a circle of 2.7 m round her).
+  UseBroom wanders, wields the broom, sweeps, and puts it away.
+  - `Wander { area }` (R52) travels to a random reachable point within a `MarkerArea` fixture in the
+    actor's precinct, named by its label as Patrol's path is: a point sampled in the shape and
+    snapped to the mesh, sampled again if no route reaches it.
+  - `Equip { item }` and `Unequip` wield and drop an item at run time, through the bones the
+    `WieldedItems` aspect's items attach to, which today spawn only with the body. Leaving play puts
+    an equipped item away with the rest of the goals' work.
+  - The sweep is a `Pose` of `WorkBroom` held 3 s, as faery's was. faery's 1 s wait after it waits
+    for PAN134c's Wait.
+  - Her package is SAGA, and UseBroom a `tree` taking the area, so philo and serela can take it in
+    theirs.
+  - By day only in faery; here all the time. Her night, sleeping in `sigrid.bed`, needs PAN121's
+    clock, PAN134b's conditions and fixture use (X17).
+  - Proved in `plans/actors.py`: she wanders within her area, wields the broom while she sweeps, and
+    holds none between sweeps.
+- **PAN134j Ivy's day.** *Needs:* PAN134g, PAN134i. `ivy` works the inn as faery's `ivy` did by day
+  (`behaviors/tambry.tsx`, R99): a looping Sequence of a no-repeat Random among the cook pot
+  (`inn.cookpot`), the two cutting boards (`inn.worktable.0`, `.1`), sweeping (`ivy.sweep`,
+  PAN134i's UseBroom) and standing at the counter (`ivy.counter`) for 10 s, then a 2 s wait.
+  - `UseFixture { fixture, mark, distance }` (faery's `SceneryInteraction`, R79) travels to the
+    nearest of a fixture's `use` marks by route length, within `distance`, and faces the fixture. It
+    is the first reader of `SceneryMarks`; PAN17b reads the same marks, and whichever lands first
+    adds the reading. The cook pot's mark is its centre, inside its collider, so a `distance` that
+    the collider leaves out of reach fails, as PAN134a's Travel fails a route short of reach.
+  - faery's UseCookPot and UseCuttingBoard (`work.ts`) are one SAGA `tree`, taking the fixture, the
+    tool and the clip: a Contingent of LookAt, Equip (`StirringSpoon`, `KitchenKnife`), a Pose
+    (`KitchenStir`, `KitchenWork`) held 4 s, and Unequip (R80).
+  - The counter is a Travel to a fixture named by its label.
+  - Her night, sleeping in `ivy.bed`, and her conversation are PAN121's, PAN134b's and PAN120a's.
+  - Proved in `plans/actors.py`: within a few picks she works at two different stations, each time
+    standing at a use mark, facing the fixture, with its tool in hand.
+- **PAN134b Priorities and conditions.** *Needs:* PAN134d. Several trees on an actor, run in R47's
   priority bands, a `Priority` component on a tree's root, since priority means nothing below it
   (one elsewhere is reported when the tree spawns); a goal's `when`, at any depth, a reactive
   formula, skipped while false and restarted when it turns true (R50); and a higher goal pre-empting
   a lower one's body action. Proved by the guardsman turning to face the player within 2 m, a
   `FaceToward` leaf, and walking on once they leave: saga.md's first character goal.
-- **PAN134c Composites and simple leaves.** *Needs:* PAN134a. The rest of R51's composites (ranked,
-  contingent, repeat, timeout, cooldown) and the leaves Wait and LookAt, checked by `cargo test` on
-  trees built in Rust, with one in play. Wait brings the wake a goal asks for (R49): evaluated again
-  in N seconds, with no action finishing.
-- **PAN134d Trees in SAGA.** *Needs:* PAN134b. Trees declared as Exemplars.md's Packages written in
-  SAGA has them, declarations with typed `tree` parameters and `as` bindings, in place of the trees
-  built in Rust.
 - **PAN134e Pursue.** *Needs:* PAN134b. A moving target (R52): replanning as it moves 1 m, pace by
   distance, and getting as near as possible where it cannot be reached. PAN111's henchmen close on
   the hero with it.

@@ -4,7 +4,7 @@ Work decided against for now, each with its gate: the event that reopens it. Whe
 the entry becomes a chunk in [roadmap.md](roadmap.md) and leaves here. An entry with no event is
 dropped, not deferred. Numbers are never reused.
 
-**Next: X153.**
+**Next: X154.**
 
 - **X1** Migrate exemplars to BSN. *Gate:* BSN assets released, and BSN supports shared
   (non-instanced) templates. Includes updating the exemplar migration script, which lives in the
@@ -698,3 +698,7 @@ dropped, not deferred. Numbers are never reused.
   aspect's warning naming why it cannot attach at its defaults (D121), as the field with no default.
   The panes show the styles alone until then. *Gate:* tooltips in Bevy's editor widgets (the
   author's ticket upstream; jackdaw has them).
+- **X153** An asset path given a handle without a load, as a loaded asset
+  ([bevy#26692](https://github.com/bevyengine/bevy/issues/26692)), so PAN28g can add an exemplar to
+  a loaded catalog under its `file#Label` path. I103 has the other candidates. *Gate:* a Bevy bump
+  that includes it.
