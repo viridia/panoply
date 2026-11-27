@@ -404,8 +404,8 @@ components and every layer restartable from saved state (R104).
   its body's and its wielded items' entities as they were, and the mesh takes the color.
 - **PAN3t Reach to open.** An actor opening or shutting a container plays a reach, `StandPoint` (an
   arm raised, 1.5 s), as faery played it for an actor opening a door, a one-second gesture faded in
-  over 0.1 s (`createRoutePlanner.ts`). A gesture state played once over the idle, then back to it;
-  no clip is named for it, so the state names `StandPoint` and falls back to `Stand`. An
+  over 0.1 s (`createRoutePlanner.ts`). The gesture is PAN134f's clip action, `StandPoint` played
+  once over the idle, falling back to `Stand`; if this chunk comes first, it builds that action. An
   interaction's effect runs on the element alone, so what performs it, the probe, which knows the
   actor, plays the gesture. The actor faces the container as it reaches. PAN59's door uses the same
   gesture. Checked in `plans/actors.py`, at the chest check: E plays the gesture, then the idle.
@@ -452,18 +452,35 @@ components and every layer restartable from saved state (R104).
 
 ## Goals
 
-PAN134, Goals, in lettered parts: X17's goal trees, a slice at a time, from faery's first demo, a
-guardsman walking a patrol path, which was a looping sequence of travel goals (`Patrol.tsx` in
-`game/src/goals`). The goals that come after these (wander, fixture use, park, remarks, the goal
-inspector of R55) wait in X17 with gates.
+PAN134, Goals, in lettered parts: X17's goal trees, a slice at a time, from poses to faery's first
+demo, a guardsman walking a patrol path (`Patrol.tsx` in `game/src/goals`). Travel, Pursue, Wander
+and Patrol are the goals that navigate, Travel the simplest. The goals that come after these
+(wander, fixture use, park, remarks, the goal inspector of R55) wait in X17 with gates.
 
-- **PAN134a Patrol.** X17's runtime, with two goal types: `Sequence { looping }` and `Travel`. Nodes
-  are entities joined by `Subgoal` and rooted by `GoalOf`; each type is a definition component that
-  requires its state component and a `GoalEval`, and evaluating gives satisfied, failed, waiting, or
-  the body action to take. A tree is evaluated when its actor's action finishes or fails, or on a
-  wake it asked for (R49), never every tick. One tree per actor, with no priorities, conditions or
-  format: a native `Patrol { path, pace }` aspect builds it in Rust, as faery's `Patrol.tsx` did,
-  its `path` the label of a `MarkerPath` fixture in the actor's precinct, typed for now.
+- **PAN134f Pose.** X17's runtime, with two goal types: `Sequence { looping }` and
+  `Pose { clip, hold }`. Nodes are entities joined by `Subgoal` and rooted by `GoalOf`; each type is
+  a definition component that requires its state component and a `GoalEval`, and evaluating gives
+  satisfied, failed, waiting, or the body action to take. A tree is evaluated when its actor's
+  action finishes or fails, or on a wake it asked for (R49), never every tick. One tree per actor,
+  with no priorities or conditions.
+  - `Pose`'s body action plays a clip by name over the idle, added to the actor's animation graph
+    where no state already holds it, and triggers `ActionFinished` when the clip ends; with `hold`,
+    it loops the clip for that many seconds, as faery's `delay` bounded a pose. PAN3t's gesture is
+    this action.
+  - No format yet: a `bsn!` tree per instance label, in a table in Rust, spawned with `GoalOf` when
+    its actor spawns, until PAN134d. `PlacedAs` holds the instance's key, so its label comes from
+    the instances index.
+  - X17's design moves into a new `docs/behavior.md`, which takes in actor-requirements.md's
+    Behavior section (R47 to R55, R99), what of it the goals here settle, and X17 goes.
+  - Proved in `plans/actors.py`: the guardsman `playground.guard.test` (`TestChar2`) in the lair
+    (the playground's `p000-p000`) dances (`Dance1`, held 4 s), then plays `StandGesture` once, and
+    does both again.
+- **PAN134g Random.** *Needs:* PAN134f. `Random { no_repeat }` (R51) picks one child, by the
+  relative `GoalWeight` component each child may carry (1 without one), as faery's `weight` did,
+  re-chosen on restart. A weight on a node whose parent is not a `Random` is reported when the tree
+  spawns. The guardsman's tree picks among `Wave`, `Labor`, `StandPoint` and `StandGesture`; the
+  draw is checked by `cargo test`.
+- **PAN134a Travel.** *Needs:* PAN134f. `Travel { to, pace }`, to a point.
   - `Travel` is a fresh design, not a port of faery's `createRoutePlanner.ts`, which held six jobs
     in one closure: an arrival test made in four places, the lifecycle of a request to a search
     worker, the check that a route improves on standing still, recovery when blocked, doors and
@@ -476,22 +493,26 @@ inspector of R55) wait in X17 with gates.
     `ActionFinished`, in place of its warning. faery's `maintain` is a Travel under a Contingent
     (PAN134c), doors are the route's (PAN16j), and ladders, `hurry` and secondary targets wait for a
     need.
-  - X17's design moves into a new `docs/behavior.md`, which takes in actor-requirements.md's
-    Behavior section (R47 to R55, R99), what of it the goals here settle, and X17 goes.
-  - Proved in `plans/actors.py`: the guardsman `playground.guard.test` (`TestChar2`) in the lair
-    (the playground's `p000-p000`) completes two laps of his path, which the author draws with
-    PAN102c beforehand.
-- **PAN134b Priorities and conditions.** *Needs:* PAN134a. Several trees on an actor, run in R47's
-  priority bands, a goal's `when` a reactive formula, skipped while false and restarted when it
-  turns true (R50), and a higher goal pre-empting a lower one's body action. Proved by the guardsman
-  turning to face the player within 2 m, a `FaceToward` leaf, and walking on once they leave:
-  saga.md's first character goal.
-- **PAN134c Composites and simple leaves.** *Needs:* PAN134a. The rest of R51's composites (random,
-  ranked, contingent, repeat, timeout, cooldown) and the leaves Wait, Pose and LookAt, checked by
-  `cargo test` on trees built in Rust, with one in play.
+  - Proved in `plans/actors.py`: the guardsman's tree, a looping Sequence of Travels to two points
+    typed in its table entry with a Pose at each, takes him to both and back.
+- **PAN134h Patrol.** *Needs:* PAN134a. `Patrol { path, looping, pace }` follows a `MarkerPath`
+  fixture in the actor's precinct, named by its label, typed for now. Unlike a Sequence of Travels,
+  the path is an asset the author edits, and following it is one body action, routed leg by leg, so
+  the goal is evaluated when the action ends or fails, not at each point. Proved in
+  `plans/actors.py`: the guardsman completes two laps of his path, which the author draws with
+  PAN102c beforehand.
+- **PAN134b Priorities and conditions.** *Needs:* PAN134h. Several trees on an actor, run in R47's
+  priority bands, a `Priority` component on a tree's root, since priority means nothing below it
+  (one elsewhere is reported when the tree spawns); a goal's `when`, at any depth, a reactive
+  formula, skipped while false and restarted when it turns true (R50); and a higher goal pre-empting
+  a lower one's body action. Proved by the guardsman turning to face the player within 2 m, a
+  `FaceToward` leaf, and walking on once they leave: saga.md's first character goal.
+- **PAN134c Composites and simple leaves.** *Needs:* PAN134a. The rest of R51's composites (ranked,
+  contingent, repeat, timeout, cooldown) and the leaves Wait and LookAt, checked by `cargo test` on
+  trees built in Rust, with one in play.
 - **PAN134d Trees in SAGA.** *Needs:* PAN134b. Trees declared as Exemplars.md's Packages written in
   SAGA has them, declarations with typed `tree` parameters and `as` bindings, in place of the trees
-  built in Rust; `Patrol` becomes a tree.
+  built in Rust.
 - **PAN134e Pursue.** *Needs:* PAN134b. A moving target (R52): replanning as it moves 1 m, pace by
   distance, and getting as near as possible where it cannot be reached. PAN111's henchmen close on
   the hero with it.
@@ -656,7 +677,7 @@ converted; Panoply has the `Guardsman` exemplar and `GuardLunch`.
   always offers a way out, which a set shadows by `id`, as `Guardsman.Lunch` does: in faery the exit
   came from whichever set held a `goodbye` (one in `village.json`), so a conversation could lose its
   exit with no error. A Talk interaction on an actor (D114), its effect a host command that starts
-  the conversation. The guardsman, on PAN134a's patrol, stops and faces the player while they talk,
+  the conversation. The guardsman, on PAN134h's patrol, stops and faces the player while they talk,
   a goal of higher priority whose `when` is the conversation, and walks on after it. Option
   conditions are on-demand formulas (D116).
 - **PAN120b Quest and inventory.** *Needs:* PAN120a. The `Quest` catalog kind and quest state:
