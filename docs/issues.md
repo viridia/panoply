@@ -4,7 +4,7 @@ Triage: findings awaiting the author's decision, whether to make each a chunk in
 [roadmap.md](roadmap.md), a deferral or a decision, or to drop it. Each says whether it was
 confirmed by running something or only by reading. Numbers are never reused.
 
-**Next: I103.**
+**Next: I104.**
 
 - **I4** A model and clip viewer, as faery's `catwalk` was (`../faery-catwalk`, Electron and
   three.js): load a glTF, pick a character in a multi-model file, play its clips from a menu.
@@ -431,3 +431,21 @@ confirmed by running something or only by reading. Numbers are never reused.
   sent the run stray input; the run alone passed, and its log was overwritten, so what despawned the
   element is unknown. Candidate: `queue_handled` for `UpdateAspects`, as for any command on an
   entity something else may despawn. Run, not reproduced (PAN28e).
+- **I103** New, Clone and Rename of exemplars (roadmap's PAN28g) cannot work in memory: Bevy gives
+  an asset a path only by loading it, and has no public way to add a label to a loaded catalog
+  (`get_or_create_path_handle` is `pub(crate)`), while precincts, tools and property roots name
+  exemplars by `file#Label`. Loading a label the file lacks reloads the whole catalog, losing its
+  unsaved edits, then fails with `MissingLabel`. Candidates: write each creation or rename through
+  to the file at once, with undo actions that write files; or catalogs that own their exemplars as a
+  map, an exemplar named by catalog and name rather than by a labeled asset, the precinct format
+  unchanged, so creating and renaming are edits like any other. The second also drops the aliases'
+  duplicate assets (`Exemplar::edit`'s `ptr_eq` scan) and the loader's Bevy #10549 workaround, and
+  would cover `EntryCatalog` too, which has the same limit. glTFs keep labels: Panoply only reads
+  them. Read in the locked commit's `bevy_asset`. A third, proposed on the Bevy Discord: an upstream
+  `AssetServer::reserve_path_handle`, giving a path its handle without a load, the asset then
+  inserted under it and kept by the catalog; a later load of the file matches the label to it. As
+  proposed it leaves the handle `NotLoaded`, and `load` requests a load in that state (`info.rs`,
+  `HandleLoadingMode::Request`), which reloads the whole catalog, so the reservation must also
+  record the asset as loaded. Filed as
+  [bevy#26692](https://github.com/bevyengine/bevy/issues/26692). Also: PAN28f and PAN28g are reused
+  ids in the roadmap, both landed (changelog); letters from n on are free.

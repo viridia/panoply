@@ -367,14 +367,15 @@ set an edit is one of (`EditKind`).
   loads the modules its scripted aspects name, as a catalog does. Then the property editor lets an
   instance override an inherited scripted aspect, add one from the aspects chooser, and add a
   missing one, which PAN28e withholds from instances; PAN79a's `SignalInput` is the first wanted.
-- **PAN28g New, Clone and Rename.** The scenery panel's New… and Clone… (`TODO(PAN28g)`), which add
-  exemplars to a catalog: saving merges edits into the file (D73), so a new exemplar needs an insert
-  beside it. Renaming an exemplar, whose old name joins its `alias` list, so that precincts naming
-  it keep working until they are saved again. And Make Exemplar on a selected instance: a New whose
-  `extends` is the instance's exemplar and whose aspects are its overrides, after which the instance
-  names the new exemplar and its overrides are cleared, as one undoable edit (Unreal's Blueprint
-  from selection, Unity's prefab variant). Until then, `precinct.py show --label` prints an
-  instance's overrides as catalog JSON.
+- **PAN28g New, Clone and Rename.** Waits on
+  [bevy#26692](https://github.com/bevyengine/bevy/issues/26692) (I103). The scenery panel's New… and
+  Clone… (`TODO(PAN28g)`), which add exemplars to a catalog: saving merges edits into the file
+  (D73), so a new exemplar needs an insert beside it. Renaming an exemplar, whose old name joins its
+  `alias` list, so that precincts naming it keep working until they are saved again. And Make
+  Exemplar on a selected instance: a New whose `extends` is the instance's exemplar and whose
+  aspects are its overrides, after which the instance names the new exemplar and its overrides are
+  cleared, as one undoable edit (Unreal's Blueprint from selection, Unity's prefab variant). Until
+  then, `precinct.py show --label` prints an instance's overrides as catalog JSON.
 - **PAN102c Editing marker paths**, on the property editor's instance roots and PAN102b's overlays.
   In selection mode, a selected `MarkerPath`'s point pins are dragged on the ground, a point
   inserted after the one chosen and deleted, each an undoable edit of the instance's override,
