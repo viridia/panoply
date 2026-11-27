@@ -224,6 +224,10 @@ calls for work becomes an issue in [issues.md](issues.md).
   the length; `update` then applies `seek_time %= clip_duration`, meant for repeating, which drops
   it near zero, and the reverse completes within a frame or two. Rare at a steady frame rate. Clamp
   the time to `[0, length]` before seeking, as `drive_scenery_animations` does.
+- Bevy's `animate_targets` visits every node of an animation graph for each bone it animates,
+  playing or not (locked Bevy a35f1b5). Every clip of the humanoid clips file in each actor's graph,
+  41 against about 12, cost 0.3 ms in `perf.py`'s townsfolk view and 0.6 ms in its editor view
+  (PAN134f), so a graph holds the states' clips, and a pose's joins when first played.
 - Incremental builds can run measurably slower (PAN105, 2026-11-24): `perf.py` on a Panoply tree
   rebuilt incrementally many times measured 1.3 to 2.5 ms a frame more at 80, 112 and 128 than the
   same code after `cargo clean -p` of every workspace crate (7.25 to 7.33 ms), which Bevy's build
@@ -248,14 +252,17 @@ calls for work becomes an issue in [issues.md](issues.md).
 - Text-to-motion recipe (2026-11-26): generate on fal.ai's Hunyuan Motion (HY-Motion 1.0), which
   returns an SMPL-H FBX at 30 fps, in clips of a few seconds that do not loop. Then retarget it onto
   the humanoid with `scripts/retarget_smpl.py` in a live Blender session (its docstring has the
-  call). The retarget held up well on a 3 s clip: no limb past 0.997 of its reach, heels at worst 3
-  cm below their rest height. The model knows movements, not dance names: "a traditional Irish jig"
-  looked nothing like one. Describe the body literally ("arms stretched out to the sides, sinks into
-  a deep crouch, slaps the ground"). Slow solo dances with large gestures (zeibekiko, mimed
-  hornpipe) suit it; fast footwork (jig steps) does not. `Dance1` came from the bare prompt "folk
-  dancing" (8 s, seed 42); "traditional country folk dance" came out as disco. Local alternatives
-  need an NVIDIA GPU: NVIDIA's Kimodo (open, with heel and toe contacts) and HY-Motion itself (24 GB
-  or more).
+  calls), then `discard_import()`. Blender's FBX importer sets the scene to the file's 30 fps, which
+  stretches every other clip to twice its length; `retarget` puts the scene's rate back. Deleting
+  the import by hand leaves its actions and packed 4K textures (14 MB each) in the file. After an
+  export, `scripts/glb_compare.py` on the clips file shows any clip whose length changed. The
+  retarget held up well on a 3 s clip: no limb past 0.997 of its reach, heels at worst 3 cm below
+  their rest height. The model knows movements, not dance names: "a traditional Irish jig" looked
+  nothing like one. Describe the body literally ("arms stretched out to the sides, sinks into a deep
+  crouch, slaps the ground"). Slow solo dances with large gestures (zeibekiko, mimed hornpipe) suit
+  it; fast footwork (jig steps) does not. `Dance1` came from the bare prompt "folk dancing" (8 s,
+  seed 42); "traditional country folk dance" came out as disco. Local alternatives need an NVIDIA
+  GPU: NVIDIA's Kimodo (open, with heel and toe contacts) and HY-Motion itself (24 GB or more).
 - `InteractionDisabled` derives no `PartialEq`, so `Propagate<InteractionDisabled>` does not
   compile, and a subtree is disabled by inserting it on each descendant, as `disable_inherited_rows`
   does (2026-11). An upstream derive would let `Propagate` carry it.

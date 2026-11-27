@@ -8,8 +8,11 @@ Blender MCP's `execute_blender_code`:
 
 Imports the FBX into a `SMPLImport` collection, moved 1.5 m along X to compare, and bakes every
 bone of `HumanoidArmature` on every frame into a new action, made active, with NLA off so the
-other clips' tracks do not mix in. It saves nothing. To keep the clip: delete the collection, turn
-NLA back on, and add the action's NLA track like the other clips'.
+other clips' tracks do not mix in. The scene keeps its frame rate, which the importer changes to
+the file's, and the keys are placed at it: a 30 fps clip in a 60 fps scene has a key every second
+frame. It saves nothing. To keep the clip: `discard_import()` (deleting the collection by hand
+leaves its actions, materials and packed textures in the file), turn NLA back on, and add the
+action's NLA track like the other clips'.
 
 The clip is turned 180 degrees about Z: SMPL faces -Y with its left at +X, the humanoid +Y with its
 left at -X, so left and right keep their names. The torso, shoulders and upper limbs copy SMPL's
@@ -23,7 +26,8 @@ Then, to make clips that chain or loop:
     result = blend_ends("ZeibekikoAction", pose=("StandAction", 0), frames=10)
     result = blend_ends("ZeibekikoAction")  # a loop: the end blends onto the clip's own start
 
-`blend_ends` eases every channel over the first and last `frames` frames onto a shared pose: a
+`blend_ends` eases every channel over the first and last `frames` keys, frames of the source
+clip, onto a shared pose: a
 frame of another action, so phrases that share it can follow one another, or, with no pose, the
 clip's own first frame, leaving the start alone and dropping the last frame, which would repeat
 the first. The hips' location is corrected along the whole
@@ -74,7 +78,14 @@ def retarget(fbx_path, action_name):
         bpy.context.view_layer.layer_collection.children[coll.name]
     )
     before = set(bpy.data.objects.keys())
+    actions_before = set(bpy.data.actions.keys())
+    fps = (scene.render.fps, scene.render.fps_base)
     bpy.ops.import_scene.fbx(filepath=fbx_path)
+    # The importer sets the scene to the file's frame rate, which would stretch every other clip.
+    source_fps = scene.render.fps / scene.render.fps_base
+    scene.render.fps, scene.render.fps_base = fps
+    step = (fps[0] / fps[1]) / source_fps
+    coll["imported_actions"] = sorted(set(bpy.data.actions.keys()) - actions_before)
     new = [bpy.data.objects[n] for n in set(bpy.data.objects.keys()) - before]
     src = next(o for o in new if o.type == "ARMATURE")
     src_action = src.animation_data.action
@@ -203,7 +214,7 @@ def retarget(fbx_path, action_name):
                 fc.keyframe_points.add(len(baked[pb.name]))
                 co = []
                 for t, e in enumerate(baked[pb.name]):
-                    co += [float(t), float(e[k][i])]
+                    co += [float(t * step), float(e[k][i])]
                 fc.keyframe_points.foreach_set("co", co)
                 for kp in fc.keyframe_points:
                     kp.interpolation = "LINEAR"
@@ -211,14 +222,38 @@ def retarget(fbx_path, action_name):
     for pb in PB:
         pb.matrix_basis = Matrix.Identity(4)
     src.location.x += SOURCE_SPACING
-    scene.frame_start, scene.frame_end = 0, last - first
+    scene.frame_start, scene.frame_end = 0, round((last - first) * step)
     scene.frame_set(0)
     return {
         "action": action.name,
         "frames": last - first + 1,
+        "source_fps": source_fps,
+        "key_step": step,
         "previous": previous,
         "rest_heel_z": round(OB["heelIK.L"].head_local.z, 3),
         **{k: round(v, 3) for k, v in worst.items()},
+    }
+
+
+def discard_import():
+    """Removes what `retarget` imported: the `SMPLImport` collection, its objects, the actions the
+    import made, and, by purging orphans, their meshes, materials and packed textures."""
+    coll = bpy.data.collections.get("SMPLImport")
+    if coll is None:
+        return {"removed": None}
+    actions = list(coll.get("imported_actions", []))
+    objects = [o.name for o in coll.all_objects]
+    for name in objects:
+        bpy.data.objects.remove(bpy.data.objects[name])
+    bpy.data.collections.remove(coll)
+    for name in actions:
+        if name in bpy.data.actions:
+            bpy.data.actions.remove(bpy.data.actions[name])
+    bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=False, do_recursive=True)
+    return {
+        "objects": objects,
+        "actions": actions,
+        "packed_images_left": [i.name for i in bpy.data.images if i.packed_file],
     }
 
 
