@@ -15,7 +15,9 @@ changelog.
 Chunks are grouped by thread, a day's area of concern. Within a thread they are in order, foundation
 first, but the order is preference: what a chunk cannot start without is its `*Needs:*`, after its
 title, naming each open chunk, deferral or issue it waits for directly (what those wait for is
-theirs to name). `xref.py` checks that each is still open.
+theirs to name). `xref.py` checks that each is still open. Work waiting on something outside the
+roadmap, such as an upstream fix, is a deferral with that gate, not a chunk; a chunk that turns out
+to wait on one keeps its id and names a new deferral in its `*Needs:*`, as PAN28g names X153.
 
 ## Terrain
 
