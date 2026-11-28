@@ -33,7 +33,7 @@ implemented yet.
   kept current by observers on each marker's insertion and removal.
 - **Variant**: a different sheet, not a state. A primary button and a plain one have a sheet each,
   and so does a checkbox that activates on press, which never shows its pressed look. A variant that
-  differs only in colour extends the base sheet and redefines its variables (see Palette).
+  differs only in colour extends the base sheet and redefines its variables (see Variables).
 - **Part**: an entity in the widget's own template marked `StylePart("label")`, with one name per
   entity. A rule for a part reads the states of the widget's root. Parts never reach into another
   widget, even a child one.
@@ -42,9 +42,14 @@ implemented yet.
 
 A part's name is not its `Name`. A `Name` is for debugging and for finding an entity in its scene,
 and a caller can override the root's. Parts that look alike are listed together in the sheet's rule,
-not given a shared name. An entity that needs two looks is split into a part and a child part. If
-that proves common, a marker component can be a second way to name a part: BSN already lets an
-entity hold several.
+not given a shared name. An entity that needs two looks is split into a part and a child part.
+
+A single name falls short when a sub-scene is used twice, as a number input's two arrows might be:
+the scene would name the part "arrow" and each use add "increment" or "decrement", but a `StylePart`
+set by the outer scene replaces the inner one. If a widget needs that, a marker component becomes a
+second way to name a part, since BSN lets an entity hold several: `.Arrow`, by the type's short name
+(`TypeRegistry::get_with_short_type_path`), beside `.arrow` for a `StylePart`. A short name two
+registered types share is a load error naming both.
 
 Order is the only precedence. A pressed button is also hovered, so its pressed rule comes after its
 hovered one; disabled comes last, so it wins over both.
@@ -214,27 +219,40 @@ would break when an entity was renamed for debugging.
 | Shared with widget templates | the same language | a second one |
 | Available | `bsn!` now, files once BSN assets land | now |
 
-## Palette
+## Variables
 
-A sheet can name a value instead of writing it: `$accent`, as in CSS variables. The values live in a
-palette, an asset with one table per type: colours, lengths, images. A theme is a palette, so
-switching themes swaps one asset.
+A sheet can name a value instead of writing it: `$accent`, as in CSS variables. A sheet defines its
+variables, and a sheet that extends it can redefine them. Faery's button had five colour variants,
+each setting four variables and no rules; in Panoply each is a sheet of a few lines that extends the
+base button. A name is looked up in the sheet, then in its bases.
 
-The field a variable fills decides its table, so a colour variable can't fill a length:
+A variable is typed by the field it fills, so a colour can't fill a length:
 
-- **Parsed text**: the property table knows `text-color` takes a colour, so `text-color: $accent`
-  looks only among the colours.
+- **Parsed text**: the property table knows `text-color` takes a colour, so `$accent` must be
+  defined as one.
 - **BSN**: the field still takes a `Color`, so the variable is a template that makes one:
-  `TextColor(palette::color("accent"))`.
+  `TextColor(var::color("accent"))`.
 
-A sheet can define variables of its own, and a sheet that extends it can redefine them. Faery's
-button had five colour variants, each setting four variables and no rules; in Panoply each is a
-sheet of a few lines that extends the base button. A name is looked up in the sheet, then in its
-bases, then in the palette.
+A name no sheet in the chain defines, or defines with another type, is a load error.
 
-A sheet resolves against the current palette, and a name none of them has, or has only in another
-table, is a load error. A theme switch resolves each sheet again and applies the widgets' current
-combinations.
+## Loading
+
+Each format has its own `AssetLoader`, and both make the same `StyleSheet` asset, one sheet per
+file. A `bsn!` sheet in Rust becomes one through `ScenePatch::load`, which loads the paths its scene
+names.
+
+A widget is styled from the frame it spawns:
+
+- A template that names its sheet, as in `WidgetStyle("ui/button.style")`, isn't spawned until the
+  sheet is loaded with its dependencies: the sheets it extends and the images its rules name.
+- The sheet resolves into the asset itself, in a system on `LoadedWithDependencies` ordered before
+  scenes spawn, as `resolve_scene_patches` does for scenes.
+- An observer on the insertion of `WidgetStyle` applies the widget's combination.
+- A `WidgetStyle` inserted later, by code rather than a template, isn't waited for. The widget keeps
+  its current look until the new sheet resolves.
+
+A changed sheet file resolves again, and every widget holding it has its current combination
+applied, so a look can be tuned while the game runs.
 
 ## Feathers
 
@@ -255,14 +273,30 @@ A sheet replaces the state handling: the state bits and their observers in place
 pairs, `StylePart` in place of the descendant search, and ordered rules in place of the branches.
 `ActivateOnPress` and `ButtonVariant` become variants.
 
-A palette replaces the theming: the `Theme*Color` components, holding a token, and the systems that
-resolve them. Feathers' tokens are strings, and the theme holds only colours, so a token can't
-become anything else. Its name is unchecked: a missing one logs a warning and draws fuchsia, at
-runtime, on the first frame that uses it. A palette checks every name when the sheet loads.
+Feathers' theming would need the theming opportunity below. Its `Theme*Color` components hold a
+token, a string resolved through the current theme. The theme holds only colours, so a token can't
+become anything else, but its name is unchecked: a missing one logs a warning and draws fuchsia, at
+runtime, on the first frame that uses it. Variables are checked when the sheet loads.
 
 It replaces little of feathers' size. Of its 13,000 lines, the number input, tabs and colour input
 make up 6,000, and nearly all of it is behaviour and layout. The styling is a few hundred lines in
 each simple control. A sheet would make the styling regular, not small.
+
+## Opportunities
+
+Not requirements: each is taken up if a good design turns up, and left otherwise.
+
+- **Theming.** Panoply has fixed variants and no themes. A palette, an asset of typed variables
+  beneath every sheet's own, would let a theme swap one asset, and a theme switch resolve each sheet
+  again.
+- **Surface levels.** Feathers resolves a token differently by the surface a widget sits on
+  (`semantic_overrides`), with the level copied down the tree to every descendant
+  (`Propagate<ThemeContext>`). The level could be state bits, so a sheet resolves each level once
+  and a widget moving between surfaces changes state.
+- **Libraries.** Several sheets in one file as labeled sub-assets (`"ui/game.style#button"`), the
+  root holding a handle to each, as glTF does. A base sheet sits beside its variants, and one handle
+  preloads them all; a mod then replaces the whole file to change one sheet. Moving to libraries
+  changes only the paths in templates.
 
 ## Open questions
 
@@ -270,10 +304,8 @@ each simple control. A sheet would make the styling regular, not small.
   rule can be a function that makes its scene; whether a `ScenePatch` asset can be resolved more
   than once is to be found out.
 - Reading a rule's `StyleRule` back out of its resolved scene, through the downcastable template.
-- Resolving a sheet that is never spawned: what waiting for its dependencies takes.
-- Whether a `bsn!` field can take a template that resolves when the sheet loads, as a palette
-  variable needs.
-- Surface levels. Feathers resolves a token differently by the surface a widget sits on
-  (`semantic_overrides`). Resolving by placement would be a cascade, so the widget names its level:
-  as a variant, one resolution of the sheet per level, or as a palette layer per level.
+- Whether a sheet can be a `ScenePatch` and resolve through it, or needs an asset of its own that
+  borrows its dependency loading.
+- Whether a `bsn!` field can take a template that resolves when the sheet loads, as a variable
+  needs.
 - Focus as a state: any focus, or only visible focus (`InputFocusVisible`).
